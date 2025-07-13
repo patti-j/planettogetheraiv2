@@ -568,6 +568,7 @@ export default function GanttChart({
           </div>
           <div 
             ref={drop}
+            data-resource-id={resource.id}
             className={`flex-1 relative p-2 min-h-[60px] transition-colors overflow-hidden ${
               isOver ? (canDrop ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200") : ""
             }`}
