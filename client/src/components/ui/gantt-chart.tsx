@@ -207,6 +207,7 @@ export default function GanttChart({
                       <OperationBlock
                         operation={operation}
                         resourceName={getResourceName(operation.assignedResourceId || 0)}
+                        jobName={jobs.find(job => job.id === operation.jobId)?.name}
                       />
                     </div>
                   </div>
@@ -289,6 +290,7 @@ export default function GanttChart({
                       key={operation.id}
                       operation={operation}
                       resourceName={resource.name}
+                      jobName={jobs.find(job => job.id === operation.jobId)?.name}
                     />
                   ))}
                   {resourceOperations.length === 0 && (

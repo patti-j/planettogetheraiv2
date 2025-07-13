@@ -5,9 +5,10 @@ import type { Operation } from "@shared/schema";
 interface OperationBlockProps {
   operation: Operation;
   resourceName: string;
+  jobName?: string;
 }
 
-export default function OperationBlock({ operation, resourceName }: OperationBlockProps) {
+export default function OperationBlock({ operation, resourceName, jobName }: OperationBlockProps) {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "operation",
     item: { operation },
@@ -37,6 +38,9 @@ export default function OperationBlock({ operation, resourceName }: OperationBlo
     // Position operations based on their order within the timeline
     // Each day slot is ~172px wide (from the time scale)
     const dayWidth = 172;
+    
+    // For now, use a simple positioning based on operation order
+    // In a real app, this would be based on actual start/end dates
     const startDay = (operation.order || 0) % 7; // Distribute across 7 days
     
     return {
@@ -56,7 +60,7 @@ export default function OperationBlock({ operation, resourceName }: OperationBlo
     >
       <div className="text-xs font-medium">{operation.name}</div>
       <div className="text-xs opacity-80">
-        {operation.duration}h • {resourceName}
+        {jobName && `${jobName} • `}{operation.duration}h • {resourceName}
       </div>
     </div>
   );
