@@ -702,8 +702,8 @@ export default function GanttChart({
         className={`border-b border-gray-100 ${isDragging ? 'opacity-50' : ''}`}
       >
         <div className="flex">
-          <div className="w-64 px-4 py-3 bg-gray-50 border-r border-gray-200">
-            <div className="flex items-center">
+          <div className="w-64 px-4 bg-gray-50 border-r border-gray-200" style={{ minHeight: `${rowHeight}px` }}>
+            <div className="flex items-center h-full">
               {canReorder && (
                 <div 
                   ref={drag}
@@ -766,8 +766,8 @@ export default function GanttChart({
     return (
       <div className="border-b border-gray-100">
         <div className="flex">
-          <div className="w-64 px-4 py-3 bg-gray-50 border-r border-gray-200">
-            <div className="flex items-center">
+          <div className="w-64 px-4 bg-gray-50 border-r border-gray-200" style={{ minHeight: `${rowHeight}px` }}>
+            <div className="flex items-center h-full">
               <div className="flex-1">
                 <div className="font-medium text-gray-800">{resource.name}</div>
                 <div className="text-xs text-gray-500">
