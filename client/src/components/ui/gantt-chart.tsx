@@ -267,6 +267,7 @@ export default function GanttChart({
       // Sync on any timeline scroll
       const timelineElement = timelineRef.current;
       let rafId: number | null = null;
+      let lastScrollLeft = timelineElement.scrollLeft;
       
       const handleScroll = () => {
         if (!isDraggingTimeline.current) {
@@ -275,22 +276,36 @@ export default function GanttChart({
             cancelAnimationFrame(rafId);
           }
           rafId = requestAnimationFrame(() => {
-            syncTimelinePositions(timelineElement.scrollLeft);
+            const currentScrollLeft = timelineElement.scrollLeft;
+            if (currentScrollLeft !== lastScrollLeft) {
+              syncTimelinePositions(currentScrollLeft);
+              lastScrollLeft = currentScrollLeft;
+            }
             rafId = null;
           });
         }
       };
       
-      // Use both scroll and input events for better responsiveness
+      // Use scroll event with higher sensitivity
       timelineElement.addEventListener('scroll', handleScroll, { passive: true });
-      timelineElement.addEventListener('input', handleScroll, { passive: true });
+      
+      // Also use a polling mechanism for very small movements
+      const pollInterval = setInterval(() => {
+        if (!isDraggingTimeline.current) {
+          const currentScrollLeft = timelineElement.scrollLeft;
+          if (currentScrollLeft !== lastScrollLeft) {
+            syncTimelinePositions(currentScrollLeft);
+            lastScrollLeft = currentScrollLeft;
+          }
+        }
+      }, 16); // ~60fps polling
       
       return () => {
         if (rafId) {
           cancelAnimationFrame(rafId);
         }
+        clearInterval(pollInterval);
         timelineElement.removeEventListener('scroll', handleScroll);
-        timelineElement.removeEventListener('input', handleScroll);
       };
     }
   }, [timelineRef.current, resources.length, operations.length, view]);
