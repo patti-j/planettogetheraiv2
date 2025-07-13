@@ -1246,7 +1246,7 @@ export default function GanttChart({
                       handleViewSettingChange(value, "colorScheme");
                     }}
                   >
-                    <SelectTrigger className="w-16 h-6 text-xs">
+                    <SelectTrigger className="w-20 h-6 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1263,7 +1263,7 @@ export default function GanttChart({
                       handleViewSettingChange(value, "textLabeling");
                     }}
                   >
-                    <SelectTrigger className="w-16 h-6 text-xs">
+                    <SelectTrigger className="w-20 h-6 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1280,6 +1280,15 @@ export default function GanttChart({
                       ))}
                     </SelectContent>
                   </Select>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setCustomTextLabelManagerOpen(true)}
+                    title="Manage Custom Text Labels"
+                    className="h-6 px-2"
+                  >
+                    <Type className="w-3 h-3" />
+                  </Button>
                 </div>
               </div>
             </div>
@@ -1396,6 +1405,21 @@ export default function GanttChart({
               resources={resources}
               selectedViewId={selectedResourceView?.id}
               onViewChange={onResourceViewChange}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Custom Text Label Manager Dialog */}
+      <Dialog open={customTextLabelManagerOpen} onOpenChange={setCustomTextLabelManagerOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Custom Text Label Manager</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden">
+            <CustomTextLabelManager 
+              open={customTextLabelManagerOpen}
+              onOpenChange={setCustomTextLabelManagerOpen}
             />
           </div>
         </DialogContent>
