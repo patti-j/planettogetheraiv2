@@ -3,11 +3,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, Users, Wrench, Building, Package, Settings, ChevronDown, Sparkles, Download, Printer, Maximize2, Minimize2 } from "lucide-react";
+import { FileText, BarChart3, Plus, Edit, Download, Printer, Maximize2, Minimize2, Settings, ChevronDown, Sparkles, Trash2, Calendar, Clock, Users, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
-import AIAnalyticsManager from "@/components/ai-analytics-manager";
-import AnalyticsWidget from "@/components/analytics-widget";
 import Sidebar from "@/components/sidebar";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -23,132 +20,96 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { type ReportConfig } from "@shared/schema";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { type ReportConfig, type Job, type Operation, type Resource } from "@shared/schema";
 
-interface AnalyticsWidget {
+interface Report {
   id: string;
   title: string;
-  type: "metric" | "chart" | "table" | "progress";
+  type: "production" | "resource" | "efficiency" | "custom";
   data: any;
-  visible: boolean;
-  position: { x: number; y: number };
-  size: { width: number; height: number };
-  config: any;
+  createdAt: Date;
+  description?: string;
+  filters?: any;
 }
 
 export default function Reports() {
-  const [widgets, setWidgets] = useState<AnalyticsWidget[]>([]);
-  const [showManager, setShowManager] = useState(false);
+  const [reports, setReports] = useState<Report[]>([]);
   const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
+  const [showReportDialog, setShowReportDialog] = useState(false);
   const [showConfigDialog, setShowConfigDialog] = useState(false);
   const [configName, setConfigName] = useState("");
   const [configDescription, setConfigDescription] = useState("");
   const [showAIDialog, setShowAIDialog] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [isMaximized, setIsMaximized] = useState(false);
+  const [reportTitle, setReportTitle] = useState("");
+  const [reportType, setReportType] = useState<Report["type"]>("production");
+  const [reportDescription, setReportDescription] = useState("");
   const { toast } = useToast();
 
-  const { data: jobs = [] } = useQuery({
+  const { data: jobs = [] } = useQuery<Job[]>({
     queryKey: ['/api/jobs'],
   });
 
-  const { data: operations = [] } = useQuery({
+  const { data: operations = [] } = useQuery<Operation[]>({
     queryKey: ['/api/operations'],
   });
 
-  const { data: resources = [] } = useQuery({
+  const { data: resources = [] } = useQuery<Resource[]>({
     queryKey: ['/api/resources'],
   });
 
-  const { data: capabilities = [] } = useQuery({
-    queryKey: ['/api/capabilities'],
-  });
-
-  const { data: reportConfigs = [] } = useQuery({
+  const { data: reportConfigs = [] } = useQuery<ReportConfig[]>({
     queryKey: ['/api/report-configs'],
   });
 
   // Load selected config
-  const { data: selectedConfig } = useQuery({
-    queryKey: ['/api/report-configs', selectedConfigId],
-    enabled: !!selectedConfigId,
-  });
+  const selectedConfig = reportConfigs.find(c => c.id === selectedConfigId) || reportConfigs.find(c => c.isDefault);
 
-  // Create report config mutation
+  useEffect(() => {
+    if (selectedConfig && selectedConfig.configuration) {
+      setReports(selectedConfig.configuration.reports || []);
+    }
+  }, [selectedConfig]);
+
   const createConfigMutation = useMutation({
-    mutationFn: async (config: { name: string; description: string; configuration: any }) => {
-      return await apiRequest('POST', '/api/report-configs', config);
+    mutationFn: async (configData: { name: string; description: string; configuration: any }) => {
+      return await apiRequest('POST', '/api/report-configs', configData);
     },
-    onSuccess: (newConfig) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/report-configs'] });
-      setSelectedConfigId(newConfig.id);
+      toast({
+        title: "Report configuration created",
+        description: "Your report configuration has been saved successfully.",
+      });
       setShowConfigDialog(false);
       setConfigName("");
       setConfigDescription("");
-      toast({
-        title: "Success",
-        description: "Report configuration created successfully",
-      });
     },
-    onError: () => {
+    onError: (error) => {
       toast({
-        title: "Error",
-        description: "Failed to create report configuration",
+        title: "Error creating report config",
+        description: "There was a problem creating the report configuration.",
         variant: "destructive",
       });
     },
   });
 
-  // Set default config mutation
-  const setDefaultConfigMutation = useMutation({
-    mutationFn: async (id: number) => {
-      return await apiRequest('POST', `/api/report-configs/${id}/set-default`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/report-configs'] });
-      toast({
-        title: "Success",
-        description: "Default report configuration updated",
-      });
-    },
-  });
-
-  // Update config mutation
-  const updateConfigMutation = useMutation({
-    mutationFn: async ({ id, configuration }: { id: number; configuration: any }) => {
-      return await apiRequest('PUT', `/api/report-configs/${id}`, { configuration });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/report-configs'] });
-      toast({
-        title: "Success",
-        description: "Report configuration updated",
-      });
-    },
-  });
-
-  // AI widget creation mutation
-  const createAIWidgetsMutation = useMutation({
+  const createAIReportMutation = useMutation({
     mutationFn: async (prompt: string) => {
-      return await apiRequest('POST', '/api/ai-agent', {
-        message: `Create analytics widgets: ${prompt}`,
-      });
+      return await apiRequest('POST', '/api/ai-agent', { command: `CREATE_REPORT: ${prompt}` });
     },
-    onSuccess: (response) => {
-      if (response.success && response.data?.widgets) {
-        const newWidgets = response.data.widgets.map((widget: any) => ({
-          ...widget,
-          id: `ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        }));
-        setWidgets(prev => [...prev, ...newWidgets]);
+    onSuccess: (data) => {
+      if (data.success && data.data?.report) {
+        setReports(prev => [...prev, data.data.report]);
         toast({
-          title: "Success",
-          description: "AI widgets created successfully",
+          title: "AI report created",
+          description: "AI has generated a new report based on your prompt.",
         });
       }
       setShowAIDialog(false);
@@ -156,139 +117,77 @@ export default function Reports() {
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to create AI widgets",
+        title: "Error creating AI report",
+        description: "There was a problem generating the report with AI.",
         variant: "destructive",
       });
     },
   });
 
-  // Initialize default widgets or load from selected config
-  useEffect(() => {
-    if (selectedConfig && selectedConfig.configuration?.widgets) {
-      setWidgets(selectedConfig.configuration.widgets);
-    } else {
-      // Default widgets
-      const defaultWidgets: AnalyticsWidget[] = [
-        {
-          id: "1",
-          title: "Production Overview",
-          type: "metric",
-          data: {
-            value: jobs.length,
-            label: "Total Jobs",
-            change: "+12%",
-            icon: "package"
-          },
-          visible: true,
-          position: { x: 0, y: 0 },
-          size: { width: 300, height: 120 },
-          config: { color: "blue" }
-        },
-        {
-          id: "2",
-          title: "Resource Utilization",
-          type: "progress",
-          data: {
-            value: 85,
-            max: 100,
-            label: "Average Utilization",
-            color: "green"
-          },
-          visible: true,
-          position: { x: 320, y: 0 },
-          size: { width: 300, height: 120 },
-          config: { showPercentage: true }
-        },
-        {
-          id: "3",
-          title: "Operations Status",
-          type: "chart",
-          data: {
-            labels: ["Completed", "In Progress", "Pending"],
-            datasets: [{
-              data: [
-                operations.filter(op => op.status === "completed").length,
-                operations.filter(op => op.status === "In-Progress").length,
-                operations.filter(op => op.status === "pending").length
-              ],
-              backgroundColor: ["#22c55e", "#3b82f6", "#f59e0b"]
-            }]
-          },
-          visible: true,
-          position: { x: 0, y: 140 },
-          size: { width: 400, height: 300 },
-          config: { chartType: "doughnut" }
-        },
-        {
-          id: "4",
-          title: "Job Priority Distribution",
-          type: "table",
-          data: {
-            headers: ["Priority", "Count", "Percentage"],
-            rows: [
-              ["High", jobs.filter(j => j.priority === "high").length, "25%"],
-              ["Medium", jobs.filter(j => j.priority === "medium").length, "50%"],
-              ["Low", jobs.filter(j => j.priority === "low").length, "25%"]
-            ]
-          },
-          visible: true,
-          position: { x: 420, y: 140 },
-          size: { width: 350, height: 200 },
-          config: { striped: true }
-        }
-      ];
-      
-      setWidgets(defaultWidgets);
+  const generateReportData = (type: Report["type"]) => {
+    switch (type) {
+      case "production":
+        return {
+          totalJobs: jobs.length,
+          completedJobs: jobs.filter(j => j.status === "completed").length,
+          activeJobs: jobs.filter(j => j.status === "active").length,
+          overdueJobs: jobs.filter(j => new Date(j.dueDate) < new Date()).length,
+          operations: operations.length,
+          completedOperations: operations.filter(o => o.status === "completed").length,
+          jobsByPriority: {
+            high: jobs.filter(j => j.priority === "high").length,
+            medium: jobs.filter(j => j.priority === "medium").length,
+            low: jobs.filter(j => j.priority === "low").length,
+          }
+        };
+      case "resource":
+        return {
+          totalResources: resources.length,
+          activeResources: resources.filter(r => r.status === "active").length,
+          maintenanceResources: resources.filter(r => r.status === "maintenance").length,
+          resourceTypes: [...new Set(resources.map(r => r.type))],
+          utilizationRate: Math.round((operations.filter(o => o.resourceId).length / operations.length) * 100),
+          topResources: resources.slice(0, 5).map(r => ({
+            name: r.name,
+            type: r.type,
+            utilization: Math.round(Math.random() * 100),
+          }))
+        };
+      case "efficiency":
+        return {
+          onTimeJobs: jobs.filter(j => j.status === "completed" && new Date(j.dueDate) >= new Date()).length,
+          averageLeadTime: 5.2,
+          resourceUtilization: 78,
+          bottlenecks: ["CNC-002", "Assembly Station A"],
+          improvementAreas: ["Scheduling optimization", "Resource allocation", "Quality control"],
+        };
+      default:
+        return {};
     }
-  }, [jobs, operations, selectedConfig]);
-
-  // Save widget configuration when widgets change
-  useEffect(() => {
-    if (selectedConfigId && widgets.length > 0) {
-      const saveConfiguration = async () => {
-        try {
-          await updateConfigMutation.mutateAsync({
-            id: selectedConfigId,
-            configuration: { widgets }
-          });
-        } catch (error) {
-          // Silent fail for auto-save
-        }
-      };
-      
-      const debounceTimer = setTimeout(saveConfiguration, 1000);
-      return () => clearTimeout(debounceTimer);
-    }
-  }, [widgets, selectedConfigId]);
-
-  // Simplified drag handling for reports page
-  const [draggedItem, setDraggedItem] = useState<any>(null);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-
-  const handleWidgetCreate = (widget: AnalyticsWidget) => {
-    setWidgets(prev => [...prev, widget]);
   };
 
-  const handleWidgetUpdate = (id: string, updates: Partial<AnalyticsWidget>) => {
-    setWidgets(prev => prev.map(widget => 
-      widget.id === id ? { ...widget, ...updates } : widget
-    ));
-  };
-
-  const handleWidgetRemove = (id: string) => {
-    setWidgets(prev => prev.filter(widget => widget.id !== id));
-  };
-
-  const handlePositionChange = (id: string, position: { x: number; y: number }) => {
-    setWidgets(prev => prev.map(widget => 
-      widget.id === id ? { ...widget, position } : widget
-    ));
-  };
-
-  const handleRemove = (id: string) => {
-    setWidgets(prev => prev.filter(widget => widget.id !== id));
+  const handleCreateReport = () => {
+    if (!reportTitle.trim()) return;
+    
+    const newReport: Report = {
+      id: Date.now().toString(),
+      title: reportTitle,
+      type: reportType,
+      description: reportDescription,
+      data: generateReportData(reportType),
+      createdAt: new Date(),
+    };
+    
+    setReports(prev => [...prev, newReport]);
+    setShowReportDialog(false);
+    setReportTitle("");
+    setReportDescription("");
+    setReportType("production");
+    
+    toast({
+      title: "Report created",
+      description: "Your report has been generated successfully.",
+    });
   };
 
   const handleCreateConfig = () => {
@@ -297,17 +196,127 @@ export default function Reports() {
     createConfigMutation.mutate({
       name: configName,
       description: configDescription,
-      configuration: { widgets }
+      configuration: { reports }
     });
   };
 
-  const handleCreateAIWidgets = () => {
+  const handleCreateAIReport = () => {
     if (!aiPrompt.trim()) return;
     
-    createAIWidgetsMutation.mutate(aiPrompt);
+    createAIReportMutation.mutate(aiPrompt);
   };
 
-  const selectedConfigName = selectedConfig?.name || reportConfigs.find(c => c.isDefault)?.name || "Default Report";
+  const handleRemoveReport = (reportId: string) => {
+    setReports(prev => prev.filter(r => r.id !== reportId));
+    toast({
+      title: "Report removed",
+      description: "The report has been removed successfully.",
+    });
+  };
+
+  const getReportIcon = (type: Report["type"]) => {
+    switch (type) {
+      case "production":
+        return <BarChart3 className="w-6 h-6" />;
+      case "resource":
+        return <Users className="w-6 h-6" />;
+      case "efficiency":
+        return <TrendingUp className="w-6 h-6" />;
+      default:
+        return <FileText className="w-6 h-6" />;
+    }
+  };
+
+  const getTypeColor = (type: Report["type"]) => {
+    switch (type) {
+      case "production":
+        return "bg-blue-100 text-blue-800";
+      case "resource":
+        return "bg-green-100 text-green-800";
+      case "efficiency":
+        return "bg-purple-100 text-purple-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const renderReportData = (report: Report) => {
+    switch (report.type) {
+      case "production":
+        return (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{report.data.totalJobs}</div>
+              <div className="text-sm text-gray-600">Total Jobs</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{report.data.completedJobs}</div>
+              <div className="text-sm text-gray-600">Completed</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600">{report.data.activeJobs}</div>
+              <div className="text-sm text-gray-600">Active</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-red-600">{report.data.overdueJobs}</div>
+              <div className="text-sm text-gray-600">Overdue</div>
+            </div>
+          </div>
+        );
+      case "resource":
+        return (
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <span>Total Resources:</span>
+              <span className="font-semibold">{report.data.totalResources}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Active:</span>
+              <span className="font-semibold text-green-600">{report.data.activeResources}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Maintenance:</span>
+              <span className="font-semibold text-yellow-600">{report.data.maintenanceResources}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Utilization Rate:</span>
+              <span className="font-semibold">{report.data.utilizationRate}%</span>
+            </div>
+          </div>
+        );
+      case "efficiency":
+        return (
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <span>On-Time Jobs:</span>
+              <span className="font-semibold text-green-600">{report.data.onTimeJobs}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Avg Lead Time:</span>
+              <span className="font-semibold">{report.data.averageLeadTime} days</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Resource Utilization:</span>
+              <span className="font-semibold">{report.data.resourceUtilization}%</span>
+            </div>
+            <div className="mt-4">
+              <div className="text-sm font-medium text-gray-700 mb-2">Bottlenecks:</div>
+              <div className="flex flex-wrap gap-1">
+                {report.data.bottlenecks.map((bottleneck: string) => (
+                  <Badge key={bottleneck} variant="outline" className="text-xs">
+                    {bottleneck}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        return <div className="text-gray-500">Custom report data</div>;
+    }
+  };
+
+  const selectedConfigName = selectedConfig?.name || reportConfigs.find(c => c.isDefault)?.name || "Default Reports";
 
   if (isMaximized) {
     return (
@@ -316,9 +325,9 @@ export default function Reports() {
         <div className="flex-none p-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports & Analytics</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports</h1>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Create, view, and export comprehensive manufacturing reports
+                Create and manage production reports
               </p>
             </div>
             <div className="flex items-center space-x-2">
@@ -351,7 +360,7 @@ export default function Reports() {
                 </DropdownMenuContent>
               </DropdownMenu>
               
-              {widgets.length > 0 && (
+              {reports.length > 0 && (
                 <>
                   <Button
                     onClick={() => window.print()}
@@ -362,12 +371,12 @@ export default function Reports() {
                   </Button>
                   <Button
                     onClick={() => {
-                      const reportData = JSON.stringify(widgets, null, 2);
+                      const reportData = JSON.stringify(reports, null, 2);
                       const blob = new Blob([reportData], { type: 'application/json' });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
                       a.href = url;
-                      a.download = `${selectedConfigName || 'report'}-${new Date().toISOString().split('T')[0]}.json`;
+                      a.download = `reports-${new Date().toISOString().split('T')[0]}.json`;
                       a.click();
                       URL.revokeObjectURL(url);
                     }}
@@ -380,6 +389,14 @@ export default function Reports() {
               )}
               
               <Button
+                onClick={() => setShowReportDialog(true)}
+                className="bg-primary hover:bg-primary/90 text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Report
+              </Button>
+              
+              <Button
                 onClick={() => setShowAIDialog(true)}
                 variant="outline"
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
@@ -387,6 +404,7 @@ export default function Reports() {
                 <Sparkles className="w-4 h-4 mr-2" />
                 AI Create
               </Button>
+              
               <Button
                 variant="outline"
                 size="sm"
@@ -400,75 +418,161 @@ export default function Reports() {
 
         {/* Main Content */}
         <div className="flex-1 overflow-hidden bg-gray-100 dark:bg-gray-800">
-          {widgets.length === 0 ? (
+          {reports.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                  <Package className="w-8 h-8 text-gray-500 dark:text-gray-400" />
+                  <FileText className="w-8 h-8 text-gray-500 dark:text-gray-400" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Reports Created</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Get started by creating your first report widget
+                  Get started by creating your first production report
                 </p>
-                <Button
-                  onClick={() => setShowAIDialog(true)}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Create with AI
-                </Button>
+                <div className="flex justify-center space-x-2">
+                  <Button
+                    onClick={() => setShowReportDialog(true)}
+                    className="bg-primary hover:bg-primary/90 text-white"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Report
+                  </Button>
+                  <Button
+                    onClick={() => setShowAIDialog(true)}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    AI Create
+                  </Button>
+                </div>
               </div>
             </div>
           ) : (
             <div className="p-6 h-full overflow-y-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {widgets.filter(widget => widget.visible).map((widget) => (
-                  <div
-                    key={widget.id}
-                    className="h-80"
-                  >
-                    <AnalyticsWidget
-                      widget={widget}
-                      onToggle={() => handleWidgetUpdate(widget.id, { visible: !widget.visible })}
-                      onRemove={() => handleRemove(widget.id)}
-                      onEdit={() => {}}
-                      onResize={(id, size) => handleWidgetUpdate(id, { size })}
-                      onPositionChange={(id, position) => handlePositionChange(id, position)}
-                      jobs={jobs}
-                      operations={operations}
-                      resources={resources}
-                      metrics={{}}
-                      layoutMode="grid"
-                    />
-                  </div>
+                {reports.map((report) => (
+                  <Card key={report.id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                            {getReportIcon(report.type)}
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg font-semibold text-gray-900">
+                              {report.title}
+                            </CardTitle>
+                            <Badge className={getTypeColor(report.type)}>
+                              {report.type}
+                            </Badge>
+                          </div>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <Settings className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => {}}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleRemoveReport(report.id)} className="text-red-600">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {report.description && (
+                          <p className="text-sm text-gray-600">{report.description}</p>
+                        )}
+                        <div className="text-xs text-gray-500 flex items-center">
+                          <Calendar className="w-3 h-3 mr-1" />
+                          {format(report.createdAt, 'MMM d, yyyy')}
+                        </div>
+                        <div className="pt-2 border-t">
+                          {renderReportData(report)}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             </div>
           )}
         </div>
 
-        <AIAnalyticsManager
-          open={showManager}
-          onOpenChange={setShowManager}
-          onWidgetCreate={handleWidgetCreate}
-          currentWidgets={widgets}
-          onWidgetUpdate={setWidgets}
-        />
+        {/* Dialogs */}
+        {/* Report Creation Dialog */}
+        <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Create New Report</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="report-title">Report Title</Label>
+                <Input
+                  id="report-title"
+                  value={reportTitle}
+                  onChange={(e) => setReportTitle(e.target.value)}
+                  placeholder="Enter report title..."
+                />
+              </div>
+              <div>
+                <Label htmlFor="report-type">Report Type</Label>
+                <Select value={reportType} onValueChange={(value) => setReportType(value as Report["type"])}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select report type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="production">Production Report</SelectItem>
+                    <SelectItem value="resource">Resource Report</SelectItem>
+                    <SelectItem value="efficiency">Efficiency Report</SelectItem>
+                    <SelectItem value="custom">Custom Report</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="report-description">Description (Optional)</Label>
+                <Textarea
+                  id="report-description"
+                  value={reportDescription}
+                  onChange={(e) => setReportDescription(e.target.value)}
+                  placeholder="Enter description..."
+                  rows={3}
+                />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setShowReportDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleCreateReport}>
+                  Create Report
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Report Configuration Dialog */}
         <Dialog open={showConfigDialog} onOpenChange={setShowConfigDialog}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Configure Report</DialogTitle>
+              <DialogTitle>Save Report Configuration</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="config-name">Report Name</Label>
+                <Label htmlFor="config-name">Configuration Name</Label>
                 <Input
                   id="config-name"
                   value={configName}
                   onChange={(e) => setConfigName(e.target.value)}
-                  placeholder="Enter report name..."
+                  placeholder="Enter configuration name..."
                 />
               </div>
               <div>
@@ -486,27 +590,27 @@ export default function Reports() {
                   Cancel
                 </Button>
                 <Button onClick={handleCreateConfig} disabled={createConfigMutation.isPending}>
-                  {createConfigMutation.isPending ? "Creating..." : "Create"}
+                  {createConfigMutation.isPending ? "Saving..." : "Save Configuration"}
                 </Button>
               </div>
             </div>
           </DialogContent>
         </Dialog>
 
-        {/* AI Analytics Dialog */}
+        {/* AI Report Creation Dialog */}
         <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>AI Analytics Creation</DialogTitle>
+              <DialogTitle>AI Report Creation</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="ai-prompt">Describe your analytics needs</Label>
+                <Label htmlFor="ai-prompt">Describe your report needs</Label>
                 <Textarea
                   id="ai-prompt"
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
-                  placeholder="Describe what kind of analytics widgets you want to create..."
+                  placeholder="Describe what kind of report you want to create..."
                   rows={4}
                 />
               </div>
@@ -514,8 +618,8 @@ export default function Reports() {
                 <Button variant="outline" onClick={() => setShowAIDialog(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleCreateAIWidgets} disabled={createAIWidgetsMutation.isPending}>
-                  {createAIWidgetsMutation.isPending ? "Creating..." : "Create with AI"}
+                <Button onClick={handleCreateAIReport} disabled={createAIReportMutation.isPending}>
+                  {createAIReportMutation.isPending ? "Creating..." : "Create with AI"}
                 </Button>
               </div>
             </div>
@@ -533,9 +637,9 @@ export default function Reports() {
         <div className="flex-none p-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports & Analytics</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports</h1>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Create, view, and export comprehensive manufacturing reports
+                Create and manage production reports
               </p>
             </div>
             <div className="flex items-center space-x-2">
@@ -568,7 +672,7 @@ export default function Reports() {
                 </DropdownMenuContent>
               </DropdownMenu>
               
-              {widgets.length > 0 && (
+              {reports.length > 0 && (
                 <>
                   <Button
                     onClick={() => window.print()}
@@ -579,12 +683,12 @@ export default function Reports() {
                   </Button>
                   <Button
                     onClick={() => {
-                      const reportData = JSON.stringify(widgets, null, 2);
+                      const reportData = JSON.stringify(reports, null, 2);
                       const blob = new Blob([reportData], { type: 'application/json' });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
                       a.href = url;
-                      a.download = `${selectedConfigName || 'report'}-${new Date().toISOString().split('T')[0]}.json`;
+                      a.download = `reports-${new Date().toISOString().split('T')[0]}.json`;
                       a.click();
                       URL.revokeObjectURL(url);
                     }}
@@ -597,6 +701,14 @@ export default function Reports() {
               )}
               
               <Button
+                onClick={() => setShowReportDialog(true)}
+                className="bg-primary hover:bg-primary/90 text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Report
+              </Button>
+              
+              <Button
                 onClick={() => setShowAIDialog(true)}
                 variant="outline"
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
@@ -604,6 +716,7 @@ export default function Reports() {
                 <Sparkles className="w-4 h-4 mr-2" />
                 AI Create
               </Button>
+              
               <Button
                 variant="outline"
                 size="sm"
@@ -617,143 +730,210 @@ export default function Reports() {
 
         {/* Main Content */}
         <div className="flex-1 overflow-hidden bg-gray-100 dark:bg-gray-800">
-          {widgets.length === 0 ? (
+          {reports.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                  <Package className="w-8 h-8 text-gray-500 dark:text-gray-400" />
+                  <FileText className="w-8 h-8 text-gray-500 dark:text-gray-400" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Reports Created</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Get started by creating your first report widget
+                  Get started by creating your first production report
                 </p>
-                <Button
-                  onClick={() => setShowAIDialog(true)}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Create with AI
-                </Button>
+                <div className="flex justify-center space-x-2">
+                  <Button
+                    onClick={() => setShowReportDialog(true)}
+                    className="bg-primary hover:bg-primary/90 text-white"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Report
+                  </Button>
+                  <Button
+                    onClick={() => setShowAIDialog(true)}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    AI Create
+                  </Button>
+                </div>
               </div>
             </div>
           ) : (
             <div className="p-6 h-full overflow-y-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {widgets.filter(widget => widget.visible).map((widget) => (
-                  <div
-                    key={widget.id}
-                    className="h-80"
-                  >
-                    <AnalyticsWidget
-                      widget={widget}
-                      onToggle={() => handleWidgetUpdate(widget.id, { visible: !widget.visible })}
-                      onRemove={() => handleRemove(widget.id)}
-                      onEdit={() => {}}
-                      onResize={(id, size) => handleWidgetUpdate(id, { size })}
-                      onPositionChange={(id, position) => handlePositionChange(id, position)}
-                      jobs={jobs}
-                      operations={operations}
-                      resources={resources}
-                      metrics={{}}
-                      layoutMode="grid"
-                    />
-                  </div>
+                {reports.map((report) => (
+                  <Card key={report.id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                            {getReportIcon(report.type)}
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg font-semibold text-gray-900">
+                              {report.title}
+                            </CardTitle>
+                            <Badge className={getTypeColor(report.type)}>
+                              {report.type}
+                            </Badge>
+                          </div>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <Settings className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => {}}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleRemoveReport(report.id)} className="text-red-600">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {report.description && (
+                          <p className="text-sm text-gray-600">{report.description}</p>
+                        )}
+                        <div className="text-xs text-gray-500 flex items-center">
+                          <Calendar className="w-3 h-3 mr-1" />
+                          {format(report.createdAt, 'MMM d, yyyy')}
+                        </div>
+                        <div className="pt-2 border-t">
+                          {renderReportData(report)}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             </div>
           )}
         </div>
 
-      <AIAnalyticsManager
-        open={showManager}
-        onOpenChange={setShowManager}
-        onWidgetCreate={handleWidgetCreate}
-        currentWidgets={widgets}
-        onWidgetUpdate={setWidgets}
-      />
+        {/* Dialogs - Same as maximized version */}
+        <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Create New Report</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="report-title">Report Title</Label>
+                <Input
+                  id="report-title"
+                  value={reportTitle}
+                  onChange={(e) => setReportTitle(e.target.value)}
+                  placeholder="Enter report title..."
+                />
+              </div>
+              <div>
+                <Label htmlFor="report-type">Report Type</Label>
+                <Select value={reportType} onValueChange={(value) => setReportType(value as Report["type"])}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select report type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="production">Production Report</SelectItem>
+                    <SelectItem value="resource">Resource Report</SelectItem>
+                    <SelectItem value="efficiency">Efficiency Report</SelectItem>
+                    <SelectItem value="custom">Custom Report</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="report-description">Description (Optional)</Label>
+                <Textarea
+                  id="report-description"
+                  value={reportDescription}
+                  onChange={(e) => setReportDescription(e.target.value)}
+                  placeholder="Enter description..."
+                  rows={3}
+                />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setShowReportDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleCreateReport}>
+                  Create Report
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
-      {/* Report Configuration Dialog */}
-      <Dialog open={showConfigDialog} onOpenChange={setShowConfigDialog}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Configure Report</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="config-name">Report Name</Label>
-              <Input
-                id="config-name"
-                value={configName}
-                onChange={(e) => setConfigName(e.target.value)}
-                placeholder="Enter report name..."
-              />
+        <Dialog open={showConfigDialog} onOpenChange={setShowConfigDialog}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Save Report Configuration</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="config-name">Configuration Name</Label>
+                <Input
+                  id="config-name"
+                  value={configName}
+                  onChange={(e) => setConfigName(e.target.value)}
+                  placeholder="Enter configuration name..."
+                />
+              </div>
+              <div>
+                <Label htmlFor="config-description">Description</Label>
+                <Textarea
+                  id="config-description"
+                  value={configDescription}
+                  onChange={(e) => setConfigDescription(e.target.value)}
+                  placeholder="Enter description..."
+                  rows={3}
+                />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setShowConfigDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleCreateConfig} disabled={createConfigMutation.isPending}>
+                  {createConfigMutation.isPending ? "Saving..." : "Save Configuration"}
+                </Button>
+              </div>
             </div>
-            <div>
-              <Label htmlFor="config-description">Description</Label>
-              <Textarea
-                id="config-description"
-                value={configDescription}
-                onChange={(e) => setConfigDescription(e.target.value)}
-                placeholder="Enter description..."
-                rows={3}
-              />
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowConfigDialog(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCreateConfig}
-                disabled={!configName.trim() || createConfigMutation.isPending}
-              >
-                {createConfigMutation.isPending ? "Creating..." : "Create Report"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
 
-      {/* AI Creation Dialog */}
-      <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <Sparkles className="w-5 h-5 mr-2 text-purple-600" />
-              AI Widget Creation
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="ai-prompt">Describe the widgets you want to create</Label>
-              <Textarea
-                id="ai-prompt"
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                placeholder="e.g., 'Create a performance dashboard showing job completion rates, resource efficiency metrics, and quality control statistics'"
-                rows={4}
-              />
+        <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>AI Report Creation</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="ai-prompt">Describe your report needs</Label>
+                <Textarea
+                  id="ai-prompt"
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  placeholder="Describe what kind of report you want to create..."
+                  rows={4}
+                />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setShowAIDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleCreateAIReport} disabled={createAIReportMutation.isPending}>
+                  {createAIReportMutation.isPending ? "Creating..." : "Create with AI"}
+                </Button>
+              </div>
             </div>
-            <div className="flex justify-end space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowAIDialog(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCreateAIWidgets}
-                disabled={!aiPrompt.trim() || createAIWidgetsMutation.isPending}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-              >
-                {createAIWidgetsMutation.isPending ? "Creating..." : "Create Widgets"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
