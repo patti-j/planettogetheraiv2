@@ -5,6 +5,8 @@ import {
   insertCapabilitySchema, insertResourceSchema, insertJobSchema, 
   insertOperationSchema, insertDependencySchema 
 } from "@shared/schema";
+import { processAICommand, transcribeAudio } from "./ai-agent";
+import multer from "multer";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Capabilities
@@ -293,6 +295,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(metrics);
     } catch (error) {
       res.status(500).json({ message: "Failed to calculate metrics" });
+    }
+  });
+
+  // AI Agent routes
+  const upload = multer();
+
+  app.post("/api/ai-agent/command", async (req, res) => {
+    try {
+      const { command } = req.body;
+      if (!command || typeof command !== "string") {
+        return res.status(400).json({ message: "Command is required" });
+      }
+      
+      const response = await processAICommand(command);
+      res.json(response);
+    } catch (error) {
+      console.error("AI Agent command error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to process AI command" 
+      });
+    }
+  });
+
+  app.post("/api/ai-agent/voice", upload.single("audio"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "Audio file is required" });
+      }
+      
+      const transcribedText = await transcribeAudio(req.file.buffer);
+      res.json({ text: transcribedText });
+    } catch (error) {
+      console.error("Voice transcription error:", error);
+      res.status(500).json({ 
+        message: "Failed to transcribe audio" 
+      });
     }
   });
 

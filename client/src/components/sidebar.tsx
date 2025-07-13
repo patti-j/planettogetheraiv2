@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText } from "lucide-react";
+import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import JobForm from "./job-form";
 import ResourceForm from "./resource-form";
@@ -23,6 +23,7 @@ export default function Sidebar() {
     { icon: ServerCog, label: "Resources", href: "/resources", active: location === "/resources" },
     { icon: BarChart3, label: "Analytics", href: "/analytics", active: location === "/analytics" },
     { icon: FileText, label: "Reports", href: "/reports", active: location === "/reports" },
+    { icon: Bot, label: "AI Assistant", href: "/ai-assistant", active: location === "/ai-assistant" },
   ];
 
   return (

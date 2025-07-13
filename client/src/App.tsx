@@ -10,6 +10,7 @@ import Jobs from "@/pages/jobs";
 import Resources from "@/pages/resources";
 import Analytics from "@/pages/analytics";
 import Reports from "@/pages/reports";
+import AIAssistant from "@/pages/ai-assistant";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/resources" component={Resources} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/reports" component={Reports} />
+      <Route path="/ai-assistant" component={AIAssistant} />
       <Route component={NotFound} />
     </Switch>
   );
