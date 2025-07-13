@@ -67,27 +67,32 @@ export function useOperationDrop(
     },
     drop: (item, monitor) => {
       const clientOffset = monitor.getClientOffset();
+      const initialOffset = monitor.getInitialClientOffset();
+      const dragOffset = monitor.getDifferenceFromInitialOffset();
       
-      if (clientOffset) {
+      if (clientOffset && initialOffset && dragOffset) {
         const resourceTimelineElement = document.querySelector(`[data-resource-id="${resource.id}"]`);
         if (resourceTimelineElement) {
           const rect = resourceTimelineElement.getBoundingClientRect();
           
-          // Calculate position relative to timeline, accounting for scroll
-          const relativeX = Math.max(0, clientOffset.x - rect.left + timelineScrollLeft);
+          // FIXED: Calculate the position of the dragged block, not the cursor
+          // The cursor position minus the initial drag offset gives us where the block's left edge is
+          const draggedBlockLeft = clientOffset.x - dragOffset.x;
+          const relativeX = Math.max(0, draggedBlockLeft - rect.left + timelineScrollLeft);
           
           // Calculate which period we're in
           const periodWidth = timelineWidth / timeScale.length;
           const periodIndex = Math.floor(relativeX / periodWidth);
           const clampedPeriodIndex = Math.max(0, Math.min(periodIndex, timeScale.length - 1));
           
-          // FIXED: Calculate the exact position within the period, not just the period start
+          // Calculate the exact position within the period
           const positionWithinPeriod = relativeX % periodWidth;
           const fractionWithinPeriod = positionWithinPeriod / periodWidth;
           
           // DEBUG: Log the drop calculation values
           console.log("DROP DEBUG:", {
             clientX: clientOffset.x,
+            draggedBlockLeft,
             rectLeft: rect.left,
             timelineScrollLeft,
             relativeX,
@@ -98,7 +103,9 @@ export function useOperationDrop(
             fractionWithinPeriod,
             timelineWidth,
             timeScaleLength: timeScale.length,
-            timeUnit
+            timeUnit,
+            initialOffset: initialOffset.x,
+            dragOffsetX: dragOffset.x
           });
           
           // FIXED: Use the same period-based calculation as OperationBlock
