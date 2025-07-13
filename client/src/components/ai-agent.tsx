@@ -267,7 +267,7 @@ export default function AIAgent() {
               >
                 <div className={`flex gap-2 max-w-[80%] ${message.type === "user" ? "flex-row-reverse" : "flex-row"}`}>
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    message.type === "user" ? "bg-blue-500" : "bg-green-500"
+                    message.type === "user" ? "bg-blue-500" : "bg-gradient-to-r from-purple-500 to-pink-500"
                   }`}>
                     {message.type === "user" ? 
                       <User className="w-4 h-4 text-white" /> : 
@@ -303,7 +303,7 @@ export default function AIAgent() {
             {(textCommandMutation.isPending || voiceCommandMutation.isPending) && (
               <div className="flex gap-3 justify-start">
                 <div className="flex gap-2 max-w-[80%]">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-green-500">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-r from-purple-500 to-pink-500">
                     <Bot className="w-4 h-4 text-white" />
                   </div>
                   <div className="rounded-lg p-3 bg-gray-100 text-gray-900">
