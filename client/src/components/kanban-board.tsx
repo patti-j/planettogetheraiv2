@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MoreHorizontal, Plus, Settings, Calendar, User, Building2, Wrench, ChevronDown } from "lucide-react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -35,9 +36,10 @@ interface DragItem {
   id: number;
   type: string;
   sourceColumnId: string;
+  index: number;
 }
 
-const JobCard = ({ job, onEdit, swimLaneField }: { job: Job; onEdit: (job: Job) => void; swimLaneField: string }) => {
+const JobCard = ({ job, onEdit, swimLaneField, index }: { job: Job; onEdit: (job: Job) => void; swimLaneField: string; index: number }) => {
   const getSourceColumnId = () => {
     switch (swimLaneField) {
       case "status":
@@ -53,7 +55,7 @@ const JobCard = ({ job, onEdit, swimLaneField }: { job: Job; onEdit: (job: Job) 
 
   const [{ isDragging }, drag] = useDrag({
     type: "job",
-    item: { id: job.id, type: "job", sourceColumnId: getSourceColumnId() },
+    item: { id: job.id, type: "job", sourceColumnId: getSourceColumnId(), index },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
@@ -120,12 +122,13 @@ const JobCard = ({ job, onEdit, swimLaneField }: { job: Job; onEdit: (job: Job) 
   );
 };
 
-const OperationCard = ({ operation, job, resources, onEdit, swimLaneField }: { 
+const OperationCard = ({ operation, job, resources, onEdit, swimLaneField, index }: { 
   operation: Operation; 
   job?: Job; 
   resources: Resource[];
   onEdit: (operation: Operation) => void;
   swimLaneField: string;
+  index: number;
 }) => {
   const getSourceColumnId = () => {
     switch (swimLaneField) {
@@ -143,7 +146,7 @@ const OperationCard = ({ operation, job, resources, onEdit, swimLaneField }: {
 
   const [{ isDragging }, drag] = useDrag({
     type: "operation",
-    item: { id: operation.id, type: "operation", sourceColumnId: getSourceColumnId() },
+    item: { id: operation.id, type: "operation", sourceColumnId: getSourceColumnId(), index },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),

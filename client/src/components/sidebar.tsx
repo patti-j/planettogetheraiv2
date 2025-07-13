@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -79,8 +80,21 @@ export default function Sidebar() {
     { icon: Bot, label: "AI Assistant", href: "/ai-assistant", active: location === "/ai-assistant" },
   ];
 
+  const getNavigationTooltip = (href: string) => {
+    const tooltips = {
+      "/": "View production schedule with interactive Gantt charts",
+      "/kanban": "Organize jobs and operations with drag-and-drop boards",
+      "/jobs": "Manage production jobs, priorities, and deadlines",
+      "/resources": "Configure machines, operators, and facilities",
+      "/analytics": "View production metrics and performance analytics",
+      "/reports": "Generate detailed production reports and insights",
+      "/ai-assistant": "Chat with AI for schedule optimization and analysis"
+    };
+    return tooltips[href] || "Navigate to this page";
+  };
+
   return (
-    <>
+    <TooltipProvider>
       <aside className="w-64 bg-white shadow-lg border-r border-gray-200">
         <div className="p-6 border-b border-gray-200">
           <h1 className="text-xl font-semibold text-gray-800 flex items-center">
@@ -91,38 +105,59 @@ export default function Sidebar() {
         
         <nav className="p-4 space-y-2">
           {navigationItems.map((item) => (
-            <Link key={item.href} href={item.href}>
-              <a
-                className={`flex items-center px-3 py-2 rounded-lg transition-colors ${
-                  item.active
-                    ? "text-gray-700 bg-blue-50 border-l-4 border-primary"
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
-              >
-                <item.icon className="w-5 h-5 mr-3" />
-                {item.label}
-              </a>
-            </Link>
+            <Tooltip key={item.href}>
+              <TooltipTrigger asChild>
+                <Link href={item.href}>
+                  <a
+                    className={`flex items-center px-3 py-2 rounded-lg transition-colors ${
+                      item.active
+                        ? "text-gray-700 bg-blue-50 border-l-4 border-primary"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <item.icon className="w-5 h-5 mr-3" />
+                    {item.label}
+                  </a>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>{getNavigationTooltip(item.href)}</p>
+              </TooltipContent>
+            </Tooltip>
           ))}
         </nav>
 
         <div className="p-4 border-t border-gray-200 mt-8">
           <h3 className="text-sm font-medium text-gray-500 mb-3">Quick Actions</h3>
           <div className="space-y-2">
-            <Button 
-              className="w-full bg-primary hover:bg-blue-700 text-white"
-              onClick={() => setJobDialogOpen(true)}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Job
-            </Button>
-            <Button 
-              className="w-full bg-accent hover:bg-green-600 text-white"
-              onClick={() => setResourceDialogOpen(true)}
-            >
-              <ServerCog className="w-4 h-4 mr-2" />
-              Add Resource
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  className="w-full bg-primary hover:bg-blue-700 text-white"
+                  onClick={() => setJobDialogOpen(true)}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Job
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Create a new production job with priority and deadline</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  className="w-full bg-accent hover:bg-green-600 text-white"
+                  onClick={() => setResourceDialogOpen(true)}
+                >
+                  <ServerCog className="w-4 h-4 mr-2" />
+                  Add Resource
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Add a new machine, operator, or facility to the system</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           
           <div className="mt-4 pt-4 border-t border-gray-200">
@@ -135,18 +170,25 @@ export default function Sidebar() {
                 onKeyPress={handleKeyPress}
                 className="flex-1 text-sm"
               />
-              <Button
-                size="sm"
-                onClick={handleAiPrompt}
-                disabled={!aiPrompt.trim() || aiMutation.isPending}
-                className="px-3"
-              >
-                {aiMutation.isPending ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    onClick={handleAiPrompt}
+                    disabled={!aiPrompt.trim() || aiMutation.isPending}
+                    className="px-3"
+                  >
+                    {aiMutation.isPending ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Send AI command to analyze schedule and create views</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
         </div>
@@ -174,6 +216,6 @@ export default function Sidebar() {
           />
         </DialogContent>
       </Dialog>
-    </>
+    </TooltipProvider>
   );
 }

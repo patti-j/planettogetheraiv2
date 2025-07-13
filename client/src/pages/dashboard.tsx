@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Plus, Filter, Save, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, Grid3X3, LayoutGrid, BarChart3 } from "lucide-react";
 import Sidebar from "@/components/sidebar";
 import GanttChart from "@/components/ui/gantt-chart";
@@ -173,10 +174,17 @@ export default function Dashboard() {
                     <Factory className="w-4 h-4 mr-1" />
                     Production Schedule - Maximized View
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => setIsMaximized(false)}>
-                    <Minimize2 className="w-4 h-4 mr-2" />
-                    Minimize
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="outline" size="sm" onClick={() => setIsMaximized(false)}>
+                        <Minimize2 className="w-4 h-4 mr-2" />
+                        Minimize
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Return to normal dashboard view</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
             </div>
@@ -226,13 +234,20 @@ export default function Dashboard() {
                 onKeyPress={handleKeyPress}
                 className="flex-1"
               />
-              <Button 
-                size="sm" 
-                onClick={handleAiPrompt}
-                disabled={aiMutation.isPending || !aiPrompt.trim()}
-              >
-                <Send className="w-4 h-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    size="sm" 
+                    onClick={handleAiPrompt}
+                    disabled={aiMutation.isPending || !aiPrompt.trim()}
+                  >
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Send AI command to control Gantt chart view</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
         </div>
@@ -241,37 +256,52 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex h-screen bg-surface">
-      <Sidebar />
-      
-      <main className="flex-1 overflow-hidden">
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-semibold text-gray-800">Production Schedule</h2>
-              <p className="text-gray-600">Manage operations and resource allocation</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-500 flex items-center">
-                <Factory className="w-4 h-4 mr-1" />
-                {new Date().toLocaleDateString('en-US', { 
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
+    <TooltipProvider>
+      <div className="flex h-screen bg-surface">
+        <Sidebar />
+        
+        <main className="flex-1 overflow-hidden">
+          {/* Header */}
+          <header className="bg-white shadow-sm border-b border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-semibold text-gray-800">Production Schedule</h2>
+                <p className="text-gray-600">Manage operations and resource allocation</p>
               </div>
-              <Button variant="outline" size="sm">
-                <Filter className="w-4 h-4 mr-2" />
-                Filter
-              </Button>
-              <Button size="sm">
-                <Save className="w-4 h-4 mr-2" />
-                Save Schedule
-              </Button>
+              <div className="flex items-center space-x-4">
+                <div className="text-sm text-gray-500 flex items-center">
+                  <Factory className="w-4 h-4 mr-1" />
+                  {new Date().toLocaleDateString('en-US', { 
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Filter className="w-4 h-4 mr-2" />
+                      Filter
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Filter schedule by date, priority, or resource type</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button size="sm">
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Schedule
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Save current schedule configuration</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
-          </div>
 
           {/* Analytics Controls */}
           <div className="flex items-center justify-between mb-4">
@@ -280,30 +310,51 @@ export default function Dashboard() {
               <span className="text-sm font-medium text-gray-700">Analytics Dashboard</span>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowCustomWidgets(!showCustomWidgets)}
-              >
-                <Grid3X3 className="w-4 h-4 mr-2" />
-                {showCustomWidgets ? "Hide Custom" : "Show Custom"}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setLayoutMode(layoutMode === "grid" ? "free" : "grid")}
-              >
-                <LayoutGrid className="w-4 h-4 mr-2" />
-                {layoutMode === "grid" ? "Free Layout" : "Grid Layout"}
-              </Button>
-              <Button
-                onClick={() => setAiAnalyticsOpen(true)}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                size="sm"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                AI Analytics
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowCustomWidgets(!showCustomWidgets)}
+                  >
+                    <Grid3X3 className="w-4 h-4 mr-2" />
+                    {showCustomWidgets ? "Hide Custom" : "Show Custom"}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Toggle display of custom analytics widgets</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLayoutMode(layoutMode === "grid" ? "free" : "grid")}
+                  >
+                    <LayoutGrid className="w-4 h-4 mr-2" />
+                    {layoutMode === "grid" ? "Free Layout" : "Grid Layout"}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Switch between organized grid and free-form layout</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => setAiAnalyticsOpen(true)}
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                    size="sm"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    AI Analytics
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Create custom analytics widgets using AI</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
 
@@ -387,10 +438,17 @@ export default function Dashboard() {
                   </TabsTrigger>
                 </TabsList>
                 <div className="flex items-center space-x-2 px-6">
-                  <Button variant="outline" size="sm" onClick={() => setIsMaximized(true)}>
-                    <Maximize2 className="w-4 h-4 mr-2" />
-                    Maximize
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="outline" size="sm" onClick={() => setIsMaximized(true)}>
+                        <Maximize2 className="w-4 h-4 mr-2" />
+                        Maximize
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Expand Gantt chart to full screen for better visibility</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
             </div>
@@ -457,6 +515,7 @@ export default function Dashboard() {
         currentWidgets={customWidgets}
         onWidgetUpdate={handleWidgetUpdate}
       />
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }

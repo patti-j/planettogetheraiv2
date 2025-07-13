@@ -95,6 +95,7 @@ export const kanbanConfigs = pgTable("kanban_configs", {
     cardSize: "compact" | "standard" | "detailed";
     groupBy: "none" | "priority" | "customer" | "resource";
   }>().default(sql`'{"showPriority": true, "showDueDate": true, "showCustomer": true, "showResource": true, "showProgress": true, "cardSize": "standard", "groupBy": "none"}'::jsonb`),
+  cardOrdering: jsonb("card_ordering").$type<Record<string, number[]>>().default(sql`'{}'::jsonb`), // Maps swim lane value to array of card IDs in order
   isDefault: boolean("is_default").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });

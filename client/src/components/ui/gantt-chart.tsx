@@ -6,6 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import OperationBlock from "./operation-block";
 import OperationForm from "../operation-form";
 import ResourceForm from "../resource-form";
@@ -1300,44 +1301,68 @@ export default function GanttChart({
           </div>
           <div className="w-auto bg-gray-50 border-r border-gray-200 px-2 py-2">
             <div className="flex items-center bg-white border rounded-md">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={zoomOut} 
-                disabled={timeUnit === "decade"} 
-                title="Zoom Out"
-                className="h-6 px-1.5 border-r rounded-r-none"
-              >
-                <ZoomOut className="w-3 h-3" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={zoomIn} 
-                disabled={timeUnit === "hour"} 
-                title="Zoom In"
-                className="h-6 px-1.5 border-r rounded-none"
-              >
-                <ZoomIn className="w-3 h-3" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={resetZoom} 
-                title="Reset Zoom"
-                className="h-6 px-2 border-r rounded-none"
-              >
-                <span className="text-xs font-medium">{timeUnit}</span>
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleScrollToToday} 
-                title="Scroll to Today"
-                className="h-6 px-1.5 rounded-l-none"
-              >
-                <Calendar className="w-3 h-3" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={zoomOut} 
+                    disabled={timeUnit === "decade"} 
+                    className="h-6 px-1.5 border-r rounded-r-none"
+                  >
+                    <ZoomOut className="w-3 h-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Zoom out to view longer time periods</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={zoomIn} 
+                    disabled={timeUnit === "hour"} 
+                    className="h-6 px-1.5 border-r rounded-none"
+                  >
+                    <ZoomIn className="w-3 h-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Zoom in to view shorter time periods</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={resetZoom} 
+                    className="h-6 px-2 border-r rounded-none"
+                  >
+                    <span className="text-xs font-medium">{timeUnit}</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Reset zoom to default view</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleScrollToToday} 
+                    className="h-6 px-1.5 rounded-l-none"
+                  >
+                    <Calendar className="w-3 h-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Scroll timeline to today's date</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
           <div 
@@ -1437,8 +1462,10 @@ export default function GanttChart({
   );
 
   return (
-    <div className="h-full">
-      {view === "operations" ? renderOperationsView() : renderResourcesView()}
-    </div>
+    <TooltipProvider>
+      <div className="h-full">
+        {view === "operations" ? renderOperationsView() : renderResourcesView()}
+      </div>
+    </TooltipProvider>
   );
 }
