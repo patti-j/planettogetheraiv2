@@ -77,6 +77,16 @@
   display: none;
 }
 
+/* Hide scrollbars for resource rows */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Ensure block dragging doesn't move the timeline */
 .operation-block {
   position: absolute;

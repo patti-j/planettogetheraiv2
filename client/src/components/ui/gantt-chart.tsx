@@ -247,7 +247,37 @@ export default function GanttChart({
     };
   }, [handleMouseMove, handleMouseUp]);
 
-  // No need for useEffect sync - we're using direct DOM manipulation
+  // Ensure all resource rows are synced with timeline header on mount and updates
+  useEffect(() => {
+    if (timelineRef.current) {
+      const syncResourceRows = () => {
+        const scrollLeft = timelineRef.current?.scrollLeft || 0;
+        const resourceRows = document.querySelectorAll('[data-resource-id]');
+        resourceRows.forEach((row) => {
+          if (row instanceof HTMLElement) {
+            row.scrollLeft = scrollLeft;
+          }
+        });
+      };
+      
+      // Initial sync
+      syncResourceRows();
+      
+      // Sync on any timeline scroll
+      const timelineElement = timelineRef.current;
+      const handleScroll = () => {
+        if (!isDraggingTimeline.current) {
+          syncResourceRows();
+        }
+      };
+      
+      timelineElement.addEventListener('scroll', handleScroll, { passive: true });
+      
+      return () => {
+        timelineElement.removeEventListener('scroll', handleScroll);
+      };
+    }
+  }, [timelineRef.current, resources.length]);
 
   // Handle scrollbar scroll events - sync all resource rows with timeline header
   const handleTimelineScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -497,7 +527,7 @@ export default function GanttChart({
           <div 
             ref={drop}
             data-resource-id={resource.id}
-            className={`flex-1 relative p-2 min-h-[60px] transition-colors overflow-x-auto ${
+            className={`flex-1 relative p-2 min-h-[60px] transition-colors overflow-x-auto scrollbar-hide ${
               isOver ? (canDrop ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200") : ""
             }`}
             onScroll={(e) => {
