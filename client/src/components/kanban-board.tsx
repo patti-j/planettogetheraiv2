@@ -812,38 +812,30 @@ function KanbanBoard({
           </div>
           
           <div className="flex items-center gap-2">
-            {/* Management Actions */}
-            <DropdownMenu>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <DropdownMenuTrigger asChild>
-                    <Button className="bg-primary hover:bg-blue-700 text-white" size="sm">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create
-                      <ChevronDown className="w-4 h-4 ml-2" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Create new jobs, resources, or boards</p>
-                </TooltipContent>
-              </Tooltip>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={onCreateJob}>
-                  <Briefcase className="w-4 h-4 mr-2" />
-                  New Job
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onCreateResource}>
-                  <Wrench className="w-4 h-4 mr-2" />
-                  New Resource
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={onConfigureBoards}>
-                  <Settings className="w-4 h-4 mr-2" />
-                  Configure Boards
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Create Action Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700 text-white" 
+                  size="sm"
+                  onClick={() => {
+                    if (selectedConfig?.viewType === "jobs") {
+                      onCreateJob && onCreateJob();
+                    } else if (selectedConfig?.viewType === "operations") {
+                      handleAddOperation();
+                    } else if (selectedConfig?.viewType === "resources") {
+                      onCreateResource && onCreateResource();
+                    }
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Create new {selectedConfig?.viewType === "jobs" ? "job" : selectedConfig?.viewType === "operations" ? "operation" : "resource"}</p>
+              </TooltipContent>
+            </Tooltip>
 
             {/* Board Selection */}
             <DropdownMenu>
@@ -894,7 +886,7 @@ function KanbanBoard({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    variant="outline"
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
                     size="sm"
                     onClick={onToggleMaximize}
                   >
