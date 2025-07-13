@@ -19,7 +19,7 @@ interface Metrics {
 }
 
 export default function Dashboard() {
-  const [currentView, setCurrentView] = useState<"operations" | "resources">("operations");
+  const [currentView, setCurrentView] = useState<"operations" | "resources">("resources");
   const [jobDialogOpen, setJobDialogOpen] = useState(false);
   const [resourceDialogOpen, setResourceDialogOpen] = useState(false);
 
@@ -118,31 +118,21 @@ export default function Dashboard() {
             <div className="border-b border-gray-200 bg-gray-50">
               <TabsList className="h-auto p-0 bg-transparent">
                 <TabsTrigger 
-                  value="operations" 
-                  className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
-                >
-                  <Factory className="w-4 h-4 mr-2" />
-                  Operations View
-                </TabsTrigger>
-                <TabsTrigger 
                   value="resources" 
                   className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
                 >
                   <Factory className="w-4 h-4 mr-2" />
                   Resources View
                 </TabsTrigger>
+                <TabsTrigger 
+                  value="operations" 
+                  className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
+                >
+                  <Factory className="w-4 h-4 mr-2" />
+                  Operations View
+                </TabsTrigger>
               </TabsList>
             </div>
-
-            <TabsContent value="operations" className="h-full m-0">
-              <GanttChart
-                jobs={jobs}
-                operations={operations}
-                resources={resources}
-                capabilities={capabilities}
-                view="operations"
-              />
-            </TabsContent>
 
             <TabsContent value="resources" className="h-full m-0">
               <GanttChart
@@ -151,6 +141,16 @@ export default function Dashboard() {
                 resources={resources}
                 capabilities={capabilities}
                 view="resources"
+              />
+            </TabsContent>
+
+            <TabsContent value="operations" className="h-full m-0">
+              <GanttChart
+                jobs={jobs}
+                operations={operations}
+                resources={resources}
+                capabilities={capabilities}
+                view="operations"
               />
             </TabsContent>
           </Tabs>

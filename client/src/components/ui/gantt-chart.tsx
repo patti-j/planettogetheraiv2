@@ -293,6 +293,68 @@ export default function GanttChart({
     </div>
   );
 
+  // Create a separate component to handle the drop zone for each resource
+  const ResourceRow = ({ resource }: { resource: Resource }) => {
+    const resourceOperations = operations.filter(op => op.assignedResourceId === resource.id);
+    const { drop, isOver, canDrop } = useOperationDrop(resource);
+
+    return (
+      <div key={resource.id} className="border-b border-gray-100">
+        <div className="flex">
+          <div className="w-64 px-4 py-3 bg-gray-50 border-r border-gray-200">
+            <div className="flex items-center">
+              <div className="flex-1">
+                <div className="font-medium text-gray-800">{resource.name}</div>
+                <div className="text-xs text-gray-500">
+                  Type: {resource.type} | 
+                  Capabilities: {resource.capabilities?.map(capId => 
+                    getCapabilityName(capId)
+                  ).join(", ") || "None"}
+                </div>
+              </div>
+              <Badge className={`text-xs ${
+                resource.status === "active" ? "bg-accent text-white" : "bg-gray-400 text-white"
+              }`}>
+                {resource.status}
+              </Badge>
+            </div>
+          </div>
+          <div 
+            ref={drop}
+            data-resource-id={resource.id}
+            className={`flex-1 relative p-2 min-h-[60px] transition-colors overflow-hidden ${
+              isOver ? (canDrop ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200") : ""
+            } ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`} 
+            style={{ width: '1200px' }}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseLeave}
+          >
+            <div style={{ transform: `translateX(-${scrollLeft}px)` }}>
+              {resourceOperations.map((operation) => (
+                <OperationBlock
+                  key={operation.id}
+                  operation={operation}
+                  resourceName={resource.name}
+                  jobName={jobs.find(job => job.id === operation.jobId)?.name}
+                  job={jobs.find(job => job.id === operation.jobId)}
+                />
+              ))}
+              {resourceOperations.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-gray-400 text-sm">
+                    {isOver ? (canDrop ? "Drop operation here" : "Incompatible capabilities") : "No operations assigned"}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderResourcesView = () => (
     <div className="h-full overflow-auto">
       {/* Time Scale Header */}
@@ -333,66 +395,9 @@ export default function GanttChart({
 
       {/* Resource Rows */}
       <div className="relative">
-        {resources.map((resource) => {
-          const resourceOperations = operations.filter(op => op.assignedResourceId === resource.id);
-          const { drop, isOver, canDrop } = useOperationDrop(resource);
-
-          return (
-            <div key={resource.id} className="border-b border-gray-100">
-              <div className="flex">
-                <div className="w-64 px-4 py-3 bg-gray-50 border-r border-gray-200">
-                  <div className="flex items-center">
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-800">{resource.name}</div>
-                      <div className="text-xs text-gray-500">
-                        Type: {resource.type} | 
-                        Capabilities: {resource.capabilities?.map(capId => 
-                          getCapabilityName(capId)
-                        ).join(", ") || "None"}
-                      </div>
-                    </div>
-                    <Badge className={`text-xs ${
-                      resource.status === "active" ? "bg-accent text-white" : "bg-gray-400 text-white"
-                    }`}>
-                      {resource.status}
-                    </Badge>
-                  </div>
-                </div>
-                <div 
-                  ref={drop}
-                  data-resource-id={resource.id}
-                  className={`flex-1 relative p-2 min-h-[60px] transition-colors overflow-hidden ${
-                    isOver ? (canDrop ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200") : ""
-                  } ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`} 
-                  style={{ width: '1200px' }}
-                  onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUp}
-                  onMouseLeave={handleMouseLeave}
-                >
-                  <div style={{ transform: `translateX(-${scrollLeft}px)` }}>
-                    {resourceOperations.map((operation) => (
-                      <OperationBlock
-                        key={operation.id}
-                        operation={operation}
-                        resourceName={resource.name}
-                        jobName={jobs.find(job => job.id === operation.jobId)?.name}
-                        job={jobs.find(job => job.id === operation.jobId)}
-                      />
-                    ))}
-                    {resourceOperations.length === 0 && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="text-gray-400 text-sm">
-                          {isOver ? (canDrop ? "Drop operation here" : "Incompatible capabilities") : "No operations assigned"}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {resources.map((resource) => (
+          <ResourceRow key={resource.id} resource={resource} />
+        ))}
       </div>
     </div>
   );
