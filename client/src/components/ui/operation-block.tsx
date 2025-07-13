@@ -25,7 +25,13 @@ export default function OperationBlock({
 }: OperationBlockProps) {
   const [{ isDragging }, drag] = useDrag({
     type: "operation",
-    item: { operation },
+    item: () => {
+      console.log("Starting drag for operation:", operation.name);
+      return { operation };
+    },
+    end: (item, monitor) => {
+      console.log("Ending drag for operation:", operation.name, "dropped:", monitor.didDrop());
+    },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
