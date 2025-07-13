@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BarChart3, TrendingUp, Clock, AlertTriangle, CheckCircle, Sparkles, Settings, Plus, Grid3X3, LayoutGrid } from "lucide-react";
+import { BarChart3, TrendingUp, Clock, AlertTriangle, CheckCircle, Sparkles, Settings, Plus, Grid3X3, LayoutGrid, Maximize2, Minimize2 } from "lucide-react";
 import Sidebar from "@/components/sidebar";
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
 import AnalyticsWidget from "@/components/analytics-widget";
@@ -32,6 +32,7 @@ export default function Analytics() {
   const [customWidgets, setCustomWidgets] = useState<AnalyticsWidget[]>([]);
   const [layoutMode, setLayoutMode] = useState<"grid" | "free">("grid");
   const [showCustomWidgets, setShowCustomWidgets] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
 
   const { data: metrics } = useQuery<Metrics>({
     queryKey: ["/api/metrics"],
@@ -118,11 +119,8 @@ export default function Analytics() {
     ));
   };
 
-  return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col">
+  const PageContent = () => (
+    <div className="flex-1 flex flex-col">
         <header className="bg-white shadow-sm border-b border-gray-200 px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -152,6 +150,13 @@ export default function Analytics() {
               >
                 <Sparkles className="w-4 h-4 mr-2" />
                 AI Analytics
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsMaximized(!isMaximized)}
+              >
+                {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
               </Button>
             </div>
           </div>
@@ -339,8 +344,22 @@ export default function Analytics() {
             </div>
           )}
         </main>
-      </div>
+    </div>
+  );
 
+  if (isMaximized) {
+    return (
+      <div className="fixed inset-0 bg-white z-50">
+        <PageContent />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar />
+      <PageContent />
+      
       {/* AI Analytics Manager */}
       <AIAnalyticsManager
         open={aiAnalyticsOpen}

@@ -5,6 +5,7 @@ import Sidebar from "@/components/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function KanbanPage() {
+  const [isMaximized, setIsMaximized] = useState(false);
 
   const { data: jobs = [], isLoading: jobsLoading } = useQuery({
     queryKey: ["/api/jobs"],
@@ -55,6 +56,21 @@ export default function KanbanPage() {
     );
   }
 
+  if (isMaximized) {
+    return (
+      <div className="fixed inset-0 bg-white z-50">
+        <KanbanBoard
+          jobs={jobs}
+          operations={operations}
+          resources={resources}
+          capabilities={capabilities}
+          isMaximized={isMaximized}
+          onToggleMaximize={() => setIsMaximized(false)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
@@ -64,6 +80,8 @@ export default function KanbanPage() {
           operations={operations}
           resources={resources}
           capabilities={capabilities}
+          isMaximized={isMaximized}
+          onToggleMaximize={() => setIsMaximized(true)}
         />
       </div>
     </div>

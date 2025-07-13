@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { MoreHorizontal, Plus, Settings, Calendar, User, Building2, Wrench, ChevronDown } from "lucide-react";
+import { MoreHorizontal, Plus, Settings, Calendar, User, Building2, Wrench, ChevronDown, Maximize2, Minimize2 } from "lucide-react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +22,8 @@ interface KanbanBoardProps {
   operations: Operation[];
   resources: Resource[];
   capabilities: Capability[];
+  isMaximized?: boolean;
+  onToggleMaximize?: () => void;
 }
 
 interface KanbanColumn {
@@ -357,11 +359,13 @@ const KanbanColumn = ({
   );
 };
 
-export default function KanbanBoard({ 
+function KanbanBoard({ 
   jobs, 
   operations, 
   resources, 
-  capabilities
+  capabilities,
+  isMaximized = false,
+  onToggleMaximize
 }: KanbanBoardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -600,8 +604,18 @@ export default function KanbanBoard({
         if (currentIndex !== -1) {
           // Remove item from current position
           cardIds.splice(currentIndex, 1);
+          // Adjust insert index if dropping after the original position
+          const finalInsertIndex = insertAtIndex > currentIndex ? insertAtIndex - 1 : insertAtIndex;
           // Insert at new position
-          cardIds.splice(insertAtIndex, 0, item.id);
+          cardIds.splice(finalInsertIndex, 0, item.id);
+          
+          console.log('Reordering card in same column:', {
+            itemId: item.id,
+            currentIndex,
+            insertAtIndex,
+            finalInsertIndex,
+            cardIds
+          });
           
           // Update card ordering in the Kanban config
           updateKanbanOrderMutation.mutate({
@@ -750,6 +764,18 @@ export default function KanbanBoard({
               <Plus className="w-4 h-4 mr-2" />
               Add {view === "jobs" ? "Job" : "Operation"}
             </Button>
+            {onToggleMaximize && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" onClick={onToggleMaximize}>
+                    {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isMaximized ? "Minimize Kanban view" : "Maximize Kanban view"}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
         </div>
 
@@ -841,3 +867,5 @@ export default function KanbanBoard({
     </DndProvider>
   );
 }
+
+export default KanbanBoard;

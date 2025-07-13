@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Download, Calendar, User, Clock, Settings, Sparkles, Grid3X3, LayoutGrid, BarChart3, Filter } from "lucide-react";
+import { FileText, Download, Calendar, User, Clock, Settings, Sparkles, Grid3X3, LayoutGrid, BarChart3, Filter, Maximize2, Minimize2 } from "lucide-react";
 import { format } from "date-fns";
 import Sidebar from "@/components/sidebar";
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
@@ -27,6 +27,7 @@ export default function Reports() {
   const [showCustomWidgets, setShowCustomWidgets] = useState(false);
   const [layoutMode, setLayoutMode] = useState<"grid" | "free">("grid");
   const [reportFilter, setReportFilter] = useState<"all" | "jobs" | "operations" | "resources">("all");
+  const [isMaximized, setIsMaximized] = useState(false);
 
   const { data: jobs = [] } = useQuery<Job[]>({
     queryKey: ["/api/jobs"],
@@ -91,11 +92,8 @@ export default function Reports() {
     ));
   };
 
-  return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col">
+  const PageContent = () => (
+    <div className="flex-1 flex flex-col">
         <header className="bg-white shadow-sm border-b border-gray-200 px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -133,6 +131,13 @@ export default function Reports() {
               >
                 <Sparkles className="w-4 h-4 mr-2" />
                 AI Reports
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsMaximized(!isMaximized)}
+              >
+                {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
               </Button>
             </div>
           </div>
@@ -375,8 +380,22 @@ export default function Reports() {
             </div>
           )}
         </main>
-      </div>
+    </div>
+  );
 
+  if (isMaximized) {
+    return (
+      <div className="fixed inset-0 bg-white z-50">
+        <PageContent />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar />
+      <PageContent />
+      
       {/* AI Analytics Manager */}
       <AIAnalyticsManager
         open={aiAnalyticsOpen}
