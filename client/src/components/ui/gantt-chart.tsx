@@ -6,7 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import OperationBlock from "./operation-block";
 import OperationForm from "../operation-form";
-import { useOperationDrop, useTimelineDrop } from "@/hooks/use-drag-drop";
+import { useOperationDrop } from "@/hooks/use-drag-drop-simple";
 import type { Job, Operation, Resource, Capability } from "@shared/schema";
 
 interface GanttChartProps {
