@@ -44,8 +44,39 @@ export default function Dashboard() {
   const [selectedResourceViewId, setSelectedResourceViewId] = useState<number | null>(null);
   const [rowHeight, setRowHeight] = useState(60);
   const [aiAnalyticsOpen, setAiAnalyticsOpen] = useState(false);
-  const [customWidgets, setCustomWidgets] = useState<AnalyticsWidget[]>([]);
-  const [showCustomWidgets, setShowCustomWidgets] = useState(false);
+  const [customWidgets, setCustomWidgets] = useState<AnalyticsWidget[]>([
+    {
+      id: "sample-1",
+      title: "Job Status Distribution",
+      type: "chart",
+      data: {},
+      visible: true,
+      position: { x: 0, y: 0 },
+      size: { width: 400, height: 300 },
+      config: { chartType: "pie", field: "status" }
+    },
+    {
+      id: "sample-2", 
+      title: "Resource Efficiency",
+      type: "progress",
+      data: {},
+      visible: true,
+      position: { x: 0, y: 0 },
+      size: { width: 300, height: 200 },
+      config: { target: 85, current: 78 }
+    },
+    {
+      id: "sample-3",
+      title: "Recent Operations",
+      type: "table",
+      data: {},
+      visible: true,
+      position: { x: 0, y: 0 },
+      size: { width: 500, height: 300 },
+      config: { limit: 5 }
+    }
+  ]);
+  const [showCustomWidgets, setShowCustomWidgets] = useState(true);
   const [layoutMode, setLayoutMode] = useState<"grid" | "free">("grid");
   const { toast } = useToast();
 
@@ -315,7 +346,14 @@ export default function Dashboard() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setShowCustomWidgets(!showCustomWidgets)}
+                    onClick={() => {
+                      const newShow = !showCustomWidgets;
+                      setShowCustomWidgets(newShow);
+                      toast({
+                        title: `Custom widgets ${newShow ? "shown" : "hidden"}`,
+                        description: newShow ? "AI-generated analytics widgets are now visible" : "Custom widgets are now hidden"
+                      });
+                    }}
                   >
                     <Grid3X3 className="w-4 h-4 mr-2" />
                     {showCustomWidgets ? "Hide Custom" : "Show Custom"}
@@ -330,7 +368,14 @@ export default function Dashboard() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setLayoutMode(layoutMode === "grid" ? "free" : "grid")}
+                    onClick={() => {
+                      const newMode = layoutMode === "grid" ? "free" : "grid";
+                      setLayoutMode(newMode);
+                      toast({
+                        title: `Layout switched to ${newMode === "grid" ? "Grid" : "Free"} mode`,
+                        description: newMode === "grid" ? "Widgets organized in columns" : "Single column layout"
+                      });
+                    }}
                   >
                     <LayoutGrid className="w-4 h-4 mr-2" />
                     {layoutMode === "grid" ? "Free Layout" : "Grid Layout"}
@@ -359,7 +404,7 @@ export default function Dashboard() {
           </div>
 
           {/* Metrics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className={`grid gap-4 mb-6 ${layoutMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-4" : "grid-cols-1"}`}>
             <MetricsCard
               title="Active Jobs"
               value={metrics?.activeJobs?.toString() || "0"}
