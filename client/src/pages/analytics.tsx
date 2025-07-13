@@ -119,6 +119,12 @@ export default function Analytics() {
     ));
   };
 
+  const handleWidgetPositionChange = (id: string, position: { x: number; y: number }) => {
+    setCustomWidgets(prev => prev.map(widget => 
+      widget.id === id ? { ...widget, position } : widget
+    ));
+  };
+
   const PageContent = () => (
     <div className="flex-1 flex flex-col">
         <header className="bg-white shadow-sm border-b border-gray-200 px-8 py-4">
@@ -334,10 +340,12 @@ export default function Analytics() {
                     onRemove={handleWidgetRemove}
                     onEdit={handleWidgetEdit}
                     onResize={handleWidgetResize}
+                    onPositionChange={handleWidgetPositionChange}
                     jobs={jobs}
                     operations={operations}
                     resources={resources}
                     metrics={metrics}
+                    layoutMode={layoutMode}
                   />
                 ))}
               </div>

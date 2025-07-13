@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { 
   insertCapabilitySchema, insertResourceSchema, insertJobSchema, 
   insertOperationSchema, insertDependencySchema, insertResourceViewSchema,
-  insertCustomTextLabelSchema, insertKanbanConfigSchema
+  insertCustomTextLabelSchema, insertKanbanConfigSchema, insertReportConfigSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import multer from "multer";
@@ -580,6 +580,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error setting default kanban config:", error);
       res.status(500).json({ error: "Failed to set default kanban config" });
+    }
+  });
+
+  // Report Configurations
+  app.get("/api/report-configs", async (req, res) => {
+    try {
+      const configs = await storage.getReportConfigs();
+      res.json(configs);
+    } catch (error) {
+      console.error("Error fetching report configs:", error);
+      res.status(500).json({ error: "Failed to fetch report configs" });
+    }
+  });
+
+  app.get("/api/report-configs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid report config ID" });
+      }
+
+      const config = await storage.getReportConfig(id);
+      if (!config) {
+        return res.status(404).json({ error: "Report config not found" });
+      }
+      res.json(config);
+    } catch (error) {
+      console.error("Error fetching report config:", error);
+      res.status(500).json({ error: "Failed to fetch report config" });
+    }
+  });
+
+  app.post("/api/report-configs", async (req, res) => {
+    try {
+      const config = insertReportConfigSchema.parse(req.body);
+      const newConfig = await storage.createReportConfig(config);
+      res.status(201).json(newConfig);
+    } catch (error) {
+      console.error("Error creating report config:", error);
+      res.status(400).json({ error: "Invalid report config data" });
+    }
+  });
+
+  app.put("/api/report-configs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid report config ID" });
+      }
+
+      const updateData = insertReportConfigSchema.partial().parse(req.body);
+      const updatedConfig = await storage.updateReportConfig(id, updateData);
+      if (!updatedConfig) {
+        return res.status(404).json({ error: "Report config not found" });
+      }
+      res.json(updatedConfig);
+    } catch (error) {
+      console.error("Error updating report config:", error);
+      res.status(400).json({ error: "Invalid report config data" });
+    }
+  });
+
+  app.delete("/api/report-configs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid report config ID" });
+      }
+
+      const deleted = await storage.deleteReportConfig(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Report config not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting report config:", error);
+      res.status(500).json({ error: "Failed to delete report config" });
+    }
+  });
+
+  app.post("/api/report-configs/:id/set-default", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid report config ID" });
+      }
+
+      await storage.setDefaultReportConfig(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error setting default report config:", error);
+      res.status(500).json({ error: "Failed to set default report config" });
     }
   });
 

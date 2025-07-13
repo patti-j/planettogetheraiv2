@@ -1,14 +1,34 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Download, Calendar, User, Clock, Settings, Sparkles, Grid3X3, LayoutGrid, BarChart3, Filter, Maximize2, Minimize2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar, Clock, Users, Wrench, Building, Package, Settings, ChevronDown, Sparkles } from "lucide-react";
 import { format } from "date-fns";
-import Sidebar from "@/components/sidebar";
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
 import AnalyticsWidget from "@/components/analytics-widget";
-import type { Job, Operation, Resource } from "@shared/schema";
+// Removed useDragDrop import as it's not used in reports
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { type ReportConfig } from "@shared/schema";
 
 interface AnalyticsWidget {
   id: string;
@@ -22,388 +42,460 @@ interface AnalyticsWidget {
 }
 
 export default function Reports() {
-  const [aiAnalyticsOpen, setAiAnalyticsOpen] = useState(false);
-  const [customWidgets, setCustomWidgets] = useState<AnalyticsWidget[]>([]);
-  const [showCustomWidgets, setShowCustomWidgets] = useState(false);
-  const [layoutMode, setLayoutMode] = useState<"grid" | "free">("grid");
-  const [reportFilter, setReportFilter] = useState<"all" | "jobs" | "operations" | "resources">("all");
-  const [isMaximized, setIsMaximized] = useState(false);
+  const [widgets, setWidgets] = useState<AnalyticsWidget[]>([]);
+  const [showManager, setShowManager] = useState(false);
+  const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
+  const [showConfigDialog, setShowConfigDialog] = useState(false);
+  const [configName, setConfigName] = useState("");
+  const [configDescription, setConfigDescription] = useState("");
+  const [showAIDialog, setShowAIDialog] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const { toast } = useToast();
 
-  const { data: jobs = [] } = useQuery<Job[]>({
-    queryKey: ["/api/jobs"],
+  const { data: jobs = [] } = useQuery({
+    queryKey: ['/api/jobs'],
   });
 
-  const { data: operations = [] } = useQuery<Operation[]>({
-    queryKey: ["/api/operations"],
+  const { data: operations = [] } = useQuery({
+    queryKey: ['/api/operations'],
   });
 
-  const { data: resources = [] } = useQuery<Resource[]>({
-    queryKey: ["/api/resources"],
+  const { data: resources = [] } = useQuery({
+    queryKey: ['/api/resources'],
   });
 
-  const handleExportReport = (reportType: string) => {
-    // This would typically trigger a download of the report
-    console.log(`Exporting ${reportType} report...`);
-    // Placeholder for actual export functionality
-  };
+  const { data: capabilities = [] } = useQuery({
+    queryKey: ['/api/capabilities'],
+  });
 
-  const getJobOperations = (jobId: number) => {
-    return operations.filter(op => op.jobId === jobId);
-  };
+  const { data: reportConfigs = [] } = useQuery({
+    queryKey: ['/api/report-configs'],
+  });
 
-  const getResourceName = (resourceId: number | null) => {
-    if (!resourceId) return "Unassigned";
-    const resource = resources.find(r => r.id === resourceId);
-    return resource?.name || `Resource ${resourceId}`;
-  };
+  // Load selected config
+  const { data: selectedConfig } = useQuery({
+    queryKey: ['/api/report-configs', selectedConfigId],
+    enabled: !!selectedConfigId,
+  });
 
-  const getJobProgress = (jobId: number) => {
-    const jobOperations = getJobOperations(jobId);
-    if (jobOperations.length === 0) return 0;
-    const completed = jobOperations.filter(op => op.status === 'completed').length;
-    return Math.round((completed / jobOperations.length) * 100);
-  };
+  // Create report config mutation
+  const createConfigMutation = useMutation({
+    mutationFn: async (config: { name: string; description: string; configuration: any }) => {
+      return await apiRequest('POST', '/api/report-configs', config);
+    },
+    onSuccess: (newConfig) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/report-configs'] });
+      setSelectedConfigId(newConfig.id);
+      setShowConfigDialog(false);
+      setConfigName("");
+      setConfigDescription("");
+      toast({
+        title: "Success",
+        description: "Report configuration created successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create report configuration",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Set default config mutation
+  const setDefaultConfigMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest('POST', `/api/report-configs/${id}/set-default`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/report-configs'] });
+      toast({
+        title: "Success",
+        description: "Default report configuration updated",
+      });
+    },
+  });
+
+  // Update config mutation
+  const updateConfigMutation = useMutation({
+    mutationFn: async ({ id, configuration }: { id: number; configuration: any }) => {
+      return await apiRequest('PUT', `/api/report-configs/${id}`, { configuration });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/report-configs'] });
+      toast({
+        title: "Success",
+        description: "Report configuration updated",
+      });
+    },
+  });
+
+  // AI widget creation mutation
+  const createAIWidgetsMutation = useMutation({
+    mutationFn: async (prompt: string) => {
+      return await apiRequest('POST', '/api/ai-agent', {
+        message: `Create analytics widgets: ${prompt}`,
+      });
+    },
+    onSuccess: (response) => {
+      if (response.success && response.data?.widgets) {
+        const newWidgets = response.data.widgets.map((widget: any) => ({
+          ...widget,
+          id: `ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        }));
+        setWidgets(prev => [...prev, ...newWidgets]);
+        toast({
+          title: "Success",
+          description: "AI widgets created successfully",
+        });
+      }
+      setShowAIDialog(false);
+      setAiPrompt("");
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create AI widgets",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Initialize default widgets or load from selected config
+  useEffect(() => {
+    if (selectedConfig && selectedConfig.configuration?.widgets) {
+      setWidgets(selectedConfig.configuration.widgets);
+    } else {
+      // Default widgets
+      const defaultWidgets: AnalyticsWidget[] = [
+        {
+          id: "1",
+          title: "Production Overview",
+          type: "metric",
+          data: {
+            value: jobs.length,
+            label: "Total Jobs",
+            change: "+12%",
+            icon: "package"
+          },
+          visible: true,
+          position: { x: 0, y: 0 },
+          size: { width: 300, height: 120 },
+          config: { color: "blue" }
+        },
+        {
+          id: "2",
+          title: "Resource Utilization",
+          type: "progress",
+          data: {
+            value: 85,
+            max: 100,
+            label: "Average Utilization",
+            color: "green"
+          },
+          visible: true,
+          position: { x: 320, y: 0 },
+          size: { width: 300, height: 120 },
+          config: { showPercentage: true }
+        },
+        {
+          id: "3",
+          title: "Operations Status",
+          type: "chart",
+          data: {
+            labels: ["Completed", "In Progress", "Pending"],
+            datasets: [{
+              data: [
+                operations.filter(op => op.status === "completed").length,
+                operations.filter(op => op.status === "In-Progress").length,
+                operations.filter(op => op.status === "pending").length
+              ],
+              backgroundColor: ["#22c55e", "#3b82f6", "#f59e0b"]
+            }]
+          },
+          visible: true,
+          position: { x: 0, y: 140 },
+          size: { width: 400, height: 300 },
+          config: { chartType: "doughnut" }
+        },
+        {
+          id: "4",
+          title: "Job Priority Distribution",
+          type: "table",
+          data: {
+            headers: ["Priority", "Count", "Percentage"],
+            rows: [
+              ["High", jobs.filter(j => j.priority === "high").length, "25%"],
+              ["Medium", jobs.filter(j => j.priority === "medium").length, "50%"],
+              ["Low", jobs.filter(j => j.priority === "low").length, "25%"]
+            ]
+          },
+          visible: true,
+          position: { x: 420, y: 140 },
+          size: { width: 350, height: 200 },
+          config: { striped: true }
+        }
+      ];
+      
+      setWidgets(defaultWidgets);
+    }
+  }, [jobs, operations, selectedConfig]);
+
+  // Save widget configuration when widgets change
+  useEffect(() => {
+    if (selectedConfigId && widgets.length > 0) {
+      const saveConfiguration = async () => {
+        try {
+          await updateConfigMutation.mutateAsync({
+            id: selectedConfigId,
+            configuration: { widgets }
+          });
+        } catch (error) {
+          // Silent fail for auto-save
+        }
+      };
+      
+      const debounceTimer = setTimeout(saveConfiguration, 1000);
+      return () => clearTimeout(debounceTimer);
+    }
+  }, [widgets, selectedConfigId]);
+
+  // Simplified drag handling for reports page
+  const [draggedItem, setDraggedItem] = useState<any>(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleWidgetCreate = (widget: AnalyticsWidget) => {
-    setCustomWidgets(prev => [...prev, widget]);
+    setWidgets(prev => [...prev, widget]);
   };
 
-  const handleWidgetUpdate = (widgets: AnalyticsWidget[]) => {
-    setCustomWidgets(widgets);
-  };
-
-  const handleWidgetToggle = (id: string) => {
-    setCustomWidgets(prev => prev.map(widget => 
-      widget.id === id ? { ...widget, visible: !widget.visible } : widget
+  const handleWidgetUpdate = (id: string, updates: Partial<AnalyticsWidget>) => {
+    setWidgets(prev => prev.map(widget => 
+      widget.id === id ? { ...widget, ...updates } : widget
     ));
   };
 
   const handleWidgetRemove = (id: string) => {
-    setCustomWidgets(prev => prev.filter(widget => widget.id !== id));
+    setWidgets(prev => prev.filter(widget => widget.id !== id));
   };
 
-  const handleWidgetEdit = (id: string) => {
-    console.log("Edit widget:", id);
-  };
-
-  const handleWidgetResize = (id: string, size: { width: number; height: number }) => {
-    setCustomWidgets(prev => prev.map(widget => 
-      widget.id === id ? { ...widget, size } : widget
+  const handlePositionChange = (id: string, position: { x: number; y: number }) => {
+    setWidgets(prev => prev.map(widget => 
+      widget.id === id ? { ...widget, position } : widget
     ));
   };
 
-  const PageContent = () => (
-    <div className="flex-1 flex flex-col">
-        <header className="bg-white shadow-sm border-b border-gray-200 px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
-              <p className="text-gray-500">Production reports and analytics</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setReportFilter(reportFilter === "all" ? "jobs" : "all")}
-              >
-                <Filter className="w-4 h-4 mr-2" />
-                {reportFilter === "all" ? "Show All" : "Filter: " + reportFilter}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowCustomWidgets(!showCustomWidgets)}
-              >
-                <Grid3X3 className="w-4 h-4 mr-2" />
-                {showCustomWidgets ? "Hide Reports" : "Show Reports"}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setLayoutMode(layoutMode === "grid" ? "free" : "grid")}
-              >
-                <LayoutGrid className="w-4 h-4 mr-2" />
-                {layoutMode === "grid" ? "Free Layout" : "Grid Layout"}
-              </Button>
-              <Button
-                onClick={() => setAiAnalyticsOpen(true)}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                AI Reports
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsMaximized(!isMaximized)}
-              >
-                {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-              </Button>
-            </div>
-          </div>
-        </header>
+  const handleRemove = (id: string) => {
+    setWidgets(prev => prev.filter(widget => widget.id !== id));
+  };
 
-        <main className="flex-1 overflow-y-auto p-8">
-          {/* Quick Export Actions */}
-          <div className="grid gap-4 md:grid-cols-4 mb-8">
-            <Button 
-              variant="outline" 
-              className="h-auto p-4 flex flex-col items-center gap-2"
-              onClick={() => handleExportReport('jobs')}
-            >
-              <FileText className="h-6 w-6" />
-              <span className="text-sm font-medium">Export Jobs</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="h-auto p-4 flex flex-col items-center gap-2"
-              onClick={() => handleExportReport('operations')}
-            >
-              <Settings className="h-6 w-6" />
-              <span className="text-sm font-medium">Export Operations</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="h-auto p-4 flex flex-col items-center gap-2"
-              onClick={() => handleExportReport('resources')}
-            >
-              <Clock className="h-6 w-6" />
-              <span className="text-sm font-medium">Export Resources</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="h-auto p-4 flex flex-col items-center gap-2"
-              onClick={() => handleExportReport('summary')}
-            >
-              <Download className="h-6 w-6" />
-              <span className="text-sm font-medium">Full Report</span>
-            </Button>
-          </div>
+  const handleCreateConfig = () => {
+    if (!configName.trim()) return;
+    
+    createConfigMutation.mutate({
+      name: configName,
+      description: configDescription,
+      configuration: { widgets }
+    });
+  };
 
-          {/* Jobs Report */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="text-lg">Jobs Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-2 font-medium">Job Name</th>
-                      <th className="text-left p-2 font-medium">Customer</th>
-                      <th className="text-left p-2 font-medium">Priority</th>
-                      <th className="text-left p-2 font-medium">Status</th>
-                      <th className="text-left p-2 font-medium">Due Date</th>
-                      <th className="text-left p-2 font-medium">Progress</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {jobs.map((job) => (
-                      <tr key={job.id} className="border-b">
-                        <td className="p-2">{job.name}</td>
-                        <td className="p-2">
-                          <div className="flex items-center gap-1">
-                            <User className="h-4 w-4 text-gray-400" />
-                            {job.customer}
-                          </div>
-                        </td>
-                        <td className="p-2">
-                          <Badge 
-                            className={
-                              job.priority === 'high' ? 'bg-red-100 text-red-800' :
-                              job.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-green-100 text-green-800'
-                            }
-                          >
-                            {job.priority}
-                          </Badge>
-                        </td>
-                        <td className="p-2">
-                          <Badge variant="secondary" className="capitalize">
-                            {job.status}
-                          </Badge>
-                        </td>
-                        <td className="p-2">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4 text-gray-400" />
-                            {format(new Date(job.dueDate), "MMM dd, yyyy")}
-                          </div>
-                        </td>
-                        <td className="p-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-16 bg-gray-200 rounded-full h-2">
-                              <div 
-                                className="bg-primary h-2 rounded-full"
-                                style={{ width: `${getJobProgress(job.id)}%` }}
-                              />
-                            </div>
-                            <span className="text-sm text-gray-600">
-                              {getJobProgress(job.id)}%
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {jobs.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    No jobs available
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+  const handleCreateAIWidgets = () => {
+    if (!aiPrompt.trim()) return;
+    
+    createAIWidgetsMutation.mutate(aiPrompt);
+  };
 
-          {/* Operations Report */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="text-lg">Operations Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-2 font-medium">Operation</th>
-                      <th className="text-left p-2 font-medium">Job</th>
-                      <th className="text-left p-2 font-medium">Status</th>
-                      <th className="text-left p-2 font-medium">Duration</th>
-                      <th className="text-left p-2 font-medium">Assigned Resource</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {operations.map((operation) => {
-                      const job = jobs.find(j => j.id === operation.jobId);
-                      return (
-                        <tr key={operation.id} className="border-b">
-                          <td className="p-2">{operation.name}</td>
-                          <td className="p-2">{job?.name || `Job ${operation.jobId}`}</td>
-                          <td className="p-2">
-                            <Badge variant="secondary" className="capitalize">
-                              {operation.status}
-                            </Badge>
-                          </td>
-                          <td className="p-2">
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-4 w-4 text-gray-400" />
-                              {operation.duration}h
-                            </div>
-                          </td>
-                          <td className="p-2">
-                            {getResourceName(operation.assignedResourceId)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                {operations.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    No operations available
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Resources Report */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Resources Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-2 font-medium">Resource</th>
-                      <th className="text-left p-2 font-medium">Type</th>
-                      <th className="text-left p-2 font-medium">Status</th>
-                      <th className="text-left p-2 font-medium">Assigned Operations</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {resources.map((resource) => {
-                      const assignedOps = operations.filter(op => op.assignedResourceId === resource.id);
-                      return (
-                        <tr key={resource.id} className="border-b">
-                          <td className="p-2">{resource.name}</td>
-                          <td className="p-2 capitalize">{resource.type}</td>
-                          <td className="p-2">
-                            <Badge 
-                              className={
-                                resource.status === 'active' ? 'bg-green-100 text-green-800' :
-                                resource.status === 'maintenance' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-red-100 text-red-800'
-                              }
-                            >
-                              {resource.status}
-                            </Badge>
-                          </td>
-                          <td className="p-2">{assignedOps.length} operations</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                {resources.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    No resources available
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Custom AI-Generated Report Widgets */}
-          {showCustomWidgets && customWidgets.length > 0 && (
-            <div className="mt-8">
-              <h2 className="text-lg font-semibold mb-4">Custom Report Widgets</h2>
-              <div className={`grid gap-4 ${layoutMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
-                {customWidgets.map((widget) => (
-                  <AnalyticsWidget
-                    key={widget.id}
-                    widget={widget}
-                    onToggle={handleWidgetToggle}
-                    onRemove={handleWidgetRemove}
-                    onEdit={handleWidgetEdit}
-                    onResize={handleWidgetResize}
-                    jobs={jobs}
-                    operations={operations}
-                    resources={resources}
-                    metrics={{}}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </main>
-    </div>
-  );
-
-  if (isMaximized) {
-    return (
-      <div className="fixed inset-0 bg-white z-50">
-        <PageContent />
-      </div>
-    );
-  }
+  const selectedConfigName = selectedConfig?.name || reportConfigs.find(c => c.isDefault)?.name || "Default Report";
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <PageContent />
-      
-      {/* AI Analytics Manager */}
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex-none p-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Comprehensive analytics and reporting dashboard
+            </p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="min-w-[180px] justify-between">
+                  {selectedConfigName}
+                  <ChevronDown className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                {reportConfigs.map((config) => (
+                  <DropdownMenuItem
+                    key={config.id}
+                    onClick={() => setSelectedConfigId(config.id)}
+                    className="flex items-center justify-between"
+                  >
+                    <span>{config.name}</span>
+                    {config.isDefault && <Badge variant="secondary" className="text-xs">Default</Badge>}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setShowConfigDialog(true)}
+                  className="text-blue-600 dark:text-blue-400"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Configure Reports
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <Button
+              onClick={() => setShowAIDialog(true)}
+              variant="outline"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              AI Create
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-hidden">
+        <div 
+          className="relative h-full bg-gray-50 dark:bg-gray-900 p-6"
+          style={{ 
+            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(0,0,0,0.15) 1px, transparent 0)', 
+            backgroundSize: '20px 20px' 
+          }}
+          onMouseMove={() => {}}
+          onMouseUp={() => {}}
+          onTouchMove={() => {}}
+          onTouchEnd={() => {}}
+        >
+          {widgets.filter(widget => widget.visible).map((widget) => (
+            <div
+              key={widget.id}
+              className={`absolute cursor-move ${
+                isDragging && draggedItem?.id === widget.id ? 'opacity-50' : ''
+              }`}
+              style={{
+                left: widget.position.x,
+                top: widget.position.y,
+                width: widget.size.width,
+                height: widget.size.height,
+                transform: isDragging && draggedItem?.id === widget.id 
+                  ? `translate(${dragOffset.x}px, ${dragOffset.y}px)` 
+                  : 'none'
+              }}
+            >
+              <AnalyticsWidget
+                widget={widget}
+                onToggle={() => handleWidgetUpdate(widget.id, { visible: !widget.visible })}
+                onRemove={() => handleRemove(widget.id)}
+                onEdit={() => {}}
+                onResize={(id, size) => handleWidgetUpdate(id, { size })}
+                onPositionChange={(id, position) => handlePositionChange(id, position)}
+                jobs={jobs}
+                operations={operations}
+                resources={resources}
+                metrics={{}}
+                layoutMode="free"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
       <AIAnalyticsManager
-        open={aiAnalyticsOpen}
-        onOpenChange={setAiAnalyticsOpen}
+        open={showManager}
+        onOpenChange={setShowManager}
         onWidgetCreate={handleWidgetCreate}
-        currentWidgets={customWidgets}
-        onWidgetUpdate={handleWidgetUpdate}
+        currentWidgets={widgets}
+        onWidgetUpdate={setWidgets}
       />
+
+      {/* Report Configuration Dialog */}
+      <Dialog open={showConfigDialog} onOpenChange={setShowConfigDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Configure Report</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="config-name">Report Name</Label>
+              <Input
+                id="config-name"
+                value={configName}
+                onChange={(e) => setConfigName(e.target.value)}
+                placeholder="Enter report name..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="config-description">Description</Label>
+              <Textarea
+                id="config-description"
+                value={configDescription}
+                onChange={(e) => setConfigDescription(e.target.value)}
+                placeholder="Enter description..."
+                rows={3}
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowConfigDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateConfig}
+                disabled={!configName.trim() || createConfigMutation.isPending}
+              >
+                {createConfigMutation.isPending ? "Creating..." : "Create Report"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Creation Dialog */}
+      <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Sparkles className="w-5 h-5 mr-2 text-purple-600" />
+              AI Widget Creation
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="ai-prompt">Describe the widgets you want to create</Label>
+              <Textarea
+                id="ai-prompt"
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="e.g., 'Create a performance dashboard showing job completion rates, resource efficiency metrics, and quality control statistics'"
+                rows={4}
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowAIDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateAIWidgets}
+                disabled={!aiPrompt.trim() || createAIWidgetsMutation.isPending}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              >
+                {createAIWidgetsMutation.isPending ? "Creating..." : "Create Widgets"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

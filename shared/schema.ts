@@ -117,6 +117,33 @@ export const customTextLabels = pgTable("custom_text_labels", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const reportConfigs = pgTable("report_configs", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: text("type").notNull(), // 'jobs', 'operations', 'resources', 'summary', 'custom'
+  configuration: jsonb("configuration").$type<{
+    fields: string[];
+    filters: Record<string, any>;
+    sorting: { field: string; direction: 'asc' | 'desc' };
+    grouping?: string;
+    chartType?: 'table' | 'chart' | 'summary';
+    widgets?: Array<{
+      id: string;
+      title: string;
+      type: "metric" | "chart" | "table" | "progress";
+      data: any;
+      visible: boolean;
+      position: { x: number; y: number };
+      size: { width: number; height: number };
+      config: any;
+    }>;
+  }>().notNull(),
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const insertCapabilitySchema = createInsertSchema(capabilities).omit({
   id: true,
 });
@@ -156,6 +183,12 @@ export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs).omit({
   createdAt: true,
 });
 
+export const insertReportConfigSchema = createInsertSchema(reportConfigs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
 export type Capability = typeof capabilities.$inferSelect;
 
@@ -179,3 +212,6 @@ export type CustomTextLabel = typeof customTextLabels.$inferSelect;
 
 export type InsertKanbanConfig = z.infer<typeof insertKanbanConfigSchema>;
 export type KanbanConfig = typeof kanbanConfigs.$inferSelect;
+
+export type InsertReportConfig = z.infer<typeof insertReportConfigSchema>;
+export type ReportConfig = typeof reportConfigs.$inferSelect;

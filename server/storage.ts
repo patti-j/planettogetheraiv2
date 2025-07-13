@@ -1,8 +1,8 @@
 import { 
-  capabilities, resources, jobs, operations, dependencies, resourceViews, customTextLabels, kanbanConfigs,
-  type Capability, type Resource, type Job, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig,
+  capabilities, resources, jobs, operations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs,
+  type Capability, type Resource, type Job, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig,
   type InsertCapability, type InsertResource, type InsertJob, 
-  type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig
+  type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -64,6 +64,15 @@ export interface IStorage {
   deleteKanbanConfig(id: number): Promise<boolean>;
   getDefaultKanbanConfig(): Promise<KanbanConfig | undefined>;
   setDefaultKanbanConfig(id: number): Promise<void>;
+  
+  // Report Configurations
+  getReportConfigs(): Promise<ReportConfig[]>;
+  getReportConfig(id: number): Promise<ReportConfig | undefined>;
+  createReportConfig(reportConfig: InsertReportConfig): Promise<ReportConfig>;
+  updateReportConfig(id: number, reportConfig: Partial<InsertReportConfig>): Promise<ReportConfig | undefined>;
+  deleteReportConfig(id: number): Promise<boolean>;
+  getDefaultReportConfig(): Promise<ReportConfig | undefined>;
+  setDefaultReportConfig(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -711,6 +720,52 @@ export class DatabaseStorage implements IStorage {
     
     // Then set the specified config as default
     await db.update(kanbanConfigs).set({ isDefault: true }).where(eq(kanbanConfigs.id, id));
+  }
+
+  async getReportConfigs(): Promise<ReportConfig[]> {
+    return await db.select().from(reportConfigs);
+  }
+
+  async getReportConfig(id: number): Promise<ReportConfig | undefined> {
+    const [config] = await db.select().from(reportConfigs).where(eq(reportConfigs.id, id));
+    return config || undefined;
+  }
+
+  async createReportConfig(reportConfig: InsertReportConfig): Promise<ReportConfig> {
+    const [config] = await db
+      .insert(reportConfigs)
+      .values(reportConfig)
+      .returning();
+    return config;
+  }
+
+  async updateReportConfig(id: number, reportConfig: Partial<InsertReportConfig>): Promise<ReportConfig | undefined> {
+    const [config] = await db
+      .update(reportConfigs)
+      .set(reportConfig)
+      .where(eq(reportConfigs.id, id))
+      .returning();
+    return config || undefined;
+  }
+
+  async deleteReportConfig(id: number): Promise<boolean> {
+    const result = await db
+      .delete(reportConfigs)
+      .where(eq(reportConfigs.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getDefaultReportConfig(): Promise<ReportConfig | undefined> {
+    const [config] = await db.select().from(reportConfigs).where(eq(reportConfigs.isDefault, true));
+    return config || undefined;
+  }
+
+  async setDefaultReportConfig(id: number): Promise<void> {
+    // First, set all existing configs to non-default
+    await db.update(reportConfigs).set({ isDefault: false });
+    
+    // Then set the specified config as default
+    await db.update(reportConfigs).set({ isDefault: true }).where(eq(reportConfigs.id, id));
   }
 }
 
