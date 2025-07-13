@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Settings, Sparkles } from "lucide-react";
+import { Plus, Edit, Trash2, Settings, Sparkles, RotateCcw, AlertTriangle } from "lucide-react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { useDrag, useDrop } from "react-dnd";
@@ -45,9 +45,11 @@ interface DraggableTextLabelProps {
   onToggle: (index: number) => void;
   onRemove: (index: number) => void;
   onUpdate: (index: number, updates: Partial<TextLabel>) => void;
+  globalFontSize: number;
+  globalFontColor: string;
 }
 
-const DraggableTextLabel = ({ label, index, onMove, onToggle, onRemove, onUpdate }: DraggableTextLabelProps) => {
+const DraggableTextLabel = ({ label, index, onMove, onToggle, onRemove, onUpdate, globalFontSize, globalFontColor }: DraggableTextLabelProps) => {
   const [{ isDragging }, drag] = useDrag({
     type: "textLabel",
     item: { index },
@@ -90,12 +92,20 @@ const DraggableTextLabel = ({ label, index, onMove, onToggle, onRemove, onUpdate
     return displayNames[type] || type;
   };
 
+  const isUsingIndividualFontSize = label.fontSize !== globalFontSize;
+  const isUsingIndividualFontColor = label.fontColor !== globalFontColor;
+  const hasIndividualStyling = isUsingIndividualFontSize || isUsingIndividualFontColor;
+
+  const resetToGlobal = () => {
+    onUpdate(index, { fontSize: globalFontSize, fontColor: globalFontColor });
+  };
+
   return (
     <div
       ref={(node) => drag(drop(node))}
       className={`flex items-center justify-between p-2 border rounded cursor-move ${
         isDragging ? "opacity-50" : ""
-      } ${label.enabled ? "bg-blue-50" : "bg-gray-50"}`}
+      } ${label.enabled ? "bg-blue-50" : "bg-gray-50"} ${hasIndividualStyling ? "ring-2 ring-orange-300" : ""}`}
     >
       <div className="flex items-center space-x-2 flex-1">
         <input
@@ -105,6 +115,12 @@ const DraggableTextLabel = ({ label, index, onMove, onToggle, onRemove, onUpdate
           className="w-4 h-4"
         />
         <span className="text-sm font-medium flex-1">{getDisplayName(label.type)}</span>
+        {hasIndividualStyling && (
+          <Badge variant="outline" className="text-xs bg-orange-100 text-orange-800">
+            <AlertTriangle className="h-2 w-2 mr-1" />
+            Custom
+          </Badge>
+        )}
         <Badge variant="secondary" className="text-xs">
           {label.order + 1}
         </Badge>
@@ -118,7 +134,7 @@ const DraggableTextLabel = ({ label, index, onMove, onToggle, onRemove, onUpdate
             max="32"
             value={label.fontSize}
             onChange={(e) => onUpdate(index, { fontSize: parseInt(e.target.value) || 12 })}
-            className="w-12 h-6 text-xs border rounded px-1"
+            className={`w-12 h-6 text-xs border rounded px-1 ${isUsingIndividualFontSize ? "bg-orange-50 border-orange-300" : ""}`}
           />
         </div>
         <div className="flex items-center space-x-1">
@@ -127,9 +143,20 @@ const DraggableTextLabel = ({ label, index, onMove, onToggle, onRemove, onUpdate
             type="color"
             value={label.fontColor}
             onChange={(e) => onUpdate(index, { fontColor: e.target.value })}
-            className="w-6 h-6 border rounded cursor-pointer"
+            className={`w-6 h-6 border rounded cursor-pointer ${isUsingIndividualFontColor ? "ring-2 ring-orange-300" : ""}`}
           />
         </div>
+        {hasIndividualStyling && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={resetToGlobal}
+            className="h-6 w-6 p-0 text-blue-500 hover:text-blue-700"
+            title="Reset to global settings"
+          >
+            <RotateCcw className="h-3 w-3" />
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="sm"
@@ -241,6 +268,8 @@ const CustomTextLabelForm = ({ onSave, onCancel, initialName = "", initialConfig
                 onToggle={toggleLabel}
                 onRemove={removeLabel}
                 onUpdate={updateLabel}
+                globalFontSize={config.fontSize}
+                globalFontColor={config.fontColor}
               />
             ))}
           </DndProvider>

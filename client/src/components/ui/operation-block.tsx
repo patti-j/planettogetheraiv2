@@ -314,8 +314,8 @@ export default function OperationBlock({
               <span
                 key={`${label.type}-${index}`}
                 style={{
-                  fontSize: `${label.fontSize || 12}px`,
-                  color: label.fontColor || "#ffffff",
+                  fontSize: `${label.fontSize || customLabel.config.fontSize || 12}px`,
+                  color: label.fontColor || customLabel.config.fontColor || "#ffffff",
                 }}
               >
                 {getTextForLabel(label.type)}
