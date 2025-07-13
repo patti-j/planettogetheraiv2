@@ -333,13 +333,17 @@ export default function KanbanBoard({
 
   const getFieldValues = (field: string) => {
     if (field === "status") {
-      return ["planned", "In-Progress", "completed", "cancelled"];
+      // Get actual status values from jobs and operations
+      const items = view === "jobs" ? jobs : operations;
+      const statusValues = [...new Set(items.map(item => item.status).filter(Boolean))];
+      // If no status values found, use defaults
+      return statusValues.length > 0 ? statusValues : ["planned", "In-Progress", "completed", "cancelled"];
     } else if (field === "priority") {
       return ["low", "medium", "high"];
     } else if (field === "customer") {
-      return [...new Set(jobs.map(job => job.customer))];
+      return [...new Set(jobs.map(job => job.customer).filter(Boolean))];
     } else if (field === "assignedResourceId") {
-      return [...new Set(resources.map(r => r.name))];
+      return [...new Set(resources.map(r => r.name).filter(Boolean))];
     }
     return [];
   };
@@ -352,7 +356,11 @@ export default function KanbanBoard({
         planned: "bg-blue-500",
         "In-Progress": "bg-yellow-500",
         completed: "bg-green-500",
-        cancelled: "bg-red-500"
+        cancelled: "bg-red-500",
+        active: "bg-yellow-500",
+        pending: "bg-blue-500",
+        done: "bg-green-500",
+        blocked: "bg-red-500"
       };
       return statusColors[value] || colors[index % colors.length];
     } else if (field === "priority") {
@@ -373,6 +381,16 @@ export default function KanbanBoard({
     const fieldValues = getFieldValues(swimLaneField);
     const items = view === "jobs" ? jobs : operations;
     
+    // Debug logging
+    console.log('Kanban Debug:', {
+      selectedConfig,
+      view,
+      swimLaneField,
+      fieldValues,
+      itemCount: items.length,
+      items: items.slice(0, 2) // Show first 2 items for debugging
+    });
+    
     const columnsMap: Record<string, KanbanColumn> = {};
     
     // Initialize columns
@@ -392,10 +410,14 @@ export default function KanbanBoard({
       const fieldValue = getFieldValue(item, swimLaneField);
       if (columnsMap[fieldValue]) {
         columnsMap[fieldValue].items.push(item);
+      } else {
+        console.log('No column found for value:', fieldValue, 'from item:', item);
       }
     });
     
-    return Object.values(columnsMap);
+    const result = Object.values(columnsMap);
+    console.log('Final columns:', result.map(col => ({ title: col.title, itemCount: col.items.length })));
+    return result;
   }, [jobs, operations, view, swimLaneField, swimLaneColors, resources, selectedConfig]);
 
   // Mutations for updating status
