@@ -444,6 +444,7 @@ export default function Dashboard() {
                   <TooltipTrigger asChild>
                     <Button 
                       size="sm" 
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
                       onClick={handleAiPrompt}
                       disabled={aiMutation.isPending || !aiPrompt.trim()}
                     >

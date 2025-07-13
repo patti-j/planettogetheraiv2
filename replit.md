@@ -435,3 +435,4 @@ The application uses a modern full-stack architecture with strong typing through
 - Fixed board configuration dropdown to not change to green highlighting
 - Applied AI purple-pink gradient styling to "Max" menu item in sidebar navigation
 - Restored standard outline styling to board maximize button for consistency with other maximize buttons
+- Updated floating AI assistant paper airplane button to use AI purple-pink gradient in maximized Gantt view
