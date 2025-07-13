@@ -73,13 +73,8 @@ export const kanbanConfigs = pgTable("kanban_configs", {
   name: text("name").notNull(),
   description: text("description"),
   viewType: text("view_type").notNull(),
-  swimLanes: jsonb("swim_lanes").$type<Array<{
-    id: string;
-    title: string;
-    status: string;
-    color: string;
-    order: number;
-  }>>().notNull(),
+  swimLaneField: text("swim_lane_field").notNull(), // Field to use for swim lanes (e.g., "status", "priority", "customer")
+  swimLaneColors: jsonb("swim_lane_colors").$type<Record<string, string>>().default(sql`'{}'::jsonb`), // Color mapping for swim lane values
   filters: jsonb("filters").$type<{
     priorities: string[];
     statuses: string[];

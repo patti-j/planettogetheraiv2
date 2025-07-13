@@ -39,10 +39,23 @@ interface DragItem {
   sourceColumnId: string;
 }
 
-const JobCard = ({ job, onEdit }: { job: Job; onEdit: (job: Job) => void }) => {
+const JobCard = ({ job, onEdit, swimLaneField }: { job: Job; onEdit: (job: Job) => void; swimLaneField: string }) => {
+  const getSourceColumnId = () => {
+    switch (swimLaneField) {
+      case "status":
+        return job.status;
+      case "priority":
+        return job.priority;
+      case "customer":
+        return job.customer;
+      default:
+        return job.status;
+    }
+  };
+
   const [{ isDragging }, drag] = useDrag({
     type: "job",
-    item: { id: job.id, type: "job", sourceColumnId: job.status },
+    item: { id: job.id, type: "job", sourceColumnId: getSourceColumnId() },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
@@ -109,15 +122,30 @@ const JobCard = ({ job, onEdit }: { job: Job; onEdit: (job: Job) => void }) => {
   );
 };
 
-const OperationCard = ({ operation, job, resources, onEdit }: { 
+const OperationCard = ({ operation, job, resources, onEdit, swimLaneField }: { 
   operation: Operation; 
   job?: Job; 
   resources: Resource[];
   onEdit: (operation: Operation) => void;
+  swimLaneField: string;
 }) => {
+  const getSourceColumnId = () => {
+    switch (swimLaneField) {
+      case "status":
+        return operation.status;
+      case "priority":
+        return operation.priority;
+      case "assignedResourceId":
+        const resource = resources.find(r => r.id === operation.assignedResourceId);
+        return resource?.name || "Unassigned";
+      default:
+        return operation.status;
+    }
+  };
+
   const [{ isDragging }, drag] = useDrag({
     type: "operation",
-    item: { id: operation.id, type: "operation", sourceColumnId: operation.status },
+    item: { id: operation.id, type: "operation", sourceColumnId: getSourceColumnId() },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
@@ -263,46 +291,91 @@ export default function KanbanBoard({
   const [selectedJob, setSelectedJob] = useState<Job | undefined>();
   const [selectedOperation, setSelectedOperation] = useState<Operation | undefined>();
   const [configManagerOpen, setConfigManagerOpen] = useState(false);
+  const [swimLaneField, setSwimLaneField] = useState<string>("status");
+  const [swimLaneColors, setSwimLaneColors] = useState<Record<string, string>>({});
 
-  // Job status columns
-  const jobColumns = useMemo(() => {
-    const columns: KanbanColumn[] = [
-      { id: "planned", title: "Planned", status: "planned", color: "bg-blue-500", items: [] },
-      { id: "in_progress", title: "In Progress", status: "in_progress", color: "bg-yellow-500", items: [] },
-      { id: "completed", title: "Completed", status: "completed", color: "bg-green-500", items: [] },
-      { id: "cancelled", title: "Cancelled", status: "cancelled", color: "bg-red-500", items: [] },
-    ];
+  // Generate columns based on selected field
+  const getFieldValue = (item: Job | Operation, field: string) => {
+    switch (field) {
+      case "status":
+        return item.status;
+      case "priority":
+        return item.priority;
+      case "customer":
+        return (item as Job).customer || "Unknown";
+      case "assignedResourceId":
+        const operation = item as Operation;
+        const resource = resources.find(r => r.id === operation.assignedResourceId);
+        return resource?.name || "Unassigned";
+      default:
+        return "Unknown";
+    }
+  };
 
-    jobs.forEach(job => {
-      const column = columns.find(col => col.status === job.status);
-      if (column) {
-        column.items.push(job);
+  const getFieldValues = (field: string) => {
+    if (field === "status") {
+      return ["planned", "in_progress", "completed", "cancelled"];
+    } else if (field === "priority") {
+      return ["low", "medium", "high"];
+    } else if (field === "customer") {
+      return [...new Set(jobs.map(job => job.customer))];
+    } else if (field === "assignedResourceId") {
+      return [...new Set(resources.map(r => r.name))];
+    }
+    return [];
+  };
+
+  const getDefaultColor = (field: string, value: string, index: number) => {
+    const colors = ["bg-blue-500", "bg-green-500", "bg-yellow-500", "bg-red-500", "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-orange-500"];
+    
+    if (field === "status") {
+      const statusColors: Record<string, string> = {
+        planned: "bg-blue-500",
+        in_progress: "bg-yellow-500",
+        completed: "bg-green-500",
+        cancelled: "bg-red-500"
+      };
+      return statusColors[value] || colors[index % colors.length];
+    } else if (field === "priority") {
+      const priorityColors: Record<string, string> = {
+        low: "bg-green-500",
+        medium: "bg-yellow-500",
+        high: "bg-red-500"
+      };
+      return priorityColors[value] || colors[index % colors.length];
+    }
+    
+    return colors[index % colors.length];
+  };
+
+  const columns = useMemo(() => {
+    const fieldValues = getFieldValues(swimLaneField);
+    const items = view === "jobs" ? jobs : operations;
+    
+    const columnsMap: Record<string, KanbanColumn> = {};
+    
+    // Initialize columns
+    fieldValues.forEach((value, index) => {
+      const color = swimLaneColors[value] || getDefaultColor(swimLaneField, value, index);
+      columnsMap[value] = {
+        id: value,
+        title: value.charAt(0).toUpperCase() + value.slice(1),
+        status: value,
+        color,
+        items: []
+      };
+    });
+    
+    // Populate columns with items
+    items.forEach(item => {
+      const fieldValue = getFieldValue(item, swimLaneField);
+      if (columnsMap[fieldValue]) {
+        columnsMap[fieldValue].items.push(item);
       }
     });
-
-    return columns;
-  }, [jobs]);
-
-  // Operation status columns
-  const operationColumns = useMemo(() => {
-    const columns: KanbanColumn[] = [
-      { id: "planned", title: "Planned", status: "planned", color: "bg-blue-500", items: [] },
-      { id: "in_progress", title: "In Progress", status: "in_progress", color: "bg-yellow-500", items: [] },
-      { id: "completed", title: "Completed", status: "completed", color: "bg-green-500", items: [] },
-      { id: "cancelled", title: "Cancelled", status: "cancelled", color: "bg-red-500", items: [] },
-    ];
-
-    operations.forEach(operation => {
-      const column = columns.find(col => col.status === operation.status);
-      if (column) {
-        column.items.push(operation);
-      }
-    });
-
-    return columns;
-  }, [operations]);
-
-  const columns = view === "jobs" ? jobColumns : operationColumns;
+    
+    return Object.values(columnsMap);
+  }, [jobs, operations, view, swimLaneField, swimLaneColors, resources]);
 
   // Mutations for updating status
   const updateJobMutation = useMutation({
@@ -335,13 +408,32 @@ export default function KanbanBoard({
     },
   });
 
-  const handleDrop = (item: DragItem, targetStatus: string) => {
-    if (item.sourceColumnId === targetStatus) return;
+  const handleDrop = (item: DragItem, targetValue: string) => {
+    if (item.sourceColumnId === targetValue) return;
 
-    if (item.type === "job") {
-      updateJobMutation.mutate({ id: item.id, status: targetStatus });
-    } else if (item.type === "operation") {
-      updateOperationMutation.mutate({ id: item.id, status: targetStatus });
+    // Build update object based on swim lane field
+    const updateData: any = {};
+    
+    if (swimLaneField === "status") {
+      updateData.status = targetValue;
+    } else if (swimLaneField === "priority") {
+      updateData.priority = targetValue;
+    } else if (swimLaneField === "customer" && item.type === "job") {
+      updateData.customer = targetValue;
+    } else if (swimLaneField === "assignedResourceId" && item.type === "operation") {
+      const resource = resources.find(r => r.name === targetValue);
+      if (resource) {
+        updateData.assignedResourceId = resource.id;
+      }
+    }
+
+    // Only proceed if we have valid update data
+    if (Object.keys(updateData).length > 0) {
+      if (item.type === "job") {
+        updateJobMutation.mutate({ id: item.id, ...updateData });
+      } else if (item.type === "operation") {
+        updateOperationMutation.mutate({ id: item.id, ...updateData });
+      }
     }
   };
 
@@ -395,6 +487,20 @@ export default function KanbanBoard({
                 <SelectItem value="operations">Operations</SelectItem>
               </SelectContent>
             </Select>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-500">Group by:</span>
+              <Select value={swimLaneField} onValueChange={setSwimLaneField}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="status">Status</SelectItem>
+                  <SelectItem value="priority">Priority</SelectItem>
+                  {view === "jobs" && <SelectItem value="customer">Customer</SelectItem>}
+                  {view === "operations" && <SelectItem value="assignedResourceId">Resource</SelectItem>}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           
           <div className="flex items-center space-x-2">
@@ -423,6 +529,7 @@ export default function KanbanBoard({
                       key={item.id}
                       job={item as Job}
                       onEdit={handleEditJob}
+                      swimLaneField={swimLaneField}
                     />
                   ))
                 ) : (
@@ -433,6 +540,7 @@ export default function KanbanBoard({
                       job={jobs.find(j => j.id === (item as Operation).jobId)}
                       resources={resources}
                       onEdit={handleEditOperation}
+                      swimLaneField={swimLaneField}
                     />
                   ))
                 )}

@@ -11,8 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Plus, Edit, Trash2, Settings, Save, X } from "lucide-react";
-import { DndProvider, useDrag, useDrop } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
+
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Job, Resource, Capability, KanbanConfig } from "@shared/schema";
@@ -20,35 +19,20 @@ import type { Job, Resource, Capability, KanbanConfig } from "@shared/schema";
 // Use the type from shared schema
 // interface KanbanConfig is already imported from @shared/schema
 
-interface SwimLane {
-  id: string;
-  title: string;
-  status: string;
-  color: string;
-  order: number;
+// Define available swim lane fields for jobs and operations
+interface SwimLaneFieldOption {
+  value: string;
+  label: string;
+  type: "jobs" | "operations" | "both";
+  values: string[];
 }
 
-interface KanbanFilters {
-  priorities: string[];
-  statuses: string[];
-  resources: number[];
-  capabilities: number[];
-  customers: string[];
-  dateRange: {
-    from: string | null;
-    to: string | null;
-  };
-}
-
-interface DisplayOptions {
-  showPriority: boolean;
-  showDueDate: boolean;
-  showCustomer: boolean;
-  showResource: boolean;
-  showProgress: boolean;
-  cardSize: "compact" | "standard" | "detailed";
-  groupBy: "none" | "priority" | "customer" | "resource";
-}
+const SWIM_LANE_FIELDS: SwimLaneFieldOption[] = [
+  { value: "status", label: "Status", type: "both", values: ["planned", "in_progress", "completed", "cancelled"] },
+  { value: "priority", label: "Priority", type: "both", values: ["low", "medium", "high"] },
+  { value: "customer", label: "Customer", type: "jobs", values: [] }, // Will be populated dynamically
+  { value: "assignedResourceId", label: "Assigned Resource", type: "operations", values: [] }, // Will be populated dynamically
+];
 
 interface KanbanConfigManagerProps {
   open: boolean;
@@ -58,59 +42,55 @@ interface KanbanConfigManagerProps {
   capabilities: Capability[];
 }
 
-interface DragItem {
-  index: number;
-  type: string;
+interface ColorMappingProps {
+  swimLaneField: string;
+  fieldValues: string[];
+  colors: Record<string, string>;
+  onColorChange: (value: string, color: string) => void;
 }
 
-interface DraggableSwimLaneProps {
-  swimLane: SwimLane;
-  index: number;
-  onMove: (fromIndex: number, toIndex: number) => void;
-  onEdit: (index: number) => void;
-  onRemove: (index: number) => void;
-}
-
-const DraggableSwimLane = ({ swimLane, index, onMove, onEdit, onRemove }: DraggableSwimLaneProps) => {
-  const [{ isDragging }, drag] = useDrag({
-    type: "swimlane",
-    item: { index, type: "swimlane" },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-  });
-
-  const [, drop] = useDrop({
-    accept: "swimlane",
-    hover: (item: DragItem) => {
-      if (item.index !== index) {
-        onMove(item.index, index);
-        item.index = index;
-      }
-    },
-  });
+const ColorMapping = ({ swimLaneField, fieldValues, colors, onColorChange }: ColorMappingProps) => {
+  const defaultColors = ["bg-blue-500", "bg-green-500", "bg-yellow-500", "bg-red-500", "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-orange-500"];
+  
+  const colorOptions = [
+    { value: "bg-blue-500", label: "Blue" },
+    { value: "bg-green-500", label: "Green" },
+    { value: "bg-yellow-500", label: "Yellow" },
+    { value: "bg-red-500", label: "Red" },
+    { value: "bg-purple-500", label: "Purple" },
+    { value: "bg-pink-500", label: "Pink" },
+    { value: "bg-indigo-500", label: "Indigo" },
+    { value: "bg-orange-500", label: "Orange" },
+  ];
 
   return (
-    <div
-      ref={(node) => drag(drop(node))}
-      className={`flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg cursor-move ${
-        isDragging ? "opacity-50" : ""
-      }`}
-    >
-      <div className="flex items-center space-x-3">
-        <div className={`w-4 h-4 rounded-full ${swimLane.color}`}></div>
-        <div>
-          <div className="font-medium">{swimLane.title}</div>
-          <div className="text-sm text-gray-500">Status: {swimLane.status}</div>
-        </div>
-      </div>
-      <div className="flex items-center space-x-2">
-        <Button variant="ghost" size="sm" onClick={() => onEdit(index)}>
-          <Edit className="w-4 h-4" />
-        </Button>
-        <Button variant="ghost" size="sm" onClick={() => onRemove(index)}>
-          <Trash2 className="w-4 h-4" />
-        </Button>
+    <div className="space-y-3">
+      <Label>Swim Lane Colors</Label>
+      <div className="grid grid-cols-2 gap-3">
+        {fieldValues.map((value, index) => (
+          <div key={value} className="flex items-center space-x-2">
+            <div className={`w-4 h-4 rounded-full ${colors[value] || defaultColors[index % defaultColors.length]}`}></div>
+            <span className="text-sm font-medium capitalize">{value}</span>
+            <Select
+              value={colors[value] || defaultColors[index % defaultColors.length]}
+              onValueChange={(color) => onColorChange(value, color)}
+            >
+              <SelectTrigger className="w-20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {colorOptions.map((color) => (
+                  <SelectItem key={color.value} value={color.value}>
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-3 h-3 rounded-full ${color.value}`}></div>
+                      <span className="text-xs">{color.label}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -121,21 +101,17 @@ interface KanbanConfigFormProps {
   jobs: Job[];
   resources: Resource[];
   capabilities: Capability[];
-  onSave: (config: Omit<KanbanConfig, 'id'>) => void;
+  onSave: (config: Omit<KanbanConfig, 'id' | 'createdAt'>) => void;
   onCancel: () => void;
 }
 
 const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCancel }: KanbanConfigFormProps) => {
-  const [formData, setFormData] = useState<Omit<KanbanConfig, 'id'>>({
+  const [formData, setFormData] = useState<Omit<KanbanConfig, 'id' | 'createdAt'>>({
     name: config?.name || "",
     description: config?.description || "",
     viewType: config?.viewType || "jobs",
-    swimLanes: config?.swimLanes || [
-      { id: "planned", title: "Planned", status: "planned", color: "bg-blue-500", order: 0 },
-      { id: "in_progress", title: "In Progress", status: "in_progress", color: "bg-yellow-500", order: 1 },
-      { id: "completed", title: "Completed", status: "completed", color: "bg-green-500", order: 2 },
-      { id: "cancelled", title: "Cancelled", status: "cancelled", color: "bg-red-500", order: 3 },
-    ],
+    swimLaneField: config?.swimLaneField || "status",
+    swimLaneColors: config?.swimLaneColors || {},
     filters: config?.filters || {
       priorities: [],
       statuses: [],
@@ -156,89 +132,39 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
     isDefault: config?.isDefault || false
   });
 
-  const [editingSwimLane, setEditingSwimLane] = useState<number | null>(null);
-  const [swimLaneForm, setSwimLaneForm] = useState<SwimLane>({
-    id: "",
-    title: "",
-    status: "",
-    color: "bg-blue-500",
-    order: 0
-  });
-
   const priorityOptions = ["high", "medium", "low"];
   const statusOptions = ["planned", "in_progress", "completed", "cancelled"];
-  const colorOptions = [
-    { value: "bg-blue-500", label: "Blue" },
-    { value: "bg-green-500", label: "Green" },
-    { value: "bg-yellow-500", label: "Yellow" },
-    { value: "bg-red-500", label: "Red" },
-    { value: "bg-purple-500", label: "Purple" },
-    { value: "bg-pink-500", label: "Pink" },
-    { value: "bg-indigo-500", label: "Indigo" },
-    { value: "bg-orange-500", label: "Orange" },
-  ];
-
   const uniqueCustomers = [...new Set(jobs.map(job => job.customer))];
+  const resourceOptions = resources.map(r => ({ value: r.id.toString(), label: r.name }));
 
-  const handleSwimLaneMove = (fromIndex: number, toIndex: number) => {
-    const newSwimLanes = [...formData.swimLanes];
-    const [moved] = newSwimLanes.splice(fromIndex, 1);
-    newSwimLanes.splice(toIndex, 0, moved);
+  // Get available swim lane fields based on view type
+  const availableFields = SWIM_LANE_FIELDS.filter(field => 
+    field.type === "both" || field.type === formData.viewType
+  );
+
+  // Get current field values based on selected swim lane field
+  const getCurrentFieldValues = () => {
+    const field = availableFields.find(f => f.value === formData.swimLaneField);
+    if (!field) return [];
     
-    // Update order values
-    newSwimLanes.forEach((lane, index) => {
-      lane.order = index;
-    });
-    
-    setFormData({ ...formData, swimLanes: newSwimLanes });
-  };
-
-  const handleSwimLaneEdit = (index: number) => {
-    const swimLane = formData.swimLanes[index];
-    setSwimLaneForm(swimLane);
-    setEditingSwimLane(index);
-  };
-
-  const handleSwimLaneRemove = (index: number) => {
-    const newSwimLanes = formData.swimLanes.filter((_, i) => i !== index);
-    newSwimLanes.forEach((lane, i) => {
-      lane.order = i;
-    });
-    setFormData({ ...formData, swimLanes: newSwimLanes });
-  };
-
-  const handleAddSwimLane = () => {
-    const newSwimLane: SwimLane = {
-      id: `lane_${Date.now()}`,
-      title: "",
-      status: "",
-      color: "bg-blue-500",
-      order: formData.swimLanes.length
-    };
-    setSwimLaneForm(newSwimLane);
-    setEditingSwimLane(-1); // -1 indicates adding new
-  };
-
-  const handleSaveSwimLane = () => {
-    if (editingSwimLane === -1) {
-      // Adding new swim lane
-      setFormData({
-        ...formData,
-        swimLanes: [...formData.swimLanes, { ...swimLaneForm, order: formData.swimLanes.length }]
-      });
+    if (field.value === "customer") {
+      return uniqueCustomers;
+    } else if (field.value === "assignedResourceId") {
+      return resourceOptions.map(r => r.label);
     } else {
-      // Editing existing swim lane
-      const newSwimLanes = [...formData.swimLanes];
-      newSwimLanes[editingSwimLane!] = swimLaneForm;
-      setFormData({ ...formData, swimLanes: newSwimLanes });
+      return field.values;
     }
-    setEditingSwimLane(null);
-    setSwimLaneForm({
-      id: "",
-      title: "",
-      status: "",
-      color: "bg-blue-500",
-      order: 0
+  };
+
+  const currentFieldValues = getCurrentFieldValues();
+
+  const handleColorChange = (value: string, color: string) => {
+    setFormData({
+      ...formData,
+      swimLaneColors: {
+        ...formData.swimLaneColors,
+        [value]: color
+      }
     });
   };
 
@@ -291,28 +217,35 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
 
       {/* Swim Lanes Configuration */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium">Swim Lanes</h3>
-          <Button type="button" variant="outline" size="sm" onClick={handleAddSwimLane}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Lane
-          </Button>
+        <h3 className="text-lg font-medium">Swim Lanes</h3>
+        
+        <div>
+          <Label htmlFor="swimLaneField">Group By Field</Label>
+          <Select 
+            value={formData.swimLaneField} 
+            onValueChange={(value) => setFormData({ ...formData, swimLaneField: value, swimLaneColors: {} })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {availableFields.map((field) => (
+                <SelectItem key={field.value} value={field.value}>
+                  {field.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
-        <DndProvider backend={HTML5Backend}>
-          <div className="space-y-2">
-            {formData.swimLanes.map((swimLane, index) => (
-              <DraggableSwimLane
-                key={swimLane.id}
-                swimLane={swimLane}
-                index={index}
-                onMove={handleSwimLaneMove}
-                onEdit={handleSwimLaneEdit}
-                onRemove={handleSwimLaneRemove}
-              />
-            ))}
-          </div>
-        </DndProvider>
+        {currentFieldValues.length > 0 && (
+          <ColorMapping
+            swimLaneField={formData.swimLaneField}
+            fieldValues={currentFieldValues}
+            colors={formData.swimLaneColors}
+            onColorChange={handleColorChange}
+          />
+        )}
       </div>
 
       <Separator />
@@ -467,66 +400,7 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
         </Button>
       </div>
 
-      {/* Swim Lane Edit Dialog */}
-      <Dialog open={editingSwimLane !== null} onOpenChange={(open) => !open && setEditingSwimLane(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingSwimLane === -1 ? "Add Swim Lane" : "Edit Swim Lane"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="swim-lane-title">Title</Label>
-              <Input
-                id="swim-lane-title"
-                value={swimLaneForm.title}
-                onChange={(e) => setSwimLaneForm({ ...swimLaneForm, title: e.target.value })}
-                placeholder="e.g., In Progress, Review"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="swim-lane-status">Status Value</Label>
-              <Input
-                id="swim-lane-status"
-                value={swimLaneForm.status}
-                onChange={(e) => setSwimLaneForm({ ...swimLaneForm, status: e.target.value })}
-                placeholder="e.g., in_progress, review"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="swim-lane-color">Color</Label>
-              <Select
-                value={swimLaneForm.color}
-                onValueChange={(value) => setSwimLaneForm({ ...swimLaneForm, color: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {colorOptions.map((color) => (
-                    <SelectItem key={color.value} value={color.value}>
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-4 h-4 rounded-full ${color.value}`}></div>
-                        <span>{color.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={() => setEditingSwimLane(null)}>
-                Cancel
-              </Button>
-              <Button type="button" onClick={handleSaveSwimLane}>
-                Save
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+
     </form>
   );
 };
