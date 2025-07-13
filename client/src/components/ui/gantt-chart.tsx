@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import OperationBlock from "./operation-block";
 import OperationForm from "../operation-form";
+import ResourceForm from "../resource-form";
 import ResourceViewManager from "../resource-view-manager";
 import TextLabelConfigDialog from "../text-label-config-dialog";
 import CustomTextLabelManager from "../custom-text-label-manager";
@@ -47,6 +48,8 @@ export default function GanttChart({
   const [expandedJobs, setExpandedJobs] = useState<Set<number>>(new Set());
   const [selectedOperation, setSelectedOperation] = useState<Operation | null>(null);
   const [operationDialogOpen, setOperationDialogOpen] = useState(false);
+  const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
+  const [resourceDialogOpen, setResourceDialogOpen] = useState(false);
   const [timeUnit, setTimeUnit] = useState<TimeUnit>("day");
   const [timelineScrollLeft, setTimelineScrollLeft] = useState(0);
   const [resourceListScrollTop, setResourceListScrollTop] = useState(0);
@@ -118,7 +121,8 @@ export default function GanttChart({
     switch (action) {
       case 'edit':
         // Open resource edit dialog
-        console.log('Edit resource:', resource);
+        setSelectedResource(resource);
+        setResourceDialogOpen(true);
         break;
       case 'schedule':
         // Open scheduling dialog for resource
@@ -134,7 +138,6 @@ export default function GanttChart({
         break;
       case 'remove_from_gantt':
         // Remove resource from current gantt view
-        console.log('Remove from gantt:', resource);
         handleRemoveResourceFromGantt(resource);
         break;
       case 'delete':
@@ -1380,6 +1383,25 @@ export default function GanttChart({
                 onSuccess={() => {
                   setOperationDialogOpen(false);
                   setSelectedOperation(null);
+                }}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+        
+        {/* Resource Edit Dialog */}
+        <Dialog open={resourceDialogOpen} onOpenChange={setResourceDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Resource</DialogTitle>
+            </DialogHeader>
+            {selectedResource && (
+              <ResourceForm
+                resource={selectedResource}
+                capabilities={capabilities}
+                onSuccess={() => {
+                  setResourceDialogOpen(false);
+                  setSelectedResource(null);
                 }}
               />
             )}

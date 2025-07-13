@@ -131,6 +131,8 @@ export default function TextLabelConfigDialog({ open, onOpenChange, resourceView
     return resourceView.textLabelConfig || defaultConfig;
   });
 
+  const [configName, setConfigName] = useState("");
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -147,6 +149,22 @@ export default function TextLabelConfigDialog({ open, onOpenChange, resourceView
     },
     onError: () => {
       toast({ title: "Failed to update text label configuration", variant: "destructive" });
+    }
+  });
+
+  const saveNamedConfigMutation = useMutation({
+    mutationFn: async ({ name, config }: { name: string; config: TextLabelConfig }) => {
+      return apiRequest("POST", "/api/custom-text-labels", {
+        name,
+        config
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/custom-text-labels"] });
+      toast({ title: "Named configuration saved successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to save named configuration", variant: "destructive" });
     }
   });
 
@@ -197,6 +215,14 @@ export default function TextLabelConfigDialog({ open, onOpenChange, resourceView
 
   const handleSave = () => {
     updateMutation.mutate(config);
+  };
+
+  const handleSaveAsNamed = () => {
+    if (!configName.trim()) {
+      toast({ title: "Please enter a name for the configuration", variant: "destructive" });
+      return;
+    }
+    saveNamedConfigMutation.mutate({ name: configName, config });
   };
 
   return (
@@ -275,6 +301,27 @@ export default function TextLabelConfigDialog({ open, onOpenChange, resourceView
                 className="flex-1"
                 placeholder="#ffffff"
               />
+            </div>
+          </div>
+
+          {/* Save as Named Configuration */}
+          <div className="border-t pt-4">
+            <Label className="text-sm font-medium">Save as Named Configuration</Label>
+            <div className="flex items-center space-x-2 mt-2">
+              <Input
+                type="text"
+                value={configName}
+                onChange={(e) => setConfigName(e.target.value)}
+                placeholder="Enter configuration name"
+                className="flex-1"
+              />
+              <Button 
+                onClick={handleSaveAsNamed} 
+                disabled={saveNamedConfigMutation.isPending || !configName.trim()}
+                variant="outline"
+              >
+                {saveNamedConfigMutation.isPending ? "Saving..." : "Save As"}
+              </Button>
             </div>
           </div>
         </div>
