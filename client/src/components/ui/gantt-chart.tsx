@@ -17,7 +17,7 @@ interface GanttChartProps {
   view: "operations" | "resources";
 }
 
-type TimeUnit = "hour" | "day" | "week" | "month" | "quarter" | "year" | "decade";
+type TimeUnit = "hour" | "shift" | "day" | "week" | "month" | "quarter" | "year" | "decade";
 
 export default function GanttChart({ 
   jobs, 
@@ -51,6 +51,10 @@ export default function GanttChart({
       case "hour":
         periodCount = 24; // Show 24 hours
         stepMs = 60 * 60 * 1000; // 1 hour in milliseconds
+        break;
+      case "shift":
+        periodCount = 9; // Show 9 shifts (3 days worth)
+        stepMs = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
         break;
       case "day":
         periodCount = 7; // Show 7 days
@@ -86,6 +90,13 @@ export default function GanttChart({
       switch (timeUnit) {
         case "hour":
           label = date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+          subLabel = date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
+          break;
+        case "shift":
+          const shiftHour = date.getHours();
+          const shiftName = shiftHour >= 0 && shiftHour < 8 ? "Night" : 
+                           shiftHour >= 8 && shiftHour < 16 ? "Day" : "Evening";
+          label = `${shiftName} Shift`;
           subLabel = date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
           break;
         case "day":
@@ -140,7 +151,7 @@ export default function GanttChart({
 
   // Zoom functions
   const zoomIn = useCallback(() => {
-    const zoomLevels: TimeUnit[] = ["decade", "year", "quarter", "month", "week", "day", "hour"];
+    const zoomLevels: TimeUnit[] = ["decade", "year", "quarter", "month", "week", "day", "shift", "hour"];
     const currentIndex = zoomLevels.indexOf(timeUnit);
     if (currentIndex < zoomLevels.length - 1) {
       setTimeUnit(zoomLevels[currentIndex + 1]);
@@ -149,7 +160,7 @@ export default function GanttChart({
   }, [timeUnit]);
 
   const zoomOut = useCallback(() => {
-    const zoomLevels: TimeUnit[] = ["decade", "year", "quarter", "month", "week", "day", "hour"];
+    const zoomLevels: TimeUnit[] = ["decade", "year", "quarter", "month", "week", "day", "shift", "hour"];
     const currentIndex = zoomLevels.indexOf(timeUnit);
     if (currentIndex > 0) {
       setTimeUnit(zoomLevels[currentIndex - 1]);

@@ -1,5 +1,4 @@
 import { type Operation, type Job } from "@shared/schema";
-import { Badge } from "@/components/ui/badge";
 import { useDrag } from "react-dnd";
 import { useEffect, useState } from "react";
 
@@ -52,6 +51,12 @@ export default function OperationBlock({
           left = (startOffsetHours / 24) * dayWidth;
           width = Math.max((durationHours / 24) * dayWidth, 20);
           break;
+        case "shift":
+          const startOffsetShifts = (startTime.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 8);
+          const durationShifts = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60 * 8);
+          left = startOffsetShifts * dayWidth;
+          width = Math.max(durationShifts * dayWidth, 20);
+          break;
         case "day":
           const startOffsetDays = (startTime.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24);
           const durationDays = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60 * 24);
@@ -101,20 +106,6 @@ export default function OperationBlock({
     }
   }, [operation.startTime, operation.endTime, dayWidth, timeUnit]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "bg-yellow-500";
-      case "in_progress":
-        return "bg-blue-500";
-      case "completed":
-        return "bg-green-500";
-      case "on_hold":
-        return "bg-orange-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
 
   const getJobColor = (jobId: number) => {
     const colors = [
@@ -153,12 +144,9 @@ export default function OperationBlock({
           <div className="text-white/80 truncate">{jobName || `Job ${operation.jobId}`}</div>
         </div>
         <div className="flex items-center space-x-1 ml-2">
-          <Badge
-            variant="outline"
-            className={`text-xs border-white/30 text-white/90 ${getStatusColor(operation.status)}`}
-          >
-            {operation.status}
-          </Badge>
+          <div className="text-xs text-white/70">
+            {operation.duration}h
+          </div>
         </div>
       </div>
     </div>
