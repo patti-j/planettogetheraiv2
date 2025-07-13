@@ -1,14 +1,17 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Plus, Filter, Save, Factory } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Filter, Save, Factory, Maximize2, Minimize2, Bot, Send } from "lucide-react";
 import Sidebar from "@/components/sidebar";
 import GanttChart from "@/components/ui/gantt-chart";
 import MetricsCard from "@/components/ui/metrics-card";
 import JobForm from "@/components/job-form";
 import ResourceForm from "@/components/resource-form";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import type { Job, Operation, Resource, Capability } from "@shared/schema";
 
 interface Metrics {
@@ -22,6 +25,9 @@ export default function Dashboard() {
   const [currentView, setCurrentView] = useState<"operations" | "resources">("resources");
   const [jobDialogOpen, setJobDialogOpen] = useState(false);
   const [resourceDialogOpen, setResourceDialogOpen] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const { toast } = useToast();
 
   const { data: jobs = [] } = useQuery<Job[]>({
     queryKey: ["/api/jobs"],
@@ -43,6 +49,127 @@ export default function Dashboard() {
     queryKey: ["/api/metrics"],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
+
+  const aiMutation = useMutation({
+    mutationFn: async (prompt: string) => {
+      const response = await apiRequest("POST", "/api/ai-agent/command", { command: prompt });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "AI Assistant",
+        description: data.message,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to process AI command",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAiPrompt = () => {
+    if (aiPrompt.trim()) {
+      aiMutation.mutate(aiPrompt);
+      setAiPrompt("");
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleAiPrompt();
+    }
+  };
+
+  if (isMaximized) {
+    return (
+      <div className="h-screen bg-surface">
+        {/* Maximized Gantt View */}
+        <div className="flex flex-col h-full bg-white">
+          <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as "operations" | "resources")}>
+            <div className="border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-between">
+                <TabsList className="h-auto p-0 bg-transparent">
+                  <TabsTrigger 
+                    value="resources" 
+                    className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
+                  >
+                    <Factory className="w-4 h-4 mr-2" />
+                    Resources View
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="operations" 
+                    className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
+                  >
+                    <Factory className="w-4 h-4 mr-2" />
+                    Operations View
+                  </TabsTrigger>
+                </TabsList>
+                <div className="flex items-center space-x-4 px-6">
+                  <div className="text-sm text-gray-500 flex items-center">
+                    <Factory className="w-4 h-4 mr-1" />
+                    Production Schedule - Maximized View
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setIsMaximized(false)}>
+                    <Minimize2 className="w-4 h-4 mr-2" />
+                    Minimize
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <TabsContent value="resources" className="flex-1 m-0">
+              <GanttChart
+                jobs={jobs}
+                operations={operations}
+                resources={resources}
+                capabilities={capabilities}
+                view="resources"
+              />
+            </TabsContent>
+
+            <TabsContent value="operations" className="flex-1 m-0">
+              <GanttChart
+                jobs={jobs}
+                operations={operations}
+                resources={resources}
+                capabilities={capabilities}
+                view="operations"
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        {/* Floating AI Assistant Quick Action */}
+        <div className="fixed bottom-6 right-6 z-50">
+          <div className="floating-ai-assistant rounded-lg shadow-lg border border-gray-200 p-4 max-w-md">
+            <div className="flex items-center space-x-2 mb-3">
+              <Bot className="w-5 h-5 text-primary" />
+              <span className="text-sm font-medium text-gray-700">AI Assistant</span>
+            </div>
+            <div className="flex space-x-2">
+              <Input
+                placeholder="Ask AI to create jobs, schedule operations..."
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="flex-1"
+              />
+              <Button 
+                size="sm" 
+                onClick={handleAiPrompt}
+                disabled={aiMutation.isPending || !aiPrompt.trim()}
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-surface">
@@ -116,22 +243,30 @@ export default function Dashboard() {
         <div className="flex-1 bg-white m-6 rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as "operations" | "resources")}>
             <div className="border-b border-gray-200 bg-gray-50">
-              <TabsList className="h-auto p-0 bg-transparent">
-                <TabsTrigger 
-                  value="resources" 
-                  className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
-                >
-                  <Factory className="w-4 h-4 mr-2" />
-                  Resources View
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="operations" 
-                  className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
-                >
-                  <Factory className="w-4 h-4 mr-2" />
-                  Operations View
-                </TabsTrigger>
-              </TabsList>
+              <div className="flex items-center justify-between">
+                <TabsList className="h-auto p-0 bg-transparent">
+                  <TabsTrigger 
+                    value="resources" 
+                    className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
+                  >
+                    <Factory className="w-4 h-4 mr-2" />
+                    Resources View
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="operations" 
+                    className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
+                  >
+                    <Factory className="w-4 h-4 mr-2" />
+                    Operations View
+                  </TabsTrigger>
+                </TabsList>
+                <div className="flex items-center space-x-2 px-6">
+                  <Button variant="outline" size="sm" onClick={() => setIsMaximized(true)}>
+                    <Maximize2 className="w-4 h-4 mr-2" />
+                    Maximize
+                  </Button>
+                </div>
+              </div>
             </div>
 
             <TabsContent value="resources" className="h-full m-0">

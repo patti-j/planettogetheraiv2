@@ -159,6 +159,29 @@
   background: #e5e7eb;
 }
 
+/* Floating AI Assistant styles */
+.floating-ai-assistant {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+  animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.floating-ai-assistant:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
 .gantt-scrollbar::-webkit-scrollbar-thumb:hover {
   background: hsl(0, 0%, 70%);
 }
