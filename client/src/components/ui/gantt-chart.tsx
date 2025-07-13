@@ -27,6 +27,7 @@ export default function GanttChart({
   const [expandedJobs, setExpandedJobs] = useState<Set<number>>(new Set());
   const [selectedOperation, setSelectedOperation] = useState<Operation | null>(null);
   const [operationDialogOpen, setOperationDialogOpen] = useState(false);
+  const [scrollLeft, setScrollLeft] = useState(0);
 
   // Generate time scale for the next 7 days
   const timeScale = useMemo(() => {
@@ -88,6 +89,11 @@ export default function GanttChart({
     return resources.find(r => r.id === resourceId)?.name || "Unassigned";
   };
 
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const scrollLeft = e.currentTarget.scrollLeft;
+    setScrollLeft(scrollLeft);
+  };
+
   const renderOperationsView = () => (
     <div className="h-full overflow-auto">
       {/* Time Scale Header */}
@@ -106,7 +112,7 @@ export default function GanttChart({
               </div>
             </div>
           </div>
-          <div className="flex-1 overflow-x-auto">
+          <div className="flex-1 overflow-x-auto" onScroll={handleScroll}>
             <div className="flex bg-gray-50 border-r border-gray-200" style={{ width: '1200px' }}>
               {timeScale.map((day, index) => (
                 <div key={index} className="w-48 border-r border-gray-200 p-2 text-center">
@@ -154,8 +160,8 @@ export default function GanttChart({
                       </Badge>
                     </div>
                   </div>
-                  <div className="flex-1 relative" style={{ width: '1200px' }}>
-                    <div className="absolute inset-0 bg-blue-50 border-r border-gray-100"></div>
+                  <div className="flex-1 relative overflow-hidden" style={{ width: '1200px' }}>
+                    <div className="absolute inset-0 bg-blue-50 border-r border-gray-100" style={{ transform: `translateX(-${scrollLeft}px)` }}></div>
                   </div>
                 </div>
               </div>
@@ -203,12 +209,14 @@ export default function GanttChart({
                         </div>
                       </div>
                     </div>
-                    <div className="flex-1 relative p-2" style={{ width: '1200px' }}>
-                      <OperationBlock
-                        operation={operation}
-                        resourceName={getResourceName(operation.assignedResourceId || 0)}
-                        jobName={jobs.find(job => job.id === operation.jobId)?.name}
-                      />
+                    <div className="flex-1 relative p-2 overflow-hidden" style={{ width: '1200px' }}>
+                      <div style={{ transform: `translateX(-${scrollLeft}px)` }}>
+                        <OperationBlock
+                          operation={operation}
+                          resourceName={getResourceName(operation.assignedResourceId || 0)}
+                          jobName={jobs.find(job => job.id === operation.jobId)?.name}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -238,7 +246,7 @@ export default function GanttChart({
               </div>
             </div>
           </div>
-          <div className="flex-1 overflow-x-auto">
+          <div className="flex-1 overflow-x-auto" onScroll={handleScroll}>
             <div className="flex bg-gray-50 border-r border-gray-200" style={{ width: '1200px' }}>
               {timeScale.map((day, index) => (
                 <div key={index} className="w-48 border-r border-gray-200 p-2 text-center">
@@ -281,26 +289,28 @@ export default function GanttChart({
                 <div 
                   ref={drop}
                   data-resource-id={resource.id}
-                  className={`flex-1 relative p-2 min-h-[60px] transition-colors ${
+                  className={`flex-1 relative p-2 min-h-[60px] transition-colors overflow-hidden ${
                     isOver ? (canDrop ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200") : ""
                   }`} 
                   style={{ width: '1200px' }}
                 >
-                  {resourceOperations.map((operation) => (
-                    <OperationBlock
-                      key={operation.id}
-                      operation={operation}
-                      resourceName={resource.name}
-                      jobName={jobs.find(job => job.id === operation.jobId)?.name}
-                    />
-                  ))}
-                  {resourceOperations.length === 0 && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-gray-400 text-sm">
-                        {isOver ? (canDrop ? "Drop operation here" : "Incompatible capabilities") : "No operations assigned"}
+                  <div style={{ transform: `translateX(-${scrollLeft}px)` }}>
+                    {resourceOperations.map((operation) => (
+                      <OperationBlock
+                        key={operation.id}
+                        operation={operation}
+                        resourceName={resource.name}
+                        jobName={jobs.find(job => job.id === operation.jobId)?.name}
+                      />
+                    ))}
+                    {resourceOperations.length === 0 && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-gray-400 text-sm">
+                          {isOver ? (canDrop ? "Drop operation here" : "Incompatible capabilities") : "No operations assigned"}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
