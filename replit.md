@@ -291,3 +291,20 @@ The application uses a modern full-stack architecture with strong typing through
 - AI can analyze prompts and create multiple custom text labels with appropriate field configurations
 - Improved user experience by focusing on custom label configurations rather than scattered field options
 - Added CREATE_CUSTOM_TEXT_LABELS action to AI agent for automatic label creation from descriptions
+
+✓ **Individual Text Label Styling Enhancement (July 13, 2025)**:
+- Enhanced text labeling system to support individual font size and color styling for each label element
+- Updated database schema to include fontSize and fontColor properties for each label element
+- Modified custom text label manager UI with individual styling controls (size and color inputs)
+- Updated operation-block rendering to apply individual styling to each text element using JSX
+- Each element in custom text labels (job name, due date, operation name) can now have unique styling
+- Enhanced drag-and-drop functionality for label ordering with per-element styling support
+
+✓ **Kanban Board Crash Fix and AI Creation (July 13, 2025)**:
+- Fixed critical Kanban board crash caused by undefined swimLanes property reference
+- Corrected display logic to use swimLaneField instead of non-existent swimLanes array
+- Added AI-powered Kanban board creation feature with natural language prompts
+- Implemented "AI Create" button in Kanban configurator with Sparkles icon
+- Added AI creation dialog with textarea for describing desired board configuration
+- AI can now create Kanban boards from descriptions like "track jobs by priority with color coding"
+- Enhanced Kanban configurator UI with improved button layout and AI integration

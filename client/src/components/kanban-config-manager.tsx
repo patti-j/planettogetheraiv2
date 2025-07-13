@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Edit, Trash2, Settings, Save, X } from "lucide-react";
+import { Plus, Edit, Trash2, Settings, Save, X, Sparkles } from "lucide-react";
 
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -410,6 +410,8 @@ export default function KanbanConfigManager({ open, onOpenChange, jobs, resource
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingConfig, setEditingConfig] = useState<KanbanConfig | undefined>();
+  const [showAIDialog, setShowAIDialog] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
 
   // Fetch kanban configurations from API
   const { data: configs = [], isLoading } = useQuery({
@@ -483,6 +485,25 @@ export default function KanbanConfigManager({ open, onOpenChange, jobs, resource
     }
   });
 
+  // AI create kanban configuration mutation
+  const aiCreateConfigMutation = useMutation({
+    mutationFn: async (prompt: string) => {
+      return apiRequest("/api/ai-agent/command", {
+        method: "POST",
+        body: { command: `Create a Kanban board: ${prompt}` },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/kanban-configs"] });
+      toast({ title: "AI board configuration created successfully" });
+      setShowAIDialog(false);
+      setAiPrompt("");
+    },
+    onError: (error: any) => {
+      toast({ title: "Error creating AI board configuration", description: error.message, variant: "destructive" });
+    }
+  });
+
   const handleSaveConfig = (configData: Omit<KanbanConfig, 'id' | 'createdAt'>) => {
     if (editingConfig) {
       // Update existing config
@@ -524,10 +545,16 @@ export default function KanbanConfigManager({ open, onOpenChange, jobs, resource
               <p className="text-sm text-gray-600">
                 Create and manage custom Kanban board configurations with different swim lanes, filters, and display options.
               </p>
-              <Button onClick={() => setShowForm(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                New Configuration
-              </Button>
+              <div className="flex space-x-2">
+                <Button variant="outline" onClick={() => setShowAIDialog(true)}>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  AI Create
+                </Button>
+                <Button onClick={() => setShowForm(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Configuration
+                </Button>
+              </div>
             </div>
             
             <div className="grid gap-4">
@@ -556,16 +583,14 @@ export default function KanbanConfigManager({ open, onOpenChange, jobs, resource
                     <div className="space-y-3">
                       <div className="flex items-center space-x-4">
                         <Badge variant="outline">{config.viewType === "jobs" ? "Jobs" : "Operations"}</Badge>
-                        <span className="text-sm text-gray-600">{config.swimLanes.length} swim lanes</span>
+                        <span className="text-sm text-gray-600">Swim Lane: {config.swimLaneField}</span>
                       </div>
                       
                       <div className="flex space-x-2">
-                        {config.swimLanes.map((lane) => (
-                          <Badge key={lane.id} className="text-xs">
-                            <div className={`w-2 h-2 rounded-full ${lane.color} mr-1`}></div>
-                            {lane.title}
-                          </Badge>
-                        ))}
+                        <Badge className="text-xs">
+                          <div className={`w-2 h-2 rounded-full bg-blue-500 mr-1`}></div>
+                          {config.swimLaneField}
+                        </Badge>
                       </div>
                       
                       <div className="flex justify-between items-center">
@@ -603,6 +628,48 @@ export default function KanbanConfigManager({ open, onOpenChange, jobs, resource
           />
         )}
       </DialogContent>
+      
+      {/* AI Creation Dialog */}
+      <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>AI Create Kanban Board</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="ai-prompt">Describe your Kanban board</Label>
+              <Textarea
+                id="ai-prompt"
+                placeholder="e.g., 'Create a board to track jobs by priority with color coding' or 'Show operations grouped by resource assignment'"
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                rows={3}
+                className="mt-2"
+              />
+            </div>
+            
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setShowAIDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => aiCreateConfigMutation.mutate(aiPrompt)}
+                disabled={!aiPrompt.trim() || aiCreateConfigMutation.isPending}
+              >
+                {aiCreateConfigMutation.isPending ? (
+                  "Creating..."
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Create Board
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
