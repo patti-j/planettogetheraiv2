@@ -447,7 +447,6 @@ export default function GanttChart({
                           timelineWidth={timelineWidth}
                           dayWidth={periodWidth}
                           timeUnit={timeUnit}
-                          timelineScrollLeft={timelineScrollLeft}
                           timelineBaseDate={timelineBaseDate}
                         />
                       </div>
@@ -466,7 +465,7 @@ export default function GanttChart({
   // Create a separate component to handle the drop zone for each resource
   const ResourceRow = ({ resource }: { resource: Resource }) => {
     const resourceOperations = operations.filter(op => op.assignedResourceId === resource.id);
-    const { drop, isOver, canDrop } = useOperationDrop(resource, timelineWidth, timeScale, timeUnit, timelineScrollLeft, timelineBaseDate);
+    const { drop, isOver, canDrop } = useOperationDrop(resource, timelineWidth, timeScale, timeUnit, timelineBaseDate);
 
     return (
       <div className="border-b border-gray-100">
@@ -507,7 +506,6 @@ export default function GanttChart({
                   timelineWidth={timelineWidth}
                   dayWidth={periodWidth}
                   timeUnit={timeUnit}
-                  timelineScrollLeft={timelineScrollLeft}
                   timelineBaseDate={timelineBaseDate}
                 />
               ))}
@@ -603,7 +601,6 @@ export default function GanttChart({
                       timelineWidth={timelineWidth}
                       dayWidth={periodWidth}
                       timeUnit={timeUnit}
-                      timelineScrollLeft={timelineScrollLeft}
                       timelineBaseDate={timelineBaseDate}
                     />
                   ))}

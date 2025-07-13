@@ -10,7 +10,6 @@ interface OperationBlockProps {
   timelineWidth: number;
   dayWidth: number;
   timeUnit: "hour" | "shift" | "day" | "week" | "month" | "quarter" | "year" | "decade";
-  timelineScrollLeft: number;
   timelineBaseDate: Date;
 }
 
@@ -22,7 +21,6 @@ export default function OperationBlock({
   timelineWidth,
   dayWidth,
   timeUnit,
-  timelineScrollLeft,
   timelineBaseDate,
 }: OperationBlockProps) {
   const [{ isDragging }, drag] = useDrag({
@@ -57,9 +55,6 @@ export default function OperationBlock({
       
       // SIMPLIFIED: Calculate position based on timeline periods (matching timeScale generation)
       const baseDate = new Date(timelineBaseDate.getTime());
-      
-      // Calculate how many periods from base date to operation start
-      const timeDiff = startTime.getTime() - baseDate.getTime();
       
       // Calculate step size for this time unit
       let stepMs: number;
@@ -98,20 +93,6 @@ export default function OperationBlock({
       
       const left = startOffset * dayWidth;
       const width = Math.max(duration * dayWidth, 20); // Minimum width for visibility
-      
-      // DEBUG: Log the operation block positioning values
-      console.log("OPERATION BLOCK DEBUG:", {
-        operationName: operation.name,
-        startTime: startTime.toISOString(),
-        baseDate: baseDate.toISOString(),
-        stepMs,
-        startOffset,
-        duration,
-        dayWidth,
-        left,
-        width,
-        timeUnit
-      });
       
       setPosition({ left, width });
     }

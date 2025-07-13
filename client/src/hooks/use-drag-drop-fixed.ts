@@ -16,7 +16,6 @@ export function useOperationDrop(
   timelineWidth: number,
   timeScale: any[],
   timeUnit: TimeUnit,
-  timelineScrollLeft: number,
   timelineBaseDate: Date,
   onDropSuccess?: () => void
 ) {
@@ -77,7 +76,7 @@ export function useOperationDrop(
           // FIXED: Use the cursor position minus the offset within the block to get the block's start position
           const cursorOffsetX = item.cursorOffsetX || 0;
           const blockStartX = clientOffset.x - cursorOffsetX;
-          const relativeX = Math.max(0, blockStartX - rect.left + timelineScrollLeft);
+          const relativeX = Math.max(0, blockStartX - rect.left);
           
           // Calculate which period we're in
           const periodWidth = timelineWidth / timeScale.length;
@@ -94,7 +93,6 @@ export function useOperationDrop(
             cursorOffsetX,
             blockStartX,
             rectLeft: rect.left,
-            timelineScrollLeft,
             relativeX,
             periodWidth,
             periodIndex,
