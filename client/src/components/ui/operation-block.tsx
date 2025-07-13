@@ -45,14 +45,14 @@ export default function OperationBlock({
     if (operation.startTime && operation.endTime) {
       const startTime = new Date(operation.startTime);
       const endTime = new Date(operation.endTime);
-      // Use the same base date as the timeline generation (no midnight adjustment)
+      
+      // SIMPLIFIED: Calculate position based on timeline periods (matching timeScale generation)
       const baseDate = new Date(timelineBaseDate.getTime());
       
-      // Calculate position based on time unit using the same logic as timeScale
-      let left = 0;
-      let width = 0;
+      // Calculate how many periods from base date to operation start
+      const timeDiff = startTime.getTime() - baseDate.getTime();
       
-      // Calculate the step size for this time unit (matching timeScale generation)
+      // Calculate step size for this time unit
       let stepMs: number;
       switch (timeUnit) {
         case "hour":
@@ -87,8 +87,8 @@ export default function OperationBlock({
       const startOffset = (startTime.getTime() - baseDate.getTime()) / stepMs;
       const duration = (endTime.getTime() - startTime.getTime()) / stepMs;
       
-      left = startOffset * dayWidth;
-      width = Math.max(duration * dayWidth, 20);
+      const left = startOffset * dayWidth;
+      const width = Math.max(duration * dayWidth, 20);
       
       setPosition({ left, width });
     }
