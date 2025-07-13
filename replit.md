@@ -200,3 +200,10 @@ The application uses a modern full-stack architecture with strong typing through
 - Implemented reliable drag state detection using DOM element class and style checks
 - Both scrollbar functionality and drag-and-drop operations now work seamlessly together
 - Maintains smooth scrollbar synchronization while preserving drag-and-drop precision
+
+✓ **Visual Jumping Fix (July 13, 2025)**:
+- Fixed operation blocks jumping to front of schedule when any operation is dropped
+- Implemented optimistic updates in mutation to prevent cache invalidation flicker
+- Added useMemo to operation position calculation to prevent unnecessary re-renders
+- Reduced cache invalidation scope to only essential queries instead of all queries
+- Operations now maintain stable visual positions during drag-and-drop operations

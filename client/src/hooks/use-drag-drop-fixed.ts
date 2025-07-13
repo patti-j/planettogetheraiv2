@@ -37,16 +37,43 @@ export function useOperationDrop(
       const result = await response.json();
       return result;
     },
+    onMutate: async ({ operationId, resourceId, startTime, endTime }) => {
+      // Optimistically update the cache to prevent visual jumping
+      await queryClient.cancelQueries({ queryKey: ["/api/operations"] });
+      
+      const previousOperations = queryClient.getQueryData(["/api/operations"]);
+      
+      queryClient.setQueryData(["/api/operations"], (old: any) => {
+        if (!old) return old;
+        return old.map((op: any) => {
+          if (op.id === operationId) {
+            return {
+              ...op,
+              assignedResourceId: resourceId,
+              startTime: startTime || op.startTime,
+              endTime: endTime || op.endTime
+            };
+          }
+          return op;
+        });
+      });
+      
+      return { previousOperations };
+    },
     onSuccess: () => {
+      // Only invalidate operations query to get fresh data
       queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/resources"] });
       queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
       
       toast({ title: "Operation assigned successfully" });
       onDropSuccess?.();
     },
-    onError: (error) => {
+    onError: (error, variables, context) => {
+      // Restore previous state on error
+      if (context?.previousOperations) {
+        queryClient.setQueryData(["/api/operations"], context.previousOperations);
+      }
+      
       console.error("Failed to assign operation:", error);
       toast({ title: "Failed to assign operation", variant: "destructive" });
     },

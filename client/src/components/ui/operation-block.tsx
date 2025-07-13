@@ -1,6 +1,6 @@
 import { type Operation, type Job } from "@shared/schema";
 import { useDrag } from "react-dnd";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 interface OperationBlockProps {
   operation: Operation;
@@ -46,56 +46,55 @@ export default function OperationBlock({
     }),
   });
 
-  const [position, setPosition] = useState({ left: 0, width: 0 });
-
-  useEffect(() => {
-    if (operation.startTime && operation.endTime) {
-      const startTime = new Date(operation.startTime);
-      const endTime = new Date(operation.endTime);
-      
-      // SIMPLIFIED: Calculate position based on timeline periods (matching timeScale generation)
-      const baseDate = new Date(timelineBaseDate.getTime());
-      
-      // Calculate step size for this time unit
-      let stepMs: number;
-      switch (timeUnit) {
-        case "hour":
-          stepMs = 60 * 60 * 1000;
-          break;
-        case "shift":
-          stepMs = 8 * 60 * 60 * 1000;
-          break;
-        case "day":
-          stepMs = 24 * 60 * 60 * 1000;
-          break;
-        case "week":
-          stepMs = 7 * 24 * 60 * 60 * 1000;
-          break;
-        case "month":
-          stepMs = 30 * 24 * 60 * 60 * 1000;
-          break;
-        case "quarter":
-          stepMs = 90 * 24 * 60 * 60 * 1000;
-          break;
-        case "year":
-          stepMs = 365 * 24 * 60 * 60 * 1000;
-          break;
-        case "decade":
-          stepMs = 3650 * 24 * 60 * 60 * 1000;
-          break;
-        default:
-          stepMs = 24 * 60 * 60 * 1000;
-      }
-      
-      // Calculate position relative to the timeline base
-      const startOffset = (startTime.getTime() - baseDate.getTime()) / stepMs;
-      const duration = (endTime.getTime() - startTime.getTime()) / stepMs;
-      
-      const left = startOffset * dayWidth;
-      const width = Math.max(duration * dayWidth, 20); // Minimum width for visibility
-      
-      setPosition({ left, width });
+  // Use useMemo to prevent unnecessary recalculations and visual jumps
+  const position = useMemo(() => {
+    if (!operation.startTime || !operation.endTime) {
+      return { left: 0, width: 0 };
     }
+
+    const startTime = new Date(operation.startTime);
+    const endTime = new Date(operation.endTime);
+    
+    // Calculate step size for this time unit
+    let stepMs: number;
+    switch (timeUnit) {
+      case "hour":
+        stepMs = 60 * 60 * 1000;
+        break;
+      case "shift":
+        stepMs = 8 * 60 * 60 * 1000;
+        break;
+      case "day":
+        stepMs = 24 * 60 * 60 * 1000;
+        break;
+      case "week":
+        stepMs = 7 * 24 * 60 * 60 * 1000;
+        break;
+      case "month":
+        stepMs = 30 * 24 * 60 * 60 * 1000;
+        break;
+      case "quarter":
+        stepMs = 90 * 24 * 60 * 60 * 1000;
+        break;
+      case "year":
+        stepMs = 365 * 24 * 60 * 60 * 1000;
+        break;
+      case "decade":
+        stepMs = 3650 * 24 * 60 * 60 * 1000;
+        break;
+      default:
+        stepMs = 24 * 60 * 60 * 1000;
+    }
+    
+    // Calculate position relative to the timeline base
+    const baseDate = new Date(timelineBaseDate.getTime());
+    const startOffset = (startTime.getTime() - baseDate.getTime()) / stepMs;
+    const duration = (endTime.getTime() - startTime.getTime()) / stepMs;
+    
+    const left = startOffset * dayWidth;
+    const width = Math.max(duration * dayWidth, 20); // Minimum width for visibility
+    
+    return { left, width };
   }, [operation.startTime, operation.endTime, dayWidth, timeUnit, timelineBaseDate]);
 
 
