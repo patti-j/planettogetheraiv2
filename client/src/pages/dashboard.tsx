@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Filter, Save, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, Grid3X3, LayoutGrid, BarChart3 } from "lucide-react";
+import { Plus, Save, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, Grid3X3, LayoutGrid, BarChart3 } from "lucide-react";
 import Sidebar from "@/components/sidebar";
 import GanttChart from "@/components/ui/gantt-chart";
 import MetricsCard from "@/components/ui/metrics-card";
@@ -212,17 +212,7 @@ export default function Dashboard() {
                       day: 'numeric'
                     })}
                   </div>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <Filter className="w-4 h-4 mr-2" />
-                        Filter
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Filter schedule by date, priority, or resource type</p>
-                    </TooltipContent>
-                  </Tooltip>
+
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button size="sm">
@@ -495,17 +485,7 @@ export default function Dashboard() {
                     day: 'numeric'
                   })}
                 </div>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Filter className="w-4 h-4 mr-2" />
-                      Filter
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Filter schedule by date, priority, or resource type</p>
-                  </TooltipContent>
-                </Tooltip>
+
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button size="sm">
