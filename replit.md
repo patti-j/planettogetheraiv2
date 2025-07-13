@@ -274,3 +274,11 @@ The application uses a modern full-stack architecture with strong typing through
 - Resource reordering only available when custom resource view is selected
 - Visual feedback during drag operations with opacity changes
 - Real-time updates to resource sequence with database persistence
+
+✓ **AI Assistant Advanced View Management (July 13, 2025)**:
+- Added AI capability to create Kanban boards from natural language ("create a Kanban board to show jobs by status")
+- Implemented AI-driven resource view creation with field-based configurations
+- Added AI control over Gantt chart zoom levels (hour/day/week/month) and scroll positions
+- Enhanced AI command processing with custom event system for real-time UI manipulation
+- AI can now manipulate Gantt chart views, create custom boards, and manage resource sequences
+- Voice and text commands support for advanced view creation and configuration

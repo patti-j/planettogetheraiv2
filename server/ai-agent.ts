@@ -52,6 +52,10 @@ You can perform these actions:
 11. CALCULATE_CUSTOM_METRIC - Calculate and return custom metrics values
 12. CHANGE_COLOR_SCHEME - Change the color scheme for Resource Gantt blocks
 13. CHANGE_TEXT_LABELING - Change the text labeling for Resource Gantt blocks
+14. CREATE_KANBAN_BOARD - Create a Kanban board configuration based on user description
+15. CREATE_RESOURCE_VIEW - Create a resource Gantt view configuration based on user description
+16. SET_GANTT_ZOOM - Set the zoom level for the Resource Gantt chart
+17. SET_GANTT_SCROLL - Set the scroll position for the Resource Gantt chart
 
 Respond with JSON in this format:
 {
@@ -70,6 +74,10 @@ For CREATE_CUSTOM_METRIC, parameters should include: name, description, calculat
 For CALCULATE_CUSTOM_METRIC, parameters should include: metricName or calculation logic
 For CHANGE_COLOR_SCHEME, parameters should include: colorScheme (by_job, by_priority, by_status, by_operation_type, by_resource)
 For CHANGE_TEXT_LABELING, parameters should include: textLabeling (operation_name, job_name, both, duration, progress, none)
+For CREATE_KANBAN_BOARD, parameters should include: name, description, viewType (jobs/operations), swimLaneField (status/priority/customer/assignedResourceId), filters (optional)
+For CREATE_RESOURCE_VIEW, parameters should include: name, description, resourceIds (array of resource IDs to include), colorScheme (optional), textLabeling (optional)
+For SET_GANTT_ZOOM, parameters should include: zoomLevel (hour/day/week/month)
+For SET_GANTT_SCROLL, parameters should include: scrollPosition (percentage 0-100 or time-based like "2024-01-15")
 
 When analyzing late jobs, provide specific information about:
 - Which jobs are late and by how much
@@ -378,6 +386,79 @@ async function executeAction(action: string, parameters: any, message: string, c
           message: message || `Changed text labeling to "${parameters.textLabeling}" for Resource Gantt view`,
           data: updatedViewForText,
           actions: ["CHANGE_TEXT_LABELING"]
+        };
+
+      case "CREATE_KANBAN_BOARD":
+        const kanbanConfig = {
+          name: parameters.name || "AI Generated Board",
+          description: parameters.description || "Created by AI Assistant",
+          viewType: parameters.viewType || "jobs",
+          swimLaneField: parameters.swimLaneField || "status",
+          swimLaneColors: parameters.swimLaneColors || {},
+          filters: parameters.filters || {
+            priorities: [],
+            statuses: [],
+            resources: [],
+            capabilities: [],
+            customers: [],
+            dateRange: { from: null, to: null }
+          },
+          displayOptions: {
+            showPriority: true,
+            showDueDate: true,
+            showCustomer: true,
+            showResource: true,
+            showProgress: true,
+            cardSize: "standard",
+            groupBy: "none"
+          },
+          isDefault: false
+        };
+        
+        const newKanbanConfig = await storage.createKanbanConfig(kanbanConfig);
+        
+        return {
+          success: true,
+          message: message || `Created Kanban board "${kanbanConfig.name}" grouping ${kanbanConfig.viewType} by ${kanbanConfig.swimLaneField}`,
+          data: newKanbanConfig,
+          actions: ["CREATE_KANBAN_BOARD"]
+        };
+
+      case "CREATE_RESOURCE_VIEW":
+        const resourceViewConfig = {
+          name: parameters.name || "AI Generated View",
+          description: parameters.description || "Created by AI Assistant",
+          resourceIds: parameters.resourceIds || [],
+          colorScheme: parameters.colorScheme || "by_priority",
+          textLabeling: parameters.textLabeling || "operation_name",
+          isDefault: false
+        };
+        
+        const newResourceView = await storage.createResourceView(resourceViewConfig);
+        
+        return {
+          success: true,
+          message: message || `Created resource view "${resourceViewConfig.name}" with ${resourceViewConfig.resourceIds.length} resources`,
+          data: newResourceView,
+          actions: ["CREATE_RESOURCE_VIEW"]
+        };
+
+      case "SET_GANTT_ZOOM":
+        // This will be handled by the frontend, just return the instruction
+        return {
+          success: true,
+          message: message || `Set Gantt chart zoom level to ${parameters.zoomLevel}`,
+          data: { zoomLevel: parameters.zoomLevel },
+          actions: ["SET_GANTT_ZOOM"]
+        };
+
+      case "SET_GANTT_SCROLL":
+        // This will be handled by the frontend, just return the instruction
+        return {
+          success: true,
+          message: message || `Set Gantt chart scroll position to ${parameters.scrollPosition}`,
+          data: { scrollPosition: parameters.scrollPosition },
+          actions: ["SET_GANTT_SCROLL"]
         };
 
       default:

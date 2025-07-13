@@ -60,6 +60,10 @@ export default function GanttChart({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
+  // Refs for timeline and resource list
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const resourceListRef = useRef<HTMLDivElement>(null);
+  
   // Use external state if provided, otherwise use internal state
   const selectedResourceViewId = externalSelectedResourceViewId !== undefined ? externalSelectedResourceViewId : internalSelectedResourceViewId;
   const setSelectedResourceViewId = (viewId: number | null) => {
@@ -218,6 +222,8 @@ export default function GanttChart({
     console.log("Text labeling changed:", textLabeling, "for view:", selectedResourceView?.name);
   }, [textLabeling, selectedResourceView?.name]);
 
+
+
   // Handler for quick color scheme changes
   const handleColorSchemeChange = async (newColorScheme: string) => {
     if (!selectedResourceView) {
@@ -260,8 +266,6 @@ export default function GanttChart({
     }
   };
   
-  const timelineRef = useRef<HTMLDivElement>(null);
-  const resourceListRef = useRef<HTMLDivElement>(null);
   const isDraggingTimeline = useRef(false);
   const isDraggingResourceList = useRef(false);
   const lastMousePos = useRef({ x: 0, y: 0 });
@@ -401,6 +405,57 @@ export default function GanttChart({
   const periodWidth = useMemo(() => {
     return timelineWidth / timeScale.periods.length;
   }, [timelineWidth, timeScale]);
+
+  // AI Event Listeners
+  useEffect(() => {
+    const handleAIGanttZoom = (event: any) => {
+      const { zoomLevel } = event.detail;
+      const validZoomLevels = ["hour", "day", "week", "month"];
+      if (validZoomLevels.includes(zoomLevel)) {
+        setTimeUnit(zoomLevel as TimeUnit);
+      }
+    };
+
+    const handleAIGanttScroll = (event: any) => {
+      const { scrollPosition } = event.detail;
+      // Handle scroll position - can be percentage or date-based
+      if (typeof scrollPosition === 'string' && scrollPosition.endsWith('%')) {
+        const percentage = parseInt(scrollPosition.replace('%', ''));
+        if (percentage >= 0 && percentage <= 100) {
+          // Calculate scroll position based on timeline width
+          const scrollLeft = (timelineWidth * percentage) / 100;
+          setTimelineScrollLeft(scrollLeft);
+          
+          // Apply to the timeline containers
+          if (timelineRef.current) {
+            timelineRef.current.scrollLeft = scrollLeft;
+          }
+        }
+      } else if (typeof scrollPosition === 'string' && scrollPosition.includes('-')) {
+        // Handle date-based scrolling
+        try {
+          const targetDate = new Date(scrollPosition);
+          const timeDiff = targetDate.getTime() - timelineBaseDate.getTime();
+          const scrollLeft = (timeDiff / timeScale.millisecondsPerUnit) * (timelineWidth / timeScale.periods.length);
+          setTimelineScrollLeft(scrollLeft);
+          
+          if (timelineRef.current) {
+            timelineRef.current.scrollLeft = scrollLeft;
+          }
+        } catch (error) {
+          console.error('Invalid date format for scroll position:', scrollPosition);
+        }
+      }
+    };
+
+    window.addEventListener('aiGanttZoom', handleAIGanttZoom);
+    window.addEventListener('aiGanttScroll', handleAIGanttScroll);
+
+    return () => {
+      window.removeEventListener('aiGanttZoom', handleAIGanttZoom);
+      window.removeEventListener('aiGanttScroll', handleAIGanttScroll);
+    };
+  }, [timelineWidth, timeScale, timelineBaseDate]);
 
   // Zoom functions
   const zoomIn = useCallback(() => {

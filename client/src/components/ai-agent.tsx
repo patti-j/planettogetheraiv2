@@ -31,7 +31,7 @@ export default function AIAgent() {
     {
       id: "1",
       type: "agent",
-      content: "Hello! I'm your manufacturing AI assistant. I can help you create jobs, operations, resources, and manage your production schedule. Try saying something like 'Create a new job for ABC Company' or 'Show me all pending operations'.",
+      content: "Hello! I'm your manufacturing AI assistant. I can help you create jobs, operations, resources, manage your production schedule, create Kanban boards, and control Gantt chart views. Try saying something like 'Create a Kanban board to show jobs by status' or 'Create a Gantt view showing CNC resources with job names'.",
       timestamp: new Date(),
     }
   ]);
@@ -42,6 +42,21 @@ export default function AIAgent() {
   const audioChunks = useRef<Blob[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Helper functions for Gantt controls
+  const handleGanttZoom = (zoomLevel: string) => {
+    // Send a custom event to the Gantt chart component
+    const event = new CustomEvent('aiGanttZoom', { detail: { zoomLevel } });
+    window.dispatchEvent(event);
+    toast({ title: `Gantt chart zoom set to ${zoomLevel}` });
+  };
+
+  const handleGanttScroll = (scrollPosition: string) => {
+    // Send a custom event to the Gantt chart component
+    const event = new CustomEvent('aiGanttScroll', { detail: { scrollPosition } });
+    window.dispatchEvent(event);
+    toast({ title: `Gantt chart scrolled to ${scrollPosition}` });
+  };
 
   // Text command mutation
   const textCommandMutation = useMutation({
@@ -72,6 +87,23 @@ export default function AIAgent() {
       }
       if (data.actions?.includes("CREATE_RESOURCE")) {
         queryClient.invalidateQueries({ queryKey: ["/api/resources"] });
+      }
+      if (data.actions?.includes("CREATE_KANBAN_BOARD")) {
+        queryClient.invalidateQueries({ queryKey: ["/api/kanban-configs"] });
+      }
+      if (data.actions?.includes("CREATE_RESOURCE_VIEW")) {
+        queryClient.invalidateQueries({ queryKey: ["/api/resource-views"] });
+      }
+      if (data.actions?.includes("CHANGE_COLOR_SCHEME") || data.actions?.includes("CHANGE_TEXT_LABELING")) {
+        queryClient.invalidateQueries({ queryKey: ["/api/resource-views"] });
+      }
+      
+      // Handle special frontend actions
+      if (data.actions?.includes("SET_GANTT_ZOOM")) {
+        handleGanttZoom(data.data.zoomLevel);
+      }
+      if (data.actions?.includes("SET_GANTT_SCROLL")) {
+        handleGanttScroll(data.data.scrollPosition);
       }
       
       toast({
