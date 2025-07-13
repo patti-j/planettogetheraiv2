@@ -6,6 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import OperationBlock from "./operation-block";
 import OperationForm from "../operation-form";
+import { useOperationDrop } from "@/hooks/use-drag-drop";
 import type { Job, Operation, Resource, Capability } from "@shared/schema";
 
 interface GanttChartProps {
@@ -145,7 +146,7 @@ export default function GanttChart({
                       <div className="flex-1">
                         <div className="font-medium text-gray-800">{job.name}</div>
                         <div className="text-xs text-gray-500">
-                          Priority: {job.priority} | Due: {job.dueDate ? new Date(job.dueDate).toLocaleDateString() : "N/A"}
+                          Customer: {job.customer} | Priority: {job.priority} | Due: {job.dueDate ? new Date(job.dueDate).toLocaleDateString() : "N/A"}
                         </div>
                       </div>
                       <Badge className={`text-xs ${getJobStatusColor(job.status)}`}>
@@ -253,6 +254,7 @@ export default function GanttChart({
       <div className="relative">
         {resources.map((resource) => {
           const resourceOperations = operations.filter(op => op.assignedResourceId === resource.id);
+          const { drop, isOver, canDrop } = useOperationDrop(resource);
 
           return (
             <div key={resource.id} className="border-b border-gray-100">
@@ -275,7 +277,13 @@ export default function GanttChart({
                     </Badge>
                   </div>
                 </div>
-                <div className="flex-1 relative p-2" style={{ width: '1200px' }}>
+                <div 
+                  ref={drop}
+                  className={`flex-1 relative p-2 min-h-[60px] transition-colors ${
+                    isOver ? (canDrop ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200") : ""
+                  }`} 
+                  style={{ width: '1200px' }}
+                >
                   {resourceOperations.map((operation) => (
                     <OperationBlock
                       key={operation.id}
@@ -283,6 +291,13 @@ export default function GanttChart({
                       resourceName={resource.name}
                     />
                   ))}
+                  {resourceOperations.length === 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-gray-400 text-sm">
+                        {isOver ? (canDrop ? "Drop operation here" : "Incompatible capabilities") : "No operations assigned"}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -31,6 +31,7 @@ export default function JobForm({ onSuccess }: JobFormProps) {
     defaultValues: {
       name: "",
       description: "",
+      customer: "",
       priority: "medium",
       status: "planned",
       dueDate: "",
@@ -72,6 +73,20 @@ export default function JobForm({ onSuccess }: JobFormProps) {
               <FormLabel>Job Name</FormLabel>
               <FormControl>
                 <Input placeholder="Enter job name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="customer"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Customer</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter customer name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

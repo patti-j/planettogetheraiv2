@@ -67,7 +67,11 @@ export class MemStorage implements IStorage {
     ];
 
     defaultCapabilities.forEach(cap => {
-      const capability: Capability = { id: this.currentCapabilityId++, ...cap };
+      const capability: Capability = { 
+        id: this.currentCapabilityId++, 
+        name: cap.name,
+        description: cap.description || null
+      };
       this.capabilities.set(capability.id, capability);
     });
 
@@ -81,8 +85,122 @@ export class MemStorage implements IStorage {
     ];
 
     defaultResources.forEach(res => {
-      const resource: Resource = { id: this.currentResourceId++, ...res };
+      const resource: Resource = { 
+        id: this.currentResourceId++, 
+        name: res.name,
+        type: res.type,
+        status: res.status || "active",
+        capabilities: res.capabilities as number[]
+      };
       this.resources.set(resource.id, resource);
+    });
+
+    // Add some sample jobs and operations
+    this.initializeSampleData();
+  }
+
+  private initializeSampleData() {
+    // Sample jobs
+    const sampleJobs = [
+      {
+        name: "Widget Assembly - Batch A",
+        customer: "Tech Corp",
+        description: "Assembly of 500 widgets for Q1 delivery",
+        priority: "high",
+        status: "active",
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+      },
+      {
+        name: "Motor Housing Production",
+        customer: "AutoParts Inc",
+        description: "CNC machining of 100 motor housings",
+        priority: "medium",
+        status: "planned",
+        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
+      },
+    ];
+
+    sampleJobs.forEach(jobData => {
+      const job: Job = {
+        id: this.currentJobId++,
+        name: jobData.name,
+        customer: jobData.customer,
+        description: jobData.description,
+        priority: jobData.priority,
+        status: jobData.status,
+        dueDate: jobData.dueDate,
+        createdAt: new Date(),
+      };
+      this.jobs.set(job.id, job);
+    });
+
+    // Sample operations for the first job
+    const sampleOperations = [
+      {
+        jobId: 1,
+        name: "CNC Machining",
+        description: "Machine widget base components",
+        status: "in-progress",
+        duration: 16,
+        requiredCapabilities: [1], // CNC Machine
+        assignedResourceId: 1,
+        order: 1,
+        startTime: new Date(),
+        endTime: new Date(Date.now() + 16 * 60 * 60 * 1000),
+      },
+      {
+        jobId: 1,
+        name: "Welding",
+        description: "Weld frame components",
+        status: "planned",
+        duration: 8,
+        requiredCapabilities: [2], // Welding
+        assignedResourceId: 3,
+        order: 2,
+        startTime: new Date(Date.now() + 16 * 60 * 60 * 1000),
+        endTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      },
+      {
+        jobId: 1,
+        name: "Final Assembly",
+        description: "Assemble all components",
+        status: "planned",
+        duration: 12,
+        requiredCapabilities: [3], // Assembly
+        assignedResourceId: 4,
+        order: 3,
+        startTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        endTime: new Date(Date.now() + 36 * 60 * 60 * 1000),
+      },
+      {
+        jobId: 1,
+        name: "Quality Check",
+        description: "Final inspection and testing",
+        status: "planned",
+        duration: 4,
+        requiredCapabilities: [4], // Quality Control
+        assignedResourceId: 5,
+        order: 4,
+        startTime: new Date(Date.now() + 36 * 60 * 60 * 1000),
+        endTime: new Date(Date.now() + 40 * 60 * 60 * 1000),
+      },
+    ];
+
+    sampleOperations.forEach(opData => {
+      const operation: Operation = {
+        id: this.currentOperationId++,
+        jobId: opData.jobId,
+        name: opData.name,
+        description: opData.description,
+        status: opData.status,
+        duration: opData.duration,
+        requiredCapabilities: opData.requiredCapabilities,
+        assignedResourceId: opData.assignedResourceId,
+        startTime: opData.startTime,
+        endTime: opData.endTime,
+        order: opData.order,
+      };
+      this.operations.set(operation.id, operation);
     });
   }
 
@@ -92,7 +210,11 @@ export class MemStorage implements IStorage {
   }
 
   async createCapability(capability: InsertCapability): Promise<Capability> {
-    const newCapability: Capability = { id: this.currentCapabilityId++, ...capability };
+    const newCapability: Capability = { 
+      id: this.currentCapabilityId++, 
+      name: capability.name,
+      description: capability.description || null
+    };
     this.capabilities.set(newCapability.id, newCapability);
     return newCapability;
   }
@@ -107,7 +229,13 @@ export class MemStorage implements IStorage {
   }
 
   async createResource(resource: InsertResource): Promise<Resource> {
-    const newResource: Resource = { id: this.currentResourceId++, ...resource };
+    const newResource: Resource = { 
+      id: this.currentResourceId++, 
+      name: resource.name,
+      type: resource.type,
+      status: resource.status || "active",
+      capabilities: (resource.capabilities as number[]) || null
+    };
     this.resources.set(newResource.id, newResource);
     return newResource;
   }
@@ -137,7 +265,12 @@ export class MemStorage implements IStorage {
   async createJob(job: InsertJob): Promise<Job> {
     const newJob: Job = { 
       id: this.currentJobId++, 
-      ...job,
+      name: job.name,
+      description: job.description || null,
+      customer: job.customer,
+      priority: job.priority || "medium",
+      status: job.status || "planned",
+      dueDate: job.dueDate || null,
       createdAt: new Date()
     };
     this.jobs.set(newJob.id, newJob);
@@ -181,7 +314,19 @@ export class MemStorage implements IStorage {
   }
 
   async createOperation(operation: InsertOperation): Promise<Operation> {
-    const newOperation: Operation = { id: this.currentOperationId++, ...operation };
+    const newOperation: Operation = { 
+      id: this.currentOperationId++, 
+      jobId: operation.jobId,
+      name: operation.name,
+      description: operation.description || null,
+      status: operation.status || "planned",
+      duration: operation.duration,
+      requiredCapabilities: (operation.requiredCapabilities as number[]) || null,
+      assignedResourceId: operation.assignedResourceId || null,
+      startTime: operation.startTime || null,
+      endTime: operation.endTime || null,
+      order: operation.order || 0
+    };
     this.operations.set(newOperation.id, newOperation);
     return newOperation;
   }

@@ -20,6 +20,7 @@ export const jobs = pgTable("jobs", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
+  customer: text("customer").notNull(),
   priority: text("priority").notNull().default("medium"),
   status: text("status").notNull().default("planned"),
   dueDate: timestamp("due_date"),
