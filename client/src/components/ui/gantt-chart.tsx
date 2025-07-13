@@ -784,6 +784,36 @@ export default function GanttChart({
 
   const unscheduledOperations = operations.filter(op => !op.assignedResourceId);
 
+  const handleViewSettingChange = async (newValue: string, settingType: "colorScheme" | "textLabeling") => {
+    if (!selectedResourceView) {
+      toast({ title: "Select a resource view to change settings", variant: "destructive" });
+      return;
+    }
+    
+    try {
+      const updateData = {
+        name: selectedResourceView.name,
+        resourceSequence: selectedResourceView.resourceSequence,
+        colorScheme: settingType === "colorScheme" ? newValue : selectedResourceView.colorScheme,
+        textLabeling: settingType === "textLabeling" ? newValue : selectedResourceView.textLabeling,
+        isDefault: selectedResourceView.isDefault
+      };
+      
+      await apiRequest("PUT", `/api/resource-views/${selectedResourceView.id}`, updateData);
+      
+      // Force invalidation of the resource views cache
+      await queryClient.invalidateQueries({ queryKey: ["/api/resource-views"] });
+      
+      // Show success message
+      const displayName = settingType === "colorScheme" ? newValue : getTextLabelingDisplayName(newValue);
+      const settingName = settingType === "colorScheme" ? "color scheme" : "text labeling";
+      toast({ title: `${settingName} changed to ${displayName}` });
+    } catch (error) {
+      console.error(`Failed to change ${settingType}:`, error);
+      toast({ title: `Failed to change ${settingType}`, variant: "destructive" });
+    }
+  };
+
 
 
   const renderOperationsView = () => {
@@ -1210,6 +1240,46 @@ export default function GanttChart({
                 </div>
               </div>
               <div className="flex items-center space-x-1">
+                <Select 
+                  value={selectedResourceView?.colorScheme || "priority"} 
+                  onValueChange={(value) => {
+                    handleViewSettingChange(value, "colorScheme");
+                  }}
+                >
+                  <SelectTrigger className="w-20 h-6 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="priority">Priority</SelectItem>
+                    <SelectItem value="status">Status</SelectItem>
+                    <SelectItem value="job">Job</SelectItem>
+                    <SelectItem value="resource">Resource</SelectItem>
+                    <SelectItem value="duration">Duration</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select 
+                  value={selectedResourceView?.textLabeling || "operation_name"} 
+                  onValueChange={(value) => {
+                    handleViewSettingChange(value, "textLabeling");
+                  }}
+                >
+                  <SelectTrigger className="w-20 h-6 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="operation_name">Operation</SelectItem>
+                    <SelectItem value="job_name">Job</SelectItem>
+                    <SelectItem value="both">Both</SelectItem>
+                    <SelectItem value="duration">Duration</SelectItem>
+                    <SelectItem value="progress">Progress</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
+                    {customTextLabels.map((label) => (
+                      <SelectItem key={label.id} value={`custom_${label.id}`}>
+                        {label.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Button 
                   variant="ghost" 
                   size="sm" 
