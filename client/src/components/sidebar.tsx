@@ -186,10 +186,10 @@ export default function Sidebar() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
-                  className="w-full bg-accent hover:bg-green-600 text-white"
+                  className="w-full bg-primary hover:bg-blue-700 text-white"
                   onClick={() => setResourceDialogOpen(true)}
                 >
-                  <ServerCog className="w-4 h-4 mr-2" />
+                  <Plus className="w-4 h-4 mr-2" />
                   New Resource
                 </Button>
               </TooltipTrigger>

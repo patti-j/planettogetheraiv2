@@ -170,12 +170,12 @@ export default function Analytics() {
                 {layoutMode === "grid" ? "Free Layout" : "Grid Layout"}
               </Button>
               <Button
-                variant="outline"
+                className="bg-primary hover:bg-blue-700 text-white"
                 size="sm"
                 onClick={handleAddManualWidget}
               >
                 <Plus className="w-4 h-4 mr-2" />
-                New Widget
+                New Analytic
               </Button>
               <Button
                 onClick={() => setAiAnalyticsOpen(true)}

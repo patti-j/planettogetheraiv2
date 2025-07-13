@@ -103,7 +103,7 @@ export default function ResourceViewManager({
         <h3 className="text-lg font-semibold">Resource Gantt Views</h3>
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingView(undefined)}>
+            <Button className="bg-primary hover:bg-blue-700 text-white" onClick={() => setEditingView(undefined)}>
               <Plus className="w-4 h-4 mr-2" />
               New Resource Gantt View
             </Button>
@@ -134,7 +134,7 @@ export default function ResourceViewManager({
                 <p className="text-sm mb-4">
                   Create custom resource gantts to organize your resources in different sequences for better scheduling visibility.
                 </p>
-                <Button onClick={() => setIsFormOpen(true)}>
+                <Button className="bg-primary hover:bg-blue-700 text-white" onClick={() => setIsFormOpen(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   New Resource Gantt View
                 </Button>
