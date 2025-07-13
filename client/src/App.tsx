@@ -6,24 +6,20 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import Dashboard from "@/pages/dashboard";
-import Jobs from "@/pages/jobs";
-import Resources from "@/pages/resources";
 import Analytics from "@/pages/analytics";
 import Reports from "@/pages/reports";
 import AIAssistant from "@/pages/ai-assistant";
-import Kanban from "@/pages/kanban";
+import Boards from "@/pages/boards";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
-      <Route path="/jobs" component={Jobs} />
-      <Route path="/resources" component={Resources} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/reports" component={Reports} />
       <Route path="/ai-assistant" component={AIAssistant} />
-      <Route path="/kanban" component={Kanban} />
+      <Route path="/boards" component={Boards} />
       <Route component={NotFound} />
     </Switch>
   );

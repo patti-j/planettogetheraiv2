@@ -401,3 +401,13 @@ The application uses a modern full-stack architecture with strong typing through
 - Enhanced analytics page with manual widget creation alongside AI-powered creation
 - Fixed widget state management across all pages with proper CRUD operations
 - Improved layout switching between grid and free-form modes for widget organization
+
+✓ **System Architecture Simplification (July 13, 2025)**:
+- Removed separate Jobs and Resources pages to reduce complexity
+- Consolidated job and resource management into unified "Boards" page
+- Renamed "Kanban Board" to "Boards" throughout the system
+- Enhanced board creation to support jobs, operations, and resources view types
+- Added resource type swim lanes with Machine, Operator, and Facility categories
+- Integrated job and resource creation dialogs directly into boards page
+- Updated navigation to streamline user workflow with fewer pages
+- Maintained all existing functionality while improving user experience

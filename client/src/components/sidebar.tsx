@@ -72,9 +72,7 @@ export default function Sidebar() {
 
   const navigationItems = [
     { icon: BarChart3, label: "Schedule View", href: "/", active: location === "/" },
-    { icon: Columns3, label: "Kanban Board", href: "/kanban", active: location === "/kanban" },
-    { icon: Briefcase, label: "Jobs", href: "/jobs", active: location === "/jobs" },
-    { icon: ServerCog, label: "Resources", href: "/resources", active: location === "/resources" },
+    { icon: Columns3, label: "Boards", href: "/boards", active: location === "/boards" },
     { icon: BarChart3, label: "Analytics", href: "/analytics", active: location === "/analytics" },
     { icon: FileText, label: "Reports", href: "/reports", active: location === "/reports" },
     { icon: Bot, label: "AI Assistant", href: "/ai-assistant", active: location === "/ai-assistant" },
@@ -83,9 +81,7 @@ export default function Sidebar() {
   const getNavigationTooltip = (href: string) => {
     const tooltips = {
       "/": "View production schedule with interactive Gantt charts",
-      "/kanban": "Organize jobs and operations with drag-and-drop boards",
-      "/jobs": "Manage production jobs, priorities, and deadlines",
-      "/resources": "Configure machines, operators, and facilities",
+      "/boards": "Organize jobs, operations, and resources with drag-and-drop boards",
       "/analytics": "View production metrics and performance analytics",
       "/reports": "Generate detailed production reports and insights",
       "/ai-assistant": "Chat with AI for schedule optimization and analysis"

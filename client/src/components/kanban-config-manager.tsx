@@ -23,7 +23,7 @@ import type { Job, Resource, Capability, KanbanConfig } from "@shared/schema";
 interface SwimLaneFieldOption {
   value: string;
   label: string;
-  type: "jobs" | "operations" | "both";
+  type: "jobs" | "operations" | "resources" | "both";
   values: string[];
 }
 
@@ -32,6 +32,8 @@ const SWIM_LANE_FIELDS: SwimLaneFieldOption[] = [
   { value: "priority", label: "Priority", type: "both", values: ["low", "medium", "high"] },
   { value: "customer", label: "Customer", type: "jobs", values: [] }, // Will be populated dynamically
   { value: "assignedResourceId", label: "Assigned Resource", type: "operations", values: [] }, // Will be populated dynamically
+  { value: "type", label: "Resource Type", type: "resources", values: ["Machine", "Operator", "Facility"] },
+  { value: "resourceStatus", label: "Resource Status", type: "resources", values: ["active", "maintenance", "offline"] },
 ];
 
 interface KanbanConfigManagerProps {
@@ -201,13 +203,14 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
         
         <div>
           <Label htmlFor="viewType">View Type</Label>
-          <Select value={formData.viewType} onValueChange={(value) => setFormData({ ...formData, viewType: value as "jobs" | "operations" })}>
+          <Select value={formData.viewType} onValueChange={(value) => setFormData({ ...formData, viewType: value as "jobs" | "operations" | "resources" })}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="jobs">Jobs</SelectItem>
               <SelectItem value="operations">Operations</SelectItem>
+              <SelectItem value="resources">Resources</SelectItem>
             </SelectContent>
           </Select>
         </div>
