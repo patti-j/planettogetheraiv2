@@ -34,12 +34,9 @@ export function useOperationDrop(
       
       const response = await apiRequest("PUT", `/api/operations/${operationId}`, updateData);
       
-      // Simple success handling - just return the operation ID
-      if (response.ok) {
-        return { success: true, id: operationId };
-      } else {
-        throw new Error(`Failed to update operation: ${response.status}`);
-      }
+      // Parse the JSON response properly
+      const result = await response.json();
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
@@ -64,41 +61,41 @@ export function useOperationDrop(
     switch (timeUnit) {
       case "hour":
         periodStart = new Date(now.getTime() + (periodIndex * 60 * 60 * 1000));
-        periodDuration = 60 * 60 * 1000; // 1 hour
+        periodDuration = 60 * 60 * 1000;
         break;
       case "shift":
         periodStart = new Date(now.getTime() + (periodIndex * 8 * 60 * 60 * 1000));
-        periodDuration = 8 * 60 * 60 * 1000; // 8-hour shift
+        periodDuration = 8 * 60 * 60 * 1000;
         break;
       case "day":
         periodStart = new Date(now.getTime() + (periodIndex * 24 * 60 * 60 * 1000));
         periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 8 * 60 * 60 * 1000; // 8 working hours
+        periodDuration = 8 * 60 * 60 * 1000;
         break;
       case "week":
         periodStart = new Date(now.getTime() + (periodIndex * 7 * 24 * 60 * 60 * 1000));
         periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 5 * 8 * 60 * 60 * 1000; // 5 working days * 8 hours
+        periodDuration = 5 * 8 * 60 * 60 * 1000;
         break;
       case "month":
         periodStart = new Date(now.getTime() + (periodIndex * 30 * 24 * 60 * 60 * 1000));
         periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 22 * 8 * 60 * 60 * 1000; // ~22 working days * 8 hours
+        periodDuration = 22 * 8 * 60 * 60 * 1000;
         break;
       case "quarter":
         periodStart = new Date(now.getTime() + (periodIndex * 90 * 24 * 60 * 60 * 1000));
         periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 66 * 8 * 60 * 60 * 1000; // ~66 working days * 8 hours
+        periodDuration = 66 * 8 * 60 * 60 * 1000;
         break;
       case "year":
         periodStart = new Date(now.getTime() + (periodIndex * 365 * 24 * 60 * 60 * 1000));
         periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 260 * 8 * 60 * 60 * 1000; // ~260 working days * 8 hours
+        periodDuration = 260 * 8 * 60 * 60 * 1000;
         break;
       case "decade":
         periodStart = new Date(now.getTime() + (periodIndex * 3650 * 24 * 60 * 60 * 1000));
         periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 2600 * 8 * 60 * 60 * 1000; // ~2600 working days * 8 hours
+        periodDuration = 2600 * 8 * 60 * 60 * 1000;
         break;
       default:
         periodStart = new Date(now.getTime() + (periodIndex * 24 * 60 * 60 * 1000));
@@ -124,36 +121,18 @@ export function useOperationDrop(
       );
     },
     drop: (item, monitor) => {
-      console.log("🎯 DROP DEBUG - Starting drop for:", item.operation.name, "on resource:", resource.name);
       const clientOffset = monitor.getClientOffset();
       
       let startTime, endTime;
       if (clientOffset) {
         const resourceTimelineElement = document.querySelector(`[data-resource-id="${resource.id}"]`);
-        console.log("🎯 DROP DEBUG - Resource timeline element found:", !!resourceTimelineElement);
         if (resourceTimelineElement) {
           const rect = resourceTimelineElement.getBoundingClientRect();
-          // Account for timeline scroll offset
           const relativeX = Math.max(0, clientOffset.x - rect.left + timelineScrollLeft);
-          
-          console.log("🎯 DROP DEBUG - Position:", {
-            clientOffset,
-            rect,
-            relativeX,
-            timelineWidth,
-            timeScaleLength: timeScale.length
-          });
           
           const periodWidth = timelineWidth / timeScale.length;
           const periodIndex = Math.floor(relativeX / periodWidth);
           const timeWithinPeriod = (relativeX % periodWidth) / periodWidth;
-          
-          console.log("🎯 DROP DEBUG - Time calc:", {
-            periodWidth,
-            periodIndex,
-            timeWithinPeriod,
-            timeUnit
-          });
           
           const { periodStart, periodDuration } = calculateTimeFromDrop(timeUnit, periodIndex, timeWithinPeriod);
           
@@ -165,16 +144,6 @@ export function useOperationDrop(
           
           startTime = startDate.toISOString();
           endTime = endDate.toISOString();
-          
-          console.log("🎯 DROP DEBUG - Final result:", {
-            periodStart,
-            periodDuration,
-            offsetWithinPeriod,
-            startDate,
-            endDate,
-            startTime,
-            endTime
-          });
         }
       }
       
@@ -217,12 +186,9 @@ export function useTimelineDrop(
       
       const response = await apiRequest("PUT", `/api/operations/${operationId}`, updateData);
       
-      // Simple success handling - just return the operation ID
-      if (response.ok) {
-        return { success: true, id: operationId };
-      } else {
-        throw new Error(`Failed to update operation: ${response.status}`);
-      }
+      // Parse the JSON response properly
+      const result = await response.json();
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
@@ -247,41 +213,41 @@ export function useTimelineDrop(
     switch (timeUnit) {
       case "hour":
         periodStart = new Date(now.getTime() + (periodIndex * 60 * 60 * 1000));
-        periodDuration = 60 * 60 * 1000; // 1 hour
+        periodDuration = 60 * 60 * 1000;
         break;
       case "shift":
         periodStart = new Date(now.getTime() + (periodIndex * 8 * 60 * 60 * 1000));
-        periodDuration = 8 * 60 * 60 * 1000; // 8-hour shift
+        periodDuration = 8 * 60 * 60 * 1000;
         break;
       case "day":
         periodStart = new Date(now.getTime() + (periodIndex * 24 * 60 * 60 * 1000));
         periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 8 * 60 * 60 * 1000; // 8 working hours
+        periodDuration = 8 * 60 * 60 * 1000;
         break;
       case "week":
         periodStart = new Date(now.getTime() + (periodIndex * 7 * 24 * 60 * 60 * 1000));
         periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 5 * 8 * 60 * 60 * 1000; // 5 working days * 8 hours
+        periodDuration = 5 * 8 * 60 * 60 * 1000;
         break;
       case "month":
         periodStart = new Date(now.getTime() + (periodIndex * 30 * 24 * 60 * 60 * 1000));
         periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 22 * 8 * 60 * 60 * 1000; // ~22 working days * 8 hours
+        periodDuration = 22 * 8 * 60 * 60 * 1000;
         break;
       case "quarter":
         periodStart = new Date(now.getTime() + (periodIndex * 90 * 24 * 60 * 60 * 1000));
         periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 66 * 8 * 60 * 60 * 1000; // ~66 working days * 8 hours
+        periodDuration = 66 * 8 * 60 * 60 * 1000;
         break;
       case "year":
         periodStart = new Date(now.getTime() + (periodIndex * 365 * 24 * 60 * 60 * 1000));
         periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 260 * 8 * 60 * 60 * 1000; // ~260 working days * 8 hours
+        periodDuration = 260 * 8 * 60 * 60 * 1000;
         break;
       case "decade":
         periodStart = new Date(now.getTime() + (periodIndex * 3650 * 24 * 60 * 60 * 1000));
         periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 2600 * 8 * 60 * 60 * 1000; // ~2600 working days * 8 hours
+        periodDuration = 2600 * 8 * 60 * 60 * 1000;
         break;
       default:
         periodStart = new Date(now.getTime() + (periodIndex * 24 * 60 * 60 * 1000));
