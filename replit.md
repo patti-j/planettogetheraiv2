@@ -316,3 +316,5 @@ The application uses a modern full-stack architecture with strong typing through
 - Added "Configure Boards" option to Kanban configuration selector dropdown
 - Improved space utilization in Kanban board header by integrating settings into dropdown
 - Consistent AI button branding reinforces AI functionality throughout the application
+- Repositioned reset arrow in text label configuration to be directly next to "Custom" badge
+- Fixed font control shifting issue by keeping reset button position stable regardless of customization state

@@ -116,10 +116,21 @@ const DraggableTextLabel = ({ label, index, onMove, onToggle, onRemove, onUpdate
         />
         <span className="text-sm font-medium flex-1">{getDisplayName(label.type)}</span>
         {hasIndividualStyling && (
-          <Badge variant="outline" className="text-xs bg-orange-100 text-orange-800">
-            <AlertTriangle className="h-2 w-2 mr-1" />
-            Custom
-          </Badge>
+          <div className="flex items-center space-x-1">
+            <Badge variant="outline" className="text-xs bg-orange-100 text-orange-800">
+              <AlertTriangle className="h-2 w-2 mr-1" />
+              Custom
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={resetToGlobal}
+              className="h-5 w-5 p-0 text-blue-500 hover:text-blue-700"
+              title="Reset to global settings"
+            >
+              <RotateCcw className="h-3 w-3" />
+            </Button>
+          </div>
         )}
         <Badge variant="secondary" className="text-xs">
           {label.order + 1}
@@ -146,17 +157,7 @@ const DraggableTextLabel = ({ label, index, onMove, onToggle, onRemove, onUpdate
             className={`w-6 h-6 border rounded cursor-pointer ${isUsingIndividualFontColor ? "ring-2 ring-orange-300" : ""}`}
           />
         </div>
-        {hasIndividualStyling && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={resetToGlobal}
-            className="h-6 w-6 p-0 text-blue-500 hover:text-blue-700"
-            title="Reset to global settings"
-          >
-            <RotateCcw className="h-3 w-3" />
-          </Button>
-        )}
+
         <Button
           variant="ghost"
           size="sm"
