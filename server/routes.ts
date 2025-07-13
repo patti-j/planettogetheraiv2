@@ -195,14 +195,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/operations/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const operation = insertOperationSchema.partial().parse(req.body);
+      console.log('Updating operation:', id, req.body);
+      
+      // Handle the date conversion before validation
+      const requestData = { ...req.body };
+      console.log('Before date conversion:', requestData);
+      
+      if (requestData.startTime && typeof requestData.startTime === 'string') {
+        requestData.startTime = new Date(requestData.startTime);
+        console.log('Converted startTime:', requestData.startTime);
+      }
+      if (requestData.endTime && typeof requestData.endTime === 'string') {
+        requestData.endTime = new Date(requestData.endTime);
+        console.log('Converted endTime:', requestData.endTime);
+      }
+      
+      console.log('After date conversion:', requestData);
+      const operation = insertOperationSchema.partial().parse(requestData);
       const updatedOperation = await storage.updateOperation(id, operation);
       if (!updatedOperation) {
         return res.status(404).json({ message: "Operation not found" });
       }
       res.json(updatedOperation);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid operation data" });
+    } catch (error: any) {
+      console.error('Operation update error:', error);
+      if (error.issues) {
+        console.error('Validation errors:', error.issues);
+        res.status(400).json({ message: "Invalid operation data", errors: error.issues });
+      } else {
+        res.status(400).json({ message: "Invalid operation data", error: error.message });
+      }
     }
   });
 

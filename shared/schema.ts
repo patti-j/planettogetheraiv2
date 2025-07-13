@@ -62,6 +62,9 @@ export const insertJobSchema = createInsertSchema(jobs).omit({
 
 export const insertOperationSchema = createInsertSchema(operations).omit({
   id: true,
+}).extend({
+  startTime: z.union([z.string().datetime(), z.date()]).optional(),
+  endTime: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
 export const insertDependencySchema = createInsertSchema(dependencies).omit({
