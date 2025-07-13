@@ -36,7 +36,8 @@ export default function OperationBlock({ operation, resourceName, jobName }: Ope
     const width = Math.max(baseWidth, durationInHours * 18); // 18px per hour
     
     // Position operations based on their start time or order
-    const dayWidth = 172; // Each day slot is ~172px wide
+    const timelineWidth = 1200; // Total timeline width (matches Gantt chart)
+    const dayWidth = timelineWidth / 7; // Each day slot width (dynamic based on timeline)
     
     let startDay = 0;
     if (operation.startTime) {
@@ -49,8 +50,11 @@ export default function OperationBlock({ operation, resourceName, jobName }: Ope
       startDay = Math.max(0, Math.min(6, daysDiff)); // Clamp to 0-6 days
       
       // Also calculate time within the day for more precise positioning
+      const workingHours = 8; // 8 AM to 4 PM
       const hoursInDay = startTime.getHours() - 8; // Assuming 8 AM start
-      const timeOffset = Math.max(0, hoursInDay) * (dayWidth / 8); // 8 working hours per day
+      const minutesInDay = startTime.getMinutes();
+      const totalMinutesInDay = Math.max(0, hoursInDay * 60 + minutesInDay);
+      const timeOffset = (totalMinutesInDay / (workingHours * 60)) * dayWidth; // More precise time positioning
       
       console.log('Operation positioning:', {
         operationId: operation.id,

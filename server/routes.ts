@@ -195,22 +195,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/operations/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      console.log('Updating operation:', id, req.body);
-      
       // Handle the date conversion before validation
       const requestData = { ...req.body };
-      console.log('Before date conversion:', requestData);
       
       if (requestData.startTime && typeof requestData.startTime === 'string') {
         requestData.startTime = new Date(requestData.startTime);
-        console.log('Converted startTime:', requestData.startTime);
       }
       if (requestData.endTime && typeof requestData.endTime === 'string') {
         requestData.endTime = new Date(requestData.endTime);
-        console.log('Converted endTime:', requestData.endTime);
       }
       
-      console.log('After date conversion:', requestData);
       const operation = insertOperationSchema.partial().parse(requestData);
       const updatedOperation = await storage.updateOperation(id, operation);
       if (!updatedOperation) {

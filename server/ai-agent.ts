@@ -106,7 +106,7 @@ async function executeAction(action: string, parameters: any, message: string): 
           description: parameters.description || null,
           customerName: parameters.customerName || null,
           priority: parameters.priority || "medium",
-          dueDate: parameters.dueDate || null,
+          dueDate: parameters.dueDate ? new Date(parameters.dueDate) : null,
           status: "active"
         };
         const newJob = await storage.createJob(jobData);

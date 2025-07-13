@@ -83,11 +83,18 @@ export function useOperationDrop(
           const dayIndex = Math.floor(relativeX / dayWidth);
           const timeWithinDay = (relativeX % dayWidth) / dayWidth; // 0-1 representing position within day
           
-          // Calculate actual start time
+          // Calculate actual start time with more precision
           const today = new Date();
           const startDate = new Date(today);
           startDate.setDate(today.getDate() + dayIndex);
-          startDate.setHours(8 + Math.floor(timeWithinDay * 8), 0, 0, 0); // 8 AM to 4 PM (8 hours)
+          
+          // More precise time calculation: 8 AM to 4 PM (8 hours)
+          const workingHours = 8;
+          const totalMinutes = timeWithinDay * workingHours * 60; // Convert to minutes
+          const hours = Math.floor(totalMinutes / 60);
+          const minutes = Math.round(totalMinutes % 60);
+          
+          startDate.setHours(8 + hours, minutes, 0, 0);
           
           // Calculate end time based on operation duration
           const endDate = new Date(startDate);

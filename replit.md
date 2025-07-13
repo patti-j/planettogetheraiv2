@@ -138,3 +138,11 @@ The application uses a modern full-stack architecture with strong typing through
 - Voice and text-based commands for creating jobs, operations, and resources
 - AI assistant page added to navigation with chat interface
 - Action execution with real-time feedback and system integration
+
+✓ **Drag-and-Drop Functionality Fixed**: 
+- Resolved critical API validation errors for operation updates
+- Fixed schema validation for date fields in operations API
+- Added proper string-to-Date conversion in operation routes
+- Drag-and-drop now correctly updates operation assignments with time calculations
+- Operations can be seamlessly moved between resources on the Gantt chart timeline
+- All drag-and-drop actions persist correctly in the PostgreSQL database
