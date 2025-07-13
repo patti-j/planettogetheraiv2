@@ -14,6 +14,7 @@ interface OperationBlockProps {
   colorScheme?: string;
   textLabeling?: string;
   customTextLabels?: any[];
+  rowHeight?: number;
 }
 
 export default function OperationBlock({
@@ -28,7 +29,12 @@ export default function OperationBlock({
   colorScheme = "by_job",
   textLabeling = "operation_name",
   customTextLabels = [],
+  rowHeight = 60,
 }: OperationBlockProps) {
+  
+  // Calculate operation block height with comfortable margins
+  // Leave 8px margin at top and bottom (16px total)
+  const blockHeight = Math.max(24, rowHeight - 16);
   const [{ isDragging }, drag] = useDrag({
     type: "operation",
     item: (monitor) => {
@@ -315,7 +321,7 @@ export default function OperationBlock({
           isDragging ? "opacity-50 scale-95" : "opacity-100 scale-100"
         } ${getBlockColor()}`}
         style={{
-          height: "40px",
+          height: `${blockHeight}px`,
           minWidth: "120px",
           padding: "0 8px",
         }}
@@ -336,14 +342,15 @@ export default function OperationBlock({
     <div
       ref={drag}
       data-operation-block
-      className={`absolute top-2 z-10 rounded-md border-2 border-white shadow-md cursor-move transition-all duration-200 ${
+      className={`absolute z-10 rounded-md border-2 border-white shadow-md cursor-move transition-all duration-200 ${
         isDragging ? "opacity-50 scale-95" : "opacity-100 scale-100"
       } ${getBlockColor()}`}
       style={{
         left: `${position.left}px`,
         width: `${position.width}px`,
-        height: "40px",
+        height: `${blockHeight}px`,
         minWidth: "80px",
+        top: "8px", // Center vertically with 8px margin
       }}
     >
       <div className="h-full flex items-center justify-between px-2 text-white text-xs">

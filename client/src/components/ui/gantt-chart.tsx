@@ -825,6 +825,7 @@ export default function GanttChart({
                           timelineBaseDate={timeScale.minDate}
                           colorScheme={colorScheme}
                           textLabeling={textLabeling}
+                          rowHeight={rowHeight}
                         />
                       </div>
                     </div>
@@ -968,6 +969,7 @@ export default function GanttChart({
                   colorScheme={colorScheme}
                   textLabeling={textLabeling}
                   customTextLabels={customTextLabels}
+                  rowHeight={rowHeight}
                 />
               ))}
             </div>
@@ -1028,6 +1030,7 @@ export default function GanttChart({
                   colorScheme={colorScheme}
                   textLabeling={textLabeling}
                   customTextLabels={customTextLabels}
+                  rowHeight={rowHeight}
                 />
               ))}
               {resourceOperations.length === 0 && (
@@ -1344,6 +1347,7 @@ export default function GanttChart({
                       colorScheme={colorScheme}
                       textLabeling={textLabeling}
                       customTextLabels={customTextLabels}
+                      rowHeight={rowHeight}
                     />
                   ))}
                 {operations.filter(op => !op.startTime || !op.endTime).length === 0 && (
