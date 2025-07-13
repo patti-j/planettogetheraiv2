@@ -55,7 +55,7 @@ export default function OperationBlock({
     const startTime = new Date(operation.startTime);
     const endTime = new Date(operation.endTime);
     
-    // Calculate step size for this time unit
+    // Calculate step size for this time unit (in milliseconds)
     let stepMs: number;
     switch (timeUnit) {
       case "hour":
@@ -89,10 +89,13 @@ export default function OperationBlock({
     // Calculate position relative to the timeline base
     const baseDate = new Date(timelineBaseDate.getTime());
     const startOffset = (startTime.getTime() - baseDate.getTime()) / stepMs;
-    const duration = (endTime.getTime() - startTime.getTime()) / stepMs;
+    const operationDurationMs = endTime.getTime() - startTime.getTime();
+    const durationInTimeUnits = operationDurationMs / stepMs;
     
+    // Calculate width based on timeline width and the operation duration
+    // Use dayWidth as the base unit (which represents the width of one time unit)
     const left = startOffset * dayWidth;
-    const width = Math.max(duration * dayWidth, 20); // Minimum width for visibility
+    const width = Math.max(durationInTimeUnits * dayWidth, 20); // Minimum width for visibility
     
     return { left, width };
   }, [operation.startTime, operation.endTime, dayWidth, timeUnit, timelineBaseDate]);

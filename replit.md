@@ -207,3 +207,10 @@ The application uses a modern full-stack architecture with strong typing through
 - Added useMemo to operation position calculation to prevent unnecessary re-renders
 - Reduced cache invalidation scope to only essential queries instead of all queries
 - Operations now maintain stable visual positions during drag-and-drop operations
+
+✓ **Operation Block Width Calculation Fix (July 13, 2025)**:
+- Fixed operation block widths to accurately reflect their duration relative to zoom level
+- Updated width calculation to use operation duration in time units multiplied by period width
+- Operations now visually represent their actual duration (e.g., 2hr vs 6hr operations show proportional widths)
+- Improved time unit conversion logic for accurate scaling across different zoom levels
+- Visual block lengths now correctly scale from hours to weeks/months based on current view
