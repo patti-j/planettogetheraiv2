@@ -111,7 +111,7 @@ export default function ResourceViewManager({
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingView ? `Edit "${editingView.name}"` : "Create New Resource Gantt"}
+                {editingView ? "Edit Resource Gantt View" : "Create New Resource Gantt"}
               </DialogTitle>
             </DialogHeader>
             <ResourceViewForm

@@ -1,10 +1,11 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { ChevronDown, ChevronRight, MoreHorizontal, ZoomIn, ZoomOut, Eye, Settings, GripVertical } from "lucide-react";
+import { ChevronDown, ChevronRight, MoreHorizontal, ZoomIn, ZoomOut, Eye, Settings, GripVertical, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import OperationBlock from "./operation-block";
 import OperationForm from "../operation-form";
 import ResourceViewManager from "../resource-view-manager";
@@ -22,6 +23,10 @@ interface GanttChartProps {
   resources: Resource[];
   capabilities: Capability[];
   view: "operations" | "resources";
+  selectedResourceViewId?: number | null;
+  onResourceViewChange?: (viewId: number | null) => void;
+  rowHeight?: number;
+  onRowHeightChange?: (height: number) => void;
 }
 
 type TimeUnit = "hour" | "shift" | "day" | "week" | "month" | "quarter" | "year" | "decade";
@@ -31,7 +36,11 @@ export default function GanttChart({
   operations, 
   resources, 
   capabilities, 
-  view 
+  view,
+  selectedResourceViewId: externalSelectedResourceViewId,
+  onResourceViewChange,
+  rowHeight = 80,
+  onRowHeightChange
 }: GanttChartProps) {
   const [expandedJobs, setExpandedJobs] = useState<Set<number>>(new Set());
   const [selectedOperation, setSelectedOperation] = useState<Operation | null>(null);
@@ -39,10 +48,20 @@ export default function GanttChart({
   const [timeUnit, setTimeUnit] = useState<TimeUnit>("day");
   const [timelineScrollLeft, setTimelineScrollLeft] = useState(0);
   const [resourceListScrollTop, setResourceListScrollTop] = useState(0);
-  const [selectedResourceViewId, setSelectedResourceViewId] = useState<number | null>(null);
+  const [internalSelectedResourceViewId, setInternalSelectedResourceViewId] = useState<number | null>(null);
   const [resourceViewManagerOpen, setResourceViewManagerOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Use external state if provided, otherwise use internal state
+  const selectedResourceViewId = externalSelectedResourceViewId !== undefined ? externalSelectedResourceViewId : internalSelectedResourceViewId;
+  const setSelectedResourceViewId = (viewId: number | null) => {
+    if (onResourceViewChange) {
+      onResourceViewChange(viewId);
+    } else {
+      setInternalSelectedResourceViewId(viewId);
+    }
+  };
   // Create a truly stable base date that never changes
   const timelineBaseDate = useMemo(() => new Date(2025, 6, 13, 7, 0, 0, 0), []); // Fixed to July 13, 2025 07:00:00
   
@@ -713,9 +732,10 @@ export default function GanttChart({
           <div 
             ref={combinedRef}
             data-resource-id={resource.id}
-            className={`flex-1 relative p-2 min-h-[80px] overflow-hidden ${
+            className={`flex-1 relative p-2 overflow-hidden ${
               isOver && canDrop ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''
             }`}
+            style={{ minHeight: `${rowHeight}px` }}
           >
             <div data-timeline-content style={{ width: `${timelineWidth}px` }}>
               {resourceOperations.map((operation) => (
@@ -767,9 +787,10 @@ export default function GanttChart({
           <div 
             ref={drop}
             data-resource-id={resource.id}
-            className={`flex-1 relative p-2 min-h-[60px] transition-colors overflow-hidden ${
+            className={`flex-1 relative p-2 transition-colors overflow-hidden ${
               isOver ? (canDrop ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200") : ""
             }`}
+            style={{ minHeight: `${rowHeight}px` }}
           >
             <div data-timeline-content style={{ width: `${timelineWidth}px` }}>
               {resourceOperations.map((operation) => (
@@ -847,6 +868,20 @@ export default function GanttChart({
                   <Settings className="w-4 h-4" />
                 </Button>
               </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-xs text-gray-500">Row Height:</span>
+                <div className="flex items-center space-x-2 w-24">
+                  <Slider
+                    value={[rowHeight]}
+                    onValueChange={(value) => onRowHeightChange?.(value[0])}
+                    min={50}
+                    max={200}
+                    step={10}
+                    className="flex-1"
+                  />
+                  <span className="text-xs text-gray-500 w-8">{rowHeight}px</span>
+                </div>
+              </div>
             </div>
           </div>
           <div 
@@ -892,7 +927,7 @@ export default function GanttChart({
                 </Badge>
               </div>
             </div>
-            <div className="flex-1 p-4 bg-yellow-50 border-r border-yellow-200 min-h-[80px]">
+            <div className="flex-1 p-4 bg-yellow-50 border-r border-yellow-200" style={{ minHeight: `${rowHeight}px` }}>
               <div className="flex flex-wrap gap-2">
                 {operations
                   .filter(op => !op.startTime || !op.endTime)

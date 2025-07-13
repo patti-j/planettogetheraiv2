@@ -27,6 +27,8 @@ export default function Dashboard() {
   const [resourceDialogOpen, setResourceDialogOpen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
+  const [selectedResourceViewId, setSelectedResourceViewId] = useState<number | null>(null);
+  const [rowHeight, setRowHeight] = useState(80);
   const { toast } = useToast();
 
   const { data: jobs = [] } = useQuery<Job[]>({
@@ -127,6 +129,10 @@ export default function Dashboard() {
                 resources={resources}
                 capabilities={capabilities}
                 view="resources"
+                selectedResourceViewId={selectedResourceViewId}
+                onResourceViewChange={setSelectedResourceViewId}
+                rowHeight={rowHeight}
+                onRowHeightChange={setRowHeight}
               />
             </TabsContent>
 
@@ -137,6 +143,10 @@ export default function Dashboard() {
                 resources={resources}
                 capabilities={capabilities}
                 view="operations"
+                selectedResourceViewId={selectedResourceViewId}
+                onResourceViewChange={setSelectedResourceViewId}
+                rowHeight={rowHeight}
+                onRowHeightChange={setRowHeight}
               />
             </TabsContent>
           </Tabs>
@@ -276,6 +286,10 @@ export default function Dashboard() {
                 resources={resources}
                 capabilities={capabilities}
                 view="resources"
+                selectedResourceViewId={selectedResourceViewId}
+                onResourceViewChange={setSelectedResourceViewId}
+                rowHeight={rowHeight}
+                onRowHeightChange={setRowHeight}
               />
             </TabsContent>
 
@@ -286,6 +300,10 @@ export default function Dashboard() {
                 resources={resources}
                 capabilities={capabilities}
                 view="operations"
+                selectedResourceViewId={selectedResourceViewId}
+                onResourceViewChange={setSelectedResourceViewId}
+                rowHeight={rowHeight}
+                onRowHeightChange={setRowHeight}
               />
             </TabsContent>
           </Tabs>
