@@ -46,8 +46,11 @@ export default function AIAgent() {
   // Text command mutation
   const textCommandMutation = useMutation({
     mutationFn: async (command: string) => {
+      console.log("Sending command:", command);
       const response = await apiRequest("POST", "/api/ai-agent/command", { command });
-      return response.json();
+      const data = await response.json();
+      console.log("Received response:", data);
+      return data;
     },
     onSuccess: (data: AIAgentResponse) => {
       const agentMessage: AIMessage = {
@@ -78,6 +81,7 @@ export default function AIAgent() {
       });
     },
     onError: (error) => {
+      console.error("Text command error:", error);
       toast({
         title: "Error",
         description: "Failed to process command",
@@ -297,7 +301,7 @@ export default function AIAgent() {
               disabled={!input.trim() || textCommandMutation.isPending || isRecording}
               size="icon"
             >
-              <Send className="w-4 h-4" />
+              {textCommandMutation.isPending ? "..." : <Send className="w-4 h-4" />}
             </Button>
           </form>
         </div>
