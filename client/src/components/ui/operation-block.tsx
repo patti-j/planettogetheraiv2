@@ -26,17 +26,21 @@ export default function OperationBlock({ operation, resourceName }: OperationBlo
   };
 
   // Calculate position and width based on operation timing
-  // For now, use static positioning - in a real app, this would be calculated based on actual dates
   const getOperationStyle = () => {
-    const baseLeft = 96; // Starting position
+    const baseLeft = 10; // Starting position with some padding
     const baseWidth = 144; // Base width
     
     // Calculate based on operation duration
     const durationInDays = Math.ceil((operation.duration || 8) / 24);
     const width = Math.max(baseWidth, durationInDays * 48);
     
+    // Position operations based on their order within the timeline
+    // Each day slot is ~172px wide (from the time scale)
+    const dayWidth = 172;
+    const startDay = (operation.order || 0) % 7; // Distribute across 7 days
+    
     return {
-      left: `${baseLeft + (operation.order || 0) * 160}px`,
+      left: `${baseLeft + startDay * dayWidth}px`,
       width: `${width}px`,
       top: "4px",
     };

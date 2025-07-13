@@ -59,17 +59,11 @@ export function useOperationDrop(
       );
     },
     drop: (item) => {
-      console.log('Dropping operation:', item.operation.id, 'onto resource:', resource.id);
-      console.log('Current assignedResourceId:', item.operation.assignedResourceId);
-      
       if (item.operation.assignedResourceId !== resource.id) {
-        console.log('Updating operation assignment...');
         updateOperationMutation.mutate({
           operationId: item.operation.id,
           resourceId: resource.id,
         });
-      } else {
-        console.log('Operation already assigned to this resource');
       }
     },
     collect: (monitor) => ({
