@@ -200,14 +200,14 @@ export default function OperationForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Assigned Resource</FormLabel>
-              <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} value={field.value?.toString() || ""}>
+              <Select onValueChange={(value) => field.onChange(value === "unassigned" ? undefined : parseInt(value))} value={field.value?.toString() || "unassigned"}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select resource" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">Unassigned</SelectItem>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
                   {resources.map((resource) => (
                     <SelectItem key={resource.id} value={resource.id.toString()}>
                       {resource.name} ({resource.type})
