@@ -7,15 +7,34 @@ interface OperationBlockProps {
   resourceName: string;
   jobName?: string;
   job?: Job;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
+  timelineWidth: number;
+  dayWidth: number;
 }
 
-export default function OperationBlock({ operation, resourceName, jobName, job }: OperationBlockProps) {
+export default function OperationBlock({ 
+  operation, 
+  resourceName, 
+  jobName, 
+  job, 
+  onDragStart, 
+  onDragEnd, 
+  timelineWidth, 
+  dayWidth 
+}: OperationBlockProps) {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "operation",
-    item: { operation },
+    item: () => {
+      onDragStart?.();
+      return { operation };
+    },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
+    end: () => {
+      onDragEnd?.();
+    },
   }));
 
   const getOperationColor = () => {
@@ -56,10 +75,6 @@ export default function OperationBlock({ operation, resourceName, jobName, job }
     const durationInHours = operation.duration || 8;
     const width = Math.max(baseWidth, durationInHours * 18); // 18px per hour
     
-    // Position operations based on their start time or order
-    const timelineWidth = 1200; // Total timeline width (matches Gantt chart)
-    const dayWidth = timelineWidth / 7; // Each day slot width (dynamic based on timeline)
-    
     let startDay = 0;
     if (operation.startTime) {
       // Use actual start time if available
@@ -76,16 +91,6 @@ export default function OperationBlock({ operation, resourceName, jobName, job }
       const minutesInDay = startTime.getMinutes();
       const totalMinutesInDay = Math.max(0, hoursInDay * 60 + minutesInDay);
       const timeOffset = (totalMinutesInDay / (workingHours * 60)) * dayWidth; // More precise time positioning
-      
-      console.log('Operation positioning:', {
-        operationId: operation.id,
-        startTime: operation.startTime,
-        daysDiff,
-        startDay,
-        hoursInDay,
-        timeOffset,
-        finalLeft: baseLeft + startDay * dayWidth + timeOffset
-      });
       
       return {
         left: `${baseLeft + startDay * dayWidth + timeOffset}px`,

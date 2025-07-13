@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { ChevronDown, ChevronRight, MoreHorizontal, Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronDown, ChevronRight, MoreHorizontal, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -27,14 +27,9 @@ export default function GanttChart({
   const [expandedJobs, setExpandedJobs] = useState<Set<number>>(new Set());
   const [selectedOperation, setSelectedOperation] = useState<Operation | null>(null);
   const [operationDialogOpen, setOperationDialogOpen] = useState(false);
-  const [scrollLeft, setScrollLeft] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, scrollLeft: 0 });
   const [isDraggingBlock, setIsDraggingBlock] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
-  const timelineRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-
+  
   // Generate time scale for the next 7 days
   const timeScale = useMemo(() => {
     const days = [];
@@ -55,20 +50,20 @@ export default function GanttChart({
 
   // Calculate timeline width based on zoom level
   const timelineWidth = useMemo(() => {
-    return 1200 * zoomLevel; // Base width times zoom level
+    return 1200 * zoomLevel;
   }, [zoomLevel]);
 
   const dayWidth = useMemo(() => {
-    return timelineWidth / 7; // Each day slot width
+    return timelineWidth / 7;
   }, [timelineWidth]);
 
   // Zoom functions
   const zoomIn = useCallback(() => {
-    setZoomLevel(prev => Math.min(prev * 1.5, 3)); // Max zoom 3x
+    setZoomLevel(prev => Math.min(prev * 1.5, 3));
   }, []);
 
   const zoomOut = useCallback(() => {
-    setZoomLevel(prev => Math.max(prev / 1.5, 0.5)); // Min zoom 0.5x
+    setZoomLevel(prev => Math.max(prev / 1.5, 0.5));
   }, []);
 
   const resetZoom = useCallback(() => {
@@ -119,11 +114,6 @@ export default function GanttChart({
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const scrollLeft = e.currentTarget.scrollLeft;
-    setScrollLeft(scrollLeft);
-    syncScrollToTimeline(scrollLeft);
-  };
-
-  const syncScrollToTimeline = (scrollLeft: number) => {
     // Sync all timeline headers and content areas
     const timelineHeaders = document.querySelectorAll('.timeline-header');
     const contentAreas = document.querySelectorAll('.timeline-content');
@@ -139,37 +129,6 @@ export default function GanttChart({
         content.scrollLeft = scrollLeft;
       }
     });
-  };
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Only handle background dragging, not operation blocks
-    if (isDraggingBlock || e.target !== e.currentTarget) return;
-    
-    setIsDragging(true);
-    setDragStart({
-      x: e.clientX,
-      scrollLeft: scrollLeft
-    });
-    e.preventDefault();
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging || isDraggingBlock) return;
-    
-    const deltaX = e.clientX - dragStart.x;
-    const maxScrollLeft = Math.max(0, timelineWidth - 800); // Adjust for zoom
-    const newScrollLeft = Math.max(0, Math.min(maxScrollLeft, dragStart.scrollLeft - deltaX));
-    setScrollLeft(newScrollLeft);
-    syncScrollToTimeline(newScrollLeft);
-    e.preventDefault();
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleMouseLeave = () => {
-    setIsDragging(false);
   };
 
   const renderOperationsView = () => (
@@ -193,14 +152,10 @@ export default function GanttChart({
               </div>
             </div>
           </div>
-          <div className="flex-1 overflow-x-auto timeline-header" onScroll={handleScroll}>
+          <div className="flex-1 overflow-x-auto overflow-y-hidden timeline-header" onScroll={handleScroll}>
             <div 
-              className={`flex bg-gray-50 border-r border-gray-200 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+              className="flex bg-gray-50 border-r border-gray-200"
               style={{ width: `${timelineWidth}px` }}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseLeave}
             >
               {timeScale.map((day, index) => (
                 <div key={index} className="border-r border-gray-200 p-2 text-center select-none" style={{ width: `${dayWidth}px` }}>
@@ -248,15 +203,8 @@ export default function GanttChart({
                       </Badge>
                     </div>
                   </div>
-                  <div 
-                    className={`flex-1 relative overflow-hidden timeline-content ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-                    style={{ width: `${timelineWidth}px` }}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseLeave}
-                  >
-                    <div className="absolute inset-0 bg-blue-50 border-r border-gray-100" style={{ transform: `translateX(-${scrollLeft}px)` }}></div>
+                  <div className="flex-1 relative overflow-x-auto overflow-y-hidden timeline-content">
+                    <div className="absolute inset-0 bg-blue-50 border-r border-gray-100" style={{ width: `${timelineWidth}px` }}></div>
                   </div>
                 </div>
               </div>
@@ -304,15 +252,8 @@ export default function GanttChart({
                         </div>
                       </div>
                     </div>
-                    <div 
-                      className={`flex-1 relative p-2 overflow-hidden timeline-content ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-                      style={{ width: `${timelineWidth}px` }}
-                      onMouseDown={handleMouseDown}
-                      onMouseMove={handleMouseMove}
-                      onMouseUp={handleMouseUp}
-                      onMouseLeave={handleMouseLeave}
-                    >
-                      <div style={{ transform: `translateX(-${scrollLeft}px)` }}>
+                    <div className="flex-1 relative p-2 min-h-[60px] overflow-x-auto overflow-y-hidden timeline-content">
+                      <div className="relative" style={{ width: `${timelineWidth}px` }}>
                         <OperationBlock
                           operation={operation}
                           resourceName={getResourceName(operation.assignedResourceId || 0)}
@@ -320,6 +261,8 @@ export default function GanttChart({
                           job={jobs.find(job => job.id === operation.jobId)}
                           onDragStart={() => setIsDraggingBlock(true)}
                           onDragEnd={() => setIsDraggingBlock(false)}
+                          timelineWidth={timelineWidth}
+                          dayWidth={dayWidth}
                         />
                       </div>
                     </div>
@@ -362,16 +305,11 @@ export default function GanttChart({
           <div 
             ref={drop}
             data-resource-id={resource.id}
-            className={`flex-1 relative p-2 min-h-[60px] transition-colors overflow-hidden timeline-content ${
+            className={`flex-1 relative p-2 min-h-[60px] transition-colors overflow-x-auto overflow-y-hidden timeline-content ${
               isOver ? (canDrop ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200") : ""
-            } ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`} 
-            style={{ width: `${timelineWidth}px` }}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseLeave}
+            }`}
           >
-            <div style={{ transform: `translateX(-${scrollLeft}px)` }}>
+            <div className="relative" style={{ width: `${timelineWidth}px` }}>
               {resourceOperations.map((operation) => (
                 <OperationBlock
                   key={operation.id}
@@ -381,6 +319,8 @@ export default function GanttChart({
                   job={jobs.find(job => job.id === operation.jobId)}
                   onDragStart={() => setIsDraggingBlock(true)}
                   onDragEnd={() => setIsDraggingBlock(false)}
+                  timelineWidth={timelineWidth}
+                  dayWidth={dayWidth}
                 />
               ))}
               {resourceOperations.length === 0 && (
@@ -418,14 +358,10 @@ export default function GanttChart({
               </div>
             </div>
           </div>
-          <div className="flex-1 overflow-x-auto timeline-header" onScroll={handleScroll}>
+          <div className="flex-1 overflow-x-auto overflow-y-hidden timeline-header" onScroll={handleScroll}>
             <div 
-              className={`flex bg-gray-50 border-r border-gray-200 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+              className="flex bg-gray-50 border-r border-gray-200"
               style={{ width: `${timelineWidth}px` }}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseLeave}
             >
               {timeScale.map((day, index) => (
                 <div key={index} className="border-r border-gray-200 p-2 text-center select-none" style={{ width: `${dayWidth}px` }}>
@@ -438,7 +374,7 @@ export default function GanttChart({
         </div>
       </div>
 
-      {/* Resource Rows */}
+      {/* Gantt Chart Content */}
       <div className="relative">
         {resources.map((resource) => (
           <ResourceRow key={resource.id} resource={resource} />
@@ -448,26 +384,29 @@ export default function GanttChart({
   );
 
   return (
-    <>
+    <div className="flex-1 bg-white">
       {view === "operations" ? renderOperationsView() : renderResourcesView()}
       
       {/* Operation Edit Dialog */}
       <Dialog open={operationDialogOpen} onOpenChange={setOperationDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Operation</DialogTitle>
           </DialogHeader>
           {selectedOperation && (
-            <OperationForm 
+            <OperationForm
               operation={selectedOperation}
               jobs={jobs}
               capabilities={capabilities}
               resources={resources}
-              onSuccess={() => setOperationDialogOpen(false)} 
+              onSuccess={() => {
+                setOperationDialogOpen(false);
+                setSelectedOperation(null);
+              }}
             />
           )}
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }
