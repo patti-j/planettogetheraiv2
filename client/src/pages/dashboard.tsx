@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Save, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, Grid3X3, LayoutGrid, BarChart3 } from "lucide-react";
+import { Plus, Save, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, Grid3X3, LayoutGrid, BarChart3, Wrench, Calendar, User } from "lucide-react";
 import Sidebar from "@/components/sidebar";
 import GanttChart from "@/components/ui/gantt-chart";
 import MetricsCard from "@/components/ui/metrics-card";
@@ -36,7 +36,7 @@ interface AnalyticsWidget {
 }
 
 export default function Dashboard() {
-  const [currentView, setCurrentView] = useState<"operations" | "resources">("resources");
+  const [currentView, setCurrentView] = useState<"operations" | "resources" | "customers">("resources");
   const [jobDialogOpen, setJobDialogOpen] = useState(false);
   const [resourceDialogOpen, setResourceDialogOpen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
@@ -362,7 +362,7 @@ export default function Dashboard() {
 
             {/* Gantt Container */}
             <div className="flex-1 bg-white mx-6 mb-6 rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as "operations" | "resources")}>
+              <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as "operations" | "resources" | "customers")}>
                 <div className="border-b border-gray-200 bg-gray-50">
                   <div className="flex items-center justify-between">
                     <TabsList className="h-auto p-0 bg-transparent">
@@ -370,15 +370,22 @@ export default function Dashboard() {
                         value="resources" 
                         className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
                       >
-                        <Factory className="w-4 h-4 mr-2" />
+                        <Wrench className="w-4 h-4 mr-2" />
                         Resource Gantt
                       </TabsTrigger>
                       <TabsTrigger 
                         value="operations" 
                         className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
                       >
-                        <Factory className="w-4 h-4 mr-2" />
+                        <Calendar className="w-4 h-4 mr-2" />
                         Job Gantt
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="customers" 
+                        className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
+                      >
+                        <User className="w-4 h-4 mr-2" />
+                        Customer Gantt
                       </TabsTrigger>
                     </TabsList>
                   </div>
@@ -405,6 +412,20 @@ export default function Dashboard() {
                     resources={resources}
                     capabilities={capabilities}
                     view="operations"
+                    selectedResourceViewId={selectedResourceViewId}
+                    onResourceViewChange={setSelectedResourceViewId}
+                    rowHeight={rowHeight}
+                    onRowHeightChange={setRowHeight}
+                  />
+                </TabsContent>
+
+                <TabsContent value="customers" className="h-full m-0">
+                  <GanttChart
+                    jobs={jobs}
+                    operations={operations}
+                    resources={resources}
+                    capabilities={capabilities}
+                    view="customers"
                     selectedResourceViewId={selectedResourceViewId}
                     onResourceViewChange={setSelectedResourceViewId}
                     rowHeight={rowHeight}
@@ -650,7 +671,7 @@ export default function Dashboard() {
 
         {/* Gantt Container */}
         <div className="flex-1 bg-white m-6 rounded-lg shadow-sm border border-gray-200 overflow-hidden min-h-0">
-          <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as "operations" | "resources")}>
+          <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as "operations" | "resources" | "customers")}>
             <div className="border-b border-gray-200 bg-gray-50">
               <div className="flex items-center justify-between">
                 <TabsList className="h-auto p-0 bg-transparent">
@@ -658,15 +679,22 @@ export default function Dashboard() {
                     value="resources" 
                     className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
                   >
-                    <Factory className="w-4 h-4 mr-2" />
+                    <Wrench className="w-4 h-4 mr-2" />
                     Resource Gantt
                   </TabsTrigger>
                   <TabsTrigger 
                     value="operations" 
                     className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
                   >
-                    <Factory className="w-4 h-4 mr-2" />
+                    <Calendar className="w-4 h-4 mr-2" />
                     Job Gantt
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="customers" 
+                    className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Customer Gantt
                   </TabsTrigger>
                 </TabsList>
                 <div className="flex items-center space-x-2 px-6">
@@ -705,6 +733,20 @@ export default function Dashboard() {
                 resources={resources}
                 capabilities={capabilities}
                 view="operations"
+                selectedResourceViewId={selectedResourceViewId}
+                onResourceViewChange={setSelectedResourceViewId}
+                rowHeight={rowHeight}
+                onRowHeightChange={setRowHeight}
+              />
+            </TabsContent>
+
+            <TabsContent value="customers" className="h-full m-0">
+              <GanttChart
+                jobs={jobs}
+                operations={operations}
+                resources={resources}
+                capabilities={capabilities}
+                view="customers"
                 selectedResourceViewId={selectedResourceViewId}
                 onResourceViewChange={setSelectedResourceViewId}
                 rowHeight={rowHeight}

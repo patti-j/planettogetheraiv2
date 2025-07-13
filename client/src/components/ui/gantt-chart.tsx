@@ -26,7 +26,7 @@ interface GanttChartProps {
   operations: Operation[];
   resources: Resource[];
   capabilities: Capability[];
-  view: "operations" | "resources";
+  view: "operations" | "resources" | "customers";
   selectedResourceViewId?: number | null;
   onResourceViewChange?: (viewId: number | null) => void;
   rowHeight?: number;
@@ -47,6 +47,7 @@ export default function GanttChart({
   onRowHeightChange
 }: GanttChartProps) {
   const [expandedJobs, setExpandedJobs] = useState<Set<number>>(new Set());
+  const [expandedCustomers, setExpandedCustomers] = useState<Set<string>>(new Set());
   const [selectedOperation, setSelectedOperation] = useState<Operation | null>(null);
   const [operationDialogOpen, setOperationDialogOpen] = useState(false);
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
@@ -1202,6 +1203,245 @@ export default function GanttChart({
     );
   };
 
+  const renderCustomersView = () => {
+    // Group jobs by customer
+    const customerGroups = useMemo(() => {
+      const groups: { [customer: string]: Job[] } = {};
+      jobs.forEach(job => {
+        const customer = job.customer || "Unknown Customer";
+        if (!groups[customer]) {
+          groups[customer] = [];
+        }
+        groups[customer].push(job);
+      });
+      return groups;
+    }, [jobs]);
+
+    const toggleCustomerExpansion = (customer: string) => {
+      const newExpanded = new Set(expandedCustomers);
+      if (newExpanded.has(customer)) {
+        newExpanded.delete(customer);
+      } else {
+        newExpanded.add(customer);
+      }
+      setExpandedCustomers(newExpanded);
+    };
+
+    const renderCustomerRow = (customer: string, customerJobs: Job[]) => {
+      const isExpanded = expandedCustomers.has(customer);
+      
+      return (
+        <div key={customer}>
+          {/* Customer Header Row */}
+          <div className="flex bg-gray-50 border-b border-gray-200" style={{ height: `${rowHeight}px` }}>
+            <div className="w-80 px-4 py-2 border-r border-gray-200 flex items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => toggleCustomerExpansion(customer)}
+                className="p-0 h-6 w-6 mr-2"
+              >
+                {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              </Button>
+              <div className="flex items-center space-x-2">
+                <User className="w-4 h-4 text-blue-600" />
+                <span className="font-medium text-gray-900">{customer}</span>
+                <Badge variant="secondary" className="text-xs">
+                  {customerJobs.length} jobs
+                </Badge>
+              </div>
+            </div>
+            <div className="flex-1 relative overflow-hidden">
+              <div
+                className="absolute inset-0 flex items-center bg-gray-50"
+                style={{ transform: `translateX(-${timelineScrollLeft}px)` }}
+              >
+                <div className="bg-gray-100 h-full flex-1 border-r border-gray-300"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Customer Jobs (when expanded) */}
+          {isExpanded && customerJobs.map(job => (
+            <div key={job.id} className="flex border-b border-gray-200" style={{ height: `${rowHeight}px` }}>
+              <div className="w-80 px-4 py-2 border-r border-gray-200 flex items-center">
+                <div className="ml-6 flex items-center space-x-2">
+                  <Calendar className="w-4 h-4 text-green-600" />
+                  <span className="font-medium text-gray-800">{job.name}</span>
+                  <Badge variant="outline" className="text-xs">
+                    {job.priority}
+                  </Badge>
+                </div>
+              </div>
+              <div className="flex-1 relative overflow-hidden">
+                <div
+                  className="absolute inset-0"
+                  style={{ transform: `translateX(-${timelineScrollLeft}px)` }}
+                >
+                  <div className="relative w-full h-full">
+                    {operations
+                      .filter(op => op.jobId === job.id)
+                      .map(operation => (
+                        <OperationBlock
+                          key={operation.id}
+                          operation={operation}
+                          resourceName={resources.find(r => r.id === operation.assignedResourceId)?.name}
+                          jobName={job.name}
+                          job={job}
+                          timelineWidth={timelineWidth}
+                          dayWidth={periodWidth}
+                          timeUnit={timeUnit}
+                          timelineBaseDate={timeScale.minDate}
+                          colorScheme={colorScheme}
+                          textLabeling={textLabeling}
+                          customTextLabels={customTextLabels}
+                          rowHeight={rowHeight}
+                        />
+                      ))
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    };
+
+    return (
+      <div className="flex flex-col h-full">
+        {/* Fixed Header */}
+        <div className="flex-none bg-white border-b border-gray-200 z-10">
+          <div className="flex">
+            <div className="w-80 px-4 py-2 bg-gray-50 border-r border-gray-200">
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-medium text-gray-700">Customer Timeline</span>
+                  <div className="flex items-center space-x-1 text-xs text-gray-500">
+                    <span>H:</span>
+                    <Slider
+                      value={[rowHeight]}
+                      onValueChange={(value) => onRowHeightChange?.(value[0])}
+                      min={20}
+                      max={200}
+                      step={5}
+                      className="w-12"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Select 
+                    value={selectedResourceView?.colorScheme || defaultColorScheme} 
+                    onValueChange={(value) => {
+                      handleViewSettingChange(value, "colorScheme");
+                    }}
+                  >
+                    <SelectTrigger className="w-28 h-6 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="priority">Priority</SelectItem>
+                      <SelectItem value="status">Status</SelectItem>
+                      <SelectItem value="job">Job</SelectItem>
+                      <SelectItem value="resource">Resource</SelectItem>
+                      <SelectItem value="duration">Duration</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select 
+                    value={selectedResourceView?.textLabeling || defaultTextLabeling} 
+                    onValueChange={(value) => {
+                      if (value === "configure") {
+                        setCustomTextLabelManagerOpen(true);
+                      } else {
+                        handleViewSettingChange(value, "textLabeling");
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-32 h-6 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customTextLabels.length === 0 && (
+                        <SelectItem value="no_labels" disabled>
+                          No custom labels - create one below
+                        </SelectItem>
+                      )}
+                      {customTextLabels.map((label) => (
+                        <SelectItem key={label.id} value={`custom_${label.id}`}>
+                          {label.name}
+                        </SelectItem>
+                      ))}
+                      <div className="border-t border-gray-200 my-1"></div>
+                      <SelectItem value="configure" className="text-blue-600 font-medium">
+                        Configure Labels...
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            <div className="w-auto bg-gray-50 border-r border-gray-200 px-2 py-2">
+              <div className="flex items-center bg-white border rounded-md">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={zoomOut} 
+                      disabled={timeUnit === "decade"} 
+                      className="h-6 px-1.5 border-r rounded-r-none"
+                    >
+                      <ZoomOut className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Zoom out to view longer time periods</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={zoomIn} 
+                      disabled={timeUnit === "hour"} 
+                      className="h-6 px-1.5 border-r rounded-r-none"
+                    >
+                      <ZoomIn className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Zoom in to view shorter time periods</p>
+                  </TooltipContent>
+                </Tooltip>
+                <span className="text-xs text-gray-600 px-2 capitalize">{timeUnit}</span>
+              </div>
+            </div>
+            <div className="flex-1 bg-gray-50 border-r border-gray-200 overflow-hidden">
+              <div style={{ width: `${timelineWidth}px`, transform: `translateX(-${timelineScrollLeft}px)` }}>
+                <div className="flex h-full bg-gray-50 border-b border-gray-200">
+                  {timeScale.periods.map((period, index) => (
+                    <div key={index} className="flex-none border-r border-gray-300 px-2 py-2 text-center" style={{ width: `${periodWidth}px` }}>
+                      <div className="text-xs font-medium text-gray-700">{period.label}</div>
+                      <div className="text-xs text-gray-500">{period.subLabel}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto" ref={resourceListRef}>
+          {Object.entries(customerGroups).map(([customer, customerJobs]) => 
+            renderCustomerRow(customer, customerJobs)
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderResourcesView = () => (
     <div className="flex flex-col h-full">
       {/* Fixed Header */}
@@ -1464,7 +1704,7 @@ export default function GanttChart({
   return (
     <TooltipProvider>
       <div className="h-full">
-        {view === "operations" ? renderOperationsView() : renderResourcesView()}
+        {view === "operations" ? renderOperationsView() : view === "customers" ? renderCustomersView() : renderResourcesView()}
       </div>
     </TooltipProvider>
   );
