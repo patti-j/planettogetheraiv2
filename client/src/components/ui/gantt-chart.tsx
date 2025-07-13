@@ -343,14 +343,14 @@ export default function GanttChart({
       switch (timeUnit) {
         case "hour":
           label = date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
-          subLabel = date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
+          subLabel = date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
           break;
         case "shift":
           const shiftHour = date.getHours();
           const shiftName = shiftHour >= 0 && shiftHour < 8 ? "Night" : 
                            shiftHour >= 8 && shiftHour < 16 ? "Day" : "Evening";
           label = `${shiftName} Shift`;
-          subLabel = date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
+          subLabel = date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
           break;
         case "day":
           label = date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
