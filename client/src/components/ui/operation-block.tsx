@@ -278,29 +278,15 @@ export default function OperationBlock({
   };
 
   const getBlockText = () => {
+    // First check if it's a legacy option
     switch (textLabeling) {
-      case "operation_name":
-        return operation.name;
-      
-      case "job_name":
-        return jobName || `Job ${operation.jobId}`;
-      
       case "both":
         return `${jobName || `Job ${operation.jobId}`} - ${operation.name}`;
-      
-      case "duration":
-        return `${operation.duration}h`;
-      
-      case "progress":
-        // For now, we'll show status as progress
-        return operation.status === "completed" ? "100%" : 
-               operation.status === "in_progress" ? "50%" : "0%";
-      
       case "none":
         return "";
-      
       default:
-        return operation.name;
+        // Use the new comprehensive text labeling system
+        return getTextForLabel(textLabeling);
     }
   };
 

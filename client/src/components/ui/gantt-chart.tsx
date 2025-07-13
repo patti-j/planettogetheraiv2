@@ -1088,6 +1088,20 @@ export default function GanttChart({
                           {textLabeling === "duration" && "Duration"}
                           {textLabeling === "progress" && "Progress"}
                           {textLabeling === "none" && "None"}
+                          {textLabeling === "due_date" && "Due Date"}
+                          {textLabeling === "priority" && "Priority"}
+                          {textLabeling === "status" && "Status"}
+                          {textLabeling === "resource_name" && "Resource"}
+                          {textLabeling === "customer" && "Customer"}
+                          {textLabeling === "job_description" && "Job Desc"}
+                          {textLabeling === "operation_description" && "Op Desc"}
+                          {textLabeling === "resource_type" && "Res Type"}
+                          {textLabeling === "capabilities" && "Capabilities"}
+                          {textLabeling === "start_time" && "Start Time"}
+                          {textLabeling === "end_time" && "End Time"}
+                          {textLabeling === "slack_days" && "Slack Days"}
+                          {textLabeling === "days_late" && "Days Late"}
+                          {textLabeling === "completion_percent" && "Completion %"}
                           <ChevronDown className="w-3 h-3 ml-1" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -1106,6 +1120,48 @@ export default function GanttChart({
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleTextLabelingChange("progress")}>
                           Progress %
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTextLabelingChange("due_date")}>
+                          Due Date
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTextLabelingChange("priority")}>
+                          Priority
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTextLabelingChange("status")}>
+                          Status
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTextLabelingChange("resource_name")}>
+                          Resource Name
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTextLabelingChange("customer")}>
+                          Customer
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTextLabelingChange("job_description")}>
+                          Job Description
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTextLabelingChange("operation_description")}>
+                          Operation Description
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTextLabelingChange("resource_type")}>
+                          Resource Type
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTextLabelingChange("capabilities")}>
+                          Capabilities
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTextLabelingChange("start_time")}>
+                          Start Time
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTextLabelingChange("end_time")}>
+                          End Time
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTextLabelingChange("slack_days")}>
+                          Slack Days
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTextLabelingChange("days_late")}>
+                          Days Late
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTextLabelingChange("completion_percent")}>
+                          Completion %
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleTextLabelingChange("none")}>
                           No Text
