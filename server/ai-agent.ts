@@ -211,11 +211,11 @@ async function executeAction(action: string, parameters: any, message: string, c
         };
 
       case "GET_STATUS":
-        const context = await getSystemContext();
+        const statusContext = await getSystemContext();
         return {
           success: true,
           message: message || `Current system status retrieved`,
-          data: context,
+          data: statusContext,
           actions: ["GET_STATUS"]
         };
 
