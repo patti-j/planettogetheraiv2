@@ -67,7 +67,7 @@ export default function GanttChart({
     
     const orderedList: Resource[] = [];
     
-    // Add resources in the order specified by the view
+    // Add ONLY resources in the order specified by the view
     selectedResourceView.resourceSequence.forEach(resourceId => {
       const resource = resources.find(r => r.id === resourceId);
       if (resource) {
@@ -75,13 +75,7 @@ export default function GanttChart({
       }
     });
     
-    // Add any remaining resources not in the view
-    resources.forEach(resource => {
-      if (!selectedResourceView.resourceSequence.includes(resource.id)) {
-        orderedList.push(resource);
-      }
-    });
-    
+    // Don't add remaining resources - only show resources in the view
     return orderedList;
   }, [resources, selectedResourceView, view]);
   
