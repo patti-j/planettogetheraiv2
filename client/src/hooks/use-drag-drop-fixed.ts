@@ -133,6 +133,16 @@ export function useOperationDrop(
           // Calculate end time based on operation duration
           const operationDuration = item.operation.duration || 8; // Default 8 hours
           const operationEndTime = new Date(operationStartTime.getTime() + (operationDuration * 60 * 60 * 1000));
+          
+          // DEBUG: Log the final time calculation
+          console.log("FINAL TIME CALCULATION:", {
+            timelineBaseDate: timelineBaseDate.toISOString(),
+            clampedPeriodIndex,
+            stepMs,
+            operationStartTime: operationStartTime.toISOString(),
+            operationEndTime: operationEndTime.toISOString(),
+            operationDuration
+          });
             
           // Update the operation with the new timing
           updateOperationMutation.mutate({
