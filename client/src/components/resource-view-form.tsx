@@ -9,6 +9,8 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 import type { ResourceView, Resource } from "@shared/schema";
 import { z } from "zod";
 
@@ -20,6 +22,65 @@ const resourceViewFormSchema = z.object({
 });
 
 type ResourceViewFormData = z.infer<typeof resourceViewFormSchema>;
+
+interface DragItem {
+  index: number;
+  resourceId: number;
+  type: string;
+}
+
+interface DraggableResourceItemProps {
+  resourceId: number;
+  resourceName: string;
+  index: number;
+  onMove: (fromIndex: number, toIndex: number) => void;
+  onRemove: (resourceId: number) => void;
+}
+
+const DraggableResourceItem = ({ resourceId, resourceName, index, onMove, onRemove }: DraggableResourceItemProps) => {
+  const [{ isDragging }, drag] = useDrag({
+    type: 'resource',
+    item: { index, resourceId, type: 'resource' },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  const [, drop] = useDrop({
+    accept: 'resource',
+    hover: (item: DragItem) => {
+      if (!drag) return;
+      
+      const dragIndex = item.index;
+      const hoverIndex = index;
+
+      if (dragIndex === hoverIndex) return;
+
+      onMove(dragIndex, hoverIndex);
+      item.index = hoverIndex;
+    },
+  });
+
+  return (
+    <div
+      ref={(node) => drag(drop(node))}
+      className={`flex items-center space-x-2 p-2 bg-gray-50 rounded-md border cursor-move ${
+        isDragging ? 'opacity-50' : ''
+      }`}
+    >
+      <GripVertical className="w-4 h-4 text-gray-400" />
+      <span className="flex-1 text-sm">{index + 1}. {resourceName}</span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={() => onRemove(resourceId)}
+      >
+        <X className="w-4 h-4" />
+      </Button>
+    </div>
+  );
+};
 
 interface ResourceViewFormProps {
   resourceView?: ResourceView;
@@ -129,14 +190,15 @@ export default function ResourceViewForm({
   };
 
   return (
-    <Card className="w-full max-w-2xl">
-      <CardHeader>
-        <CardTitle>
-          {resourceView ? "Edit Resource View" : "Create New Resource View"}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+    <DndProvider backend={HTML5Backend}>
+      <Card className="w-full max-w-2xl">
+        <CardHeader>
+          <CardTitle>
+            {resourceView ? "Edit Resource View" : "Create New Resource View"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
             <Input
@@ -171,21 +233,14 @@ export default function ResourceViewForm({
               ) : (
                 <div className="space-y-2">
                   {formData.resourceSequence.map((resourceId, index) => (
-                    <div
+                    <DraggableResourceItem
                       key={resourceId}
-                      className="flex items-center space-x-2 p-2 bg-gray-50 rounded-md border"
-                    >
-                      <GripVertical className="w-4 h-4 text-gray-400 cursor-move" />
-                      <span className="flex-1 text-sm">{getResourceName(resourceId)}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeResource(resourceId)}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
+                      resourceId={resourceId}
+                      resourceName={getResourceName(resourceId)}
+                      index={index}
+                      onMove={moveResource}
+                      onRemove={removeResource}
+                    />
                   ))}
                 </div>
               )}
@@ -239,5 +294,6 @@ export default function ResourceViewForm({
         </form>
       </CardContent>
     </Card>
+    </DndProvider>
   );
 }
