@@ -11,6 +11,7 @@ interface OperationBlockProps {
   dayWidth: number;
   timeUnit: "hour" | "shift" | "day" | "week" | "month" | "quarter" | "year" | "decade";
   timelineScrollLeft: number;
+  timelineBaseDate: Date;
 }
 
 export default function OperationBlock({
@@ -22,6 +23,7 @@ export default function OperationBlock({
   dayWidth,
   timeUnit,
   timelineScrollLeft,
+  timelineBaseDate,
 }: OperationBlockProps) {
   const [{ isDragging }, drag] = useDrag({
     type: "operation",
@@ -43,7 +45,7 @@ export default function OperationBlock({
     if (operation.startTime && operation.endTime) {
       const startTime = new Date(operation.startTime);
       const endTime = new Date(operation.endTime);
-      const baseDate = new Date();
+      const baseDate = new Date(timelineBaseDate.getTime());
       baseDate.setHours(0, 0, 0, 0);
       
       // Calculate position based on time unit

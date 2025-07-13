@@ -15,6 +15,7 @@ export function useOperationDrop(
   timelineWidth: number,
   timeScale: any[],
   timeUnit: TimeUnit,
+  timelineScrollLeft: number,
   onDropSuccess?: () => void
 ) {
   const { toast } = useToast();
@@ -130,7 +131,8 @@ export function useOperationDrop(
         console.log("🎯 DROP DEBUG - Resource timeline element found:", !!resourceTimelineElement);
         if (resourceTimelineElement) {
           const rect = resourceTimelineElement.getBoundingClientRect();
-          const relativeX = Math.max(0, clientOffset.x - rect.left);
+          // Account for timeline scroll offset
+          const relativeX = Math.max(0, clientOffset.x - rect.left + timelineScrollLeft);
           
           console.log("🎯 DROP DEBUG - Position:", {
             clientOffset,

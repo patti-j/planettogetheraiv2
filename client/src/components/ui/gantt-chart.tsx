@@ -39,6 +39,9 @@ export default function GanttChart({
   const isDraggingResourceList = useRef(false);
   const lastMousePos = useRef({ x: 0, y: 0 });
 
+  // Timeline base date
+  const timelineBaseDate = useMemo(() => new Date(), [timeUnit]);
+  
   // Generate dynamic time scale based on time unit
   const timeScale = useMemo(() => {
     const periods = [];
@@ -446,6 +449,7 @@ export default function GanttChart({
                           dayWidth={periodWidth}
                           timeUnit={timeUnit}
                           timelineScrollLeft={timelineScrollLeft}
+                          timelineBaseDate={timelineBaseDate}
                         />
                       </div>
                     </div>
@@ -463,7 +467,7 @@ export default function GanttChart({
   // Create a separate component to handle the drop zone for each resource
   const ResourceRow = ({ resource }: { resource: Resource }) => {
     const resourceOperations = operations.filter(op => op.assignedResourceId === resource.id);
-    const { drop, isOver, canDrop } = useOperationDrop(resource, timelineWidth, timeScale, timeUnit);
+    const { drop, isOver, canDrop } = useOperationDrop(resource, timelineWidth, timeScale, timeUnit, timelineScrollLeft);
 
     return (
       <div className="border-b border-gray-100">
@@ -505,6 +509,7 @@ export default function GanttChart({
                   dayWidth={periodWidth}
                   timeUnit={timeUnit}
                   timelineScrollLeft={timelineScrollLeft}
+                  timelineBaseDate={timelineBaseDate}
                 />
               ))}
               {resourceOperations.length === 0 && (
@@ -600,6 +605,7 @@ export default function GanttChart({
                       dayWidth={periodWidth}
                       timeUnit={timeUnit}
                       timelineScrollLeft={timelineScrollLeft}
+                      timelineBaseDate={timelineBaseDate}
                     />
                   ))}
                 {operations.filter(op => !op.startTime || !op.endTime).length === 0 && (
