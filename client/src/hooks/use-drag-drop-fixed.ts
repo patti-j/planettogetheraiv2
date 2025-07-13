@@ -81,6 +81,10 @@ export function useOperationDrop(
           const periodIndex = Math.floor(relativeX / periodWidth);
           const clampedPeriodIndex = Math.max(0, Math.min(periodIndex, timeScale.length - 1));
           
+          // FIXED: Calculate the exact position within the period, not just the period start
+          const positionWithinPeriod = relativeX % periodWidth;
+          const fractionWithinPeriod = positionWithinPeriod / periodWidth;
+          
           // DEBUG: Log the drop calculation values
           console.log("DROP DEBUG:", {
             clientX: clientOffset.x,
@@ -90,6 +94,8 @@ export function useOperationDrop(
             periodWidth,
             periodIndex,
             clampedPeriodIndex,
+            positionWithinPeriod,
+            fractionWithinPeriod,
             timelineWidth,
             timeScaleLength: timeScale.length,
             timeUnit
@@ -127,8 +133,10 @@ export function useOperationDrop(
               stepMs = 24 * 60 * 60 * 1000;
           }
           
-          // Calculate operation start time using same logic as OperationBlock
-          const operationStartTime = new Date(timelineBaseDate.getTime() + (clampedPeriodIndex * stepMs));
+          // FIXED: Calculate operation start time using precise position within the period
+          const periodStartTime = timelineBaseDate.getTime() + (clampedPeriodIndex * stepMs);
+          const preciseStartTime = periodStartTime + (fractionWithinPeriod * stepMs);
+          const operationStartTime = new Date(preciseStartTime);
           
           // Calculate end time based on operation duration
           const operationDuration = item.operation.duration || 8; // Default 8 hours
@@ -138,7 +146,10 @@ export function useOperationDrop(
           console.log("FINAL TIME CALCULATION:", {
             timelineBaseDate: timelineBaseDate.toISOString(),
             clampedPeriodIndex,
+            fractionWithinPeriod,
             stepMs,
+            periodStartTime: new Date(periodStartTime).toISOString(),
+            preciseStartTime: new Date(preciseStartTime).toISOString(),
             operationStartTime: operationStartTime.toISOString(),
             operationEndTime: operationEndTime.toISOString(),
             operationDuration
