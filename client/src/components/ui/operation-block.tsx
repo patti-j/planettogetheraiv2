@@ -97,7 +97,7 @@ export default function OperationBlock({
       const duration = (endTime.getTime() - startTime.getTime()) / stepMs;
       
       const left = startOffset * dayWidth;
-      const width = Math.max(duration * dayWidth, 20);
+      const width = Math.max(duration * dayWidth, 20); // Minimum width for visibility
       
       // DEBUG: Log the operation block positioning values
       console.log("OPERATION BLOCK DEBUG:", {
