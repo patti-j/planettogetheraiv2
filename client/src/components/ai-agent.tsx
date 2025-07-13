@@ -174,29 +174,36 @@ export default function AIAgent() {
     }
   });
 
-  // Initialize media recorder
-  useEffect(() => {
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(stream => {
-          const recorder = new MediaRecorder(stream);
-          setMediaRecorder(recorder);
-          
-          recorder.ondataavailable = (event) => {
-            audioChunks.current.push(event.data);
-          };
-          
-          recorder.onstop = () => {
-            const audioBlob = new Blob(audioChunks.current, { type: "audio/wav" });
-            audioChunks.current = [];
-            voiceCommandMutation.mutate(audioBlob);
-          };
-        })
-        .catch(err => {
-          console.error("Error accessing microphone:", err);
-        });
+  // Initialize media recorder on first use
+  const initializeMicrophone = async () => {
+    if (mediaRecorder) return mediaRecorder;
+    
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      
+      recorder.ondataavailable = (event) => {
+        audioChunks.current.push(event.data);
+      };
+      
+      recorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks.current, { type: "audio/wav" });
+        audioChunks.current = [];
+        voiceCommandMutation.mutate(audioBlob);
+      };
+      
+      setMediaRecorder(recorder);
+      return recorder;
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+      toast({
+        title: "Microphone unavailable",
+        description: "Please allow microphone access to use voice commands",
+        variant: "destructive"
+      });
+      return null;
     }
-  }, []);
+  };
 
   const handleTextSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -216,24 +223,22 @@ export default function AIAgent() {
     setInput("");
   };
 
-  const toggleRecording = () => {
-    if (!mediaRecorder) {
-      toast({
-        title: "Microphone unavailable",
-        description: "Please allow microphone access to use voice commands",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const toggleRecording = async () => {
     if (isRecording) {
-      mediaRecorder.stop();
-      setIsRecording(false);
-      setIsListening(false);
+      // Stop recording
+      if (mediaRecorder) {
+        mediaRecorder.stop();
+        setIsRecording(false);
+        setIsListening(false);
+      }
     } else {
-      mediaRecorder.start();
-      setIsRecording(true);
-      setIsListening(true);
+      // Start recording - initialize microphone if needed
+      const recorder = await initializeMicrophone();
+      if (recorder) {
+        recorder.start();
+        setIsRecording(true);
+        setIsListening(true);
+      }
     }
   };
 

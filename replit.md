@@ -450,3 +450,9 @@ The application uses a modern full-stack architecture with strong typing through
 - Fixed create button in boards page to use standard primary blue color instead of darker blue
 - Standardized button colors across entire application: AI purple for Max-related features, primary blue for standard actions
 - Maintained consistent color scheme alignment throughout all UI components
+
+✓ **Microphone Permission Optimization (July 13, 2025)**:
+- Moved microphone initialization from page load to first voice button click
+- Users no longer get prompted for microphone access when navigating to Max AI page
+- Microphone permission now only requested when user actually tries to use voice features
+- Improved user experience by reducing unnecessary permission prompts for text-only users
