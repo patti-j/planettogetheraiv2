@@ -194,16 +194,30 @@ export default function GanttChart({
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (isDraggingTimeline.current) {
       const deltaX = e.clientX - lastMousePos.current.x;
-      setTimelineScrollLeft(prev => Math.max(0, prev - deltaX));
+      const newScrollLeft = Math.max(0, timelineScrollLeft - deltaX);
+      setTimelineScrollLeft(newScrollLeft);
+      
+      // Directly set the scrollbar position
+      if (timelineRef.current) {
+        timelineRef.current.scrollLeft = newScrollLeft;
+      }
+      
       lastMousePos.current = { x: e.clientX, y: e.clientY };
     }
     
     if (isDraggingResourceList.current) {
       const deltaY = e.clientY - lastMousePos.current.y;
-      setResourceListScrollTop(prev => Math.max(0, prev - deltaY));
+      const newScrollTop = Math.max(0, resourceListScrollTop - deltaY);
+      setResourceListScrollTop(newScrollTop);
+      
+      // Directly set the scrollbar position
+      if (resourceListRef.current) {
+        resourceListRef.current.scrollTop = newScrollTop;
+      }
+      
       lastMousePos.current = { x: e.clientX, y: e.clientY };
     }
-  }, []);
+  }, [timelineScrollLeft, resourceListScrollTop]);
 
   const handleMouseUp = useCallback(() => {
     isDraggingTimeline.current = false;
@@ -236,7 +250,7 @@ export default function GanttChart({
     };
   }, [handleMouseMove, handleMouseUp]);
 
-  // Sync scroll position with drag position
+  // Sync scroll position with state (only when not dragging to avoid conflicts)
   useEffect(() => {
     if (timelineRef.current && !isDraggingTimeline.current) {
       timelineRef.current.scrollLeft = timelineScrollLeft;
