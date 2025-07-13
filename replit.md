@@ -163,14 +163,14 @@ The application uses a modern full-stack architecture with strong typing through
 - Updated branding in sidebar, page title, and documentation
 - Maintained all existing functionality with new branding
 
-✓ **Enhanced Gantt Chart with Drag-to-Scroll (July 13, 2025)**:
+✓ **Enhanced Gantt Chart with Hybrid Drag-and-Scroll (July 13, 2025)**:
 - Implemented advanced zoom functionality: hour → day → week time scales
-- Added drag-to-scroll navigation for timeline (horizontal panning)
-- Added drag-to-scroll navigation for resource/job lists (vertical panning)
-- Removed traditional scrollbars in favor of intuitive drag interaction
+- Added hybrid navigation system combining drag-to-scroll with traditional scrollbars
+- Timeline supports both horizontal scrollbar and drag-to-scroll navigation
+- Resource list supports both vertical scrollbar and drag-to-scroll navigation
 - Enhanced zoom controls with visual feedback showing current time unit
-- Smooth animations for timeline and resource list transformations
+- Smooth synchronization between drag position and scrollbar position
 - Improved cursor feedback (grab/grabbing states) for better UX
 - Timeline now supports up to 24-hour granularity for detailed scheduling
-- Resource list supports vertical dragging for navigating through resources
+- Users can choose between traditional scrolling or intuitive drag navigation
 - Maintains all existing drag-and-drop operation assignment functionality

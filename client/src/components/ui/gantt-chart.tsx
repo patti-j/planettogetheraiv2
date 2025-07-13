@@ -30,8 +30,8 @@ export default function GanttChart({
   const [selectedOperation, setSelectedOperation] = useState<Operation | null>(null);
   const [operationDialogOpen, setOperationDialogOpen] = useState(false);
   const [timeUnit, setTimeUnit] = useState<TimeUnit>("day");
-  const [timelineOffset, setTimelineOffset] = useState(0);
-  const [resourceListOffset, setResourceListOffset] = useState(0);
+  const [timelineScrollLeft, setTimelineScrollLeft] = useState(0);
+  const [resourceListScrollTop, setResourceListScrollTop] = useState(0);
   
   const timelineRef = useRef<HTMLDivElement>(null);
   const resourceListRef = useRef<HTMLDivElement>(null);
@@ -111,7 +111,7 @@ export default function GanttChart({
     } else if (timeUnit === "day") {
       setTimeUnit("hour");
     }
-    setTimelineOffset(0); // Reset scroll position when zooming
+    setTimelineScrollLeft(0); // Reset scroll position when zooming
   }, [timeUnit]);
 
   const zoomOut = useCallback(() => {
@@ -120,13 +120,13 @@ export default function GanttChart({
     } else if (timeUnit === "day") {
       setTimeUnit("week");
     }
-    setTimelineOffset(0); // Reset scroll position when zooming
+    setTimelineScrollLeft(0); // Reset scroll position when zooming
   }, [timeUnit]);
 
   const resetZoom = useCallback(() => {
     setTimeUnit("day");
-    setTimelineOffset(0);
-    setResourceListOffset(0);
+    setTimelineScrollLeft(0);
+    setResourceListScrollTop(0);
   }, []);
 
   // Timeline drag handlers
@@ -141,19 +141,16 @@ export default function GanttChart({
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (isDraggingTimeline.current) {
       const deltaX = e.clientX - lastMousePos.current.x;
-      setTimelineOffset(prev => Math.max(0, Math.min(prev - deltaX, timelineWidth - 800))); // Limit scroll range
+      setTimelineScrollLeft(prev => Math.max(0, prev - deltaX));
       lastMousePos.current = { x: e.clientX, y: e.clientY };
     }
     
     if (isDraggingResourceList.current) {
       const deltaY = e.clientY - lastMousePos.current.y;
-      setResourceListOffset(prev => {
-        const maxOffset = Math.max(0, (resources.length * 80) - 400); // Estimate based on resource count
-        return Math.max(0, Math.min(prev - deltaY, maxOffset));
-      });
+      setResourceListScrollTop(prev => Math.max(0, prev - deltaY));
       lastMousePos.current = { x: e.clientX, y: e.clientY };
     }
-  }, [timelineWidth, resources.length]);
+  }, []);
 
   const handleMouseUp = useCallback(() => {
     isDraggingTimeline.current = false;
@@ -179,6 +176,32 @@ export default function GanttChart({
       document.removeEventListener('mouseup', handleMouseUp);
     };
   }, [handleMouseMove, handleMouseUp]);
+
+  // Sync scroll position with drag position
+  useEffect(() => {
+    if (timelineRef.current && !isDraggingTimeline.current) {
+      timelineRef.current.scrollLeft = timelineScrollLeft;
+    }
+  }, [timelineScrollLeft]);
+
+  useEffect(() => {
+    if (resourceListRef.current && !isDraggingResourceList.current) {
+      resourceListRef.current.scrollTop = resourceListScrollTop;
+    }
+  }, [resourceListScrollTop]);
+
+  // Handle scrollbar scroll events
+  const handleTimelineScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    if (!isDraggingTimeline.current) {
+      setTimelineScrollLeft(e.currentTarget.scrollLeft);
+    }
+  }, []);
+
+  const handleResourceListScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    if (!isDraggingResourceList.current) {
+      setResourceListScrollTop(e.currentTarget.scrollTop);
+    }
+  }, []);
 
   const toggleJobExpansion = useCallback((jobId: number) => {
     setExpandedJobs(prev => {
@@ -244,16 +267,14 @@ export default function GanttChart({
             </div>
           </div>
           <div 
-            className="flex-1 bg-gray-50 border-r border-gray-200 overflow-hidden cursor-move select-none"
+            className="flex-1 bg-gray-50 border-r border-gray-200 overflow-x-auto cursor-grab active:cursor-grabbing"
             onMouseDown={handleTimelineMouseDown}
+            onScroll={handleTimelineScroll}
             ref={timelineRef}
           >
             <div 
-              className="flex transition-transform duration-100"
-              style={{ 
-                width: `${timelineWidth}px`,
-                transform: `translateX(-${timelineOffset}px)`
-              }}
+              className="flex"
+              style={{ width: `${timelineWidth}px` }}
             >
               {timeScale.map((period, index) => (
                 <div key={index} className="border-r border-gray-200 p-2 text-center flex-shrink-0" style={{ width: `${periodWidth}px` }}>
@@ -267,133 +288,112 @@ export default function GanttChart({
       </div>
 
       {/* Scrollable Content - Operations */}
-      <div className="flex-1 overflow-hidden">
-        <div 
-          className="transition-transform duration-100"
-          style={{ transform: `translateY(-${resourceListOffset}px)` }}
-        >
-          {jobs.map((job) => {
-            const jobOperations = getOperationsByJob(job.id);
-            const isExpanded = expandedJobs.has(job.id);
+      <div className="flex-1 overflow-y-auto cursor-grab active:cursor-grabbing" 
+           onMouseDown={handleResourceListMouseDown}
+           onScroll={handleResourceListScroll}
+           ref={resourceListRef}>
+        {jobs.map((job) => {
+          const jobOperations = getOperationsByJob(job.id);
+          const isExpanded = expandedJobs.has(job.id);
 
-            return (
-              <div key={job.id}>
-                {/* Job Row */}
-                <div className="border-b border-gray-100">
+          return (
+            <div key={job.id}>
+              {/* Job Row */}
+              <div className="border-b border-gray-100">
+                <div className="flex">
+                  <div className="w-64 px-4 py-3 bg-gray-50 border-r border-gray-200">
+                    <div className="flex items-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="p-0 h-auto mr-2"
+                        onClick={() => toggleJobExpansion(job.id)}
+                      >
+                        {isExpanded ? 
+                          <ChevronDown className="w-4 h-4 text-gray-400" /> : 
+                          <ChevronRight className="w-4 h-4 text-gray-400" />
+                        }
+                      </Button>
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-800">{job.name}</div>
+                        <div className="text-xs text-gray-500">
+                          Customer: {job.customer} | Priority: {job.priority} | Due: {job.dueDate ? new Date(job.dueDate).toLocaleDateString() : "N/A"}
+                        </div>
+                      </div>
+                      <Badge className={`text-xs ${getJobStatusColor(job.status)}`}>
+                        {job.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="flex-1 bg-blue-50 border-r border-gray-100 overflow-x-auto" style={{ minHeight: '60px' }}>
+                    <div style={{ width: `${timelineWidth}px` }}>
+                      {/* Job level timeline background */}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Operation Rows */}
+              {isExpanded && jobOperations.map((operation) => (
+                <div key={operation.id} className="border-b border-gray-100">
                   <div className="flex">
-                    <div className="w-64 px-4 py-3 bg-gray-50 border-r border-gray-200">
-                      <div className="flex items-center">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="p-0 h-auto mr-2"
-                          onClick={() => toggleJobExpansion(job.id)}
-                        >
-                          {isExpanded ? 
-                            <ChevronDown className="w-4 h-4 text-gray-400" /> : 
-                            <ChevronRight className="w-4 h-4 text-gray-400" />
-                          }
-                        </Button>
+                    <div className="w-64 px-4 py-3 border-r border-gray-200">
+                      <div className="flex items-center ml-6">
+                        <div className="w-2 h-2 bg-gray-300 rounded-full mr-2"></div>
                         <div className="flex-1">
-                          <div className="font-medium text-gray-800">{job.name}</div>
+                          <div className="text-sm text-gray-700">{operation.name}</div>
                           <div className="text-xs text-gray-500">
-                            Customer: {job.customer} | Priority: {job.priority} | Due: {job.dueDate ? new Date(job.dueDate).toLocaleDateString() : "N/A"}
+                            {operation.requiredCapabilities?.map(capId => 
+                              getCapabilityName(capId)
+                            ).join(", ") || "No requirements"}
                           </div>
                         </div>
-                        <Badge className={`text-xs ${getJobStatusColor(job.status)}`}>
-                          {job.status}
-                        </Badge>
+                        <div className="flex items-center space-x-1">
+                          <Badge className={`text-xs ${getOperationStatusColor(operation.status)}`}>
+                            {operation.status}
+                          </Badge>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => {
+                                setSelectedOperation(operation);
+                                setOperationDialogOpen(true);
+                              }}>
+                                Edit Operation
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                View Dependencies
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-red-600">
+                                Delete Operation
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
                     </div>
-                    <div 
-                      className="flex-1 bg-blue-50 border-r border-gray-100 overflow-hidden cursor-move"
-                      onMouseDown={handleTimelineMouseDown}
-                      style={{ minHeight: '60px' }}
-                    >
-                      <div 
-                        className="h-full transition-transform duration-100"
-                        style={{ 
-                          width: `${timelineWidth}px`,
-                          transform: `translateX(-${timelineOffset}px)`
-                        }}
-                      >
-                        {/* Job level timeline background */}
+                    <div className="flex-1 relative p-2 min-h-[60px] overflow-x-auto">
+                      <div style={{ width: `${timelineWidth}px` }}>
+                        <OperationBlock
+                          operation={operation}
+                          resourceName={getResourceName(operation.assignedResourceId || 0)}
+                          jobName={jobs.find(job => job.id === operation.jobId)?.name}
+                          job={jobs.find(job => job.id === operation.jobId)}
+                          timelineWidth={timelineWidth}
+                          dayWidth={periodWidth}
+                        />
                       </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Operation Rows */}
-                {isExpanded && jobOperations.map((operation) => (
-                  <div key={operation.id} className="border-b border-gray-100">
-                    <div className="flex">
-                      <div className="w-64 px-4 py-3 border-r border-gray-200">
-                        <div className="flex items-center ml-6">
-                          <div className="w-2 h-2 bg-gray-300 rounded-full mr-2"></div>
-                          <div className="flex-1">
-                            <div className="text-sm text-gray-700">{operation.name}</div>
-                            <div className="text-xs text-gray-500">
-                              {operation.requiredCapabilities?.map(capId => 
-                                getCapabilityName(capId)
-                              ).join(", ") || "No requirements"}
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Badge className={`text-xs ${getOperationStatusColor(operation.status)}`}>
-                              {operation.status}
-                            </Badge>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                  <MoreHorizontal className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => {
-                                  setSelectedOperation(operation);
-                                  setOperationDialogOpen(true);
-                                }}>
-                                  Edit Operation
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  View Dependencies
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="text-red-600">
-                                  Delete Operation
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </div>
-                      </div>
-                      <div 
-                        className="flex-1 relative p-2 min-h-[60px] overflow-hidden cursor-move"
-                        onMouseDown={handleTimelineMouseDown}
-                      >
-                        <div 
-                          className="absolute inset-0 transition-transform duration-100"
-                          style={{ 
-                            width: `${timelineWidth}px`,
-                            transform: `translateX(-${timelineOffset}px)`
-                          }}
-                        >
-                          <OperationBlock
-                            operation={operation}
-                            resourceName={getResourceName(operation.assignedResourceId || 0)}
-                            jobName={jobs.find(job => job.id === operation.jobId)?.name}
-                            job={jobs.find(job => job.id === operation.jobId)}
-                            timelineWidth={timelineWidth}
-                            dayWidth={periodWidth}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            );
-          })}
-        </div>
+              ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -426,18 +426,11 @@ export default function GanttChart({
           </div>
           <div 
             ref={drop}
-            className={`flex-1 relative p-2 min-h-[60px] transition-colors overflow-hidden cursor-move ${
+            className={`flex-1 relative p-2 min-h-[60px] transition-colors overflow-x-auto ${
               isOver ? (canDrop ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200") : ""
             }`}
-            onMouseDown={handleTimelineMouseDown}
           >
-            <div 
-              className="absolute inset-0 transition-transform duration-100"
-              style={{ 
-                width: `${timelineWidth}px`,
-                transform: `translateX(-${timelineOffset}px)`
-              }}
-            >
+            <div style={{ width: `${timelineWidth}px` }}>
               {resourceOperations.map((operation) => (
                 <OperationBlock
                   key={operation.id}
@@ -485,16 +478,14 @@ export default function GanttChart({
             </div>
           </div>
           <div 
-            className="flex-1 bg-gray-50 border-r border-gray-200 overflow-hidden cursor-move select-none"
+            className="flex-1 bg-gray-50 border-r border-gray-200 overflow-x-auto cursor-grab active:cursor-grabbing"
             onMouseDown={handleTimelineMouseDown}
+            onScroll={handleTimelineScroll}
             ref={timelineRef}
           >
             <div 
-              className="flex transition-transform duration-100"
-              style={{ 
-                width: `${timelineWidth}px`,
-                transform: `translateX(-${timelineOffset}px)`
-              }}
+              className="flex"
+              style={{ width: `${timelineWidth}px` }}
             >
               {timeScale.map((period, index) => (
                 <div key={index} className="border-r border-gray-200 p-2 text-center flex-shrink-0" style={{ width: `${periodWidth}px` }}>
@@ -508,19 +499,13 @@ export default function GanttChart({
       </div>
 
       {/* Scrollable Content - Resources */}
-      <div 
-        className="flex-1 overflow-hidden cursor-move select-none"
-        onMouseDown={handleResourceListMouseDown}
-        ref={resourceListRef}
-      >
-        <div 
-          className="transition-transform duration-100"
-          style={{ transform: `translateY(-${resourceListOffset}px)` }}
-        >
-          {resources.map((resource) => (
-            <ResourceRow key={resource.id} resource={resource} />
-          ))}
-        </div>
+      <div className="flex-1 overflow-y-auto cursor-grab active:cursor-grabbing"
+           onMouseDown={handleResourceListMouseDown}
+           onScroll={handleResourceListScroll}
+           ref={resourceListRef}>
+        {resources.map((resource) => (
+          <ResourceRow key={resource.id} resource={resource} />
+        ))}
       </div>
     </div>
   );
