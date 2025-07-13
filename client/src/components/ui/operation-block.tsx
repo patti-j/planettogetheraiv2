@@ -90,6 +90,20 @@ export default function OperationBlock({
       const left = startOffset * dayWidth;
       const width = Math.max(duration * dayWidth, 20);
       
+      // DEBUG: Log the operation block positioning values
+      console.log("OPERATION BLOCK DEBUG:", {
+        operationName: operation.name,
+        startTime: startTime.toISOString(),
+        baseDate: baseDate.toISOString(),
+        stepMs,
+        startOffset,
+        duration,
+        dayWidth,
+        left,
+        width,
+        timeUnit
+      });
+      
       setPosition({ left, width });
     }
   }, [operation.startTime, operation.endTime, dayWidth, timeUnit, timelineBaseDate]);

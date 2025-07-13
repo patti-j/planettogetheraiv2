@@ -81,6 +81,20 @@ export function useOperationDrop(
           const periodIndex = Math.floor(relativeX / periodWidth);
           const clampedPeriodIndex = Math.max(0, Math.min(periodIndex, timeScale.length - 1));
           
+          // DEBUG: Log the drop calculation values
+          console.log("DROP DEBUG:", {
+            clientX: clientOffset.x,
+            rectLeft: rect.left,
+            timelineScrollLeft,
+            relativeX,
+            periodWidth,
+            periodIndex,
+            clampedPeriodIndex,
+            timelineWidth,
+            timeScaleLength: timeScale.length,
+            timeUnit
+          });
+          
           // FIXED: Use the same period-based calculation as OperationBlock
           // Calculate step size for this time unit (matching OperationBlock)
           let stepMs: number;
