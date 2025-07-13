@@ -9,6 +9,7 @@ import { Slider } from "@/components/ui/slider";
 import OperationBlock from "./operation-block";
 import OperationForm from "../operation-form";
 import ResourceViewManager from "../resource-view-manager";
+import TextLabelConfigDialog from "../text-label-config-dialog";
 import { useOperationDrop } from "@/hooks/use-drag-drop-fixed";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -50,6 +51,7 @@ export default function GanttChart({
   const [resourceListScrollTop, setResourceListScrollTop] = useState(0);
   const [internalSelectedResourceViewId, setInternalSelectedResourceViewId] = useState<number | null>(null);
   const [resourceViewManagerOpen, setResourceViewManagerOpen] = useState(false);
+  const [textConfigDialogOpen, setTextConfigDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -959,88 +961,100 @@ export default function GanttChart({
                 </div>
               </div>
               
-              {/* Quick Switch Preset Buttons */}
-              <div className="flex items-center space-x-2">
-                <div className="flex items-center space-x-1">
-                  <Palette className="w-3 h-3 text-gray-500" />
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-6 px-2 text-xs"
-                        title="Change Color Scheme"
-                      >
-                        {colorScheme === "by_job" && "Job"}
-                        {colorScheme === "by_priority" && "Priority"}
-                        {colorScheme === "by_status" && "Status"}
-                        {colorScheme === "by_operation_type" && "Type"}
-                        {colorScheme === "by_resource" && "Resource"}
-                        <ChevronDown className="w-3 h-3 ml-1" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleColorSchemeChange("by_job")}>
-                        By Job
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleColorSchemeChange("by_priority")}>
-                        By Priority
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleColorSchemeChange("by_status")}>
-                        By Status
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleColorSchemeChange("by_operation_type")}>
-                        By Operation Type
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleColorSchemeChange("by_resource")}>
-                        By Resource
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+              {/* Quick Switch Preset Buttons - only show when a resource view is selected */}
+              {selectedResourceView && (
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1">
+                    <Palette className="w-3 h-3 text-gray-500" />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-6 px-2 text-xs"
+                          title="Change Color Scheme"
+                        >
+                          {colorScheme === "by_job" && "Job"}
+                          {colorScheme === "by_priority" && "Priority"}
+                          {colorScheme === "by_status" && "Status"}
+                          {colorScheme === "by_operation_type" && "Type"}
+                          {colorScheme === "by_resource" && "Resource"}
+                          <ChevronDown className="w-3 h-3 ml-1" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleColorSchemeChange("by_job")}>
+                          By Job
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleColorSchemeChange("by_priority")}>
+                          By Priority
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleColorSchemeChange("by_status")}>
+                          By Status
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleColorSchemeChange("by_operation_type")}>
+                          By Operation Type
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleColorSchemeChange("by_resource")}>
+                          By Resource
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  
+                  <div className="flex items-center space-x-1">
+                    <Type className="w-3 h-3 text-gray-500" />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-6 px-2 text-xs"
+                          title="Change Text Labeling"
+                        >
+                          {textLabeling === "operation_name" && "Operation"}
+                          {textLabeling === "job_name" && "Job"}
+                          {textLabeling === "both" && "Both"}
+                          {textLabeling === "duration" && "Duration"}
+                          {textLabeling === "progress" && "Progress"}
+                          {textLabeling === "none" && "None"}
+                          <ChevronDown className="w-3 h-3 ml-1" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleTextLabelingChange("operation_name")}>
+                          Operation Name
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTextLabelingChange("job_name")}>
+                          Job Name
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTextLabelingChange("both")}>
+                          Job + Operation
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTextLabelingChange("duration")}>
+                          Duration
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTextLabelingChange("progress")}>
+                          Progress %
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTextLabelingChange("none")}>
+                          No Text
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 px-2 text-xs"
+                    onClick={() => setTextConfigDialogOpen(true)}
+                    title="Configure Text Labels"
+                  >
+                    <Settings className="w-3 h-3" />
+                  </Button>
                 </div>
-                
-                <div className="flex items-center space-x-1">
-                  <Type className="w-3 h-3 text-gray-500" />
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-6 px-2 text-xs"
-                        title="Change Text Labeling"
-                      >
-                        {textLabeling === "operation_name" && "Operation"}
-                        {textLabeling === "job_name" && "Job"}
-                        {textLabeling === "both" && "Both"}
-                        {textLabeling === "duration" && "Duration"}
-                        {textLabeling === "progress" && "Progress"}
-                        {textLabeling === "none" && "None"}
-                        <ChevronDown className="w-3 h-3 ml-1" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleTextLabelingChange("operation_name")}>
-                        Operation Name
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleTextLabelingChange("job_name")}>
-                        Job Name
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleTextLabelingChange("both")}>
-                        Job + Operation
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleTextLabelingChange("duration")}>
-                        Duration
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleTextLabelingChange("progress")}>
-                        Progress %
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleTextLabelingChange("none")}>
-                        No Text
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
+              )}
             </div>
           </div>
           <div 
@@ -1164,6 +1178,15 @@ export default function GanttChart({
             />
           </DialogContent>
         </Dialog>
+        
+        {/* Text Label Configuration Dialog */}
+        {selectedResourceView && (
+          <TextLabelConfigDialog
+            open={textConfigDialogOpen}
+            onOpenChange={setTextConfigDialogOpen}
+            resourceView={selectedResourceView}
+          />
+        )}
       </div>
     </DndProvider>
   );

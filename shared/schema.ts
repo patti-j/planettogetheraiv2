@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -55,6 +56,15 @@ export const resourceViews = pgTable("resource_views", {
   isDefault: boolean("is_default").default(false),
   colorScheme: text("color_scheme").notNull().default("by_job"),
   textLabeling: text("text_labeling").notNull().default("operation_name"),
+  textLabelConfig: jsonb("text_label_config").$type<{
+    labels: Array<{
+      type: "operation_name" | "job_name" | "due_date" | "priority" | "status" | "duration" | "progress" | "resource_name" | "customer";
+      enabled: boolean;
+      order: number;
+    }>;
+    fontSize: number;
+    fontColor: string;
+  }>().default(sql`'{"labels": [{"type": "operation_name", "enabled": true, "order": 0}], "fontSize": 12, "fontColor": "#ffffff"}'::jsonb`),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
