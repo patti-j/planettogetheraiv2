@@ -193,9 +193,9 @@ export default function ResourceViewForm({
     <DndProvider backend={HTML5Backend}>
       <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
         <CardHeader>
-          <CardTitle>
-            {resourceView ? `Edit "${resourceView.name}"` : "Create New Resource Gantt"}
-          </CardTitle>
+          {resourceView && (
+            <CardTitle>Edit "{resourceView.name}"</CardTitle>
+          )}
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
