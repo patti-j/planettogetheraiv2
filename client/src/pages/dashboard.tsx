@@ -366,7 +366,7 @@ export default function Dashboard() {
             <div className="flex-1 bg-white mx-6 mb-6 rounded-lg shadow-sm border border-gray-200 overflow-hidden">
               <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as "operations" | "resources" | "customers")}>
                 <div className="border-b border-gray-200 bg-gray-50">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between px-4">
                     <TabsList className="h-auto p-0 bg-transparent">
                       <TabsTrigger 
                         value="resources" 
@@ -392,7 +392,7 @@ export default function Dashboard() {
                     </TabsList>
                     
                     {/* Mobile View Toggle */}
-                    <div className="flex items-center space-x-2 px-4">
+                    <div className="flex items-center space-x-2 bg-white rounded-lg shadow-sm border border-gray-200 p-2">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
