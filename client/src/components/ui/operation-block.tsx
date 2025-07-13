@@ -90,12 +90,16 @@ export default function OperationBlock({
     const baseDate = new Date(timelineBaseDate.getTime());
     const startOffset = (startTime.getTime() - baseDate.getTime()) / stepMs;
     const operationDurationMs = endTime.getTime() - startTime.getTime();
-    const durationInTimeUnits = operationDurationMs / stepMs;
     
-    // Calculate width based on timeline width and the operation duration
-    // Use dayWidth as the base unit (which represents the width of one time unit)
+    // Calculate width based on the operation's actual duration relative to the time unit
+    // This is the key fix: use the operation's duration (in hours) vs the time unit scale
+    const operationDurationHours = operationDurationMs / (60 * 60 * 1000);
+    const timeUnitHours = stepMs / (60 * 60 * 1000);
+    const durationRatio = operationDurationHours / timeUnitHours;
+    
+    // Calculate width based on timeline width and the operation duration ratio
     const left = startOffset * dayWidth;
-    const width = Math.max(durationInTimeUnits * dayWidth, 20); // Minimum width for visibility
+    const width = Math.max(durationRatio * dayWidth, 20); // Minimum width for visibility
     
     return { left, width };
   }, [operation.startTime, operation.endTime, dayWidth, timeUnit, timelineBaseDate]);

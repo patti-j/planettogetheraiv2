@@ -210,7 +210,8 @@ The application uses a modern full-stack architecture with strong typing through
 
 ✓ **Operation Block Width Calculation Fix (July 13, 2025)**:
 - Fixed operation block widths to accurately reflect their duration relative to zoom level
-- Updated width calculation to use operation duration in time units multiplied by period width
+- Updated width calculation to use operation duration in hours vs time unit scale in hours (durationRatio)
 - Operations now visually represent their actual duration (e.g., 2hr vs 6hr operations show proportional widths)
 - Improved time unit conversion logic for accurate scaling across different zoom levels
 - Visual block lengths now correctly scale from hours to weeks/months based on current view
+- Fixed zoom level scaling: operations maintain proportional width across all zoom levels (hour/day/week/month)
