@@ -33,8 +33,18 @@ export function useOperationDrop(
       if (endTime) updateData.endTime = endTime;
       
       const response = await apiRequest("PUT", `/api/operations/${operationId}`, updateData);
-      const text = await response.text();
-      return text ? JSON.parse(text) : {};
+      
+      // Handle response parsing safely
+      try {
+        const text = await response.text();
+        if (text && text.trim()) {
+          return JSON.parse(text);
+        }
+        return { success: true, id: operationId };
+      } catch (parseError) {
+        // If JSON parsing fails but response was successful, return success
+        return { success: true, id: operationId };
+      }
     },
     onSuccess: (updatedOperation) => {
       queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
@@ -42,7 +52,7 @@ export function useOperationDrop(
       queryClient.invalidateQueries({ queryKey: ["/api/resources"] });
       queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
       
-      if (updatedOperation.jobId) {
+      if (updatedOperation && updatedOperation.jobId) {
         queryClient.invalidateQueries({ queryKey: ["/api/jobs", updatedOperation.jobId, "operations"] });
       }
       
@@ -215,8 +225,18 @@ export function useTimelineDrop(
       if (endTime) updateData.endTime = endTime;
       
       const response = await apiRequest("PUT", `/api/operations/${operationId}`, updateData);
-      const text = await response.text();
-      return text ? JSON.parse(text) : {};
+      
+      // Handle response parsing safely
+      try {
+        const text = await response.text();
+        if (text && text.trim()) {
+          return JSON.parse(text);
+        }
+        return { success: true, id: operationId };
+      } catch (parseError) {
+        // If JSON parsing fails but response was successful, return success
+        return { success: true, id: operationId };
+      }
     },
     onSuccess: (updatedOperation) => {
       queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
@@ -224,7 +244,7 @@ export function useTimelineDrop(
       queryClient.invalidateQueries({ queryKey: ["/api/resources"] });
       queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
       
-      if (updatedOperation.jobId) {
+      if (updatedOperation && updatedOperation.jobId) {
         queryClient.invalidateQueries({ queryKey: ["/api/jobs", updatedOperation.jobId, "operations"] });
       }
       
@@ -309,9 +329,9 @@ export function useTimelineDrop(
       
       let startTime, endTime;
       if (clientOffset) {
-        const timelineElement = document.querySelector('[data-timeline-drop="true"]');
-        if (timelineElement) {
-          const rect = timelineElement.getBoundingClientRect();
+        const resourceTimelineElement = document.querySelector(`[data-resource-id="${resource.id}"]`);
+        if (resourceTimelineElement) {
+          const rect = resourceTimelineElement.getBoundingClientRect();
           const relativeX = Math.max(0, clientOffset.x - rect.left);
           
           const periodWidth = timelineWidth / timeScale.length;
@@ -358,6 +378,6 @@ export function useCapabilityValidation() {
       return operation.requiredCapabilities.every(reqCap => 
         resourceCapabilities.includes(reqCap)
       );
-    }
+    },
   };
 }
