@@ -132,7 +132,7 @@ export default function GanttChart({
               </div>
             </div>
           </div>
-          <div className="flex-1 bg-gray-50 border-r border-gray-200 overflow-x-auto">
+          <div className="flex-1 bg-gray-50 border-r border-gray-200 overflow-x-scroll gantt-visible-scrollbar">
             <div 
               className="flex"
               style={{ width: `${timelineWidth}px` }}
@@ -148,8 +148,8 @@ export default function GanttChart({
         </div>
       </div>
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-auto">
+      {/* Scrollable Content - Operations */}
+      <div className="flex-1 overflow-scroll gantt-visible-scrollbar">
         {jobs.map((job) => {
           const jobOperations = getOperationsByJob(job.id);
           const isExpanded = expandedJobs.has(job.id);
@@ -330,7 +330,7 @@ export default function GanttChart({
               </div>
             </div>
           </div>
-          <div className="flex-1 bg-gray-50 border-r border-gray-200 overflow-x-auto">
+          <div className="flex-1 bg-gray-50 border-r border-gray-200 overflow-x-scroll gantt-visible-scrollbar">
             <div 
               className="flex"
               style={{ width: `${timelineWidth}px` }}
@@ -346,8 +346,8 @@ export default function GanttChart({
         </div>
       </div>
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-auto">
+      {/* Scrollable Content - Resources */}
+      <div className="flex-1 overflow-scroll gantt-visible-scrollbar">
         {resources.map((resource) => (
           <ResourceRow key={resource.id} resource={resource} />
         ))}
