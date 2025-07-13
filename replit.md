@@ -522,3 +522,13 @@ The application uses a modern full-stack architecture with strong typing through
 - Added proper minimum width constraints for button containers to prevent truncation
 - Enhanced overflow handling with proper container hierarchy for mobile devices
 - Both swim lane columns and button controls now properly scroll on mobile devices
+
+✓ **Mobile-Optimized Schedule View (July 13, 2025)**:
+- Created dedicated MobileSchedule component specifically designed for phone usage
+- Implemented mobile-first card-based layout with comprehensive operation details
+- Added time-period filtering (Today, This Week, All) optimized for mobile navigation
+- Included resource and status filtering with mobile-friendly dropdown selectors
+- Enhanced operation cards with status indicators, priority badges, and resource information
+- Mobile view toggle buttons in dashboard header (Mobile View / Desktop View)
+- Vertical scrolling card layout replaces horizontal Gantt charts for mobile usability
+- Maintains all desktop Gantt functionality while providing mobile-optimized alternative

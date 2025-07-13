@@ -5,9 +5,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Save, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, Grid3X3, LayoutGrid, BarChart3, Wrench, Calendar, User } from "lucide-react";
+import { Plus, Save, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, Grid3X3, LayoutGrid, BarChart3, Wrench, Calendar, User, Smartphone, Monitor } from "lucide-react";
 import Sidebar from "@/components/sidebar";
 import GanttChart from "@/components/ui/gantt-chart";
+import MobileSchedule from "@/components/mobile-schedule";
 import MetricsCard from "@/components/ui/metrics-card";
 import JobForm from "@/components/job-form";
 import ResourceForm from "@/components/resource-form";
@@ -44,6 +45,7 @@ export default function Dashboard() {
   const [selectedResourceViewId, setSelectedResourceViewId] = useState<number | null>(null);
   const [rowHeight, setRowHeight] = useState(60);
   const [analyticsManagerOpen, setAnalyticsManagerOpen] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
   const [customWidgets, setCustomWidgets] = useState<AnalyticsWidget[]>([
     {
       id: "sample-1",
@@ -388,50 +390,97 @@ export default function Dashboard() {
                         Customer Gantt
                       </TabsTrigger>
                     </TabsList>
+                    
+                    {/* Mobile View Toggle */}
+                    <div className="flex items-center space-x-2 px-4">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant={isMobileView ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setIsMobileView(true)}
+                          >
+                            <Smartphone className="w-4 h-4 mr-2" />
+                            Mobile View
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Switch to mobile-optimized schedule view</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant={!isMobileView ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setIsMobileView(false)}
+                          >
+                            <Monitor className="w-4 h-4 mr-2" />
+                            Desktop View
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Switch to desktop Gantt chart view</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                   </div>
                 </div>
 
-                <TabsContent value="resources" className="h-full m-0">
-                  <GanttChart
-                    jobs={jobs}
-                    operations={operations}
-                    resources={resources}
-                    capabilities={capabilities}
-                    view="resources"
-                    selectedResourceViewId={selectedResourceViewId}
-                    onResourceViewChange={setSelectedResourceViewId}
-                    rowHeight={rowHeight}
-                    onRowHeightChange={setRowHeight}
-                  />
-                </TabsContent>
+                {isMobileView ? (
+                  <div className="h-full">
+                    <MobileSchedule
+                      jobs={jobs}
+                      operations={operations}
+                      resources={resources}
+                      capabilities={capabilities}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <TabsContent value="resources" className="h-full m-0">
+                      <GanttChart
+                        jobs={jobs}
+                        operations={operations}
+                        resources={resources}
+                        capabilities={capabilities}
+                        view="resources"
+                        selectedResourceViewId={selectedResourceViewId}
+                        onResourceViewChange={setSelectedResourceViewId}
+                        rowHeight={rowHeight}
+                        onRowHeightChange={setRowHeight}
+                      />
+                    </TabsContent>
 
-                <TabsContent value="operations" className="h-full m-0">
-                  <GanttChart
-                    jobs={jobs}
-                    operations={operations}
-                    resources={resources}
-                    capabilities={capabilities}
-                    view="operations"
-                    selectedResourceViewId={selectedResourceViewId}
-                    onResourceViewChange={setSelectedResourceViewId}
-                    rowHeight={rowHeight}
-                    onRowHeightChange={setRowHeight}
-                  />
-                </TabsContent>
+                    <TabsContent value="operations" className="h-full m-0">
+                      <GanttChart
+                        jobs={jobs}
+                        operations={operations}
+                        resources={resources}
+                        capabilities={capabilities}
+                        view="operations"
+                        selectedResourceViewId={selectedResourceViewId}
+                        onResourceViewChange={setSelectedResourceViewId}
+                        rowHeight={rowHeight}
+                        onRowHeightChange={setRowHeight}
+                      />
+                    </TabsContent>
 
-                <TabsContent value="customers" className="h-full m-0">
-                  <GanttChart
-                    jobs={jobs}
-                    operations={operations}
-                    resources={resources}
-                    capabilities={capabilities}
-                    view="customers"
-                    selectedResourceViewId={selectedResourceViewId}
-                    onResourceViewChange={setSelectedResourceViewId}
-                    rowHeight={rowHeight}
-                    onRowHeightChange={setRowHeight}
-                  />
-                </TabsContent>
+                    <TabsContent value="customers" className="h-full m-0">
+                      <GanttChart
+                        jobs={jobs}
+                        operations={operations}
+                        resources={resources}
+                        capabilities={capabilities}
+                        view="customers"
+                        selectedResourceViewId={selectedResourceViewId}
+                        onResourceViewChange={setSelectedResourceViewId}
+                        rowHeight={rowHeight}
+                        onRowHeightChange={setRowHeight}
+                      />
+                    </TabsContent>
+                  </>
+                )}
               </Tabs>
             </div>
           </div>
