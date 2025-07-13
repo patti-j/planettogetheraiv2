@@ -479,3 +479,12 @@ The application uses a modern full-stack architecture with strong typing through
 - Added AI Actions mutation with proper error handling and success notifications
 - Consistent AI purple-pink gradient styling throughout AI Actions feature
 - Enhanced sidebar with tooltips explaining AI Actions functionality
+
+✓ **Button Text Standardization (July 13, 2025)**:
+- Standardized all creation buttons to use "New" instead of "Add", "Create", or mixed terminology
+- Updated sidebar quick actions: "Add Resource" → "New Resource", "Create New Job" → "New Job"
+- Standardized Kanban board actions: "Create Job/Operation/Resource" → "New Job/Operation/Resource"
+- Updated all dialog titles to use "New" consistently for creation flows
+- Modified form buttons in JobForm, ResourceForm, OperationForm to use "New" for creation
+- Updated resource view manager and analytics components to use "New" terminology
+- Enhanced user experience with consistent button labeling throughout the entire application

@@ -180,7 +180,7 @@ export default function ResourceForm({
           <Button type="submit" disabled={createResourceMutation.isPending || updateResourceMutation.isPending}>
             {(createResourceMutation.isPending || updateResourceMutation.isPending) ? 
               (isEditing ? "Updating..." : "Creating...") : 
-              (isEditing ? "Update Resource" : "Create Resource")
+              (isEditing ? "Update Resource" : "New Resource")
             }
           </Button>
         </div>

@@ -273,7 +273,7 @@ export default function OperationForm({
           <Button type="submit" disabled={createOperationMutation.isPending || updateOperationMutation.isPending}>
             {(createOperationMutation.isPending || updateOperationMutation.isPending) ? 
               (isEditing ? "Updating..." : "Creating...") : 
-              (isEditing ? "Update Operation" : "Create Operation")
+              (isEditing ? "Update Operation" : "New Operation")
             }
           </Button>
         </div>

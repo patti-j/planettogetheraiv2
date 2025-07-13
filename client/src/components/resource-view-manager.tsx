@@ -105,13 +105,13 @@ export default function ResourceViewManager({
           <DialogTrigger asChild>
             <Button onClick={() => setEditingView(undefined)}>
               <Plus className="w-4 h-4 mr-2" />
-              Add Resource Gantt View
+              New Resource Gantt View
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingView ? "Edit Resource Gantt View" : "Add New Resource Gantt View"}
+                {editingView ? "Edit Resource Gantt View" : "New Resource Gantt View"}
               </DialogTitle>
             </DialogHeader>
             <ResourceViewForm
@@ -136,7 +136,7 @@ export default function ResourceViewManager({
                 </p>
                 <Button onClick={() => setIsFormOpen(true)}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Your First Resource Gantt View
+                  New Resource Gantt View
                 </Button>
               </div>
             </CardContent>

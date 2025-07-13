@@ -147,7 +147,7 @@ export default function Boards() {
         <Dialog open={jobDialogOpen} onOpenChange={setJobDialogOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Create New Job</DialogTitle>
+              <DialogTitle>New Job</DialogTitle>
             </DialogHeader>
             <JobForm onSuccess={() => setJobDialogOpen(false)} />
           </DialogContent>
@@ -157,7 +157,7 @@ export default function Boards() {
         <Dialog open={resourceDialogOpen} onOpenChange={setResourceDialogOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Add New Resource</DialogTitle>
+              <DialogTitle>New Resource</DialogTitle>
             </DialogHeader>
             <ResourceForm 
               capabilities={capabilities} 

@@ -332,12 +332,12 @@ export default function AIAnalyticsManager({
                   <div className="p-3 border rounded-lg">
                     <h4 className="font-medium text-sm">Production Overview</h4>
                     <p className="text-xs text-gray-500 mt-1">Key metrics and KPIs</p>
-                    <Button size="sm" className="mt-2 w-full">Add Template</Button>
+                    <Button size="sm" className="mt-2 w-full">New Template</Button>
                   </div>
                   <div className="p-3 border rounded-lg">
                     <h4 className="font-medium text-sm">Resource Utilization</h4>
                     <p className="text-xs text-gray-500 mt-1">Charts and utilization data</p>
-                    <Button size="sm" className="mt-2 w-full">Add Template</Button>
+                    <Button size="sm" className="mt-2 w-full">New Template</Button>
                   </div>
                 </div>
               </div>

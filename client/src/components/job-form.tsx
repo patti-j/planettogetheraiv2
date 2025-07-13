@@ -234,7 +234,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
                 onClick={() => setOperationDialogOpen(true)}
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add Operation
+                New Operation
               </Button>
             </div>
             
@@ -318,7 +318,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
             Cancel
           </Button>
           <Button type="submit" disabled={createJobMutation.isPending}>
-            {createJobMutation.isPending ? (job ? "Updating..." : "Creating...") : (job ? "Update Job" : "Create Job")}
+            {createJobMutation.isPending ? (job ? "Updating..." : "Creating...") : (job ? "Update Job" : "New Job")}
           </Button>
         </div>
         </form>
@@ -329,7 +329,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingOperation ? "Edit Operation" : "Add Operation"}
+              {editingOperation ? "Edit Operation" : "New Operation"}
             </DialogTitle>
           </DialogHeader>
           <OperationForm

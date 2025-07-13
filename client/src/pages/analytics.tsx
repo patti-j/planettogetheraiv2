@@ -175,7 +175,7 @@ export default function Analytics() {
                 onClick={handleAddManualWidget}
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add Widget
+                New Widget
               </Button>
               <Button
                 onClick={() => setAiAnalyticsOpen(true)}

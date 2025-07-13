@@ -831,7 +831,7 @@ function KanbanBoard({
                   }}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Create {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
+                  New {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -972,7 +972,7 @@ function KanbanBoard({
       <Dialog open={jobDialogOpen} onOpenChange={setJobDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{selectedJob ? "Edit Job" : "Create New Job"}</DialogTitle>
+            <DialogTitle>{selectedJob ? "Edit Job" : "New Job"}</DialogTitle>
           </DialogHeader>
           <JobForm
             job={selectedJob}
@@ -985,7 +985,7 @@ function KanbanBoard({
       <Dialog open={operationDialogOpen} onOpenChange={setOperationDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{selectedOperation ? "Edit Operation" : "Create New Operation"}</DialogTitle>
+            <DialogTitle>{selectedOperation ? "Edit Operation" : "New Operation"}</DialogTitle>
           </DialogHeader>
           <OperationForm
             operation={selectedOperation}

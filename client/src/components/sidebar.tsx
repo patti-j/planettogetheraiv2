@@ -190,7 +190,7 @@ export default function Sidebar() {
                   onClick={() => setResourceDialogOpen(true)}
                 >
                   <ServerCog className="w-4 h-4 mr-2" />
-                  Add Resource
+                  New Resource
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right">
@@ -251,7 +251,7 @@ export default function Sidebar() {
       <Dialog open={jobDialogOpen} onOpenChange={setJobDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Create New Job</DialogTitle>
+            <DialogTitle>New Job</DialogTitle>
           </DialogHeader>
           <JobForm onSuccess={() => setJobDialogOpen(false)} />
         </DialogContent>
@@ -261,7 +261,7 @@ export default function Sidebar() {
       <Dialog open={resourceDialogOpen} onOpenChange={setResourceDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Resource</DialogTitle>
+            <DialogTitle>New Resource</DialogTitle>
           </DialogHeader>
           <ResourceForm 
             capabilities={capabilities} 
@@ -288,7 +288,7 @@ export default function Sidebar() {
                 value={aiActionsPrompt}
                 onChange={(e) => setAiActionsPrompt(e.target.value)}
                 onKeyPress={handleAiActionsKeyPress}
-                placeholder="e.g., Add buttons for common maintenance tasks and priority job creation..."
+                placeholder="e.g., New buttons for common maintenance tasks and priority job creation..."
                 className="w-full"
               />
             </div>
