@@ -47,6 +47,7 @@ You can perform these actions:
 6. GET_STATUS - Get current system status
 7. SEARCH_JOBS - Search for jobs by criteria
 8. SEARCH_OPERATIONS - Search for operations by criteria
+9. ANALYZE_LATE_JOBS - Analyze which jobs are late and provide detailed information
 
 Respond with JSON in this format:
 {
@@ -60,8 +61,15 @@ For CREATE_OPERATION, parameters should include: name, description, jobId, durat
 For CREATE_RESOURCE, parameters should include: name, type, capabilities
 For UPDATE_OPERATION, parameters should include: id, and fields to update
 For ASSIGN_OPERATION, parameters should include: operationId, resourceId
+For ANALYZE_LATE_JOBS, no parameters needed - analyze current jobs and operations to determine which are late
 
-Be helpful and interpret natural language commands into appropriate actions.`
+When analyzing late jobs, provide specific information about:
+- Which jobs are late and by how much
+- Current status of operations
+- Impact on production schedule
+- Recommended actions
+
+Be helpful and interpret natural language commands into appropriate actions. When asked about late jobs, overdue operations, or scheduling issues, use ANALYZE_LATE_JOBS to provide detailed analysis.`
         },
         {
           role: "user",
@@ -74,7 +82,7 @@ Be helpful and interpret natural language commands into appropriate actions.`
     const aiResponse = JSON.parse(response.choices[0].message.content || "{}");
     
     // Execute the determined action
-    return await executeAction(aiResponse.action, aiResponse.parameters, aiResponse.message);
+    return await executeAction(aiResponse.action, aiResponse.parameters, aiResponse.message, context);
     
   } catch (error) {
     console.error("AI Agent Error:", error);
@@ -97,7 +105,7 @@ async function getSystemContext(): Promise<SystemContext> {
   return { jobs, operations, resources, capabilities };
 }
 
-async function executeAction(action: string, parameters: any, message: string): Promise<AIAgentResponse> {
+async function executeAction(action: string, parameters: any, message: string, context?: SystemContext): Promise<AIAgentResponse> {
   try {
     switch (action) {
       case "CREATE_JOB":
@@ -203,6 +211,79 @@ async function executeAction(action: string, parameters: any, message: string): 
           message: message || `Found ${filteredOperations.length} matching operations`,
           data: filteredOperations,
           actions: ["SEARCH_OPERATIONS"]
+        };
+
+      case "ANALYZE_LATE_JOBS":
+        if (!context) {
+          const freshContext = await getSystemContext();
+          context = freshContext;
+        }
+        
+        const today = new Date();
+        const lateJobs = [];
+        const lateOperations = [];
+        
+        // Analyze each job for lateness
+        for (const job of context.jobs) {
+          const jobDueDate = new Date(job.dueDate);
+          const jobOperations = context.operations.filter(op => op.jobId === job.id);
+          
+          // Check if job is past due date
+          if (today > jobDueDate) {
+            const daysLate = Math.floor((today.getTime() - jobDueDate.getTime()) / (24 * 60 * 60 * 1000));
+            lateJobs.push({
+              ...job,
+              daysLate,
+              operations: jobOperations
+            });
+          }
+          
+          // Check for operations that are overdue
+          for (const operation of jobOperations) {
+            if (operation.endTime && new Date(operation.endTime) > jobDueDate) {
+              const daysLate = Math.floor((new Date(operation.endTime).getTime() - jobDueDate.getTime()) / (24 * 60 * 60 * 1000));
+              lateOperations.push({
+                ...operation,
+                jobName: job.name,
+                daysLate
+              });
+            }
+          }
+        }
+        
+        let analysisMessage = "Late Jobs Analysis:\n\n";
+        
+        if (lateJobs.length === 0) {
+          analysisMessage += "✅ No jobs are currently overdue.\n";
+        } else {
+          analysisMessage += `⚠️ ${lateJobs.length} job(s) are overdue:\n`;
+          lateJobs.forEach(job => {
+            analysisMessage += `• ${job.name} (${job.customerName}) - ${job.daysLate} days late\n`;
+            analysisMessage += `  Due: ${new Date(job.dueDate).toLocaleDateString()}\n`;
+            analysisMessage += `  Operations: ${job.operations.length} total\n`;
+          });
+        }
+        
+        if (lateOperations.length > 0) {
+          analysisMessage += `\n🔍 ${lateOperations.length} operation(s) completed late:\n`;
+          lateOperations.forEach(op => {
+            analysisMessage += `• ${op.name} (${op.jobName}) - ${op.daysLate} days late\n`;
+          });
+        }
+        
+        return {
+          success: true,
+          message: analysisMessage,
+          data: {
+            lateJobs,
+            lateOperations,
+            summary: {
+              totalLateJobs: lateJobs.length,
+              totalLateOperations: lateOperations.length,
+              analysisDate: today.toISOString()
+            }
+          },
+          actions: ["ANALYZE_LATE_JOBS"]
         };
 
       default:
