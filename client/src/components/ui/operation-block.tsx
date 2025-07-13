@@ -45,74 +45,54 @@ export default function OperationBlock({
     if (operation.startTime && operation.endTime) {
       const startTime = new Date(operation.startTime);
       const endTime = new Date(operation.endTime);
+      // Use the same base date as the timeline generation (no midnight adjustment)
       const baseDate = new Date(timelineBaseDate.getTime());
-      baseDate.setHours(0, 0, 0, 0);
       
-      // Calculate position based on time unit
+      // Calculate position based on time unit using the same logic as timeScale
       let left = 0;
       let width = 0;
       
+      // Calculate the step size for this time unit (matching timeScale generation)
+      let stepMs: number;
       switch (timeUnit) {
         case "hour":
-          const startOffsetHours = (startTime.getTime() - baseDate.getTime()) / (1000 * 60 * 60);
-          const durationHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
-          left = (startOffsetHours / 24) * dayWidth;
-          width = Math.max((durationHours / 24) * dayWidth, 20);
+          stepMs = 60 * 60 * 1000;
           break;
         case "shift":
-          const startOffsetShifts = (startTime.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 8);
-          const durationShifts = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60 * 8);
-          left = startOffsetShifts * dayWidth;
-          width = Math.max(durationShifts * dayWidth, 20);
+          stepMs = 8 * 60 * 60 * 1000;
           break;
         case "day":
-          const startOffsetDays = (startTime.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24);
-          const durationDays = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60 * 24);
-          left = startOffsetDays * dayWidth;
-          width = Math.max(durationDays * dayWidth, 20);
+          stepMs = 24 * 60 * 60 * 1000;
           break;
         case "week":
-          const startOffsetWeeks = (startTime.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24 * 7);
-          const durationWeeks = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60 * 24 * 7);
-          left = startOffsetWeeks * dayWidth;
-          width = Math.max(durationWeeks * dayWidth, 20);
+          stepMs = 7 * 24 * 60 * 60 * 1000;
           break;
         case "month":
-          const startOffsetMonths = (startTime.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
-          const durationMonths = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60 * 24 * 30);
-          left = startOffsetMonths * dayWidth;
-          width = Math.max(durationMonths * dayWidth, 20);
+          stepMs = 30 * 24 * 60 * 60 * 1000;
           break;
         case "quarter":
-          const startOffsetQuarters = (startTime.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24 * 90);
-          const durationQuarters = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60 * 24 * 90);
-          left = startOffsetQuarters * dayWidth;
-          width = Math.max(durationQuarters * dayWidth, 20);
+          stepMs = 90 * 24 * 60 * 60 * 1000;
           break;
         case "year":
-          const startOffsetYears = (startTime.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
-          const durationYears = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60 * 24 * 365);
-          left = startOffsetYears * dayWidth;
-          width = Math.max(durationYears * dayWidth, 20);
+          stepMs = 365 * 24 * 60 * 60 * 1000;
           break;
         case "decade":
-          const startOffsetDecades = (startTime.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24 * 365 * 10);
-          const durationDecades = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60 * 24 * 365 * 10);
-          left = startOffsetDecades * dayWidth;
-          width = Math.max(durationDecades * dayWidth, 20);
+          stepMs = 3650 * 24 * 60 * 60 * 1000;
           break;
         default:
-          // Default to day calculation
-          const defaultOffsetDays = (startTime.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24);
-          const defaultDurationDays = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60 * 24);
-          left = defaultOffsetDays * dayWidth;
-          width = Math.max(defaultDurationDays * dayWidth, 20);
-          break;
+          stepMs = 24 * 60 * 60 * 1000;
       }
+      
+      // Calculate position relative to the timeline base
+      const startOffset = (startTime.getTime() - baseDate.getTime()) / stepMs;
+      const duration = (endTime.getTime() - startTime.getTime()) / stepMs;
+      
+      left = startOffset * dayWidth;
+      width = Math.max(duration * dayWidth, 20);
       
       setPosition({ left, width });
     }
-  }, [operation.startTime, operation.endTime, dayWidth, timeUnit]);
+  }, [operation.startTime, operation.endTime, dayWidth, timeUnit, timelineBaseDate]);
 
 
   const getJobColor = (jobId: number) => {

@@ -39,11 +39,8 @@ export default function GanttChart({
   const isDraggingResourceList = useRef(false);
   const lastMousePos = useRef({ x: 0, y: 0 });
 
-  // Timeline base date
-  const timelineBaseDate = useMemo(() => new Date(), [timeUnit]);
-  
   // Generate dynamic time scale based on time unit
-  const timeScale = useMemo(() => {
+  const { timeScale, timelineBaseDate } = useMemo(() => {
     const periods = [];
     const now = new Date();
     
@@ -139,7 +136,10 @@ export default function GanttChart({
       });
     }
     
-    return periods;
+    return {
+      timeScale: periods,
+      timelineBaseDate: now
+    };
   }, [timeUnit]);
 
   // Calculate timeline dimensions
