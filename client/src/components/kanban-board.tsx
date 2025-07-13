@@ -300,7 +300,12 @@ export default function KanbanBoard({
       return kanbanConfigs.find(config => config.id === selectedConfigId);
     }
     // Use default configuration if available
-    return kanbanConfigs.find(config => config.isDefault) || kanbanConfigs[0];
+    const defaultConfig = kanbanConfigs.find(config => config.isDefault) || kanbanConfigs[0];
+    // Set the selectedConfigId to the default config if not already set
+    if (defaultConfig && !selectedConfigId) {
+      setSelectedConfigId(defaultConfig.id);
+    }
+    return defaultConfig;
   }, [kanbanConfigs, selectedConfigId]);
 
   // Derived values from selected configuration
@@ -328,7 +333,7 @@ export default function KanbanBoard({
 
   const getFieldValues = (field: string) => {
     if (field === "status") {
-      return ["planned", "in_progress", "completed", "cancelled"];
+      return ["planned", "In-Progress", "completed", "cancelled"];
     } else if (field === "priority") {
       return ["low", "medium", "high"];
     } else if (field === "customer") {
@@ -345,7 +350,7 @@ export default function KanbanBoard({
     if (field === "status") {
       const statusColors: Record<string, string> = {
         planned: "bg-blue-500",
-        in_progress: "bg-yellow-500",
+        "In-Progress": "bg-yellow-500",
         completed: "bg-green-500",
         cancelled: "bg-red-500"
       };

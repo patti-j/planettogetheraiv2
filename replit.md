@@ -326,6 +326,8 @@ The application uses a modern full-stack architecture with strong typing through
 - AI assistant can now successfully create Kanban boards without HTTP method errors
 - Added horizontal dividing line above "Configure Labels..." option in text label dropdown for consistency
 - Standardized dropdown styling across Gantt chart and Kanban board configuration menus
-- Enhanced operation status formatting to display "in_progress" as "In-Process" for improved readability
-- Added formatOperationStatus utility function for consistent status display across all components
-- Updated operation blocks, job forms, and analytics dashboard to use formatted status labels
+- Simplified operation status handling by using "In-Progress" as stored value instead of formatting function
+- Updated all status references in codebase to use "In-Progress" instead of "in_progress"
+- Removed formatOperationStatus utility function for cleaner, more maintainable code
+- Fixed Kanban board configuration dropdown to properly apply selected board configurations
+- Updated status color mappings and field values to handle "In-Progress" status correctly

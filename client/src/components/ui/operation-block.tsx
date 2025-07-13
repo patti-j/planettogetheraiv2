@@ -1,7 +1,7 @@
 import { type Operation, type Job } from "@shared/schema";
 import { useDrag } from "react-dnd";
 import { useEffect, useState, useMemo } from "react";
-import { formatOperationStatus } from "@/lib/utils";
+
 
 interface OperationBlockProps {
   operation: Operation;
@@ -155,7 +155,7 @@ export default function OperationBlock({
       case "by_status":
         switch (operation.status) {
           case "completed": return "bg-green-500";
-          case "in_progress": return "bg-blue-500";
+          case "In-Progress": return "bg-blue-500";
           case "planned": return "bg-gray-500";
           default: return "bg-gray-500";
         }
@@ -218,7 +218,7 @@ export default function OperationBlock({
         return job?.priority || "medium";
       
       case "status":
-        return formatOperationStatus(operation.status);
+        return operation.status;
       
       case "duration":
         return `${operation.duration}h`;
@@ -226,7 +226,7 @@ export default function OperationBlock({
       case "progress":
         // Calculate progress based on status
         return operation.status === "completed" ? "100%" : 
-               operation.status === "in_progress" ? "50%" : "0%";
+               operation.status === "In-Progress" ? "50%" : "0%";
       
       case "resource_name":
         return resourceName || "Unassigned";

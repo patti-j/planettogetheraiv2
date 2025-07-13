@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BarChart3, TrendingUp, Clock, AlertTriangle, CheckCircle } from "lucide-react";
 import Sidebar from "@/components/sidebar";
-import { formatOperationStatus } from "@/lib/utils";
 import type { Job, Operation, Resource } from "@shared/schema";
 
 interface Metrics {
@@ -176,7 +175,7 @@ export default function Analytics() {
                     <div key={status} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary">
-                          {formatOperationStatus(status)}
+                          {status}
                         </Badge>
                       </div>
                       <span className="font-medium">{count}</span>

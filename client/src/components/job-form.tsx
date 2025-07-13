@@ -15,7 +15,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Plus, Edit, Trash2, MoreHorizontal, Settings, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { formatOperationStatus } from "@/lib/utils";
 import { insertJobSchema, type Job, type Operation, type Capability, type Resource } from "@shared/schema";
 import OperationForm from "./operation-form";
 
@@ -254,7 +253,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
                         <div className="flex items-center gap-2 mb-2">
                           <h4 className="font-medium text-gray-900">{operation.name}</h4>
                           <Badge variant="secondary">
-                            {formatOperationStatus(operation.status)}
+                            {operation.status}
                           </Badge>
                         </div>
                         
