@@ -22,13 +22,23 @@ export function useOperationDrop(
       });
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (updatedOperation) => {
+      // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/resources"] });
       queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
+      
+      // Also invalidate job-specific operations
+      if (updatedOperation.jobId) {
+        queryClient.invalidateQueries({ queryKey: ["/api/jobs", updatedOperation.jobId, "operations"] });
+      }
+      
       toast({ title: "Operation assigned successfully" });
       onDropSuccess?.();
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Failed to assign operation:", error);
       toast({ title: "Failed to assign operation", variant: "destructive" });
     },
   });
@@ -49,11 +59,17 @@ export function useOperationDrop(
       );
     },
     drop: (item) => {
+      console.log('Dropping operation:', item.operation.id, 'onto resource:', resource.id);
+      console.log('Current assignedResourceId:', item.operation.assignedResourceId);
+      
       if (item.operation.assignedResourceId !== resource.id) {
+        console.log('Updating operation assignment...');
         updateOperationMutation.mutate({
           operationId: item.operation.id,
           resourceId: resource.id,
         });
+      } else {
+        console.log('Operation already assigned to this resource');
       }
     },
     collect: (monitor) => ({
