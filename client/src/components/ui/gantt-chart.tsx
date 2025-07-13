@@ -318,11 +318,11 @@ export default function GanttChart({
               className="flex-1 bg-gray-50 border-r border-gray-200 overflow-x-auto cursor-grab active:cursor-grabbing"
               onMouseDown={handleTimelineMouseDown}
               onScroll={handleTimelineScroll}
+              ref={timelineRef}
             >
               <div 
                 className="flex"
                 style={{ width: `${timelineWidth}px` }}
-                ref={timelineRef}
               >
                 {timeScale.map((period, index) => (
                   <div key={index} className="border-r border-gray-200 p-2 text-center flex-shrink-0" style={{ width: `${periodWidth}px` }}>
