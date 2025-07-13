@@ -43,7 +43,7 @@ export default function Dashboard() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [selectedResourceViewId, setSelectedResourceViewId] = useState<number | null>(null);
   const [rowHeight, setRowHeight] = useState(60);
-  const [aiAnalyticsOpen, setAiAnalyticsOpen] = useState(false);
+  const [analyticsManagerOpen, setAnalyticsManagerOpen] = useState(false);
   const [customWidgets, setCustomWidgets] = useState<AnalyticsWidget[]>([
     {
       id: "sample-1",
@@ -51,7 +51,7 @@ export default function Dashboard() {
       type: "chart",
       data: {},
       visible: true,
-      position: { x: 0, y: 0 },
+      position: { x: 20, y: 20 },
       size: { width: 400, height: 300 },
       config: { chartType: "pie", field: "status" }
     },
@@ -61,7 +61,7 @@ export default function Dashboard() {
       type: "progress",
       data: {},
       visible: true,
-      position: { x: 0, y: 0 },
+      position: { x: 450, y: 20 },
       size: { width: 300, height: 200 },
       config: { target: 85, current: 78 }
     },
@@ -71,7 +71,7 @@ export default function Dashboard() {
       type: "table",
       data: {},
       visible: true,
-      position: { x: 0, y: 0 },
+      position: { x: 20, y: 350 },
       size: { width: 500, height: 300 },
       config: { limit: 5 }
     }
@@ -169,7 +169,12 @@ export default function Dashboard() {
   };
 
   const handleWidgetEdit = (id: string) => {
-    console.log("Edit widget:", id);
+    // Open analytics manager with the specific widget for editing
+    const widget = customWidgets.find(w => w.id === id);
+    if (widget) {
+      setAnalyticsManagerOpen(true);
+      // Could add state to focus on specific widget in manager
+    }
   };
 
   const handleWidgetResize = (id: string, size: { width: number; height: number }) => {
@@ -396,7 +401,7 @@ export default function Dashboard() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    onClick={() => setAiAnalyticsOpen(true)}
+                    onClick={() => setAnalyticsManagerOpen(true)}
                     className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
                     size="sm"
                   >
@@ -569,8 +574,8 @@ export default function Dashboard() {
 
       {/* AI Analytics Manager */}
       <AIAnalyticsManager
-        open={aiAnalyticsOpen}
-        onOpenChange={setAiAnalyticsOpen}
+        open={analyticsManagerOpen}
+        onOpenChange={setAnalyticsManagerOpen}
         onWidgetCreate={handleWidgetCreate}
         currentWidgets={customWidgets}
         onWidgetUpdate={handleWidgetUpdate}

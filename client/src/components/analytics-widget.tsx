@@ -51,6 +51,9 @@ export default function AnalyticsWidget({
   const handleMouseDown = (e: React.MouseEvent) => {
     if (layoutMode !== "free") return;
     
+    e.preventDefault();
+    e.stopPropagation();
+    
     const rect = widgetRef.current?.getBoundingClientRect();
     if (!rect) return;
     
@@ -64,6 +67,8 @@ export default function AnalyticsWidget({
   const handleMouseMove = (e: MouseEvent) => {
     if (!isDragging || layoutMode !== "free") return;
     
+    e.preventDefault();
+    
     const container = widgetRef.current?.parentElement;
     if (!container) return;
     
@@ -71,10 +76,18 @@ export default function AnalyticsWidget({
     const newX = e.clientX - containerRect.left - dragOffset.x;
     const newY = e.clientY - containerRect.top - dragOffset.y;
     
-    onPositionChange(widget.id, { x: Math.max(0, newX), y: Math.max(0, newY) });
+    // Ensure the widget stays within bounds
+    const maxX = containerRect.width - widget.size.width;
+    const maxY = containerRect.height - widget.size.height;
+    
+    onPositionChange(widget.id, { 
+      x: Math.max(0, Math.min(maxX, newX)), 
+      y: Math.max(0, Math.min(maxY, newY)) 
+    });
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e: MouseEvent) => {
+    e.preventDefault();
     setIsDragging(false);
   };
 
@@ -88,7 +101,7 @@ export default function AnalyticsWidget({
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isDragging, dragOffset]);
+  }, [isDragging, dragOffset, layoutMode, widget.id, onPositionChange]);
   
   const widgetData = useMemo(() => {
     // Generate data based on widget type and configuration
@@ -227,10 +240,11 @@ export default function AnalyticsWidget({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="h-6 w-6 p-0 cursor-move"
+                className="h-6 w-6 p-0 cursor-move hover:bg-gray-100"
                 onMouseDown={handleMouseDown}
+                title="Drag to move widget"
               >
-                <Move className="w-4 h-4" />
+                <Move className="w-4 h-4 text-gray-400" />
               </Button>
             )}
             {getIcon()}
