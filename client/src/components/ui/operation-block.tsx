@@ -32,16 +32,35 @@ export default function OperationBlock({ operation, resourceName, jobName }: Ope
     const baseWidth = 144; // Base width
     
     // Calculate based on operation duration
-    const durationInDays = Math.ceil((operation.duration || 8) / 24);
-    const width = Math.max(baseWidth, durationInDays * 48);
+    const durationInHours = operation.duration || 8;
+    const width = Math.max(baseWidth, durationInHours * 18); // 18px per hour
     
-    // Position operations based on their order within the timeline
-    // Each day slot is ~172px wide (from the time scale)
-    const dayWidth = 172;
+    // Position operations based on their start time or order
+    const dayWidth = 172; // Each day slot is ~172px wide
     
-    // For now, use a simple positioning based on operation order
-    // In a real app, this would be based on actual start/end dates
-    const startDay = (operation.order || 0) % 7; // Distribute across 7 days
+    let startDay = 0;
+    if (operation.startTime) {
+      // Use actual start time if available
+      const startTime = new Date(operation.startTime);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const daysDiff = Math.floor((startTime.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+      startDay = Math.max(0, Math.min(6, daysDiff)); // Clamp to 0-6 days
+      
+      // Also calculate time within the day for more precise positioning
+      const hoursInDay = startTime.getHours() - 8; // Assuming 8 AM start
+      const timeOffset = Math.max(0, hoursInDay) * (dayWidth / 8); // 8 working hours per day
+      
+      return {
+        left: `${baseLeft + startDay * dayWidth + timeOffset}px`,
+        width: `${width}px`,
+        top: "4px",
+      };
+    } else {
+      // Fallback to order-based positioning
+      startDay = (operation.order || 0) % 7; // Distribute across 7 days
+    }
     
     return {
       left: `${baseLeft + startDay * dayWidth}px`,

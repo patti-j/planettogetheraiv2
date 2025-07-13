@@ -16,10 +16,17 @@ export function useOperationDrop(
   const queryClient = useQueryClient();
 
   const updateOperationMutation = useMutation({
-    mutationFn: async ({ operationId, resourceId }: { operationId: number; resourceId: number }) => {
-      const response = await apiRequest("PUT", `/api/operations/${operationId}`, {
-        assignedResourceId: resourceId,
-      });
+    mutationFn: async ({ operationId, resourceId, startTime, endTime }: { 
+      operationId: number; 
+      resourceId: number; 
+      startTime?: string;
+      endTime?: string;
+    }) => {
+      const updateData: any = { assignedResourceId: resourceId };
+      if (startTime) updateData.startTime = startTime;
+      if (endTime) updateData.endTime = endTime;
+      
+      const response = await apiRequest("PUT", `/api/operations/${operationId}`, updateData);
       return response.json();
     },
     onSuccess: (updatedOperation) => {
@@ -58,11 +65,43 @@ export function useOperationDrop(
         resourceCapabilities.includes(reqCap)
       );
     },
-    drop: (item) => {
+    drop: (item, monitor) => {
       if (item.operation.assignedResourceId !== resource.id) {
+        // Get the drop position and calculate time-based positioning
+        const clientOffset = monitor.getClientOffset();
+        const targetElement = monitor.getDropResult()?.element || document.querySelector(`[data-resource-id="${resource.id}"]`);
+        
+        let startTime, endTime;
+        if (clientOffset && targetElement) {
+          // Calculate the time position based on drop location
+          const rect = targetElement.getBoundingClientRect();
+          const relativeX = clientOffset.x - rect.left;
+          const timelineWidth = rect.width;
+          
+          // Calculate which day (0-6) and time within that day
+          const dayWidth = timelineWidth / 7; // 7 days in timeline
+          const dayIndex = Math.floor(relativeX / dayWidth);
+          const timeWithinDay = (relativeX % dayWidth) / dayWidth; // 0-1 representing position within day
+          
+          // Calculate actual start time
+          const today = new Date();
+          const startDate = new Date(today);
+          startDate.setDate(today.getDate() + dayIndex);
+          startDate.setHours(8 + Math.floor(timeWithinDay * 8), 0, 0, 0); // 8 AM to 4 PM (8 hours)
+          
+          // Calculate end time based on operation duration
+          const endDate = new Date(startDate);
+          endDate.setHours(startDate.getHours() + (item.operation.duration || 8));
+          
+          startTime = startDate.toISOString();
+          endTime = endDate.toISOString();
+        }
+        
         updateOperationMutation.mutate({
           operationId: item.operation.id,
           resourceId: resource.id,
+          startTime,
+          endTime
         });
       }
     },
