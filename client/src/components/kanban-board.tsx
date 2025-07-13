@@ -88,7 +88,7 @@ const JobCard = ({ job, onEdit, swimLaneField, index }: { job: Job; onEdit: (job
   return (
     <div
       ref={drag}
-      className={`bg-white rounded-lg shadow-sm border border-gray-200 p-3 mb-3 cursor-move hover:shadow-md transition-shadow ${
+      className={`bg-white rounded-lg shadow-sm border border-gray-200 p-2 sm:p-3 mb-2 sm:mb-3 cursor-move hover:shadow-md transition-shadow ${
         isDragging ? "opacity-50 rotate-3" : ""
       }`}
     >
@@ -116,8 +116,8 @@ const JobCard = ({ job, onEdit, swimLaneField, index }: { job: Job; onEdit: (job
       
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs text-gray-500">
-          <span>Customer: {job.customer}</span>
-          <Badge className={`text-xs ${getPriorityColor(job.priority)} text-white`}>
+          <span className="truncate pr-2">Customer: {job.customer}</span>
+          <Badge className={`text-xs ${getPriorityColor(job.priority)} text-white flex-shrink-0`}>
             {job.priority}
           </Badge>
         </div>
@@ -187,7 +187,7 @@ const OperationCard = ({ operation, job, resources, onEdit, swimLaneField, index
   return (
     <div
       ref={drag}
-      className={`bg-white rounded-lg shadow-sm border border-gray-200 p-3 mb-3 cursor-move hover:shadow-md transition-shadow ${
+      className={`bg-white rounded-lg shadow-sm border border-gray-200 p-2 sm:p-3 mb-2 sm:mb-3 cursor-move hover:shadow-md transition-shadow ${
         isDragging ? "opacity-50 rotate-3" : ""
       }`}
     >
@@ -221,11 +221,11 @@ const OperationCard = ({ operation, job, resources, onEdit, swimLaneField, index
         )}
         
         <div className="flex items-center justify-between text-xs text-gray-500">
-          <span>Duration: {operation.duration}h</span>
+          <span className="flex-shrink-0">Duration: {operation.duration}h</span>
           {assignedResource && (
-            <div className="flex items-center">
+            <div className="flex items-center truncate ml-2">
               {getResourceIcon(assignedResource.type)}
-              <span className="ml-1">{assignedResource.name}</span>
+              <span className="ml-1 truncate">{assignedResource.name}</span>
             </div>
           )}
         </div>
@@ -315,7 +315,7 @@ const KanbanColumn = ({
   return (
     <div
       ref={drop}
-      className={`bg-gray-50 rounded-lg p-4 min-h-[600px] w-80 flex-shrink-0 ${
+      className={`bg-gray-50 rounded-lg p-2 sm:p-4 min-h-[400px] sm:min-h-[600px] w-72 sm:w-80 flex-shrink-0 ${
         isOver && canDrop ? "bg-blue-50 border-2 border-blue-300 border-dashed" : ""
       }`}
     >
@@ -777,17 +777,17 @@ function KanbanBoard({
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
           <div className="flex items-center space-x-4">
             <h2 className="text-lg font-medium text-gray-900">Board</h2>
-            <div className="w-48 h-8 bg-gray-200 rounded animate-pulse" />
+            <div className="w-32 sm:w-48 h-8 bg-gray-200 rounded animate-pulse" />
           </div>
         </div>
-        <div className="flex-1 bg-gray-100 p-4">
-          <div className="flex space-x-4">
+        <div className="flex-1 bg-gray-100 p-2 sm:p-4">
+          <div className="flex space-x-2 sm:space-x-4 overflow-x-auto pb-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="w-80 bg-gray-50 rounded-lg p-4 h-96">
+              <div key={i} className="w-72 sm:w-80 bg-gray-50 rounded-lg p-2 sm:p-4 h-80 sm:h-96 flex-shrink-0">
                 <div className="h-6 bg-gray-200 rounded animate-pulse mb-4" />
                 <div className="space-y-2">
-                  <div className="h-20 bg-gray-200 rounded animate-pulse" />
-                  <div className="h-20 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-16 sm:h-20 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-16 sm:h-20 bg-gray-200 rounded animate-pulse" />
                 </div>
               </div>
             ))}
@@ -801,11 +801,11 @@ function KanbanBoard({
     <DndProvider backend={HTML5Backend}>
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border-b border-gray-200 bg-white gap-4 sm:gap-0">
           <div className="flex items-center space-x-4">
             <h2 className="text-lg font-medium text-gray-900">Board</h2>
             {selectedConfig && (
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
+              <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
                 <Badge variant="outline">{selectedConfig.viewType === "jobs" ? "Jobs" : "Operations"}</Badge>
                 <span>•</span>
                 <span>Grouped by {selectedConfig.swimLaneField}</span>
@@ -813,12 +813,12 @@ function KanbanBoard({
             )}
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
             {/* Create Action Button */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
-                  className="bg-primary hover:bg-blue-700 text-white" 
+                  className="bg-primary hover:bg-blue-700 text-white whitespace-nowrap" 
                   size="sm"
                   onClick={() => {
                     if (selectedConfig?.viewType === "jobs") {
@@ -831,7 +831,8 @@ function KanbanBoard({
                   }}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  New {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
+                  <span className="hidden sm:inline">New {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}</span>
+                  <span className="sm:hidden">New</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -843,12 +844,13 @@ function KanbanBoard({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white" 
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white whitespace-nowrap" 
                   size="sm"
                   onClick={onAICreateBoards}
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
-                  AI Boards
+                  <span className="hidden sm:inline">AI Boards</span>
+                  <span className="sm:hidden">AI</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -861,9 +863,9 @@ function KanbanBoard({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      {selectedConfig?.name || "Select Board"}
-                      <ChevronDown className="w-4 h-4 ml-2" />
+                    <Button variant="outline" size="sm" className="whitespace-nowrap max-w-32 sm:max-w-none">
+                      <span className="truncate">{selectedConfig?.name || "Select Board"}</span>
+                      <ChevronDown className="w-4 h-4 ml-2 flex-shrink-0" />
                     </Button>
                   </DropdownMenuTrigger>
                 </TooltipTrigger>
@@ -921,7 +923,7 @@ function KanbanBoard({
         </div>
 
         {/* Kanban Columns */}
-        <div className="flex-1 overflow-x-auto bg-gray-100 p-4">
+        <div className="flex-1 overflow-x-auto bg-gray-100 p-2 sm:p-4">
           {!selectedConfig ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
@@ -933,7 +935,7 @@ function KanbanBoard({
               </div>
             </div>
           ) : (
-            <div className="flex space-x-4 min-w-max">
+            <div className="flex space-x-2 sm:space-x-4 min-w-max pb-4">
               {columns.map((column) => (
                 <KanbanColumn
                   key={column.id}
