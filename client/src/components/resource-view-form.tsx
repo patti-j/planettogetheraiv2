@@ -194,7 +194,7 @@ export default function ResourceViewForm({
       <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
         <CardHeader>
           <CardTitle>
-            {resourceView ? "Edit Resource Gantt" : "Create New Resource Gantt"}
+            {resourceView ? `Edit "${resourceView.name}"` : "Create New Resource Gantt"}
           </CardTitle>
         </CardHeader>
         <CardContent>

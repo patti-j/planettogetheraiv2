@@ -228,3 +228,12 @@ The application uses a modern full-stack architecture with strong typing through
 - Fixed dialog height constraints with scrollable content areas for better UX
 - Renamed "Resource View" to "Resource Gantt" and "Operations View" to "Job Gantt" throughout the UI
 - Resource views now allow users to create custom resource sequences for optimized scheduling workflows
+
+✓ **In-Gantt Resource Reordering (July 13, 2025)**:
+- Implemented drag-and-drop resource reordering directly within the Resource Gantt view
+- Added DraggableResourceRow component with grip handles for intuitive resource sequencing
+- Combined operation drop zones with resource reordering for seamless dual functionality
+- Added visual feedback with opacity changes and grip icons for better user experience
+- Resource reordering only available when a custom resource view is selected
+- Fixed dialog title redundancy to show specific view names in edit dialogs
+- Real-time updates to resource sequence with database persistence and toast notifications

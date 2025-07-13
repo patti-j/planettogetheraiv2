@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { ChevronDown, ChevronRight, MoreHorizontal, ZoomIn, ZoomOut, Eye, Settings } from "lucide-react";
+import { ChevronDown, ChevronRight, MoreHorizontal, ZoomIn, ZoomOut, Eye, Settings, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -9,8 +9,11 @@ import OperationBlock from "./operation-block";
 import OperationForm from "../operation-form";
 import ResourceViewManager from "../resource-view-manager";
 import { useOperationDrop } from "@/hooks/use-drag-drop-fixed";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import { useToast } from "@/hooks/use-toast";
 import type { Job, Operation, Resource, Capability, ResourceView } from "@shared/schema";
 
 interface GanttChartProps {
@@ -38,8 +41,39 @@ export default function GanttChart({
   const [resourceListScrollTop, setResourceListScrollTop] = useState(0);
   const [selectedResourceViewId, setSelectedResourceViewId] = useState<number | null>(null);
   const [resourceViewManagerOpen, setResourceViewManagerOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   // Create a truly stable base date that never changes
   const timelineBaseDate = useMemo(() => new Date(2025, 6, 13, 7, 0, 0, 0), []); // Fixed to July 13, 2025 07:00:00
+  
+  // Mutation to update resource view sequence
+  const updateResourceViewMutation = useMutation({
+    mutationFn: async ({ viewId, resourceSequence }: { viewId: number; resourceSequence: number[] }) => {
+      const response = await apiRequest("PUT", `/api/resource-views/${viewId}`, { resourceSequence });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/resource-views"] });
+      toast({ title: "Resource sequence updated successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to update resource sequence", variant: "destructive" });
+    },
+  });
+  
+  // Function to handle reordering resources within a view
+  const handleResourceReorder = (fromIndex: number, toIndex: number) => {
+    if (!selectedResourceView || fromIndex === toIndex) return;
+    
+    const newSequence = [...selectedResourceView.resourceSequence];
+    const [moved] = newSequence.splice(fromIndex, 1);
+    newSequence.splice(toIndex, 0, moved);
+    
+    updateResourceViewMutation.mutate({
+      viewId: selectedResourceView.id,
+      resourceSequence: newSequence
+    });
+  };
   
   // Fetch resource views
   const { data: resourceViews = [] } = useQuery<ResourceView[]>({
@@ -610,7 +644,101 @@ export default function GanttChart({
     );
   };
 
-  // Create a separate component to handle the drop zone for each resource
+  // Draggable resource row component for reordering
+  const DraggableResourceRow = ({ resource, index }: { resource: Resource; index: number }) => {
+    const resourceOperations = operations.filter(op => op.assignedResourceId === resource.id);
+    const { drop, isOver, canDrop } = useOperationDrop(resource, timelineWidth, timeScale, timeUnit, timeScale.minDate);
+    
+    // Can only drag if we have a selected resource view
+    const canReorder = selectedResourceView && selectedResourceView.resourceSequence.length > 1;
+    
+    const [{ isDragging }, drag, preview] = useDrag({
+      type: "resource-row",
+      item: { resourceId: resource.id, index },
+      canDrag: canReorder,
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
+      }),
+    });
+    
+    const [, dropResource] = useDrop({
+      accept: "resource-row",
+      hover: (item: { resourceId: number; index: number }) => {
+        if (item.index !== index) {
+          handleResourceReorder(item.index, index);
+          item.index = index;
+        }
+      },
+    });
+    
+    // Combine the operation drop ref with the resource drop ref
+    const combinedRef = useCallback((node: HTMLDivElement | null) => {
+      drop(node);
+      dropResource(node);
+    }, [drop, dropResource]);
+    
+    return (
+      <div 
+        ref={preview}
+        className={`border-b border-gray-100 ${isDragging ? 'opacity-50' : ''}`}
+      >
+        <div className="flex">
+          <div className="w-64 px-4 py-3 bg-gray-50 border-r border-gray-200">
+            <div className="flex items-center">
+              {canReorder && (
+                <div 
+                  ref={drag}
+                  className="mr-2 cursor-move text-gray-400 hover:text-gray-600"
+                  title="Drag to reorder resources"
+                >
+                  <GripVertical className="w-4 h-4" />
+                </div>
+              )}
+              <div className="flex-1">
+                <div className="font-medium text-gray-800">{resource.name}</div>
+                <div className="text-xs text-gray-500">
+                  Type: {resource.type} | 
+                  Capabilities: {resource.capabilities?.map(capId => 
+                    getCapabilityName(capId)
+                  ).join(", ") || "None"}
+                </div>
+              </div>
+              <Badge className={`text-xs ${
+                resource.status === "active" ? "bg-accent text-white" : "bg-gray-400 text-white"
+              }`}>
+                {resource.status}
+              </Badge>
+            </div>
+          </div>
+          <div 
+            ref={combinedRef}
+            data-resource-id={resource.id}
+            className={`flex-1 relative p-2 min-h-[80px] overflow-hidden ${
+              isOver && canDrop ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''
+            }`}
+          >
+            <div data-timeline-content style={{ width: `${timelineWidth}px` }}>
+              {resourceOperations.map((operation) => (
+                <OperationBlock
+                  key={operation.id}
+                  operation={operation}
+                  resourceName={resource.name}
+                  jobName={jobs.find(job => job.id === operation.jobId)?.name}
+                  job={jobs.find(job => job.id === operation.jobId)}
+                  timelineWidth={timelineWidth}
+                  dayWidth={periodWidth}
+                  timeUnit={timeUnit}
+                  timelineBaseDate={timeScale.minDate}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Create a separate component to handle the drop zone for each resource (fallback)
   const ResourceRow = ({ resource }: { resource: Resource }) => {
     const resourceOperations = operations.filter(op => op.assignedResourceId === resource.id);
     const { drop, isOver, canDrop } = useOperationDrop(resource, timelineWidth, timeScale, timeUnit, timeScale.minDate);
@@ -792,54 +920,56 @@ export default function GanttChart({
           </div>
         </div>
         
-        {orderedResources.map((resource) => (
-          <ResourceRow key={resource.id} resource={resource} />
+        {orderedResources.map((resource, index) => (
+          <DraggableResourceRow key={resource.id} resource={resource} index={index} />
         ))}
       </div>
     </div>
   );
 
   return (
-    <div className="flex-1 bg-white h-full">
-      {view === "operations" ? renderOperationsView() : renderResourcesView()}
-      
-      {/* Operation Edit Dialog */}
-      <Dialog open={operationDialogOpen} onOpenChange={setOperationDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Operation</DialogTitle>
-          </DialogHeader>
-          {selectedOperation && (
-            <OperationForm
-              operation={selectedOperation}
-              jobs={jobs}
-              capabilities={capabilities}
+    <DndProvider backend={HTML5Backend}>
+      <div className="flex-1 bg-white h-full">
+        {view === "operations" ? renderOperationsView() : renderResourcesView()}
+        
+        {/* Operation Edit Dialog */}
+        <Dialog open={operationDialogOpen} onOpenChange={setOperationDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Operation</DialogTitle>
+            </DialogHeader>
+            {selectedOperation && (
+              <OperationForm
+                operation={selectedOperation}
+                jobs={jobs}
+                capabilities={capabilities}
+                resources={resources}
+                onSuccess={() => {
+                  setOperationDialogOpen(false);
+                  setSelectedOperation(null);
+                }}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+        
+        {/* Resource View Manager Dialog */}
+        <Dialog open={resourceViewManagerOpen} onOpenChange={setResourceViewManagerOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Resource Gantt Manager</DialogTitle>
+            </DialogHeader>
+            <ResourceViewManager
               resources={resources}
-              onSuccess={() => {
-                setOperationDialogOpen(false);
-                setSelectedOperation(null);
+              selectedViewId={selectedResourceView?.id}
+              onViewChange={(viewId) => {
+                setSelectedResourceViewId(viewId);
+                setResourceViewManagerOpen(false);
               }}
             />
-          )}
-        </DialogContent>
-      </Dialog>
-      
-      {/* Resource View Manager Dialog */}
-      <Dialog open={resourceViewManagerOpen} onOpenChange={setResourceViewManagerOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Resource Gantt Manager</DialogTitle>
-          </DialogHeader>
-          <ResourceViewManager
-            resources={resources}
-            selectedViewId={selectedResourceView?.id}
-            onViewChange={(viewId) => {
-              setSelectedResourceViewId(viewId);
-              setResourceViewManagerOpen(false);
-            }}
-          />
-        </DialogContent>
-      </Dialog>
-    </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </DndProvider>
   );
 }
