@@ -503,6 +503,7 @@ export default function GanttChart({
       case 'machine':
         return <Wrench className="w-4 h-4 text-gray-500" />;
       case 'person':
+      case 'operator':
         return <Users className="w-4 h-4 text-gray-500" />;
       case 'facility':
         return <Building2 className="w-4 h-4 text-gray-500" />;
@@ -729,11 +730,7 @@ export default function GanttChart({
               <div className="flex-1">
                 <div className="font-medium text-gray-800">{resource.name}</div>
                 <div className="text-xs text-gray-500 flex items-center gap-2">
-                  <span className="flex items-center gap-1">
-                    {getResourceTypeIcon(resource.type)}
-                    {resource.type}
-                  </span>
-                  <span>•</span>
+                  {getResourceTypeIcon(resource.type)}
                   <span>
                     {resource.capabilities?.map(capId => 
                       getCapabilityName(capId)
@@ -790,11 +787,7 @@ export default function GanttChart({
               <div className="flex-1">
                 <div className="font-medium text-gray-800">{resource.name}</div>
                 <div className="text-xs text-gray-500 flex items-center gap-2">
-                  <span className="flex items-center gap-1">
-                    {getResourceTypeIcon(resource.type)}
-                    {resource.type}
-                  </span>
-                  <span>•</span>
+                  {getResourceTypeIcon(resource.type)}
                   <span>
                     {resource.capabilities?.map(capId => 
                       getCapabilityName(capId)
@@ -856,13 +849,33 @@ export default function GanttChart({
               <div className="flex items-center justify-between">
                 <span className="font-medium text-gray-700">Resources</span>
                 <div className="flex items-center space-x-1">
-                  <Button variant="ghost" size="sm" onClick={zoomOut} disabled={timeUnit === "decade"} title="Zoom Out">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={zoomOut} 
+                    disabled={timeUnit === "decade"} 
+                    title="Zoom Out"
+                    className="flex-shrink-0 min-w-[32px] min-h-[32px]"
+                  >
                     <ZoomOut className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={resetZoom} title="Reset Zoom">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={resetZoom} 
+                    title="Reset Zoom"
+                    className="flex-shrink-0 min-w-[48px] min-h-[32px]"
+                  >
                     <span className="text-xs">{timeUnit}</span>
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={zoomIn} disabled={timeUnit === "hour"} title="Zoom In">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={zoomIn} 
+                    disabled={timeUnit === "hour"} 
+                    title="Zoom In"
+                    className="flex-shrink-0 min-w-[32px] min-h-[32px]"
+                  >
                     <ZoomIn className="w-4 h-4" />
                   </Button>
                 </div>

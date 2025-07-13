@@ -248,3 +248,6 @@ The application uses a modern full-stack architecture with strong typing through
 - Fixed row height constraints by removing fixed padding that prevented rows from shrinking below 80px
 - Added resource type icons (wrench for machines, users for people, building for facilities)
 - Simplified resource display by removing "Type:" and "Capabilities:" labels for cleaner, more compact layout
+- Fixed resource type detection to properly show Users icon for "Operator" type resources
+- Removed redundant resource type text, now showing only icons with capabilities
+- Stabilized zoom button positioning to prevent cursor jumping during repeated clicks
