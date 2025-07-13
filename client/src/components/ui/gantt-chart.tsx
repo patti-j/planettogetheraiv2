@@ -1245,7 +1245,6 @@ export default function GanttChart({
                     step={5}
                     className="w-12"
                   />
-                  <span className="w-6 text-right">{rowHeight}</span>
                 </div>
               </div>
               <div className="flex items-center space-x-1">
@@ -1298,48 +1297,46 @@ export default function GanttChart({
               </div>
             </div>
           </div>
-          <div className="flex-1 bg-gray-50 border-r border-gray-200">
-            <div className="flex items-center justify-end px-2 py-2">
-              <div className="flex items-center bg-white border rounded-md">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={zoomOut} 
-                  disabled={timeUnit === "decade"} 
-                  title="Zoom Out"
-                  className="h-6 px-2 border-r rounded-r-none"
-                >
-                  <ZoomOut className="w-3 h-3" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={resetZoom} 
-                  title="Reset Zoom"
-                  className="h-6 px-2 border-r rounded-none"
-                >
-                  <span className="text-xs font-medium">{timeUnit}</span>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={zoomIn} 
-                  disabled={timeUnit === "hour"} 
-                  title="Zoom In"
-                  className="h-6 px-2 border-r rounded-none"
-                >
-                  <ZoomIn className="w-3 h-3" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleScrollToToday} 
-                  title="Scroll to Today"
-                  className="h-6 px-2 rounded-l-none"
-                >
-                  <Calendar className="w-3 h-3" />
-                </Button>
-              </div>
+          <div className="w-auto bg-gray-50 border-r border-gray-200 px-2 py-2">
+            <div className="flex items-center bg-white border rounded-md">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={zoomOut} 
+                disabled={timeUnit === "decade"} 
+                title="Zoom Out"
+                className="h-6 px-1.5 border-r rounded-r-none"
+              >
+                <ZoomOut className="w-3 h-3" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={zoomIn} 
+                disabled={timeUnit === "hour"} 
+                title="Zoom In"
+                className="h-6 px-1.5 border-r rounded-none"
+              >
+                <ZoomIn className="w-3 h-3" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={resetZoom} 
+                title="Reset Zoom"
+                className="h-6 px-2 border-r rounded-none"
+              >
+                <span className="text-xs font-medium">{timeUnit}</span>
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleScrollToToday} 
+                title="Scroll to Today"
+                className="h-6 px-1.5 rounded-l-none"
+              >
+                <Calendar className="w-3 h-3" />
+              </Button>
             </div>
           </div>
           <div 
