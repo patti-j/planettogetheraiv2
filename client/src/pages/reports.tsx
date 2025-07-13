@@ -8,7 +8,7 @@ import { Calendar, Clock, Users, Wrench, Building, Package, Settings, ChevronDow
 import { format } from "date-fns";
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
 import AnalyticsWidget from "@/components/analytics-widget";
-// Removed useDragDrop import as it's not used in reports
+import Sidebar from "@/components/sidebar";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -309,7 +309,9 @@ export default function Reports() {
   const selectedConfigName = selectedConfig?.name || reportConfigs.find(c => c.isDefault)?.name || "Default Report";
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+      <Sidebar />
+      <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex-none p-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <div>
@@ -496,6 +498,7 @@ export default function Reports() {
           </div>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }
