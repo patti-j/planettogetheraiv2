@@ -33,8 +33,6 @@ export function useOperationDrop(
       if (endTime) updateData.endTime = endTime;
       
       const response = await apiRequest("PUT", `/api/operations/${operationId}`, updateData);
-      
-      // Parse the JSON response properly
       const result = await response.json();
       return result;
     },
@@ -55,56 +53,43 @@ export function useOperationDrop(
 
   const calculateTimeFromDrop = (timeUnit: TimeUnit, periodIndex: number, timeWithinPeriod: number) => {
     const now = new Date();
-    let periodStart: Date;
-    let periodDuration: number;
+    let stepMs: number;
     
+    // Match the exact logic from the Gantt chart timeScale generation
     switch (timeUnit) {
       case "hour":
-        periodStart = new Date(now.getTime() + (periodIndex * 60 * 60 * 1000));
-        periodDuration = 60 * 60 * 1000;
+        stepMs = 60 * 60 * 1000; // 1 hour in milliseconds
         break;
       case "shift":
-        periodStart = new Date(now.getTime() + (periodIndex * 8 * 60 * 60 * 1000));
-        periodDuration = 8 * 60 * 60 * 1000;
+        stepMs = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
         break;
       case "day":
-        periodStart = new Date(now.getTime() + (periodIndex * 24 * 60 * 60 * 1000));
-        periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 8 * 60 * 60 * 1000;
+        stepMs = 24 * 60 * 60 * 1000; // 1 day in milliseconds
         break;
       case "week":
-        periodStart = new Date(now.getTime() + (periodIndex * 7 * 24 * 60 * 60 * 1000));
-        periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 5 * 8 * 60 * 60 * 1000;
+        stepMs = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
         break;
       case "month":
-        periodStart = new Date(now.getTime() + (periodIndex * 30 * 24 * 60 * 60 * 1000));
-        periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 22 * 8 * 60 * 60 * 1000;
+        stepMs = 30 * 24 * 60 * 60 * 1000; // ~1 month in milliseconds
         break;
       case "quarter":
-        periodStart = new Date(now.getTime() + (periodIndex * 90 * 24 * 60 * 60 * 1000));
-        periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 66 * 8 * 60 * 60 * 1000;
+        stepMs = 90 * 24 * 60 * 60 * 1000; // ~1 quarter in milliseconds
         break;
       case "year":
-        periodStart = new Date(now.getTime() + (periodIndex * 365 * 24 * 60 * 60 * 1000));
-        periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 260 * 8 * 60 * 60 * 1000;
+        stepMs = 365 * 24 * 60 * 60 * 1000; // ~1 year in milliseconds
         break;
       case "decade":
-        periodStart = new Date(now.getTime() + (periodIndex * 3650 * 24 * 60 * 60 * 1000));
-        periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 2600 * 8 * 60 * 60 * 1000;
+        stepMs = 3650 * 24 * 60 * 60 * 1000; // ~1 decade in milliseconds
         break;
       default:
-        periodStart = new Date(now.getTime() + (periodIndex * 24 * 60 * 60 * 1000));
-        periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 8 * 60 * 60 * 1000;
+        stepMs = 24 * 60 * 60 * 1000; // Default to 1 day
         break;
     }
     
-    return { periodStart, periodDuration };
+    // Calculate the exact period start time matching the timeline generation
+    const periodStart = new Date(now.getTime() + (periodIndex * stepMs));
+    
+    return { periodStart, periodDuration: stepMs };
   };
 
   const [{ isOver, canDrop }, drop] = useDrop<DragItem, void, { isOver: boolean; canDrop: boolean }>({
@@ -185,8 +170,6 @@ export function useTimelineDrop(
       if (endTime) updateData.endTime = endTime;
       
       const response = await apiRequest("PUT", `/api/operations/${operationId}`, updateData);
-      
-      // Parse the JSON response properly
       const result = await response.json();
       return result;
     },
@@ -207,56 +190,43 @@ export function useTimelineDrop(
 
   const calculateTimeFromDrop = (timeUnit: TimeUnit, periodIndex: number, timeWithinPeriod: number) => {
     const now = new Date();
-    let periodStart: Date;
-    let periodDuration: number;
+    let stepMs: number;
     
+    // Match the exact logic from the Gantt chart timeScale generation
     switch (timeUnit) {
       case "hour":
-        periodStart = new Date(now.getTime() + (periodIndex * 60 * 60 * 1000));
-        periodDuration = 60 * 60 * 1000;
+        stepMs = 60 * 60 * 1000; // 1 hour in milliseconds
         break;
       case "shift":
-        periodStart = new Date(now.getTime() + (periodIndex * 8 * 60 * 60 * 1000));
-        periodDuration = 8 * 60 * 60 * 1000;
+        stepMs = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
         break;
       case "day":
-        periodStart = new Date(now.getTime() + (periodIndex * 24 * 60 * 60 * 1000));
-        periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 8 * 60 * 60 * 1000;
+        stepMs = 24 * 60 * 60 * 1000; // 1 day in milliseconds
         break;
       case "week":
-        periodStart = new Date(now.getTime() + (periodIndex * 7 * 24 * 60 * 60 * 1000));
-        periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 5 * 8 * 60 * 60 * 1000;
+        stepMs = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
         break;
       case "month":
-        periodStart = new Date(now.getTime() + (periodIndex * 30 * 24 * 60 * 60 * 1000));
-        periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 22 * 8 * 60 * 60 * 1000;
+        stepMs = 30 * 24 * 60 * 60 * 1000; // ~1 month in milliseconds
         break;
       case "quarter":
-        periodStart = new Date(now.getTime() + (periodIndex * 90 * 24 * 60 * 60 * 1000));
-        periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 66 * 8 * 60 * 60 * 1000;
+        stepMs = 90 * 24 * 60 * 60 * 1000; // ~1 quarter in milliseconds
         break;
       case "year":
-        periodStart = new Date(now.getTime() + (periodIndex * 365 * 24 * 60 * 60 * 1000));
-        periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 260 * 8 * 60 * 60 * 1000;
+        stepMs = 365 * 24 * 60 * 60 * 1000; // ~1 year in milliseconds
         break;
       case "decade":
-        periodStart = new Date(now.getTime() + (periodIndex * 3650 * 24 * 60 * 60 * 1000));
-        periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 2600 * 8 * 60 * 60 * 1000;
+        stepMs = 3650 * 24 * 60 * 60 * 1000; // ~1 decade in milliseconds
         break;
       default:
-        periodStart = new Date(now.getTime() + (periodIndex * 24 * 60 * 60 * 1000));
-        periodStart.setHours(8, 0, 0, 0);
-        periodDuration = 8 * 60 * 60 * 1000;
+        stepMs = 24 * 60 * 60 * 1000; // Default to 1 day
         break;
     }
     
-    return { periodStart, periodDuration };
+    // Calculate the exact period start time matching the timeline generation
+    const periodStart = new Date(now.getTime() + (periodIndex * stepMs));
+    
+    return { periodStart, periodDuration: stepMs };
   };
 
   const [{ isOver, canDrop }, drop] = useDrop<DragItem, void, { isOver: boolean; canDrop: boolean }>({
