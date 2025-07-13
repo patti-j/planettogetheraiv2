@@ -1,0 +1,83 @@
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+export const capabilities = pgTable("capabilities", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+});
+
+export const resources = pgTable("resources", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  type: text("type").notNull(),
+  status: text("status").notNull().default("active"),
+  capabilities: jsonb("capabilities").$type<number[]>().default([]),
+});
+
+export const jobs = pgTable("jobs", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  priority: text("priority").notNull().default("medium"),
+  status: text("status").notNull().default("planned"),
+  dueDate: timestamp("due_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const operations = pgTable("operations", {
+  id: serial("id").primaryKey(),
+  jobId: integer("job_id").references(() => jobs.id).notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  status: text("status").notNull().default("planned"),
+  duration: integer("duration").notNull(), // in hours
+  requiredCapabilities: jsonb("required_capabilities").$type<number[]>().default([]),
+  assignedResourceId: integer("assigned_resource_id").references(() => resources.id),
+  startTime: timestamp("start_time"),
+  endTime: timestamp("end_time"),
+  order: integer("order").notNull().default(0),
+});
+
+export const dependencies = pgTable("dependencies", {
+  id: serial("id").primaryKey(),
+  fromOperationId: integer("from_operation_id").references(() => operations.id).notNull(),
+  toOperationId: integer("to_operation_id").references(() => operations.id).notNull(),
+});
+
+export const insertCapabilitySchema = createInsertSchema(capabilities).omit({
+  id: true,
+});
+
+export const insertResourceSchema = createInsertSchema(resources).omit({
+  id: true,
+});
+
+export const insertJobSchema = createInsertSchema(jobs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertOperationSchema = createInsertSchema(operations).omit({
+  id: true,
+});
+
+export const insertDependencySchema = createInsertSchema(dependencies).omit({
+  id: true,
+});
+
+export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
+export type Capability = typeof capabilities.$inferSelect;
+
+export type InsertResource = z.infer<typeof insertResourceSchema>;
+export type Resource = typeof resources.$inferSelect;
+
+export type InsertJob = z.infer<typeof insertJobSchema>;
+export type Job = typeof jobs.$inferSelect;
+
+export type InsertOperation = z.infer<typeof insertOperationSchema>;
+export type Operation = typeof operations.$inferSelect;
+
+export type InsertDependency = z.infer<typeof insertDependencySchema>;
+export type Dependency = typeof dependencies.$inferSelect;
