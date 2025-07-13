@@ -34,27 +34,18 @@ export function useOperationDrop(
       
       const response = await apiRequest("PUT", `/api/operations/${operationId}`, updateData);
       
-      // Handle response parsing safely
-      try {
-        const text = await response.text();
-        if (text && text.trim()) {
-          return JSON.parse(text);
-        }
+      // Simple success handling - just return the operation ID
+      if (response.ok) {
         return { success: true, id: operationId };
-      } catch (parseError) {
-        // If JSON parsing fails but response was successful, return success
-        return { success: true, id: operationId };
+      } else {
+        throw new Error(`Failed to update operation: ${response.status}`);
       }
     },
-    onSuccess: (updatedOperation) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
       queryClient.invalidateQueries({ queryKey: ["/api/resources"] });
       queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
-      
-      if (updatedOperation && updatedOperation.jobId) {
-        queryClient.invalidateQueries({ queryKey: ["/api/jobs", updatedOperation.jobId, "operations"] });
-      }
       
       toast({ title: "Operation assigned successfully" });
       onDropSuccess?.();
@@ -226,27 +217,18 @@ export function useTimelineDrop(
       
       const response = await apiRequest("PUT", `/api/operations/${operationId}`, updateData);
       
-      // Handle response parsing safely
-      try {
-        const text = await response.text();
-        if (text && text.trim()) {
-          return JSON.parse(text);
-        }
+      // Simple success handling - just return the operation ID
+      if (response.ok) {
         return { success: true, id: operationId };
-      } catch (parseError) {
-        // If JSON parsing fails but response was successful, return success
-        return { success: true, id: operationId };
+      } else {
+        throw new Error(`Failed to update operation: ${response.status}`);
       }
     },
-    onSuccess: (updatedOperation) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
       queryClient.invalidateQueries({ queryKey: ["/api/resources"] });
       queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
-      
-      if (updatedOperation && updatedOperation.jobId) {
-        queryClient.invalidateQueries({ queryKey: ["/api/jobs", updatedOperation.jobId, "operations"] });
-      }
       
       toast({ title: "Operation assigned successfully" });
       onDropSuccess?.();
