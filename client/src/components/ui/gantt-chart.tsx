@@ -30,6 +30,7 @@ export default function GanttChart({
   const [scrollLeft, setScrollLeft] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, scrollLeft: 0 });
+  const [isDraggingBlock, setIsDraggingBlock] = useState(false);
 
   // Generate time scale for the next 7 days
   const timeScale = useMemo(() => {
@@ -96,7 +97,20 @@ export default function GanttChart({
     setScrollLeft(scrollLeft);
   };
 
+  const syncScrollToTimeline = (scrollLeft: number) => {
+    // Find all timeline headers and sync their scroll
+    const timelineHeaders = document.querySelectorAll('.timeline-header');
+    timelineHeaders.forEach((header) => {
+      if (header instanceof HTMLElement) {
+        header.scrollLeft = scrollLeft;
+      }
+    });
+  };
+
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Only handle background dragging, not operation blocks
+    if (isDraggingBlock) return;
+    
     setIsDragging(true);
     setDragStart({
       x: e.clientX,
@@ -106,11 +120,12 @@ export default function GanttChart({
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
+    if (!isDragging || isDraggingBlock) return;
     
     const deltaX = e.clientX - dragStart.x;
     const newScrollLeft = Math.max(0, Math.min(1200 - 800, dragStart.scrollLeft - deltaX)); // Limit scroll range
     setScrollLeft(newScrollLeft);
+    syncScrollToTimeline(newScrollLeft);
     e.preventDefault();
   };
 
@@ -264,6 +279,7 @@ export default function GanttChart({
                           operation={operation}
                           resourceName={getResourceName(operation.assignedResourceId || 0)}
                           jobName={jobs.find(job => job.id === operation.jobId)?.name}
+                          job={jobs.find(job => job.id === operation.jobId)}
                         />
                       </div>
                     </div>
@@ -361,6 +377,7 @@ export default function GanttChart({
                         operation={operation}
                         resourceName={resource.name}
                         jobName={jobs.find(job => job.id === operation.jobId)?.name}
+                        job={jobs.find(job => job.id === operation.jobId)}
                       />
                     ))}
                     {resourceOperations.length === 0 && (

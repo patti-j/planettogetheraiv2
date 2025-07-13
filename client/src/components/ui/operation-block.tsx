@@ -1,14 +1,15 @@
 import { useDrag } from "react-dnd";
 import { Badge } from "@/components/ui/badge";
-import type { Operation } from "@shared/schema";
+import type { Operation, Job } from "@shared/schema";
 
 interface OperationBlockProps {
   operation: Operation;
   resourceName: string;
   jobName?: string;
+  job?: Job;
 }
 
-export default function OperationBlock({ operation, resourceName, jobName }: OperationBlockProps) {
+export default function OperationBlock({ operation, resourceName, jobName, job }: OperationBlockProps) {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "operation",
     item: { operation },
@@ -17,13 +18,33 @@ export default function OperationBlock({ operation, resourceName, jobName }: Ope
     }),
   }));
 
-  const getOperationColor = (status: string) => {
-    switch (status) {
-      case "in-progress": return "bg-warning";
-      case "completed": return "bg-accent";
-      case "planned": return "bg-primary";
-      default: return "bg-gray-400";
+  const getOperationColor = () => {
+    if (!job) return "bg-gray-400";
+    
+    const today = new Date();
+    const dueDate = new Date(job.dueDate);
+    const operationEndTime = operation.endTime ? new Date(operation.endTime) : null;
+    
+    if (operationEndTime) {
+      // Check if operation is completed on time
+      if (operationEndTime <= dueDate) {
+        // Check if it's more than a week early
+        const weekInMs = 7 * 24 * 60 * 60 * 1000;
+        if (dueDate.getTime() - operationEndTime.getTime() > weekInMs) {
+          return "bg-yellow-500"; // More than a week early
+        }
+        return "bg-green-500"; // On time
+      } else {
+        return "bg-red-500"; // Late
+      }
     }
+    
+    // For operations without end time, check if we're past due date
+    if (today > dueDate) {
+      return "bg-red-500"; // Late
+    }
+    
+    return "bg-blue-500"; // Default for active operations
   };
 
   // Calculate position and width based on operation timing
@@ -83,17 +104,26 @@ export default function OperationBlock({ operation, resourceName, jobName }: Ope
     };
   };
 
+  const formatDueDate = (date: string) => {
+    return new Date(date).toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
   return (
     <div
       ref={drag}
       className={`absolute text-white rounded px-3 py-1 shadow-sm cursor-move hover:shadow-md transition-shadow ${
-        getOperationColor(operation.status)
+        getOperationColor()
       } ${isDragging ? "opacity-50" : ""}`}
       style={getOperationStyle()}
     >
-      <div className="text-xs font-medium">{operation.name}</div>
+      <div className="text-xs font-medium">{jobName || "Unknown Job"}</div>
+      <div className="text-xs opacity-90">{operation.name}</div>
       <div className="text-xs opacity-80">
-        {jobName && `${jobName} • `}{operation.duration}h • {resourceName}
+        Due: {job ? formatDueDate(job.dueDate) : "Unknown"}
       </div>
     </div>
   );
