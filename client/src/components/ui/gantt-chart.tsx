@@ -131,6 +131,10 @@ export default function GanttChart({
     // Don't add remaining resources - only show resources in the view
     return orderedList;
   }, [resources, selectedResourceView, view]);
+
+  // Get color scheme and text labeling from selected resource view
+  const colorScheme = selectedResourceView?.colorScheme || "by_job";
+  const textLabeling = selectedResourceView?.textLabeling || "operation_name";
   
   const timelineRef = useRef<HTMLDivElement>(null);
   const resourceListRef = useRef<HTMLDivElement>(null);
@@ -662,7 +666,8 @@ export default function GanttChart({
                           dayWidth={periodWidth}
                           timeUnit={timeUnit}
                           timelineBaseDate={timeScale.minDate}
-
+                          colorScheme={colorScheme}
+                          textLabeling={textLabeling}
                         />
                       </div>
                     </div>
@@ -765,6 +770,8 @@ export default function GanttChart({
                   dayWidth={periodWidth}
                   timeUnit={timeUnit}
                   timelineBaseDate={timeScale.minDate}
+                  colorScheme={colorScheme}
+                  textLabeling={textLabeling}
                 />
               ))}
             </div>
@@ -822,7 +829,8 @@ export default function GanttChart({
                   dayWidth={periodWidth}
                   timeUnit={timeUnit}
                   timelineBaseDate={timeScale.minDate}
-
+                  colorScheme={colorScheme}
+                  textLabeling={textLabeling}
                 />
               ))}
               {resourceOperations.length === 0 && (
@@ -980,7 +988,8 @@ export default function GanttChart({
                       dayWidth={periodWidth}
                       timeUnit={timeUnit}
                       timelineBaseDate={timeScale.minDate}
-
+                      colorScheme={colorScheme}
+                      textLabeling={textLabeling}
                     />
                   ))}
                 {operations.filter(op => !op.startTime || !op.endTime).length === 0 && (

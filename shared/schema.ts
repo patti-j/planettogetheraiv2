@@ -53,6 +53,8 @@ export const resourceViews = pgTable("resource_views", {
   description: text("description"),
   resourceSequence: jsonb("resource_sequence").$type<number[]>().notNull(),
   isDefault: boolean("is_default").default(false),
+  colorScheme: text("color_scheme").notNull().default("by_job"),
+  textLabeling: text("text_labeling").notNull().default("operation_name"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

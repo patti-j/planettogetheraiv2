@@ -50,6 +50,8 @@ You can perform these actions:
 9. ANALYZE_LATE_JOBS - Analyze which jobs are late and provide detailed information
 10. CREATE_CUSTOM_METRIC - Create a custom metric for tracking specific KPIs
 11. CALCULATE_CUSTOM_METRIC - Calculate and return custom metrics values
+12. CHANGE_COLOR_SCHEME - Change the color scheme for Resource Gantt blocks
+13. CHANGE_TEXT_LABELING - Change the text labeling for Resource Gantt blocks
 
 Respond with JSON in this format:
 {
@@ -66,6 +68,8 @@ For ASSIGN_OPERATION, parameters should include: operationId, resourceId
 For ANALYZE_LATE_JOBS, no parameters needed - analyze current jobs and operations to determine which are late
 For CREATE_CUSTOM_METRIC, parameters should include: name, description, calculation (formula or logic)
 For CALCULATE_CUSTOM_METRIC, parameters should include: metricName or calculation logic
+For CHANGE_COLOR_SCHEME, parameters should include: colorScheme (by_job, by_priority, by_status, by_operation_type, by_resource)
+For CHANGE_TEXT_LABELING, parameters should include: textLabeling (operation_name, job_name, both, duration, progress, none)
 
 When analyzing late jobs, provide specific information about:
 - Which jobs are late and by how much
@@ -326,6 +330,54 @@ async function executeAction(action: string, parameters: any, message: string, c
           message: message || `Custom metric calculated successfully`,
           data: metricResult,
           actions: ["CALCULATE_CUSTOM_METRIC"]
+        };
+
+      case "CHANGE_COLOR_SCHEME":
+        // Find the current default resource view and update its color scheme
+        const resourceViews = await storage.getResourceViews();
+        const currentView = resourceViews.find(rv => rv.isDefault);
+        
+        if (!currentView) {
+          return {
+            success: false,
+            message: "No default resource view found. Please create a resource view first.",
+            data: null
+          };
+        }
+
+        const updatedView = await storage.updateResourceView(currentView.id, {
+          colorScheme: parameters.colorScheme
+        });
+
+        return {
+          success: true,
+          message: message || `Changed color scheme to "${parameters.colorScheme}" for Resource Gantt view`,
+          data: updatedView,
+          actions: ["CHANGE_COLOR_SCHEME"]
+        };
+
+      case "CHANGE_TEXT_LABELING":
+        // Find the current default resource view and update its text labeling
+        const resourceViewsForText = await storage.getResourceViews();
+        const currentViewForText = resourceViewsForText.find(rv => rv.isDefault);
+        
+        if (!currentViewForText) {
+          return {
+            success: false,
+            message: "No default resource view found. Please create a resource view first.",
+            data: null
+          };
+        }
+
+        const updatedViewForText = await storage.updateResourceView(currentViewForText.id, {
+          textLabeling: parameters.textLabeling
+        });
+
+        return {
+          success: true,
+          message: message || `Changed text labeling to "${parameters.textLabeling}" for Resource Gantt view`,
+          data: updatedViewForText,
+          actions: ["CHANGE_TEXT_LABELING"]
         };
 
       default:

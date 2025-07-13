@@ -4,7 +4,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { X, GripVertical, Plus, Save } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { X, GripVertical, Plus, Save, Palette, Type } from "lucide-react";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +20,8 @@ const resourceViewFormSchema = z.object({
   description: z.string().optional(),
   resourceSequence: z.array(z.number()).min(1, "At least one resource is required"),
   isDefault: z.boolean().default(false),
+  colorScheme: z.string().default("by_job"),
+  textLabeling: z.string().default("operation_name"),
 });
 
 type ResourceViewFormData = z.infer<typeof resourceViewFormSchema>;
@@ -103,6 +106,8 @@ export default function ResourceViewForm({
     description: resourceView?.description || "",
     resourceSequence: resourceView?.resourceSequence || [],
     isDefault: resourceView?.isDefault || false,
+    colorScheme: resourceView?.colorScheme || "by_job",
+    textLabeling: resourceView?.textLabeling || "operation_name",
   });
   
   const [availableResources, setAvailableResources] = useState<Resource[]>(
@@ -218,6 +223,53 @@ export default function ResourceViewForm({
               placeholder="Enter view description (optional)"
               rows={3}
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Palette className="w-4 h-4" />
+                Block Color Scheme
+              </Label>
+              <Select
+                value={formData.colorScheme}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, colorScheme: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select color scheme" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="by_job">By Job</SelectItem>
+                  <SelectItem value="by_priority">By Priority</SelectItem>
+                  <SelectItem value="by_status">By Status</SelectItem>
+                  <SelectItem value="by_operation_type">By Operation Type</SelectItem>
+                  <SelectItem value="by_resource">By Resource</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Type className="w-4 h-4" />
+                Text Labeling
+              </Label>
+              <Select
+                value={formData.textLabeling}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, textLabeling: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select text labeling" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="operation_name">Operation Name</SelectItem>
+                  <SelectItem value="job_name">Job Name</SelectItem>
+                  <SelectItem value="both">Job + Operation</SelectItem>
+                  <SelectItem value="duration">Duration</SelectItem>
+                  <SelectItem value="progress">Progress %</SelectItem>
+                  <SelectItem value="none">No Text</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-4">
