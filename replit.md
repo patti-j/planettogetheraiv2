@@ -321,3 +321,6 @@ The application uses a modern full-stack architecture with strong typing through
 - Updated "Create & Manage Labels" to "Configure Labels" for consistency and precision
 - Applied consistent blue color styling to "Configure Boards" dropdown option matching text labeling configuration
 - Enhanced visual consistency indicating options that open configuration dialogs vs make selections
+- Fixed critical API request error in Kanban config manager causing "method is not a valid HTTP token" error
+- Corrected all apiRequest function calls to use proper signature (method, url, data) instead of object parameters
+- AI assistant can now successfully create Kanban boards without HTTP method errors

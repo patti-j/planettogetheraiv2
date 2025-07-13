@@ -422,10 +422,7 @@ export default function KanbanConfigManager({ open, onOpenChange, jobs, resource
   // Create kanban configuration mutation
   const createConfigMutation = useMutation({
     mutationFn: async (configData: Omit<KanbanConfig, 'id' | 'createdAt'>) => {
-      return apiRequest("/api/kanban-configs", {
-        method: "POST",
-        body: configData,
-      });
+      return apiRequest("POST", "/api/kanban-configs", configData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/kanban-configs"] });
@@ -439,10 +436,7 @@ export default function KanbanConfigManager({ open, onOpenChange, jobs, resource
   // Update kanban configuration mutation
   const updateConfigMutation = useMutation({
     mutationFn: async ({ id, ...configData }: { id: number } & Partial<Omit<KanbanConfig, 'id' | 'createdAt'>>) => {
-      return apiRequest(`/api/kanban-configs/${id}`, {
-        method: "PUT",
-        body: configData,
-      });
+      return apiRequest("PUT", `/api/kanban-configs/${id}`, configData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/kanban-configs"] });
@@ -456,9 +450,7 @@ export default function KanbanConfigManager({ open, onOpenChange, jobs, resource
   // Delete kanban configuration mutation
   const deleteConfigMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/kanban-configs/${id}`, {
-        method: "DELETE",
-      });
+      return apiRequest("DELETE", `/api/kanban-configs/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/kanban-configs"] });
@@ -472,9 +464,7 @@ export default function KanbanConfigManager({ open, onOpenChange, jobs, resource
   // Set default kanban configuration mutation
   const setDefaultConfigMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/kanban-configs/${id}/set-default`, {
-        method: "POST",
-      });
+      return apiRequest("POST", `/api/kanban-configs/${id}/set-default`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/kanban-configs"] });
@@ -488,10 +478,7 @@ export default function KanbanConfigManager({ open, onOpenChange, jobs, resource
   // AI create kanban configuration mutation
   const aiCreateConfigMutation = useMutation({
     mutationFn: async (prompt: string) => {
-      return apiRequest("/api/ai-agent/command", {
-        method: "POST",
-        body: { command: `Create a Kanban board: ${prompt}` },
-      });
+      return apiRequest("POST", "/api/ai-agent/command", { command: `Create a Kanban board: ${prompt}` });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/kanban-configs"] });
