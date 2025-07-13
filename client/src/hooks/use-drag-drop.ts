@@ -51,47 +51,6 @@ export function useOperationDrop(
     },
   });
 
-  const calculateTimeFromDrop = (timeUnit: TimeUnit, periodIndex: number, timeWithinPeriod: number) => {
-    const now = new Date();
-    let stepMs: number;
-    
-    // Match the exact logic from the Gantt chart timeScale generation
-    switch (timeUnit) {
-      case "hour":
-        stepMs = 60 * 60 * 1000; // 1 hour in milliseconds
-        break;
-      case "shift":
-        stepMs = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
-        break;
-      case "day":
-        stepMs = 24 * 60 * 60 * 1000; // 1 day in milliseconds
-        break;
-      case "week":
-        stepMs = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
-        break;
-      case "month":
-        stepMs = 30 * 24 * 60 * 60 * 1000; // ~1 month in milliseconds
-        break;
-      case "quarter":
-        stepMs = 90 * 24 * 60 * 60 * 1000; // ~1 quarter in milliseconds
-        break;
-      case "year":
-        stepMs = 365 * 24 * 60 * 60 * 1000; // ~1 year in milliseconds
-        break;
-      case "decade":
-        stepMs = 3650 * 24 * 60 * 60 * 1000; // ~1 decade in milliseconds
-        break;
-      default:
-        stepMs = 24 * 60 * 60 * 1000; // Default to 1 day
-        break;
-    }
-    
-    // Calculate the exact period start time matching the timeline generation
-    const periodStart = new Date(now.getTime() + (periodIndex * stepMs));
-    
-    return { periodStart, periodDuration: stepMs };
-  };
-
   const [{ isOver, canDrop }, drop] = useDrop<DragItem, void, { isOver: boolean; canDrop: boolean }>({
     accept: "operation",
     canDrop: (item) => {
@@ -113,22 +72,66 @@ export function useOperationDrop(
         const resourceTimelineElement = document.querySelector(`[data-resource-id="${resource.id}"]`);
         if (resourceTimelineElement) {
           const rect = resourceTimelineElement.getBoundingClientRect();
+          
+          // Calculate position relative to timeline, accounting for scroll
           const relativeX = Math.max(0, clientOffset.x - rect.left + timelineScrollLeft);
           
+          // Calculate which period we're in based on the timeline scale
           const periodWidth = timelineWidth / timeScale.length;
           const periodIndex = Math.floor(relativeX / periodWidth);
-          const timeWithinPeriod = (relativeX % periodWidth) / periodWidth;
           
-          const { periodStart, periodDuration } = calculateTimeFromDrop(timeUnit, periodIndex, timeWithinPeriod);
+          // Clamp to valid period indices
+          const clampedPeriodIndex = Math.max(0, Math.min(periodIndex, timeScale.length - 1));
           
-          const offsetWithinPeriod = timeWithinPeriod * periodDuration;
-          const startDate = new Date(periodStart.getTime() + offsetWithinPeriod);
-          
-          const operationDuration = item.operation.duration || 8;
-          const endDate = new Date(startDate.getTime() + (operationDuration * 60 * 60 * 1000));
-          
-          startTime = startDate.toISOString();
-          endTime = endDate.toISOString();
+          // Get the exact time for this period from the timeScale
+          const periodData = timeScale[clampedPeriodIndex];
+          if (periodData && periodData.date) {
+            const periodStartTime = new Date(periodData.date);
+            
+            // Calculate offset within the period
+            const offsetWithinPeriod = (relativeX % periodWidth) / periodWidth;
+            
+            // Calculate step size for this time unit
+            let stepMs: number;
+            switch (timeUnit) {
+              case "hour":
+                stepMs = 60 * 60 * 1000; // 1 hour
+                break;
+              case "shift":
+                stepMs = 8 * 60 * 60 * 1000; // 8 hours
+                break;
+              case "day":
+                stepMs = 24 * 60 * 60 * 1000; // 1 day
+                break;
+              case "week":
+                stepMs = 7 * 24 * 60 * 60 * 1000; // 1 week
+                break;
+              case "month":
+                stepMs = 30 * 24 * 60 * 60 * 1000; // ~1 month
+                break;
+              case "quarter":
+                stepMs = 90 * 24 * 60 * 60 * 1000; // ~1 quarter
+                break;
+              case "year":
+                stepMs = 365 * 24 * 60 * 60 * 1000; // ~1 year
+                break;
+              case "decade":
+                stepMs = 3650 * 24 * 60 * 60 * 1000; // ~1 decade
+                break;
+              default:
+                stepMs = 24 * 60 * 60 * 1000; // Default to 1 day
+            }
+            
+            // Calculate the exact start time
+            const startDate = new Date(periodStartTime.getTime() + (offsetWithinPeriod * stepMs));
+            
+            // Calculate end time based on operation duration
+            const operationDuration = item.operation.duration || 8;
+            const endDate = new Date(startDate.getTime() + (operationDuration * 60 * 60 * 1000));
+            
+            startTime = startDate.toISOString();
+            endTime = endDate.toISOString();
+          }
         }
       }
       
@@ -188,47 +191,6 @@ export function useTimelineDrop(
     },
   });
 
-  const calculateTimeFromDrop = (timeUnit: TimeUnit, periodIndex: number, timeWithinPeriod: number) => {
-    const now = new Date();
-    let stepMs: number;
-    
-    // Match the exact logic from the Gantt chart timeScale generation
-    switch (timeUnit) {
-      case "hour":
-        stepMs = 60 * 60 * 1000; // 1 hour in milliseconds
-        break;
-      case "shift":
-        stepMs = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
-        break;
-      case "day":
-        stepMs = 24 * 60 * 60 * 1000; // 1 day in milliseconds
-        break;
-      case "week":
-        stepMs = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
-        break;
-      case "month":
-        stepMs = 30 * 24 * 60 * 60 * 1000; // ~1 month in milliseconds
-        break;
-      case "quarter":
-        stepMs = 90 * 24 * 60 * 60 * 1000; // ~1 quarter in milliseconds
-        break;
-      case "year":
-        stepMs = 365 * 24 * 60 * 60 * 1000; // ~1 year in milliseconds
-        break;
-      case "decade":
-        stepMs = 3650 * 24 * 60 * 60 * 1000; // ~1 decade in milliseconds
-        break;
-      default:
-        stepMs = 24 * 60 * 60 * 1000; // Default to 1 day
-        break;
-    }
-    
-    // Calculate the exact period start time matching the timeline generation
-    const periodStart = new Date(now.getTime() + (periodIndex * stepMs));
-    
-    return { periodStart, periodDuration: stepMs };
-  };
-
   const [{ isOver, canDrop }, drop] = useDrop<DragItem, void, { isOver: boolean; canDrop: boolean }>({
     accept: "operation",
     canDrop: (item) => {
@@ -250,22 +212,66 @@ export function useTimelineDrop(
         const resourceTimelineElement = document.querySelector(`[data-resource-id="${resource.id}"]`);
         if (resourceTimelineElement) {
           const rect = resourceTimelineElement.getBoundingClientRect();
+          
+          // Calculate position relative to timeline (no scroll here for timeline drop)
           const relativeX = Math.max(0, clientOffset.x - rect.left);
           
+          // Calculate which period we're in based on the timeline scale
           const periodWidth = timelineWidth / timeScale.length;
           const periodIndex = Math.floor(relativeX / periodWidth);
-          const timeWithinPeriod = (relativeX % periodWidth) / periodWidth;
           
-          const { periodStart, periodDuration } = calculateTimeFromDrop(timeUnit, periodIndex, timeWithinPeriod);
+          // Clamp to valid period indices
+          const clampedPeriodIndex = Math.max(0, Math.min(periodIndex, timeScale.length - 1));
           
-          const offsetWithinPeriod = timeWithinPeriod * periodDuration;
-          const startDate = new Date(periodStart.getTime() + offsetWithinPeriod);
-          
-          const operationDuration = item.operation.duration || 8;
-          const endDate = new Date(startDate.getTime() + (operationDuration * 60 * 60 * 1000));
-          
-          startTime = startDate.toISOString();
-          endTime = endDate.toISOString();
+          // Get the exact time for this period from the timeScale
+          const periodData = timeScale[clampedPeriodIndex];
+          if (periodData && periodData.date) {
+            const periodStartTime = new Date(periodData.date);
+            
+            // Calculate offset within the period
+            const offsetWithinPeriod = (relativeX % periodWidth) / periodWidth;
+            
+            // Calculate step size for this time unit
+            let stepMs: number;
+            switch (timeUnit) {
+              case "hour":
+                stepMs = 60 * 60 * 1000; // 1 hour
+                break;
+              case "shift":
+                stepMs = 8 * 60 * 60 * 1000; // 8 hours
+                break;
+              case "day":
+                stepMs = 24 * 60 * 60 * 1000; // 1 day
+                break;
+              case "week":
+                stepMs = 7 * 24 * 60 * 60 * 1000; // 1 week
+                break;
+              case "month":
+                stepMs = 30 * 24 * 60 * 60 * 1000; // ~1 month
+                break;
+              case "quarter":
+                stepMs = 90 * 24 * 60 * 60 * 1000; // ~1 quarter
+                break;
+              case "year":
+                stepMs = 365 * 24 * 60 * 60 * 1000; // ~1 year
+                break;
+              case "decade":
+                stepMs = 3650 * 24 * 60 * 60 * 1000; // ~1 decade
+                break;
+              default:
+                stepMs = 24 * 60 * 60 * 1000; // Default to 1 day
+            }
+            
+            // Calculate the exact start time
+            const startDate = new Date(periodStartTime.getTime() + (offsetWithinPeriod * stepMs));
+            
+            // Calculate end time based on operation duration
+            const operationDuration = item.operation.duration || 8;
+            const endDate = new Date(startDate.getTime() + (operationDuration * 60 * 60 * 1000));
+            
+            startTime = startDate.toISOString();
+            endTime = endDate.toISOString();
+          }
         }
       }
       
