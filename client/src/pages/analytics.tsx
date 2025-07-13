@@ -110,7 +110,26 @@ export default function Analytics() {
   };
 
   const handleWidgetEdit = (id: string) => {
-    console.log("Edit widget:", id);
+    // Open analytics manager with the specific widget for editing
+    const widget = customWidgets.find(w => w.id === id);
+    if (widget) {
+      setAiAnalyticsOpen(true);
+      // Could add state to focus on specific widget in manager
+    }
+  };
+
+  const handleAddManualWidget = () => {
+    const newWidget: AnalyticsWidget = {
+      id: Date.now().toString(),
+      title: "New Analytics Widget",
+      type: "metric",
+      data: { value: 0, label: "New Metric" },
+      visible: true,
+      position: { x: 20, y: 20 },
+      size: { width: 300, height: 200 },
+      config: {}
+    };
+    setCustomWidgets(prev => [...prev, newWidget]);
   };
 
   const handleWidgetResize = (id: string, size: { width: number; height: number }) => {
@@ -149,6 +168,14 @@ export default function Analytics() {
               >
                 <LayoutGrid className="w-4 h-4 mr-2" />
                 {layoutMode === "grid" ? "Free Layout" : "Grid Layout"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAddManualWidget}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Widget
               </Button>
               <Button
                 onClick={() => setAiAnalyticsOpen(true)}
@@ -331,7 +358,7 @@ export default function Analytics() {
           {showCustomWidgets && customWidgets.length > 0 && (
             <div className="mt-8">
               <h2 className="text-lg font-semibold mb-4">Custom Analytics Widgets</h2>
-              <div className={`grid gap-4 ${layoutMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
+              <div className={`${layoutMode === "grid" ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3" : "relative min-h-[600px] border-2 border-dashed border-gray-300 rounded-lg"}`}>
                 {customWidgets.map((widget) => (
                   <AnalyticsWidget
                     key={widget.id}
