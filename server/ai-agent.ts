@@ -78,6 +78,7 @@ For CREATE_KANBAN_BOARD, parameters should include: name, description, viewType 
 For CREATE_RESOURCE_VIEW, parameters should include: name, description, resourceIds (array of resource IDs to include), colorScheme (optional), textLabeling (optional)
 For SET_GANTT_ZOOM, parameters should include: zoomLevel (hour/day/week/month)
 For SET_GANTT_SCROLL, parameters should include: scrollPosition (percentage 0-100 or time-based like "2024-01-15")
+For SCROLL_TO_TODAY, no parameters needed - scroll to today's date on the timeline
 
 When analyzing late jobs, provide specific information about:
 - Which jobs are late and by how much
@@ -415,33 +416,57 @@ async function executeAction(action: string, parameters: any, message: string, c
           isDefault: false
         };
         
-        const newKanbanConfig = await storage.createKanbanConfig(kanbanConfig);
-        
-        return {
-          success: true,
-          message: message || `Created Kanban board "${kanbanConfig.name}" grouping ${kanbanConfig.viewType} by ${kanbanConfig.swimLaneField}`,
-          data: newKanbanConfig,
-          actions: ["CREATE_KANBAN_BOARD"]
-        };
+        try {
+          const newKanbanConfig = await storage.createKanbanConfig(kanbanConfig);
+          
+          return {
+            success: true,
+            message: message || `Created Kanban board "${kanbanConfig.name}" grouping ${kanbanConfig.viewType} by ${kanbanConfig.swimLaneField}`,
+            data: newKanbanConfig,
+            actions: ["CREATE_KANBAN_BOARD"]
+          };
+        } catch (error) {
+          console.error("Error creating Kanban board:", error);
+          return {
+            success: false,
+            message: "Failed to create Kanban board. Please check the configuration.",
+            data: null
+          };
+        }
 
       case "CREATE_RESOURCE_VIEW":
+        // Get all resources if no specific IDs are provided
+        const allResources = await storage.getResources();
+        const resourceSequence = parameters.resourceIds && parameters.resourceIds.length > 0 
+          ? parameters.resourceIds 
+          : allResources.map(r => r.id);
+        
         const resourceViewConfig = {
           name: parameters.name || "AI Generated View",
           description: parameters.description || "Created by AI Assistant",
-          resourceIds: parameters.resourceIds || [],
+          resourceSequence: resourceSequence,
           colorScheme: parameters.colorScheme || "by_priority",
           textLabeling: parameters.textLabeling || "operation_name",
           isDefault: false
         };
         
-        const newResourceView = await storage.createResourceView(resourceViewConfig);
-        
-        return {
-          success: true,
-          message: message || `Created resource view "${resourceViewConfig.name}" with ${resourceViewConfig.resourceIds.length} resources`,
-          data: newResourceView,
-          actions: ["CREATE_RESOURCE_VIEW"]
-        };
+        try {
+          const newResourceView = await storage.createResourceView(resourceViewConfig);
+          
+          return {
+            success: true,
+            message: message || `Created resource view "${resourceViewConfig.name}" with ${resourceSequence.length} resources`,
+            data: newResourceView,
+            actions: ["CREATE_RESOURCE_VIEW"]
+          };
+        } catch (error) {
+          console.error("Error creating resource view:", error);
+          return {
+            success: false,
+            message: "Failed to create resource view. Please check the configuration.",
+            data: null
+          };
+        }
 
       case "SET_GANTT_ZOOM":
         // This will be handled by the frontend, just return the instruction
@@ -459,6 +484,15 @@ async function executeAction(action: string, parameters: any, message: string, c
           message: message || `Set Gantt chart scroll position to ${parameters.scrollPosition}`,
           data: { scrollPosition: parameters.scrollPosition },
           actions: ["SET_GANTT_SCROLL"]
+        };
+
+      case "SCROLL_TO_TODAY":
+        // This will be handled by the frontend, just return the instruction
+        return {
+          success: true,
+          message: message || `Scrolling Gantt chart to today's date`,
+          data: { scrollToToday: true },
+          actions: ["SCROLL_TO_TODAY"]
         };
 
       default:

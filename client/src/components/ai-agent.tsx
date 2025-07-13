@@ -58,6 +58,13 @@ export default function AIAgent() {
     toast({ title: `Gantt chart scrolled to ${scrollPosition}` });
   };
 
+  const handleScrollToToday = () => {
+    // Send a custom event to the Gantt chart component
+    const event = new CustomEvent('aiScrollToToday', { detail: {} });
+    window.dispatchEvent(event);
+    toast({ title: "Scrolled to today's date" });
+  };
+
   // Text command mutation
   const textCommandMutation = useMutation({
     mutationFn: async (command: string) => {
@@ -104,6 +111,9 @@ export default function AIAgent() {
       }
       if (data.actions?.includes("SET_GANTT_SCROLL")) {
         handleGanttScroll(data.data.scrollPosition);
+      }
+      if (data.actions?.includes("SCROLL_TO_TODAY")) {
+        handleScrollToToday();
       }
       
       toast({

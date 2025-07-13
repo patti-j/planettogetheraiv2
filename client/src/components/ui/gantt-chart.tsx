@@ -406,6 +406,19 @@ export default function GanttChart({
     return timelineWidth / timeScale.periods.length;
   }, [timelineWidth, timeScale]);
 
+  // Scroll to today function
+  const handleScrollToToday = useCallback(() => {
+    // Calculate scroll position for today's date
+    const today = new Date();
+    const timeDiff = today.getTime() - timeScale.minDate.getTime();
+    const scrollLeft = (timeDiff / timeScale.stepMs) * periodWidth;
+    setTimelineScrollLeft(scrollLeft);
+    
+    if (timelineRef.current) {
+      timelineRef.current.scrollLeft = scrollLeft;
+    }
+  }, [timeScale.minDate, timeScale.stepMs, periodWidth]);
+
   // AI Event Listeners
   useEffect(() => {
     const handleAIGanttZoom = (event: any) => {
@@ -448,12 +461,16 @@ export default function GanttChart({
       }
     };
 
+
+
     window.addEventListener('aiGanttZoom', handleAIGanttZoom);
     window.addEventListener('aiGanttScroll', handleAIGanttScroll);
+    window.addEventListener('aiScrollToToday', handleScrollToToday);
 
     return () => {
       window.removeEventListener('aiGanttZoom', handleAIGanttZoom);
       window.removeEventListener('aiGanttScroll', handleAIGanttScroll);
+      window.removeEventListener('aiScrollToToday', handleScrollToToday);
     };
   }, [timelineWidth, timeScale, timelineBaseDate]);
 
@@ -750,6 +767,9 @@ export default function GanttChart({
                   </Button>
                   <Button variant="ghost" size="sm" onClick={zoomIn} disabled={timeUnit === "hour"} title="Zoom In">
                     <ZoomIn className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={handleScrollToToday} title="Scroll to Today">
+                    <Calendar className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
@@ -1140,6 +1160,15 @@ export default function GanttChart({
                     className="flex-shrink-0 min-w-[32px] min-h-[32px]"
                   >
                     <ZoomIn className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleScrollToToday} 
+                    title="Scroll to Today"
+                    className="flex-shrink-0 min-w-[32px] min-h-[32px]"
+                  >
+                    <Calendar className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
