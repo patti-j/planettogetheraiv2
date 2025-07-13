@@ -6,7 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import OperationBlock from "./operation-block";
 import OperationForm from "../operation-form";
-import { useOperationDrop } from "@/hooks/use-drag-drop";
+import { useOperationDrop } from "@/hooks/use-drag-drop-fixed";
 import type { Job, Operation, Resource, Capability } from "@shared/schema";
 
 interface GanttChartProps {
@@ -467,7 +467,7 @@ export default function GanttChart({
   // Create a separate component to handle the drop zone for each resource
   const ResourceRow = ({ resource }: { resource: Resource }) => {
     const resourceOperations = operations.filter(op => op.assignedResourceId === resource.id);
-    const { drop, isOver, canDrop } = useOperationDrop(resource, timelineWidth, timeScale, timeUnit, timelineScrollLeft);
+    const { drop, isOver, canDrop } = useOperationDrop(resource, timelineWidth, timeScale, timeUnit, timelineScrollLeft, timelineBaseDate);
 
     return (
       <div className="border-b border-gray-100">
