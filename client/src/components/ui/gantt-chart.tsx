@@ -1,13 +1,17 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { ChevronDown, ChevronRight, MoreHorizontal, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronDown, ChevronRight, MoreHorizontal, ZoomIn, ZoomOut, Eye, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import OperationBlock from "./operation-block";
 import OperationForm from "../operation-form";
+import ResourceViewManager from "../resource-view-manager";
 import { useOperationDrop } from "@/hooks/use-drag-drop-fixed";
-import type { Job, Operation, Resource, Capability } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import type { Job, Operation, Resource, Capability, ResourceView } from "@shared/schema";
 
 interface GanttChartProps {
   jobs: Job[];
@@ -32,8 +36,54 @@ export default function GanttChart({
   const [timeUnit, setTimeUnit] = useState<TimeUnit>("day");
   const [timelineScrollLeft, setTimelineScrollLeft] = useState(0);
   const [resourceListScrollTop, setResourceListScrollTop] = useState(0);
+  const [selectedResourceViewId, setSelectedResourceViewId] = useState<number | null>(null);
+  const [resourceViewManagerOpen, setResourceViewManagerOpen] = useState(false);
   // Create a truly stable base date that never changes
   const timelineBaseDate = useMemo(() => new Date(2025, 6, 13, 7, 0, 0, 0), []); // Fixed to July 13, 2025 07:00:00
+  
+  // Fetch resource views
+  const { data: resourceViews = [] } = useQuery<ResourceView[]>({
+    queryKey: ["/api/resource-views"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/resource-views");
+      return response.json();
+    },
+  });
+  
+  // Get the currently selected resource view
+  const selectedResourceView = useMemo(() => {
+    if (selectedResourceViewId) {
+      return resourceViews.find(v => v.id === selectedResourceViewId);
+    }
+    // If no view is selected, use the default view
+    return resourceViews.find(v => v.isDefault);
+  }, [resourceViews, selectedResourceViewId]);
+  
+  // Order resources according to the selected view
+  const orderedResources = useMemo(() => {
+    if (!selectedResourceView || view !== "resources") {
+      return resources;
+    }
+    
+    const orderedList: Resource[] = [];
+    
+    // Add resources in the order specified by the view
+    selectedResourceView.resourceSequence.forEach(resourceId => {
+      const resource = resources.find(r => r.id === resourceId);
+      if (resource) {
+        orderedList.push(resource);
+      }
+    });
+    
+    // Add any remaining resources not in the view
+    resources.forEach(resource => {
+      if (!selectedResourceView.resourceSequence.includes(resource.id)) {
+        orderedList.push(resource);
+      }
+    });
+    
+    return orderedList;
+  }, [resources, selectedResourceView, view]);
   
   const timelineRef = useRef<HTMLDivElement>(null);
   const resourceListRef = useRef<HTMLDivElement>(null);
@@ -634,17 +684,45 @@ export default function GanttChart({
       <div className="flex-none bg-white border-b border-gray-200 z-10">
         <div className="flex">
           <div className="w-64 px-4 py-3 bg-gray-50 border-r border-gray-200">
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-gray-700">Resources</span>
-              <div className="flex items-center space-x-1">
-                <Button variant="ghost" size="sm" onClick={zoomOut} disabled={timeUnit === "decade"} title="Zoom Out">
-                  <ZoomOut className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="sm" onClick={resetZoom} title="Reset Zoom">
-                  <span className="text-xs">{timeUnit}</span>
-                </Button>
-                <Button variant="ghost" size="sm" onClick={zoomIn} disabled={timeUnit === "hour"} title="Zoom In">
-                  <ZoomIn className="w-4 h-4" />
+            <div className="flex flex-col space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-gray-700">Resources</span>
+                <div className="flex items-center space-x-1">
+                  <Button variant="ghost" size="sm" onClick={zoomOut} disabled={timeUnit === "decade"} title="Zoom Out">
+                    <ZoomOut className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={resetZoom} title="Reset Zoom">
+                    <span className="text-xs">{timeUnit}</span>
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={zoomIn} disabled={timeUnit === "hour"} title="Zoom In">
+                    <ZoomIn className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Select 
+                  value={selectedResourceView?.id?.toString() || "all"} 
+                  onValueChange={(value) => setSelectedResourceViewId(value === "all" ? null : parseInt(value))}
+                >
+                  <SelectTrigger className="flex-1 h-8 text-xs">
+                    <SelectValue placeholder="Select view" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Resources</SelectItem>
+                    {resourceViews.map((view) => (
+                      <SelectItem key={view.id} value={view.id.toString()}>
+                        {view.name} {view.isDefault && "(Default)"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setResourceViewManagerOpen(true)}
+                  title="Manage Views"
+                >
+                  <Settings className="w-4 h-4" />
                 </Button>
               </div>
             </div>
@@ -720,7 +798,7 @@ export default function GanttChart({
           </div>
         </div>
         
-        {resources.map((resource) => (
+        {orderedResources.map((resource) => (
           <ResourceRow key={resource.id} resource={resource} />
         ))}
       </div>
@@ -749,6 +827,23 @@ export default function GanttChart({
               }}
             />
           )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Resource View Manager Dialog */}
+      <Dialog open={resourceViewManagerOpen} onOpenChange={setResourceViewManagerOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Resource View Manager</DialogTitle>
+          </DialogHeader>
+          <ResourceViewManager
+            resources={resources}
+            selectedViewId={selectedResourceView?.id}
+            onViewChange={(viewId) => {
+              setSelectedResourceViewId(viewId);
+              setResourceViewManagerOpen(false);
+            }}
+          />
         </DialogContent>
       </Dialog>
     </div>

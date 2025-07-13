@@ -47,6 +47,15 @@ export const dependencies = pgTable("dependencies", {
   toOperationId: integer("to_operation_id").references(() => operations.id).notNull(),
 });
 
+export const resourceViews = pgTable("resource_views", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  resourceSequence: jsonb("resource_sequence").$type<number[]>().notNull(),
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertCapabilitySchema = createInsertSchema(capabilities).omit({
   id: true,
 });
@@ -71,6 +80,11 @@ export const insertDependencySchema = createInsertSchema(dependencies).omit({
   id: true,
 });
 
+export const insertResourceViewSchema = createInsertSchema(resourceViews).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
 export type Capability = typeof capabilities.$inferSelect;
 
@@ -85,3 +99,6 @@ export type Operation = typeof operations.$inferSelect;
 
 export type InsertDependency = z.infer<typeof insertDependencySchema>;
 export type Dependency = typeof dependencies.$inferSelect;
+
+export type InsertResourceView = z.infer<typeof insertResourceViewSchema>;
+export type ResourceView = typeof resourceViews.$inferSelect;

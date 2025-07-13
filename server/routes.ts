@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
   insertCapabilitySchema, insertResourceSchema, insertJobSchema, 
-  insertOperationSchema, insertDependencySchema 
+  insertOperationSchema, insertDependencySchema, insertResourceViewSchema 
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import multer from "multer";
@@ -275,6 +275,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete dependency" });
+    }
+  });
+
+  // Resource Views
+  app.get("/api/resource-views", async (req, res) => {
+    try {
+      const resourceViews = await storage.getResourceViews();
+      res.json(resourceViews);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch resource views" });
+    }
+  });
+
+  app.get("/api/resource-views/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const resourceView = await storage.getResourceView(id);
+      if (!resourceView) {
+        return res.status(404).json({ message: "Resource view not found" });
+      }
+      res.json(resourceView);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch resource view" });
+    }
+  });
+
+  app.post("/api/resource-views", async (req, res) => {
+    try {
+      const resourceView = insertResourceViewSchema.parse(req.body);
+      const newResourceView = await storage.createResourceView(resourceView);
+      res.status(201).json(newResourceView);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid resource view data" });
+    }
+  });
+
+  app.put("/api/resource-views/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const resourceView = insertResourceViewSchema.partial().parse(req.body);
+      const updatedResourceView = await storage.updateResourceView(id, resourceView);
+      if (!updatedResourceView) {
+        return res.status(404).json({ message: "Resource view not found" });
+      }
+      res.json(updatedResourceView);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid resource view data" });
+    }
+  });
+
+  app.delete("/api/resource-views/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteResourceView(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Resource view not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete resource view" });
+    }
+  });
+
+  app.get("/api/resource-views/default", async (req, res) => {
+    try {
+      const defaultView = await storage.getDefaultResourceView();
+      if (!defaultView) {
+        return res.status(404).json({ message: "No default resource view found" });
+      }
+      res.json(defaultView);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch default resource view" });
+    }
+  });
+
+  app.post("/api/resource-views/:id/set-default", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.setDefaultResourceView(id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to set default resource view" });
     }
   });
 

@@ -1,8 +1,8 @@
 import { 
-  capabilities, resources, jobs, operations, dependencies,
-  type Capability, type Resource, type Job, type Operation, type Dependency,
+  capabilities, resources, jobs, operations, dependencies, resourceViews,
+  type Capability, type Resource, type Job, type Operation, type Dependency, type ResourceView,
   type InsertCapability, type InsertResource, type InsertJob, 
-  type InsertOperation, type InsertDependency
+  type InsertOperation, type InsertDependency, type InsertResourceView
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -39,6 +39,15 @@ export interface IStorage {
   getDependenciesByOperationId(operationId: number): Promise<Dependency[]>;
   createDependency(dependency: InsertDependency): Promise<Dependency>;
   deleteDependency(id: number): Promise<boolean>;
+  
+  // Resource Views
+  getResourceViews(): Promise<ResourceView[]>;
+  getResourceView(id: number): Promise<ResourceView | undefined>;
+  createResourceView(resourceView: InsertResourceView): Promise<ResourceView>;
+  updateResourceView(id: number, resourceView: Partial<InsertResourceView>): Promise<ResourceView | undefined>;
+  deleteResourceView(id: number): Promise<boolean>;
+  getDefaultResourceView(): Promise<ResourceView | undefined>;
+  setDefaultResourceView(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -47,12 +56,14 @@ export class MemStorage implements IStorage {
   private jobs: Map<number, Job> = new Map();
   private operations: Map<number, Operation> = new Map();
   private dependencies: Map<number, Dependency> = new Map();
+  private resourceViews: Map<number, ResourceView> = new Map();
   
   private currentCapabilityId = 1;
   private currentResourceId = 1;
   private currentJobId = 1;
   private currentOperationId = 1;
   private currentDependencyId = 1;
+  private currentResourceViewId = 1;
 
   constructor() {
     this.initializeDefaultData();
@@ -373,6 +384,56 @@ export class MemStorage implements IStorage {
   async deleteDependency(id: number): Promise<boolean> {
     return this.dependencies.delete(id);
   }
+
+  async getResourceViews(): Promise<ResourceView[]> {
+    return Array.from(this.resourceViews.values());
+  }
+
+  async getResourceView(id: number): Promise<ResourceView | undefined> {
+    return this.resourceViews.get(id);
+  }
+
+  async createResourceView(resourceView: InsertResourceView): Promise<ResourceView> {
+    const newResourceView: ResourceView = { 
+      id: this.currentResourceViewId++, 
+      ...resourceView,
+      createdAt: new Date()
+    };
+    this.resourceViews.set(newResourceView.id, newResourceView);
+    return newResourceView;
+  }
+
+  async updateResourceView(id: number, resourceView: Partial<InsertResourceView>): Promise<ResourceView | undefined> {
+    const existing = this.resourceViews.get(id);
+    if (!existing) return undefined;
+    
+    const updated: ResourceView = { ...existing, ...resourceView };
+    this.resourceViews.set(id, updated);
+    return updated;
+  }
+
+  async deleteResourceView(id: number): Promise<boolean> {
+    return this.resourceViews.delete(id);
+  }
+
+  async getDefaultResourceView(): Promise<ResourceView | undefined> {
+    return Array.from(this.resourceViews.values()).find(view => view.isDefault);
+  }
+
+  async setDefaultResourceView(id: number): Promise<void> {
+    // First, set all existing views to non-default
+    Array.from(this.resourceViews.values()).forEach(view => {
+      view.isDefault = false;
+      this.resourceViews.set(view.id, view);
+    });
+    
+    // Then set the specified view as default
+    const view = this.resourceViews.get(id);
+    if (view) {
+      view.isDefault = true;
+      this.resourceViews.set(id, view);
+    }
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -513,6 +574,50 @@ export class DatabaseStorage implements IStorage {
   async deleteDependency(id: number): Promise<boolean> {
     const result = await db.delete(dependencies).where(eq(dependencies.id, id));
     return (result.rowCount || 0) > 0;
+  }
+
+  async getResourceViews(): Promise<ResourceView[]> {
+    return await db.select().from(resourceViews);
+  }
+
+  async getResourceView(id: number): Promise<ResourceView | undefined> {
+    const [resourceView] = await db.select().from(resourceViews).where(eq(resourceViews.id, id));
+    return resourceView || undefined;
+  }
+
+  async createResourceView(resourceView: InsertResourceView): Promise<ResourceView> {
+    const [newResourceView] = await db
+      .insert(resourceViews)
+      .values(resourceView)
+      .returning();
+    return newResourceView;
+  }
+
+  async updateResourceView(id: number, resourceView: Partial<InsertResourceView>): Promise<ResourceView | undefined> {
+    const [updatedResourceView] = await db
+      .update(resourceViews)
+      .set(resourceView)
+      .where(eq(resourceViews.id, id))
+      .returning();
+    return updatedResourceView || undefined;
+  }
+
+  async deleteResourceView(id: number): Promise<boolean> {
+    const result = await db.delete(resourceViews).where(eq(resourceViews.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async getDefaultResourceView(): Promise<ResourceView | undefined> {
+    const [defaultView] = await db.select().from(resourceViews).where(eq(resourceViews.isDefault, true));
+    return defaultView || undefined;
+  }
+
+  async setDefaultResourceView(id: number): Promise<void> {
+    // First, set all existing views to non-default
+    await db.update(resourceViews).set({ isDefault: false });
+    
+    // Then set the specified view as default
+    await db.update(resourceViews).set({ isDefault: true }).where(eq(resourceViews.id, id));
   }
 }
 
