@@ -4,6 +4,8 @@ import {
   type InsertCapability, type InsertResource, type InsertJob, 
   type InsertOperation, type InsertDependency
 } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // Capabilities
@@ -373,4 +375,145 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  async getCapabilities(): Promise<Capability[]> {
+    return await db.select().from(capabilities);
+  }
+
+  async createCapability(capability: InsertCapability): Promise<Capability> {
+    const [newCapability] = await db
+      .insert(capabilities)
+      .values(capability)
+      .returning();
+    return newCapability;
+  }
+
+  async getResources(): Promise<Resource[]> {
+    return await db.select().from(resources);
+  }
+
+  async getResource(id: number): Promise<Resource | undefined> {
+    const [resource] = await db.select().from(resources).where(eq(resources.id, id));
+    return resource || undefined;
+  }
+
+  async createResource(resource: InsertResource): Promise<Resource> {
+    const [newResource] = await db
+      .insert(resources)
+      .values(resource)
+      .returning();
+    return newResource;
+  }
+
+  async updateResource(id: number, resource: Partial<InsertResource>): Promise<Resource | undefined> {
+    const [updatedResource] = await db
+      .update(resources)
+      .set(resource)
+      .where(eq(resources.id, id))
+      .returning();
+    return updatedResource || undefined;
+  }
+
+  async deleteResource(id: number): Promise<boolean> {
+    const result = await db.delete(resources).where(eq(resources.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async getJobs(): Promise<Job[]> {
+    return await db.select().from(jobs);
+  }
+
+  async getJob(id: number): Promise<Job | undefined> {
+    const [job] = await db.select().from(jobs).where(eq(jobs.id, id));
+    return job || undefined;
+  }
+
+  async createJob(job: InsertJob): Promise<Job> {
+    const [newJob] = await db
+      .insert(jobs)
+      .values(job)
+      .returning();
+    return newJob;
+  }
+
+  async updateJob(id: number, job: Partial<InsertJob>): Promise<Job | undefined> {
+    const [updatedJob] = await db
+      .update(jobs)
+      .set(job)
+      .where(eq(jobs.id, id))
+      .returning();
+    return updatedJob || undefined;
+  }
+
+  async deleteJob(id: number): Promise<boolean> {
+    // First delete associated operations
+    await db.delete(operations).where(eq(operations.jobId, id));
+    
+    const result = await db.delete(jobs).where(eq(jobs.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async getOperations(): Promise<Operation[]> {
+    return await db.select().from(operations);
+  }
+
+  async getOperationsByJobId(jobId: number): Promise<Operation[]> {
+    return await db.select().from(operations).where(eq(operations.jobId, jobId));
+  }
+
+  async getOperation(id: number): Promise<Operation | undefined> {
+    const [operation] = await db.select().from(operations).where(eq(operations.id, id));
+    return operation || undefined;
+  }
+
+  async createOperation(operation: InsertOperation): Promise<Operation> {
+    const [newOperation] = await db
+      .insert(operations)
+      .values(operation)
+      .returning();
+    return newOperation;
+  }
+
+  async updateOperation(id: number, operation: Partial<InsertOperation>): Promise<Operation | undefined> {
+    const [updatedOperation] = await db
+      .update(operations)
+      .set(operation)
+      .where(eq(operations.id, id))
+      .returning();
+    return updatedOperation || undefined;
+  }
+
+  async deleteOperation(id: number): Promise<boolean> {
+    // First delete associated dependencies
+    await db.delete(dependencies).where(eq(dependencies.fromOperationId, id));
+    await db.delete(dependencies).where(eq(dependencies.toOperationId, id));
+    
+    const result = await db.delete(operations).where(eq(operations.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async getDependencies(): Promise<Dependency[]> {
+    return await db.select().from(dependencies);
+  }
+
+  async getDependenciesByOperationId(operationId: number): Promise<Dependency[]> {
+    return await db.select().from(dependencies).where(
+      eq(dependencies.fromOperationId, operationId)
+    );
+  }
+
+  async createDependency(dependency: InsertDependency): Promise<Dependency> {
+    const [newDependency] = await db
+      .insert(dependencies)
+      .values(dependency)
+      .returning();
+    return newDependency;
+  }
+
+  async deleteDependency(id: number): Promise<boolean> {
+    const result = await db.delete(dependencies).where(eq(dependencies.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+}
+
+export const storage = new DatabaseStorage();

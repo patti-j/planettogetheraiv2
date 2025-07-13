@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a full-stack manufacturing production scheduler application built with React, TypeScript, Express, and Drizzle ORM. The system manages production jobs, operations, resources, and capabilities in a manufacturing environment with a visual Gantt chart interface and drag-and-drop functionality.
+This is a full-stack manufacturing production scheduler application built with React, TypeScript, Express, PostgreSQL, and Drizzle ORM. The system manages production jobs, operations, resources, and capabilities in a manufacturing environment with a visual Gantt chart interface and drag-and-drop functionality. The application now uses persistent PostgreSQL database storage instead of in-memory storage.
 
 ## User Preferences
 
@@ -23,8 +23,10 @@ Preferred communication style: Simple, everyday language.
 - **Framework**: Express.js with TypeScript
 - **Database**: PostgreSQL with Drizzle ORM
 - **Database Provider**: Neon Database (serverless PostgreSQL)
+- **Storage**: DatabaseStorage class implementing IStorage interface
 - **API Design**: RESTful API with JSON responses
 - **Development**: Hot module replacement via Vite integration
+- **Data Seeding**: Automatic database seeding with sample manufacturing data
 
 ### Project Structure
 ```
@@ -109,3 +111,22 @@ Preferred communication style: Simple, everyday language.
 - **Static Serving**: Express serves built frontend in production
 
 The application uses a modern full-stack architecture with strong typing throughout, real-time updates, and an intuitive drag-and-drop interface for manufacturing production scheduling.
+
+## Recent Changes (July 13, 2025)
+
+✓ **Database Integration**: 
+- Successfully migrated from in-memory storage to PostgreSQL database
+- Implemented DatabaseStorage class with full CRUD operations
+- Added automatic database seeding with sample manufacturing data
+- Schema migration completed using Drizzle Kit
+
+✓ **Sample Data**: 
+- Added sample jobs with customer information (Tech Corp, AutoParts Inc)
+- Created 5 capabilities (CNC Machining, Welding, Assembly, Quality Control, Packaging)
+- Configured 6 resources with appropriate capabilities
+- Set up 5 operations with proper job assignments and capability requirements
+
+✓ **Persistent Storage**: 
+- All data now persists across application restarts
+- Database automatically seeds on first run
+- Full capability-based resource matching working with persistent data
