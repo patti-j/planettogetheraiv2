@@ -1,6 +1,7 @@
 import { type Operation, type Job } from "@shared/schema";
 import { useDrag } from "react-dnd";
 import { useEffect, useState, useMemo } from "react";
+import { formatOperationStatus } from "@/lib/utils";
 
 interface OperationBlockProps {
   operation: Operation;
@@ -217,7 +218,7 @@ export default function OperationBlock({
         return job?.priority || "medium";
       
       case "status":
-        return operation.status;
+        return formatOperationStatus(operation.status);
       
       case "duration":
         return `${operation.duration}h`;
