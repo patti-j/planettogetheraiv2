@@ -326,7 +326,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
 
       {/* Operation Dialog */}
       <Dialog open={operationDialogOpen} onOpenChange={handleOperationDialogClose}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingOperation ? "Edit Operation" : "Add Operation"}
