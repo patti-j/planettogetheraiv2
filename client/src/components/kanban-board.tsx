@@ -6,10 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MoreHorizontal, Plus, Settings, Calendar, User, Building2, Wrench } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import JobForm from "@/components/job-form";
+import OperationForm from "@/components/operation-form";
 import type { Job, Operation, Resource, Capability } from "@shared/schema";
 
 interface KanbanBoardProps {
@@ -254,6 +257,10 @@ export default function KanbanBoard({
 }: KanbanBoardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [jobDialogOpen, setJobDialogOpen] = useState(false);
+  const [operationDialogOpen, setOperationDialogOpen] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<Job | undefined>();
+  const [selectedOperation, setSelectedOperation] = useState<Operation | undefined>();
 
   // Job status columns
   const jobColumns = useMemo(() => {
@@ -337,13 +344,37 @@ export default function KanbanBoard({
   };
 
   const handleEditJob = (job: Job) => {
-    // TODO: Open job edit dialog
-    console.log("Edit job:", job);
+    setSelectedJob(job);
+    setJobDialogOpen(true);
   };
 
   const handleEditOperation = (operation: Operation) => {
-    // TODO: Open operation edit dialog
-    console.log("Edit operation:", operation);
+    setSelectedOperation(operation);
+    setOperationDialogOpen(true);
+  };
+
+  const handleAddJob = () => {
+    setSelectedJob(undefined);
+    setJobDialogOpen(true);
+  };
+
+  const handleAddOperation = () => {
+    setSelectedOperation(undefined);
+    setOperationDialogOpen(true);
+  };
+
+  const handleJobFormSuccess = () => {
+    setJobDialogOpen(false);
+    setSelectedJob(undefined);
+    queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
+  };
+
+  const handleOperationFormSuccess = () => {
+    setOperationDialogOpen(false);
+    setSelectedOperation(undefined);
+    queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
   };
 
   return (
@@ -365,7 +396,7 @@ export default function KanbanBoard({
           </div>
           
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={view === "jobs" ? handleAddJob : handleAddOperation}>
               <Plus className="w-4 h-4 mr-2" />
               Add {view === "jobs" ? "Job" : "Operation"}
             </Button>
@@ -408,6 +439,35 @@ export default function KanbanBoard({
           </div>
         </div>
       </div>
+
+      {/* Job Creation/Edit Dialog */}
+      <Dialog open={jobDialogOpen} onOpenChange={setJobDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{selectedJob ? "Edit Job" : "Create New Job"}</DialogTitle>
+          </DialogHeader>
+          <JobForm
+            job={selectedJob}
+            onSuccess={handleJobFormSuccess}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Operation Creation/Edit Dialog */}
+      <Dialog open={operationDialogOpen} onOpenChange={setOperationDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{selectedOperation ? "Edit Operation" : "Create New Operation"}</DialogTitle>
+          </DialogHeader>
+          <OperationForm
+            operation={selectedOperation}
+            jobs={jobs}
+            capabilities={capabilities}
+            resources={resources}
+            onSuccess={handleOperationFormSuccess}
+          />
+        </DialogContent>
+      </Dialog>
     </DndProvider>
   );
 }
