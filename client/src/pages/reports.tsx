@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, Users, Wrench, Building, Package, Settings, ChevronDown, Sparkles } from "lucide-react";
+import { Calendar, Clock, Users, Wrench, Building, Package, Settings, ChevronDown, Sparkles, Download, Printer } from "lucide-react";
 import { format } from "date-fns";
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
 import AnalyticsWidget from "@/components/analytics-widget";
@@ -312,101 +312,133 @@ export default function Reports() {
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex-none p-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Comprehensive analytics and reporting dashboard
-            </p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="min-w-[180px] justify-between">
-                  {selectedConfigName}
-                  <ChevronDown className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64">
-                {reportConfigs.map((config) => (
-                  <DropdownMenuItem
-                    key={config.id}
-                    onClick={() => setSelectedConfigId(config.id)}
-                    className="flex items-center justify-between"
-                  >
-                    <span>{config.name}</span>
-                    {config.isDefault && <Badge variant="secondary" className="text-xs">Default</Badge>}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setShowConfigDialog(true)}
-                  className="text-blue-600 dark:text-blue-400"
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Configure Reports
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            <Button
-              onClick={() => setShowAIDialog(true)}
-              variant="outline"
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              AI Create
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-hidden">
-        <div 
-          className="relative h-full bg-gray-50 dark:bg-gray-900 p-6"
-          style={{ 
-            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(0,0,0,0.15) 1px, transparent 0)', 
-            backgroundSize: '20px 20px' 
-          }}
-          onMouseMove={() => {}}
-          onMouseUp={() => {}}
-          onTouchMove={() => {}}
-          onTouchEnd={() => {}}
-        >
-          {widgets.filter(widget => widget.visible).map((widget) => (
-            <div
-              key={widget.id}
-              className={`absolute cursor-move ${
-                isDragging && draggedItem?.id === widget.id ? 'opacity-50' : ''
-              }`}
-              style={{
-                left: widget.position.x,
-                top: widget.position.y,
-                width: widget.size.width,
-                height: widget.size.height,
-                transform: isDragging && draggedItem?.id === widget.id 
-                  ? `translate(${dragOffset.x}px, ${dragOffset.y}px)` 
-                  : 'none'
-              }}
-            >
-              <AnalyticsWidget
-                widget={widget}
-                onToggle={() => handleWidgetUpdate(widget.id, { visible: !widget.visible })}
-                onRemove={() => handleRemove(widget.id)}
-                onEdit={() => {}}
-                onResize={(id, size) => handleWidgetUpdate(id, { size })}
-                onPositionChange={(id, position) => handlePositionChange(id, position)}
-                jobs={jobs}
-                operations={operations}
-                resources={resources}
-                metrics={{}}
-                layoutMode="free"
-              />
+        {/* Header */}
+        <div className="flex-none p-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports & Analytics</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Create, view, and export comprehensive manufacturing reports
+              </p>
             </div>
-          ))}
+            <div className="flex items-center space-x-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="min-w-[180px] justify-between">
+                    {selectedConfigName}
+                    <ChevronDown className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  {reportConfigs.map((config) => (
+                    <DropdownMenuItem
+                      key={config.id}
+                      onClick={() => setSelectedConfigId(config.id)}
+                      className="flex items-center justify-between"
+                    >
+                      <span>{config.name}</span>
+                      {config.isDefault && <Badge variant="secondary" className="text-xs">Default</Badge>}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setShowConfigDialog(true)}
+                    className="text-blue-600 dark:text-blue-400"
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Configure Reports
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              {widgets.length > 0 && (
+                <>
+                  <Button
+                    onClick={() => window.print()}
+                    variant="outline"
+                  >
+                    <Printer className="w-4 h-4 mr-2" />
+                    Print
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      const reportData = JSON.stringify(widgets, null, 2);
+                      const blob = new Blob([reportData], { type: 'application/json' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${selectedConfigName || 'report'}-${new Date().toISOString().split('T')[0]}.json`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    variant="outline"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </Button>
+                </>
+              )}
+              
+              <Button
+                onClick={() => setShowAIDialog(true)}
+                variant="outline"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                AI Create
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
+
+        {/* Main Content */}
+        <div className="flex-1 overflow-hidden bg-gray-100 dark:bg-gray-800">
+          {widgets.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                  <Package className="w-8 h-8 text-gray-500 dark:text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Reports Created</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Get started by creating your first report widget
+                </p>
+                <Button
+                  onClick={() => setShowAIDialog(true)}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Create with AI
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="p-6 h-full overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {widgets.filter(widget => widget.visible).map((widget) => (
+                  <div
+                    key={widget.id}
+                    className="h-80"
+                  >
+                    <AnalyticsWidget
+                      widget={widget}
+                      onToggle={() => handleWidgetUpdate(widget.id, { visible: !widget.visible })}
+                      onRemove={() => handleRemove(widget.id)}
+                      onEdit={() => {}}
+                      onResize={(id, size) => handleWidgetUpdate(id, { size })}
+                      onPositionChange={(id, position) => handlePositionChange(id, position)}
+                      jobs={jobs}
+                      operations={operations}
+                      resources={resources}
+                      metrics={{}}
+                      layoutMode="grid"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
       <AIAnalyticsManager
         open={showManager}
