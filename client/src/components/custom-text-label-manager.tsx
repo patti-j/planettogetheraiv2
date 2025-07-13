@@ -23,6 +23,8 @@ interface TextLabel {
   type: "operation_name" | "job_name" | "due_date" | "priority" | "status" | "duration" | "progress" | "resource_name" | "customer" | "job_description" | "operation_description" | "resource_type" | "capabilities" | "start_time" | "end_time" | "slack_days" | "days_late" | "completion_percent";
   enabled: boolean;
   order: number;
+  fontSize: number;
+  fontColor: string;
 }
 
 interface TextLabelConfig {
@@ -42,9 +44,10 @@ interface DraggableTextLabelProps {
   onMove: (fromIndex: number, toIndex: number) => void;
   onToggle: (index: number) => void;
   onRemove: (index: number) => void;
+  onUpdate: (index: number, updates: Partial<TextLabel>) => void;
 }
 
-const DraggableTextLabel = ({ label, index, onMove, onToggle, onRemove }: DraggableTextLabelProps) => {
+const DraggableTextLabel = ({ label, index, onMove, onToggle, onRemove, onUpdate }: DraggableTextLabelProps) => {
   const [{ isDragging }, drag] = useDrag({
     type: "textLabel",
     item: { index },
@@ -94,26 +97,48 @@ const DraggableTextLabel = ({ label, index, onMove, onToggle, onRemove }: Dragga
         isDragging ? "opacity-50" : ""
       } ${label.enabled ? "bg-blue-50" : "bg-gray-50"}`}
     >
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-2 flex-1">
         <input
           type="checkbox"
           checked={label.enabled}
           onChange={() => onToggle(index)}
           className="w-4 h-4"
         />
-        <span className="text-sm font-medium">{getDisplayName(label.type)}</span>
+        <span className="text-sm font-medium flex-1">{getDisplayName(label.type)}</span>
         <Badge variant="secondary" className="text-xs">
           {label.order + 1}
         </Badge>
       </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => onRemove(index)}
-        className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-      >
-        <Trash2 className="h-3 w-3" />
-      </Button>
+      <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1">
+          <label className="text-xs text-gray-500">Size:</label>
+          <input
+            type="number"
+            min="8"
+            max="32"
+            value={label.fontSize}
+            onChange={(e) => onUpdate(index, { fontSize: parseInt(e.target.value) || 12 })}
+            className="w-12 h-6 text-xs border rounded px-1"
+          />
+        </div>
+        <div className="flex items-center space-x-1">
+          <label className="text-xs text-gray-500">Color:</label>
+          <input
+            type="color"
+            value={label.fontColor}
+            onChange={(e) => onUpdate(index, { fontColor: e.target.value })}
+            className="w-6 h-6 border rounded cursor-pointer"
+          />
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onRemove(index)}
+          className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      </div>
     </div>
   );
 };
@@ -129,7 +154,7 @@ const CustomTextLabelForm = ({ onSave, onCancel, initialName = "", initialConfig
   const [name, setName] = useState(initialName);
   const [config, setConfig] = useState<TextLabelConfig>(
     initialConfig || {
-      labels: [{ type: "operation_name", enabled: true, order: 0 }],
+      labels: [{ type: "operation_name", enabled: true, order: 0, fontSize: 12, fontColor: "#ffffff" }],
       fontSize: 12,
       fontColor: "#ffffff",
     }
@@ -146,6 +171,8 @@ const CustomTextLabelForm = ({ onSave, onCancel, initialName = "", initialConfig
       type: type as any,
       enabled: true,
       order: config.labels.length,
+      fontSize: 12,
+      fontColor: "#ffffff",
     };
     setConfig({
       ...config,
@@ -166,6 +193,12 @@ const CustomTextLabelForm = ({ onSave, onCancel, initialName = "", initialConfig
   const toggleLabel = (index: number) => {
     const newLabels = [...config.labels];
     newLabels[index].enabled = !newLabels[index].enabled;
+    setConfig({ ...config, labels: newLabels });
+  };
+
+  const updateLabel = (index: number, updates: Partial<TextLabel>) => {
+    const newLabels = [...config.labels];
+    newLabels[index] = { ...newLabels[index], ...updates };
     setConfig({ ...config, labels: newLabels });
   };
 
@@ -207,6 +240,7 @@ const CustomTextLabelForm = ({ onSave, onCancel, initialName = "", initialConfig
                 onMove={moveLabel}
                 onToggle={toggleLabel}
                 onRemove={removeLabel}
+                onUpdate={updateLabel}
               />
             ))}
           </DndProvider>

@@ -308,8 +308,22 @@ export default function OperationBlock({
           .filter(label => label.enabled)
           .sort((a, b) => a.order - b.order);
         
-        const textParts = enabledLabels.map(label => getTextForLabel(label.type));
-        return textParts.join(" • ");
+        return (
+          <div className="flex flex-wrap items-center gap-1">
+            {enabledLabels.map((label, index) => (
+              <span
+                key={`${label.type}-${index}`}
+                style={{
+                  fontSize: `${label.fontSize || 12}px`,
+                  color: label.fontColor || "#ffffff",
+                }}
+              >
+                {getTextForLabel(label.type)}
+                {index < enabledLabels.length - 1 && " • "}
+              </span>
+            ))}
+          </div>
+        );
       }
     }
     // Fallback to operation name if no custom label

@@ -107,6 +107,8 @@ export const customTextLabels = pgTable("custom_text_labels", {
       type: "operation_name" | "job_name" | "due_date" | "priority" | "status" | "duration" | "progress" | "resource_name" | "customer" | "job_description" | "operation_description" | "resource_type" | "capabilities" | "start_time" | "end_time" | "slack_days" | "days_late" | "completion_percent";
       enabled: boolean;
       order: number;
+      fontSize: number;
+      fontColor: string;
     }>;
     fontSize: number;
     fontColor: string;
