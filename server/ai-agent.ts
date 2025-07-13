@@ -58,6 +58,7 @@ You can perform these actions:
 17. SET_GANTT_SCROLL - Set the scroll position for the Resource Gantt chart
 18. SCROLL_TO_TODAY - Scroll the Gantt chart to show today's date
 19. CREATE_CUSTOM_TEXT_LABELS - Create custom text labels based on user description
+20. CREATE_ANALYTICS_WIDGETS - Create analytics widgets for reports and dashboards
 
 Respond with JSON in this format:
 {
@@ -82,6 +83,7 @@ For CREATE_RESOURCE_VIEW, parameters should include: name, description, resource
 For SET_GANTT_ZOOM, parameters should include: zoomLevel (hour/day/week/month)
 For SET_GANTT_SCROLL, parameters should include: scrollPosition (percentage 0-100 or time-based like "2024-01-15")
 For SCROLL_TO_TODAY, no parameters needed - scroll to today's date on the timeline
+For CREATE_ANALYTICS_WIDGETS, parameters should include: widgets (array of widget objects with title, type, data, config)
 
 When analyzing late jobs, provide specific information about:
 - Which jobs are late and by how much
@@ -521,6 +523,26 @@ async function executeAction(action: string, parameters: any, message: string, c
           actions: ["CREATE_CUSTOM_TEXT_LABELS"]
         };
 
+      case "CREATE_ANALYTICS_WIDGETS":
+        // Process analytics widgets creation
+        const analyticsWidgets = parameters.widgets || [];
+        
+        // Generate appropriate widget data based on current system context
+        const processedWidgets = analyticsWidgets.map((widget: any) => {
+          const widgetData = {
+            ...widget,
+            data: generateWidgetData(widget.type, widget.config, context)
+          };
+          return widgetData;
+        });
+        
+        return {
+          success: true,
+          message: message || `Created ${processedWidgets.length} analytics widget(s) successfully`,
+          data: { widgets: processedWidgets },
+          actions: ["CREATE_ANALYTICS_WIDGETS"]
+        };
+
       default:
         return {
           success: false,
@@ -680,6 +702,115 @@ async function calculateCustomMetric(parameters: any, context?: SystemContext) {
     calculatedAt: new Date().toISOString(),
     error: 'Calculation not supported'
   };
+}
+
+function generateWidgetData(type: string, config: any, context?: SystemContext) {
+  const { jobs, operations, resources } = context || {};
+  
+  switch (type) {
+    case "metric":
+      // Generate metric data based on config
+      if (config?.metric === "activeJobs") {
+        return jobs?.filter(j => j.status === "active").length || 0;
+      } else if (config?.metric === "utilization") {
+        // Calculate overall resource utilization
+        const totalOperations = operations?.length || 0;
+        const totalResources = resources?.length || 0;
+        return totalResources > 0 ? Math.round((totalOperations / totalResources) * 100) : 0;
+      } else if (config?.metric === "overdueOperations") {
+        const today = new Date();
+        return operations?.filter(op => 
+          op.endTime && new Date(op.endTime) < today && op.status !== "completed"
+        ).length || 0;
+      } else if (config?.metric === "avgLeadTime") {
+        const completedJobs = jobs?.filter(j => j.status === "completed") || [];
+        if (completedJobs.length === 0) return 0;
+        
+        const totalLeadTime = completedJobs.reduce((sum, job) => {
+          const jobOps = operations?.filter(op => op.jobId === job.id) || [];
+          const firstOpStart = jobOps.reduce((earliest, op) => 
+            !earliest || (op.startTime && new Date(op.startTime) < new Date(earliest)) ? op.startTime : earliest, null);
+          const lastOpEnd = jobOps.reduce((latest, op) => 
+            !latest || (op.endTime && new Date(op.endTime) > new Date(latest)) ? op.endTime : latest, null);
+          
+          if (firstOpStart && lastOpEnd) {
+            return sum + (new Date(lastOpEnd).getTime() - new Date(firstOpStart).getTime()) / (1000 * 60 * 60 * 24);
+          }
+          return sum;
+        }, 0);
+        
+        return Math.round(totalLeadTime / completedJobs.length);
+      }
+      return 0;
+      
+    case "chart":
+      if (config?.chartType === "bar") {
+        // Generate bar chart data for jobs by priority
+        const priorityCount = {};
+        jobs?.forEach(job => {
+          const priority = job.priority || 'medium';
+          priorityCount[priority] = (priorityCount[priority] || 0) + 1;
+        });
+        
+        return Object.entries(priorityCount).map(([priority, count]) => ({
+          name: priority,
+          value: count
+        }));
+      } else if (config?.chartType === "line") {
+        // Generate line chart data for operations over time
+        const today = new Date();
+        const pastDays = 7;
+        const data = [];
+        
+        for (let i = pastDays; i >= 0; i--) {
+          const date = new Date(today);
+          date.setDate(date.getDate() - i);
+          const dayOperations = operations?.filter(op => 
+            op.startTime && new Date(op.startTime).toDateString() === date.toDateString()
+          ).length || 0;
+          
+          data.push({
+            name: date.toLocaleDateString(),
+            value: dayOperations
+          });
+        }
+        
+        return data;
+      }
+      return [];
+      
+    case "table":
+      if (config?.tableType === "jobs") {
+        return jobs?.slice(0, 10).map(job => ({
+          id: job.id,
+          name: job.name,
+          customer: job.customer,
+          priority: job.priority,
+          status: job.status,
+          dueDate: job.dueDate
+        })) || [];
+      } else if (config?.tableType === "operations") {
+        return operations?.slice(0, 10).map(op => ({
+          id: op.id,
+          name: op.name,
+          status: op.status,
+          duration: op.duration,
+          assignedResourceId: op.assignedResourceId
+        })) || [];
+      }
+      return [];
+      
+    case "progress":
+      if (config?.progressType === "completion") {
+        const completedJobs = jobs?.filter(j => j.status === "completed").length || 0;
+        const totalJobs = jobs?.length || 0;
+        return totalJobs > 0 ? Math.round((completedJobs / totalJobs) * 100) : 0;
+      }
+      return 0;
+      
+    default:
+      return null;
+  }
 }
 
 // Audio transcription using Whisper

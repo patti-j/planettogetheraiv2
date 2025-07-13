@@ -1,8 +1,12 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3, TrendingUp, Clock, AlertTriangle, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { BarChart3, TrendingUp, Clock, AlertTriangle, CheckCircle, Sparkles, Settings, Plus, Grid3X3, LayoutGrid } from "lucide-react";
 import Sidebar from "@/components/sidebar";
+import AIAnalyticsManager from "@/components/ai-analytics-manager";
+import AnalyticsWidget from "@/components/analytics-widget";
 import type { Job, Operation, Resource } from "@shared/schema";
 
 interface Metrics {
@@ -12,7 +16,23 @@ interface Metrics {
   avgLeadTime: number;
 }
 
+interface AnalyticsWidget {
+  id: string;
+  title: string;
+  type: "metric" | "chart" | "table" | "progress";
+  data: any;
+  visible: boolean;
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+  config: any;
+}
+
 export default function Analytics() {
+  const [aiAnalyticsOpen, setAiAnalyticsOpen] = useState(false);
+  const [customWidgets, setCustomWidgets] = useState<AnalyticsWidget[]>([]);
+  const [layoutMode, setLayoutMode] = useState<"grid" | "free">("grid");
+  const [showCustomWidgets, setShowCustomWidgets] = useState(false);
+
   const { data: metrics } = useQuery<Metrics>({
     queryKey: ["/api/metrics"],
   });
@@ -70,6 +90,34 @@ export default function Analytics() {
   const resourceUtilization = getResourceUtilization();
   const overdueJobs = getOverdueJobs();
 
+  const handleWidgetCreate = (widget: AnalyticsWidget) => {
+    setCustomWidgets(prev => [...prev, widget]);
+  };
+
+  const handleWidgetUpdate = (widgets: AnalyticsWidget[]) => {
+    setCustomWidgets(widgets);
+  };
+
+  const handleWidgetToggle = (id: string) => {
+    setCustomWidgets(prev => prev.map(widget => 
+      widget.id === id ? { ...widget, visible: !widget.visible } : widget
+    ));
+  };
+
+  const handleWidgetRemove = (id: string) => {
+    setCustomWidgets(prev => prev.filter(widget => widget.id !== id));
+  };
+
+  const handleWidgetEdit = (id: string) => {
+    console.log("Edit widget:", id);
+  };
+
+  const handleWidgetResize = (id: string, size: { width: number; height: number }) => {
+    setCustomWidgets(prev => prev.map(widget => 
+      widget.id === id ? { ...widget, size } : widget
+    ));
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
@@ -80,6 +128,31 @@ export default function Analytics() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
               <p className="text-gray-500">Production performance insights</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCustomWidgets(!showCustomWidgets)}
+              >
+                <Grid3X3 className="w-4 h-4 mr-2" />
+                {showCustomWidgets ? "Hide Custom" : "Show Custom"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setLayoutMode(layoutMode === "grid" ? "free" : "grid")}
+              >
+                <LayoutGrid className="w-4 h-4 mr-2" />
+                {layoutMode === "grid" ? "Free Layout" : "Grid Layout"}
+              </Button>
+              <Button
+                onClick={() => setAiAnalyticsOpen(true)}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                AI Analytics
+              </Button>
             </div>
           </div>
         </header>
@@ -243,8 +316,39 @@ export default function Analytics() {
               </CardContent>
             </Card>
           )}
+          {/* Custom AI-Generated Widgets */}
+          {showCustomWidgets && customWidgets.length > 0 && (
+            <div className="mt-8">
+              <h2 className="text-lg font-semibold mb-4">Custom Analytics Widgets</h2>
+              <div className={`grid gap-4 ${layoutMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
+                {customWidgets.map((widget) => (
+                  <AnalyticsWidget
+                    key={widget.id}
+                    widget={widget}
+                    onToggle={handleWidgetToggle}
+                    onRemove={handleWidgetRemove}
+                    onEdit={handleWidgetEdit}
+                    onResize={handleWidgetResize}
+                    jobs={jobs}
+                    operations={operations}
+                    resources={resources}
+                    metrics={metrics}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </main>
       </div>
+
+      {/* AI Analytics Manager */}
+      <AIAnalyticsManager
+        open={aiAnalyticsOpen}
+        onOpenChange={setAiAnalyticsOpen}
+        onWidgetCreate={handleWidgetCreate}
+        currentWidgets={customWidgets}
+        onWidgetUpdate={handleWidgetUpdate}
+      />
     </div>
   );
 }

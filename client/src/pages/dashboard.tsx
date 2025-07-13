@@ -4,12 +4,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Filter, Save, Factory, Maximize2, Minimize2, Bot, Send } from "lucide-react";
+import { Plus, Filter, Save, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, Grid3X3, LayoutGrid, BarChart3 } from "lucide-react";
 import Sidebar from "@/components/sidebar";
 import GanttChart from "@/components/ui/gantt-chart";
 import MetricsCard from "@/components/ui/metrics-card";
 import JobForm from "@/components/job-form";
 import ResourceForm from "@/components/resource-form";
+import AIAnalyticsManager from "@/components/ai-analytics-manager";
+import AnalyticsWidget from "@/components/analytics-widget";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Job, Operation, Resource, Capability } from "@shared/schema";
@@ -21,6 +23,17 @@ interface Metrics {
   avgLeadTime: number;
 }
 
+interface AnalyticsWidget {
+  id: string;
+  title: string;
+  type: "metric" | "chart" | "table" | "progress";
+  data: any;
+  visible: boolean;
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+  config: any;
+}
+
 export default function Dashboard() {
   const [currentView, setCurrentView] = useState<"operations" | "resources">("resources");
   const [jobDialogOpen, setJobDialogOpen] = useState(false);
@@ -29,6 +42,10 @@ export default function Dashboard() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [selectedResourceViewId, setSelectedResourceViewId] = useState<number | null>(null);
   const [rowHeight, setRowHeight] = useState(60);
+  const [aiAnalyticsOpen, setAiAnalyticsOpen] = useState(false);
+  const [customWidgets, setCustomWidgets] = useState<AnalyticsWidget[]>([]);
+  const [showCustomWidgets, setShowCustomWidgets] = useState(false);
+  const [layoutMode, setLayoutMode] = useState<"grid" | "free">("grid");
   const { toast } = useToast();
 
   const { data: jobs = [] } = useQuery<Job[]>({
@@ -91,6 +108,34 @@ export default function Dashboard() {
       aiMutation.mutate(aiPrompt);
       setAiPrompt("");
     }
+  };
+
+  const handleWidgetCreate = (widget: AnalyticsWidget) => {
+    setCustomWidgets(prev => [...prev, widget]);
+  };
+
+  const handleWidgetUpdate = (widgets: AnalyticsWidget[]) => {
+    setCustomWidgets(widgets);
+  };
+
+  const handleWidgetToggle = (id: string) => {
+    setCustomWidgets(prev => prev.map(widget => 
+      widget.id === id ? { ...widget, visible: !widget.visible } : widget
+    ));
+  };
+
+  const handleWidgetRemove = (id: string) => {
+    setCustomWidgets(prev => prev.filter(widget => widget.id !== id));
+  };
+
+  const handleWidgetEdit = (id: string) => {
+    console.log("Edit widget:", id);
+  };
+
+  const handleWidgetResize = (id: string, size: { width: number; height: number }) => {
+    setCustomWidgets(prev => prev.map(widget => 
+      widget.id === id ? { ...widget, size } : widget
+    ));
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -228,6 +273,40 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* Analytics Controls */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Analytics Dashboard</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCustomWidgets(!showCustomWidgets)}
+              >
+                <Grid3X3 className="w-4 h-4 mr-2" />
+                {showCustomWidgets ? "Hide Custom" : "Show Custom"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setLayoutMode(layoutMode === "grid" ? "free" : "grid")}
+              >
+                <LayoutGrid className="w-4 h-4 mr-2" />
+                {layoutMode === "grid" ? "Free Layout" : "Grid Layout"}
+              </Button>
+              <Button
+                onClick={() => setAiAnalyticsOpen(true)}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                size="sm"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                AI Analytics
+              </Button>
+            </div>
+          </div>
+
           {/* Metrics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <MetricsCard
@@ -261,6 +340,29 @@ export default function Dashboard() {
               color="orange"
             />
           </div>
+
+          {/* Custom AI-Generated Widgets */}
+          {showCustomWidgets && customWidgets.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-4">Custom Analytics Widgets</h3>
+              <div className={`grid gap-4 ${layoutMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
+                {customWidgets.map((widget) => (
+                  <AnalyticsWidget
+                    key={widget.id}
+                    widget={widget}
+                    onToggle={handleWidgetToggle}
+                    onRemove={handleWidgetRemove}
+                    onEdit={handleWidgetEdit}
+                    onResize={handleWidgetResize}
+                    jobs={jobs}
+                    operations={operations}
+                    resources={resources}
+                    metrics={metrics}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </header>
 
         {/* Gantt Container */}
@@ -346,6 +448,15 @@ export default function Dashboard() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* AI Analytics Manager */}
+      <AIAnalyticsManager
+        open={aiAnalyticsOpen}
+        onOpenChange={setAiAnalyticsOpen}
+        onWidgetCreate={handleWidgetCreate}
+        currentWidgets={customWidgets}
+        onWidgetUpdate={handleWidgetUpdate}
+      />
     </div>
   );
 }
