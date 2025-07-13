@@ -13,6 +13,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import JobForm from "@/components/job-form";
 import OperationForm from "@/components/operation-form";
+import KanbanConfigManager from "@/components/kanban-config-manager";
 import type { Job, Operation, Resource, Capability } from "@shared/schema";
 
 interface KanbanBoardProps {
@@ -261,6 +262,7 @@ export default function KanbanBoard({
   const [operationDialogOpen, setOperationDialogOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | undefined>();
   const [selectedOperation, setSelectedOperation] = useState<Operation | undefined>();
+  const [configManagerOpen, setConfigManagerOpen] = useState(false);
 
   // Job status columns
   const jobColumns = useMemo(() => {
@@ -400,7 +402,7 @@ export default function KanbanBoard({
               <Plus className="w-4 h-4 mr-2" />
               Add {view === "jobs" ? "Job" : "Operation"}
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setConfigManagerOpen(true)}>
               <Settings className="w-4 h-4" />
             </Button>
           </div>
@@ -468,6 +470,15 @@ export default function KanbanBoard({
           />
         </DialogContent>
       </Dialog>
+
+      {/* Kanban Configuration Manager */}
+      <KanbanConfigManager
+        open={configManagerOpen}
+        onOpenChange={setConfigManagerOpen}
+        jobs={jobs}
+        resources={resources}
+        capabilities={capabilities}
+      />
     </DndProvider>
   );
 }

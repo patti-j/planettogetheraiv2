@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { 
   insertCapabilitySchema, insertResourceSchema, insertJobSchema, 
   insertOperationSchema, insertDependencySchema, insertResourceViewSchema,
-  insertCustomTextLabelSchema
+  insertCustomTextLabelSchema, insertKanbanConfigSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import multer from "multer";
@@ -498,6 +498,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting custom text label:", error);
       res.status(500).json({ error: "Failed to delete custom text label" });
+    }
+  });
+
+  // Kanban Configurations
+  app.get("/api/kanban-configs", async (req, res) => {
+    try {
+      const kanbanConfigs = await storage.getKanbanConfigs();
+      res.json(kanbanConfigs);
+    } catch (error) {
+      console.error("Error fetching kanban configs:", error);
+      res.status(500).json({ error: "Failed to fetch kanban configs" });
+    }
+  });
+
+  app.post("/api/kanban-configs", async (req, res) => {
+    try {
+      const validation = insertKanbanConfigSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid kanban config data", details: validation.error.errors });
+      }
+
+      const kanbanConfig = await storage.createKanbanConfig(validation.data);
+      res.status(201).json(kanbanConfig);
+    } catch (error) {
+      console.error("Error creating kanban config:", error);
+      res.status(500).json({ error: "Failed to create kanban config" });
+    }
+  });
+
+  app.put("/api/kanban-configs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid kanban config ID" });
+      }
+
+      const validation = insertKanbanConfigSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid kanban config data", details: validation.error.errors });
+      }
+
+      const kanbanConfig = await storage.updateKanbanConfig(id, validation.data);
+      if (!kanbanConfig) {
+        return res.status(404).json({ error: "Kanban config not found" });
+      }
+      res.json(kanbanConfig);
+    } catch (error) {
+      console.error("Error updating kanban config:", error);
+      res.status(500).json({ error: "Failed to update kanban config" });
+    }
+  });
+
+  app.delete("/api/kanban-configs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid kanban config ID" });
+      }
+
+      const kanbanConfig = await storage.deleteKanbanConfig(id);
+      if (!kanbanConfig) {
+        return res.status(404).json({ error: "Kanban config not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting kanban config:", error);
+      res.status(500).json({ error: "Failed to delete kanban config" });
+    }
+  });
+
+  app.post("/api/kanban-configs/:id/set-default", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid kanban config ID" });
+      }
+
+      await storage.setDefaultKanbanConfig(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error setting default kanban config:", error);
+      res.status(500).json({ error: "Failed to set default kanban config" });
     }
   });
 

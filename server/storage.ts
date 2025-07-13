@@ -1,8 +1,8 @@
 import { 
-  capabilities, resources, jobs, operations, dependencies, resourceViews, customTextLabels,
-  type Capability, type Resource, type Job, type Operation, type Dependency, type ResourceView, type CustomTextLabel,
+  capabilities, resources, jobs, operations, dependencies, resourceViews, customTextLabels, kanbanConfigs,
+  type Capability, type Resource, type Job, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig,
   type InsertCapability, type InsertResource, type InsertJob, 
-  type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel
+  type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -55,6 +55,15 @@ export interface IStorage {
   createCustomTextLabel(customTextLabel: InsertCustomTextLabel): Promise<CustomTextLabel>;
   updateCustomTextLabel(id: number, customTextLabel: Partial<InsertCustomTextLabel>): Promise<CustomTextLabel | undefined>;
   deleteCustomTextLabel(id: number): Promise<boolean>;
+  
+  // Kanban Configurations
+  getKanbanConfigs(): Promise<KanbanConfig[]>;
+  getKanbanConfig(id: number): Promise<KanbanConfig | undefined>;
+  createKanbanConfig(kanbanConfig: InsertKanbanConfig): Promise<KanbanConfig>;
+  updateKanbanConfig(id: number, kanbanConfig: Partial<InsertKanbanConfig>): Promise<KanbanConfig | undefined>;
+  deleteKanbanConfig(id: number): Promise<boolean>;
+  getDefaultKanbanConfig(): Promise<KanbanConfig | undefined>;
+  setDefaultKanbanConfig(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -657,6 +666,51 @@ export class DatabaseStorage implements IStorage {
   async deleteCustomTextLabel(id: number): Promise<boolean> {
     const result = await db.delete(customTextLabels).where(eq(customTextLabels.id, id));
     return (result.rowCount || 0) > 0;
+  }
+
+  // Kanban Configurations
+  async getKanbanConfigs(): Promise<KanbanConfig[]> {
+    return await db.select().from(kanbanConfigs);
+  }
+
+  async getKanbanConfig(id: number): Promise<KanbanConfig | undefined> {
+    const [kanbanConfig] = await db.select().from(kanbanConfigs).where(eq(kanbanConfigs.id, id));
+    return kanbanConfig || undefined;
+  }
+
+  async createKanbanConfig(kanbanConfig: InsertKanbanConfig): Promise<KanbanConfig> {
+    const [newKanbanConfig] = await db
+      .insert(kanbanConfigs)
+      .values(kanbanConfig)
+      .returning();
+    return newKanbanConfig;
+  }
+
+  async updateKanbanConfig(id: number, kanbanConfig: Partial<InsertKanbanConfig>): Promise<KanbanConfig | undefined> {
+    const [updatedKanbanConfig] = await db
+      .update(kanbanConfigs)
+      .set(kanbanConfig)
+      .where(eq(kanbanConfigs.id, id))
+      .returning();
+    return updatedKanbanConfig || undefined;
+  }
+
+  async deleteKanbanConfig(id: number): Promise<boolean> {
+    const result = await db.delete(kanbanConfigs).where(eq(kanbanConfigs.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async getDefaultKanbanConfig(): Promise<KanbanConfig | undefined> {
+    const [defaultConfig] = await db.select().from(kanbanConfigs).where(eq(kanbanConfigs.isDefault, true));
+    return defaultConfig || undefined;
+  }
+
+  async setDefaultKanbanConfig(id: number): Promise<void> {
+    // First, set all existing configs to non-default
+    await db.update(kanbanConfigs).set({ isDefault: false });
+    
+    // Then set the specified config as default
+    await db.update(kanbanConfigs).set({ isDefault: true }).where(eq(kanbanConfigs.id, id));
   }
 }
 

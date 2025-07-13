@@ -68,6 +68,42 @@ export const resourceViews = pgTable("resource_views", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const kanbanConfigs = pgTable("kanban_configs", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  viewType: text("view_type").notNull(),
+  swimLanes: jsonb("swim_lanes").$type<Array<{
+    id: string;
+    title: string;
+    status: string;
+    color: string;
+    order: number;
+  }>>().notNull(),
+  filters: jsonb("filters").$type<{
+    priorities: string[];
+    statuses: string[];
+    resources: number[];
+    capabilities: number[];
+    customers: string[];
+    dateRange: {
+      from: string | null;
+      to: string | null;
+    };
+  }>().default(sql`'{"priorities": [], "statuses": [], "resources": [], "capabilities": [], "customers": [], "dateRange": {"from": null, "to": null}}'::jsonb`),
+  displayOptions: jsonb("display_options").$type<{
+    showPriority: boolean;
+    showDueDate: boolean;
+    showCustomer: boolean;
+    showResource: boolean;
+    showProgress: boolean;
+    cardSize: "compact" | "standard" | "detailed";
+    groupBy: "none" | "priority" | "customer" | "resource";
+  }>().default(sql`'{"showPriority": true, "showDueDate": true, "showCustomer": true, "showResource": true, "showProgress": true, "cardSize": "standard", "groupBy": "none"}'::jsonb`),
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const customTextLabels = pgTable("custom_text_labels", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -117,6 +153,11 @@ export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels).
   createdAt: true,
 });
 
+export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
 export type Capability = typeof capabilities.$inferSelect;
 
@@ -137,3 +178,6 @@ export type ResourceView = typeof resourceViews.$inferSelect;
 
 export type InsertCustomTextLabel = z.infer<typeof insertCustomTextLabelSchema>;
 export type CustomTextLabel = typeof customTextLabels.$inferSelect;
+
+export type InsertKanbanConfig = z.infer<typeof insertKanbanConfigSchema>;
+export type KanbanConfig = typeof kanbanConfigs.$inferSelect;
