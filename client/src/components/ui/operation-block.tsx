@@ -52,6 +52,16 @@ export default function OperationBlock({ operation, resourceName, jobName }: Ope
       const hoursInDay = startTime.getHours() - 8; // Assuming 8 AM start
       const timeOffset = Math.max(0, hoursInDay) * (dayWidth / 8); // 8 working hours per day
       
+      console.log('Operation positioning:', {
+        operationId: operation.id,
+        startTime: operation.startTime,
+        daysDiff,
+        startDay,
+        hoursInDay,
+        timeOffset,
+        finalLeft: baseLeft + startDay * dayWidth + timeOffset
+      });
+      
       return {
         left: `${baseLeft + startDay * dayWidth + timeOffset}px`,
         width: `${width}px`,

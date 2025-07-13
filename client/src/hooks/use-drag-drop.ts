@@ -72,29 +72,42 @@ export function useOperationDrop(
         const targetElement = monitor.getDropResult()?.element || document.querySelector(`[data-resource-id="${resource.id}"]`);
         
         let startTime, endTime;
-        if (clientOffset && targetElement) {
-          // Calculate the time position based on drop location
-          const rect = targetElement.getBoundingClientRect();
-          const relativeX = clientOffset.x - rect.left;
-          const timelineWidth = rect.width;
-          
-          // Calculate which day (0-6) and time within that day
-          const dayWidth = timelineWidth / 7; // 7 days in timeline
-          const dayIndex = Math.floor(relativeX / dayWidth);
-          const timeWithinDay = (relativeX % dayWidth) / dayWidth; // 0-1 representing position within day
-          
-          // Calculate actual start time
-          const today = new Date();
-          const startDate = new Date(today);
-          startDate.setDate(today.getDate() + dayIndex);
-          startDate.setHours(8 + Math.floor(timeWithinDay * 8), 0, 0, 0); // 8 AM to 4 PM (8 hours)
-          
-          // Calculate end time based on operation duration
-          const endDate = new Date(startDate);
-          endDate.setHours(startDate.getHours() + (item.operation.duration || 8));
-          
-          startTime = startDate.toISOString();
-          endTime = endDate.toISOString();
+        if (clientOffset) {
+          // Find the resource timeline element
+          const resourceTimelineElement = document.querySelector(`[data-resource-id="${resource.id}"]`);
+          if (resourceTimelineElement) {
+            const rect = resourceTimelineElement.getBoundingClientRect();
+            const relativeX = Math.max(0, clientOffset.x - rect.left);
+            const timelineWidth = rect.width;
+            
+            // Calculate which day (0-6) and time within that day
+            const dayWidth = timelineWidth / 7; // 7 days in timeline
+            const dayIndex = Math.floor(relativeX / dayWidth);
+            const timeWithinDay = (relativeX % dayWidth) / dayWidth; // 0-1 representing position within day
+            
+            // Calculate actual start time
+            const today = new Date();
+            const startDate = new Date(today);
+            startDate.setDate(today.getDate() + dayIndex);
+            startDate.setHours(8 + Math.floor(timeWithinDay * 8), 0, 0, 0); // 8 AM to 4 PM (8 hours)
+            
+            // Calculate end time based on operation duration
+            const endDate = new Date(startDate);
+            endDate.setHours(startDate.getHours() + (item.operation.duration || 8));
+            
+            startTime = startDate.toISOString();
+            endTime = endDate.toISOString();
+            
+            console.log('Drop calculation:', {
+              relativeX,
+              timelineWidth,
+              dayWidth,
+              dayIndex,
+              timeWithinDay,
+              startTime,
+              endTime
+            });
+          }
         }
         
         updateOperationMutation.mutate({
