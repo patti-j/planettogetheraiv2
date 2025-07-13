@@ -1,5 +1,5 @@
-import { useState, useCallback, useMemo } from "react";
-import { ChevronDown, ChevronRight, MoreHorizontal, Maximize2, Minimize2 } from "lucide-react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { ChevronDown, ChevronRight, MoreHorizontal, Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -31,6 +31,9 @@ export default function GanttChart({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, scrollLeft: 0 });
   const [isDraggingBlock, setIsDraggingBlock] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // Generate time scale for the next 7 days
   const timeScale = useMemo(() => {
@@ -48,6 +51,28 @@ export default function GanttChart({
     }
     
     return days;
+  }, []);
+
+  // Calculate timeline width based on zoom level
+  const timelineWidth = useMemo(() => {
+    return 1200 * zoomLevel; // Base width times zoom level
+  }, [zoomLevel]);
+
+  const dayWidth = useMemo(() => {
+    return timelineWidth / 7; // Each day slot width
+  }, [timelineWidth]);
+
+  // Zoom functions
+  const zoomIn = useCallback(() => {
+    setZoomLevel(prev => Math.min(prev * 1.5, 3)); // Max zoom 3x
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    setZoomLevel(prev => Math.max(prev / 1.5, 0.5)); // Min zoom 0.5x
+  }, []);
+
+  const resetZoom = useCallback(() => {
+    setZoomLevel(1);
   }, []);
 
   const toggleJobExpansion = useCallback((jobId: number) => {
@@ -95,21 +120,30 @@ export default function GanttChart({
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const scrollLeft = e.currentTarget.scrollLeft;
     setScrollLeft(scrollLeft);
+    syncScrollToTimeline(scrollLeft);
   };
 
   const syncScrollToTimeline = (scrollLeft: number) => {
-    // Find all timeline headers and sync their scroll
+    // Sync all timeline headers and content areas
     const timelineHeaders = document.querySelectorAll('.timeline-header');
+    const contentAreas = document.querySelectorAll('.timeline-content');
+    
     timelineHeaders.forEach((header) => {
-      if (header instanceof HTMLElement) {
+      if (header instanceof HTMLElement && header.scrollLeft !== scrollLeft) {
         header.scrollLeft = scrollLeft;
+      }
+    });
+    
+    contentAreas.forEach((content) => {
+      if (content instanceof HTMLElement && content.scrollLeft !== scrollLeft) {
+        content.scrollLeft = scrollLeft;
       }
     });
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     // Only handle background dragging, not operation blocks
-    if (isDraggingBlock) return;
+    if (isDraggingBlock || e.target !== e.currentTarget) return;
     
     setIsDragging(true);
     setDragStart({
@@ -123,7 +157,8 @@ export default function GanttChart({
     if (!isDragging || isDraggingBlock) return;
     
     const deltaX = e.clientX - dragStart.x;
-    const newScrollLeft = Math.max(0, Math.min(1200 - 800, dragStart.scrollLeft - deltaX)); // Limit scroll range
+    const maxScrollLeft = Math.max(0, timelineWidth - 800); // Adjust for zoom
+    const newScrollLeft = Math.max(0, Math.min(maxScrollLeft, dragStart.scrollLeft - deltaX));
     setScrollLeft(newScrollLeft);
     syncScrollToTimeline(newScrollLeft);
     e.preventDefault();
@@ -138,34 +173,37 @@ export default function GanttChart({
   };
 
   const renderOperationsView = () => (
-    <div className="h-full overflow-auto">
+    <div className="h-full overflow-y-auto">
       {/* Time Scale Header */}
       <div className="sticky top-0 bg-white border-b border-gray-200 z-10">
         <div className="flex">
           <div className="w-64 px-4 py-3 bg-gray-50 border-r border-gray-200">
             <div className="flex items-center justify-between">
               <span className="font-medium text-gray-700">Jobs & Operations</span>
-              <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="sm">
-                  <Maximize2 className="w-4 h-4" />
+              <div className="flex items-center space-x-1">
+                <Button variant="ghost" size="sm" onClick={zoomOut} title="Zoom Out">
+                  <ZoomOut className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm">
-                  <Minimize2 className="w-4 h-4" />
+                <Button variant="ghost" size="sm" onClick={resetZoom} title="Reset Zoom">
+                  <span className="text-xs">{(zoomLevel * 100).toFixed(0)}%</span>
+                </Button>
+                <Button variant="ghost" size="sm" onClick={zoomIn} title="Zoom In">
+                  <ZoomIn className="w-4 h-4" />
                 </Button>
               </div>
             </div>
           </div>
-          <div className="flex-1 overflow-x-auto" onScroll={handleScroll}>
+          <div className="flex-1 overflow-x-auto timeline-header" onScroll={handleScroll}>
             <div 
               className={`flex bg-gray-50 border-r border-gray-200 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-              style={{ width: '1200px' }}
+              style={{ width: `${timelineWidth}px` }}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseLeave}
             >
               {timeScale.map((day, index) => (
-                <div key={index} className="w-48 border-r border-gray-200 p-2 text-center select-none">
+                <div key={index} className="border-r border-gray-200 p-2 text-center select-none" style={{ width: `${dayWidth}px` }}>
                   <div className="text-xs font-medium text-gray-500">{day.label}</div>
                   <div className="text-xs text-gray-400">{day.month}</div>
                 </div>
@@ -211,8 +249,8 @@ export default function GanttChart({
                     </div>
                   </div>
                   <div 
-                    className={`flex-1 relative overflow-hidden ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-                    style={{ width: '1200px' }}
+                    className={`flex-1 relative overflow-hidden timeline-content ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+                    style={{ width: `${timelineWidth}px` }}
                     onMouseDown={handleMouseDown}
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
@@ -267,8 +305,8 @@ export default function GanttChart({
                       </div>
                     </div>
                     <div 
-                      className={`flex-1 relative p-2 overflow-hidden ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-                      style={{ width: '1200px' }}
+                      className={`flex-1 relative p-2 overflow-hidden timeline-content ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+                      style={{ width: `${timelineWidth}px` }}
                       onMouseDown={handleMouseDown}
                       onMouseMove={handleMouseMove}
                       onMouseUp={handleMouseUp}
@@ -280,6 +318,8 @@ export default function GanttChart({
                           resourceName={getResourceName(operation.assignedResourceId || 0)}
                           jobName={jobs.find(job => job.id === operation.jobId)?.name}
                           job={jobs.find(job => job.id === operation.jobId)}
+                          onDragStart={() => setIsDraggingBlock(true)}
+                          onDragEnd={() => setIsDraggingBlock(false)}
                         />
                       </div>
                     </div>
@@ -322,10 +362,10 @@ export default function GanttChart({
           <div 
             ref={drop}
             data-resource-id={resource.id}
-            className={`flex-1 relative p-2 min-h-[60px] transition-colors overflow-hidden ${
+            className={`flex-1 relative p-2 min-h-[60px] transition-colors overflow-hidden timeline-content ${
               isOver ? (canDrop ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200") : ""
             } ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`} 
-            style={{ width: '1200px' }}
+            style={{ width: `${timelineWidth}px` }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -339,6 +379,8 @@ export default function GanttChart({
                   resourceName={resource.name}
                   jobName={jobs.find(job => job.id === operation.jobId)?.name}
                   job={jobs.find(job => job.id === operation.jobId)}
+                  onDragStart={() => setIsDraggingBlock(true)}
+                  onDragEnd={() => setIsDraggingBlock(false)}
                 />
               ))}
               {resourceOperations.length === 0 && (
@@ -356,34 +398,37 @@ export default function GanttChart({
   };
 
   const renderResourcesView = () => (
-    <div className="h-full overflow-auto">
+    <div className="h-full overflow-y-auto">
       {/* Time Scale Header */}
       <div className="sticky top-0 bg-white border-b border-gray-200 z-10">
         <div className="flex">
           <div className="w-64 px-4 py-3 bg-gray-50 border-r border-gray-200">
             <div className="flex items-center justify-between">
               <span className="font-medium text-gray-700">Resources</span>
-              <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="sm">
-                  <Maximize2 className="w-4 h-4" />
+              <div className="flex items-center space-x-1">
+                <Button variant="ghost" size="sm" onClick={zoomOut} title="Zoom Out">
+                  <ZoomOut className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm">
-                  <Minimize2 className="w-4 h-4" />
+                <Button variant="ghost" size="sm" onClick={resetZoom} title="Reset Zoom">
+                  <span className="text-xs">{(zoomLevel * 100).toFixed(0)}%</span>
+                </Button>
+                <Button variant="ghost" size="sm" onClick={zoomIn} title="Zoom In">
+                  <ZoomIn className="w-4 h-4" />
                 </Button>
               </div>
             </div>
           </div>
-          <div className="flex-1 overflow-x-auto" onScroll={handleScroll}>
+          <div className="flex-1 overflow-x-auto timeline-header" onScroll={handleScroll}>
             <div 
               className={`flex bg-gray-50 border-r border-gray-200 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-              style={{ width: '1200px' }}
+              style={{ width: `${timelineWidth}px` }}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseLeave}
             >
               {timeScale.map((day, index) => (
-                <div key={index} className="w-48 border-r border-gray-200 p-2 text-center select-none">
+                <div key={index} className="border-r border-gray-200 p-2 text-center select-none" style={{ width: `${dayWidth}px` }}>
                   <div className="text-xs font-medium text-gray-500">{day.label}</div>
                   <div className="text-xs text-gray-400">{day.month}</div>
                 </div>

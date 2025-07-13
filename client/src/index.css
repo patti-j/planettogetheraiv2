@@ -58,6 +58,37 @@
   --error: hsl(0, 77%, 55%);
 }
 
+/* Synchronized scrolling for Gantt chart */
+.timeline-header {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.timeline-header::-webkit-scrollbar {
+  display: none;
+}
+
+.timeline-content {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.timeline-content::-webkit-scrollbar {
+  display: none;
+}
+
+/* Ensure block dragging doesn't move the timeline */
+.operation-block {
+  position: absolute;
+  z-index: 20;
+  pointer-events: auto;
+}
+
+.operation-block.dragging {
+  z-index: 30;
+  pointer-events: none;
+}
+
 @layer base {
   * {
     @apply border-border;
