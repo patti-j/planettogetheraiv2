@@ -8,21 +8,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MoreHorizontal, Plus, Settings, Calendar, User, Building2, Wrench } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import JobForm from "@/components/job-form";
 import OperationForm from "@/components/operation-form";
 import KanbanConfigManager from "@/components/kanban-config-manager";
-import type { Job, Operation, Resource, Capability } from "@shared/schema";
+import type { Job, Operation, Resource, Capability, KanbanConfig } from "@shared/schema";
 
 interface KanbanBoardProps {
   jobs: Job[];
   operations: Operation[];
   resources: Resource[];
   capabilities: Capability[];
-  view: "jobs" | "operations";
-  onViewChange: (view: "jobs" | "operations") => void;
 }
 
 interface KanbanColumn {
@@ -280,9 +278,7 @@ export default function KanbanBoard({
   jobs, 
   operations, 
   resources, 
-  capabilities, 
-  view, 
-  onViewChange 
+  capabilities
 }: KanbanBoardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -291,8 +287,26 @@ export default function KanbanBoard({
   const [selectedJob, setSelectedJob] = useState<Job | undefined>();
   const [selectedOperation, setSelectedOperation] = useState<Operation | undefined>();
   const [configManagerOpen, setConfigManagerOpen] = useState(false);
-  const [swimLaneField, setSwimLaneField] = useState<string>("status");
-  const [swimLaneColors, setSwimLaneColors] = useState<Record<string, string>>({});
+  const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
+
+  // Fetch kanban configurations
+  const { data: kanbanConfigs = [], isLoading: configsLoading } = useQuery<KanbanConfig[]>({
+    queryKey: ["/api/kanban-configs"],
+  });
+
+  // Get the selected configuration or default
+  const selectedConfig = useMemo(() => {
+    if (selectedConfigId) {
+      return kanbanConfigs.find(config => config.id === selectedConfigId);
+    }
+    // Use default configuration if available
+    return kanbanConfigs.find(config => config.isDefault) || kanbanConfigs[0];
+  }, [kanbanConfigs, selectedConfigId]);
+
+  // Derived values from selected configuration
+  const view = selectedConfig?.viewType || "jobs";
+  const swimLaneField = selectedConfig?.swimLaneField || "status";
+  const swimLaneColors = selectedConfig?.swimLaneColors || {};
 
   // Generate columns based on selected field
   const getFieldValue = (item: Job | Operation, field: string) => {
@@ -349,6 +363,8 @@ export default function KanbanBoard({
   };
 
   const columns = useMemo(() => {
+    if (!selectedConfig) return [];
+    
     const fieldValues = getFieldValues(swimLaneField);
     const items = view === "jobs" ? jobs : operations;
     
@@ -375,7 +391,7 @@ export default function KanbanBoard({
     });
     
     return Object.values(columnsMap);
-  }, [jobs, operations, view, swimLaneField, swimLaneColors, resources]);
+  }, [jobs, operations, view, swimLaneField, swimLaneColors, resources, selectedConfig]);
 
   // Mutations for updating status
   const updateJobMutation = useMutation({
@@ -471,6 +487,33 @@ export default function KanbanBoard({
     queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
   };
 
+  // Show loading state
+  if (configsLoading) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
+          <div className="flex items-center space-x-4">
+            <h2 className="text-lg font-medium text-gray-900">Kanban Board</h2>
+            <div className="w-48 h-8 bg-gray-200 rounded animate-pulse" />
+          </div>
+        </div>
+        <div className="flex-1 bg-gray-100 p-4">
+          <div className="flex space-x-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="w-80 bg-gray-50 rounded-lg p-4 h-96">
+                <div className="h-6 bg-gray-200 rounded animate-pulse mb-4" />
+                <div className="space-y-2">
+                  <div className="h-20 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-20 bg-gray-200 rounded animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="flex flex-col h-full">
@@ -478,29 +521,28 @@ export default function KanbanBoard({
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
           <div className="flex items-center space-x-4">
             <h2 className="text-lg font-medium text-gray-900">Kanban Board</h2>
-            <Select value={view} onValueChange={(value) => onViewChange(value as "jobs" | "operations")}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
+            <Select 
+              value={selectedConfigId?.toString() || ""} 
+              onValueChange={(value) => setSelectedConfigId(value ? parseInt(value) : null)}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Select configuration" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="jobs">Jobs</SelectItem>
-                <SelectItem value="operations">Operations</SelectItem>
+                {kanbanConfigs.map((config) => (
+                  <SelectItem key={config.id} value={config.id.toString()}>
+                    {config.name} {config.isDefault && "(Default)"}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">Group by:</span>
-              <Select value={swimLaneField} onValueChange={setSwimLaneField}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="status">Status</SelectItem>
-                  <SelectItem value="priority">Priority</SelectItem>
-                  {view === "jobs" && <SelectItem value="customer">Customer</SelectItem>}
-                  {view === "operations" && <SelectItem value="assignedResourceId">Resource</SelectItem>}
-                </SelectContent>
-              </Select>
-            </div>
+            {selectedConfig && (
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <Badge variant="outline">{selectedConfig.viewType === "jobs" ? "Jobs" : "Operations"}</Badge>
+                <span>•</span>
+                <span>Grouped by {selectedConfig.swimLaneField}</span>
+              </div>
+            )}
           </div>
           
           <div className="flex items-center space-x-2">
@@ -516,37 +558,49 @@ export default function KanbanBoard({
 
         {/* Kanban Columns */}
         <div className="flex-1 overflow-x-auto bg-gray-100 p-4">
-          <div className="flex space-x-4 min-w-max">
-            {columns.map((column) => (
-              <KanbanColumn
-                key={column.id}
-                column={column}
-                onDrop={handleDrop}
-              >
-                {view === "jobs" ? (
-                  column.items.map((item) => (
-                    <JobCard
-                      key={item.id}
-                      job={item as Job}
-                      onEdit={handleEditJob}
-                      swimLaneField={swimLaneField}
-                    />
-                  ))
-                ) : (
-                  column.items.map((item) => (
-                    <OperationCard
-                      key={item.id}
-                      operation={item as Operation}
-                      job={jobs.find(j => j.id === (item as Operation).jobId)}
-                      resources={resources}
-                      onEdit={handleEditOperation}
-                      swimLaneField={swimLaneField}
-                    />
-                  ))
-                )}
-              </KanbanColumn>
-            ))}
-          </div>
+          {!selectedConfig ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <p className="text-gray-500 mb-4">No Kanban configuration selected</p>
+                <Button onClick={() => setConfigManagerOpen(true)}>
+                  <Settings className="w-4 h-4 mr-2" />
+                  Create Configuration
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex space-x-4 min-w-max">
+              {columns.map((column) => (
+                <KanbanColumn
+                  key={column.id}
+                  column={column}
+                  onDrop={handleDrop}
+                >
+                  {view === "jobs" ? (
+                    column.items.map((item) => (
+                      <JobCard
+                        key={item.id}
+                        job={item as Job}
+                        onEdit={handleEditJob}
+                        swimLaneField={swimLaneField}
+                      />
+                    ))
+                  ) : (
+                    column.items.map((item) => (
+                      <OperationCard
+                        key={item.id}
+                        operation={item as Operation}
+                        job={jobs.find(j => j.id === (item as Operation).jobId)}
+                        resources={resources}
+                        onEdit={handleEditOperation}
+                        swimLaneField={swimLaneField}
+                      />
+                    ))
+                  )}
+                </KanbanColumn>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

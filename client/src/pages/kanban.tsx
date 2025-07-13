@@ -5,7 +5,6 @@ import Sidebar from "@/components/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function KanbanPage() {
-  const [view, setView] = useState<"jobs" | "operations">("jobs");
 
   const { data: jobs = [], isLoading: jobsLoading } = useQuery({
     queryKey: ["/api/jobs"],
@@ -65,8 +64,6 @@ export default function KanbanPage() {
           operations={operations}
           resources={resources}
           capabilities={capabilities}
-          view={view}
-          onViewChange={setView}
         />
       </div>
     </div>
