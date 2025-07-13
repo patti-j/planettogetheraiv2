@@ -121,18 +121,35 @@ export function useOperationDrop(
       );
     },
     drop: (item, monitor) => {
+      console.log("🎯 DROP DEBUG - Starting drop for:", item.operation.name, "on resource:", resource.name);
       const clientOffset = monitor.getClientOffset();
       
       let startTime, endTime;
       if (clientOffset) {
         const resourceTimelineElement = document.querySelector(`[data-resource-id="${resource.id}"]`);
+        console.log("🎯 DROP DEBUG - Resource timeline element found:", !!resourceTimelineElement);
         if (resourceTimelineElement) {
           const rect = resourceTimelineElement.getBoundingClientRect();
           const relativeX = Math.max(0, clientOffset.x - rect.left);
           
+          console.log("🎯 DROP DEBUG - Position:", {
+            clientOffset,
+            rect,
+            relativeX,
+            timelineWidth,
+            timeScaleLength: timeScale.length
+          });
+          
           const periodWidth = timelineWidth / timeScale.length;
           const periodIndex = Math.floor(relativeX / periodWidth);
           const timeWithinPeriod = (relativeX % periodWidth) / periodWidth;
+          
+          console.log("🎯 DROP DEBUG - Time calc:", {
+            periodWidth,
+            periodIndex,
+            timeWithinPeriod,
+            timeUnit
+          });
           
           const { periodStart, periodDuration } = calculateTimeFromDrop(timeUnit, periodIndex, timeWithinPeriod);
           
@@ -144,6 +161,16 @@ export function useOperationDrop(
           
           startTime = startDate.toISOString();
           endTime = endDate.toISOString();
+          
+          console.log("🎯 DROP DEBUG - Final result:", {
+            periodStart,
+            periodDuration,
+            offsetWithinPeriod,
+            startDate,
+            endDate,
+            startTime,
+            endTime
+          });
         }
       }
       
