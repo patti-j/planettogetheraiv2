@@ -1200,11 +1200,15 @@ export default function GanttChart({
                 <Select 
                   value={selectedResourceViewId?.toString() || "all"} 
                   onValueChange={(value) => {
-                    const newViewId = value === "all" ? null : parseInt(value);
-                    onResourceViewChange?.(newViewId);
+                    if (value === "configure") {
+                      setResourceViewManagerOpen(true);
+                    } else {
+                      const newViewId = value === "all" ? null : parseInt(value);
+                      onResourceViewChange?.(newViewId);
+                    }
                   }}
                 >
-                  <SelectTrigger className="w-36 h-7 text-sm">
+                  <SelectTrigger className="w-40 h-7 text-sm">
                     <SelectValue placeholder="Select view" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1214,17 +1218,11 @@ export default function GanttChart({
                         {view.name} {view.isDefault && "(Default)"}
                       </SelectItem>
                     ))}
+                    <SelectItem value="configure" className="text-blue-600 font-medium">
+                      Configure Views...
+                    </SelectItem>
                   </SelectContent>
                 </Select>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setResourceViewManagerOpen(true)}
-                  title="Manage Views"
-                  className="h-7 px-2"
-                >
-                  <Settings className="w-4 h-4" />
-                </Button>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-1 text-xs text-gray-500">
@@ -1260,10 +1258,14 @@ export default function GanttChart({
                   <Select 
                     value={selectedResourceView?.textLabeling || "operation_name"} 
                     onValueChange={(value) => {
-                      handleViewSettingChange(value, "textLabeling");
+                      if (value === "configure") {
+                        setCustomTextLabelManagerOpen(true);
+                      } else {
+                        handleViewSettingChange(value, "textLabeling");
+                      }
                     }}
                   >
-                    <SelectTrigger className="w-20 h-6 text-xs">
+                    <SelectTrigger className="w-24 h-6 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1278,17 +1280,11 @@ export default function GanttChart({
                           {label.name}
                         </SelectItem>
                       ))}
+                      <SelectItem value="configure" className="text-blue-600 font-medium">
+                        Configure Labels...
+                      </SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setCustomTextLabelManagerOpen(true)}
-                    title="Manage Custom Text Labels"
-                    className="h-6 px-2"
-                  >
-                    <Type className="w-3 h-3" />
-                  </Button>
                 </div>
               </div>
             </div>
