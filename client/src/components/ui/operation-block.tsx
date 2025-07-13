@@ -92,10 +92,15 @@ export default function OperationBlock({
     const operationDurationMs = endTime.getTime() - startTime.getTime();
     
     // Calculate width based on the operation's actual duration relative to the time unit
-    // This is the key fix: use the operation's duration (in hours) vs the time unit scale
+    // Convert operation duration to hours and calculate what fraction of the time unit it represents
     const operationDurationHours = operationDurationMs / (60 * 60 * 1000);
     const timeUnitHours = stepMs / (60 * 60 * 1000);
+    
+    // The width should be proportional to how much of the time unit the operation takes
+    // For example: 6 hours in a month (720 hours) = 6/720 = 0.0083 of the month width
     const durationRatio = operationDurationHours / timeUnitHours;
+    
+    // The width should be proportional to the operation duration relative to the time unit
     
     // Calculate width based on timeline width and the operation duration ratio
     const left = startOffset * dayWidth;
