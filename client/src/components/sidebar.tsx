@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send } from "lucide-react";
+import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -57,6 +57,7 @@ export default function Sidebar() {
 
   const navigationItems = [
     { icon: BarChart3, label: "Schedule View", href: "/", active: location === "/" },
+    { icon: Columns3, label: "Kanban Board", href: "/kanban", active: location === "/kanban" },
     { icon: Briefcase, label: "Jobs", href: "/jobs", active: location === "/jobs" },
     { icon: ServerCog, label: "Resources", href: "/resources", active: location === "/resources" },
     { icon: BarChart3, label: "Analytics", href: "/analytics", active: location === "/analytics" },

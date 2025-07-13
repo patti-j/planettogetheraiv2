@@ -11,6 +11,7 @@ import Resources from "@/pages/resources";
 import Analytics from "@/pages/analytics";
 import Reports from "@/pages/reports";
 import AIAssistant from "@/pages/ai-assistant";
+import Kanban from "@/pages/kanban";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/analytics" component={Analytics} />
       <Route path="/reports" component={Reports} />
       <Route path="/ai-assistant" component={AIAssistant} />
+      <Route path="/kanban" component={Kanban} />
       <Route component={NotFound} />
     </Switch>
   );
