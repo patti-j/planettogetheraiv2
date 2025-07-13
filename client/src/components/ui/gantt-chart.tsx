@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { ChevronDown, ChevronRight, MoreHorizontal, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +27,6 @@ export default function GanttChart({
   const [expandedJobs, setExpandedJobs] = useState<Set<number>>(new Set());
   const [selectedOperation, setSelectedOperation] = useState<Operation | null>(null);
   const [operationDialogOpen, setOperationDialogOpen] = useState(false);
-  const [isDraggingBlock, setIsDraggingBlock] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   
   // Generate time scale for the next 7 days
@@ -112,29 +111,10 @@ export default function GanttChart({
     return resources.find(r => r.id === resourceId)?.name || "Unassigned";
   };
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const scrollLeft = e.currentTarget.scrollLeft;
-    // Sync all timeline headers and content areas
-    const timelineHeaders = document.querySelectorAll('.timeline-header');
-    const contentAreas = document.querySelectorAll('.timeline-content');
-    
-    timelineHeaders.forEach((header) => {
-      if (header instanceof HTMLElement && header.scrollLeft !== scrollLeft) {
-        header.scrollLeft = scrollLeft;
-      }
-    });
-    
-    contentAreas.forEach((content) => {
-      if (content instanceof HTMLElement && content.scrollLeft !== scrollLeft) {
-        content.scrollLeft = scrollLeft;
-      }
-    });
-  };
-
   const renderOperationsView = () => (
-    <div className="h-full overflow-y-auto">
-      {/* Time Scale Header */}
-      <div className="sticky top-0 bg-white border-b border-gray-200 z-10">
+    <div className="flex flex-col h-full">
+      {/* Fixed Header */}
+      <div className="flex-none bg-white border-b border-gray-200 z-10">
         <div className="flex">
           <div className="w-64 px-4 py-3 bg-gray-50 border-r border-gray-200">
             <div className="flex items-center justify-between">
@@ -152,9 +132,9 @@ export default function GanttChart({
               </div>
             </div>
           </div>
-          <div className="flex-1 overflow-x-auto overflow-y-hidden timeline-header" onScroll={handleScroll}>
+          <div className="flex-1 bg-gray-50 border-r border-gray-200 overflow-x-auto">
             <div 
-              className="flex bg-gray-50 border-r border-gray-200"
+              className="flex"
               style={{ width: `${timelineWidth}px` }}
             >
               {timeScale.map((day, index) => (
@@ -168,8 +148,8 @@ export default function GanttChart({
         </div>
       </div>
 
-      {/* Gantt Chart Content */}
-      <div className="relative">
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-auto">
         {jobs.map((job) => {
           const jobOperations = getOperationsByJob(job.id);
           const isExpanded = expandedJobs.has(job.id);
@@ -203,8 +183,8 @@ export default function GanttChart({
                       </Badge>
                     </div>
                   </div>
-                  <div className="flex-1 relative overflow-x-auto overflow-y-hidden timeline-content">
-                    <div className="absolute inset-0 bg-blue-50 border-r border-gray-100" style={{ width: `${timelineWidth}px` }}></div>
+                  <div className="flex-1 bg-blue-50 border-r border-gray-100" style={{ minWidth: `${timelineWidth}px` }}>
+                    {/* Job level timeline background */}
                   </div>
                 </div>
               </div>
@@ -252,19 +232,15 @@ export default function GanttChart({
                         </div>
                       </div>
                     </div>
-                    <div className="flex-1 relative p-2 min-h-[60px] overflow-x-auto overflow-y-hidden timeline-content">
-                      <div className="relative" style={{ width: `${timelineWidth}px` }}>
-                        <OperationBlock
-                          operation={operation}
-                          resourceName={getResourceName(operation.assignedResourceId || 0)}
-                          jobName={jobs.find(job => job.id === operation.jobId)?.name}
-                          job={jobs.find(job => job.id === operation.jobId)}
-                          onDragStart={() => setIsDraggingBlock(true)}
-                          onDragEnd={() => setIsDraggingBlock(false)}
-                          timelineWidth={timelineWidth}
-                          dayWidth={dayWidth}
-                        />
-                      </div>
+                    <div className="flex-1 relative p-2 min-h-[60px]" style={{ minWidth: `${timelineWidth}px` }}>
+                      <OperationBlock
+                        operation={operation}
+                        resourceName={getResourceName(operation.assignedResourceId || 0)}
+                        jobName={jobs.find(job => job.id === operation.jobId)?.name}
+                        job={jobs.find(job => job.id === operation.jobId)}
+                        timelineWidth={timelineWidth}
+                        dayWidth={dayWidth}
+                      />
                     </div>
                   </div>
                 </div>
@@ -282,7 +258,7 @@ export default function GanttChart({
     const { drop, isOver, canDrop } = useOperationDrop(resource);
 
     return (
-      <div key={resource.id} className="border-b border-gray-100">
+      <div className="border-b border-gray-100">
         <div className="flex">
           <div className="w-64 px-4 py-3 bg-gray-50 border-r border-gray-200">
             <div className="flex items-center">
@@ -304,33 +280,29 @@ export default function GanttChart({
           </div>
           <div 
             ref={drop}
-            data-resource-id={resource.id}
-            className={`flex-1 relative p-2 min-h-[60px] transition-colors overflow-x-auto overflow-y-hidden timeline-content ${
+            className={`flex-1 relative p-2 min-h-[60px] transition-colors ${
               isOver ? (canDrop ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200") : ""
             }`}
+            style={{ minWidth: `${timelineWidth}px` }}
           >
-            <div className="relative" style={{ width: `${timelineWidth}px` }}>
-              {resourceOperations.map((operation) => (
-                <OperationBlock
-                  key={operation.id}
-                  operation={operation}
-                  resourceName={resource.name}
-                  jobName={jobs.find(job => job.id === operation.jobId)?.name}
-                  job={jobs.find(job => job.id === operation.jobId)}
-                  onDragStart={() => setIsDraggingBlock(true)}
-                  onDragEnd={() => setIsDraggingBlock(false)}
-                  timelineWidth={timelineWidth}
-                  dayWidth={dayWidth}
-                />
-              ))}
-              {resourceOperations.length === 0 && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-gray-400 text-sm">
-                    {isOver ? (canDrop ? "Drop operation here" : "Incompatible capabilities") : "No operations assigned"}
-                  </div>
+            {resourceOperations.map((operation) => (
+              <OperationBlock
+                key={operation.id}
+                operation={operation}
+                resourceName={resource.name}
+                jobName={jobs.find(job => job.id === operation.jobId)?.name}
+                job={jobs.find(job => job.id === operation.jobId)}
+                timelineWidth={timelineWidth}
+                dayWidth={dayWidth}
+              />
+            ))}
+            {resourceOperations.length === 0 && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-gray-400 text-sm">
+                  {isOver ? (canDrop ? "Drop operation here" : "Incompatible capabilities") : "No operations assigned"}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -338,9 +310,9 @@ export default function GanttChart({
   };
 
   const renderResourcesView = () => (
-    <div className="h-full overflow-y-auto">
-      {/* Time Scale Header */}
-      <div className="sticky top-0 bg-white border-b border-gray-200 z-10">
+    <div className="flex flex-col h-full">
+      {/* Fixed Header */}
+      <div className="flex-none bg-white border-b border-gray-200 z-10">
         <div className="flex">
           <div className="w-64 px-4 py-3 bg-gray-50 border-r border-gray-200">
             <div className="flex items-center justify-between">
@@ -358,9 +330,9 @@ export default function GanttChart({
               </div>
             </div>
           </div>
-          <div className="flex-1 overflow-x-auto overflow-y-hidden timeline-header" onScroll={handleScroll}>
+          <div className="flex-1 bg-gray-50 border-r border-gray-200 overflow-x-auto">
             <div 
-              className="flex bg-gray-50 border-r border-gray-200"
+              className="flex"
               style={{ width: `${timelineWidth}px` }}
             >
               {timeScale.map((day, index) => (
@@ -374,8 +346,8 @@ export default function GanttChart({
         </div>
       </div>
 
-      {/* Gantt Chart Content */}
-      <div className="relative">
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-auto">
         {resources.map((resource) => (
           <ResourceRow key={resource.id} resource={resource} />
         ))}
@@ -384,7 +356,7 @@ export default function GanttChart({
   );
 
   return (
-    <div className="flex-1 bg-white">
+    <div className="flex-1 bg-white h-full">
       {view === "operations" ? renderOperationsView() : renderResourcesView()}
       
       {/* Operation Edit Dialog */}
