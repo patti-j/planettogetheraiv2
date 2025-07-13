@@ -13,6 +13,7 @@ interface OperationBlockProps {
   timelineBaseDate: Date;
   colorScheme?: string;
   textLabeling?: string;
+  customTextLabels?: any[];
 }
 
 export default function OperationBlock({
@@ -26,6 +27,7 @@ export default function OperationBlock({
   timelineBaseDate,
   colorScheme = "by_job",
   textLabeling = "operation_name",
+  customTextLabels = [],
 }: OperationBlockProps) {
   const [{ isDragging }, drag] = useDrag({
     type: "operation",
@@ -285,6 +287,19 @@ export default function OperationBlock({
       case "none":
         return "";
       default:
+        // Check if it's a custom text label
+        if (textLabeling?.startsWith("custom_")) {
+          const customLabelId = parseInt(textLabeling.replace("custom_", ""));
+          const customLabel = customTextLabels.find(label => label.id === customLabelId);
+          if (customLabel && customLabel.config) {
+            const enabledLabels = customLabel.config.labels
+              .filter(label => label.enabled)
+              .sort((a, b) => a.order - b.order);
+            
+            const textParts = enabledLabels.map(label => getTextForLabel(label.type));
+            return textParts.join(" • ");
+          }
+        }
         // Use the new comprehensive text labeling system
         return getTextForLabel(textLabeling);
     }

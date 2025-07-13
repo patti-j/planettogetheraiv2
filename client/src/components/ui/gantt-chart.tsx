@@ -10,6 +10,7 @@ import OperationBlock from "./operation-block";
 import OperationForm from "../operation-form";
 import ResourceViewManager from "../resource-view-manager";
 import TextLabelConfigDialog from "../text-label-config-dialog";
+import CustomTextLabelManager from "../custom-text-label-manager";
 import { useOperationDrop } from "@/hooks/use-drag-drop-fixed";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -52,6 +53,7 @@ export default function GanttChart({
   const [internalSelectedResourceViewId, setInternalSelectedResourceViewId] = useState<number | null>(null);
   const [resourceViewManagerOpen, setResourceViewManagerOpen] = useState(false);
   const [textConfigDialogOpen, setTextConfigDialogOpen] = useState(false);
+  const [customTextLabelManagerOpen, setCustomTextLabelManagerOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -152,6 +154,15 @@ export default function GanttChart({
     queryKey: ["/api/resource-views"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/resource-views");
+      return response.json();
+    },
+  });
+
+  // Fetch custom text labels
+  const { data: customTextLabels = [] } = useQuery({
+    queryKey: ["/api/custom-text-labels"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/custom-text-labels");
       return response.json();
     },
   });
@@ -609,6 +620,39 @@ export default function GanttChart({
     return resources.find(r => r.id === resourceId)?.name || "Unassigned";
   };
 
+  const getTextLabelingDisplayName = (textLabeling: string) => {
+    if (textLabeling?.startsWith("custom_")) {
+      const customLabelId = parseInt(textLabeling.replace("custom_", ""));
+      const customLabel = customTextLabels.find(label => label.id === customLabelId);
+      return customLabel?.name || "Custom";
+    }
+    
+    const displayNames: { [key: string]: string } = {
+      "operation_name": "Operation",
+      "job_name": "Job",
+      "both": "Both",
+      "duration": "Duration",
+      "progress": "Progress",
+      "none": "None",
+      "due_date": "Due Date",
+      "priority": "Priority",
+      "status": "Status",
+      "resource_name": "Resource",
+      "customer": "Customer",
+      "job_description": "Job Desc",
+      "operation_description": "Op Desc",
+      "resource_type": "Res Type",
+      "capabilities": "Capabilities",
+      "start_time": "Start Time",
+      "end_time": "End Time",
+      "slack_days": "Slack Days",
+      "days_late": "Days Late",
+      "completion_percent": "Completion %"
+    };
+    
+    return displayNames[textLabeling] || "Text";
+  };
+
   const renderOperationsView = () => {
     return (
       <div className="flex flex-col h-full">
@@ -860,10 +904,12 @@ export default function GanttChart({
                     <AlertTriangle className="h-4 w-4 mr-2" />
                     Schedule Maintenance
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleResourceAction(resource, 'remove_from_gantt')}>
-                    <Eye className="h-4 w-4 mr-2" />
-                    Remove from Gantt
-                  </DropdownMenuItem>
+                  {selectedResourceView && (
+                    <DropdownMenuItem onClick={() => handleResourceAction(resource, 'remove_from_gantt')}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      Remove from Gantt
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem 
                     onClick={() => handleResourceAction(resource, 'delete')}
                     className="text-red-600 hover:text-red-700"
@@ -897,6 +943,7 @@ export default function GanttChart({
                   timelineBaseDate={timeScale.minDate}
                   colorScheme={colorScheme}
                   textLabeling={textLabeling}
+                  customTextLabels={customTextLabels}
                 />
               ))}
             </div>
@@ -956,6 +1003,7 @@ export default function GanttChart({
                   timelineBaseDate={timeScale.minDate}
                   colorScheme={colorScheme}
                   textLabeling={textLabeling}
+                  customTextLabels={customTextLabels}
                 />
               ))}
               {resourceOperations.length === 0 && (
@@ -1015,10 +1063,10 @@ export default function GanttChart({
               </div>
               <div className="flex items-center space-x-2">
                 <Select 
-                  value={selectedResourceView?.id?.toString() || "all"} 
+                  value={selectedResourceViewId?.toString() || "all"} 
                   onValueChange={(value) => {
                     const newViewId = value === "all" ? null : parseInt(value);
-                    setSelectedResourceViewId(newViewId);
+                    onResourceViewChange?.(newViewId);
                   }}
                 >
                   <SelectTrigger className="flex-1 h-8 text-xs">
@@ -1110,26 +1158,7 @@ export default function GanttChart({
                           title="Change Text Labeling"
                           disabled={!selectedResourceView}
                         >
-                          {textLabeling === "operation_name" && "Operation"}
-                          {textLabeling === "job_name" && "Job"}
-                          {textLabeling === "both" && "Both"}
-                          {textLabeling === "duration" && "Duration"}
-                          {textLabeling === "progress" && "Progress"}
-                          {textLabeling === "none" && "None"}
-                          {textLabeling === "due_date" && "Due Date"}
-                          {textLabeling === "priority" && "Priority"}
-                          {textLabeling === "status" && "Status"}
-                          {textLabeling === "resource_name" && "Resource"}
-                          {textLabeling === "customer" && "Customer"}
-                          {textLabeling === "job_description" && "Job Desc"}
-                          {textLabeling === "operation_description" && "Op Desc"}
-                          {textLabeling === "resource_type" && "Res Type"}
-                          {textLabeling === "capabilities" && "Capabilities"}
-                          {textLabeling === "start_time" && "Start Time"}
-                          {textLabeling === "end_time" && "End Time"}
-                          {textLabeling === "slack_days" && "Slack Days"}
-                          {textLabeling === "days_late" && "Days Late"}
-                          {textLabeling === "completion_percent" && "Completion %"}
+                          {getTextLabelingDisplayName(textLabeling)}
                           <ChevronDown className="w-3 h-3 ml-1" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -1193,6 +1222,24 @@ export default function GanttChart({
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleTextLabelingChange("none")}>
                           No Text
+                        </DropdownMenuItem>
+                        {customTextLabels.length > 0 && (
+                          <>
+                            <DropdownMenuItem disabled>
+                              ─── Custom Labels ───
+                            </DropdownMenuItem>
+                            {customTextLabels.map((customLabel) => (
+                              <DropdownMenuItem
+                                key={customLabel.id}
+                                onClick={() => handleTextLabelingChange(`custom_${customLabel.id}`)}
+                              >
+                                {customLabel.name}
+                              </DropdownMenuItem>
+                            ))}
+                          </>
+                        )}
+                        <DropdownMenuItem onClick={() => setCustomTextLabelManagerOpen(true)}>
+                          ─── Manage Custom Labels ───
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -1272,6 +1319,7 @@ export default function GanttChart({
                       timelineBaseDate={timeScale.minDate}
                       colorScheme={colorScheme}
                       textLabeling={textLabeling}
+                      customTextLabels={customTextLabels}
                     />
                   ))}
                 {operations.filter(op => !op.startTime || !op.endTime).length === 0 && (
@@ -1342,6 +1390,12 @@ export default function GanttChart({
             resourceView={selectedResourceView}
           />
         )}
+
+        {/* Custom Text Label Manager */}
+        <CustomTextLabelManager
+          open={customTextLabelManagerOpen}
+          onOpenChange={setCustomTextLabelManagerOpen}
+        />
       </div>
     </DndProvider>
   );

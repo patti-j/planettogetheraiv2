@@ -3,7 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
   insertCapabilitySchema, insertResourceSchema, insertJobSchema, 
-  insertOperationSchema, insertDependencySchema, insertResourceViewSchema 
+  insertOperationSchema, insertDependencySchema, insertResourceViewSchema,
+  insertCustomTextLabelSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import multer from "multer";
@@ -430,6 +431,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         message: "Failed to transcribe audio" 
       });
+    }
+  });
+
+  // Custom Text Labels
+  app.get("/api/custom-text-labels", async (req, res) => {
+    try {
+      const customTextLabels = await storage.getCustomTextLabels();
+      res.json(customTextLabels);
+    } catch (error) {
+      console.error("Error fetching custom text labels:", error);
+      res.status(500).json({ error: "Failed to fetch custom text labels" });
+    }
+  });
+
+  app.post("/api/custom-text-labels", async (req, res) => {
+    try {
+      const validation = insertCustomTextLabelSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid custom text label data", details: validation.error.errors });
+      }
+
+      const customTextLabel = await storage.createCustomTextLabel(validation.data);
+      res.status(201).json(customTextLabel);
+    } catch (error) {
+      console.error("Error creating custom text label:", error);
+      res.status(500).json({ error: "Failed to create custom text label" });
+    }
+  });
+
+  app.put("/api/custom-text-labels/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid custom text label ID" });
+      }
+
+      const validation = insertCustomTextLabelSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid custom text label data", details: validation.error.errors });
+      }
+
+      const customTextLabel = await storage.updateCustomTextLabel(id, validation.data);
+      if (!customTextLabel) {
+        return res.status(404).json({ error: "Custom text label not found" });
+      }
+      res.json(customTextLabel);
+    } catch (error) {
+      console.error("Error updating custom text label:", error);
+      res.status(500).json({ error: "Failed to update custom text label" });
+    }
+  });
+
+  app.delete("/api/custom-text-labels/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid custom text label ID" });
+      }
+
+      const success = await storage.deleteCustomTextLabel(id);
+      if (!success) {
+        return res.status(404).json({ error: "Custom text label not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting custom text label:", error);
+      res.status(500).json({ error: "Failed to delete custom text label" });
     }
   });
 

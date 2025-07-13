@@ -68,6 +68,21 @@ export const resourceViews = pgTable("resource_views", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const customTextLabels = pgTable("custom_text_labels", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  config: jsonb("config").$type<{
+    labels: Array<{
+      type: "operation_name" | "job_name" | "due_date" | "priority" | "status" | "duration" | "progress" | "resource_name" | "customer" | "job_description" | "operation_description" | "resource_type" | "capabilities" | "start_time" | "end_time" | "slack_days" | "days_late" | "completion_percent";
+      enabled: boolean;
+      order: number;
+    }>;
+    fontSize: number;
+    fontColor: string;
+  }>().notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertCapabilitySchema = createInsertSchema(capabilities).omit({
   id: true,
 });
@@ -97,6 +112,11 @@ export const insertResourceViewSchema = createInsertSchema(resourceViews).omit({
   createdAt: true,
 });
 
+export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
 export type Capability = typeof capabilities.$inferSelect;
 
@@ -114,3 +134,6 @@ export type Dependency = typeof dependencies.$inferSelect;
 
 export type InsertResourceView = z.infer<typeof insertResourceViewSchema>;
 export type ResourceView = typeof resourceViews.$inferSelect;
+
+export type InsertCustomTextLabel = z.infer<typeof insertCustomTextLabelSchema>;
+export type CustomTextLabel = typeof customTextLabels.$inferSelect;

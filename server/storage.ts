@@ -1,8 +1,8 @@
 import { 
-  capabilities, resources, jobs, operations, dependencies, resourceViews,
-  type Capability, type Resource, type Job, type Operation, type Dependency, type ResourceView,
+  capabilities, resources, jobs, operations, dependencies, resourceViews, customTextLabels,
+  type Capability, type Resource, type Job, type Operation, type Dependency, type ResourceView, type CustomTextLabel,
   type InsertCapability, type InsertResource, type InsertJob, 
-  type InsertOperation, type InsertDependency, type InsertResourceView
+  type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -48,6 +48,13 @@ export interface IStorage {
   deleteResourceView(id: number): Promise<boolean>;
   getDefaultResourceView(): Promise<ResourceView | undefined>;
   setDefaultResourceView(id: number): Promise<void>;
+  
+  // Custom Text Labels
+  getCustomTextLabels(): Promise<CustomTextLabel[]>;
+  getCustomTextLabel(id: number): Promise<CustomTextLabel | undefined>;
+  createCustomTextLabel(customTextLabel: InsertCustomTextLabel): Promise<CustomTextLabel>;
+  updateCustomTextLabel(id: number, customTextLabel: Partial<InsertCustomTextLabel>): Promise<CustomTextLabel | undefined>;
+  deleteCustomTextLabel(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -618,6 +625,38 @@ export class DatabaseStorage implements IStorage {
     
     // Then set the specified view as default
     await db.update(resourceViews).set({ isDefault: true }).where(eq(resourceViews.id, id));
+  }
+
+  // Custom Text Labels
+  async getCustomTextLabels(): Promise<CustomTextLabel[]> {
+    return await db.select().from(customTextLabels);
+  }
+
+  async getCustomTextLabel(id: number): Promise<CustomTextLabel | undefined> {
+    const [customTextLabel] = await db.select().from(customTextLabels).where(eq(customTextLabels.id, id));
+    return customTextLabel || undefined;
+  }
+
+  async createCustomTextLabel(customTextLabel: InsertCustomTextLabel): Promise<CustomTextLabel> {
+    const [newCustomTextLabel] = await db
+      .insert(customTextLabels)
+      .values(customTextLabel)
+      .returning();
+    return newCustomTextLabel;
+  }
+
+  async updateCustomTextLabel(id: number, customTextLabel: Partial<InsertCustomTextLabel>): Promise<CustomTextLabel | undefined> {
+    const [updatedCustomTextLabel] = await db
+      .update(customTextLabels)
+      .set(customTextLabel)
+      .where(eq(customTextLabels.id, id))
+      .returning();
+    return updatedCustomTextLabel || undefined;
+  }
+
+  async deleteCustomTextLabel(id: number): Promise<boolean> {
+    const result = await db.delete(customTextLabels).where(eq(customTextLabels.id, id));
+    return (result.rowCount || 0) > 0;
   }
 }
 
