@@ -178,27 +178,37 @@ export default function GanttChart({
   
   // Order resources according to the selected view
   const orderedResources = useMemo(() => {
-    if (!selectedResourceView || view !== "resources") {
+    if (view !== "resources") {
       return resources;
     }
     
-    const orderedList: Resource[] = [];
+    // If no specific view is selected (All Resources), show all resources
+    if (!selectedResourceViewId) {
+      return resources;
+    }
     
-    // Add ONLY resources in the order specified by the view
-    selectedResourceView.resourceSequence.forEach(resourceId => {
-      const resource = resources.find(r => r.id === resourceId);
-      if (resource) {
-        orderedList.push(resource);
-      }
-    });
+    // If a specific view is selected, only show resources in that view
+    if (selectedResourceView) {
+      const orderedList: Resource[] = [];
+      
+      // Add ONLY resources in the order specified by the view
+      selectedResourceView.resourceSequence.forEach(resourceId => {
+        const resource = resources.find(r => r.id === resourceId);
+        if (resource) {
+          orderedList.push(resource);
+        }
+      });
+      
+      return orderedList;
+    }
     
-    // Don't add remaining resources - only show resources in the view
-    return orderedList;
-  }, [resources, selectedResourceView, view]);
+    // Fallback to all resources
+    return resources;
+  }, [resources, selectedResourceView, selectedResourceViewId, view]);
 
   // Get color scheme and text labeling from selected resource view
-  const colorScheme = selectedResourceView?.colorScheme || "by_job";
-  const textLabeling = selectedResourceView?.textLabeling || "operation_name";
+  const colorScheme = (selectedResourceViewId && selectedResourceView?.colorScheme) || "by_job";
+  const textLabeling = (selectedResourceViewId && selectedResourceView?.textLabeling) || "operation_name";
 
   // Handler for quick color scheme changes
   const handleColorSchemeChange = async (newColorScheme: string) => {
