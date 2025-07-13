@@ -70,7 +70,7 @@ export default function Sidebar() {
         <div className="p-6 border-b border-gray-200">
           <h1 className="text-xl font-semibold text-gray-800 flex items-center">
             <Factory className="text-primary mr-2" size={24} />
-            Production Scheduler Pro
+            PlanetTogether
           </h1>
         </div>
         

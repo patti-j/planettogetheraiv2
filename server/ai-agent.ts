@@ -48,6 +48,8 @@ You can perform these actions:
 7. SEARCH_JOBS - Search for jobs by criteria
 8. SEARCH_OPERATIONS - Search for operations by criteria
 9. ANALYZE_LATE_JOBS - Analyze which jobs are late and provide detailed information
+10. CREATE_CUSTOM_METRIC - Create a custom metric for tracking specific KPIs
+11. CALCULATE_CUSTOM_METRIC - Calculate and return custom metrics values
 
 Respond with JSON in this format:
 {
@@ -56,12 +58,14 @@ Respond with JSON in this format:
   "message": "Human-readable response message"
 }
 
-For CREATE_JOB, parameters should include: name, description, customerName, priority, dueDate
+For CREATE_JOB, parameters should include: name, description, customer, priority, dueDate
 For CREATE_OPERATION, parameters should include: name, description, jobId, duration, requiredCapabilities
 For CREATE_RESOURCE, parameters should include: name, type, capabilities
 For UPDATE_OPERATION, parameters should include: id, and fields to update
 For ASSIGN_OPERATION, parameters should include: operationId, resourceId
 For ANALYZE_LATE_JOBS, no parameters needed - analyze current jobs and operations to determine which are late
+For CREATE_CUSTOM_METRIC, parameters should include: name, description, calculation (formula or logic)
+For CALCULATE_CUSTOM_METRIC, parameters should include: metricName or calculation logic
 
 When analyzing late jobs, provide specific information about:
 - Which jobs are late and by how much
@@ -109,10 +113,20 @@ async function executeAction(action: string, parameters: any, message: string, c
   try {
     switch (action) {
       case "CREATE_JOB":
+        // Extract customer from various parameter names or from the command itself
+        let customerName = parameters.customer || parameters.customerName;
+        if (!customerName && parameters.name) {
+          // Try to extract customer from job name if it contains "for [customer]"
+          const forMatch = parameters.name.match(/for\s+(.+?)(?:\s+with|\s+due|\s*$)/i);
+          if (forMatch) {
+            customerName = forMatch[1];
+          }
+        }
+        
         const jobData: InsertJob = {
-          name: parameters.name,
+          name: parameters.name || "New Job",
           description: parameters.description || null,
-          customerName: parameters.customerName || null,
+          customer: customerName || "Unknown Customer",
           priority: parameters.priority || "medium",
           dueDate: parameters.dueDate ? new Date(parameters.dueDate) : null,
           status: "active"
@@ -214,9 +228,9 @@ async function executeAction(action: string, parameters: any, message: string, c
         };
 
       case "ANALYZE_LATE_JOBS":
-        if (!context) {
-          const freshContext = await getSystemContext();
-          context = freshContext;
+        let analysisContext = context;
+        if (!analysisContext) {
+          analysisContext = await getSystemContext();
         }
         
         const today = new Date();
@@ -224,9 +238,9 @@ async function executeAction(action: string, parameters: any, message: string, c
         const lateOperations = [];
         
         // Analyze each job for lateness
-        for (const job of context.jobs) {
+        for (const job of analysisContext.jobs) {
           const jobDueDate = new Date(job.dueDate);
-          const jobOperations = context.operations.filter(op => op.jobId === job.id);
+          const jobOperations = analysisContext.operations.filter(op => op.jobId === job.id);
           
           // Check if job is past due date
           if (today > jobDueDate) {
@@ -258,7 +272,7 @@ async function executeAction(action: string, parameters: any, message: string, c
         } else {
           analysisMessage += `⚠️ ${lateJobs.length} job(s) are overdue:\n`;
           lateJobs.forEach(job => {
-            analysisMessage += `• ${job.name} (${job.customerName}) - ${job.daysLate} days late\n`;
+            analysisMessage += `• ${job.name} (${job.customer}) - ${job.daysLate} days late\n`;
             analysisMessage += `  Due: ${new Date(job.dueDate).toLocaleDateString()}\n`;
             analysisMessage += `  Operations: ${job.operations.length} total\n`;
           });
@@ -286,6 +300,34 @@ async function executeAction(action: string, parameters: any, message: string, c
           actions: ["ANALYZE_LATE_JOBS"]
         };
 
+      case "CREATE_CUSTOM_METRIC":
+        const customMetric = {
+          name: parameters.name,
+          description: parameters.description,
+          calculation: parameters.calculation,
+          createdAt: new Date().toISOString()
+        };
+        
+        return {
+          success: true,
+          message: message || `Custom metric "${parameters.name}" created successfully`,
+          data: customMetric,
+          actions: ["CREATE_CUSTOM_METRIC"]
+        };
+
+      case "CALCULATE_CUSTOM_METRIC":
+        let metricContext = context;
+        if (!metricContext) {
+          metricContext = await getSystemContext();
+        }
+        const metricResult = await calculateCustomMetric(parameters, metricContext);
+        return {
+          success: true,
+          message: message || `Custom metric calculated successfully`,
+          data: metricResult,
+          actions: ["CALCULATE_CUSTOM_METRIC"]
+        };
+
       default:
         return {
           success: false,
@@ -301,6 +343,150 @@ async function executeAction(action: string, parameters: any, message: string, c
       data: null
     };
   }
+}
+
+async function calculateCustomMetric(parameters: any, context?: SystemContext) {
+  const { jobs, operations, resources } = context || {};
+  
+  // Common calculations based on the metric request
+  const calculations = {
+    // Time-based metrics
+    "average_job_duration": () => {
+      if (!jobs || jobs.length === 0) return 0;
+      const completedJobs = jobs.filter(j => j.status === "completed");
+      if (completedJobs.length === 0) return 0;
+      
+      const totalDuration = completedJobs.reduce((sum, job) => {
+        const jobOps = operations?.filter(op => op.jobId === job.id) || [];
+        return sum + jobOps.reduce((opSum, op) => opSum + (op.duration || 0), 0);
+      }, 0);
+      
+      return Math.round(totalDuration / completedJobs.length);
+    },
+    
+    "resource_utilization_by_type": () => {
+      if (!resources || !operations) return {};
+      
+      const utilization = {};
+      resources.forEach(resource => {
+        const resourceOps = operations.filter(op => op.assignedResourceId === resource.id);
+        const totalHours = resourceOps.reduce((sum, op) => sum + (op.duration || 0), 0);
+        const workingHours = 8 * 5; // 40 hours per week
+        
+        if (!utilization[resource.type]) {
+          utilization[resource.type] = { totalHours: 0, resourceCount: 0 };
+        }
+        utilization[resource.type].totalHours += totalHours;
+        utilization[resource.type].resourceCount += 1;
+      });
+      
+      Object.keys(utilization).forEach(type => {
+        const data = utilization[type];
+        utilization[type].averageUtilization = Math.round((data.totalHours / (data.resourceCount * workingHours)) * 100);
+      });
+      
+      return utilization;
+    },
+    
+    "jobs_by_priority": () => {
+      if (!jobs) return {};
+      
+      const priorityCount = {};
+      jobs.forEach(job => {
+        const priority = job.priority || 'medium';
+        priorityCount[priority] = (priorityCount[priority] || 0) + 1;
+      });
+      
+      return priorityCount;
+    },
+    
+    "completion_rate": () => {
+      if (!jobs || jobs.length === 0) return 0;
+      const completedJobs = jobs.filter(j => j.status === "completed").length;
+      return Math.round((completedJobs / jobs.length) * 100);
+    },
+    
+    "average_lead_time": () => {
+      if (!jobs || !operations) return 0;
+      
+      const completedJobs = jobs.filter(j => j.status === "completed");
+      if (completedJobs.length === 0) return 0;
+      
+      const totalLeadTime = completedJobs.reduce((sum, job) => {
+        const jobOps = operations.filter(op => op.jobId === job.id);
+        const firstOpStart = jobOps.reduce((earliest, op) => 
+          !earliest || (op.startTime && new Date(op.startTime) < new Date(earliest)) ? op.startTime : earliest, null);
+        const lastOpEnd = jobOps.reduce((latest, op) => 
+          !latest || (op.endTime && new Date(op.endTime) > new Date(latest)) ? op.endTime : latest, null);
+        
+        if (firstOpStart && lastOpEnd) {
+          return sum + (new Date(lastOpEnd).getTime() - new Date(firstOpStart).getTime()) / (1000 * 60 * 60 * 24);
+        }
+        return sum;
+      }, 0);
+      
+      return Math.round(totalLeadTime / completedJobs.length);
+    }
+  };
+  
+  // Check if the metric name matches a predefined calculation
+  const metricName = parameters.metricName || parameters.name;
+  if (metricName && calculations[metricName.toLowerCase().replace(/\s+/g, '_')]) {
+    const result = calculations[metricName.toLowerCase().replace(/\s+/g, '_')]();
+    return {
+      metricName,
+      value: result,
+      calculatedAt: new Date().toISOString()
+    };
+  }
+  
+  // Try to calculate based on the calculation parameter
+  if (parameters.calculation) {
+    try {
+      // Simple calculation interpreter for basic metrics
+      if (parameters.calculation.includes('total_jobs')) {
+        return {
+          metricName: parameters.metricName || 'Total Jobs',
+          value: jobs?.length || 0,
+          calculatedAt: new Date().toISOString()
+        };
+      }
+      
+      if (parameters.calculation.includes('total_operations')) {
+        return {
+          metricName: parameters.metricName || 'Total Operations',
+          value: operations?.length || 0,
+          calculatedAt: new Date().toISOString()
+        };
+      }
+      
+      if (parameters.calculation.includes('total_resources')) {
+        return {
+          metricName: parameters.metricName || 'Total Resources',
+          value: resources?.length || 0,
+          calculatedAt: new Date().toISOString()
+        };
+      }
+      
+      if (parameters.calculation.includes('active_jobs')) {
+        return {
+          metricName: parameters.metricName || 'Active Jobs',
+          value: jobs?.filter(j => j.status === 'active').length || 0,
+          calculatedAt: new Date().toISOString()
+        };
+      }
+      
+    } catch (error) {
+      console.error('Custom metric calculation error:', error);
+    }
+  }
+  
+  return {
+    metricName: parameters.metricName || 'Unknown Metric',
+    value: 'Unable to calculate',
+    calculatedAt: new Date().toISOString(),
+    error: 'Calculation not supported'
+  };
 }
 
 // Audio transcription using Whisper

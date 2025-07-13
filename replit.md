@@ -1,4 +1,4 @@
-# Manufacturing Production Scheduler
+# PlanetTogether - Manufacturing Production Scheduler
 
 ## Overview
 
@@ -146,3 +146,19 @@ The application uses a modern full-stack architecture with strong typing through
 - Drag-and-drop now correctly updates operation assignments with time calculations
 - Operations can be seamlessly moved between resources on the Gantt chart timeline
 - All drag-and-drop actions persist correctly in the PostgreSQL database
+
+✓ **AI Assistant Job Creation Fixed**: 
+- Corrected schema field mismatch from "customerName" to "customer" in job creation
+- Fixed AI agent job creation error that was preventing new job creation
+- AI assistant now properly creates jobs with correct customer field mapping
+
+✓ **Custom Metrics Feature**: 
+- Added CREATE_CUSTOM_METRIC and CALCULATE_CUSTOM_METRIC actions to AI assistant
+- Implemented comprehensive custom metrics calculation system
+- Supports predefined metrics: average_job_duration, resource_utilization_by_type, jobs_by_priority, completion_rate, average_lead_time
+- AI can now create and calculate custom manufacturing metrics on demand
+
+✓ **Product Rebranding**: 
+- Updated product name from "Production Scheduler Pro" to "PlanetTogether"
+- Updated branding in sidebar, page title, and documentation
+- Maintained all existing functionality with new branding
