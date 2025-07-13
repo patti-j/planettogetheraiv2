@@ -1197,7 +1197,6 @@ export default function GanttChart({
           <div className="w-80 px-4 py-2 bg-gray-50 border-r border-gray-200">
             <div className="flex flex-col space-y-2">
               <div className="flex items-center space-x-2">
-                <span className="font-medium text-gray-700">Resources</span>
                 <Select 
                   value={selectedResourceViewId?.toString() || "all"} 
                   onValueChange={(value) => {
@@ -1205,7 +1204,7 @@ export default function GanttChart({
                     onResourceViewChange?.(newViewId);
                   }}
                 >
-                  <SelectTrigger className="w-24 h-6 text-xs">
+                  <SelectTrigger className="w-36 h-7 text-sm">
                     <SelectValue placeholder="Select view" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1222,9 +1221,9 @@ export default function GanttChart({
                   size="sm" 
                   onClick={() => setResourceViewManagerOpen(true)}
                   title="Manage Views"
-                  className="h-6 px-2"
+                  className="h-7 px-2"
                 >
-                  <Settings className="w-3 h-3" />
+                  <Settings className="w-4 h-4" />
                 </Button>
               </div>
               <div className="flex items-center justify-between">
