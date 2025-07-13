@@ -100,11 +100,14 @@ export default function OperationBlock({
     // For example: 6 hours in a month (720 hours) = 6/720 = 0.0083 of the month width
     const durationRatio = operationDurationHours / timeUnitHours;
     
-    // The width should be proportional to the operation duration relative to the time unit
+    // Operation width scales proportionally with zoom level - zoomed out = smaller blocks
     
     // Calculate width based on timeline width and the operation duration ratio
     const left = startOffset * dayWidth;
-    const width = Math.max(durationRatio * dayWidth, 20); // Minimum width for visibility
+    
+    // Adaptive minimum width based on zoom level - tighter constraints for zoomed out views
+    const minWidth = timeUnit === "month" ? 2 : timeUnit === "week" ? 4 : timeUnit === "day" ? 8 : 12;
+    const width = Math.max(durationRatio * dayWidth, minWidth);
     
     return { left, width };
   }, [operation.startTime, operation.endTime, dayWidth, timeUnit, timelineBaseDate]);

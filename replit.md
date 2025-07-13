@@ -215,3 +215,6 @@ The application uses a modern full-stack architecture with strong typing through
 - Improved time unit conversion logic for accurate scaling across different zoom levels
 - Visual block lengths now correctly scale from hours to weeks/months based on current view
 - Fixed zoom level scaling: operations maintain proportional width across all zoom levels (hour/day/week/month)
+- Implemented adaptive minimum width constraints to prevent operations from becoming invisible at extreme zoom levels
+- Day view: 6hr operation = 50px, 2hr operation = 17px (proper proportional scaling)
+- Month view: 6hr operation = 2px, 2hr operation = 2px (constrained by minimum width but mathematically correct scaling)
