@@ -127,6 +127,7 @@ export default function OperationBlock({
 
   const getBlockColor = () => {
     switch (colorScheme) {
+      case "job":
       case "by_job":
         const jobColors = [
           "bg-blue-500",
@@ -140,6 +141,7 @@ export default function OperationBlock({
         ];
         return jobColors[operation.jobId % jobColors.length];
       
+      case "priority":
       case "by_priority":
         switch (job?.priority) {
           case "high": return "bg-red-500";
@@ -148,6 +150,7 @@ export default function OperationBlock({
           default: return "bg-gray-500";
         }
       
+      case "status":
       case "by_status":
         switch (operation.status) {
           case "completed": return "bg-green-500";
@@ -171,6 +174,7 @@ export default function OperationBlock({
         ];
         return typeColors[hash % typeColors.length];
       
+      case "resource":
       case "by_resource":
         const resourceColors = [
           "bg-slate-500",
@@ -183,6 +187,15 @@ export default function OperationBlock({
           "bg-yellow-500",
         ];
         return resourceColors[(operation.assignedResourceId || 0) % resourceColors.length];
+      
+      case "duration":
+      case "by_duration":
+        // Color based on duration ranges
+        const duration = operation.duration || 0;
+        if (duration <= 2) return "bg-green-500";
+        if (duration <= 4) return "bg-yellow-500";
+        if (duration <= 8) return "bg-orange-500";
+        return "bg-red-500";
       
       default:
         return "bg-blue-500";

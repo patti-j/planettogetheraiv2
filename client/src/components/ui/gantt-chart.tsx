@@ -57,6 +57,8 @@ export default function GanttChart({
   const [resourceViewManagerOpen, setResourceViewManagerOpen] = useState(false);
   const [textConfigDialogOpen, setTextConfigDialogOpen] = useState(false);
   const [customTextLabelManagerOpen, setCustomTextLabelManagerOpen] = useState(false);
+  const [defaultColorScheme, setDefaultColorScheme] = useState("priority");
+  const [defaultTextLabeling, setDefaultTextLabeling] = useState("operation_name");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -213,9 +215,9 @@ export default function GanttChart({
     return resources;
   }, [resources, selectedResourceView, selectedResourceViewId, view]);
 
-  // Get color scheme and text labeling from selected resource view
-  const colorScheme = (selectedResourceViewId && selectedResourceView?.colorScheme) || "by_job";
-  const textLabeling = (selectedResourceViewId && selectedResourceView?.textLabeling) || "operation_name";
+  // Get color scheme and text labeling from selected resource view or default values
+  const colorScheme = selectedResourceView?.colorScheme || defaultColorScheme;
+  const textLabeling = selectedResourceView?.textLabeling || defaultTextLabeling;
   
   // Debug logging
   useEffect(() => {
@@ -786,7 +788,17 @@ export default function GanttChart({
 
   const handleViewSettingChange = async (newValue: string, settingType: "colorScheme" | "textLabeling") => {
     if (!selectedResourceView) {
-      toast({ title: "Select a resource view to change settings", variant: "destructive" });
+      // Handle the case when "All Resources" is selected - use local state
+      if (settingType === "colorScheme") {
+        setDefaultColorScheme(newValue);
+      } else {
+        setDefaultTextLabeling(newValue);
+      }
+      
+      // Show success message
+      const displayName = settingType === "colorScheme" ? newValue : getTextLabelingDisplayName(newValue);
+      const settingName = settingType === "colorScheme" ? "color scheme" : "text labeling";
+      toast({ title: `${settingName} changed to ${displayName}` });
       return;
     }
     
@@ -1239,7 +1251,7 @@ export default function GanttChart({
                 </div>
                 <div className="flex items-center space-x-1">
                   <Select 
-                    value={selectedResourceView?.colorScheme || "priority"} 
+                    value={selectedResourceView?.colorScheme || defaultColorScheme} 
                     onValueChange={(value) => {
                       handleViewSettingChange(value, "colorScheme");
                     }}
@@ -1256,7 +1268,7 @@ export default function GanttChart({
                     </SelectContent>
                   </Select>
                   <Select 
-                    value={selectedResourceView?.textLabeling || "operation_name"} 
+                    value={selectedResourceView?.textLabeling || defaultTextLabeling} 
                     onValueChange={(value) => {
                       if (value === "configure") {
                         setCustomTextLabelManagerOpen(true);
