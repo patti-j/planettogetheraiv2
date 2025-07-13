@@ -81,24 +81,52 @@ export function useOperationDrop(
           const periodIndex = Math.floor(relativeX / periodWidth);
           const clampedPeriodIndex = Math.max(0, Math.min(periodIndex, timeScale.length - 1));
           
-          // Get the period data
-          const periodData = timeScale[clampedPeriodIndex];
-          if (periodData && periodData.date) {
-            // Use the exact period start time as the operation start time
-            const operationStartTime = new Date(periodData.date);
-            
-            // Calculate end time based on operation duration
-            const operationDuration = item.operation.duration || 8; // Default 8 hours
-            const operationEndTime = new Date(operationStartTime.getTime() + (operationDuration * 60 * 60 * 1000));
-            
-            // Update the operation with the new timing
-            updateOperationMutation.mutate({
-              operationId: item.operation.id,
-              resourceId: resource.id,
-              startTime: operationStartTime.toISOString(),
-              endTime: operationEndTime.toISOString()
-            });
+          // FIXED: Use the same period-based calculation as OperationBlock
+          // Calculate step size for this time unit (matching OperationBlock)
+          let stepMs: number;
+          switch (timeUnit) {
+            case "hour":
+              stepMs = 60 * 60 * 1000;
+              break;
+            case "shift":
+              stepMs = 8 * 60 * 60 * 1000;
+              break;
+            case "day":
+              stepMs = 24 * 60 * 60 * 1000;
+              break;
+            case "week":
+              stepMs = 7 * 24 * 60 * 60 * 1000;
+              break;
+            case "month":
+              stepMs = 30 * 24 * 60 * 60 * 1000;
+              break;
+            case "quarter":
+              stepMs = 90 * 24 * 60 * 60 * 1000;
+              break;
+            case "year":
+              stepMs = 365 * 24 * 60 * 60 * 1000;
+              break;
+            case "decade":
+              stepMs = 3650 * 24 * 60 * 60 * 1000;
+              break;
+            default:
+              stepMs = 24 * 60 * 60 * 1000;
           }
+          
+          // Calculate operation start time using same logic as OperationBlock
+          const operationStartTime = new Date(timelineBaseDate.getTime() + (clampedPeriodIndex * stepMs));
+          
+          // Calculate end time based on operation duration
+          const operationDuration = item.operation.duration || 8; // Default 8 hours
+          const operationEndTime = new Date(operationStartTime.getTime() + (operationDuration * 60 * 60 * 1000));
+            
+          // Update the operation with the new timing
+          updateOperationMutation.mutate({
+            operationId: item.operation.id,
+            resourceId: resource.id,
+            startTime: operationStartTime.toISOString(),
+            endTime: operationEndTime.toISOString()
+          });
         }
       }
     },
