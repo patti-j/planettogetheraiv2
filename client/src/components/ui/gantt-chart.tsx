@@ -1318,7 +1318,8 @@ export default function GanttChart({
           </DialogHeader>
           <div className="flex-1 overflow-hidden">
             <ResourceViewManager 
-              onClose={() => setResourceViewManagerOpen(false)}
+              resources={resources}
+              selectedViewId={selectedResourceView?.id}
               onViewChange={onResourceViewChange}
             />
           </div>
