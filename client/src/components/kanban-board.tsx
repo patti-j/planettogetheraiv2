@@ -772,7 +772,7 @@ function KanbanBoard({
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
           <div className="flex items-center space-x-4">
-            <h2 className="text-lg font-medium text-gray-900">Kanban Board</h2>
+            <h2 className="text-lg font-medium text-gray-900">Board</h2>
             <div className="w-48 h-8 bg-gray-200 rounded animate-pulse" />
           </div>
         </div>
@@ -799,7 +799,7 @@ function KanbanBoard({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
           <div className="flex items-center space-x-4">
-            <h2 className="text-lg font-medium text-gray-900">Kanban Board</h2>
+            <h2 className="text-lg font-medium text-gray-900">Board</h2>
             <div className="flex items-center">
               <Select 
                 value={selectedConfigId?.toString() || ""} 

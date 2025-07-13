@@ -63,7 +63,7 @@ export default function Boards() {
       <main className="flex-1 overflow-hidden bg-white">
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div>
-            <h2 className="text-lg font-medium text-gray-900">Boards</h2>
+            <h2 className="text-lg font-medium text-gray-900">Board</h2>
             <p className="text-sm text-gray-600">Organize jobs, operations, and resources with drag-and-drop boards</p>
           </div>
           <div className="flex items-center gap-2">

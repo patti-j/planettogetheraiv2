@@ -229,7 +229,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
               <h3 className="text-lg font-medium">Operations</h3>
               <Button
                 type="button"
-                variant="outline"
+                className="bg-primary hover:bg-blue-700 text-white"
                 size="sm"
                 onClick={() => setOperationDialogOpen(true)}
               >
