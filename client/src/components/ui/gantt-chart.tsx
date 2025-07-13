@@ -197,11 +197,11 @@ export default function GanttChart({
       const newScrollLeft = Math.max(0, timelineRef.current.scrollLeft - deltaX);
       timelineRef.current.scrollLeft = newScrollLeft;
       
-      // Sync all resource rows with the timeline header scroll
-      const resourceRows = document.querySelectorAll('[data-resource-id]');
-      resourceRows.forEach((row) => {
-        if (row instanceof HTMLElement && row.scrollLeft !== newScrollLeft) {
-          row.scrollLeft = newScrollLeft;
+      // Sync all timeline containers with the timeline header scroll
+      const timelineContainers = document.querySelectorAll('[data-resource-id]');
+      timelineContainers.forEach((container) => {
+        if (container instanceof HTMLElement && container.scrollLeft !== newScrollLeft) {
+          container.scrollLeft = newScrollLeft;
         }
       });
       
@@ -247,15 +247,14 @@ export default function GanttChart({
     };
   }, [handleMouseMove, handleMouseUp]);
 
-  // Ensure all resource rows are synced with timeline header on mount and updates
+  // Ensure all timeline containers are synced with timeline header on mount and updates
   useEffect(() => {
-    const syncResourceRows = (scrollLeft: number) => {
-      // Use a more specific selector to find all resource timeline containers
-      const resourceRows = document.querySelectorAll('[data-resource-id]');
-      console.log('Syncing resource rows:', resourceRows.length, 'scrollLeft:', scrollLeft);
-      resourceRows.forEach((row) => {
-        if (row instanceof HTMLElement && row.scrollLeft !== scrollLeft) {
-          row.scrollLeft = scrollLeft;
+    const syncTimelineContainers = (scrollLeft: number) => {
+      // Find all timeline containers (both resource rows and operation rows)
+      const timelineContainers = document.querySelectorAll('[data-resource-id]');
+      timelineContainers.forEach((container) => {
+        if (container instanceof HTMLElement && container.scrollLeft !== scrollLeft) {
+          container.scrollLeft = scrollLeft;
         }
       });
     };
@@ -263,14 +262,13 @@ export default function GanttChart({
     if (timelineRef.current) {
       // Initial sync
       const initialScrollLeft = timelineRef.current.scrollLeft;
-      syncResourceRows(initialScrollLeft);
+      syncTimelineContainers(initialScrollLeft);
       
       // Sync on any timeline scroll
       const timelineElement = timelineRef.current;
       const handleScroll = () => {
         if (!isDraggingTimeline.current) {
-          console.log('Timeline scroll detected, syncing rows');
-          syncResourceRows(timelineElement.scrollLeft);
+          syncTimelineContainers(timelineElement.scrollLeft);
         }
       };
       
@@ -280,17 +278,17 @@ export default function GanttChart({
         timelineElement.removeEventListener('scroll', handleScroll);
       };
     }
-  }, [timelineRef.current, resources.length, view]);
+  }, [timelineRef.current, resources.length, operations.length, view]);
 
-  // Handle scrollbar scroll events - sync all resource rows with timeline header
+  // Handle scrollbar scroll events - sync all timeline containers with timeline header
   const handleTimelineScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     if (!isDraggingTimeline.current) {
-      // Sync all resource rows with the timeline header scroll
+      // Sync all timeline containers with the timeline header scroll
       const scrollLeft = e.currentTarget.scrollLeft;
-      const resourceRows = document.querySelectorAll('[data-resource-id]');
-      resourceRows.forEach((row) => {
-        if (row instanceof HTMLElement && row.scrollLeft !== scrollLeft) {
-          row.scrollLeft = scrollLeft;
+      const timelineContainers = document.querySelectorAll('[data-resource-id]');
+      timelineContainers.forEach((container) => {
+        if (container instanceof HTMLElement && container.scrollLeft !== scrollLeft) {
+          container.scrollLeft = scrollLeft;
         }
       });
     }
@@ -475,7 +473,16 @@ export default function GanttChart({
                         </div>
                       </div>
                     </div>
-                    <div className="flex-1 relative p-2 min-h-[60px] overflow-x-hidden">
+                    <div 
+                      className="flex-1 relative p-2 min-h-[60px] overflow-x-auto scrollbar-hide"
+                      data-resource-id={`operation-${operation.id}`}
+                      onScroll={(e) => {
+                        // Sync this operation row's scroll with the timeline header
+                        if (timelineRef.current && !isDraggingTimeline.current) {
+                          timelineRef.current.scrollLeft = e.currentTarget.scrollLeft;
+                        }
+                      }}
+                    >
                       <div style={{ width: `${timelineWidth}px` }}>
                         <OperationBlock
                           operation={operation}
