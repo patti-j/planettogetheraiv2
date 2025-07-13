@@ -1,9 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { BarChart3, TrendingUp, Clock, AlertTriangle, CheckCircle, MoreHorizontal, Eye, EyeOff, X, Settings, Maximize2 } from "lucide-react";
+import { BarChart3, TrendingUp, Clock, AlertTriangle, CheckCircle, MoreHorizontal, Eye, EyeOff, X, Settings, Maximize2, Move } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface AnalyticsWidget {
@@ -23,10 +23,12 @@ interface AnalyticsWidgetProps {
   onRemove: (id: string) => void;
   onEdit: (id: string) => void;
   onResize: (id: string, size: { width: number; height: number }) => void;
+  onPositionChange: (id: string, position: { x: number; y: number }) => void;
   jobs: any[];
   operations: any[];
   resources: any[];
   metrics: any;
+  layoutMode: "grid" | "free";
 }
 
 export default function AnalyticsWidget({ 
@@ -35,11 +37,58 @@ export default function AnalyticsWidget({
   onRemove, 
   onEdit, 
   onResize, 
+  onPositionChange,
   jobs, 
   operations, 
   resources, 
-  metrics 
+  metrics,
+  layoutMode
 }: AnalyticsWidgetProps) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const widgetRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (layoutMode !== "free") return;
+    
+    const rect = widgetRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    
+    setIsDragging(true);
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    });
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging || layoutMode !== "free") return;
+    
+    const container = widgetRef.current?.parentElement;
+    if (!container) return;
+    
+    const containerRect = container.getBoundingClientRect();
+    const newX = e.clientX - containerRect.left - dragOffset.x;
+    const newY = e.clientY - containerRect.top - dragOffset.y;
+    
+    onPositionChange(widget.id, { x: Math.max(0, newX), y: Math.max(0, newY) });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // Add mouse event listeners
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, dragOffset]);
   
   const widgetData = useMemo(() => {
     // Generate data based on widget type and configuration
@@ -159,10 +208,31 @@ export default function AnalyticsWidget({
   if (!widget.visible) return null;
 
   return (
-    <Card className="h-full">
+    <Card 
+      ref={widgetRef}
+      className={`h-full ${isDragging ? 'shadow-lg' : ''} ${layoutMode === 'free' ? 'cursor-move' : ''}`}
+      style={layoutMode === 'free' ? {
+        position: 'absolute',
+        left: `${widget.position.x}px`,
+        top: `${widget.position.y}px`,
+        width: `${widget.size.width}px`,
+        minHeight: `${widget.size.height}px`,
+        zIndex: isDragging ? 1000 : 1
+      } : {}}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
+            {layoutMode === 'free' && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 w-6 p-0 cursor-move"
+                onMouseDown={handleMouseDown}
+              >
+                <Move className="w-4 h-4" />
+              </Button>
+            )}
             {getIcon()}
             <CardTitle className="text-sm">{widget.title}</CardTitle>
           </div>

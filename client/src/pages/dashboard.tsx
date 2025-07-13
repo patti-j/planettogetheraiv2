@@ -146,6 +146,14 @@ export default function Dashboard() {
     setCustomWidgets(prev => [...prev, widget]);
   };
 
+  const handleWidgetPositionChange = (id: string, position: { x: number; y: number }) => {
+    setCustomWidgets(prev => 
+      prev.map(widget => 
+        widget.id === id ? { ...widget, position } : widget
+      )
+    );
+  };
+
   const handleWidgetUpdate = (widgets: AnalyticsWidget[]) => {
     setCustomWidgets(widgets);
   };
@@ -441,7 +449,7 @@ export default function Dashboard() {
           {showCustomWidgets && customWidgets.length > 0 && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-4">Custom Analytics Widgets</h3>
-              <div className={`grid gap-4 ${layoutMode === "grid" ? "md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
+              <div className={`${layoutMode === "grid" ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3" : "relative min-h-[600px] border-2 border-dashed border-gray-300 rounded-lg"}`}>
                 {customWidgets.map((widget) => (
                   <AnalyticsWidget
                     key={widget.id}
@@ -450,12 +458,19 @@ export default function Dashboard() {
                     onRemove={handleWidgetRemove}
                     onEdit={handleWidgetEdit}
                     onResize={handleWidgetResize}
+                    onPositionChange={handleWidgetPositionChange}
                     jobs={jobs}
                     operations={operations}
                     resources={resources}
                     metrics={metrics}
+                    layoutMode={layoutMode}
                   />
                 ))}
+                {layoutMode === "free" && (
+                  <div className="absolute top-4 left-4 text-sm text-gray-500 pointer-events-none">
+                    Drag widgets using the move handle (⋮⋮) to reposition them
+                  </div>
+                )}
               </div>
             </div>
           )}

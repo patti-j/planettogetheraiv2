@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Badge } from "@/components/ui/badge";
@@ -59,6 +59,12 @@ const JobCard = ({ job, onEdit, swimLaneField, index }: { job: Job; onEdit: (job
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
+    end: (draggedItem, monitor) => {
+      // Prevent any default behavior that might cause screen changes
+      if (monitor.didDrop()) {
+        return;
+      }
+    },
   });
 
   const getPriorityColor = (priority: string) => {
@@ -150,6 +156,12 @@ const OperationCard = ({ operation, job, resources, onEdit, swimLaneField, index
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
+    end: (draggedItem, monitor) => {
+      // Prevent any default behavior that might cause screen changes
+      if (monitor.didDrop()) {
+        return;
+      }
+    },
   });
 
   const assignedResource = resources.find(r => r.id === operation.assignedResourceId);
@@ -226,18 +238,64 @@ const OperationCard = ({ operation, job, resources, onEdit, swimLaneField, index
   );
 };
 
+// Individual drop zone for resequencing
+const CardDropZone = ({ 
+  onDrop, 
+  columnId, 
+  insertIndex, 
+  isFirst = false, 
+  isLast = false 
+}: { 
+  onDrop: (item: DragItem, targetStatus: string, insertAtIndex?: number) => void;
+  columnId: string;
+  insertIndex: number;
+  isFirst?: boolean;
+  isLast?: boolean;
+}) => {
+  const [{ isOver, canDrop }, drop] = useDrop({
+    accept: ["job", "operation"],
+    drop: (item: DragItem) => {
+      onDrop(item, columnId, insertIndex);
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+      canDrop: monitor.canDrop(),
+    }),
+  });
+
+  return (
+    <div
+      ref={drop}
+      className={`transition-all duration-200 ${
+        isOver && canDrop 
+          ? "h-8 bg-blue-100 border-2 border-blue-300 border-dashed rounded-md mx-2 flex items-center justify-center" 
+          : "h-2"
+      }`}
+    >
+      {isOver && canDrop && (
+        <div className="text-xs text-blue-600 font-medium">
+          Drop here to reorder
+        </div>
+      )}
+    </div>
+  );
+};
+
 const KanbanColumn = ({ 
   column, 
   onDrop, 
   children 
 }: { 
   column: KanbanColumn; 
-  onDrop: (item: DragItem, targetStatus: string) => void;
+  onDrop: (item: DragItem, targetStatus: string, insertAtIndex?: number) => void;
   children: React.ReactNode;
 }) => {
   const [{ isOver, canDrop }, drop] = useDrop({
     accept: ["job", "operation"],
-    drop: (item: DragItem) => onDrop(item, column.status),
+    drop: (item: DragItem) => {
+      // Default drop at the end of the column
+      onDrop(item, column.status, column.items.length);
+    },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
       canDrop: monitor.canDrop(),
@@ -261,18 +319,40 @@ const KanbanColumn = ({
         </Badge>
       </div>
       
-      <div className="space-y-2">
-        {children}
+      <div className="space-y-0">
+        {column.items.length === 0 ? (
+          <div className="text-center text-gray-400 mt-8">
+            <p className="text-sm">No items</p>
+            {isOver && canDrop && (
+              <p className="text-xs mt-2">Drop here to update status</p>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Top drop zone */}
+            <CardDropZone 
+              onDrop={onDrop}
+              columnId={column.id}
+              insertIndex={0}
+              isFirst={true}
+            />
+            
+            {/* Render children with drop zones between them */}
+            {React.Children.map(children, (child, index) => (
+              <div key={index}>
+                {child}
+                {/* Drop zone after each card */}
+                <CardDropZone 
+                  onDrop={onDrop}
+                  columnId={column.id}
+                  insertIndex={index + 1}
+                  isLast={index === column.items.length - 1}
+                />
+              </div>
+            ))}
+          </>
+        )}
       </div>
-      
-      {column.items.length === 0 && (
-        <div className="text-center text-gray-400 mt-8">
-          <p className="text-sm">No items</p>
-          {isOver && canDrop && (
-            <p className="text-xs mt-2">Drop here to update status</p>
-          )}
-        </div>
-      )}
     </div>
   );
 };
@@ -417,6 +497,28 @@ export default function KanbanBoard({
         console.log('No column found for value:', fieldValue, 'from item:', item);
       }
     });
+
+    // Sort items in each column based on saved card ordering
+    Object.values(columnsMap).forEach(column => {
+      const savedOrder = selectedConfig?.cardOrdering?.[column.id];
+      if (savedOrder && savedOrder.length > 0) {
+        // Sort items according to saved order
+        column.items.sort((a, b) => {
+          const aIndex = savedOrder.indexOf(a.id);
+          const bIndex = savedOrder.indexOf(b.id);
+          
+          // If both items are in saved order, sort by their position
+          if (aIndex !== -1 && bIndex !== -1) {
+            return aIndex - bIndex;
+          }
+          // If only one is in saved order, prioritize it
+          if (aIndex !== -1) return -1;
+          if (bIndex !== -1) return 1;
+          // If neither is in saved order, keep current order
+          return 0;
+        });
+      }
+    });
     
     const result = Object.values(columnsMap);
     console.log('Final columns:', result.map(col => ({ title: col.title, itemCount: col.items.length })));
@@ -454,7 +556,65 @@ export default function KanbanBoard({
     },
   });
 
-  const handleDrop = (item: DragItem, targetValue: string) => {
+  // Mutation for updating Kanban card ordering
+  const updateKanbanOrderMutation = useMutation({
+    mutationFn: async ({ 
+      configId, 
+      swimLaneValue, 
+      cardIds 
+    }: { 
+      configId: number; 
+      swimLaneValue: string; 
+      cardIds: number[] 
+    }) => {
+      // Get current config to merge with existing cardOrdering
+      const currentConfig = selectedConfig;
+      const newCardOrdering = {
+        ...currentConfig?.cardOrdering,
+        [swimLaneValue]: cardIds
+      };
+      
+      const response = await apiRequest("PUT", `/api/kanban-configs/${configId}`, { 
+        cardOrdering: newCardOrdering
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/kanban-configs"] });
+      toast({ title: "Card order updated successfully" });
+    },
+    onError: (error: any) => {
+      console.error("Card ordering update failed:", error);
+      toast({ title: "Failed to update card order", variant: "destructive" });
+    },
+  });
+
+  const handleDrop = (item: DragItem, targetValue: string, insertAtIndex?: number) => {
+    // Handle reordering within the same column
+    if (item.sourceColumnId === targetValue && insertAtIndex !== undefined) {
+      const currentColumn = columns.find(col => col.id === targetValue);
+      if (currentColumn && selectedConfig) {
+        const cardIds = currentColumn.items.map(cardItem => cardItem.id);
+        const currentIndex = cardIds.indexOf(item.id);
+        
+        if (currentIndex !== -1) {
+          // Remove item from current position
+          cardIds.splice(currentIndex, 1);
+          // Insert at new position
+          cardIds.splice(insertAtIndex, 0, item.id);
+          
+          // Update card ordering in the Kanban config
+          updateKanbanOrderMutation.mutate({
+            configId: selectedConfig.id,
+            swimLaneValue: targetValue,
+            cardIds
+          });
+        }
+      }
+      return;
+    }
+
+    // Handle moving between columns (existing logic)
     if (item.sourceColumnId === targetValue) return;
 
     // Build update object based on swim lane field
