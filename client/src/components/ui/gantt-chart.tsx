@@ -1289,6 +1289,7 @@ export default function GanttChart({
                         {label.name}
                       </SelectItem>
                     ))}
+                    <div className="border-t border-gray-200 my-1"></div>
                     <SelectItem value="configure" className="text-blue-600 font-medium">
                       Configure Labels...
                     </SelectItem>

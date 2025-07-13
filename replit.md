@@ -324,3 +324,5 @@ The application uses a modern full-stack architecture with strong typing through
 - Fixed critical API request error in Kanban config manager causing "method is not a valid HTTP token" error
 - Corrected all apiRequest function calls to use proper signature (method, url, data) instead of object parameters
 - AI assistant can now successfully create Kanban boards without HTTP method errors
+- Added horizontal dividing line above "Configure Labels..." option in text label dropdown for consistency
+- Standardized dropdown styling across Gantt chart and Kanban board configuration menus
