@@ -1194,9 +1194,9 @@ export default function GanttChart({
       {/* Fixed Header */}
       <div className="flex-none bg-white border-b border-gray-200 z-10">
         <div className="flex">
-          <div className="w-80 px-4 py-3 bg-gray-50 border-r border-gray-200">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
+          <div className="w-80 px-4 py-2 bg-gray-50 border-r border-gray-200">
+            <div className="flex flex-col space-y-2">
+              <div className="flex items-center space-x-2">
                 <span className="font-medium text-gray-700">Resources</span>
                 <Select 
                   value={selectedResourceViewId?.toString() || "all"} 
@@ -1205,7 +1205,7 @@ export default function GanttChart({
                     onResourceViewChange?.(newViewId);
                   }}
                 >
-                  <SelectTrigger className="w-28 h-6 text-xs">
+                  <SelectTrigger className="w-24 h-6 text-xs">
                     <SelectValue placeholder="Select view" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1226,6 +1226,8 @@ export default function GanttChart({
                 >
                   <Settings className="w-3 h-3" />
                 </Button>
+              </div>
+              <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-1 text-xs text-gray-500">
                   <span>H:</span>
                   <Slider
@@ -1238,83 +1240,87 @@ export default function GanttChart({
                   />
                   <span className="w-6 text-right">{rowHeight}</span>
                 </div>
+                <div className="flex items-center space-x-1">
+                  <Select 
+                    value={selectedResourceView?.colorScheme || "priority"} 
+                    onValueChange={(value) => {
+                      handleViewSettingChange(value, "colorScheme");
+                    }}
+                  >
+                    <SelectTrigger className="w-16 h-6 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="priority">Priority</SelectItem>
+                      <SelectItem value="status">Status</SelectItem>
+                      <SelectItem value="job">Job</SelectItem>
+                      <SelectItem value="resource">Resource</SelectItem>
+                      <SelectItem value="duration">Duration</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select 
+                    value={selectedResourceView?.textLabeling || "operation_name"} 
+                    onValueChange={(value) => {
+                      handleViewSettingChange(value, "textLabeling");
+                    }}
+                  >
+                    <SelectTrigger className="w-16 h-6 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="operation_name">Operation</SelectItem>
+                      <SelectItem value="job_name">Job</SelectItem>
+                      <SelectItem value="both">Both</SelectItem>
+                      <SelectItem value="duration">Duration</SelectItem>
+                      <SelectItem value="progress">Progress</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
+                      {customTextLabels.map((label) => (
+                        <SelectItem key={label.id} value={`custom_${label.id}`}>
+                          {label.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="flex items-center space-x-1">
-                <Select 
-                  value={selectedResourceView?.colorScheme || "priority"} 
-                  onValueChange={(value) => {
-                    handleViewSettingChange(value, "colorScheme");
-                  }}
-                >
-                  <SelectTrigger className="w-20 h-6 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="priority">Priority</SelectItem>
-                    <SelectItem value="status">Status</SelectItem>
-                    <SelectItem value="job">Job</SelectItem>
-                    <SelectItem value="resource">Resource</SelectItem>
-                    <SelectItem value="duration">Duration</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select 
-                  value={selectedResourceView?.textLabeling || "operation_name"} 
-                  onValueChange={(value) => {
-                    handleViewSettingChange(value, "textLabeling");
-                  }}
-                >
-                  <SelectTrigger className="w-20 h-6 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="operation_name">Operation</SelectItem>
-                    <SelectItem value="job_name">Job</SelectItem>
-                    <SelectItem value="both">Both</SelectItem>
-                    <SelectItem value="duration">Duration</SelectItem>
-                    <SelectItem value="progress">Progress</SelectItem>
-                    <SelectItem value="none">None</SelectItem>
-                    {customTextLabels.map((label) => (
-                      <SelectItem key={label.id} value={`custom_${label.id}`}>
-                        {label.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={zoomOut} 
-                  disabled={timeUnit === "decade"} 
-                  title="Zoom Out"
-                >
-                  <ZoomOut className="w-4 h-4" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={resetZoom} 
-                  title="Reset Zoom"
-                >
-                  <span className="text-xs">{timeUnit}</span>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={zoomIn} 
-                  disabled={timeUnit === "hour"} 
-                  title="Zoom In"
-                >
-                  <ZoomIn className="w-4 h-4" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleScrollToToday} 
-                  title="Scroll to Today"
-                >
-                  <Calendar className="w-4 h-4" />
-                </Button>
-              </div>
+            </div>
+          </div>
+          <div className="flex-1 bg-gray-50 border-r border-gray-200">
+            <div className="flex items-center justify-end space-x-1 px-2 py-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={zoomOut} 
+                disabled={timeUnit === "decade"} 
+                title="Zoom Out"
+              >
+                <ZoomOut className="w-4 h-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={resetZoom} 
+                title="Reset Zoom"
+              >
+                <span className="text-xs">{timeUnit}</span>
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={zoomIn} 
+                disabled={timeUnit === "hour"} 
+                title="Zoom In"
+              >
+                <ZoomIn className="w-4 h-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleScrollToToday} 
+                title="Scroll to Today"
+              >
+                <Calendar className="w-4 h-4" />
+              </Button>
             </div>
           </div>
           <div 
