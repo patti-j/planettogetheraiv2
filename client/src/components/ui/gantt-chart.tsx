@@ -200,7 +200,7 @@ export default function GanttChart({
       // Sync all resource rows with the timeline header scroll
       const resourceRows = document.querySelectorAll('[data-resource-id]');
       resourceRows.forEach((row) => {
-        if (row instanceof HTMLElement) {
+        if (row instanceof HTMLElement && row.scrollLeft !== newScrollLeft) {
           row.scrollLeft = newScrollLeft;
         }
       });
@@ -249,25 +249,26 @@ export default function GanttChart({
 
   // Ensure all resource rows are synced with timeline header on mount and updates
   useEffect(() => {
+    const syncResourceRows = (scrollLeft: number) => {
+      // Use a more specific selector to find all resource timeline containers
+      const resourceRows = document.querySelectorAll('[data-resource-id]');
+      resourceRows.forEach((row) => {
+        if (row instanceof HTMLElement && row.scrollLeft !== scrollLeft) {
+          row.scrollLeft = scrollLeft;
+        }
+      });
+    };
+
     if (timelineRef.current) {
-      const syncResourceRows = () => {
-        const scrollLeft = timelineRef.current?.scrollLeft || 0;
-        const resourceRows = document.querySelectorAll('[data-resource-id]');
-        resourceRows.forEach((row) => {
-          if (row instanceof HTMLElement) {
-            row.scrollLeft = scrollLeft;
-          }
-        });
-      };
-      
       // Initial sync
-      syncResourceRows();
+      const initialScrollLeft = timelineRef.current.scrollLeft;
+      syncResourceRows(initialScrollLeft);
       
       // Sync on any timeline scroll
       const timelineElement = timelineRef.current;
       const handleScroll = () => {
         if (!isDraggingTimeline.current) {
-          syncResourceRows();
+          syncResourceRows(timelineElement.scrollLeft);
         }
       };
       
@@ -277,7 +278,7 @@ export default function GanttChart({
         timelineElement.removeEventListener('scroll', handleScroll);
       };
     }
-  }, [timelineRef.current, resources.length]);
+  }, [timelineRef.current, resources.length, view]);
 
   // Handle scrollbar scroll events - sync all resource rows with timeline header
   const handleTimelineScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -286,7 +287,7 @@ export default function GanttChart({
       const scrollLeft = e.currentTarget.scrollLeft;
       const resourceRows = document.querySelectorAll('[data-resource-id]');
       resourceRows.forEach((row) => {
-        if (row instanceof HTMLElement) {
+        if (row instanceof HTMLElement && row.scrollLeft !== scrollLeft) {
           row.scrollLeft = scrollLeft;
         }
       });
