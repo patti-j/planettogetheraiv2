@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { ChevronDown, ChevronRight, MoreHorizontal, ZoomIn, ZoomOut, Eye, Settings, GripVertical, Maximize2, Minimize2, Wrench, Users, Building2, Palette, Type, Plus, Edit3, Trash2, Calendar, Clock, AlertTriangle } from "lucide-react";
+import { ChevronDown, ChevronRight, MoreHorizontal, ZoomIn, ZoomOut, Eye, Settings, GripVertical, Maximize2, Minimize2, Wrench, Users, Building2, Palette, Type, Edit3, Trash2, Calendar, Clock, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -96,6 +96,22 @@ export default function GanttChart({
     });
   }
 
+  const handleRemoveResourceFromGantt = (resource: Resource) => {
+    if (!selectedResourceView) {
+      toast({ title: "No resource view selected", variant: "destructive" });
+      return;
+    }
+    
+    const updatedSequence = selectedResourceView.resourceSequence.filter(id => id !== resource.id);
+    
+    updateResourceViewMutation.mutate({
+      viewId: selectedResourceView.id,
+      resourceSequence: updatedSequence
+    });
+    
+    toast({ title: `${resource.name} removed from ${selectedResourceView.name}` });
+  };
+
   const handleResourceAction = (resource: Resource, action: string) => {
     switch (action) {
       case 'edit':
@@ -114,9 +130,10 @@ export default function GanttChart({
         // Schedule maintenance for resource
         console.log('Schedule maintenance for:', resource);
         break;
-      case 'add_operation':
-        // Add new operation to resource
-        console.log('Add operation to:', resource);
+      case 'remove_from_gantt':
+        // Remove resource from current gantt view
+        console.log('Remove from gantt:', resource);
+        handleRemoveResourceFromGantt(resource);
         break;
       case 'delete':
         // Delete resource (with confirmation)
@@ -837,9 +854,9 @@ export default function GanttChart({
                     <AlertTriangle className="h-4 w-4 mr-2" />
                     Schedule Maintenance
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleResourceAction(resource, 'add_operation')}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Operation
+                  <DropdownMenuItem onClick={() => handleResourceAction(resource, 'remove_from_gantt')}>
+                    <Eye className="h-4 w-4 mr-2" />
+                    Remove from Gantt
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     onClick={() => handleResourceAction(resource, 'delete')}
