@@ -381,7 +381,7 @@ export default function CustomTextLabelManager({ open, onOpenChange }: CustomTex
 
   const aiCreateMutation = useMutation({
     mutationFn: async (prompt: string) => {
-      const response = await apiRequest("POST", "/api/ai-agent", {
+      const response = await apiRequest("POST", "/api/ai-agent/command", {
         command: `CREATE_CUSTOM_TEXT_LABELS: ${prompt}`,
       });
       return response.json();
