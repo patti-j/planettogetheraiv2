@@ -161,8 +161,8 @@ export default function GanttChart({
     if (selectedResourceViewId) {
       return resourceViews.find(v => v.id === selectedResourceViewId);
     }
-    // If no view is selected, use the default view
-    return resourceViews.find(v => v.isDefault);
+    // If no view is selected, use the default view or the first available view
+    return resourceViews.find(v => v.isDefault) || resourceViews[0];
   }, [resourceViews, selectedResourceViewId]);
   
   // Order resources according to the selected view
@@ -191,7 +191,10 @@ export default function GanttChart({
 
   // Handler for quick color scheme changes
   const handleColorSchemeChange = async (newColorScheme: string) => {
-    if (!selectedResourceView) return;
+    if (!selectedResourceView) {
+      toast({ title: "Select a resource view to change color scheme", variant: "destructive" });
+      return;
+    }
     
     try {
       await apiRequest("PUT", `/api/resource-views/${selectedResourceView.id}`, {
@@ -206,7 +209,10 @@ export default function GanttChart({
 
   // Handler for quick text labeling changes
   const handleTextLabelingChange = async (newTextLabeling: string) => {
-    if (!selectedResourceView) return;
+    if (!selectedResourceView) {
+      toast({ title: "Select a resource view to change text labeling", variant: "destructive" });
+      return;
+    }
     
     try {
       await apiRequest("PUT", `/api/resource-views/${selectedResourceView.id}`, {
@@ -1010,7 +1016,10 @@ export default function GanttChart({
               <div className="flex items-center space-x-2">
                 <Select 
                   value={selectedResourceView?.id?.toString() || "all"} 
-                  onValueChange={(value) => setSelectedResourceViewId(value === "all" ? null : parseInt(value))}
+                  onValueChange={(value) => {
+                    const newViewId = value === "all" ? null : parseInt(value);
+                    setSelectedResourceViewId(newViewId);
+                  }}
                 >
                   <SelectTrigger className="flex-1 h-8 text-xs">
                     <SelectValue placeholder="Select view" />
@@ -1048,8 +1057,8 @@ export default function GanttChart({
                 </div>
               </div>
               
-              {/* Quick Switch Preset Buttons - only show when a resource view is selected */}
-              {selectedResourceView && (
+              {/* Quick Switch Preset Buttons - show when in resources view */}
+              {view === "resources" && (
                 <div className="flex items-center space-x-2">
                   <div className="flex items-center space-x-1">
                     <Palette className="w-3 h-3 text-gray-500" />
@@ -1060,6 +1069,7 @@ export default function GanttChart({
                           size="sm" 
                           className="h-6 px-2 text-xs"
                           title="Change Color Scheme"
+                          disabled={!selectedResourceView}
                         >
                           {colorScheme === "by_job" && "Job"}
                           {colorScheme === "by_priority" && "Priority"}
@@ -1098,6 +1108,7 @@ export default function GanttChart({
                           size="sm" 
                           className="h-6 px-2 text-xs"
                           title="Change Text Labeling"
+                          disabled={!selectedResourceView}
                         >
                           {textLabeling === "operation_name" && "Operation"}
                           {textLabeling === "job_name" && "Job"}
@@ -1193,6 +1204,7 @@ export default function GanttChart({
                     className="h-6 px-2 text-xs"
                     onClick={() => setTextConfigDialogOpen(true)}
                     title="Configure Text Labels"
+                    disabled={!selectedResourceView}
                   >
                     <Settings className="w-3 h-3" />
                   </Button>
