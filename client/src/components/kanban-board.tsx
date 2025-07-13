@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MoreHorizontal, Plus, Settings, Calendar, User, Building2, Wrench } from "lucide-react";
+import { MoreHorizontal, Plus, Settings, Calendar, User, Building2, Wrench, ChevronDown } from "lucide-react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -521,21 +521,31 @@ export default function KanbanBoard({
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
           <div className="flex items-center space-x-4">
             <h2 className="text-lg font-medium text-gray-900">Kanban Board</h2>
-            <Select 
-              value={selectedConfigId?.toString() || ""} 
-              onValueChange={(value) => setSelectedConfigId(value ? parseInt(value) : null)}
-            >
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Select configuration" />
-              </SelectTrigger>
-              <SelectContent>
-                {kanbanConfigs.map((config) => (
-                  <SelectItem key={config.id} value={config.id.toString()}>
-                    {config.name} {config.isDefault && "(Default)"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center">
+              <Select 
+                value={selectedConfigId?.toString() || ""} 
+                onValueChange={(value) => setSelectedConfigId(value ? parseInt(value) : null)}
+              >
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Select configuration" />
+                </SelectTrigger>
+                <SelectContent>
+                  {kanbanConfigs.map((config) => (
+                    <SelectItem key={config.id} value={config.id.toString()}>
+                      {config.name} {config.isDefault && "(Default)"}
+                    </SelectItem>
+                  ))}
+                  <div className="border-t border-gray-200 my-1"></div>
+                  <div 
+                    className="flex items-center px-2 py-1.5 text-sm cursor-pointer hover:bg-gray-100"
+                    onClick={() => setConfigManagerOpen(true)}
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Configure Boards
+                  </div>
+                </SelectContent>
+              </Select>
+            </div>
             {selectedConfig && (
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <Badge variant="outline">{selectedConfig.viewType === "jobs" ? "Jobs" : "Operations"}</Badge>
@@ -549,9 +559,6 @@ export default function KanbanBoard({
             <Button variant="outline" size="sm" onClick={view === "jobs" ? handleAddJob : handleAddOperation}>
               <Plus className="w-4 h-4 mr-2" />
               Add {view === "jobs" ? "Job" : "Operation"}
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setConfigManagerOpen(true)}>
-              <Settings className="w-4 h-4" />
             </Button>
           </div>
         </div>

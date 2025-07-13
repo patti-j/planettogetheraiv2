@@ -368,7 +368,11 @@ const AITextLabelForm = ({ onSubmit, onCancel, isLoading }: AITextLabelFormProps
         <Button variant="outline" onClick={onCancel} disabled={isLoading}>
           Cancel
         </Button>
-        <Button onClick={handleSubmit} disabled={!prompt.trim() || isLoading}>
+        <Button 
+          onClick={handleSubmit} 
+          disabled={!prompt.trim() || isLoading}
+          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
+        >
           {isLoading ? "Creating..." : "Create with AI"}
         </Button>
       </div>
@@ -540,7 +544,10 @@ export default function CustomTextLabelManager({ open, onOpenChange }: CustomTex
                 <Plus className="h-4 w-4 mr-2" />
                 Create New
               </Button>
-              <Button variant="outline" onClick={() => setShowAIForm(true)}>
+              <Button 
+                onClick={() => setShowAIForm(true)}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
+              >
                 <Sparkles className="h-4 w-4 mr-2" />
                 AI Create
               </Button>

@@ -546,7 +546,10 @@ export default function KanbanConfigManager({ open, onOpenChange, jobs, resource
                 Create and manage custom Kanban board configurations with different swim lanes, filters, and display options.
               </p>
               <div className="flex space-x-2">
-                <Button variant="outline" onClick={() => setShowAIDialog(true)}>
+                <Button 
+                  onClick={() => setShowAIDialog(true)}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
+                >
                   <Sparkles className="w-4 h-4 mr-2" />
                   AI Create
                 </Button>
@@ -656,6 +659,7 @@ export default function KanbanConfigManager({ open, onOpenChange, jobs, resource
               <Button 
                 onClick={() => aiCreateConfigMutation.mutate(aiPrompt)}
                 disabled={!aiPrompt.trim() || aiCreateConfigMutation.isPending}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
               >
                 {aiCreateConfigMutation.isPending ? (
                   "Creating..."

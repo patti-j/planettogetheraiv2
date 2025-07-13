@@ -348,7 +348,6 @@ export default function OperationBlock({
         <div className="h-full flex items-center justify-between text-white text-xs">
           <div className="flex-1 truncate">
             <div className="font-medium truncate">{getBlockText()}</div>
-            <div className="text-white/70 truncate">{operation.duration}h</div>
           </div>
         </div>
       </div>
@@ -373,9 +372,6 @@ export default function OperationBlock({
       <div className="h-full flex items-center justify-between px-2 text-white text-xs">
         <div className="flex-1 truncate">
           <div className="font-medium truncate">{getBlockText()}</div>
-          {textLabeling !== "none" && textLabeling !== "both" && textLabeling !== "duration" && (
-            <div className="text-white/70 truncate">{operation.duration}h</div>
-          )}
         </div>
       </div>
     </div>
