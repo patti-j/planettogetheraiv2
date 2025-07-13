@@ -362,6 +362,42 @@ export default function Dashboard() {
               )}
             </header>
 
+            {/* Mobile View Toggle - Move to top level */}
+            <div className="mx-6 mb-4 flex justify-end">
+              <div className="flex items-center space-x-2 bg-white rounded-lg shadow-sm border border-gray-200 p-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={isMobileView ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setIsMobileView(true)}
+                    >
+                      <Smartphone className="w-4 h-4 mr-2" />
+                      Mobile View
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Switch to mobile-optimized schedule view</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={!isMobileView ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setIsMobileView(false)}
+                    >
+                      <Monitor className="w-4 h-4 mr-2" />
+                      Desktop View
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Switch to desktop Gantt chart view</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+
             {/* Gantt Container */}
             <div className="flex-1 bg-white mx-6 mb-6 rounded-lg shadow-sm border border-gray-200 overflow-hidden">
               <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as "operations" | "resources" | "customers")}>
@@ -390,40 +426,6 @@ export default function Dashboard() {
                         Customer Gantt
                       </TabsTrigger>
                     </TabsList>
-                    
-                    {/* Mobile View Toggle */}
-                    <div className="flex items-center space-x-2 bg-white rounded-lg shadow-sm border border-gray-200 p-2">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant={isMobileView ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setIsMobileView(true)}
-                          >
-                            <Smartphone className="w-4 h-4 mr-2" />
-                            Mobile View
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Switch to mobile-optimized schedule view</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant={!isMobileView ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setIsMobileView(false)}
-                          >
-                            <Monitor className="w-4 h-4 mr-2" />
-                            Desktop View
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Switch to desktop Gantt chart view</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
                   </div>
                 </div>
 
