@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { MoreHorizontal, Plus, Settings, Calendar, User, Building2, Wrench, ChevronDown, Maximize2, Minimize2, Briefcase, Users } from "lucide-react";
+import { MoreHorizontal, Plus, Settings, Calendar, User, Building2, Wrench, ChevronDown, Maximize2, Minimize2, Briefcase, Users, Sparkles } from "lucide-react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -30,6 +30,7 @@ interface KanbanBoardProps {
   onCreateJob?: () => void;
   onCreateResource?: () => void;
   onConfigureBoards?: () => void;
+  onAICreateBoards?: () => void;
 }
 
 interface KanbanColumn {
@@ -385,7 +386,8 @@ function KanbanBoard({
   onToggleMaximize,
   onCreateJob,
   onCreateResource,
-  onConfigureBoards
+  onConfigureBoards,
+  onAICreateBoards
 }: KanbanBoardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -834,6 +836,23 @@ function KanbanBoard({
               </TooltipTrigger>
               <TooltipContent>
                 <p>Create new {selectedConfig?.viewType === "jobs" ? "job" : selectedConfig?.viewType === "operations" ? "operation" : "resource"}</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* AI Boards Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white" 
+                  size="sm"
+                  onClick={onAICreateBoards}
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  AI Boards
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Create boards using AI with natural language descriptions</p>
               </TooltipContent>
             </Tooltip>
 

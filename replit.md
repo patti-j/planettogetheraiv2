@@ -436,3 +436,11 @@ The application uses a modern full-stack architecture with strong typing through
 - Applied AI purple-pink gradient styling to "Max" menu item in sidebar navigation
 - Restored standard outline styling to board maximize button for consistency with other maximize buttons
 - Updated floating AI assistant paper airplane button to use AI purple-pink gradient in maximized Gantt view
+
+✓ **AI Boards Feature Addition (July 13, 2025)**:
+- Added AI Boards button to boards page header with purple-pink gradient styling
+- Implemented AI board creation dialog with natural language input
+- Added AI mutation for creating board configurations via API
+- Enhanced boards page with AI-powered board creation alongside manual configuration
+- AI can create multiple board types (jobs, operations, resources) from descriptive prompts
+- Consistent AI branding with Sparkles icon and purple color scheme throughout feature
