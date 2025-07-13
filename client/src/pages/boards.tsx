@@ -97,6 +97,16 @@ export default function Boards() {
 
   const PageContent = () => (
     <div className="flex-1 flex flex-col">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-800">Boards</h1>
+            <p className="text-gray-600 mt-1">Organize jobs, operations, and resources using customizable board views</p>
+          </div>
+        </div>
+      </header>
+      
       <main className="flex-1 overflow-hidden bg-white">
         <KanbanBoard
           jobs={jobs}

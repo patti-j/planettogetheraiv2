@@ -467,7 +467,7 @@ export default function Dashboard() {
       <div className="flex h-screen bg-surface">
         <Sidebar />
         
-        <main className="flex-1 overflow-hidden">
+        <main className="flex-1 overflow-y-auto">
           {/* Header */}
           <header className="bg-white shadow-sm border-b border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
@@ -649,7 +649,7 @@ export default function Dashboard() {
         </header>
 
         {/* Gantt Container */}
-        <div className="flex-1 bg-white m-6 rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="flex-1 bg-white m-6 rounded-lg shadow-sm border border-gray-200 overflow-hidden min-h-0">
           <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as "operations" | "resources")}>
             <div className="border-b border-gray-200 bg-gray-50">
               <div className="flex items-center justify-between">

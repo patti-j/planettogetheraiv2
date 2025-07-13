@@ -462,3 +462,11 @@ The application uses a modern full-stack architecture with strong typing through
 - Cleaned up unused Filter icon import from dashboard component
 - Streamlined schedule page interface by removing non-functional filter controls
 - Enhanced user experience by removing confusing UI elements
+
+✓ **Page Title Standardization & Scrolling Fix (July 13, 2025)**:
+- Added description under boards page title: "Organize jobs, operations, and resources using customizable board views"
+- Standardized all page titles to use consistent "text-2xl font-semibold text-gray-800" styling
+- Updated all page descriptions to use "text-gray-600" for consistent color scheme
+- Fixed schedule page scrolling by changing main container from overflow-hidden to overflow-y-auto
+- Added min-h-0 to Gantt container to prevent flex item growth issues
+- Ensured all pages (Schedule, Boards, Analytics, Reports, Max AI) have consistent title formatting

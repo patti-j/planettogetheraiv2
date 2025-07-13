@@ -149,8 +149,8 @@ export default function Analytics() {
         <header className="bg-white shadow-sm border-b border-gray-200 px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
-              <p className="text-gray-500">Production performance insights</p>
+              <h1 className="text-2xl font-semibold text-gray-800">Analytics</h1>
+              <p className="text-gray-600">Production performance insights</p>
             </div>
             <div className="flex items-center gap-2">
               <Button
