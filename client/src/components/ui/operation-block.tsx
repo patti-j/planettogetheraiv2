@@ -9,7 +9,7 @@ interface OperationBlockProps {
   job?: Job;
   timelineWidth: number;
   dayWidth: number;
-  timeUnit: "hour" | "day" | "week" | "month" | "quarter" | "year" | "decade";
+  timeUnit: "hour" | "shift" | "day" | "week" | "month" | "quarter" | "year" | "decade";
   timelineScrollLeft: number;
 }
 

@@ -291,8 +291,6 @@ export default function GanttChart({
   };
 
   const renderOperationsView = () => {
-    const { drop: timelineDrop, isOver: timelineIsOver, canDrop: timelineCanDrop } = useTimelineDrop(timelineWidth, timeScale, timeUnit);
-    
     return (
       <div className="flex flex-col h-full">
         {/* Fixed Header */}
@@ -315,11 +313,8 @@ export default function GanttChart({
               </div>
             </div>
             <div 
-              ref={timelineDrop}
               data-timeline-container
-              className={`flex-1 bg-gray-50 border-r border-gray-200 overflow-x-auto cursor-grab active:cursor-grabbing ${
-                timelineIsOver ? (timelineCanDrop ? "bg-green-50" : "bg-red-50") : ""
-              }`}
+              className="flex-1 bg-gray-50 border-r border-gray-200 overflow-x-auto cursor-grab active:cursor-grabbing"
               onMouseDown={handleTimelineMouseDown}
               onScroll={handleTimelineScroll}
             >
