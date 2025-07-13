@@ -197,11 +197,11 @@ export default function GanttChart({
       const newScrollLeft = Math.max(0, timelineRef.current.scrollLeft - deltaX);
       timelineRef.current.scrollLeft = newScrollLeft;
       
-      // Sync all timeline containers with the timeline header scroll
-      const timelineContainers = document.querySelectorAll('[data-resource-id]');
-      timelineContainers.forEach((container) => {
-        if (container instanceof HTMLElement && container.scrollLeft !== newScrollLeft) {
-          container.scrollLeft = newScrollLeft;
+      // Sync all timeline content positions using transforms
+      const timelineContents = document.querySelectorAll('[data-timeline-content]');
+      timelineContents.forEach((content) => {
+        if (content instanceof HTMLElement) {
+          content.style.transform = `translateX(-${newScrollLeft}px)`;
         }
       });
       
@@ -247,14 +247,14 @@ export default function GanttChart({
     };
   }, [handleMouseMove, handleMouseUp]);
 
-  // Ensure all timeline containers are synced with timeline header on mount and updates
+  // Sync timeline content positions using CSS transforms instead of scroll synchronization
   useEffect(() => {
-    const syncTimelineContainers = (scrollLeft: number) => {
-      // Find all timeline containers (both resource rows and operation rows)
-      const timelineContainers = document.querySelectorAll('[data-resource-id]');
-      timelineContainers.forEach((container) => {
-        if (container instanceof HTMLElement && container.scrollLeft !== scrollLeft) {
-          container.scrollLeft = scrollLeft;
+    const syncTimelinePositions = (scrollLeft: number) => {
+      // Find all timeline content containers and apply transform
+      const timelineContents = document.querySelectorAll('[data-timeline-content]');
+      timelineContents.forEach((content) => {
+        if (content instanceof HTMLElement) {
+          content.style.transform = `translateX(-${scrollLeft}px)`;
         }
       });
     };
@@ -262,13 +262,13 @@ export default function GanttChart({
     if (timelineRef.current) {
       // Initial sync
       const initialScrollLeft = timelineRef.current.scrollLeft;
-      syncTimelineContainers(initialScrollLeft);
+      syncTimelinePositions(initialScrollLeft);
       
       // Sync on any timeline scroll
       const timelineElement = timelineRef.current;
       const handleScroll = () => {
         if (!isDraggingTimeline.current) {
-          syncTimelineContainers(timelineElement.scrollLeft);
+          syncTimelinePositions(timelineElement.scrollLeft);
         }
       };
       
@@ -474,16 +474,9 @@ export default function GanttChart({
                       </div>
                     </div>
                     <div 
-                      className="flex-1 relative p-2 min-h-[60px] overflow-x-auto scrollbar-hide"
-                      data-resource-id={`operation-${operation.id}`}
-                      onScroll={(e) => {
-                        // Sync this operation row's scroll with the timeline header
-                        if (timelineRef.current && !isDraggingTimeline.current) {
-                          timelineRef.current.scrollLeft = e.currentTarget.scrollLeft;
-                        }
-                      }}
+                      className="flex-1 relative p-2 min-h-[60px] overflow-hidden"
                     >
-                      <div style={{ width: `${timelineWidth}px` }}>
+                      <div data-timeline-content style={{ width: `${timelineWidth}px` }}>
                         <OperationBlock
                           operation={operation}
                           resourceName={getResourceName(operation.assignedResourceId || 0)}
@@ -536,18 +529,11 @@ export default function GanttChart({
           </div>
           <div 
             ref={drop}
-            data-resource-id={resource.id}
-            className={`flex-1 relative p-2 min-h-[60px] transition-colors overflow-x-auto scrollbar-hide ${
+            className={`flex-1 relative p-2 min-h-[60px] transition-colors overflow-hidden ${
               isOver ? (canDrop ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200") : ""
             }`}
-            onScroll={(e) => {
-              // Sync this resource row's scroll with the timeline header
-              if (timelineRef.current && !isDraggingTimeline.current) {
-                timelineRef.current.scrollLeft = e.currentTarget.scrollLeft;
-              }
-            }}
           >
-            <div style={{ width: `${timelineWidth}px` }}>
+            <div data-timeline-content style={{ width: `${timelineWidth}px` }}>
               {resourceOperations.map((operation) => (
                 <OperationBlock
                   key={operation.id}
