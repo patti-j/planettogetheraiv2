@@ -431,6 +431,7 @@ The application uses a modern full-stack architecture with strong typing through
 - Moved all Create actions and board selection to board panel header
 - Consolidated all board controls into single streamlined interface
 - Converted Create dropdown to contextual action button (shows "Create Job", "Create Operation", or "Create Resource" based on current board)
-- Updated maximize button styling with purple-pink gradient to match AI branding
 - Standardized create button color to blue-600 for consistency across pages
 - Fixed board configuration dropdown to not change to green highlighting
+- Applied AI purple-pink gradient styling to "Max" menu item in sidebar navigation
+- Restored standard outline styling to board maximize button for consistency with other maximize buttons

@@ -106,9 +106,13 @@ export default function Sidebar() {
                 <Link href={item.href}>
                   <a
                     className={`flex items-center px-3 py-2 rounded-lg transition-colors ${
-                      item.active
-                        ? "text-gray-700 bg-blue-50 border-l-4 border-primary"
-                        : "text-gray-600 hover:bg-gray-100"
+                      item.href === "/ai-assistant"
+                        ? item.active
+                          ? "text-white bg-gradient-to-r from-purple-500 to-pink-500 border-l-4 border-purple-600"
+                          : "text-gray-600 hover:text-white hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500"
+                        : item.active
+                          ? "text-gray-700 bg-blue-50 border-l-4 border-primary"
+                          : "text-gray-600 hover:bg-gray-100"
                     }`}
                   >
                     <item.icon className="w-5 h-5 mr-3" />
