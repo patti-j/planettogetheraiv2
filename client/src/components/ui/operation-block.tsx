@@ -11,7 +11,6 @@ interface OperationBlockProps {
   dayWidth: number;
   timeUnit: "hour" | "shift" | "day" | "week" | "month" | "quarter" | "year" | "decade";
   timelineBaseDate: Date;
-  scrollLeft: number;
 }
 
 export default function OperationBlock({
@@ -23,7 +22,6 @@ export default function OperationBlock({
   dayWidth,
   timeUnit,
   timelineBaseDate,
-  scrollLeft,
 }: OperationBlockProps) {
   const [{ isDragging }, drag] = useDrag({
     type: "operation",
@@ -93,12 +91,12 @@ export default function OperationBlock({
       const startOffset = (startTime.getTime() - baseDate.getTime()) / stepMs;
       const duration = (endTime.getTime() - startTime.getTime()) / stepMs;
       
-      const left = startOffset * dayWidth + scrollLeft;
+      const left = startOffset * dayWidth;
       const width = Math.max(duration * dayWidth, 20); // Minimum width for visibility
       
       setPosition({ left, width });
     }
-  }, [operation.startTime, operation.endTime, dayWidth, timeUnit, timelineBaseDate, scrollLeft]);
+  }, [operation.startTime, operation.endTime, dayWidth, timeUnit, timelineBaseDate]);
 
 
   const getJobColor = (jobId: number) => {
