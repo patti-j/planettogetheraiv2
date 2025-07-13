@@ -121,8 +121,33 @@ export default function OperationBlock({
     return colors[jobId % colors.length];
   };
 
+  // If this is an unscheduled operation, render it as a draggable block without position
   if (!operation.startTime || !operation.endTime) {
-    return null;
+    return (
+      <div
+        ref={drag}
+        className={`inline-block mr-2 mb-2 rounded-md border-2 border-gray-300 shadow-sm cursor-move transition-all duration-200 ${
+          isDragging ? "opacity-50 scale-95" : "opacity-100 scale-100"
+        } bg-gray-100 hover:bg-gray-200`}
+        style={{
+          height: "40px",
+          minWidth: "120px",
+          padding: "0 8px",
+        }}
+      >
+        <div className="h-full flex items-center justify-between text-gray-700 text-xs">
+          <div className="flex-1 truncate">
+            <div className="font-medium truncate">{operation.name}</div>
+            <div className="text-gray-500 truncate">{jobName || `Job ${operation.jobId}`}</div>
+          </div>
+          <div className="flex items-center space-x-1 ml-2">
+            <div className="text-xs text-gray-500">
+              {operation.duration}h
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

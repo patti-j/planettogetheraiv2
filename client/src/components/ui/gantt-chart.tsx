@@ -556,6 +556,50 @@ export default function GanttChart({
            onMouseDown={handleResourceListMouseDown}
            onScroll={handleResourceListScroll}
            ref={resourceListRef}>
+        
+        {/* Unscheduled Operations Section */}
+        <div className="border-b border-gray-200 bg-yellow-50">
+          <div className="flex">
+            <div className="w-64 px-4 py-3 bg-yellow-100 border-r border-yellow-200">
+              <div className="flex items-center">
+                <div className="flex-1">
+                  <div className="font-medium text-yellow-800">Unscheduled Operations</div>
+                  <div className="text-xs text-yellow-600">
+                    Drag these operations to resources to schedule them
+                  </div>
+                </div>
+                <Badge className="text-xs bg-yellow-600 text-white">
+                  {operations.filter(op => !op.startTime || !op.endTime).length}
+                </Badge>
+              </div>
+            </div>
+            <div className="flex-1 p-4 bg-yellow-50 border-r border-yellow-200 min-h-[80px]">
+              <div className="flex flex-wrap gap-2">
+                {operations
+                  .filter(op => !op.startTime || !op.endTime)
+                  .map((operation) => (
+                    <OperationBlock
+                      key={operation.id}
+                      operation={operation}
+                      resourceName="Unscheduled"
+                      jobName={jobs.find(job => job.id === operation.jobId)?.name}
+                      job={jobs.find(job => job.id === operation.jobId)}
+                      timelineWidth={timelineWidth}
+                      dayWidth={periodWidth}
+                      timeUnit={timeUnit}
+                      timelineScrollLeft={timelineScrollLeft}
+                    />
+                  ))}
+                {operations.filter(op => !op.startTime || !op.endTime).length === 0 && (
+                  <div className="text-yellow-600 text-sm italic">
+                    All operations are scheduled
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        
         {resources.map((resource) => (
           <ResourceRow key={resource.id} resource={resource} />
         ))}
