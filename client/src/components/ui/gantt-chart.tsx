@@ -39,7 +39,7 @@ export default function GanttChart({
   view,
   selectedResourceViewId: externalSelectedResourceViewId,
   onResourceViewChange,
-  rowHeight = 80,
+  rowHeight = 60,
   onRowHeightChange
 }: GanttChartProps) {
   const [expandedJobs, setExpandedJobs] = useState<Set<number>>(new Set());
@@ -874,9 +874,9 @@ export default function GanttChart({
                   <Slider
                     value={[rowHeight]}
                     onValueChange={(value) => onRowHeightChange?.(value[0])}
-                    min={50}
+                    min={20}
                     max={200}
-                    step={10}
+                    step={5}
                     className="flex-1"
                   />
                   <span className="text-xs text-gray-500 w-8">{rowHeight}px</span>

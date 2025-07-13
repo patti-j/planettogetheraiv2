@@ -237,3 +237,11 @@ The application uses a modern full-stack architecture with strong typing through
 - Resource reordering only available when a custom resource view is selected
 - Fixed dialog title redundancy to show specific view names in edit dialogs
 - Real-time updates to resource sequence with database persistence and toast notifications
+
+✓ **View Persistence and Adjustable Row Heights (July 13, 2025)**:
+- Fixed view selection persistence across maximize/minimize operations
+- Added adjustable row height slider (20px to 200px range) in Resource Gantt header
+- Applied dynamic height to all resource rows and unscheduled operations section
+- Row height and view selections now persist when switching between normal and maximized views
+- Optimized for maximum flexibility with minimum 20px row height and 5px step increments
+- State management moved to dashboard level for consistent behavior across view modes

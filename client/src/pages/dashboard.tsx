@@ -28,7 +28,7 @@ export default function Dashboard() {
   const [isMaximized, setIsMaximized] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [selectedResourceViewId, setSelectedResourceViewId] = useState<number | null>(null);
-  const [rowHeight, setRowHeight] = useState(80);
+  const [rowHeight, setRowHeight] = useState(60);
   const { toast } = useToast();
 
   const { data: jobs = [] } = useQuery<Job[]>({
