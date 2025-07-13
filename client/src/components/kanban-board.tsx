@@ -270,13 +270,14 @@ const CardDropZone = ({
       ref={drop}
       className={`transition-all duration-200 ${
         isOver && canDrop 
-          ? "h-8 bg-blue-100 border-2 border-blue-300 border-dashed rounded-md mx-2 flex items-center justify-center" 
-          : "h-2"
-      }`}
+          ? "h-12 bg-blue-100 border-2 border-blue-400 border-dashed rounded-lg mx-1 flex items-center justify-center shadow-sm" 
+          : "h-4 hover:h-6 hover:bg-gray-50 hover:border hover:border-gray-200 hover:border-dashed hover:rounded-md"
+      } ${isFirst ? "mt-2" : ""} ${isLast ? "mb-2" : ""}`}
     >
       {isOver && canDrop && (
-        <div className="text-xs text-blue-600 font-medium">
-          Drop here to reorder
+        <div className="text-xs text-blue-600 font-medium flex items-center">
+          <div className="w-2 h-2 bg-blue-400 rounded-full mr-2 animate-pulse"></div>
+          Drop here to {isFirst ? "move to top" : "reorder"}
         </div>
       )}
     </div>
@@ -323,10 +324,17 @@ const KanbanColumn = ({
       
       <div className="space-y-0">
         {column.items.length === 0 ? (
-          <div className="text-center text-gray-400 mt-8">
+          <div className={`text-center mt-8 p-8 rounded-lg border-2 border-dashed transition-all duration-200 ${
+            isOver && canDrop 
+              ? "border-blue-400 bg-blue-50 text-blue-600" 
+              : "border-gray-300 text-gray-400"
+          }`}>
             <p className="text-sm">No items</p>
             {isOver && canDrop && (
-              <p className="text-xs mt-2">Drop here to update status</p>
+              <div className="flex items-center justify-center mt-2">
+                <div className="w-2 h-2 bg-blue-400 rounded-full mr-2 animate-pulse"></div>
+                <p className="text-xs font-medium">Drop here to update status</p>
+              </div>
             )}
           </div>
         ) : (
