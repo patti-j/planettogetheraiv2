@@ -6,6 +6,7 @@ import type { Resource, Operation } from '@shared/schema';
 
 interface DragItem {
   operation: Operation;
+  cursorOffsetX?: number; // How far from the left edge of the block the cursor is
 }
 
 type TimeUnit = "hour" | "shift" | "day" | "week" | "month" | "quarter" | "year" | "decade";
@@ -73,9 +74,10 @@ export function useOperationDrop(
         if (resourceTimelineElement) {
           const rect = resourceTimelineElement.getBoundingClientRect();
           
-          // FIXED: Use the cursor position directly - it should be where the user wants to drop
-          // The issue was trying to calculate the block position when the cursor position is what matters
-          const relativeX = Math.max(0, clientOffset.x - rect.left + timelineScrollLeft);
+          // FIXED: Use the cursor position minus the offset within the block to get the block's start position
+          const cursorOffsetX = item.cursorOffsetX || 0;
+          const blockStartX = clientOffset.x - cursorOffsetX;
+          const relativeX = Math.max(0, blockStartX - rect.left + timelineScrollLeft);
           
           // Calculate which period we're in
           const periodWidth = timelineWidth / timeScale.length;
@@ -89,6 +91,8 @@ export function useOperationDrop(
           // DEBUG: Log the drop calculation values
           console.log("DROP DEBUG:", {
             clientX: clientOffset.x,
+            cursorOffsetX,
+            blockStartX,
             rectLeft: rect.left,
             timelineScrollLeft,
             relativeX,

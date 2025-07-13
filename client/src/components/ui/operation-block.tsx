@@ -27,9 +27,18 @@ export default function OperationBlock({
 }: OperationBlockProps) {
   const [{ isDragging }, drag] = useDrag({
     type: "operation",
-    item: () => {
+    item: (monitor) => {
       console.log("Starting drag for operation:", operation.name);
-      return { operation };
+      // Store the initial mouse position relative to the element
+      const initialOffset = monitor.getInitialClientOffset();
+      const elementRect = monitor.getInitialSourceClientOffset();
+      
+      const cursorOffsetX = initialOffset && elementRect ? initialOffset.x - elementRect.x : 0;
+      
+      return { 
+        operation,
+        cursorOffsetX // How far from the left edge of the block the cursor is
+      };
     },
     end: (item, monitor) => {
       console.log("Ending drag for operation:", operation.name, "dropped:", monitor.didDrop());
