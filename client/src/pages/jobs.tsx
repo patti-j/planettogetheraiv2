@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Edit, Trash2, Calendar, User, AlertCircle } from "lucide-react";
+import { Plus, MoreHorizontal, Edit, Trash2, Calendar, User, AlertCircle, Maximize2, Minimize2 } from "lucide-react";
 import { format } from "date-fns";
 import Sidebar from "@/components/sidebar";
 import JobForm from "@/components/job-form";
@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function Jobs() {
   const [jobDialogOpen, setJobDialogOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
+  const [isMaximized, setIsMaximized] = useState(false);
   const { toast } = useToast();
 
   const { data: jobs = [], isLoading } = useQuery<Job[]>({
@@ -97,6 +98,137 @@ export default function Jobs() {
     return new Date(dueDate) < new Date();
   };
 
+  if (isMaximized) {
+    return (
+      <div className="fixed inset-0 bg-white z-50 flex flex-col">
+        <header className="bg-white shadow-sm border-b border-gray-200 px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Jobs</h1>
+              <p className="text-gray-500">Manage your production jobs</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button 
+                onClick={() => setJobDialogOpen(true)}
+                className="bg-primary hover:bg-blue-700 text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Job
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsMaximized(!isMaximized)}
+              >
+                {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-y-auto p-8">
+          {isLoading ? (
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="mt-2 text-gray-600">Loading jobs...</p>
+            </div>
+          ) : jobs.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <Plus className="w-12 h-12 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No jobs yet</h3>
+              <p className="text-gray-500 mb-4">Get started by creating your first production job.</p>
+              <Button onClick={() => setJobDialogOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Job
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {jobs.map((job) => (
+                <Card key={job.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg font-semibold text-gray-900 mb-1">
+                          {job.name}
+                        </CardTitle>
+                        <div className="flex items-center space-x-2">
+                          <Badge className={getPriorityColor(job.priority)}>
+                            {job.priority}
+                          </Badge>
+                          <Badge className={getStatusColor(job.status)}>
+                            {job.status}
+                          </Badge>
+                        </div>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditJob(job)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteJob(job.id)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Customer: {job.customer}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Calendar className="mr-2 h-4 w-4" />
+                        <span>Due: {format(new Date(job.dueDate), 'MMM d, yyyy')}</span>
+                        {isOverdue(job.dueDate) && (
+                          <AlertCircle className="ml-2 h-4 w-4 text-red-500" />
+                        )}
+                      </div>
+                      {job.description && (
+                        <p className="text-sm text-gray-500 mt-2">{job.description}</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </main>
+
+        <Dialog open={jobDialogOpen} onOpenChange={handleDialogClose}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>
+                {editingJob ? "Edit Job" : "Create New Job"}
+              </DialogTitle>
+            </DialogHeader>
+            <JobForm 
+              job={editingJob || undefined}
+              onSuccess={() => {
+                handleDialogClose();
+                queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
@@ -108,13 +240,22 @@ export default function Jobs() {
               <h1 className="text-2xl font-bold text-gray-900">Jobs</h1>
               <p className="text-gray-500">Manage your production jobs</p>
             </div>
-            <Button 
-              onClick={() => setJobDialogOpen(true)}
-              className="bg-primary hover:bg-blue-700 text-white"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Job
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button 
+                onClick={() => setJobDialogOpen(true)}
+                className="bg-primary hover:bg-blue-700 text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Job
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsMaximized(!isMaximized)}
+              >
+                {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </Button>
+            </div>
           </div>
         </header>
 

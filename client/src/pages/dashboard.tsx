@@ -506,8 +506,7 @@ export default function Dashboard() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button variant="outline" size="sm" onClick={() => setIsMaximized(true)}>
-                        <Maximize2 className="w-4 h-4 mr-2" />
-                        Maximize
+                        <Maximize2 className="w-4 h-4" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>

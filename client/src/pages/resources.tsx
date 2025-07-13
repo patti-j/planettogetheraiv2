@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Edit, Trash2, ServerCog, Settings, Wrench } from "lucide-react";
+import { Plus, MoreHorizontal, Edit, Trash2, ServerCog, Settings, Wrench, Maximize2, Minimize2 } from "lucide-react";
 import Sidebar from "@/components/sidebar";
 import ResourceForm from "@/components/resource-form";
 import type { Resource, Capability } from "@shared/schema";
@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function Resources() {
   const [resourceDialogOpen, setResourceDialogOpen] = useState(false);
   const [editingResource, setEditingResource] = useState<Resource | null>(null);
+  const [isMaximized, setIsMaximized] = useState(false);
   const { toast } = useToast();
 
   const { data: resources = [], isLoading } = useQuery<Resource[]>({
@@ -99,6 +100,140 @@ export default function Resources() {
     }
   };
 
+  if (isMaximized) {
+    return (
+      <div className="fixed inset-0 bg-white z-50 flex flex-col">
+        <header className="bg-white shadow-sm border-b border-gray-200 px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Resources</h1>
+              <p className="text-gray-500">Manage your production resources</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button 
+                onClick={() => setResourceDialogOpen(true)}
+                className="bg-accent hover:bg-green-600 text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Resource
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsMaximized(!isMaximized)}
+              >
+                {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-y-auto p-8">
+          {isLoading ? (
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="mt-2 text-gray-600">Loading resources...</p>
+            </div>
+          ) : resources.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <ServerCog className="w-12 h-12 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No resources yet</h3>
+              <p className="text-gray-500 mb-4">Add your first resource to start scheduling operations.</p>
+              <Button onClick={() => setResourceDialogOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Resource
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {resources.map((resource) => {
+                const TypeIcon = getTypeIcon(resource.type);
+                return (
+                  <Card key={resource.id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <TypeIcon className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg font-semibold text-gray-900">
+                              {resource.name}
+                            </CardTitle>
+                            <Badge className={getStatusColor(resource.status)}>
+                              {resource.status}
+                            </Badge>
+                          </div>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditResource(resource)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteResource(resource.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex items-center text-sm text-gray-600">
+                          <span className="font-medium">Type:</span>
+                          <span className="ml-2">{resource.type}</span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 mb-1">Capabilities:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {resource.capabilities.map((capabilityId) => (
+                              <Badge key={capabilityId} variant="outline" className="text-xs">
+                                {getCapabilityName(capabilityId)}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </main>
+
+        <Dialog open={resourceDialogOpen} onOpenChange={handleDialogClose}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>
+                {editingResource ? "Edit Resource" : "Create New Resource"}
+              </DialogTitle>
+            </DialogHeader>
+            <ResourceForm 
+              resource={editingResource || undefined}
+              onSuccess={() => {
+                handleDialogClose();
+                queryClient.invalidateQueries({ queryKey: ["/api/resources"] });
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
@@ -110,13 +245,22 @@ export default function Resources() {
               <h1 className="text-2xl font-bold text-gray-900">Resources</h1>
               <p className="text-gray-500">Manage your production resources</p>
             </div>
-            <Button 
-              onClick={() => setResourceDialogOpen(true)}
-              className="bg-accent hover:bg-green-600 text-white"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Resource
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button 
+                onClick={() => setResourceDialogOpen(true)}
+                className="bg-accent hover:bg-green-600 text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Resource
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsMaximized(!isMaximized)}
+              >
+                {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </Button>
+            </div>
           </div>
         </header>
 
