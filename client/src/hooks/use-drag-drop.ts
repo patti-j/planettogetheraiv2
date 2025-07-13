@@ -33,7 +33,8 @@ export function useOperationDrop(
       if (endTime) updateData.endTime = endTime;
       
       const response = await apiRequest("PUT", `/api/operations/${operationId}`, updateData);
-      return response.json();
+      const text = await response.text();
+      return text ? JSON.parse(text) : {};
     },
     onSuccess: (updatedOperation) => {
       queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
@@ -214,7 +215,8 @@ export function useTimelineDrop(
       if (endTime) updateData.endTime = endTime;
       
       const response = await apiRequest("PUT", `/api/operations/${operationId}`, updateData);
-      return response.json();
+      const text = await response.text();
+      return text ? JSON.parse(text) : {};
     },
     onSuccess: (updatedOperation) => {
       queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
