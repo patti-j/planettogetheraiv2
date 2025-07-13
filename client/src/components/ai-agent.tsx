@@ -32,7 +32,7 @@ export default function AIAgent() {
     {
       id: "1",
       type: "agent",
-      content: "Hello! I'm your manufacturing AI assistant. I can help you create jobs, operations, resources, manage your production schedule, create Kanban boards, and control Gantt chart views. Try saying something like 'Create a Kanban board to show jobs by status' or 'Create a Gantt view showing CNC resources with job names'.",
+      content: "Hello! I'm Max, your manufacturing AI assistant. I can help you create jobs, operations, resources, manage your production schedule, create Kanban boards, and control Gantt chart views. Try saying something like 'Create a Kanban board to show jobs by status' or 'Create a Gantt view showing CNC resources with job names'.",
       timestamp: new Date(),
     }
   ]);

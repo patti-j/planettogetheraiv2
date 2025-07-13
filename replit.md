@@ -422,3 +422,5 @@ The application uses a modern full-stack architecture with strong typing through
 - Fixed duplicate headers in KanbanBoard component by removing redundant "Kanban Board" titles
 - Renamed "Kanban Board" to "Board" throughout the interface for consistency
 - Updated "Add Operation" button styling to match consistent primary blue color scheme
+- Renamed AI manufacturing assistant to "Max, your AI Assistant" throughout the system
+- Updated AI assistant branding in navigation, page titles, sidebar, and floating assistant components

@@ -108,7 +108,7 @@ export default function Dashboard() {
     },
     onSuccess: (data) => {
       toast({
-        title: "AI Assistant",
+        title: "Max",
         description: data.message,
       });
       
@@ -430,7 +430,7 @@ export default function Dashboard() {
             <div className="floating-ai-assistant rounded-lg shadow-lg border border-gray-200 p-4 max-w-md">
               <div className="flex items-center space-x-2 mb-3">
                 <Bot className="w-5 h-5 text-primary" />
-                <span className="text-sm font-medium text-gray-700">AI Assistant</span>
+                <span className="text-sm font-medium text-gray-700">Max</span>
               </div>
               <div className="flex space-x-2">
                 <Input

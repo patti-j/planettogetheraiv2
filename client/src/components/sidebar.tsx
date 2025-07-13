@@ -30,7 +30,7 @@ export default function Sidebar() {
     },
     onSuccess: (data) => {
       toast({
-        title: "AI Assistant",
+        title: "Max",
         description: data.message,
       });
       
@@ -75,7 +75,7 @@ export default function Sidebar() {
     { icon: Columns3, label: "Boards", href: "/boards", active: location === "/boards" },
     { icon: BarChart3, label: "Analytics", href: "/analytics", active: location === "/analytics" },
     { icon: FileText, label: "Reports", href: "/reports", active: location === "/reports" },
-    { icon: Bot, label: "AI Assistant", href: "/ai-assistant", active: location === "/ai-assistant" },
+    { icon: Bot, label: "Max", href: "/ai-assistant", active: location === "/ai-assistant" },
   ];
 
   const getNavigationTooltip = (href: string) => {
@@ -84,7 +84,7 @@ export default function Sidebar() {
       "/boards": "Organize jobs, operations, and resources with drag-and-drop boards",
       "/analytics": "View production metrics and performance analytics",
       "/reports": "Generate detailed production reports and insights",
-      "/ai-assistant": "Chat with AI for schedule optimization and analysis"
+      "/ai-assistant": "Chat with Max for schedule optimization and analysis"
     };
     return tooltips[href] || "Navigate to this page";
   };
@@ -157,7 +157,7 @@ export default function Sidebar() {
           </div>
           
           <div className="mt-4 pt-4 border-t border-gray-200">
-            <h4 className="text-sm font-medium text-gray-500 mb-2">AI Assistant</h4>
+            <h4 className="text-sm font-medium text-gray-500 mb-2">Max</h4>
             <div className="flex space-x-2">
               <Input
                 placeholder="Ask AI about late jobs..."
