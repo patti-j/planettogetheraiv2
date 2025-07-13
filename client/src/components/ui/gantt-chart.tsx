@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { ChevronDown, ChevronRight, MoreHorizontal, ZoomIn, ZoomOut, Eye, Settings, GripVertical, Maximize2, Minimize2, Wrench, Users, Building2 } from "lucide-react";
+import { ChevronDown, ChevronRight, MoreHorizontal, ZoomIn, ZoomOut, Eye, Settings, GripVertical, Maximize2, Minimize2, Wrench, Users, Building2, Palette, Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -135,6 +135,36 @@ export default function GanttChart({
   // Get color scheme and text labeling from selected resource view
   const colorScheme = selectedResourceView?.colorScheme || "by_job";
   const textLabeling = selectedResourceView?.textLabeling || "operation_name";
+
+  // Handler for quick color scheme changes
+  const handleColorSchemeChange = async (newColorScheme: string) => {
+    if (!selectedResourceView) return;
+    
+    try {
+      await apiRequest("PUT", `/api/resource-views/${selectedResourceView.id}`, {
+        colorScheme: newColorScheme
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/resource-views"] });
+      toast({ title: `Color scheme changed to ${newColorScheme.replace("by_", "").replace("_", " ")}` });
+    } catch (error) {
+      toast({ title: "Failed to change color scheme", variant: "destructive" });
+    }
+  };
+
+  // Handler for quick text labeling changes
+  const handleTextLabelingChange = async (newTextLabeling: string) => {
+    if (!selectedResourceView) return;
+    
+    try {
+      await apiRequest("PUT", `/api/resource-views/${selectedResourceView.id}`, {
+        textLabeling: newTextLabeling
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/resource-views"] });
+      toast({ title: `Text labeling changed to ${newTextLabeling.replace("_", " ")}` });
+    } catch (error) {
+      toast({ title: "Failed to change text labeling", variant: "destructive" });
+    }
+  };
   
   const timelineRef = useRef<HTMLDivElement>(null);
   const resourceListRef = useRef<HTMLDivElement>(null);
@@ -926,6 +956,89 @@ export default function GanttChart({
                     className="flex-1"
                   />
                   <span className="text-xs text-gray-500 w-8">{rowHeight}px</span>
+                </div>
+              </div>
+              
+              {/* Quick Switch Preset Buttons */}
+              <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1">
+                  <Palette className="w-3 h-3 text-gray-500" />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 px-2 text-xs"
+                        title="Change Color Scheme"
+                      >
+                        {colorScheme === "by_job" && "Job"}
+                        {colorScheme === "by_priority" && "Priority"}
+                        {colorScheme === "by_status" && "Status"}
+                        {colorScheme === "by_operation_type" && "Type"}
+                        {colorScheme === "by_resource" && "Resource"}
+                        <ChevronDown className="w-3 h-3 ml-1" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleColorSchemeChange("by_job")}>
+                        By Job
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleColorSchemeChange("by_priority")}>
+                        By Priority
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleColorSchemeChange("by_status")}>
+                        By Status
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleColorSchemeChange("by_operation_type")}>
+                        By Operation Type
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleColorSchemeChange("by_resource")}>
+                        By Resource
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                
+                <div className="flex items-center space-x-1">
+                  <Type className="w-3 h-3 text-gray-500" />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 px-2 text-xs"
+                        title="Change Text Labeling"
+                      >
+                        {textLabeling === "operation_name" && "Operation"}
+                        {textLabeling === "job_name" && "Job"}
+                        {textLabeling === "both" && "Both"}
+                        {textLabeling === "duration" && "Duration"}
+                        {textLabeling === "progress" && "Progress"}
+                        {textLabeling === "none" && "None"}
+                        <ChevronDown className="w-3 h-3 ml-1" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleTextLabelingChange("operation_name")}>
+                        Operation Name
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleTextLabelingChange("job_name")}>
+                        Job Name
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleTextLabelingChange("both")}>
+                        Job + Operation
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleTextLabelingChange("duration")}>
+                        Duration
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleTextLabelingChange("progress")}>
+                        Progress %
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleTextLabelingChange("none")}>
+                        No Text
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </div>
