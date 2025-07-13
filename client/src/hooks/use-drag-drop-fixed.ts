@@ -67,18 +67,15 @@ export function useOperationDrop(
     },
     drop: (item, monitor) => {
       const clientOffset = monitor.getClientOffset();
-      const initialOffset = monitor.getInitialClientOffset();
-      const dragOffset = monitor.getDifferenceFromInitialOffset();
       
-      if (clientOffset && initialOffset && dragOffset) {
+      if (clientOffset) {
         const resourceTimelineElement = document.querySelector(`[data-resource-id="${resource.id}"]`);
         if (resourceTimelineElement) {
           const rect = resourceTimelineElement.getBoundingClientRect();
           
-          // FIXED: Calculate the position of the dragged block, not the cursor
-          // The cursor position minus the initial drag offset gives us where the block's left edge is
-          const draggedBlockLeft = clientOffset.x - dragOffset.x;
-          const relativeX = Math.max(0, draggedBlockLeft - rect.left + timelineScrollLeft);
+          // FIXED: Use the cursor position directly - it should be where the user wants to drop
+          // The issue was trying to calculate the block position when the cursor position is what matters
+          const relativeX = Math.max(0, clientOffset.x - rect.left + timelineScrollLeft);
           
           // Calculate which period we're in
           const periodWidth = timelineWidth / timeScale.length;
@@ -92,7 +89,6 @@ export function useOperationDrop(
           // DEBUG: Log the drop calculation values
           console.log("DROP DEBUG:", {
             clientX: clientOffset.x,
-            draggedBlockLeft,
             rectLeft: rect.left,
             timelineScrollLeft,
             relativeX,
@@ -103,9 +99,7 @@ export function useOperationDrop(
             fractionWithinPeriod,
             timelineWidth,
             timeScaleLength: timeScale.length,
-            timeUnit,
-            initialOffset: initialOffset.x,
-            dragOffsetX: dragOffset.x
+            timeUnit
           });
           
           // FIXED: Use the same period-based calculation as OperationBlock
