@@ -17,7 +17,7 @@ interface GanttChartProps {
   view: "operations" | "resources";
 }
 
-type TimeUnit = "hour" | "day" | "week";
+type TimeUnit = "hour" | "day" | "week" | "month" | "quarter" | "year" | "decade";
 
 export default function GanttChart({ 
   jobs, 
@@ -60,6 +60,22 @@ export default function GanttChart({
         periodCount = 4; // Show 4 weeks
         stepMs = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
         break;
+      case "month":
+        periodCount = 12; // Show 12 months
+        stepMs = 30 * 24 * 60 * 60 * 1000; // ~1 month in milliseconds
+        break;
+      case "quarter":
+        periodCount = 4; // Show 4 quarters
+        stepMs = 90 * 24 * 60 * 60 * 1000; // ~1 quarter in milliseconds
+        break;
+      case "year":
+        periodCount = 5; // Show 5 years
+        stepMs = 365 * 24 * 60 * 60 * 1000; // ~1 year in milliseconds
+        break;
+      case "decade":
+        periodCount = 3; // Show 3 decades
+        stepMs = 3650 * 24 * 60 * 60 * 1000; // ~1 decade in milliseconds
+        break;
     }
     
     for (let i = 0; i < periodCount; i++) {
@@ -80,6 +96,24 @@ export default function GanttChart({
           const endOfWeek = new Date(date.getTime() + (6 * 24 * 60 * 60 * 1000));
           label = `Week ${Math.ceil((date.getTime() - new Date(date.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000))}`;
           subLabel = `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+          break;
+        case "month":
+          label = date.toLocaleDateString('en-US', { month: 'short' });
+          subLabel = date.toLocaleDateString('en-US', { year: 'numeric' });
+          break;
+        case "quarter":
+          const quarter = Math.ceil((date.getMonth() + 1) / 3);
+          label = `Q${quarter}`;
+          subLabel = date.toLocaleDateString('en-US', { year: 'numeric' });
+          break;
+        case "year":
+          label = date.toLocaleDateString('en-US', { year: 'numeric' });
+          subLabel = `${date.getFullYear()}`;
+          break;
+        case "decade":
+          const decade = Math.floor(date.getFullYear() / 10) * 10;
+          label = `${decade}s`;
+          subLabel = `${decade}-${decade + 9}`;
           break;
       }
       
@@ -106,19 +140,19 @@ export default function GanttChart({
 
   // Zoom functions
   const zoomIn = useCallback(() => {
-    if (timeUnit === "week") {
-      setTimeUnit("day");
-    } else if (timeUnit === "day") {
-      setTimeUnit("hour");
+    const zoomLevels: TimeUnit[] = ["decade", "year", "quarter", "month", "week", "day", "hour"];
+    const currentIndex = zoomLevels.indexOf(timeUnit);
+    if (currentIndex < zoomLevels.length - 1) {
+      setTimeUnit(zoomLevels[currentIndex + 1]);
     }
     setTimelineScrollLeft(0); // Reset scroll position when zooming
   }, [timeUnit]);
 
   const zoomOut = useCallback(() => {
-    if (timeUnit === "hour") {
-      setTimeUnit("day");
-    } else if (timeUnit === "day") {
-      setTimeUnit("week");
+    const zoomLevels: TimeUnit[] = ["decade", "year", "quarter", "month", "week", "day", "hour"];
+    const currentIndex = zoomLevels.indexOf(timeUnit);
+    if (currentIndex > 0) {
+      setTimeUnit(zoomLevels[currentIndex - 1]);
     }
     setTimelineScrollLeft(0); // Reset scroll position when zooming
   }, [timeUnit]);
@@ -257,7 +291,7 @@ export default function GanttChart({
               <div className="flex items-center justify-between">
                 <span className="font-medium text-gray-700">Jobs & Operations</span>
                 <div className="flex items-center space-x-1">
-                  <Button variant="ghost" size="sm" onClick={zoomOut} disabled={timeUnit === "week"} title="Zoom Out">
+                  <Button variant="ghost" size="sm" onClick={zoomOut} disabled={timeUnit === "decade"} title="Zoom Out">
                     <ZoomOut className="w-4 h-4" />
                   </Button>
                   <Button variant="ghost" size="sm" onClick={resetZoom} title="Reset Zoom">
@@ -392,6 +426,8 @@ export default function GanttChart({
                           job={jobs.find(job => job.id === operation.jobId)}
                           timelineWidth={timelineWidth}
                           dayWidth={periodWidth}
+                          timeUnit={timeUnit}
+                          timelineScrollLeft={timelineScrollLeft}
                         />
                       </div>
                     </div>
@@ -449,6 +485,8 @@ export default function GanttChart({
                   job={jobs.find(job => job.id === operation.jobId)}
                   timelineWidth={timelineWidth}
                   dayWidth={periodWidth}
+                  timeUnit={timeUnit}
+                  timelineScrollLeft={timelineScrollLeft}
                 />
               ))}
               {resourceOperations.length === 0 && (
@@ -474,7 +512,7 @@ export default function GanttChart({
             <div className="flex items-center justify-between">
               <span className="font-medium text-gray-700">Resources</span>
               <div className="flex items-center space-x-1">
-                <Button variant="ghost" size="sm" onClick={zoomOut} disabled={timeUnit === "week"} title="Zoom Out">
+                <Button variant="ghost" size="sm" onClick={zoomOut} disabled={timeUnit === "decade"} title="Zoom Out">
                   <ZoomOut className="w-4 h-4" />
                 </Button>
                 <Button variant="ghost" size="sm" onClick={resetZoom} title="Reset Zoom">
