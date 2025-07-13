@@ -62,6 +62,20 @@ export default function Dashboard() {
         title: "AI Assistant",
         description: data.message,
       });
+      
+      // Handle special frontend actions - same as AI Agent component
+      if (data.actions?.includes("SET_GANTT_ZOOM")) {
+        const event = new CustomEvent('aiGanttZoom', { detail: { zoomLevel: data.data.zoomLevel } });
+        window.dispatchEvent(event);
+      }
+      if (data.actions?.includes("SET_GANTT_SCROLL")) {
+        const event = new CustomEvent('aiGanttScroll', { detail: { scrollPosition: data.data.scrollPosition } });
+        window.dispatchEvent(event);
+      }
+      if (data.actions?.includes("SCROLL_TO_TODAY")) {
+        const event = new CustomEvent('aiScrollToToday', { detail: {} });
+        window.dispatchEvent(event);
+      }
     },
     onError: (error) => {
       toast({

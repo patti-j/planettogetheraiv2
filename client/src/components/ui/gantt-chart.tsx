@@ -408,10 +408,19 @@ export default function GanttChart({
 
   // Scroll to today function
   const handleScrollToToday = useCallback(() => {
+    console.log('Scroll to today called');
     // Calculate scroll position for today's date
     const today = new Date();
     const timeDiff = today.getTime() - timeScale.minDate.getTime();
     const scrollLeft = (timeDiff / timeScale.stepMs) * periodWidth;
+    console.log('Today scroll calculation:', {
+      today: today.toISOString(),
+      minDate: timeScale.minDate.toISOString(),
+      timeDiff,
+      stepMs: timeScale.stepMs,
+      periodWidth,
+      scrollLeft
+    });
     setTimelineScrollLeft(scrollLeft);
     
     if (timelineRef.current) {
@@ -422,14 +431,17 @@ export default function GanttChart({
   // AI Event Listeners
   useEffect(() => {
     const handleAIGanttZoom = (event: any) => {
+      console.log('AI Gantt Zoom event received:', event.detail);
       const { zoomLevel } = event.detail;
       const validZoomLevels = ["hour", "day", "week", "month"];
       if (validZoomLevels.includes(zoomLevel)) {
+        console.log('Setting zoom level to:', zoomLevel);
         setTimeUnit(zoomLevel as TimeUnit);
       }
     };
 
     const handleAIGanttScroll = (event: any) => {
+      console.log('AI Gantt Scroll event received:', event.detail);
       const { scrollPosition } = event.detail;
       // Handle scroll position - can be percentage or date-based
       if (typeof scrollPosition === 'string' && scrollPosition.endsWith('%')) {
@@ -437,6 +449,7 @@ export default function GanttChart({
         if (percentage >= 0 && percentage <= 100) {
           // Calculate scroll position based on timeline width
           const scrollLeft = (timelineWidth * percentage) / 100;
+          console.log('Percentage scroll - setting scroll to:', scrollLeft);
           setTimelineScrollLeft(scrollLeft);
           
           // Apply to the timeline containers
@@ -448,8 +461,9 @@ export default function GanttChart({
         // Handle date-based scrolling
         try {
           const targetDate = new Date(scrollPosition);
-          const timeDiff = targetDate.getTime() - timelineBaseDate.getTime();
-          const scrollLeft = (timeDiff / timeScale.millisecondsPerUnit) * (timelineWidth / timeScale.periods.length);
+          const timeDiff = targetDate.getTime() - timeScale.minDate.getTime();
+          const scrollLeft = (timeDiff / timeScale.stepMs) * periodWidth;
+          console.log('Date scroll - setting scroll to:', scrollLeft);
           setTimelineScrollLeft(scrollLeft);
           
           if (timelineRef.current) {
@@ -472,7 +486,7 @@ export default function GanttChart({
       window.removeEventListener('aiGanttScroll', handleAIGanttScroll);
       window.removeEventListener('aiScrollToToday', handleScrollToToday);
     };
-  }, [timelineWidth, timeScale, timelineBaseDate]);
+  }, [timelineWidth, timeScale, periodWidth]);
 
   // Zoom functions
   const zoomIn = useCallback(() => {
@@ -755,22 +769,24 @@ export default function GanttChart({
         {/* Fixed Header */}
         <div className="flex-none bg-white border-b border-gray-200 z-10">
           <div className="flex">
-            <div className="w-64 px-4 py-3 bg-gray-50 border-r border-gray-200">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-gray-700">Jobs & Operations</span>
-                <div className="flex items-center space-x-1">
-                  <Button variant="ghost" size="sm" onClick={zoomOut} disabled={timeUnit === "decade"} title="Zoom Out">
-                    <ZoomOut className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={resetZoom} title="Reset Zoom">
-                    <span className="text-xs">{timeUnit}</span>
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={zoomIn} disabled={timeUnit === "hour"} title="Zoom In">
-                    <ZoomIn className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={handleScrollToToday} title="Scroll to Today">
-                    <Calendar className="w-4 h-4" />
-                  </Button>
+            <div className="w-80 px-4 py-3 bg-gray-50 border-r border-gray-200">
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-gray-700">Jobs & Operations</span>
+                  <div className="flex items-center space-x-1">
+                    <Button variant="ghost" size="sm" onClick={zoomOut} disabled={timeUnit === "decade"} title="Zoom Out">
+                      <ZoomOut className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={resetZoom} title="Reset Zoom">
+                      <span className="text-xs">{timeUnit}</span>
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={zoomIn} disabled={timeUnit === "hour"} title="Zoom In">
+                      <ZoomIn className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={handleScrollToToday} title="Scroll to Today">
+                      <Calendar className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -810,7 +826,7 @@ export default function GanttChart({
               {/* Job Row */}
               <div className="border-b border-gray-100">
                 <div className="flex">
-                  <div className="w-64 px-4 py-3 bg-gray-50 border-r border-gray-200">
+                  <div className="w-80 px-4 py-3 bg-gray-50 border-r border-gray-200">
                     <div className="flex items-center">
                       <Button
                         variant="ghost"
@@ -846,7 +862,7 @@ export default function GanttChart({
               {isExpanded && jobOperations.map((operation) => (
                 <div key={operation.id} className="border-b border-gray-100">
                   <div className="flex">
-                    <div className="w-64 px-4 py-3 border-r border-gray-200">
+                    <div className="w-80 px-4 py-3 border-r border-gray-200">
                       <div className="flex items-center ml-6">
                         <div className="w-2 h-2 bg-gray-300 rounded-full mr-2"></div>
                         <div className="flex-1">
@@ -954,7 +970,7 @@ export default function GanttChart({
         className={`border-b border-gray-100 ${isDragging ? 'opacity-50' : ''}`}
       >
         <div className="flex">
-          <div className="w-64 px-4 bg-gray-50 border-r border-gray-200" style={{ minHeight: `${rowHeight}px` }}>
+          <div className="w-80 px-4 bg-gray-50 border-r border-gray-200" style={{ minHeight: `${rowHeight}px` }}>
             <div className="flex items-center h-full">
               {canReorder && (
                 <div 
@@ -1062,7 +1078,7 @@ export default function GanttChart({
     return (
       <div className="border-b border-gray-100">
         <div className="flex">
-          <div className="w-64 px-4 bg-gray-50 border-r border-gray-200" style={{ minHeight: `${rowHeight}px` }}>
+          <div className="w-80 px-4 bg-gray-50 border-r border-gray-200" style={{ minHeight: `${rowHeight}px` }}>
             <div className="flex items-center h-full">
               <div className="flex-1">
                 <div className="font-medium text-gray-800">{resource.name}</div>
@@ -1127,7 +1143,7 @@ export default function GanttChart({
       {/* Fixed Header */}
       <div className="flex-none bg-white border-b border-gray-200 z-10">
         <div className="flex">
-          <div className="w-64 px-4 py-3 bg-gray-50 border-r border-gray-200">
+          <div className="w-80 px-4 py-3 bg-gray-50 border-r border-gray-200">
             <div className="flex flex-col space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-gray-700">Resources</span>

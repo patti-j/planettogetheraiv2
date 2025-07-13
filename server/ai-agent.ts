@@ -56,6 +56,7 @@ You can perform these actions:
 15. CREATE_RESOURCE_VIEW - Create a resource Gantt view configuration based on user description
 16. SET_GANTT_ZOOM - Set the zoom level for the Resource Gantt chart
 17. SET_GANTT_SCROLL - Set the scroll position for the Resource Gantt chart
+18. SCROLL_TO_TODAY - Scroll the Gantt chart to show today's date
 
 Respond with JSON in this format:
 {
