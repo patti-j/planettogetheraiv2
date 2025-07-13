@@ -140,8 +140,9 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <div className="max-h-[80vh] overflow-y-auto">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="name"
@@ -244,7 +245,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
                 <p className="text-sm text-gray-500">Add operations to define the work steps for this job.</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="max-h-80 overflow-y-auto space-y-3 border rounded-lg p-2">
                 {operations.map((operation) => (
                   <Card key={operation.id} className="p-4">
                     <div className="flex items-start justify-between">
@@ -320,7 +321,8 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
             {createJobMutation.isPending ? (job ? "Updating..." : "Creating...") : (job ? "Update Job" : "Create Job")}
           </Button>
         </div>
-      </form>
+        </form>
+      </Form>
 
       {/* Operation Dialog */}
       <Dialog open={operationDialogOpen} onOpenChange={handleOperationDialogClose}>
@@ -339,6 +341,6 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
           />
         </DialogContent>
       </Dialog>
-    </Form>
+    </div>
   );
 }

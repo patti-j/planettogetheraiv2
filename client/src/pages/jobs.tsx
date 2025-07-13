@@ -212,7 +212,7 @@ export default function Jobs() {
 
       {/* Job Dialog */}
       <Dialog open={jobDialogOpen} onOpenChange={handleDialogClose}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingJob ? "Edit Job" : "Create New Job"}
