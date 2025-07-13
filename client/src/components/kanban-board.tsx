@@ -832,98 +832,100 @@ function KanbanBoard({
             )}
           </div>
           
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Create Action Button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  className="bg-primary hover:bg-blue-700 text-white" 
-                  size="sm"
-                  onClick={() => {
-                    if (selectedConfig?.viewType === "jobs") {
-                      onCreateJob && onCreateJob();
-                    } else if (selectedConfig?.viewType === "operations") {
-                      handleAddOperation();
-                    } else if (selectedConfig?.viewType === "resources") {
-                      onCreateResource && onCreateResource();
-                    }
-                  }}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  New {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Create new {selectedConfig?.viewType === "jobs" ? "job" : selectedConfig?.viewType === "operations" ? "operation" : "resource"}</p>
-              </TooltipContent>
-            </Tooltip>
-
-            {/* AI Boards Button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white" 
-                  size="sm"
-                  onClick={onAICreateBoards}
-                >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  AI Boards
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Create boards using AI with natural language descriptions</p>
-              </TooltipContent>
-            </Tooltip>
-
-            {/* Board Selection */}
-            <DropdownMenu>
+          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+            <div className="flex items-center gap-2 min-w-max">
+              {/* Create Action Button */}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="min-w-0 flex-1 sm:flex-none">
-                      <span className="truncate">{selectedConfig?.name || "Select Board"}</span>
-                      <ChevronDown className="w-4 h-4 ml-2 flex-shrink-0" />
-                    </Button>
-                  </DropdownMenuTrigger>
+                  <Button 
+                    className="bg-primary hover:bg-blue-700 text-white" 
+                    size="sm"
+                    onClick={() => {
+                      if (selectedConfig?.viewType === "jobs") {
+                        onCreateJob && onCreateJob();
+                      } else if (selectedConfig?.viewType === "operations") {
+                        handleAddOperation();
+                      } else if (selectedConfig?.viewType === "resources") {
+                        onCreateResource && onCreateResource();
+                      }
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    New {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Switch between different board configurations</p>
+                  <p>Create new {selectedConfig?.viewType === "jobs" ? "job" : selectedConfig?.viewType === "operations" ? "operation" : "resource"}</p>
                 </TooltipContent>
               </Tooltip>
-              <DropdownMenuContent align="end">
-                {kanbanConfigs.map((config) => (
-                  <DropdownMenuItem
-                    key={config.id}
-                    onClick={() => onConfigChange && onConfigChange(config.id)}
-                    className={selectedConfig?.id === config.id ? "bg-blue-50 text-blue-900" : ""}
+
+              {/* AI Boards Button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white" 
+                    size="sm"
+                    onClick={onAICreateBoards}
                   >
-                    <div className="flex items-center">
-                      {config.viewType === "jobs" ? (
-                        <Briefcase className="w-4 h-4 mr-2" />
-                      ) : config.viewType === "resources" ? (
-                        <Wrench className="w-4 h-4 mr-2" />
-                      ) : (
-                        <Users className="w-4 h-4 mr-2" />
-                      )}
-                      <div>
-                        <div className="font-medium">{config.name}</div>
-                        <div className="text-xs text-gray-500 capitalize">{config.viewType} board</div>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    AI Boards
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Create boards using AI with natural language descriptions</p>
+                </TooltipContent>
+              </Tooltip>
+
+              {/* Board Selection */}
+              <DropdownMenu>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="min-w-0 flex-1 sm:flex-none">
+                        <span className="truncate">{selectedConfig?.name || "Select Board"}</span>
+                        <ChevronDown className="w-4 h-4 ml-2 flex-shrink-0" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Switch between different board configurations</p>
+                  </TooltipContent>
+                </Tooltip>
+                <DropdownMenuContent align="end">
+                  {kanbanConfigs.map((config) => (
+                    <DropdownMenuItem
+                      key={config.id}
+                      onClick={() => onConfigChange && onConfigChange(config.id)}
+                      className={selectedConfig?.id === config.id ? "bg-blue-50 text-blue-900" : ""}
+                    >
+                      <div className="flex items-center">
+                        {config.viewType === "jobs" ? (
+                          <Briefcase className="w-4 h-4 mr-2" />
+                        ) : config.viewType === "resources" ? (
+                          <Wrench className="w-4 h-4 mr-2" />
+                        ) : (
+                          <Users className="w-4 h-4 mr-2" />
+                        )}
+                        <div>
+                          <div className="font-medium">{config.name}</div>
+                          <div className="text-xs text-gray-500 capitalize">{config.viewType} board</div>
+                        </div>
                       </div>
-                    </div>
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={onConfigureBoards} className="text-blue-600">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Configure Boards
                   </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={onConfigureBoards} className="text-blue-600">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Configure Boards
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
 
         {/* Kanban Columns */}
-        <div className="flex-1 overflow-x-auto overflow-y-hidden bg-gray-100 p-2 sm:p-4">
+        <div className="flex-1 bg-gray-100 p-2 sm:p-4 overflow-hidden">
           {!selectedConfig ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
@@ -935,36 +937,38 @@ function KanbanBoard({
               </div>
             </div>
           ) : (
-            <div className="flex space-x-2 sm:space-x-4 h-full" style={{ minWidth: `${columns.length * 300}px` }}>
-              {columns.map((column) => (
-                <KanbanColumn
-                  key={column.id}
-                  column={column}
-                  onDrop={handleDrop}
-                >
-                  {view === "jobs" ? (
-                    column.items.map((item) => (
-                      <JobCard
-                        key={item.id}
-                        job={item as Job}
-                        onEdit={handleEditJob}
-                        swimLaneField={swimLaneField}
-                      />
-                    ))
-                  ) : (
-                    column.items.map((item) => (
-                      <OperationCard
-                        key={item.id}
-                        operation={item as Operation}
-                        job={jobs.find(j => j.id === (item as Operation).jobId)}
-                        resources={resources}
-                        onEdit={handleEditOperation}
-                        swimLaneField={swimLaneField}
-                      />
-                    ))
-                  )}
-                </KanbanColumn>
-              ))}
+            <div className="h-full overflow-x-auto overflow-y-hidden">
+              <div className="flex space-x-2 sm:space-x-4 h-full" style={{ minWidth: `${columns.length * 300}px` }}>
+                {columns.map((column) => (
+                  <KanbanColumn
+                    key={column.id}
+                    column={column}
+                    onDrop={handleDrop}
+                  >
+                    {view === "jobs" ? (
+                      column.items.map((item) => (
+                        <JobCard
+                          key={item.id}
+                          job={item as Job}
+                          onEdit={handleEditJob}
+                          swimLaneField={swimLaneField}
+                        />
+                      ))
+                    ) : (
+                      column.items.map((item) => (
+                        <OperationCard
+                          key={item.id}
+                          operation={item as Operation}
+                          job={jobs.find(j => j.id === (item as Operation).jobId)}
+                          resources={resources}
+                          onEdit={handleEditOperation}
+                          swimLaneField={swimLaneField}
+                        />
+                      ))
+                    )}
+                  </KanbanColumn>
+                ))}
+              </div>
             </div>
           )}
         </div>
