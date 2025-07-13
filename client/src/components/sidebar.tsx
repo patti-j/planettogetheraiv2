@@ -71,7 +71,7 @@ export default function Sidebar() {
   };
 
   const navigationItems = [
-    { icon: BarChart3, label: "Schedule View", href: "/", active: location === "/" },
+    { icon: BarChart3, label: "Schedule", href: "/", active: location === "/" },
     { icon: Columns3, label: "Boards", href: "/boards", active: location === "/boards" },
     { icon: BarChart3, label: "Analytics", href: "/analytics", active: location === "/analytics" },
     { icon: FileText, label: "Reports", href: "/reports", active: location === "/reports" },

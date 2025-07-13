@@ -60,11 +60,11 @@ export default function Boards() {
 
   const PageContent = () => (
     <div className="flex-1 flex flex-col">
-      <header className="bg-white shadow-sm border-b border-gray-200 px-8 py-4">
-        <div className="flex items-center justify-between">
+      <main className="flex-1 overflow-hidden bg-white">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Boards</h1>
-            <p className="text-gray-500">Organize jobs, operations, and resources with drag-and-drop boards</p>
+            <h2 className="text-lg font-medium text-gray-900">Boards</h2>
+            <p className="text-sm text-gray-600">Organize jobs, operations, and resources with drag-and-drop boards</p>
           </div>
           <div className="flex items-center gap-2">
             {/* Management Actions */}
@@ -72,7 +72,7 @@ export default function Boards() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
+                    <Button className="bg-primary hover:bg-blue-700 text-white" size="sm">
                       <Plus className="w-4 h-4 mr-2" />
                       Create
                       <ChevronDown className="w-4 h-4 ml-2" />
@@ -161,9 +161,7 @@ export default function Boards() {
             </Tooltip>
           </div>
         </div>
-      </header>
-
-      <main className="flex-1 overflow-hidden">
+        
         <KanbanBoard
           jobs={jobs}
           operations={operations}
