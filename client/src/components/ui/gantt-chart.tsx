@@ -252,6 +252,7 @@ export default function GanttChart({
     const syncResourceRows = (scrollLeft: number) => {
       // Use a more specific selector to find all resource timeline containers
       const resourceRows = document.querySelectorAll('[data-resource-id]');
+      console.log('Syncing resource rows:', resourceRows.length, 'scrollLeft:', scrollLeft);
       resourceRows.forEach((row) => {
         if (row instanceof HTMLElement && row.scrollLeft !== scrollLeft) {
           row.scrollLeft = scrollLeft;
@@ -268,6 +269,7 @@ export default function GanttChart({
       const timelineElement = timelineRef.current;
       const handleScroll = () => {
         if (!isDraggingTimeline.current) {
+          console.log('Timeline scroll detected, syncing rows');
           syncResourceRows(timelineElement.scrollLeft);
         }
       };
