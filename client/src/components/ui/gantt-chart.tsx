@@ -266,16 +266,31 @@ export default function GanttChart({
       
       // Sync on any timeline scroll
       const timelineElement = timelineRef.current;
+      let rafId: number | null = null;
+      
       const handleScroll = () => {
         if (!isDraggingTimeline.current) {
-          syncTimelinePositions(timelineElement.scrollLeft);
+          // Use requestAnimationFrame to ensure smooth updates
+          if (rafId) {
+            cancelAnimationFrame(rafId);
+          }
+          rafId = requestAnimationFrame(() => {
+            syncTimelinePositions(timelineElement.scrollLeft);
+            rafId = null;
+          });
         }
       };
       
+      // Use both scroll and input events for better responsiveness
       timelineElement.addEventListener('scroll', handleScroll, { passive: true });
+      timelineElement.addEventListener('input', handleScroll, { passive: true });
       
       return () => {
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+        }
         timelineElement.removeEventListener('scroll', handleScroll);
+        timelineElement.removeEventListener('input', handleScroll);
       };
     }
   }, [timelineRef.current, resources.length, operations.length, view]);
