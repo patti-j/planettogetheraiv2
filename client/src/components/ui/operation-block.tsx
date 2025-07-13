@@ -316,6 +316,13 @@ export default function OperationBlock({
               .sort((a, b) => a.order - b.order);
             
             const textParts = enabledLabels.map(label => getTextForLabel(label.type));
+            console.log("Custom text label processing:", {
+              customLabelId,
+              customLabel: customLabel.name,
+              enabledLabels,
+              textParts,
+              joined: textParts.join(" • ")
+            });
             return textParts.join(" • ");
           }
         }
