@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { ChevronDown, ChevronRight, MoreHorizontal, ZoomIn, ZoomOut, Eye, Settings, GripVertical, Maximize2, Minimize2, Wrench, Users, Building2, Palette, Type } from "lucide-react";
+import { ChevronDown, ChevronRight, MoreHorizontal, ZoomIn, ZoomOut, Eye, Settings, GripVertical, Maximize2, Minimize2, Wrench, Users, Building2, Palette, Type, Plus, Edit3, Trash2, Calendar, Clock, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -94,6 +94,40 @@ export default function GanttChart({
       viewId: selectedResourceView.id,
       resourceSequence: newSequence
     });
+  }
+
+  const handleResourceAction = (resource: Resource, action: string) => {
+    switch (action) {
+      case 'edit':
+        // Open resource edit dialog
+        console.log('Edit resource:', resource);
+        break;
+      case 'schedule':
+        // Open scheduling dialog for resource
+        console.log('Schedule operations for:', resource);
+        break;
+      case 'view_schedule':
+        // Show detailed schedule view
+        console.log('View schedule for:', resource);
+        break;
+      case 'maintenance':
+        // Schedule maintenance for resource
+        console.log('Schedule maintenance for:', resource);
+        break;
+      case 'add_operation':
+        // Add new operation to resource
+        console.log('Add operation to:', resource);
+        break;
+      case 'delete':
+        // Delete resource (with confirmation)
+        if (confirm(`Are you sure you want to delete ${resource.name}?`)) {
+          console.log('Delete resource:', resource);
+          // TODO: Implement actual deletion
+        }
+        break;
+      default:
+        console.log('Unknown action:', action);
+    }
   };
   
   // Fetch resource views
@@ -775,11 +809,47 @@ export default function GanttChart({
                   </span>
                 </div>
               </div>
-              <Badge className={`text-xs ${
+              <Badge className={`text-xs mr-2 ${
                 resource.status === "active" ? "bg-accent text-white" : "bg-gray-400 text-white"
               }`}>
                 {resource.status}
               </Badge>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleResourceAction(resource, 'edit')}>
+                    <Edit3 className="h-4 w-4 mr-2" />
+                    Edit Resource
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleResourceAction(resource, 'schedule')}>
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Schedule Operations
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleResourceAction(resource, 'view_schedule')}>
+                    <Clock className="h-4 w-4 mr-2" />
+                    View Schedule
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleResourceAction(resource, 'maintenance')}>
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    Schedule Maintenance
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleResourceAction(resource, 'add_operation')}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Operation
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => handleResourceAction(resource, 'delete')}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Resource
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           <div 

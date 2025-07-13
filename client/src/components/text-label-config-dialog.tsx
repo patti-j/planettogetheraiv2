@@ -20,7 +20,7 @@ interface TextLabelConfigDialogProps {
 }
 
 interface TextLabel {
-  type: "operation_name" | "job_name" | "due_date" | "priority" | "status" | "duration" | "progress" | "resource_name" | "customer";
+  type: "operation_name" | "job_name" | "due_date" | "priority" | "status" | "duration" | "progress" | "resource_name" | "customer" | "job_description" | "operation_description" | "resource_type" | "capabilities" | "start_time" | "end_time" | "slack_days" | "days_late" | "completion_percent";
   enabled: boolean;
   order: number;
 }
@@ -78,6 +78,15 @@ const DraggableTextLabelItem = ({
       case "progress": return "Progress %";
       case "resource_name": return "Resource Name";
       case "customer": return "Customer";
+      case "job_description": return "Job Description";
+      case "operation_description": return "Operation Description";
+      case "resource_type": return "Resource Type";
+      case "capabilities": return "Capabilities";
+      case "start_time": return "Start Time";
+      case "end_time": return "End Time";
+      case "slack_days": return "Slack Days";
+      case "days_late": return "Days Late";
+      case "completion_percent": return "Completion %";
       default: return type;
     }
   };
@@ -181,7 +190,9 @@ export default function TextLabelConfigDialog({ open, onOpenChange, resourceView
 
   const availableLabelTypes = [
     "operation_name", "job_name", "due_date", "priority", "status", 
-    "duration", "progress", "resource_name", "customer"
+    "duration", "progress", "resource_name", "customer", "job_description",
+    "operation_description", "resource_type", "capabilities", "start_time",
+    "end_time", "slack_days", "days_late", "completion_percent"
   ].filter(type => !config.labels.some(label => label.type === type));
 
   const handleSave = () => {

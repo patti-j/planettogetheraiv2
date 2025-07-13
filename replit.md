@@ -251,3 +251,26 @@ The application uses a modern full-stack architecture with strong typing through
 - Fixed resource type detection to properly show Users icon for "Operator" type resources
 - Removed redundant resource type text, now showing only icons with capabilities
 - Stabilized zoom button positioning to prevent cursor jumping during repeated clicks
+
+✓ **Resource Action Menus with Context-Aware Actions (July 13, 2025)**:
+- Added comprehensive "..." action menus for each resource with 6 different actions
+- Context-aware actions: Edit Resource, Schedule Operations, View Schedule, Schedule Maintenance, Add Operation, Delete Resource
+- Actions tailored for different user types (operators, managers, maintenance staff)
+- Proper icons and visual hierarchy for intuitive resource management
+- Positioned optimally in resource headers for easy access during scheduling
+
+✓ **Advanced Text Label System Enhancement (July 13, 2025)**:
+- Expanded text labeling to support 15+ field types including all job, operation, and resource fields
+- Added calculated fields: Slack Days, Days Late, Completion Percent, Start Time, End Time
+- Enhanced text configuration dialog with support for all new label types
+- Comprehensive label options: Operation Name, Job Name, Due Date, Priority, Status, Duration, Progress, Resource Name, Customer, Job Description, Operation Description, Resource Type, Capabilities, Start Time, End Time, Slack Days, Days Late, Completion Percent
+- Updated database schema to support expanded label configurations
+- Enhanced operation block rendering to display calculated fields with proper formatting
+
+✓ **Resource Row Drag-and-Drop Functionality (July 13, 2025)**:
+- Implemented working drag-and-drop functionality for resource rows in Resource Gantt view
+- Added grip handles on the left edge of resource rows for intuitive dragging
+- Combined operation assignment and resource reordering in single interface
+- Resource reordering only available when custom resource view is selected
+- Visual feedback during drag operations with opacity changes
+- Real-time updates to resource sequence with database persistence

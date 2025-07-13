@@ -181,6 +181,102 @@ export default function OperationBlock({
     }
   };
 
+  const getTextForLabel = (labelType: string) => {
+    switch (labelType) {
+      case "operation_name":
+        return operation.name;
+      
+      case "job_name":
+        return jobName || `Job ${operation.jobId}`;
+      
+      case "due_date":
+        return job?.dueDate ? new Date(job.dueDate).toLocaleDateString() : "No due date";
+      
+      case "priority":
+        return job?.priority || "medium";
+      
+      case "status":
+        return operation.status;
+      
+      case "duration":
+        return `${operation.duration}h`;
+      
+      case "progress":
+        // Calculate progress based on status
+        return operation.status === "completed" ? "100%" : 
+               operation.status === "in_progress" ? "50%" : "0%";
+      
+      case "resource_name":
+        return resourceName || "Unassigned";
+      
+      case "customer":
+        return job?.customer || "Unknown";
+      
+      case "job_description":
+        return job?.description || "No description";
+      
+      case "operation_description":
+        return operation.description || "No description";
+      
+      case "resource_type":
+        // This would need to be passed from parent component
+        return "Machine"; // placeholder
+      
+      case "capabilities":
+        return operation.requiredCapabilities?.join(", ") || "None";
+      
+      case "start_time":
+        return operation.startTime ? new Date(operation.startTime).toLocaleString() : "Not scheduled";
+      
+      case "end_time":
+        return operation.endTime ? new Date(operation.endTime).toLocaleString() : "Not scheduled";
+      
+      case "slack_days":
+        // Calculate slack days (due date - planned end date)
+        if (job?.dueDate && operation.endTime) {
+          const dueDate = new Date(job.dueDate);
+          const endDate = new Date(operation.endTime);
+          const diffTime = dueDate.getTime() - endDate.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          return diffDays >= 0 ? `${diffDays} days` : `${Math.abs(diffDays)} days over`;
+        }
+        return "N/A";
+      
+      case "days_late":
+        // Calculate days late (current date - due date)
+        if (job?.dueDate) {
+          const dueDate = new Date(job.dueDate);
+          const currentDate = new Date();
+          const diffTime = currentDate.getTime() - dueDate.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          return diffDays > 0 ? `${diffDays} days late` : "On time";
+        }
+        return "N/A";
+      
+      case "completion_percent":
+        // Calculate completion percentage based on status and time
+        if (operation.status === "completed") return "100%";
+        if (operation.status === "planned") return "0%";
+        if (operation.status === "in_progress") {
+          // Simple calculation based on time passed
+          if (operation.startTime && operation.endTime) {
+            const startTime = new Date(operation.startTime).getTime();
+            const endTime = new Date(operation.endTime).getTime();
+            const currentTime = new Date().getTime();
+            const totalDuration = endTime - startTime;
+            const elapsed = currentTime - startTime;
+            const percentage = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
+            return `${Math.round(percentage)}%`;
+          }
+          return "50%";
+        }
+        return "0%";
+      
+      default:
+        return operation.name;
+    }
+  };
+
   const getBlockText = () => {
     switch (textLabeling) {
       case "operation_name":

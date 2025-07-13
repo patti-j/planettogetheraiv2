@@ -58,7 +58,7 @@ export const resourceViews = pgTable("resource_views", {
   textLabeling: text("text_labeling").notNull().default("operation_name"),
   textLabelConfig: jsonb("text_label_config").$type<{
     labels: Array<{
-      type: "operation_name" | "job_name" | "due_date" | "priority" | "status" | "duration" | "progress" | "resource_name" | "customer";
+      type: "operation_name" | "job_name" | "due_date" | "priority" | "status" | "duration" | "progress" | "resource_name" | "customer" | "job_description" | "operation_description" | "resource_type" | "capabilities" | "start_time" | "end_time" | "slack_days" | "days_late" | "completion_percent";
       enabled: boolean;
       order: number;
     }>;
