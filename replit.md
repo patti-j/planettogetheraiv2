@@ -282,3 +282,12 @@ The application uses a modern full-stack architecture with strong typing through
 - Enhanced AI command processing with custom event system for real-time UI manipulation
 - AI can now manipulate Gantt chart views, create custom boards, and manage resource sequences
 - Voice and text commands support for advanced view creation and configuration
+
+✓ **Text Labeling System Simplification (July 13, 2025)**:
+- Simplified text labeling dropdown to show only custom text labels instead of individual field options
+- Removed confusing individual field options (operation_name, job_name, both, duration, etc.)
+- Added AI-powered custom text label creation feature with natural language prompt input
+- Enhanced custom text label manager with "AI Create" button for intelligent label generation
+- AI can analyze prompts and create multiple custom text labels with appropriate field configurations
+- Improved user experience by focusing on custom label configurations rather than scattered field options
+- Added CREATE_CUSTOM_TEXT_LABELS action to AI agent for automatic label creation from descriptions

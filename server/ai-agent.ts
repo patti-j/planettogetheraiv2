@@ -57,6 +57,7 @@ You can perform these actions:
 16. SET_GANTT_ZOOM - Set the zoom level for the Resource Gantt chart
 17. SET_GANTT_SCROLL - Set the scroll position for the Resource Gantt chart
 18. SCROLL_TO_TODAY - Scroll the Gantt chart to show today's date
+19. CREATE_CUSTOM_TEXT_LABELS - Create custom text labels based on user description
 
 Respond with JSON in this format:
 {
@@ -73,6 +74,7 @@ For ASSIGN_OPERATION, parameters should include: operationId, resourceId
 For ANALYZE_LATE_JOBS, no parameters needed - analyze current jobs and operations to determine which are late
 For CREATE_CUSTOM_METRIC, parameters should include: name, description, calculation (formula or logic)
 For CALCULATE_CUSTOM_METRIC, parameters should include: metricName or calculation logic
+For CREATE_CUSTOM_TEXT_LABELS, parameters should include: labelConfigurations (array of label objects with name and field configurations)
 For CHANGE_COLOR_SCHEME, parameters should include: colorScheme (by_job, by_priority, by_status, by_operation_type, by_resource)
 For CHANGE_TEXT_LABELING, parameters should include: textLabeling (operation_name, job_name, both, duration, progress, none)
 For CREATE_KANBAN_BOARD, parameters should include: name, description, viewType (jobs/operations), swimLaneField (status/priority/customer/assignedResourceId), filters (optional)
@@ -494,6 +496,29 @@ async function executeAction(action: string, parameters: any, message: string, c
           message: message || `Scrolling Gantt chart to today's date`,
           data: { scrollToToday: true },
           actions: ["SCROLL_TO_TODAY"]
+        };
+
+      case "CREATE_CUSTOM_TEXT_LABELS":
+        const createdLabels = [];
+        
+        // Process each label configuration
+        for (const labelConfig of parameters.labelConfigurations) {
+          const customTextLabel = await storage.createCustomTextLabel({
+            name: labelConfig.name,
+            config: {
+              labels: labelConfig.labels || [],
+              fontSize: labelConfig.fontSize || 12,
+              fontColor: labelConfig.fontColor || "#ffffff"
+            }
+          });
+          createdLabels.push(customTextLabel);
+        }
+        
+        return {
+          success: true,
+          message: message || `Created ${createdLabels.length} custom text label(s) successfully`,
+          data: createdLabels,
+          actions: ["CREATE_CUSTOM_TEXT_LABELS"]
         };
 
       default:

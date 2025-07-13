@@ -58,7 +58,7 @@ export default function GanttChart({
   const [textConfigDialogOpen, setTextConfigDialogOpen] = useState(false);
   const [customTextLabelManagerOpen, setCustomTextLabelManagerOpen] = useState(false);
   const [defaultColorScheme, setDefaultColorScheme] = useState("priority");
-  const [defaultTextLabeling, setDefaultTextLabeling] = useState("operation_name");
+  const [defaultTextLabeling, setDefaultTextLabeling] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -1280,19 +1280,18 @@ export default function GanttChart({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="operation_name">Operation</SelectItem>
-                    <SelectItem value="job_name">Job</SelectItem>
-                    <SelectItem value="both">Both</SelectItem>
-                    <SelectItem value="duration">Duration</SelectItem>
-                    <SelectItem value="progress">Progress</SelectItem>
-                    <SelectItem value="none">None</SelectItem>
+                    {customTextLabels.length === 0 && (
+                      <SelectItem value="no_labels" disabled>
+                        No custom labels - create one below
+                      </SelectItem>
+                    )}
                     {customTextLabels.map((label) => (
                       <SelectItem key={label.id} value={`custom_${label.id}`}>
                         {label.name}
                       </SelectItem>
                     ))}
                     <SelectItem value="configure" className="text-blue-600 font-medium">
-                      Configure Labels...
+                      Create & Manage Labels...
                     </SelectItem>
                   </SelectContent>
                 </Select>

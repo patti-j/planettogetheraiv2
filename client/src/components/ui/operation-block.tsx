@@ -299,36 +299,21 @@ export default function OperationBlock({
   };
 
   const getBlockText = () => {
-    // First check if it's a legacy option
-    switch (textLabeling) {
-      case "both":
-        return `${jobName || `Job ${operation.jobId}`} - ${operation.name}`;
-      case "none":
-        return "";
-      default:
-        // Check if it's a custom text label
-        if (textLabeling?.startsWith("custom_")) {
-          const customLabelId = parseInt(textLabeling.replace("custom_", ""));
-          const customLabel = customTextLabels.find(label => label.id === customLabelId);
-          if (customLabel && customLabel.config) {
-            const enabledLabels = customLabel.config.labels
-              .filter(label => label.enabled)
-              .sort((a, b) => a.order - b.order);
-            
-            const textParts = enabledLabels.map(label => getTextForLabel(label.type));
-            console.log("Custom text label processing:", {
-              customLabelId,
-              customLabel: customLabel.name,
-              enabledLabels,
-              textParts,
-              joined: textParts.join(" • ")
-            });
-            return textParts.join(" • ");
-          }
-        }
-        // Use the new comprehensive text labeling system
-        return getTextForLabel(textLabeling);
+    // Check if it's a custom text label
+    if (textLabeling?.startsWith("custom_")) {
+      const customLabelId = parseInt(textLabeling.replace("custom_", ""));
+      const customLabel = customTextLabels.find(label => label.id === customLabelId);
+      if (customLabel && customLabel.config) {
+        const enabledLabels = customLabel.config.labels
+          .filter(label => label.enabled)
+          .sort((a, b) => a.order - b.order);
+        
+        const textParts = enabledLabels.map(label => getTextForLabel(label.type));
+        return textParts.join(" • ");
+      }
     }
+    // Fallback to operation name if no custom label
+    return operation.name;
   };
 
   // If this is an unscheduled operation, render it as a draggable block without position
@@ -349,9 +334,7 @@ export default function OperationBlock({
         <div className="h-full flex items-center justify-between text-white text-xs">
           <div className="flex-1 truncate">
             <div className="font-medium truncate">{getBlockText()}</div>
-            {textLabeling !== "none" && textLabeling !== "both" && (
-              <div className="text-white/70 truncate">{operation.duration}h</div>
-            )}
+            <div className="text-white/70 truncate">{operation.duration}h</div>
           </div>
         </div>
       </div>

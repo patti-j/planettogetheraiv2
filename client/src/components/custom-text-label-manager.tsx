@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Settings } from "lucide-react";
+import { Plus, Edit, Trash2, Settings, Sparkles } from "lucide-react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { useDrag, useDrop } from "react-dnd";
@@ -267,8 +268,54 @@ const CustomTextLabelForm = ({ onSave, onCancel, initialName = "", initialConfig
   );
 };
 
+interface AITextLabelFormProps {
+  onSubmit: (prompt: string) => void;
+  onCancel: () => void;
+  isLoading: boolean;
+}
+
+const AITextLabelForm = ({ onSubmit, onCancel, isLoading }: AITextLabelFormProps) => {
+  const [prompt, setPrompt] = useState("");
+
+  const handleSubmit = () => {
+    if (prompt.trim()) {
+      onSubmit(prompt.trim());
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <Label htmlFor="prompt">Describe the text labels you want to create</Label>
+        <Textarea
+          id="prompt"
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder="Example: Create labels for tracking job progress including operation name, percentage complete, and due date"
+          className="min-h-[100px]"
+        />
+      </div>
+      
+      <div className="text-sm text-gray-600">
+        <p>AI will analyze your request and create custom text labels with appropriate field combinations.</p>
+        <p className="mt-2">Available fields include: operation name, job name, due date, priority, status, duration, progress, resource name, customer, job description, operation description, resource type, capabilities, start time, end time, slack days, days late, and completion percentage.</p>
+      </div>
+
+      <div className="flex justify-end space-x-2">
+        <Button variant="outline" onClick={onCancel} disabled={isLoading}>
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit} disabled={!prompt.trim() || isLoading}>
+          {isLoading ? "Creating..." : "Create with AI"}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 export default function CustomTextLabelManager({ open, onOpenChange }: CustomTextLabelManagerProps) {
   const [showForm, setShowForm] = useState(false);
+  const [showAIForm, setShowAIForm] = useState(false);
   const [editingLabel, setEditingLabel] = useState<CustomTextLabel | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -332,6 +379,23 @@ export default function CustomTextLabelManager({ open, onOpenChange }: CustomTex
     },
   });
 
+  const aiCreateMutation = useMutation({
+    mutationFn: async (prompt: string) => {
+      const response = await apiRequest("POST", "/api/ai-agent", {
+        command: `CREATE_CUSTOM_TEXT_LABELS: ${prompt}`,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/custom-text-labels"] });
+      toast({ title: "AI custom text labels created successfully" });
+      setShowAIForm(false);
+    },
+    onError: () => {
+      toast({ title: "Failed to create AI custom text labels", variant: "destructive" });
+    },
+  });
+
   const handleSave = (name: string, config: TextLabelConfig) => {
     if (editingLabel) {
       updateMutation.mutate({ id: editingLabel.id, name, config });
@@ -356,6 +420,10 @@ export default function CustomTextLabelManager({ open, onOpenChange }: CustomTex
     setEditingLabel(null);
   };
 
+  const handleAICancel = () => {
+    setShowAIForm(false);
+  };
+
   if (showForm) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -376,6 +444,23 @@ export default function CustomTextLabelManager({ open, onOpenChange }: CustomTex
     );
   }
 
+  if (showAIForm) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>AI Create Custom Text Labels</DialogTitle>
+          </DialogHeader>
+          <AITextLabelForm
+            onSubmit={aiCreateMutation.mutate}
+            onCancel={handleAICancel}
+            isLoading={aiCreateMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -387,10 +472,16 @@ export default function CustomTextLabelManager({ open, onOpenChange }: CustomTex
             <p className="text-sm text-gray-600">
               Create and manage custom text label configurations for your resource views.
             </p>
-            <Button onClick={() => setShowForm(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create New
-            </Button>
+            <div className="flex space-x-2">
+              <Button onClick={() => setShowForm(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create New
+              </Button>
+              <Button variant="outline" onClick={() => setShowAIForm(true)}>
+                <Sparkles className="h-4 w-4 mr-2" />
+                AI Create
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-2">
