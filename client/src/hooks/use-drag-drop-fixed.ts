@@ -14,7 +14,7 @@ type TimeUnit = "hour" | "shift" | "day" | "week" | "month" | "quarter" | "year"
 export function useOperationDrop(
   resource: Resource,
   timelineWidth: number,
-  timeScale: any[],
+  timeScale: { periods: any[]; minDate: Date; maxDate: Date },
   timeUnit: TimeUnit,
   timelineBaseDate: Date,
   onDropSuccess?: () => void
@@ -106,9 +106,9 @@ export function useOperationDrop(
           const relativeX = Math.max(0, blockStartX - rect.left);
           
           // Calculate which period we're in
-          const periodWidth = timelineWidth / timeScale.length;
+          const periodWidth = timelineWidth / timeScale.periods.length;
           const periodIndex = Math.floor(relativeX / periodWidth);
-          const clampedPeriodIndex = Math.max(0, Math.min(periodIndex, timeScale.length - 1));
+          const clampedPeriodIndex = Math.max(0, Math.min(periodIndex, timeScale.periods.length - 1));
           
           // Calculate the exact position within the period
           const positionWithinPeriod = relativeX % periodWidth;
@@ -127,7 +127,7 @@ export function useOperationDrop(
             positionWithinPeriod,
             fractionWithinPeriod,
             timelineWidth,
-            timeScaleLength: timeScale.length,
+            timeScaleLength: timeScale.periods.length,
             timeUnit
           });
           

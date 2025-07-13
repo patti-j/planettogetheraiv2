@@ -41,51 +41,77 @@ export default function GanttChart({
   const isDraggingResourceList = useRef(false);
   const lastMousePos = useRef({ x: 0, y: 0 });
 
-  // Generate dynamic time scale based on time unit
+  // Generate dynamic time scale based on time unit and operations
   const timeScale = useMemo(() => {
     const periods = [];
     const now = timelineBaseDate;
     
-    let periodCount: number;
+    // Calculate the date range based on operations
+    let minDate = now;
+    let maxDate = now;
+    
+    // Find the earliest and latest operation dates
+    operations.forEach(op => {
+      if (op.startTime) {
+        const startDate = new Date(op.startTime);
+        if (startDate < minDate) minDate = startDate;
+        
+        if (op.endTime) {
+          const endDate = new Date(op.endTime);
+          if (endDate > maxDate) maxDate = endDate;
+        }
+      }
+    });
+    
+    // Add padding to the range
+    const paddingMs = 30 * 24 * 60 * 60 * 1000; // 30 days padding
+    minDate = new Date(Math.min(minDate.getTime() - paddingMs, now.getTime()));
+    maxDate = new Date(maxDate.getTime() + paddingMs);
+    
     let stepMs: number;
+    let periodCount: number;
     
     switch (timeUnit) {
       case "hour":
-        periodCount = 24; // Show 24 hours
         stepMs = 60 * 60 * 1000; // 1 hour in milliseconds
+        periodCount = Math.ceil((maxDate.getTime() - minDate.getTime()) / stepMs);
         break;
       case "shift":
-        periodCount = 9; // Show 9 shifts (3 days worth)
         stepMs = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
+        periodCount = Math.ceil((maxDate.getTime() - minDate.getTime()) / stepMs);
         break;
       case "day":
-        periodCount = 7; // Show 7 days
         stepMs = 24 * 60 * 60 * 1000; // 1 day in milliseconds
+        periodCount = Math.ceil((maxDate.getTime() - minDate.getTime()) / stepMs);
         break;
       case "week":
-        periodCount = 4; // Show 4 weeks
         stepMs = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
+        periodCount = Math.ceil((maxDate.getTime() - minDate.getTime()) / stepMs);
         break;
       case "month":
-        periodCount = 12; // Show 12 months
         stepMs = 30 * 24 * 60 * 60 * 1000; // ~1 month in milliseconds
+        periodCount = Math.ceil((maxDate.getTime() - minDate.getTime()) / stepMs);
         break;
       case "quarter":
-        periodCount = 4; // Show 4 quarters
         stepMs = 90 * 24 * 60 * 60 * 1000; // ~1 quarter in milliseconds
+        periodCount = Math.ceil((maxDate.getTime() - minDate.getTime()) / stepMs);
         break;
       case "year":
-        periodCount = 5; // Show 5 years
         stepMs = 365 * 24 * 60 * 60 * 1000; // ~1 year in milliseconds
+        periodCount = Math.ceil((maxDate.getTime() - minDate.getTime()) / stepMs);
         break;
       case "decade":
-        periodCount = 3; // Show 3 decades
         stepMs = 3650 * 24 * 60 * 60 * 1000; // ~1 decade in milliseconds
+        periodCount = Math.ceil((maxDate.getTime() - minDate.getTime()) / stepMs);
         break;
     }
     
+    // Ensure minimum periods for usability
+    const minPeriods = timeUnit === "hour" ? 24 : timeUnit === "day" ? 30 : timeUnit === "week" ? 12 : 6;
+    periodCount = Math.max(periodCount, minPeriods);
+    
     for (let i = 0; i < periodCount; i++) {
-      const date = new Date(now.getTime() + (i * stepMs));
+      const date = new Date(minDate.getTime() + (i * stepMs));
       let label: string;
       let subLabel: string;
       
@@ -138,17 +164,17 @@ export default function GanttChart({
       });
     }
     
-    return periods;
-  }, [timeUnit, timelineBaseDate]);
+    return { periods, minDate, stepMs };
+  }, [timeUnit, operations]);
 
   // Calculate timeline dimensions
   const timelineWidth = useMemo(() => {
     const baseWidth = 200; // Base width per period
-    return timeScale.length * baseWidth;
+    return timeScale.periods.length * baseWidth;
   }, [timeScale]);
 
   const periodWidth = useMemo(() => {
-    return timelineWidth / timeScale.length;
+    return timelineWidth / timeScale.periods.length;
   }, [timelineWidth, timeScale]);
 
   // Zoom functions
@@ -412,7 +438,7 @@ export default function GanttChart({
                 className="flex"
                 style={{ width: `${timelineWidth}px` }}
               >
-                {timeScale.map((period, index) => (
+                {timeScale.periods.map((period, index) => (
                   <div key={index} className="border-r border-gray-200 p-2 text-center flex-shrink-0" style={{ width: `${periodWidth}px` }}>
                     <div className="text-xs font-medium text-gray-500">{period.label}</div>
                     <div className="text-xs text-gray-400">{period.subLabel}</div>
@@ -524,7 +550,7 @@ export default function GanttChart({
                           timelineWidth={timelineWidth}
                           dayWidth={periodWidth}
                           timeUnit={timeUnit}
-                          timelineBaseDate={timelineBaseDate}
+                          timelineBaseDate={timeScale.minDate}
 
                         />
                       </div>
@@ -543,7 +569,7 @@ export default function GanttChart({
   // Create a separate component to handle the drop zone for each resource
   const ResourceRow = ({ resource }: { resource: Resource }) => {
     const resourceOperations = operations.filter(op => op.assignedResourceId === resource.id);
-    const { drop, isOver, canDrop } = useOperationDrop(resource, timelineWidth, timeScale, timeUnit, timelineBaseDate);
+    const { drop, isOver, canDrop } = useOperationDrop(resource, timelineWidth, timeScale, timeUnit, timeScale.minDate);
 
     return (
       <div className="border-b border-gray-100">
@@ -584,7 +610,7 @@ export default function GanttChart({
                   timelineWidth={timelineWidth}
                   dayWidth={periodWidth}
                   timeUnit={timeUnit}
-                  timelineBaseDate={timelineBaseDate}
+                  timelineBaseDate={timeScale.minDate}
 
                 />
               ))}
@@ -633,7 +659,7 @@ export default function GanttChart({
               className="flex"
               style={{ width: `${timelineWidth}px` }}
             >
-              {timeScale.map((period, index) => (
+              {timeScale.periods.map((period, index) => (
                 <div key={index} className="border-r border-gray-200 p-2 text-center flex-shrink-0" style={{ width: `${periodWidth}px` }}>
                   <div className="text-xs font-medium text-gray-500">{period.label}</div>
                   <div className="text-xs text-gray-400">{period.subLabel}</div>
@@ -680,7 +706,7 @@ export default function GanttChart({
                       timelineWidth={timelineWidth}
                       dayWidth={periodWidth}
                       timeUnit={timeUnit}
-                      timelineBaseDate={timelineBaseDate}
+                      timelineBaseDate={timeScale.minDate}
 
                     />
                   ))}
