@@ -318,3 +318,6 @@ The application uses a modern full-stack architecture with strong typing through
 - Consistent AI button branding reinforces AI functionality throughout the application
 - Repositioned reset arrow in text label configuration to be directly next to "Custom" badge
 - Fixed font control shifting issue by keeping reset button position stable regardless of customization state
+- Updated "Create & Manage Labels" to "Configure Labels" for consistency and precision
+- Applied consistent blue color styling to "Configure Boards" dropdown option matching text labeling configuration
+- Enhanced visual consistency indicating options that open configuration dialogs vs make selections

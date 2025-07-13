@@ -537,7 +537,7 @@ export default function KanbanBoard({
                   ))}
                   <div className="border-t border-gray-200 my-1"></div>
                   <div 
-                    className="flex items-center px-2 py-1.5 text-sm cursor-pointer hover:bg-gray-100"
+                    className="flex items-center px-2 py-1.5 text-sm cursor-pointer hover:bg-gray-100 text-blue-600 font-medium"
                     onClick={() => setConfigManagerOpen(true)}
                   >
                     <Settings className="w-4 h-4 mr-2" />

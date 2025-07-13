@@ -1290,7 +1290,7 @@ export default function GanttChart({
                       </SelectItem>
                     ))}
                     <SelectItem value="configure" className="text-blue-600 font-medium">
-                      Create & Manage Labels...
+                      Configure Labels...
                     </SelectItem>
                   </SelectContent>
                 </Select>
