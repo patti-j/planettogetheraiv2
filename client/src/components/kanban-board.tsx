@@ -315,7 +315,7 @@ const KanbanColumn = ({
   return (
     <div
       ref={drop}
-      className={`bg-gray-50 rounded-lg p-2 sm:p-4 min-h-[400px] sm:min-h-[600px] w-72 sm:w-80 flex-shrink-0 ${
+      className={`bg-gray-50 rounded-lg p-2 sm:p-4 h-full w-72 sm:w-80 flex-shrink-0 flex flex-col ${
         isOver && canDrop ? "bg-blue-50 border-2 border-blue-300 border-dashed" : ""
       }`}
     >
@@ -329,7 +329,7 @@ const KanbanColumn = ({
         </Badge>
       </div>
       
-      <div className="space-y-0">
+      <div className="flex-1 overflow-y-auto space-y-0">
         {column.items.length === 0 ? (
           <div className={`text-center mt-8 p-8 rounded-lg border-2 border-dashed transition-all duration-200 ${
             isOver && canDrop 
@@ -801,24 +801,43 @@ function KanbanBoard({
     <DndProvider backend={HTML5Backend}>
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border-b border-gray-200 bg-white gap-4 sm:gap-0">
-          <div className="flex items-center space-x-4">
-            <h2 className="text-lg font-medium text-gray-900">Board</h2>
-            {selectedConfig && (
-              <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
-                <Badge variant="outline">{selectedConfig.viewType === "jobs" ? "Jobs" : "Operations"}</Badge>
-                <span>•</span>
-                <span>Grouped by {selectedConfig.swimLaneField}</span>
-              </div>
+        <div className="flex flex-col p-4 border-b border-gray-200 bg-white gap-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <h2 className="text-lg font-medium text-gray-900">Board</h2>
+              {selectedConfig && (
+                <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
+                  <Badge variant="outline">{selectedConfig.viewType === "jobs" ? "Jobs" : "Operations"}</Badge>
+                  <span>•</span>
+                  <span>Grouped by {selectedConfig.swimLaneField}</span>
+                </div>
+              )}
+            </div>
+            
+            {onToggleMaximize && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onToggleMaximize}
+                  >
+                    {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isMaximized ? "Exit full screen" : "Maximize board view"}</p>
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
           
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Create Action Button */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
-                  className="bg-primary hover:bg-blue-700 text-white whitespace-nowrap" 
+                  className="bg-primary hover:bg-blue-700 text-white" 
                   size="sm"
                   onClick={() => {
                     if (selectedConfig?.viewType === "jobs") {
@@ -831,8 +850,7 @@ function KanbanBoard({
                   }}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">New {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}</span>
-                  <span className="sm:hidden">New</span>
+                  New {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -844,13 +862,12 @@ function KanbanBoard({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white whitespace-nowrap" 
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white" 
                   size="sm"
                   onClick={onAICreateBoards}
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">AI Boards</span>
-                  <span className="sm:hidden">AI</span>
+                  AI Boards
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -863,7 +880,7 @@ function KanbanBoard({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="whitespace-nowrap max-w-32 sm:max-w-none">
+                    <Button variant="outline" size="sm" className="min-w-0 flex-1 sm:flex-none">
                       <span className="truncate">{selectedConfig?.name || "Select Board"}</span>
                       <ChevronDown className="w-4 h-4 ml-2 flex-shrink-0" />
                     </Button>
@@ -902,28 +919,11 @@ function KanbanBoard({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-
-            {onToggleMaximize && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={onToggleMaximize}
-                  >
-                    {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{isMaximized ? "Exit full screen" : "Maximize board view"}</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
           </div>
         </div>
 
         {/* Kanban Columns */}
-        <div className="flex-1 overflow-x-auto bg-gray-100 p-2 sm:p-4">
+        <div className="flex-1 overflow-x-auto overflow-y-hidden bg-gray-100 p-2 sm:p-4">
           {!selectedConfig ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
@@ -935,7 +935,7 @@ function KanbanBoard({
               </div>
             </div>
           ) : (
-            <div className="flex space-x-2 sm:space-x-4 min-w-max pb-4">
+            <div className="flex space-x-2 sm:space-x-4 h-full" style={{ minWidth: `${columns.length * 300}px` }}>
               {columns.map((column) => (
                 <KanbanColumn
                   key={column.id}
