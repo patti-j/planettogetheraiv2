@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { insertJobSchema } from "@shared/schema";
+import { insertJobSchema, type Job } from "@shared/schema";
 
 const jobFormSchema = insertJobSchema.extend({
   dueDate: z.string().optional(),
@@ -19,22 +19,23 @@ const jobFormSchema = insertJobSchema.extend({
 type JobFormData = z.infer<typeof jobFormSchema>;
 
 interface JobFormProps {
+  job?: Job;
   onSuccess?: () => void;
 }
 
-export default function JobForm({ onSuccess }: JobFormProps) {
+export default function JobForm({ job, onSuccess }: JobFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const form = useForm<JobFormData>({
     resolver: zodResolver(jobFormSchema),
     defaultValues: {
-      name: "",
-      description: "",
-      customer: "",
-      priority: "medium",
-      status: "planned",
-      dueDate: "",
+      name: job?.name || "",
+      description: job?.description || "",
+      customer: job?.customer || "",
+      priority: job?.priority || "medium",
+      status: job?.status || "planned",
+      dueDate: job?.dueDate ? new Date(job.dueDate).toISOString().split('T')[0] : "",
     },
   });
 
@@ -44,17 +45,19 @@ export default function JobForm({ onSuccess }: JobFormProps) {
         ...data,
         dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
       };
-      const response = await apiRequest("POST", "/api/jobs", jobData);
+      const url = job ? `/api/jobs/${job.id}` : "/api/jobs";
+      const method = job ? "PUT" : "POST";
+      const response = await apiRequest(method, url, jobData);
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
       queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
-      toast({ title: "Job created successfully" });
+      toast({ title: job ? "Job updated successfully" : "Job created successfully" });
       onSuccess?.();
     },
     onError: () => {
-      toast({ title: "Failed to create job", variant: "destructive" });
+      toast({ title: job ? "Failed to update job" : "Failed to create job", variant: "destructive" });
     },
   });
 
