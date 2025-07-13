@@ -448,6 +448,7 @@ export default function GanttChart({
                           dayWidth={periodWidth}
                           timeUnit={timeUnit}
                           timelineBaseDate={timelineBaseDate}
+                          scrollLeft={timelineScrollLeft}
                         />
                       </div>
                     </div>
@@ -507,6 +508,7 @@ export default function GanttChart({
                   dayWidth={periodWidth}
                   timeUnit={timeUnit}
                   timelineBaseDate={timelineBaseDate}
+                  scrollLeft={timelineScrollLeft}
                 />
               ))}
               {resourceOperations.length === 0 && (
@@ -602,6 +604,7 @@ export default function GanttChart({
                       dayWidth={periodWidth}
                       timeUnit={timeUnit}
                       timelineBaseDate={timelineBaseDate}
+                      scrollLeft={0}
                     />
                   ))}
                 {operations.filter(op => !op.startTime || !op.endTime).length === 0 && (
