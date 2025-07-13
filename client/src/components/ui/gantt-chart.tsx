@@ -196,6 +196,15 @@ export default function GanttChart({
       const deltaX = e.clientX - lastMousePos.current.x;
       const newScrollLeft = Math.max(0, timelineRef.current.scrollLeft - deltaX);
       timelineRef.current.scrollLeft = newScrollLeft;
+      
+      // Sync all resource rows with the timeline header scroll
+      const resourceRows = document.querySelectorAll('[data-resource-id]');
+      resourceRows.forEach((row) => {
+        if (row instanceof HTMLElement) {
+          row.scrollLeft = newScrollLeft;
+        }
+      });
+      
       lastMousePos.current = { x: e.clientX, y: e.clientY };
     }
     
@@ -240,9 +249,18 @@ export default function GanttChart({
 
   // No need for useEffect sync - we're using direct DOM manipulation
 
-  // Handle scrollbar scroll events - no state updates needed for direct DOM manipulation
+  // Handle scrollbar scroll events - sync all resource rows with timeline header
   const handleTimelineScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    // Just let the native scroll happen, no state synchronization needed
+    if (!isDraggingTimeline.current) {
+      // Sync all resource rows with the timeline header scroll
+      const scrollLeft = e.currentTarget.scrollLeft;
+      const resourceRows = document.querySelectorAll('[data-resource-id]');
+      resourceRows.forEach((row) => {
+        if (row instanceof HTMLElement) {
+          row.scrollLeft = scrollLeft;
+        }
+      });
+    }
   }, []);
 
   const handleResourceListScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -479,9 +497,15 @@ export default function GanttChart({
           <div 
             ref={drop}
             data-resource-id={resource.id}
-            className={`flex-1 relative p-2 min-h-[60px] transition-colors overflow-x-hidden ${
+            className={`flex-1 relative p-2 min-h-[60px] transition-colors overflow-x-auto ${
               isOver ? (canDrop ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200") : ""
             }`}
+            onScroll={(e) => {
+              // Sync this resource row's scroll with the timeline header
+              if (timelineRef.current && !isDraggingTimeline.current) {
+                timelineRef.current.scrollLeft = e.currentTarget.scrollLeft;
+              }
+            }}
           >
             <div style={{ width: `${timelineWidth}px` }}>
               {resourceOperations.map((operation) => (
