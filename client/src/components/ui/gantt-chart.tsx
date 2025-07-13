@@ -763,30 +763,51 @@ export default function GanttChart({
     return displayNames[textLabeling] || "Text";
   };
 
+  const getOrderedResources = () => {
+    if (selectedResourceView && selectedResourceView.resourceSequence) {
+      // Order resources according to the selected view
+      const orderedResources = selectedResourceView.resourceSequence
+        .map(resourceId => resources.find(r => r.id === resourceId))
+        .filter(Boolean) as Resource[];
+      
+      // Add any resources not in the sequence at the end
+      const remainingResources = resources.filter(r => 
+        !selectedResourceView.resourceSequence.includes(r.id)
+      );
+      
+      return [...orderedResources, ...remainingResources];
+    }
+    
+    // Default ordering
+    return resources;
+  };
+
+  const unscheduledOperations = operations.filter(op => !op.assignedResourceId);
+
+
+
   const renderOperationsView = () => {
     return (
       <div className="flex flex-col h-full">
         {/* Fixed Header */}
         <div className="flex-none bg-white border-b border-gray-200 z-10">
           <div className="flex">
-            <div className="w-80 px-4 py-3 bg-gray-50 border-r border-gray-200">
-              <div className="flex flex-col space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-gray-700">Jobs & Operations</span>
-                  <div className="flex items-center space-x-1">
-                    <Button variant="ghost" size="sm" onClick={zoomOut} disabled={timeUnit === "decade"} title="Zoom Out">
-                      <ZoomOut className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={resetZoom} title="Reset Zoom">
-                      <span className="text-xs">{timeUnit}</span>
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={zoomIn} disabled={timeUnit === "hour"} title="Zoom In">
-                      <ZoomIn className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={handleScrollToToday} title="Scroll to Today">
-                      <Calendar className="w-4 h-4" />
-                    </Button>
-                  </div>
+            <div className="w-80 px-4 py-2 bg-gray-50 border-r border-gray-200">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-gray-700">Jobs & Operations</span>
+                <div className="flex items-center space-x-1">
+                  <Button variant="ghost" size="sm" onClick={zoomOut} disabled={timeUnit === "decade"} title="Zoom Out">
+                    <ZoomOut className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={resetZoom} title="Reset Zoom">
+                    <span className="text-xs">{timeUnit}</span>
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={zoomIn} disabled={timeUnit === "hour"} title="Zoom In">
+                    <ZoomIn className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={handleScrollToToday} title="Scroll to Today">
+                    <Calendar className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
             </div>
@@ -1144,51 +1165,9 @@ export default function GanttChart({
       <div className="flex-none bg-white border-b border-gray-200 z-10">
         <div className="flex">
           <div className="w-80 px-4 py-3 bg-gray-50 border-r border-gray-200">
-            <div className="flex flex-col space-y-2">
-              <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
                 <span className="font-medium text-gray-700">Resources</span>
-                <div className="flex items-center space-x-1">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={zoomOut} 
-                    disabled={timeUnit === "decade"} 
-                    title="Zoom Out"
-                    className="flex-shrink-0 min-w-[32px] min-h-[32px]"
-                  >
-                    <ZoomOut className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={resetZoom} 
-                    title="Reset Zoom"
-                    className="flex-shrink-0 min-w-[48px] min-h-[32px]"
-                  >
-                    <span className="text-xs">{timeUnit}</span>
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={zoomIn} 
-                    disabled={timeUnit === "hour"} 
-                    title="Zoom In"
-                    className="flex-shrink-0 min-w-[32px] min-h-[32px]"
-                  >
-                    <ZoomIn className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={handleScrollToToday} 
-                    title="Scroll to Today"
-                    className="flex-shrink-0 min-w-[32px] min-h-[32px]"
-                  >
-                    <Calendar className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
                 <Select 
                   value={selectedResourceViewId?.toString() || "all"} 
                   onValueChange={(value) => {
@@ -1196,7 +1175,7 @@ export default function GanttChart({
                     onResourceViewChange?.(newViewId);
                   }}
                 >
-                  <SelectTrigger className="flex-1 h-8 text-xs">
+                  <SelectTrigger className="w-28 h-6 text-xs">
                     <SelectValue placeholder="Select view" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1213,177 +1192,59 @@ export default function GanttChart({
                   size="sm" 
                   onClick={() => setResourceViewManagerOpen(true)}
                   title="Manage Views"
+                  className="h-6 px-2"
                 >
-                  <Settings className="w-4 h-4" />
+                  <Settings className="w-3 h-3" />
                 </Button>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-xs text-gray-500">Row Height:</span>
-                <div className="flex items-center space-x-2 w-24">
+                <div className="flex items-center space-x-1 text-xs text-gray-500">
+                  <span>H:</span>
                   <Slider
                     value={[rowHeight]}
                     onValueChange={(value) => onRowHeightChange?.(value[0])}
                     min={20}
                     max={200}
                     step={5}
-                    className="flex-1"
+                    className="w-12"
                   />
-                  <span className="text-xs text-gray-500 w-8">{rowHeight}px</span>
+                  <span className="w-6 text-right">{rowHeight}</span>
                 </div>
               </div>
-              
-              {/* Quick Switch Preset Buttons - show when in resources view */}
-              {view === "resources" && (
-                <div className="flex items-center space-x-2">
-                  <div className="flex items-center space-x-1">
-                    <Palette className="w-3 h-3 text-gray-500" />
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-6 px-2 text-xs"
-                          title="Change Color Scheme"
-                          disabled={!selectedResourceView}
-                        >
-                          {colorScheme === "by_job" && "Job"}
-                          {colorScheme === "by_priority" && "Priority"}
-                          {colorScheme === "by_status" && "Status"}
-                          {colorScheme === "by_operation_type" && "Type"}
-                          {colorScheme === "by_resource" && "Resource"}
-                          <ChevronDown className="w-3 h-3 ml-1" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleColorSchemeChange("by_job")}>
-                          By Job
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleColorSchemeChange("by_priority")}>
-                          By Priority
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleColorSchemeChange("by_status")}>
-                          By Status
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleColorSchemeChange("by_operation_type")}>
-                          By Operation Type
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleColorSchemeChange("by_resource")}>
-                          By Resource
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  
-                  <div className="flex items-center space-x-1">
-                    <Type className="w-3 h-3 text-gray-500" />
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-6 px-2 text-xs"
-                          title="Change Text Labeling"
-                          disabled={!selectedResourceView}
-                        >
-                          {getTextLabelingDisplayName(textLabeling)}
-                          <ChevronDown className="w-3 h-3 ml-1" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleTextLabelingChange("operation_name")}>
-                          Operation Name
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTextLabelingChange("job_name")}>
-                          Job Name
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTextLabelingChange("both")}>
-                          Job + Operation
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTextLabelingChange("duration")}>
-                          Duration
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTextLabelingChange("progress")}>
-                          Progress %
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTextLabelingChange("due_date")}>
-                          Due Date
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTextLabelingChange("priority")}>
-                          Priority
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTextLabelingChange("status")}>
-                          Status
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTextLabelingChange("resource_name")}>
-                          Resource Name
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTextLabelingChange("customer")}>
-                          Customer
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTextLabelingChange("job_description")}>
-                          Job Description
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTextLabelingChange("operation_description")}>
-                          Operation Description
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTextLabelingChange("resource_type")}>
-                          Resource Type
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTextLabelingChange("capabilities")}>
-                          Capabilities
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTextLabelingChange("start_time")}>
-                          Start Time
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTextLabelingChange("end_time")}>
-                          End Time
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTextLabelingChange("slack_days")}>
-                          Slack Days
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTextLabelingChange("days_late")}>
-                          Days Late
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTextLabelingChange("completion_percent")}>
-                          Completion %
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTextLabelingChange("none")}>
-                          No Text
-                        </DropdownMenuItem>
-                        {customTextLabels.length > 0 && (
-                          <>
-                            <DropdownMenuItem disabled>
-                              ─── Custom Labels ───
-                            </DropdownMenuItem>
-                            {customTextLabels.map((customLabel) => (
-                              <DropdownMenuItem
-                                key={customLabel.id}
-                                onClick={() => handleTextLabelingChange(`custom_${customLabel.id}`)}
-                              >
-                                {customLabel.name}
-                              </DropdownMenuItem>
-                            ))}
-                          </>
-                        )}
-                        <DropdownMenuItem onClick={() => setCustomTextLabelManagerOpen(true)}>
-                          ─── Manage Custom Labels ───
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-6 px-2 text-xs"
-                    onClick={() => setTextConfigDialogOpen(true)}
-                    title="Configure Text Labels"
-                    disabled={!selectedResourceView}
-                  >
-                    <Settings className="w-3 h-3" />
-                  </Button>
-                </div>
-              )}
+              <div className="flex items-center space-x-1">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={zoomOut} 
+                  disabled={timeUnit === "decade"} 
+                  title="Zoom Out"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={resetZoom} 
+                  title="Reset Zoom"
+                >
+                  <span className="text-xs">{timeUnit}</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={zoomIn} 
+                  disabled={timeUnit === "hour"} 
+                  title="Zoom In"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleScrollToToday} 
+                  title="Scroll to Today"
+                >
+                  <Calendar className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
           <div 
@@ -1407,143 +1268,68 @@ export default function GanttChart({
         </div>
       </div>
 
-      {/* Scrollable Content - Resources */}
-      <div className="flex-1 overflow-y-auto cursor-grab active:cursor-grabbing"
+      {/* Scrollable Resource List */}
+      <div className="flex-1 overflow-y-auto cursor-grab active:cursor-grabbing" 
            onMouseDown={handleResourceListMouseDown}
            onScroll={handleResourceListScroll}
            ref={resourceListRef}>
-        
-        {/* Unscheduled Operations Section */}
-        <div className="border-b border-gray-200 bg-yellow-50">
-          <div className="flex">
-            <div className="w-64 px-4 py-3 bg-yellow-100 border-r border-yellow-200">
-              <div className="flex items-center">
-                <div className="flex-1">
-                  <div className="font-medium text-yellow-800">Unscheduled Operations</div>
-                  <div className="text-xs text-yellow-600">
-                    Drag these operations to resources to schedule them
+        {getOrderedResources().map((resource, index) => (
+          <DraggableResourceRow 
+            key={resource.id} 
+            resource={resource} 
+            index={index}
+          />
+        ))}
+      </div>
+
+      {/* Unscheduled Operations */}
+      <div className="border-t border-gray-200 bg-gray-50" style={{ minHeight: `${rowHeight}px` }}>
+        <div className="flex">
+          <div className="w-80 px-4 bg-gray-50 border-r border-gray-200 flex items-center" style={{ minHeight: `${rowHeight}px` }}>
+            <div className="font-medium text-gray-800">Unscheduled Operations</div>
+          </div>
+          <div className="flex-1 p-2 overflow-x-auto" style={{ minHeight: `${rowHeight}px` }}>
+            <div className="flex space-x-2">
+              {unscheduledOperations.map((operation) => (
+                <div 
+                  key={operation.id} 
+                  className="flex-shrink-0 bg-white border border-gray-200 rounded px-2 py-1 shadow-sm cursor-move"
+                  draggable
+                  onDragStart={(e) => handleOperationDrag(e, operation)}
+                >
+                  <div className="text-xs font-medium text-gray-800">{operation.name}</div>
+                  <div className="text-xs text-gray-500">
+                    {operation.requiredCapabilities?.map(capId => 
+                      getCapabilityName(capId)
+                    ).join(", ") || "No requirements"}
                   </div>
                 </div>
-                <Badge className="text-xs bg-yellow-600 text-white">
-                  {operations.filter(op => !op.startTime || !op.endTime).length}
-                </Badge>
-              </div>
-            </div>
-            <div className="flex-1 p-4 bg-yellow-50 border-r border-yellow-200" style={{ minHeight: `${rowHeight}px` }}>
-              <div className="flex flex-wrap gap-2">
-                {operations
-                  .filter(op => !op.startTime || !op.endTime)
-                  .map((operation) => (
-                    <OperationBlock
-                      key={operation.id}
-                      operation={operation}
-                      resourceName="Unscheduled"
-                      jobName={jobs.find(job => job.id === operation.jobId)?.name}
-                      job={jobs.find(job => job.id === operation.jobId)}
-                      timelineWidth={timelineWidth}
-                      dayWidth={periodWidth}
-                      timeUnit={timeUnit}
-                      timelineBaseDate={timeScale.minDate}
-                      colorScheme={colorScheme}
-                      textLabeling={textLabeling}
-                      customTextLabels={customTextLabels}
-                      rowHeight={rowHeight}
-                    />
-                  ))}
-                {operations.filter(op => !op.startTime || !op.endTime).length === 0 && (
-                  <div className="text-yellow-600 text-sm italic">
-                    All operations are scheduled
-                  </div>
-                )}
-              </div>
+              ))}
             </div>
           </div>
         </div>
-        
-        {orderedResources.map((resource, index) => (
-          <DraggableResourceRow key={resource.id} resource={resource} index={index} />
-        ))}
       </div>
+
+      {/* Resource View Manager Dialog */}
+      <Dialog open={resourceViewManagerOpen} onOpenChange={setResourceViewManagerOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Resource View Manager</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden">
+            <ResourceViewManager 
+              onClose={() => setResourceViewManagerOpen(false)}
+              onViewChange={onResourceViewChange}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div className="flex-1 bg-white h-full">
-        {view === "operations" ? renderOperationsView() : renderResourcesView()}
-        
-        {/* Operation Edit Dialog */}
-        <Dialog open={operationDialogOpen} onOpenChange={setOperationDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Operation</DialogTitle>
-            </DialogHeader>
-            {selectedOperation && (
-              <OperationForm
-                operation={selectedOperation}
-                jobs={jobs}
-                capabilities={capabilities}
-                resources={resources}
-                onSuccess={() => {
-                  setOperationDialogOpen(false);
-                  setSelectedOperation(null);
-                }}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
-        
-        {/* Resource Edit Dialog */}
-        <Dialog open={resourceDialogOpen} onOpenChange={setResourceDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Resource</DialogTitle>
-            </DialogHeader>
-            {selectedResource && (
-              <ResourceForm
-                resource={selectedResource}
-                capabilities={capabilities}
-                onSuccess={() => {
-                  setResourceDialogOpen(false);
-                  setSelectedResource(null);
-                }}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
-        
-        {/* Resource View Manager Dialog */}
-        <Dialog open={resourceViewManagerOpen} onOpenChange={setResourceViewManagerOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Resource Gantt Manager</DialogTitle>
-            </DialogHeader>
-            <ResourceViewManager
-              resources={resources}
-              selectedViewId={selectedResourceView?.id}
-              onViewChange={(viewId) => {
-                setSelectedResourceViewId(viewId);
-                setResourceViewManagerOpen(false);
-              }}
-            />
-          </DialogContent>
-        </Dialog>
-        
-        {/* Text Label Configuration Dialog */}
-        {selectedResourceView && (
-          <TextLabelConfigDialog
-            open={textConfigDialogOpen}
-            onOpenChange={setTextConfigDialogOpen}
-            resourceView={selectedResourceView}
-          />
-        )}
-
-        {/* Custom Text Label Manager */}
-        <CustomTextLabelManager
-          open={customTextLabelManagerOpen}
-          onOpenChange={setCustomTextLabelManagerOpen}
-        />
-      </div>
-    </DndProvider>
+    <div className="h-full">
+      {view === "operations" ? renderOperationsView() : renderResourcesView()}
+    </div>
   );
 }
