@@ -192,3 +192,11 @@ The application uses a modern full-stack architecture with strong typing through
 - Resolved fundamental issue where timeline containers had identical scrollWidth/clientWidth
 - Enhanced responsiveness for both small and large scroll movements
 - Proper cleanup mechanisms to prevent memory leaks
+
+✓ **Drag-and-Drop Conflict Resolution (July 13, 2025)**:
+- Fixed critical issue where scrollbar polling interfered with operation dragging
+- Enhanced drag detection to check for both timeline and operation dragging states
+- Updated all scroll handlers (scroll events, polling, timeline scroll) to pause during operation dragging
+- Implemented reliable drag state detection using DOM element class and style checks
+- Both scrollbar functionality and drag-and-drop operations now work seamlessly together
+- Maintains smooth scrollbar synchronization while preserving drag-and-drop precision

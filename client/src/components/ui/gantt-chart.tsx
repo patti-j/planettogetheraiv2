@@ -271,7 +271,7 @@ export default function GanttChart({
       
       const handleScroll = () => {
         // Check for both timeline dragging and operation dragging
-        const isDraggingOperation = document.querySelector('[data-operation-block].opacity-50') !== null;
+        const isDraggingOperation = document.querySelector('[data-operation-block][class*="opacity-50"]') !== null;
         
         if (!isDraggingTimeline.current && !isDraggingOperation) {
           // Use requestAnimationFrame to ensure smooth updates
@@ -295,7 +295,7 @@ export default function GanttChart({
       // Also use a polling mechanism for very small movements
       const pollInterval = setInterval(() => {
         // Check for both timeline dragging and operation dragging
-        const isDraggingOperation = document.querySelector('[data-operation-block].opacity-50') !== null;
+        const isDraggingOperation = document.querySelector('[data-operation-block][class*="opacity-50"]') !== null;
         
         if (!isDraggingTimeline.current && !isDraggingOperation) {
           const currentScrollLeft = timelineElement.scrollLeft;
@@ -319,7 +319,7 @@ export default function GanttChart({
   // Handle scrollbar scroll events - sync all timeline containers with timeline header
   const handleTimelineScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     // Check for both timeline dragging and operation dragging
-    const isDraggingOperation = document.querySelector('[data-operation-block].opacity-50') !== null;
+    const isDraggingOperation = document.querySelector('[data-operation-block][class*="opacity-50"]') !== null;
     
     if (!isDraggingTimeline.current && !isDraggingOperation) {
       // Sync all timeline containers with the timeline header scroll
