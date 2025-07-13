@@ -294,11 +294,13 @@ const CardDropZone = ({
 const KanbanColumn = ({ 
   column, 
   onDrop, 
-  children 
+  children,
+  className
 }: { 
   column: KanbanColumn; 
   onDrop: (item: DragItem, targetStatus: string, insertAtIndex?: number) => void;
   children: React.ReactNode;
+  className?: string;
 }) => {
   const [{ isOver, canDrop }, drop] = useDrop({
     accept: ["job", "operation"],
@@ -315,9 +317,9 @@ const KanbanColumn = ({
   return (
     <div
       ref={drop}
-      className={`bg-gray-50 rounded-lg p-2 sm:p-4 h-full w-72 sm:w-80 flex-shrink-0 flex flex-col ${
+      className={`bg-gray-50 rounded-lg p-2 sm:p-4 h-full w-80 flex-shrink-0 flex flex-col ${
         isOver && canDrop ? "bg-blue-50 border-2 border-blue-300 border-dashed" : ""
-      }`}
+      } ${className || ""}`}
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
@@ -832,8 +834,8 @@ function KanbanBoard({
             )}
           </div>
           
-          <div className="overflow-x-auto pb-2 kanban-scroll">
-            <div className="flex items-center gap-2" style={{ minWidth: 'max-content' }}>
+          <div className="mobile-scroll-container pb-2 mobile-scroll">
+            <div className="mobile-scroll-content items-center gap-2">
               {/* Create Action Button */}
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -937,13 +939,14 @@ function KanbanBoard({
               </div>
             </div>
           ) : (
-            <div className="h-full overflow-x-auto overflow-y-hidden kanban-scroll">
-              <div className="flex space-x-2 sm:space-x-4 h-full" style={{ minWidth: `${columns.length * 320}px` }}>
+            <div className="h-full mobile-scroll-container mobile-scroll">
+              <div className="mobile-scroll-content space-x-2 sm:space-x-4 h-full" style={{ minWidth: `${columns.length * 320}px` }}>
                 {columns.map((column) => (
                   <KanbanColumn
                     key={column.id}
                     column={column}
                     onDrop={handleDrop}
+
                   >
                     {view === "jobs" ? (
                       column.items.map((item) => (

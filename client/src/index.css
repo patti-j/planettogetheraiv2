@@ -59,28 +59,51 @@
 }
 
 /* Mobile scrolling improvements */
-.kanban-scroll {
+.mobile-scroll {
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+  /* Force hardware acceleration */
+  transform: translateZ(0);
+  /* Prevent momentum scrolling interruption */
+  -webkit-transform: translateZ(0);
+  /* Ensure smooth scrolling */
+  scroll-behavior: smooth;
 }
 
-.kanban-scroll::-webkit-scrollbar {
-  height: 8px;
+/* Force visible scrollbars on mobile */
+.mobile-scroll::-webkit-scrollbar {
+  height: 12px;
+  width: 12px;
 }
 
-.kanban-scroll::-webkit-scrollbar-track {
+.mobile-scroll::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
-.kanban-scroll::-webkit-scrollbar-thumb {
-  background: rgba(155, 155, 155, 0.5);
-  border-radius: 4px;
-}
-
-.kanban-scroll::-webkit-scrollbar-thumb:hover {
+.mobile-scroll::-webkit-scrollbar-thumb {
   background: rgba(155, 155, 155, 0.8);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.mobile-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(155, 155, 155, 1);
+}
+
+/* Ensure container can scroll */
+.mobile-scroll-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: 100%;
+  position: relative;
+}
+
+/* Force minimum width for scrollable content */
+.mobile-scroll-content {
+  display: flex;
+  width: max-content;
+  min-width: 100%;
 }
 
 /* Synchronized scrolling for Gantt chart */
