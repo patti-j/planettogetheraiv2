@@ -28,6 +28,8 @@ export default function GanttChart({
   const [selectedOperation, setSelectedOperation] = useState<Operation | null>(null);
   const [operationDialogOpen, setOperationDialogOpen] = useState(false);
   const [scrollLeft, setScrollLeft] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, scrollLeft: 0 });
 
   // Generate time scale for the next 7 days
   const timeScale = useMemo(() => {
@@ -94,6 +96,32 @@ export default function GanttChart({
     setScrollLeft(scrollLeft);
   };
 
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX,
+      scrollLeft: scrollLeft
+    });
+    e.preventDefault();
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    
+    const deltaX = e.clientX - dragStart.x;
+    const newScrollLeft = Math.max(0, Math.min(1200 - 800, dragStart.scrollLeft - deltaX)); // Limit scroll range
+    setScrollLeft(newScrollLeft);
+    e.preventDefault();
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
   const renderOperationsView = () => (
     <div className="h-full overflow-auto">
       {/* Time Scale Header */}
@@ -113,9 +141,16 @@ export default function GanttChart({
             </div>
           </div>
           <div className="flex-1 overflow-x-auto" onScroll={handleScroll}>
-            <div className="flex bg-gray-50 border-r border-gray-200" style={{ width: '1200px' }}>
+            <div 
+              className={`flex bg-gray-50 border-r border-gray-200 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+              style={{ width: '1200px' }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseLeave}
+            >
               {timeScale.map((day, index) => (
-                <div key={index} className="w-48 border-r border-gray-200 p-2 text-center">
+                <div key={index} className="w-48 border-r border-gray-200 p-2 text-center select-none">
                   <div className="text-xs font-medium text-gray-500">{day.label}</div>
                   <div className="text-xs text-gray-400">{day.month}</div>
                 </div>
@@ -160,7 +195,14 @@ export default function GanttChart({
                       </Badge>
                     </div>
                   </div>
-                  <div className="flex-1 relative overflow-hidden" style={{ width: '1200px' }}>
+                  <div 
+                    className={`flex-1 relative overflow-hidden ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+                    style={{ width: '1200px' }}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseLeave}
+                  >
                     <div className="absolute inset-0 bg-blue-50 border-r border-gray-100" style={{ transform: `translateX(-${scrollLeft}px)` }}></div>
                   </div>
                 </div>
@@ -209,7 +251,14 @@ export default function GanttChart({
                         </div>
                       </div>
                     </div>
-                    <div className="flex-1 relative p-2 overflow-hidden" style={{ width: '1200px' }}>
+                    <div 
+                      className={`flex-1 relative p-2 overflow-hidden ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+                      style={{ width: '1200px' }}
+                      onMouseDown={handleMouseDown}
+                      onMouseMove={handleMouseMove}
+                      onMouseUp={handleMouseUp}
+                      onMouseLeave={handleMouseLeave}
+                    >
                       <div style={{ transform: `translateX(-${scrollLeft}px)` }}>
                         <OperationBlock
                           operation={operation}
@@ -247,9 +296,16 @@ export default function GanttChart({
             </div>
           </div>
           <div className="flex-1 overflow-x-auto" onScroll={handleScroll}>
-            <div className="flex bg-gray-50 border-r border-gray-200" style={{ width: '1200px' }}>
+            <div 
+              className={`flex bg-gray-50 border-r border-gray-200 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+              style={{ width: '1200px' }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseLeave}
+            >
               {timeScale.map((day, index) => (
-                <div key={index} className="w-48 border-r border-gray-200 p-2 text-center">
+                <div key={index} className="w-48 border-r border-gray-200 p-2 text-center select-none">
                   <div className="text-xs font-medium text-gray-500">{day.label}</div>
                   <div className="text-xs text-gray-400">{day.month}</div>
                 </div>
@@ -291,8 +347,12 @@ export default function GanttChart({
                   data-resource-id={resource.id}
                   className={`flex-1 relative p-2 min-h-[60px] transition-colors overflow-hidden ${
                     isOver ? (canDrop ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200") : ""
-                  }`} 
+                  } ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`} 
                   style={{ width: '1200px' }}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseLeave}
                 >
                   <div style={{ transform: `translateX(-${scrollLeft}px)` }}>
                     {resourceOperations.map((operation) => (
