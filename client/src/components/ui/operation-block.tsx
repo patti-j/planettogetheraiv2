@@ -132,6 +132,7 @@ export default function OperationBlock({
     return (
       <div
         ref={drag}
+        data-operation-block
         className={`inline-block mr-2 mb-2 rounded-md border-2 border-gray-300 shadow-sm cursor-move transition-all duration-200 ${
           isDragging ? "opacity-50 scale-95" : "opacity-100 scale-100"
         } bg-gray-100 hover:bg-gray-200`}
@@ -159,6 +160,7 @@ export default function OperationBlock({
   return (
     <div
       ref={drag}
+      data-operation-block
       className={`absolute top-2 z-10 rounded-md border-2 border-white shadow-md cursor-move transition-all duration-200 ${
         isDragging ? "opacity-50 scale-95" : "opacity-100 scale-100"
       } ${getJobColor(operation.jobId)}`}

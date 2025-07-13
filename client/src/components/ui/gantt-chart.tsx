@@ -176,6 +176,12 @@ export default function GanttChart({
 
   // Timeline drag handlers
   const handleTimelineMouseDown = useCallback((e: React.MouseEvent) => {
+    // Don't interfere with operation drag and drop
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-operation-block]') || target.classList.contains('cursor-move')) {
+      return;
+    }
+    
     if (e.button === 0) { // Left mouse button
       isDraggingTimeline.current = true;
       lastMousePos.current = { x: e.clientX, y: e.clientY };
@@ -204,6 +210,12 @@ export default function GanttChart({
 
   // Resource list drag handlers
   const handleResourceListMouseDown = useCallback((e: React.MouseEvent) => {
+    // Don't interfere with operation drag and drop
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-operation-block]') || target.classList.contains('cursor-move')) {
+      return;
+    }
+    
     if (e.button === 0) { // Left mouse button
       isDraggingResourceList.current = true;
       lastMousePos.current = { x: e.clientX, y: e.clientY };
