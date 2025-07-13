@@ -24,11 +24,7 @@ export default function Sidebar() {
 
   const aiMutation = useMutation({
     mutationFn: async (prompt: string) => {
-      const response = await apiRequest("/api/ai/command", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ command: prompt }),
-      });
+      const response = await apiRequest("POST", "/api/ai-agent/command", { command: prompt });
       return response.json();
     },
     onSuccess: (data) => {

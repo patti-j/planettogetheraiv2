@@ -26,11 +26,7 @@ export function useOperationDrop(
       if (startTime) updateData.startTime = startTime;
       if (endTime) updateData.endTime = endTime;
       
-      const response = await apiRequest(`/api/operations/${operationId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updateData),
-      });
+      const response = await apiRequest("PUT", `/api/operations/${operationId}`, updateData);
       return response.json();
     },
     onSuccess: (updatedOperation) => {
