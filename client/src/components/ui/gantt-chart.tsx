@@ -387,7 +387,7 @@ export default function GanttChart({
                     </div>
                   </div>
                   <div className="flex-1 bg-blue-50 border-r border-gray-100 overflow-x-hidden" style={{ minHeight: '60px' }}>
-                    <div style={{ width: `${timelineWidth}px`, transform: `translateX(-${timelineScrollLeft}px)` }}>
+                    <div style={{ width: `${timelineWidth}px` }}>
                       {/* Job level timeline background */}
                     </div>
                   </div>
@@ -438,7 +438,7 @@ export default function GanttChart({
                       </div>
                     </div>
                     <div className="flex-1 relative p-2 min-h-[60px] overflow-x-hidden">
-                      <div style={{ width: `${timelineWidth}px`, transform: `translateX(-${timelineScrollLeft}px)` }}>
+                      <div style={{ width: `${timelineWidth}px` }}>
                         <OperationBlock
                           operation={operation}
                           resourceName={getResourceName(operation.assignedResourceId || 0)}
@@ -496,7 +496,7 @@ export default function GanttChart({
               isOver ? (canDrop ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200") : ""
             }`}
           >
-            <div style={{ width: `${timelineWidth}px`, transform: `translateX(-${timelineScrollLeft}px)` }}>
+            <div style={{ width: `${timelineWidth}px` }}>
               {resourceOperations.map((operation) => (
                 <OperationBlock
                   key={operation.id}
