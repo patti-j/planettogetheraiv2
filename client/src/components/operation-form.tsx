@@ -66,8 +66,9 @@ export default function OperationForm({
       const response = await apiRequest("POST", "/api/operations", operationData);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (newOperation) => {
       queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/jobs", newOperation.jobId, "operations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
       toast({ title: "Operation created successfully" });
       onSuccess?.();
@@ -87,8 +88,9 @@ export default function OperationForm({
       const response = await apiRequest("PUT", `/api/operations/${operation!.id}`, operationData);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (updatedOperation) => {
       queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/jobs", updatedOperation.jobId, "operations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
       toast({ title: "Operation updated successfully" });
       onSuccess?.();
