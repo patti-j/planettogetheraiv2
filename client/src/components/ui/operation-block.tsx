@@ -1,134 +1,111 @@
-import { useDrag } from "react-dnd";
+import { type Operation, type Job } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
-import type { Operation, Job } from "@shared/schema";
+import { useDrag } from "react-dnd";
+import { useEffect, useState } from "react";
 
 interface OperationBlockProps {
   operation: Operation;
   resourceName: string;
   jobName?: string;
   job?: Job;
-  onDragStart?: () => void;
-  onDragEnd?: () => void;
   timelineWidth: number;
   dayWidth: number;
 }
 
-export default function OperationBlock({ 
-  operation, 
-  resourceName, 
-  jobName, 
-  job, 
-  onDragStart, 
-  onDragEnd, 
-  timelineWidth, 
-  dayWidth 
+export default function OperationBlock({
+  operation,
+  resourceName,
+  jobName,
+  job,
+  timelineWidth,
+  dayWidth,
 }: OperationBlockProps) {
-  const [{ isDragging }, drag] = useDrag(() => ({
+  const [{ isDragging }, drag] = useDrag({
     type: "operation",
-    item: () => {
-      onDragStart?.();
-      return { operation };
-    },
+    item: { operation },
     collect: (monitor) => ({
-      isDragging: !!monitor.isDragging(),
+      isDragging: monitor.isDragging(),
     }),
-    end: () => {
-      onDragEnd?.();
-    },
-  }));
+  });
 
-  const getOperationColor = () => {
-    if (!job) return "bg-gray-400";
-    
-    const today = new Date();
-    const dueDate = new Date(job.dueDate);
-    const operationEndTime = operation.endTime ? new Date(operation.endTime) : null;
-    
-    if (operationEndTime) {
-      // Check if operation is completed on time
-      if (operationEndTime <= dueDate) {
-        // Check if it's more than a week early
-        const weekInMs = 7 * 24 * 60 * 60 * 1000;
-        if (dueDate.getTime() - operationEndTime.getTime() > weekInMs) {
-          return "bg-yellow-500"; // More than a week early
-        }
-        return "bg-green-500"; // On time
-      } else {
-        return "bg-red-500"; // Late
-      }
-    }
-    
-    // For operations without end time, check if we're past due date
-    if (today > dueDate) {
-      return "bg-red-500"; // Late
-    }
-    
-    return "bg-blue-500"; // Default for active operations
-  };
+  const [position, setPosition] = useState({ left: 0, width: 0 });
 
-  // Calculate position and width based on operation timing
-  const getOperationStyle = () => {
-    const baseLeft = 10; // Starting position with some padding
-    const baseWidth = 144; // Base width
-    
-    // Calculate based on operation duration
-    const durationInHours = operation.duration || 8;
-    const width = Math.max(baseWidth, durationInHours * 18); // 18px per hour
-    
-    let startDay = 0;
-    if (operation.startTime) {
-      // Use actual start time if available
+  useEffect(() => {
+    if (operation.startTime && operation.endTime) {
       const startTime = new Date(operation.startTime);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const endTime = new Date(operation.endTime);
+      const baseDate = new Date();
+      baseDate.setHours(0, 0, 0, 0);
       
-      const daysDiff = Math.floor((startTime.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
-      startDay = Math.max(0, Math.min(6, daysDiff)); // Clamp to 0-6 days
+      const startOffsetHours = (startTime.getTime() - baseDate.getTime()) / (1000 * 60 * 60);
+      const duration = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
       
-      // Also calculate time within the day for more precise positioning
-      const workingHours = 8; // 8 AM to 4 PM
-      const hoursInDay = startTime.getHours() - 8; // Assuming 8 AM start
-      const minutesInDay = startTime.getMinutes();
-      const totalMinutesInDay = Math.max(0, hoursInDay * 60 + minutesInDay);
-      const timeOffset = (totalMinutesInDay / (workingHours * 60)) * dayWidth; // More precise time positioning
+      const left = (startOffsetHours / 24) * dayWidth;
+      const width = Math.max((duration / 24) * dayWidth, 20);
       
-      return {
-        left: `${baseLeft + startDay * dayWidth + timeOffset}px`,
-        width: `${width}px`,
-        top: "4px",
-      };
-    } else {
-      // Fallback to order-based positioning
-      startDay = (operation.order || 0) % 7; // Distribute across 7 days
+      setPosition({ left, width });
     }
-    
-    return {
-      left: `${baseLeft + startDay * dayWidth}px`,
-      width: `${width}px`,
-      top: "4px",
-    };
+  }, [operation.startTime, operation.endTime, dayWidth]);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "bg-yellow-500";
+      case "in_progress":
+        return "bg-blue-500";
+      case "completed":
+        return "bg-green-500";
+      case "on_hold":
+        return "bg-orange-500";
+      default:
+        return "bg-gray-500";
+    }
   };
 
-  const formatDueDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
-    });
+  const getJobColor = (jobId: number) => {
+    const colors = [
+      "bg-blue-500",
+      "bg-green-500",
+      "bg-purple-500",
+      "bg-orange-500",
+      "bg-pink-500",
+      "bg-indigo-500",
+      "bg-teal-500",
+      "bg-red-500",
+    ];
+    return colors[jobId % colors.length];
   };
+
+  if (!operation.startTime || !operation.endTime) {
+    return null;
+  }
 
   return (
     <div
       ref={drag}
-      className={`absolute text-white rounded px-3 py-1 shadow-sm cursor-move hover:shadow-md transition-shadow ${
-        getOperationColor()
-      } ${isDragging ? "opacity-50" : ""}`}
-      style={getOperationStyle()}
+      className={`absolute top-2 z-10 rounded-md border-2 border-white shadow-md cursor-move transition-all duration-200 ${
+        isDragging ? "opacity-50 scale-95" : "opacity-100 scale-100"
+      } ${getJobColor(operation.jobId)}`}
+      style={{
+        left: `${position.left}px`,
+        width: `${position.width}px`,
+        height: "40px",
+        minWidth: "80px",
+      }}
     >
-      <div className="text-xs font-medium">{jobName || "Unknown Job"}</div>
-      <div className="text-xs opacity-90">{operation.name}</div>
-      <div className="text-xs opacity-80">
-        Due: {job ? formatDueDate(job.dueDate) : "Unknown"}
+      <div className="h-full flex items-center justify-between px-2 text-white text-xs">
+        <div className="flex-1 truncate">
+          <div className="font-medium truncate">{operation.name}</div>
+          <div className="text-white/80 truncate">{jobName || `Job ${operation.jobId}`}</div>
+        </div>
+        <div className="flex items-center space-x-1 ml-2">
+          <Badge
+            variant="outline"
+            className={`text-xs border-white/30 text-white/90 ${getStatusColor(operation.status)}`}
+          >
+            {operation.status}
+          </Badge>
+        </div>
       </div>
     </div>
   );

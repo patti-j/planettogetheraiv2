@@ -6,7 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import OperationBlock from "./operation-block";
 import OperationForm from "../operation-form";
-import { useOperationDrop } from "@/hooks/use-drag-drop";
+import { useOperationDrop, useTimelineDrop } from "@/hooks/use-drag-drop";
 import type { Job, Operation, Resource, Capability } from "@shared/schema";
 
 interface GanttChartProps {
@@ -245,47 +245,54 @@ export default function GanttChart({
     return resources.find(r => r.id === resourceId)?.name || "Unassigned";
   };
 
-  const renderOperationsView = () => (
-    <div className="flex flex-col h-full">
-      {/* Fixed Header */}
-      <div className="flex-none bg-white border-b border-gray-200 z-10">
-        <div className="flex">
-          <div className="w-64 px-4 py-3 bg-gray-50 border-r border-gray-200">
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-gray-700">Jobs & Operations</span>
-              <div className="flex items-center space-x-1">
-                <Button variant="ghost" size="sm" onClick={zoomOut} disabled={timeUnit === "week"} title="Zoom Out">
-                  <ZoomOut className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="sm" onClick={resetZoom} title="Reset Zoom">
-                  <span className="text-xs">{timeUnit}</span>
-                </Button>
-                <Button variant="ghost" size="sm" onClick={zoomIn} disabled={timeUnit === "hour"} title="Zoom In">
-                  <ZoomIn className="w-4 h-4" />
-                </Button>
+  const renderOperationsView = () => {
+    const { drop: timelineDrop, isOver: timelineIsOver, canDrop: timelineCanDrop } = useTimelineDrop(timelineWidth, timeScale, timeUnit);
+    
+    return (
+      <div className="flex flex-col h-full">
+        {/* Fixed Header */}
+        <div className="flex-none bg-white border-b border-gray-200 z-10">
+          <div className="flex">
+            <div className="w-64 px-4 py-3 bg-gray-50 border-r border-gray-200">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-gray-700">Jobs & Operations</span>
+                <div className="flex items-center space-x-1">
+                  <Button variant="ghost" size="sm" onClick={zoomOut} disabled={timeUnit === "week"} title="Zoom Out">
+                    <ZoomOut className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={resetZoom} title="Reset Zoom">
+                    <span className="text-xs">{timeUnit}</span>
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={zoomIn} disabled={timeUnit === "hour"} title="Zoom In">
+                    <ZoomIn className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <div 
+              ref={timelineDrop}
+              data-timeline-container
+              className={`flex-1 bg-gray-50 border-r border-gray-200 overflow-x-auto cursor-grab active:cursor-grabbing ${
+                timelineIsOver ? (timelineCanDrop ? "bg-green-50" : "bg-red-50") : ""
+              }`}
+              onMouseDown={handleTimelineMouseDown}
+              onScroll={handleTimelineScroll}
+            >
+              <div 
+                className="flex"
+                style={{ width: `${timelineWidth}px` }}
+                ref={timelineRef}
+              >
+                {timeScale.map((period, index) => (
+                  <div key={index} className="border-r border-gray-200 p-2 text-center flex-shrink-0" style={{ width: `${periodWidth}px` }}>
+                    <div className="text-xs font-medium text-gray-500">{period.label}</div>
+                    <div className="text-xs text-gray-400">{period.subLabel}</div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-          <div 
-            className="flex-1 bg-gray-50 border-r border-gray-200 overflow-x-auto cursor-grab active:cursor-grabbing"
-            onMouseDown={handleTimelineMouseDown}
-            onScroll={handleTimelineScroll}
-            ref={timelineRef}
-          >
-            <div 
-              className="flex"
-              style={{ width: `${timelineWidth}px` }}
-            >
-              {timeScale.map((period, index) => (
-                <div key={index} className="border-r border-gray-200 p-2 text-center flex-shrink-0" style={{ width: `${periodWidth}px` }}>
-                  <div className="text-xs font-medium text-gray-500">{period.label}</div>
-                  <div className="text-xs text-gray-400">{period.subLabel}</div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
-      </div>
 
       {/* Scrollable Content - Operations */}
       <div className="flex-1 overflow-y-auto cursor-grab active:cursor-grabbing" 
@@ -396,12 +403,13 @@ export default function GanttChart({
         })}
       </div>
     </div>
-  );
+    );
+  };
 
   // Create a separate component to handle the drop zone for each resource
   const ResourceRow = ({ resource }: { resource: Resource }) => {
     const resourceOperations = operations.filter(op => op.assignedResourceId === resource.id);
-    const { drop, isOver, canDrop } = useOperationDrop(resource);
+    const { drop, isOver, canDrop } = useOperationDrop(resource, timelineWidth, timeScale, timeUnit);
 
     return (
       <div className="border-b border-gray-100">
@@ -426,6 +434,7 @@ export default function GanttChart({
           </div>
           <div 
             ref={drop}
+            data-resource-id={resource.id}
             className={`flex-1 relative p-2 min-h-[60px] transition-colors overflow-x-hidden ${
               isOver ? (canDrop ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200") : ""
             }`}

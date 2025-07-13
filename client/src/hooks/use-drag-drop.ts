@@ -10,6 +10,9 @@ interface DragItem {
 
 export function useOperationDrop(
   resource: Resource,
+  timelineWidth: number,
+  timeScale: any[],
+  timeUnit: "hour" | "day" | "week",
   onDropSuccess?: () => void
 ) {
   const { toast } = useToast();
@@ -76,29 +79,41 @@ export function useOperationDrop(
         if (resourceTimelineElement) {
           const rect = resourceTimelineElement.getBoundingClientRect();
           const relativeX = Math.max(0, clientOffset.x - rect.left);
-          const timelineWidth = rect.width;
           
-          // Calculate which day (0-6) and time within that day
-          const dayWidth = timelineWidth / 7; // 7 days in timeline
-          const dayIndex = Math.floor(relativeX / dayWidth);
-          const timeWithinDay = (relativeX % dayWidth) / dayWidth; // 0-1 representing position within day
+          // Calculate which time period and position within that period
+          const periodWidth = timelineWidth / timeScale.length;
+          const periodIndex = Math.floor(relativeX / periodWidth);
+          const timeWithinPeriod = (relativeX % periodWidth) / periodWidth; // 0-1 representing position within period
           
-          // Calculate actual start time with more precision
-          const today = new Date();
-          const startDate = new Date(today);
-          startDate.setDate(today.getDate() + dayIndex);
+          // Get the base date for this period
+          const now = new Date();
+          let periodStart: Date;
+          let periodDuration: number; // in milliseconds
           
-          // More precise time calculation: 8 AM to 4 PM (8 hours)
-          const workingHours = 8;
-          const totalMinutes = timeWithinDay * workingHours * 60; // Convert to minutes
-          const hours = Math.floor(totalMinutes / 60);
-          const minutes = Math.round(totalMinutes % 60);
+          switch (timeUnit) {
+            case "hour":
+              periodStart = new Date(now.getTime() + (periodIndex * 60 * 60 * 1000));
+              periodDuration = 60 * 60 * 1000; // 1 hour
+              break;
+            case "day":
+              periodStart = new Date(now.getTime() + (periodIndex * 24 * 60 * 60 * 1000));
+              periodStart.setHours(8, 0, 0, 0); // Start at 8 AM
+              periodDuration = 8 * 60 * 60 * 1000; // 8 working hours
+              break;
+            case "week":
+              periodStart = new Date(now.getTime() + (periodIndex * 7 * 24 * 60 * 60 * 1000));
+              periodStart.setHours(8, 0, 0, 0); // Start at 8 AM on first day
+              periodDuration = 5 * 8 * 60 * 60 * 1000; // 5 working days * 8 hours
+              break;
+          }
           
-          startDate.setHours(8 + hours, minutes, 0, 0);
+          // Calculate precise start time within the period
+          const offsetWithinPeriod = timeWithinPeriod * periodDuration;
+          const startDate = new Date(periodStart.getTime() + offsetWithinPeriod);
           
           // Calculate end time based on operation duration
-          const endDate = new Date(startDate);
-          endDate.setHours(startDate.getHours() + (item.operation.duration || 8));
+          const operationDuration = item.operation.duration || 8; // default 8 hours
+          const endDate = new Date(startDate.getTime() + (operationDuration * 60 * 60 * 1000));
           
           startTime = startDate.toISOString();
           endTime = endDate.toISOString();
@@ -106,11 +121,11 @@ export function useOperationDrop(
           console.log('Drop calculation:', {
             operationId: item.operation.id,
             resourceId: resource.id,
+            timeUnit,
             relativeX,
-            timelineWidth,
-            dayWidth,
-            dayIndex,
-            timeWithinDay,
+            periodWidth,
+            periodIndex,
+            timeWithinPeriod,
             startTime,
             endTime
           });
@@ -121,6 +136,137 @@ export function useOperationDrop(
       updateOperationMutation.mutate({
         operationId: item.operation.id,
         resourceId: resource.id,
+        startTime,
+        endTime
+      });
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+      canDrop: monitor.canDrop(),
+    }),
+  });
+
+  return {
+    drop,
+    isOver,
+    canDrop,
+    isDropping: updateOperationMutation.isPending,
+  };
+}
+
+// Hook for dropping operations in operations view (for time-only changes)
+export function useTimelineDrop(
+  timelineWidth: number,
+  timeScale: any[],
+  timeUnit: "hour" | "day" | "week",
+  onDropSuccess?: () => void
+) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const updateOperationMutation = useMutation({
+    mutationFn: async ({ operationId, startTime, endTime }: { 
+      operationId: number; 
+      startTime?: string;
+      endTime?: string;
+    }) => {
+      const updateData: any = {};
+      if (startTime) updateData.startTime = startTime;
+      if (endTime) updateData.endTime = endTime;
+      
+      const response = await apiRequest("PUT", `/api/operations/${operationId}`, updateData);
+      return response.json();
+    },
+    onSuccess: (updatedOperation) => {
+      // Invalidate all relevant queries
+      queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/resources"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
+      
+      // Also invalidate job-specific operations
+      if (updatedOperation.jobId) {
+        queryClient.invalidateQueries({ queryKey: ["/api/jobs", updatedOperation.jobId, "operations"] });
+      }
+      
+      toast({ title: "Operation rescheduled successfully" });
+      onDropSuccess?.();
+    },
+    onError: (error) => {
+      console.error("Failed to reschedule operation:", error);
+      toast({ title: "Failed to reschedule operation", variant: "destructive" });
+    },
+  });
+
+  const [{ isOver, canDrop }, drop] = useDrop<DragItem, void, { isOver: boolean; canDrop: boolean }>({
+    accept: "operation",
+    canDrop: () => true, // Can always drop for time changes
+    drop: (item, monitor) => {
+      // Get the drop position and calculate time-based positioning
+      const clientOffset = monitor.getClientOffset();
+      
+      let startTime, endTime;
+      if (clientOffset) {
+        // Find the timeline element
+        const timelineElement = document.querySelector(`[data-timeline-container]`);
+        if (timelineElement) {
+          const rect = timelineElement.getBoundingClientRect();
+          const relativeX = Math.max(0, clientOffset.x - rect.left);
+          
+          // Calculate which time period and position within that period
+          const periodWidth = timelineWidth / timeScale.length;
+          const periodIndex = Math.floor(relativeX / periodWidth);
+          const timeWithinPeriod = (relativeX % periodWidth) / periodWidth; // 0-1 representing position within period
+          
+          // Get the base date for this period
+          const now = new Date();
+          let periodStart: Date;
+          let periodDuration: number; // in milliseconds
+          
+          switch (timeUnit) {
+            case "hour":
+              periodStart = new Date(now.getTime() + (periodIndex * 60 * 60 * 1000));
+              periodDuration = 60 * 60 * 1000; // 1 hour
+              break;
+            case "day":
+              periodStart = new Date(now.getTime() + (periodIndex * 24 * 60 * 60 * 1000));
+              periodStart.setHours(8, 0, 0, 0); // Start at 8 AM
+              periodDuration = 8 * 60 * 60 * 1000; // 8 working hours
+              break;
+            case "week":
+              periodStart = new Date(now.getTime() + (periodIndex * 7 * 24 * 60 * 60 * 1000));
+              periodStart.setHours(8, 0, 0, 0); // Start at 8 AM on first day
+              periodDuration = 5 * 8 * 60 * 60 * 1000; // 5 working days * 8 hours
+              break;
+          }
+          
+          // Calculate precise start time within the period
+          const offsetWithinPeriod = timeWithinPeriod * periodDuration;
+          const startDate = new Date(periodStart.getTime() + offsetWithinPeriod);
+          
+          // Calculate end time based on operation duration
+          const operationDuration = item.operation.duration || 8; // default 8 hours
+          const endDate = new Date(startDate.getTime() + (operationDuration * 60 * 60 * 1000));
+          
+          startTime = startDate.toISOString();
+          endTime = endDate.toISOString();
+          
+          console.log('Timeline drop calculation:', {
+            operationId: item.operation.id,
+            timeUnit,
+            relativeX,
+            periodWidth,
+            periodIndex,
+            timeWithinPeriod,
+            startTime,
+            endTime
+          });
+        }
+      }
+      
+      // Update the operation time
+      updateOperationMutation.mutate({
+        operationId: item.operation.id,
         startTime,
         endTime
       });
