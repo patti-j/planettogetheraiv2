@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -19,6 +20,7 @@ export default function Sidebar() {
   const [aiActionsDialogOpen, setAiActionsDialogOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiActionsPrompt, setAiActionsPrompt] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: capabilities = [] } = useQuery<Capability[]>({
@@ -128,123 +130,144 @@ export default function Sidebar() {
     return tooltips[href] || "Navigate to this page";
   };
 
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full">
+      <div className="p-4 md:p-6 border-b border-gray-200">
+        <h1 className="text-lg md:text-xl font-semibold text-gray-800 flex items-center">
+          <Factory className="text-primary mr-2" size={20} />
+          PlanetTogether
+        </h1>
+      </div>
+      
+      <nav className="flex-1 p-3 md:p-4 space-y-1 md:space-y-2">
+        {navigationItems.map((item) => (
+          <Tooltip key={item.href}>
+            <TooltipTrigger asChild>
+              <Link href={item.href}>
+                <a
+                  className={`flex items-center px-3 py-2 rounded-lg transition-colors text-sm md:text-base ${
+                    item.href === "/ai-assistant"
+                      ? item.active
+                        ? "text-white bg-gradient-to-r from-purple-500 to-pink-500 border-l-4 border-purple-600"
+                        : "text-gray-600 hover:text-white hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500"
+                      : item.active
+                        ? "text-gray-700 bg-blue-50 border-l-4 border-primary"
+                        : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <item.icon className="w-4 h-4 md:w-5 md:h-5 mr-3" />
+                  {item.label}
+                </a>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>{getNavigationTooltip(item.href)}</p>
+            </TooltipContent>
+          </Tooltip>
+        ))}
+      </nav>
+
+      <div className="p-3 md:p-4 border-t border-gray-200 mt-auto">
+        <h3 className="text-xs md:text-sm font-medium text-gray-500 mb-3">Quick Actions</h3>
+        <div className="space-y-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setJobDialogOpen(true)}
+                className="w-full justify-start text-xs md:text-sm"
+              >
+                <Plus className="w-3 h-3 md:w-4 md:h-4 mr-2" />
+                New Job
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>Create a new production job</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setResourceDialogOpen(true)}
+                className="w-full justify-start text-xs md:text-sm"
+              >
+                <Plus className="w-3 h-3 md:w-4 md:h-4 mr-2" />
+                New Resource
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>Add a new manufacturing resource</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setAiActionsDialogOpen(true)}
+                className="w-full justify-start text-xs md:text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white border-purple-500 hover:from-purple-600 hover:to-pink-600"
+              >
+                <Sparkles className="w-3 h-3 md:w-4 md:h-4 mr-2" />
+                AI Actions
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>Configure AI-powered quick actions</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+
+        <div className="mt-4 space-y-2">
+          <div className="flex items-center space-x-2">
+            <Input
+              placeholder="Ask Max..."
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="flex-1 text-xs md:text-sm"
+              disabled={aiMutation.isPending}
+            />
+            <Button
+              onClick={handleAiPrompt}
+              disabled={aiMutation.isPending || !aiPrompt.trim()}
+              size="sm"
+              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-purple-500 hover:from-purple-600 hover:to-pink-600"
+            >
+              {aiMutation.isPending ? (
+                <div className="w-3 h-3 md:w-4 md:h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Send className="w-3 h-3 md:w-4 md:h-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <TooltipProvider>
-      <aside className="w-64 bg-white shadow-lg border-r border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-          <h1 className="text-xl font-semibold text-gray-800 flex items-center">
-            <Factory className="text-primary mr-2" size={24} />
-            PlanetTogether
-          </h1>
-        </div>
-        
-        <nav className="p-4 space-y-2">
-          {navigationItems.map((item) => (
-            <Tooltip key={item.href}>
-              <TooltipTrigger asChild>
-                <Link href={item.href}>
-                  <a
-                    className={`flex items-center px-3 py-2 rounded-lg transition-colors ${
-                      item.href === "/ai-assistant"
-                        ? item.active
-                          ? "text-white bg-gradient-to-r from-purple-500 to-pink-500 border-l-4 border-purple-600"
-                          : "text-gray-600 hover:text-white hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500"
-                        : item.active
-                          ? "text-gray-700 bg-blue-50 border-l-4 border-primary"
-                          : "text-gray-600 hover:bg-gray-100"
-                    }`}
-                  >
-                    <item.icon className="w-5 h-5 mr-3" />
-                    {item.label}
-                  </a>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p>{getNavigationTooltip(item.href)}</p>
-              </TooltipContent>
-            </Tooltip>
-          ))}
-        </nav>
+      {/* Mobile Menu Button */}
+      <div className="md:hidden fixed top-4 left-4 z-50">
+        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="sm" className="bg-white shadow-lg">
+              <Menu className="w-4 h-4" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-64 p-0">
+            <SidebarContent />
+          </SheetContent>
+        </Sheet>
+      </div>
 
-        <div className="p-4 border-t border-gray-200 mt-8">
-          <h3 className="text-sm font-medium text-gray-500 mb-3">Quick Actions</h3>
-          <div className="space-y-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  className="w-full bg-primary hover:bg-blue-700 text-white"
-                  onClick={() => setJobDialogOpen(true)}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Job
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p>Create a new production job with priority and deadline</p>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  className="w-full bg-primary hover:bg-blue-700 text-white"
-                  onClick={() => setResourceDialogOpen(true)}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Resource
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p>Add a new machine, operator, or facility to the system</p>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-                  onClick={() => setAiActionsDialogOpen(true)}
-                >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  AI Actions
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p>Configure quick actions using AI - customize your workflow buttons</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <h4 className="text-sm font-medium text-gray-500 mb-2">Max</h4>
-            <div className="flex space-x-2">
-              <Input
-                placeholder="Ask AI about late jobs..."
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                onKeyPress={handleKeyPress}
-                className="flex-1 text-sm"
-              />
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="sm"
-                    onClick={handleAiPrompt}
-                    disabled={!aiPrompt.trim() || aiMutation.isPending}
-                    className="px-3"
-                  >
-                    {aiMutation.isPending ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>Send AI command to analyze schedule and create views</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          </div>
-        </div>
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:block w-64 bg-white shadow-lg border-r border-gray-200">
+        <SidebarContent />
       </aside>
 
       {/* Job Dialog */}

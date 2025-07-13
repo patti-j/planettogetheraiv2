@@ -1447,7 +1447,7 @@ export default function GanttChart({
       {/* Fixed Header */}
       <div className="flex-none bg-white border-b border-gray-200 z-10">
         <div className="flex">
-          <div className="w-80 px-4 py-2 bg-gray-50 border-r border-gray-200">
+          <div className="w-80 px-2 md:px-4 py-2 bg-gray-50 border-r border-gray-200">
             <div className="flex flex-col space-y-2">
               <div className="flex items-center space-x-2">
                 <Select 
@@ -1461,7 +1461,7 @@ export default function GanttChart({
                     }
                   }}
                 >
-                  <SelectTrigger className="w-32 h-7 text-sm">
+                  <SelectTrigger className="w-24 md:w-32 h-6 md:h-7 text-xs md:text-sm">
                     <SelectValue placeholder="Select view" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1484,7 +1484,7 @@ export default function GanttChart({
                     min={20}
                     max={200}
                     step={5}
-                    className="w-12"
+                    className="w-8 md:w-12"
                   />
                 </div>
               </div>
@@ -1495,7 +1495,7 @@ export default function GanttChart({
                     handleViewSettingChange(value, "colorScheme");
                   }}
                 >
-                  <SelectTrigger className="w-28 h-6 text-xs">
+                  <SelectTrigger className="w-20 md:w-28 h-6 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1516,7 +1516,7 @@ export default function GanttChart({
                     }
                   }}
                 >
-                  <SelectTrigger className="w-32 h-6 text-xs">
+                  <SelectTrigger className="w-24 md:w-32 h-6 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1539,7 +1539,7 @@ export default function GanttChart({
               </div>
             </div>
           </div>
-          <div className="w-auto bg-gray-50 border-r border-gray-200 px-2 py-2">
+          <div className="w-auto bg-gray-50 border-r border-gray-200 px-1 md:px-2 py-2">
             <div className="flex items-center bg-white border rounded-md">
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -1548,7 +1548,7 @@ export default function GanttChart({
                     size="sm" 
                     onClick={zoomOut} 
                     disabled={timeUnit === "decade"} 
-                    className="h-6 px-1.5 border-r rounded-r-none"
+                    className="h-6 px-1 md:px-1.5 border-r rounded-r-none"
                   >
                     <ZoomOut className="w-3 h-3" />
                   </Button>
@@ -1564,7 +1564,7 @@ export default function GanttChart({
                     size="sm" 
                     onClick={zoomIn} 
                     disabled={timeUnit === "hour"} 
-                    className="h-6 px-1.5 border-r rounded-none"
+                    className="h-6 px-1 md:px-1.5 border-r rounded-none"
                   >
                     <ZoomIn className="w-3 h-3" />
                   </Button>
@@ -1579,7 +1579,7 @@ export default function GanttChart({
                     variant="ghost" 
                     size="sm" 
                     onClick={resetZoom} 
-                    className="h-6 px-2 border-r rounded-none"
+                    className="h-6 px-1 md:px-2 border-r rounded-none"
                   >
                     <span className="text-xs font-medium">{timeUnit}</span>
                   </Button>
@@ -1594,7 +1594,7 @@ export default function GanttChart({
                     variant="ghost" 
                     size="sm" 
                     onClick={handleScrollToToday} 
-                    className="h-6 px-1.5 rounded-l-none"
+                    className="h-6 px-1 md:px-1.5 rounded-l-none"
                   >
                     <Calendar className="w-3 h-3" />
                   </Button>

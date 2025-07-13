@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import Sidebar from "@/components/sidebar";
 import Dashboard from "@/pages/dashboard";
 import Analytics from "@/pages/analytics";
 import Reports from "@/pages/reports";
@@ -30,8 +31,13 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <DndProvider backend={HTML5Backend}>
         <TooltipProvider>
+          <div className="flex h-screen bg-gray-50">
+            <Sidebar />
+            <main className="flex-1 overflow-hidden w-full">
+              <Router />
+            </main>
+          </div>
           <Toaster />
-          <Router />
         </TooltipProvider>
       </DndProvider>
     </QueryClientProvider>
