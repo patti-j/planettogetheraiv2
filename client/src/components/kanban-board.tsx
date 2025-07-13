@@ -832,13 +832,13 @@ function KanbanBoard({
             )}
           </div>
           
-          <div className="flex items-center gap-2 overflow-x-auto pb-2">
-            <div className="flex items-center gap-2 min-w-max">
+          <div className="overflow-x-auto pb-2 kanban-scroll">
+            <div className="flex items-center gap-2" style={{ minWidth: 'max-content' }}>
               {/* Create Action Button */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button 
-                    className="bg-primary hover:bg-blue-700 text-white" 
+                    className="bg-primary hover:bg-blue-700 text-white whitespace-nowrap" 
                     size="sm"
                     onClick={() => {
                       if (selectedConfig?.viewType === "jobs") {
@@ -863,7 +863,7 @@ function KanbanBoard({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button 
-                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white" 
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white whitespace-nowrap" 
                     size="sm"
                     onClick={onAICreateBoards}
                   >
@@ -881,8 +881,8 @@ function KanbanBoard({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="min-w-0 flex-1 sm:flex-none">
-                        <span className="truncate">{selectedConfig?.name || "Select Board"}</span>
+                      <Button variant="outline" size="sm" className="whitespace-nowrap">
+                        <span className="truncate max-w-32">{selectedConfig?.name || "Select Board"}</span>
                         <ChevronDown className="w-4 h-4 ml-2 flex-shrink-0" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -937,8 +937,8 @@ function KanbanBoard({
               </div>
             </div>
           ) : (
-            <div className="h-full overflow-x-auto overflow-y-hidden">
-              <div className="flex space-x-2 sm:space-x-4 h-full" style={{ minWidth: `${columns.length * 300}px` }}>
+            <div className="h-full overflow-x-auto overflow-y-hidden kanban-scroll">
+              <div className="flex space-x-2 sm:space-x-4 h-full" style={{ minWidth: `${columns.length * 320}px` }}>
                 {columns.map((column) => (
                   <KanbanColumn
                     key={column.id}
