@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { ChevronDown, ChevronRight, MoreHorizontal, ZoomIn, ZoomOut, Eye, Settings, GripVertical, Maximize2, Minimize2 } from "lucide-react";
+import { ChevronDown, ChevronRight, MoreHorizontal, ZoomIn, ZoomOut, Eye, Settings, GripVertical, Maximize2, Minimize2, Wrench, Users, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -498,6 +498,19 @@ export default function GanttChart({
     return capabilities.find(c => c.id === capabilityId)?.name || "Unknown";
   };
 
+  const getResourceTypeIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'machine':
+        return <Wrench className="w-4 h-4 text-gray-500" />;
+      case 'person':
+        return <Users className="w-4 h-4 text-gray-500" />;
+      case 'facility':
+        return <Building2 className="w-4 h-4 text-gray-500" />;
+      default:
+        return <Wrench className="w-4 h-4 text-gray-500" />;
+    }
+  };
+
   const getResourceName = (resourceId: number) => {
     return resources.find(r => r.id === resourceId)?.name || "Unassigned";
   };
@@ -715,11 +728,17 @@ export default function GanttChart({
               )}
               <div className="flex-1">
                 <div className="font-medium text-gray-800">{resource.name}</div>
-                <div className="text-xs text-gray-500">
-                  Type: {resource.type} | 
-                  Capabilities: {resource.capabilities?.map(capId => 
-                    getCapabilityName(capId)
-                  ).join(", ") || "None"}
+                <div className="text-xs text-gray-500 flex items-center gap-2">
+                  <span className="flex items-center gap-1">
+                    {getResourceTypeIcon(resource.type)}
+                    {resource.type}
+                  </span>
+                  <span>•</span>
+                  <span>
+                    {resource.capabilities?.map(capId => 
+                      getCapabilityName(capId)
+                    ).join(", ") || "None"}
+                  </span>
                 </div>
               </div>
               <Badge className={`text-xs ${
@@ -770,11 +789,17 @@ export default function GanttChart({
             <div className="flex items-center h-full">
               <div className="flex-1">
                 <div className="font-medium text-gray-800">{resource.name}</div>
-                <div className="text-xs text-gray-500">
-                  Type: {resource.type} | 
-                  Capabilities: {resource.capabilities?.map(capId => 
-                    getCapabilityName(capId)
-                  ).join(", ") || "None"}
+                <div className="text-xs text-gray-500 flex items-center gap-2">
+                  <span className="flex items-center gap-1">
+                    {getResourceTypeIcon(resource.type)}
+                    {resource.type}
+                  </span>
+                  <span>•</span>
+                  <span>
+                    {resource.capabilities?.map(capId => 
+                      getCapabilityName(capId)
+                    ).join(", ") || "None"}
+                  </span>
                 </div>
               </div>
               <Badge className={`text-xs ${

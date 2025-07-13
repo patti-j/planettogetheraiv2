@@ -245,3 +245,6 @@ The application uses a modern full-stack architecture with strong typing through
 - Row height and view selections now persist when switching between normal and maximized views
 - Optimized for maximum flexibility with minimum 20px row height and 5px step increments
 - State management moved to dashboard level for consistent behavior across view modes
+- Fixed row height constraints by removing fixed padding that prevented rows from shrinking below 80px
+- Added resource type icons (wrench for machines, users for people, building for facilities)
+- Simplified resource display by removing "Type:" and "Capabilities:" labels for cleaner, more compact layout
