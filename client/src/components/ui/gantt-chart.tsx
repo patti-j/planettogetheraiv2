@@ -192,32 +192,20 @@ export default function GanttChart({
   }, []);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (isDraggingTimeline.current) {
+    if (isDraggingTimeline.current && timelineRef.current) {
       const deltaX = e.clientX - lastMousePos.current.x;
-      const newScrollLeft = Math.max(0, timelineScrollLeft - deltaX);
-      setTimelineScrollLeft(newScrollLeft);
-      
-      // Directly set the scrollbar position
-      if (timelineRef.current) {
-        timelineRef.current.scrollLeft = newScrollLeft;
-      }
-      
+      const newScrollLeft = Math.max(0, timelineRef.current.scrollLeft - deltaX);
+      timelineRef.current.scrollLeft = newScrollLeft;
       lastMousePos.current = { x: e.clientX, y: e.clientY };
     }
     
-    if (isDraggingResourceList.current) {
+    if (isDraggingResourceList.current && resourceListRef.current) {
       const deltaY = e.clientY - lastMousePos.current.y;
-      const newScrollTop = Math.max(0, resourceListScrollTop - deltaY);
-      setResourceListScrollTop(newScrollTop);
-      
-      // Directly set the scrollbar position
-      if (resourceListRef.current) {
-        resourceListRef.current.scrollTop = newScrollTop;
-      }
-      
+      const newScrollTop = Math.max(0, resourceListRef.current.scrollTop - deltaY);
+      resourceListRef.current.scrollTop = newScrollTop;
       lastMousePos.current = { x: e.clientX, y: e.clientY };
     }
-  }, [timelineScrollLeft, resourceListScrollTop]);
+  }, []);
 
   const handleMouseUp = useCallback(() => {
     isDraggingTimeline.current = false;
@@ -250,30 +238,15 @@ export default function GanttChart({
     };
   }, [handleMouseMove, handleMouseUp]);
 
-  // Sync scroll position with state (only when not dragging to avoid conflicts)
-  useEffect(() => {
-    if (timelineRef.current && !isDraggingTimeline.current) {
-      timelineRef.current.scrollLeft = timelineScrollLeft;
-    }
-  }, [timelineScrollLeft]);
+  // No need for useEffect sync - we're using direct DOM manipulation
 
-  useEffect(() => {
-    if (resourceListRef.current && !isDraggingResourceList.current) {
-      resourceListRef.current.scrollTop = resourceListScrollTop;
-    }
-  }, [resourceListScrollTop]);
-
-  // Handle scrollbar scroll events
+  // Handle scrollbar scroll events - no state updates needed for direct DOM manipulation
   const handleTimelineScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    if (!isDraggingTimeline.current) {
-      setTimelineScrollLeft(e.currentTarget.scrollLeft);
-    }
+    // Just let the native scroll happen, no state synchronization needed
   }, []);
 
   const handleResourceListScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    if (!isDraggingResourceList.current) {
-      setResourceListScrollTop(e.currentTarget.scrollTop);
-    }
+    // Just let the native scroll happen, no state synchronization needed
   }, []);
 
   const toggleJobExpansion = useCallback((jobId: number) => {
