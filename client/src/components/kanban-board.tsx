@@ -5,10 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { MoreHorizontal, Plus, Settings, Calendar, User, Building2, Wrench, ChevronDown, Maximize2, Minimize2 } from "lucide-react";
+import { MoreHorizontal, Plus, Settings, Calendar, User, Building2, Wrench, ChevronDown, Maximize2, Minimize2, Briefcase, Users } from "lucide-react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -22,8 +22,14 @@ interface KanbanBoardProps {
   operations: Operation[];
   resources: Resource[];
   capabilities: Capability[];
+  selectedConfig?: KanbanConfig;
+  onConfigChange?: (configId: number) => void;
+  kanbanConfigs?: KanbanConfig[];
   isMaximized?: boolean;
   onToggleMaximize?: () => void;
+  onCreateJob?: () => void;
+  onCreateResource?: () => void;
+  onConfigureBoards?: () => void;
 }
 
 interface KanbanColumn {
@@ -372,8 +378,14 @@ function KanbanBoard({
   operations, 
   resources, 
   capabilities,
+  selectedConfig: parentSelectedConfig,
+  onConfigChange,
+  kanbanConfigs: parentKanbanConfigs,
   isMaximized = false,
-  onToggleMaximize
+  onToggleMaximize,
+  onCreateJob,
+  onCreateResource,
+  onConfigureBoards
 }: KanbanBoardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -384,24 +396,14 @@ function KanbanBoard({
   const [configManagerOpen, setConfigManagerOpen] = useState(false);
   const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
 
-  // Fetch kanban configurations
-  const { data: kanbanConfigs = [], isLoading: configsLoading } = useQuery<KanbanConfig[]>({
+  // Use parent configs if available, otherwise fetch
+  const { data: fetchedKanbanConfigs = [], isLoading: configsLoading } = useQuery<KanbanConfig[]>({
     queryKey: ["/api/kanban-configs"],
+    enabled: !parentKanbanConfigs,
   });
 
-  // Get the selected configuration or default
-  const selectedConfig = useMemo(() => {
-    if (selectedConfigId) {
-      return kanbanConfigs.find(config => config.id === selectedConfigId);
-    }
-    // Use default configuration if available
-    const defaultConfig = kanbanConfigs.find(config => config.isDefault) || kanbanConfigs[0];
-    // Set the selectedConfigId to the default config if not already set
-    if (defaultConfig && !selectedConfigId) {
-      setSelectedConfigId(defaultConfig.id);
-    }
-    return defaultConfig;
-  }, [kanbanConfigs, selectedConfigId]);
+  const kanbanConfigs = parentKanbanConfigs || fetchedKanbanConfigs;
+  const selectedConfig = parentSelectedConfig || kanbanConfigs.find(config => config.isDefault) || kanbanConfigs[0];
 
   // Derived values from selected configuration
   const view = selectedConfig?.viewType || "jobs";
@@ -800,31 +802,6 @@ function KanbanBoard({
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
           <div className="flex items-center space-x-4">
             <h2 className="text-lg font-medium text-gray-900">Board</h2>
-            <div className="flex items-center">
-              <Select 
-                value={selectedConfigId?.toString() || ""} 
-                onValueChange={(value) => setSelectedConfigId(value ? parseInt(value) : null)}
-              >
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select configuration" />
-                </SelectTrigger>
-                <SelectContent>
-                  {kanbanConfigs.map((config) => (
-                    <SelectItem key={config.id} value={config.id.toString()}>
-                      {config.name} {config.isDefault && "(Default)"}
-                    </SelectItem>
-                  ))}
-                  <div className="border-t border-gray-200 my-1"></div>
-                  <div 
-                    className="flex items-center px-2 py-1.5 text-sm cursor-pointer hover:bg-gray-100 text-blue-600 font-medium"
-                    onClick={() => setConfigManagerOpen(true)}
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Configure Boards
-                  </div>
-                </SelectContent>
-              </Select>
-            </div>
             {selectedConfig && (
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <Badge variant="outline">{selectedConfig.viewType === "jobs" ? "Jobs" : "Operations"}</Badge>
@@ -834,20 +811,98 @@ function KanbanBoard({
             )}
           </div>
           
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" onClick={view === "jobs" ? handleAddJob : handleAddOperation}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add {view === "jobs" ? "Job" : "Operation"}
-            </Button>
+          <div className="flex items-center gap-2">
+            {/* Management Actions */}
+            <DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button className="bg-primary hover:bg-blue-700 text-white" size="sm">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create
+                      <ChevronDown className="w-4 h-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Create new jobs, resources, or boards</p>
+                </TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onCreateJob}>
+                  <Briefcase className="w-4 h-4 mr-2" />
+                  New Job
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onCreateResource}>
+                  <Wrench className="w-4 h-4 mr-2" />
+                  New Resource
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onConfigureBoards}>
+                  <Settings className="w-4 h-4 mr-2" />
+                  Configure Boards
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Board Selection */}
+            <DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      {selectedConfig?.name || "Select Board"}
+                      <ChevronDown className="w-4 h-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Switch between different board configurations</p>
+                </TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent align="end">
+                {kanbanConfigs.map((config) => (
+                  <DropdownMenuItem
+                    key={config.id}
+                    onClick={() => onConfigChange && onConfigChange(config.id)}
+                    className={selectedConfig?.id === config.id ? "bg-blue-50 text-blue-900" : ""}
+                  >
+                    <div className="flex items-center">
+                      {config.viewType === "jobs" ? (
+                        <Briefcase className="w-4 h-4 mr-2" />
+                      ) : config.viewType === "resources" ? (
+                        <Wrench className="w-4 h-4 mr-2" />
+                      ) : (
+                        <Users className="w-4 h-4 mr-2" />
+                      )}
+                      <div>
+                        <div className="font-medium">{config.name}</div>
+                        <div className="text-xs text-gray-500 capitalize">{config.viewType} board</div>
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onConfigureBoards} className="text-blue-600">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Configure Boards
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {onToggleMaximize && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="outline" size="sm" onClick={onToggleMaximize}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onToggleMaximize}
+                  >
                     {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{isMaximized ? "Minimize Kanban view" : "Maximize Kanban view"}</p>
+                  <p>{isMaximized ? "Exit full screen" : "Maximize board view"}</p>
                 </TooltipContent>
               </Tooltip>
             )}

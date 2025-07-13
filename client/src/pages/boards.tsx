@@ -61,107 +61,6 @@ export default function Boards() {
   const PageContent = () => (
     <div className="flex-1 flex flex-col">
       <main className="flex-1 overflow-hidden bg-white">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <div>
-            <h2 className="text-lg font-medium text-gray-900">Board</h2>
-            <p className="text-sm text-gray-600">Organize jobs, operations, and resources with drag-and-drop boards</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* Management Actions */}
-            <DropdownMenu>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <DropdownMenuTrigger asChild>
-                    <Button className="bg-primary hover:bg-blue-700 text-white" size="sm">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create
-                      <ChevronDown className="w-4 h-4 ml-2" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Create new jobs, resources, or boards</p>
-                </TooltipContent>
-              </Tooltip>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setJobDialogOpen(true)}>
-                  <Briefcase className="w-4 h-4 mr-2" />
-                  New Job
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setResourceDialogOpen(true)}>
-                  <Wrench className="w-4 h-4 mr-2" />
-                  New Resource
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setShowConfigManager(true)}>
-                  <Settings className="w-4 h-4 mr-2" />
-                  Configure Boards
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Board Selection */}
-            <DropdownMenu>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      {selectedConfig?.name || "Select Board"}
-                      <ChevronDown className="w-4 h-4 ml-2" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Switch between different board configurations</p>
-                </TooltipContent>
-              </Tooltip>
-              <DropdownMenuContent align="end">
-                {kanbanConfigs.map((config) => (
-                  <DropdownMenuItem
-                    key={config.id}
-                    onClick={() => handleConfigSelect(config.id)}
-                    className={selectedConfig?.id === config.id ? "bg-blue-50 text-blue-900" : ""}
-                  >
-                    <div className="flex items-center">
-                      {config.viewType === "jobs" ? (
-                        <Briefcase className="w-4 h-4 mr-2" />
-                      ) : config.viewType === "resources" ? (
-                        <Wrench className="w-4 h-4 mr-2" />
-                      ) : (
-                        <Users className="w-4 h-4 mr-2" />
-                      )}
-                      <div>
-                        <div className="font-medium">{config.name}</div>
-                        <div className="text-xs text-gray-500 capitalize">{config.viewType} board</div>
-                      </div>
-                    </div>
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setShowConfigManager(true)} className="text-blue-600">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Configure Boards
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsMaximized(!isMaximized)}
-                >
-                  {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{isMaximized ? "Exit full screen" : "Maximize board view"}</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
-        
         <KanbanBoard
           jobs={jobs}
           operations={operations}
@@ -169,6 +68,12 @@ export default function Boards() {
           capabilities={capabilities}
           selectedConfig={selectedConfig}
           onConfigChange={handleConfigSelect}
+          kanbanConfigs={kanbanConfigs}
+          isMaximized={isMaximized}
+          onToggleMaximize={() => setIsMaximized(!isMaximized)}
+          onCreateJob={() => setJobDialogOpen(true)}
+          onCreateResource={() => setResourceDialogOpen(true)}
+          onConfigureBoards={() => setShowConfigManager(true)}
         />
       </main>
     </div>
