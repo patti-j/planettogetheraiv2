@@ -32,6 +32,7 @@ export default function GanttChart({
   const [timeUnit, setTimeUnit] = useState<TimeUnit>("day");
   const [timelineScrollLeft, setTimelineScrollLeft] = useState(0);
   const [resourceListScrollTop, setResourceListScrollTop] = useState(0);
+  const [timelineBaseDate] = useState(() => new Date()); // Fixed base date
   
   const timelineRef = useRef<HTMLDivElement>(null);
   const resourceListRef = useRef<HTMLDivElement>(null);
@@ -40,9 +41,9 @@ export default function GanttChart({
   const lastMousePos = useRef({ x: 0, y: 0 });
 
   // Generate dynamic time scale based on time unit
-  const { timeScale, timelineBaseDate } = useMemo(() => {
+  const timeScale = useMemo(() => {
     const periods = [];
-    const now = new Date();
+    const now = timelineBaseDate;
     
     let periodCount: number;
     let stepMs: number;
@@ -136,11 +137,8 @@ export default function GanttChart({
       });
     }
     
-    return {
-      timeScale: periods,
-      timelineBaseDate: now
-    };
-  }, [timeUnit]);
+    return periods;
+  }, [timeUnit, timelineBaseDate]);
 
   // Calculate timeline dimensions
   const timelineWidth = useMemo(() => {
