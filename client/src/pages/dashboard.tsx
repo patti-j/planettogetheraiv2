@@ -97,14 +97,14 @@ export default function Dashboard() {
                     className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
                   >
                     <Factory className="w-4 h-4 mr-2" />
-                    Resources View
+                    Resource Gantt
                   </TabsTrigger>
                   <TabsTrigger 
                     value="operations" 
                     className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
                   >
                     <Factory className="w-4 h-4 mr-2" />
-                    Operations View
+                    Job Gantt
                   </TabsTrigger>
                 </TabsList>
                 <div className="flex items-center space-x-4 px-6">
@@ -250,14 +250,14 @@ export default function Dashboard() {
                     className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
                   >
                     <Factory className="w-4 h-4 mr-2" />
-                    Resources View
+                    Resource Gantt
                   </TabsTrigger>
                   <TabsTrigger 
                     value="operations" 
                     className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
                   >
                     <Factory className="w-4 h-4 mr-2" />
-                    Operations View
+                    Job Gantt
                   </TabsTrigger>
                 </TabsList>
                 <div className="flex items-center space-x-2 px-6">

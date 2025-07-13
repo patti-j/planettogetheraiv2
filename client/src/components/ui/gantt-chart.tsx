@@ -832,9 +832,9 @@ export default function GanttChart({
       
       {/* Resource View Manager Dialog */}
       <Dialog open={resourceViewManagerOpen} onOpenChange={setResourceViewManagerOpen}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Resource View Manager</DialogTitle>
+            <DialogTitle>Resource Gantt Manager</DialogTitle>
           </DialogHeader>
           <ResourceViewManager
             resources={resources}

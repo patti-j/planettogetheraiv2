@@ -100,18 +100,18 @@ export default function ResourceViewManager({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Resource Views</h3>
+        <h3 className="text-lg font-semibold">Resource Gantt Views</h3>
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => setEditingView(undefined)}>
               <Plus className="w-4 h-4 mr-2" />
-              Create View
+              Create Gantt
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingView ? "Edit Resource View" : "Create New Resource View"}
+                {editingView ? "Edit Resource Gantt" : "Create New Resource Gantt"}
               </DialogTitle>
             </DialogHeader>
             <ResourceViewForm
@@ -130,13 +130,13 @@ export default function ResourceViewManager({
             <CardContent className="p-6">
               <div className="text-center text-gray-500">
                 <Eye className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                <p className="text-lg font-medium mb-2">No resource views created</p>
+                <p className="text-lg font-medium mb-2">No resource gantts created</p>
                 <p className="text-sm mb-4">
-                  Create custom resource views to organize your resources in different sequences for better scheduling visibility.
+                  Create custom resource gantts to organize your resources in different sequences for better scheduling visibility.
                 </p>
                 <Button onClick={() => setIsFormOpen(true)}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Create Your First View
+                  Create Your First Gantt
                 </Button>
               </div>
             </CardContent>

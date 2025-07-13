@@ -218,3 +218,13 @@ The application uses a modern full-stack architecture with strong typing through
 - Implemented adaptive minimum width constraints to prevent operations from becoming invisible at extreme zoom levels
 - Day view: 6hr operation = 50px, 2hr operation = 17px (proper proportional scaling)
 - Month view: 6hr operation = 2px, 2hr operation = 2px (constrained by minimum width but mathematically correct scaling)
+
+✓ **Custom Resource View Management System (July 13, 2025)**:
+- Implemented complete resource view management with database schema and API endpoints
+- Added resource view form with drag-and-drop resource sequencing using react-dnd
+- Created resource view manager for creating, editing, and deleting custom resource groupings
+- Integrated view selector in Gantt chart header for easy switching between resource sequences
+- Added default view functionality and automatic resource ordering based on selected view
+- Fixed dialog height constraints with scrollable content areas for better UX
+- Renamed "Resource View" to "Resource Gantt" and "Operations View" to "Job Gantt" throughout the UI
+- Resource views now allow users to create custom resource sequences for optimized scheduling workflows

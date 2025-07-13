@@ -191,10 +191,10 @@ export default function ResourceViewForm({
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <Card className="w-full max-w-2xl">
+      <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
         <CardHeader>
           <CardTitle>
-            {resourceView ? "Edit Resource View" : "Create New Resource View"}
+            {resourceView ? "Edit Resource Gantt" : "Create New Resource Gantt"}
           </CardTitle>
         </CardHeader>
         <CardContent>
