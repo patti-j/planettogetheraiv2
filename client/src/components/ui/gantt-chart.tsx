@@ -172,8 +172,8 @@ export default function GanttChart({
     if (selectedResourceViewId) {
       return resourceViews.find(v => v.id === selectedResourceViewId);
     }
-    // If no view is selected, use the default view or the first available view
-    return resourceViews.find(v => v.isDefault) || resourceViews[0];
+    // If no view is selected, don't use any view for All Resources
+    return null;
   }, [resourceViews, selectedResourceViewId]);
   
   // Order resources according to the selected view
@@ -209,6 +209,11 @@ export default function GanttChart({
   // Get color scheme and text labeling from selected resource view
   const colorScheme = (selectedResourceViewId && selectedResourceView?.colorScheme) || "by_job";
   const textLabeling = (selectedResourceViewId && selectedResourceView?.textLabeling) || "operation_name";
+  
+  // Debug logging
+  useEffect(() => {
+    console.log("Text labeling changed:", textLabeling, "for view:", selectedResourceView?.name);
+  }, [textLabeling, selectedResourceView?.name]);
 
   // Handler for quick color scheme changes
   const handleColorSchemeChange = async (newColorScheme: string) => {
@@ -239,9 +244,15 @@ export default function GanttChart({
       await apiRequest("PUT", `/api/resource-views/${selectedResourceView.id}`, {
         textLabeling: newTextLabeling
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/resource-views"] });
-      toast({ title: `Text labeling changed to ${newTextLabeling.replace("_", " ")}` });
+      
+      // Force invalidation of the resource views cache
+      await queryClient.invalidateQueries({ queryKey: ["/api/resource-views"] });
+      
+      // Show success message with better display name
+      const displayName = getTextLabelingDisplayName(newTextLabeling);
+      toast({ title: `Text labeling changed to ${displayName}` });
     } catch (error) {
+      console.error("Failed to change text labeling:", error);
       toast({ title: "Failed to change text labeling", variant: "destructive" });
     }
   };
