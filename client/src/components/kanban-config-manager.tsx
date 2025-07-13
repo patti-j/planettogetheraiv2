@@ -28,7 +28,7 @@ interface SwimLaneFieldOption {
 }
 
 const SWIM_LANE_FIELDS: SwimLaneFieldOption[] = [
-  { value: "status", label: "Status", type: "both", values: ["planned", "in_progress", "completed", "cancelled"] },
+  { value: "status", label: "Status", type: "both", values: ["planned", "In-Progress", "completed", "cancelled"] },
   { value: "priority", label: "Priority", type: "both", values: ["low", "medium", "high"] },
   { value: "customer", label: "Customer", type: "jobs", values: [] }, // Will be populated dynamically
   { value: "assignedResourceId", label: "Assigned Resource", type: "operations", values: [] }, // Will be populated dynamically

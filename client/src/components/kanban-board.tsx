@@ -537,34 +537,80 @@ function KanbanBoard({
     return result;
   }, [jobs, operations, view, swimLaneField, swimLaneColors, resources, selectedConfig]);
 
-  // Mutations for updating status
+  // Mutations for updating status with optimistic updates
   const updateJobMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      const response = await apiRequest("PUT", `/api/jobs/${id}`, { status });
+    mutationFn: async (updateData: { id: number; [key: string]: any }) => {
+      const response = await apiRequest("PUT", `/api/jobs/${updateData.id}`, updateData);
       return response.json();
     },
-    onSuccess: () => {
+    onMutate: async (updateData) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: ["/api/jobs"] });
+      
+      // Snapshot the previous value
+      const previousJobs = queryClient.getQueryData(["/api/jobs"]);
+      
+      // Optimistically update to the new value
+      queryClient.setQueryData(["/api/jobs"], (old: Job[]) => {
+        if (!old) return old;
+        return old.map(job => 
+          job.id === updateData.id 
+            ? { ...job, ...updateData } 
+            : job
+        );
+      });
+      
+      return { previousJobs };
+    },
+    onError: (err, updateData, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousJobs) {
+        queryClient.setQueryData(["/api/jobs"], context.previousJobs);
+      }
+      toast({ title: "Failed to update job", variant: "destructive" });
+    },
+    onSettled: () => {
+      // Always refetch after error or success
       queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
       queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
-      toast({ title: "Job status updated successfully" });
-    },
-    onError: () => {
-      toast({ title: "Failed to update job status", variant: "destructive" });
     },
   });
 
   const updateOperationMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      const response = await apiRequest("PUT", `/api/operations/${id}`, { status });
+    mutationFn: async (updateData: { id: number; [key: string]: any }) => {
+      const response = await apiRequest("PUT", `/api/operations/${updateData.id}`, updateData);
       return response.json();
     },
-    onSuccess: () => {
+    onMutate: async (updateData) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: ["/api/operations"] });
+      
+      // Snapshot the previous value
+      const previousOperations = queryClient.getQueryData(["/api/operations"]);
+      
+      // Optimistically update to the new value
+      queryClient.setQueryData(["/api/operations"], (old: Operation[]) => {
+        if (!old) return old;
+        return old.map(operation => 
+          operation.id === updateData.id 
+            ? { ...operation, ...updateData } 
+            : operation
+        );
+      });
+      
+      return { previousOperations };
+    },
+    onError: (err, updateData, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousOperations) {
+        queryClient.setQueryData(["/api/operations"], context.previousOperations);
+      }
+      toast({ title: "Failed to update operation", variant: "destructive" });
+    },
+    onSettled: () => {
+      // Always refetch after error or success
       queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
-      toast({ title: "Operation status updated successfully" });
-    },
-    onError: () => {
-      toast({ title: "Failed to update operation status", variant: "destructive" });
     },
   });
 
@@ -661,6 +707,27 @@ function KanbanBoard({
         updateJobMutation.mutate({ id: item.id, ...updateData });
       } else if (item.type === "operation") {
         updateOperationMutation.mutate({ id: item.id, ...updateData });
+      }
+      
+      // Update card ordering if provided
+      if (insertAtIndex !== undefined && selectedConfig?.id) {
+        const targetColumn = columns.find(col => col.id === targetValue);
+        if (targetColumn) {
+          const newOrder = [...targetColumn.items];
+          // Remove the item if it was in this column
+          const existingIndex = newOrder.findIndex(i => i.id === item.id);
+          if (existingIndex !== -1) {
+            newOrder.splice(existingIndex, 1);
+          }
+          // Insert at the target position
+          newOrder.splice(insertAtIndex, 0, item);
+          
+          updateKanbanOrderMutation.mutate({
+            configId: selectedConfig.id,
+            swimLaneValue: targetValue,
+            cardIds: newOrder.map(i => i.id)
+          });
+        }
       }
     }
   };

@@ -370,3 +370,21 @@ The application uses a modern full-stack architecture with strong typing through
 - Added comprehensive report display with proper icons, badges, and data visualization
 - Integrated print and export functionality for generated reports
 - All maximize modes provide enhanced layouts (more columns, better spacing) for improved productivity
+
+✓ **Production Schedule Page Maximize Enhancement (July 13, 2025)**:
+- Added maximize button to entire Production Schedule page header (not just Gantt chart)
+- Maximize button now controls full dashboard view including metrics and analytics widgets
+- Consistent arrow icon styling (↗️ for maximize, ↙️ for minimize) matching other pages
+- Enhanced maximize view includes complete production metrics and custom analytics widgets
+- Tooltip support for maximize functionality with descriptive hover text
+
+✓ **Kanban Drag-and-Drop UX Improvements (July 13, 2025)**:
+- Implemented optimistic updates for job and operation mutations to prevent visual jumping
+- Fixed drag-and-drop cards to maintain stable positions during status changes
+- Added comprehensive error handling with rollback on failed mutations
+- Enhanced handleDrop function with proper card ordering and insertion positioning
+- Fixed mutation functions to accept flexible update data for multiple field types
+- Improved card positioning logic to handle both reordering and cross-column movement
+- Cards now smoothly transition without returning to original position first
+- Updated status values in Kanban configuration to use "In-Progress" instead of "in_progress"
+- Fixed swimlane field values to match actual operation status values for consistency

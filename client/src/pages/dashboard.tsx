@@ -413,6 +413,20 @@ export default function Dashboard() {
                   <p>Create custom analytics widgets using AI</p>
                 </TooltipContent>
               </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsMaximized(!isMaximized)}
+                  >
+                    {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Maximize entire production schedule view</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
 
