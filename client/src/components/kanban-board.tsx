@@ -818,7 +818,7 @@ function KanbanBoard({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
-                  className="bg-blue-600 hover:bg-blue-700 text-white" 
+                  className="bg-primary hover:bg-blue-700 text-white" 
                   size="sm"
                   onClick={() => {
                     if (selectedConfig?.viewType === "jobs") {
