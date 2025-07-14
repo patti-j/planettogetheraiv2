@@ -432,38 +432,40 @@ export default function Dashboard() {
             </div>
 
             {/* Gantt Container */}
-            <div className="flex-1 bg-white mx-6 mb-6 rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="flex-1 bg-white mx-6 mb-6 rounded-lg shadow-sm border border-gray-200 overflow-hidden min-h-0">
               <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as "operations" | "resources" | "customers")}>
-                <div className="border-b border-gray-200 bg-gray-50">
-                  <div className="flex items-center justify-between px-4">
-                    <TabsList className="h-auto p-0 bg-transparent">
-                      <TabsTrigger 
-                        value="resources" 
-                        className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
-                      >
-                        <Wrench className="w-4 h-4 mr-2" />
-                        Resource Gantt
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="operations" 
-                        className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
-                      >
-                        <Calendar className="w-4 h-4 mr-2" />
-                        Job Gantt
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="customers" 
-                        className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
-                      >
-                        <User className="w-4 h-4 mr-2" />
-                        Customer Gantt
-                      </TabsTrigger>
-                    </TabsList>
+                {!isMobileView && (
+                  <div className="border-b border-gray-200 bg-gray-50">
+                    <div className="flex items-center justify-between px-4">
+                      <TabsList className="h-auto p-0 bg-transparent">
+                        <TabsTrigger 
+                          value="resources" 
+                          className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
+                        >
+                          <Wrench className="w-4 h-4 mr-2" />
+                          Resource Gantt
+                        </TabsTrigger>
+                        <TabsTrigger 
+                          value="operations" 
+                          className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
+                        >
+                          <Calendar className="w-4 h-4 mr-2" />
+                          Job Gantt
+                        </TabsTrigger>
+                        <TabsTrigger 
+                          value="customers" 
+                          className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
+                        >
+                          <User className="w-4 h-4 mr-2" />
+                          Customer Gantt
+                        </TabsTrigger>
+                      </TabsList>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {isMobileView ? (
-                  <div className="h-full flex flex-col min-h-0">
+                  <div className="h-full">
                     <MobileSchedule
                       jobs={jobs}
                       operations={operations}
