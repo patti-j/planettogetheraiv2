@@ -194,9 +194,9 @@ export default function Dashboard() {
   if (isMaximized) {
     return (
       <TooltipProvider>
-        <div className="h-screen bg-surface">
+        <div className="h-screen bg-surface overflow-y-auto">
           {/* Maximized Complete Dashboard View */}
-          <div className="flex flex-col h-full bg-white">
+          <div className="flex flex-col min-h-full bg-white">
             {/* Header */}
             <header className="bg-white shadow-sm border-b border-gray-200 p-6">
               <div className="flex items-center justify-between mb-6">
@@ -432,7 +432,7 @@ export default function Dashboard() {
             </div>
 
             {/* Gantt Container */}
-            <div className="flex-1 bg-white mx-6 mb-6 rounded-lg shadow-sm border border-gray-200 overflow-hidden min-h-0">
+            <div className={`bg-white mx-6 mb-6 rounded-lg shadow-sm border border-gray-200 ${isMobileView ? 'flex-1 min-h-0' : 'flex-1 overflow-hidden'}`}>
               <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as "operations" | "resources" | "customers")}>
                 {!isMobileView && (
                   <div className="border-b border-gray-200 bg-gray-50">
@@ -465,7 +465,7 @@ export default function Dashboard() {
                 )}
 
                 {isMobileView ? (
-                  <div className="h-full">
+                  <div className="h-full flex flex-col">
                     <MobileSchedule
                       jobs={jobs}
                       operations={operations}
