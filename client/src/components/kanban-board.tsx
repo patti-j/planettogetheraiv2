@@ -850,11 +850,11 @@ function KanbanBoard({
               )}
             </div>
             
-            {/* Mobile controls in vertical stack */}
-            <div className="space-y-3 w-full">
-              <div className="grid grid-cols-2 gap-3 w-full">
+            {/* Mobile controls - simplified layout */}
+            <div className="space-y-2">
+              <div className="flex gap-2">
                 <Button 
-                  className="bg-primary hover:bg-blue-700 text-white text-xs w-full min-w-0" 
+                  className="bg-primary hover:bg-blue-700 text-white text-xs flex-1 min-w-0" 
                   size="sm"
                   onClick={() => {
                     if (selectedConfig?.viewType === "jobs") {
@@ -866,19 +866,18 @@ function KanbanBoard({
                     }
                   }}
                 >
-                  <Plus className="w-4 h-4 mr-1 flex-shrink-0" />
-                  <span className="truncate">
-                    {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
-                  </span>
+                  <Plus className="w-4 h-4 mr-1" />
+                  <span className="hidden sm:inline">New </span>
+                  {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Op" : "Resource"}
                 </Button>
 
                 <Button 
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs w-full min-w-0" 
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs flex-1 min-w-0" 
                   size="sm"
                   onClick={onAICreateBoards}
                 >
-                  <Sparkles className="w-4 h-4 mr-1 flex-shrink-0" />
-                  <span className="truncate">AI Boards</span>
+                  <Sparkles className="w-4 h-4 mr-1" />
+                  AI
                 </Button>
               </div>
               
@@ -937,14 +936,14 @@ function KanbanBoard({
           ) : (
             <div className="h-full">
               {/* Mobile columns */}
-              <div className="md:hidden h-full overflow-x-auto p-2" style={{ WebkitOverflowScrolling: 'touch' }}>
-                <div className="flex gap-3 h-full pb-4" style={{ minWidth: `${columns.length * 272}px` }}>
+              <div className="md:hidden h-full mobile-scroll-x p-2">
+                <div className="flex gap-2 h-full pb-4 pr-4" style={{ minWidth: `${columns.length * 240}px` }}>
                   {columns.map((column) => (
                     <KanbanColumn
                       key={column.id}
                       column={column}
                       onDrop={handleDrop}
-                      className="w-64 flex-shrink-0"
+                      className="w-56 flex-shrink-0"
                     >
                       {view === "jobs" ? (
                         column.items.map((item) => (

@@ -313,4 +313,29 @@
   .kanban-mobile-dropdown {
     width: 100%;
   }
+  
+  /* Mobile scrollbar styling */
+  .mobile-scroll-x {
+    overflow-x: scroll;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .mobile-scroll-x::-webkit-scrollbar {
+    height: 8px;
+  }
+  
+  .mobile-scroll-x::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  
+  .mobile-scroll-x::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+  
+  .mobile-scroll-x::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
 }
