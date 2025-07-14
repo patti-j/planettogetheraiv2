@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertCircle, CheckCircle, Clock, Users, Settings, Wrench, Building2, Play, Pause, AlertTriangle, GripVertical, RotateCcw, PauseCircle, PlayCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { AlertCircle, CheckCircle, Clock, Users, Settings, Wrench, Building2, Play, Pause, AlertTriangle, GripVertical, RotateCcw, PauseCircle, PlayCircle, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useDrag, useDrop, DndProvider } from "react-dnd";
@@ -192,6 +194,9 @@ export default function ShopFloor() {
   const [localOperations, setLocalOperations] = useState<Operation[]>([]);
   const [hasReorder, setHasReorder] = useState(false);
   const [isLivePaused, setIsLivePaused] = useState(false);
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [customMetrics, setCustomMetrics] = useState<any[]>([]);
   const queryClient = useQueryClient();
 
   // Fetch data
@@ -310,6 +315,39 @@ export default function ShopFloor() {
     rescheduleOperationsMutation.mutate(operationsToUpdate);
   };
 
+  // AI metrics configuration mutation
+  const aiMetricsMutation = useMutation({
+    mutationFn: async (prompt: string) => {
+      return apiRequest("POST", "/api/ai/command", { 
+        command: `CREATE_CUSTOM_METRICS: ${prompt}` 
+      });
+    },
+    onSuccess: (data) => {
+      if (data.success && data.data) {
+        setCustomMetrics(data.data);
+        toast({
+          title: "Metrics Updated",
+          description: "Custom metrics have been created successfully.",
+        });
+      }
+      setAiDialogOpen(false);
+      setAiPrompt("");
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create custom metrics. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle AI metrics creation
+  const handleAiMetrics = () => {
+    if (!aiPrompt.trim()) return;
+    aiMetricsMutation.mutate(aiPrompt);
+  };
+
   // Filter operations based on selected resource and time
   const filteredOperations = localOperations.filter(op => {
     if (selectedResource !== "all" && op.resourceId !== parseInt(selectedResource)) {
@@ -423,6 +461,53 @@ export default function ShopFloor() {
                 </>
               )}
             </Button>
+            
+            {/* AI Metrics Configuration */}
+            <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-none"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  AI Metrics
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Configure Metrics with AI</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Describe the metrics you want to see on the shop floor:
+                    </label>
+                    <Textarea
+                      placeholder="e.g., Show efficiency metrics, completion rates by resource type, or queue depths by priority..."
+                      value={aiPrompt}
+                      onChange={(e) => setAiPrompt(e.target.value)}
+                      className="min-h-[100px]"
+                    />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      variant="outline"
+                      onClick={() => setAiDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleAiMetrics}
+                      disabled={!aiPrompt.trim() || aiMetricsMutation.isPending}
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                    >
+                      {aiMetricsMutation.isPending ? "Creating..." : "Create Metrics"}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>
@@ -488,6 +573,30 @@ export default function ShopFloor() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Custom AI Metrics */}
+        {customMetrics.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+            {customMetrics.map((metric, index) => (
+              <Card key={index}>
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">{metric.title}</p>
+                      <p className="text-2xl font-bold text-blue-600">{metric.value}</p>
+                      {metric.subtitle && (
+                        <p className="text-xs text-gray-500">{metric.subtitle}</p>
+                      )}
+                    </div>
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Sparkles className="w-4 h-4 text-blue-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {/* Filters */}
         <div className="flex gap-2 mb-4">

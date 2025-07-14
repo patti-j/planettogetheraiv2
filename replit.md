@@ -629,6 +629,18 @@ The application uses a modern full-stack architecture with strong typing through
 - Implemented proper scrolling behavior with flex layout and overflow-y-auto for operations list
 - Enhanced mobile layout with fixed header and scrollable content area
 
+✓ **AI Metrics Configuration for Shop Floor (July 14, 2025)**:
+- Added AI-powered metrics configuration functionality to shop floor page
+- Implemented AI Metrics button with purple gradient styling for consistency
+- Created AI dialog allowing users to describe desired metrics in natural language
+- Added CREATE_CUSTOM_METRICS action to AI agent for processing metric requests
+- Implemented comprehensive metrics generation covering efficiency, utilization, completion rates, queue depths, priority tracking, and machine status
+- Added pauseable live updates with play/pause controls to prevent UI disruption during interaction
+- Fixed dropdown state management to persist selections during data updates
+- Enhanced shop floor page with drag-and-drop operation reordering and reschedule functionality
+- Custom AI metrics display dynamically based on user prompts with real-time data
+- Integrated AI metrics seamlessly with existing shop floor interface and mobile responsiveness
+
 ✓ **AI-First Button Ordering Enhancement (July 14, 2025)**:
 - Reordered AI and New buttons on both reports and analytics pages to emphasize AI-first approach
 - AI buttons now appear before New buttons to prioritize AI-powered features

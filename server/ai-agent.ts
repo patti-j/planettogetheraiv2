@@ -346,6 +346,19 @@ async function executeAction(action: string, parameters: any, message: string, c
           actions: ["CALCULATE_CUSTOM_METRIC"]
         };
 
+      case "CREATE_CUSTOM_METRICS":
+        let metricsContext = context;
+        if (!metricsContext) {
+          metricsContext = await getSystemContext();
+        }
+        const customMetrics = await createCustomMetrics(parameters, metricsContext);
+        return {
+          success: true,
+          message: message || "Created custom metrics for shop floor",
+          data: customMetrics,
+          actions: ["CREATE_CUSTOM_METRICS"]
+        };
+
       case "CHANGE_COLOR_SCHEME":
         // Find the current default resource view and update its color scheme
         const resourceViews = await storage.getResourceViews();
@@ -702,6 +715,130 @@ async function calculateCustomMetric(parameters: any, context?: SystemContext) {
     calculatedAt: new Date().toISOString(),
     error: 'Calculation not supported'
   };
+}
+
+async function createCustomMetrics(parameters: any, context?: SystemContext) {
+  const { jobs, operations, resources } = context || {};
+  
+  // Generate shop floor metrics based on AI prompt
+  const prompt = parameters.prompt || parameters.description || "";
+  
+  // Common shop floor metrics that can be generated
+  const metrics = [];
+  
+  // Efficiency metrics
+  if (prompt.toLowerCase().includes("efficiency") || prompt.toLowerCase().includes("productivity")) {
+    const completedOps = operations?.filter(op => op.status === "Completed") || [];
+    const totalOps = operations?.length || 1;
+    const efficiency = Math.round((completedOps.length / totalOps) * 100);
+    
+    metrics.push({
+      title: "Operation Efficiency",
+      value: `${efficiency}%`,
+      subtitle: `${completedOps.length} of ${totalOps} operations completed`
+    });
+  }
+  
+  // Resource utilization metrics
+  if (prompt.toLowerCase().includes("utilization") || prompt.toLowerCase().includes("resource")) {
+    const activeResources = resources?.filter(r => r.status === "active") || [];
+    const totalResources = resources?.length || 1;
+    const utilization = Math.round((activeResources.length / totalResources) * 100);
+    
+    metrics.push({
+      title: "Resource Utilization",
+      value: `${utilization}%`,
+      subtitle: `${activeResources.length} of ${totalResources} resources active`
+    });
+  }
+  
+  // Completion rate metrics
+  if (prompt.toLowerCase().includes("completion") || prompt.toLowerCase().includes("rate")) {
+    const completedJobs = jobs?.filter(j => j.status === "completed") || [];
+    const totalJobs = jobs?.length || 1;
+    const completionRate = Math.round((completedJobs.length / totalJobs) * 100);
+    
+    metrics.push({
+      title: "Job Completion Rate",
+      value: `${completionRate}%`,
+      subtitle: `${completedJobs.length} of ${totalJobs} jobs completed`
+    });
+  }
+  
+  // Queue depth metrics
+  if (prompt.toLowerCase().includes("queue") || prompt.toLowerCase().includes("backlog")) {
+    const pendingOps = operations?.filter(op => op.status === "Pending") || [];
+    const inProgressOps = operations?.filter(op => op.status === "In-Progress") || [];
+    
+    metrics.push({
+      title: "Queue Depth",
+      value: pendingOps.length,
+      subtitle: `${pendingOps.length} pending, ${inProgressOps.length} in progress`
+    });
+  }
+  
+  // Priority metrics
+  if (prompt.toLowerCase().includes("priority") || prompt.toLowerCase().includes("urgent")) {
+    const highPriorityJobs = jobs?.filter(j => j.priority === "high") || [];
+    const mediumPriorityJobs = jobs?.filter(j => j.priority === "medium") || [];
+    const lowPriorityJobs = jobs?.filter(j => j.priority === "low") || [];
+    
+    metrics.push({
+      title: "High Priority Jobs",
+      value: highPriorityJobs.length,
+      subtitle: `${mediumPriorityJobs.length} medium, ${lowPriorityJobs.length} low`
+    });
+  }
+  
+  // Machine-specific metrics
+  if (prompt.toLowerCase().includes("machine") || prompt.toLowerCase().includes("equipment")) {
+    const machines = resources?.filter(r => r.type === "Machine") || [];
+    const activeMachines = machines.filter(m => m.status === "active");
+    
+    metrics.push({
+      title: "Machine Status",
+      value: activeMachines.length,
+      subtitle: `${activeMachines.length} of ${machines.length} machines active`
+    });
+  }
+  
+  // Time-based metrics
+  if (prompt.toLowerCase().includes("time") || prompt.toLowerCase().includes("duration")) {
+    const avgDuration = operations?.reduce((sum, op) => sum + (op.duration || 0), 0) / (operations?.length || 1);
+    
+    metrics.push({
+      title: "Avg Operation Time",
+      value: `${Math.round(avgDuration)}h`,
+      subtitle: `Average duration across all operations`
+    });
+  }
+  
+  // Default metrics if no specific ones are found
+  if (metrics.length === 0) {
+    const activeOps = operations?.filter(op => op.status === "In-Progress") || [];
+    const completedOps = operations?.filter(op => op.status === "Completed") || [];
+    const pendingOps = operations?.filter(op => op.status === "Pending") || [];
+    
+    metrics.push(
+      {
+        title: "Active Operations",
+        value: activeOps.length,
+        subtitle: "Currently in progress"
+      },
+      {
+        title: "Completed Today",
+        value: completedOps.length,
+        subtitle: "Operations finished"
+      },
+      {
+        title: "Pending Queue",
+        value: pendingOps.length,
+        subtitle: "Awaiting assignment"
+      }
+    );
+  }
+  
+  return metrics;
 }
 
 function generateWidgetData(type: string, config: any, context?: SystemContext) {
