@@ -810,9 +810,9 @@ function KanbanBoard({
     <DndProvider backend={HTML5Backend}>
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="p-4 border-b border-gray-200 bg-white">
+        <div className="px-4 py-2 border-b border-gray-200 bg-white">
           {/* Desktop header */}
-          <div className="hidden md:flex items-center justify-between mb-4">
+          <div className="hidden md:flex items-center justify-between mb-2">
             <div className="flex items-center space-x-4">
               <h2 className="text-lg font-medium text-gray-900">Board</h2>
               {selectedConfig && (
@@ -844,7 +844,7 @@ function KanbanBoard({
 
           {/* Mobile header */}
           <div className="md:hidden">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <h2 className="text-lg font-medium text-gray-900">Board</h2>
               {/* Hide maximize button on mobile since it's automatically maximized */}
               {onToggleMaximize && !isMobile && (
@@ -859,7 +859,7 @@ function KanbanBoard({
             </div>
             
             {/* Mobile controls - stacked layout */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Button 
                 className="bg-primary hover:bg-blue-700 text-white text-xs w-full" 
                 size="sm"
