@@ -139,8 +139,87 @@ export default function Boards() {
   if (isMaximized) {
     return (
       <TooltipProvider>
-        <div className="fixed inset-0 bg-white z-50">
+        <div className="fixed inset-0 bg-white z-50 flex">
+          <Sidebar />
           <PageContent />
+          
+          {/* Dialogs for maximized view */}
+          <Dialog open={jobDialogOpen} onOpenChange={setJobDialogOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>New Job</DialogTitle>
+              </DialogHeader>
+              <JobForm onSuccess={() => setJobDialogOpen(false)} />
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={resourceDialogOpen} onOpenChange={setResourceDialogOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>New Resource</DialogTitle>
+              </DialogHeader>
+              <ResourceForm onSuccess={() => setResourceDialogOpen(false)} />
+            </DialogContent>
+          </Dialog>
+
+          <KanbanConfigManager
+            open={showConfigManager}
+            onOpenChange={setShowConfigManager}
+            jobs={jobs}
+            resources={resources}
+            capabilities={capabilities}
+          />
+
+          <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center">
+                  <Sparkles className="w-5 h-5 mr-2 text-purple-500" />
+                  AI Board Creation
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700">
+                    Describe the board you want to create:
+                  </label>
+                  <Textarea
+                    placeholder="e.g., 'Create a board to track jobs by priority with color coding' or 'Show operations grouped by resource assignment'"
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    className="mt-1"
+                    rows={4}
+                  />
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setAiDialogOpen(false)}
+                    disabled={aiMutation.isPending}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                    onClick={handleAICreate}
+                    disabled={aiMutation.isPending || !aiPrompt.trim()}
+                  >
+                    {aiMutation.isPending ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Create Board
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </TooltipProvider>
     );
