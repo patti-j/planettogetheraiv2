@@ -162,18 +162,18 @@ export default function AIAnalyticsManager({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl md:max-w-4xl lg:max-w-6xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>AI Analytics & Dashboard Manager</DialogTitle>
+          <DialogTitle className="text-lg sm:text-xl">AI Analytics & Dashboard Manager</DialogTitle>
         </DialogHeader>
         
         <div className="flex-1 overflow-hidden">
           <Tabs defaultValue="ai-create" className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="ai-create">AI Create</TabsTrigger>
-              <TabsTrigger value="widgets">Widget Library</TabsTrigger>
-              <TabsTrigger value="layout">Layout Controls</TabsTrigger>
-              <TabsTrigger value="settings">Dashboard Settings</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+              <TabsTrigger value="ai-create" className="text-xs sm:text-sm">AI Create</TabsTrigger>
+              <TabsTrigger value="widgets" className="text-xs sm:text-sm">Widgets</TabsTrigger>
+              <TabsTrigger value="layout" className="text-xs sm:text-sm hidden sm:flex">Layout</TabsTrigger>
+              <TabsTrigger value="settings" className="text-xs sm:text-sm hidden sm:flex">Settings</TabsTrigger>
             </TabsList>
 
             <TabsContent value="ai-create" className="flex-1 space-y-4">
@@ -212,7 +212,7 @@ export default function AIAnalyticsManager({
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                   <Card>
                     <CardHeader className="pb-3">
                       <CardTitle className="text-sm">Quick Examples</CardTitle>
@@ -221,7 +221,7 @@ export default function AIAnalyticsManager({
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="w-full justify-start text-left h-auto p-2"
+                        className="w-full justify-start text-left h-auto p-2 text-xs sm:text-sm"
                         onClick={() => setAiPrompt("Show me production efficiency metrics with resource utilization charts")}
                       >
                         Production Efficiency Dashboard
@@ -229,7 +229,7 @@ export default function AIAnalyticsManager({
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="w-full justify-start text-left h-auto p-2"
+                        className="w-full justify-start text-left h-auto p-2 text-xs sm:text-sm"
                         onClick={() => setAiPrompt("Create job tracking reports with completion status and timeline analysis")}
                       >
                         Job Tracking Reports
@@ -237,7 +237,7 @@ export default function AIAnalyticsManager({
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="w-full justify-start text-left h-auto p-2"
+                        className="w-full justify-start text-left h-auto p-2 text-xs sm:text-sm"
                         onClick={() => setAiPrompt("Generate capacity planning analytics with resource allocation insights")}
                       >
                         Capacity Planning Analytics
@@ -256,13 +256,13 @@ export default function AIAnalyticsManager({
                         ) : (
                           currentWidgets.map((widget) => (
                             <div key={widget.id} className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-xs">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <Badge variant="outline" className="text-xs shrink-0">
                                   {widget.type}
                                 </Badge>
-                                <span className="text-sm">{widget.title}</span>
+                                <span className="text-sm truncate">{widget.title}</span>
                               </div>
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-1 shrink-0">
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
@@ -291,44 +291,44 @@ export default function AIAnalyticsManager({
             </TabsContent>
 
             <TabsContent value="widgets" className="flex-1 space-y-4">
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <Button 
                   variant="outline" 
-                  className="h-20 flex flex-col items-center gap-2"
+                  className="h-16 sm:h-20 flex flex-col items-center gap-1 sm:gap-2"
                   onClick={() => createManualWidget("metric")}
                 >
-                  <BarChart3 className="w-6 h-6" />
+                  <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6" />
                   <span className="text-xs">Metric Card</span>
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="h-20 flex flex-col items-center gap-2"
+                  className="h-16 sm:h-20 flex flex-col items-center gap-1 sm:gap-2"
                   onClick={() => createManualWidget("chart")}
                 >
-                  <TrendingUp className="w-6 h-6" />
+                  <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" />
                   <span className="text-xs">Chart Widget</span>
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="h-20 flex flex-col items-center gap-2"
+                  className="h-16 sm:h-20 flex flex-col items-center gap-1 sm:gap-2"
                   onClick={() => createManualWidget("table")}
                 >
-                  <Grid3X3 className="w-6 h-6" />
+                  <Grid3X3 className="w-5 h-5 sm:w-6 sm:h-6" />
                   <span className="text-xs">Data Table</span>
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="h-20 flex flex-col items-center gap-2"
+                  className="h-16 sm:h-20 flex flex-col items-center gap-1 sm:gap-2"
                   onClick={() => createManualWidget("progress")}
                 >
-                  <CheckCircle className="w-6 h-6" />
+                  <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" />
                   <span className="text-xs">Progress Bar</span>
                 </Button>
               </div>
 
-              <div className="border rounded-lg p-4">
-                <h3 className="font-medium mb-3">Widget Templates</h3>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="border rounded-lg p-3 sm:p-4">
+                <h3 className="font-medium mb-3 text-sm sm:text-base">Widget Templates</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="p-3 border rounded-lg">
                     <h4 className="font-medium text-sm">Production Overview</h4>
                     <p className="text-xs text-gray-500 mt-1">Key metrics and KPIs</p>
@@ -351,10 +351,10 @@ export default function AIAnalyticsManager({
 
             <TabsContent value="layout" className="flex-1 space-y-4">
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
                   <Label>Layout Mode</Label>
                   <Select value={layoutMode} onValueChange={(value: any) => setLayoutMode(value)}>
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="w-full sm:w-32">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -364,27 +364,27 @@ export default function AIAnalyticsManager({
                   </Select>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <Button variant="outline" size="sm">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
                     <LayoutGrid className="w-4 h-4 mr-2" />
                     Auto Arrange
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
                     <Maximize2 className="w-4 h-4 mr-2" />
                     Fit to Screen
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
                     <RefreshCw className="w-4 h-4 mr-2" />
                     Reset Layout
                   </Button>
                 </div>
 
-                <div className="border rounded-lg p-4">
-                  <h3 className="font-medium mb-3">Widget Visibility</h3>
-                  <div className="grid grid-cols-2 gap-2">
+                <div className="border rounded-lg p-3 sm:p-4">
+                  <h3 className="font-medium mb-3 text-sm sm:text-base">Widget Visibility</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {currentWidgets.map((widget) => (
                       <div key={widget.id} className="flex items-center justify-between p-2 border rounded">
-                        <span className="text-sm">{widget.title}</span>
+                        <span className="text-sm truncate mr-2">{widget.title}</span>
                         <Switch 
                           checked={widget.visible}
                           onCheckedChange={() => handleWidgetToggle(widget.id)}
@@ -398,10 +398,10 @@ export default function AIAnalyticsManager({
 
             <TabsContent value="settings" className="flex-1 space-y-4">
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
                   <Label>Refresh Interval</Label>
                   <Select defaultValue="30">
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="w-full sm:w-32">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -414,30 +414,30 @@ export default function AIAnalyticsManager({
                   </Select>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <Button variant="outline" onClick={exportDashboard}>
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                  <Button variant="outline" onClick={exportDashboard} className="w-full sm:w-auto">
                     <Download className="w-4 h-4 mr-2" />
                     Export Dashboard
                   </Button>
-                  <Button variant="outline">
+                  <Button variant="outline" className="w-full sm:w-auto">
                     <Share2 className="w-4 h-4 mr-2" />
                     Share Dashboard
                   </Button>
                 </div>
 
-                <div className="border rounded-lg p-4">
-                  <h3 className="font-medium mb-3">Display Options</h3>
+                <div className="border rounded-lg p-3 sm:p-4">
+                  <h3 className="font-medium mb-3 text-sm sm:text-base">Display Options</h3>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label>Show Grid Lines</Label>
+                      <Label className="text-sm">Show Grid Lines</Label>
                       <Switch defaultChecked />
                     </div>
                     <div className="flex items-center justify-between">
-                      <Label>Auto-refresh Data</Label>
+                      <Label className="text-sm">Auto-refresh Data</Label>
                       <Switch defaultChecked />
                     </div>
                     <div className="flex items-center justify-between">
-                      <Label>Show Timestamps</Label>
+                      <Label className="text-sm">Show Timestamps</Label>
                       <Switch />
                     </div>
                   </div>
