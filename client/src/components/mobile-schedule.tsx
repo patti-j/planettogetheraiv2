@@ -1,13 +1,16 @@
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
+import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, User, Wrench, AlertCircle, CheckCircle2, PlayCircle, PauseCircle } from "lucide-react";
+import { Calendar, Clock, User, Wrench, AlertCircle, CheckCircle2, PlayCircle, PauseCircle, GripVertical, Save, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import { apiRequest } from "@/lib/queryClient";
 import type { Job, Operation, Resource, Capability } from "@shared/schema";
 
 interface MobileScheduleProps {
@@ -16,6 +19,148 @@ interface MobileScheduleProps {
   resources: Resource[];
   capabilities: Capability[];
 }
+
+interface DraggableOperationCardProps {
+  operation: Operation;
+  index: number;
+  job: Job | undefined;
+  resource: Resource | undefined;
+  requiredCapabilities: Capability[];
+  statusInfo: { color: string; icon: any; label: string };
+  getPriorityColor: (priority: string) => string;
+  onMove: (dragIndex: number, hoverIndex: number) => void;
+}
+
+const DraggableOperationCard = ({ 
+  operation, 
+  index, 
+  job, 
+  resource, 
+  requiredCapabilities, 
+  statusInfo, 
+  getPriorityColor,
+  onMove 
+}: DraggableOperationCardProps) => {
+  const StatusIcon = statusInfo.icon;
+
+  const [{ isDragging }, drag, preview] = useDrag({
+    type: "operation",
+    item: { index, id: operation.id },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  const [, drop] = useDrop({
+    accept: "operation",
+    hover: (item: { index: number; id: number }) => {
+      if (item.index !== index) {
+        onMove(item.index, index);
+        item.index = index;
+      }
+    },
+  });
+
+  return (
+    <div ref={(node) => drag(drop(node))} style={{ opacity: isDragging ? 0.5 : 1 }}>
+      <Card className="border-l-4 cursor-move" style={{ borderLeftColor: statusInfo.color.replace('bg-', '#') }}>
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-3 flex-1">
+              <div className="mt-1">
+                <GripVertical className="w-4 h-4 text-gray-400" />
+              </div>
+              <div className="flex-1">
+                <CardTitle className="text-lg font-medium text-gray-900">
+                  {operation.name}
+                </CardTitle>
+                <p className="text-sm text-gray-600 mt-1">
+                  {job?.name}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Badge className={`${statusInfo.color} text-white`}>
+                <StatusIcon className="w-3 h-3 mr-1" />
+                {statusInfo.label}
+              </Badge>
+              {job?.priority && (
+                <Badge variant="outline" className={getPriorityColor(job.priority)}>
+                  {job.priority}
+                </Badge>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="pt-0">
+          <div className="space-y-3">
+            {/* Description */}
+            {operation.description && (
+              <p className="text-sm text-gray-600">
+                {operation.description}
+              </p>
+            )}
+
+            {/* Time and Duration */}
+            <div className="flex items-center space-x-4 text-sm text-gray-500">
+              {operation.startTime && (
+                <div className="flex items-center">
+                  <Calendar className="w-4 h-4 mr-1" />
+                  {format(new Date(operation.startTime), "MMM d, h:mm a")}
+                </div>
+              )}
+              <div className="flex items-center">
+                <Clock className="w-4 h-4 mr-1" />
+                {operation.duration}h
+              </div>
+            </div>
+
+            {/* Resource and Capabilities */}
+            <div className="space-y-2">
+              {resource && (
+                <div className="flex items-center text-sm text-gray-600">
+                  <Wrench className="w-4 h-4 mr-2" />
+                  <span>{resource.name}</span>
+                  <Badge variant="outline" className="ml-2 text-xs">
+                    {resource.type}
+                  </Badge>
+                </div>
+              )}
+              
+              {requiredCapabilities.length > 0 && (
+                <div className="flex items-center text-sm text-gray-600">
+                  <User className="w-4 h-4 mr-2" />
+                  <div className="flex flex-wrap gap-1">
+                    {requiredCapabilities.map(capability => (
+                      <Badge key={capability.id} variant="secondary" className="text-xs">
+                        {capability.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Customer */}
+            {job?.customer && (
+              <div className="text-sm text-gray-600">
+                <span className="font-medium">Customer:</span> {job.customer}
+              </div>
+            )}
+
+            {/* Due Date */}
+            {job?.dueDate && (
+              <div className="text-sm text-gray-600">
+                <span className="font-medium">Due:</span> {format(new Date(job.dueDate), "MMM d, yyyy")}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
 
 export default function MobileSchedule({ 
   jobs, 
@@ -26,10 +171,36 @@ export default function MobileSchedule({
   const [selectedTab, setSelectedTab] = useState("today");
   const [selectedResource, setSelectedResource] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [orderedOperations, setOrderedOperations] = useState<Operation[]>([]);
+  const [hasReorder, setHasReorder] = useState(false);
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Mutation for updating operation schedules
+  const updateOperationMutation = useMutation({
+    mutationFn: async (data: { id: number; startTime: string; endTime: string; order: number }) => {
+      return apiRequest("PATCH", `/api/operations/${data.id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
+      toast({
+        title: "Operations rescheduled",
+        description: "The operation sequence has been updated successfully."
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to reschedule operations. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
 
   // Filter operations based on selected filters
   const filteredOperations = useMemo(() => {
-    let filtered = operations;
+    let filtered = orderedOperations.length > 0 ? orderedOperations : operations;
 
     // Filter by resource
     if (selectedResource !== "all") {
@@ -67,7 +238,63 @@ export default function MobileSchedule({
       if (!a.startTime || !b.startTime) return 0;
       return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
     });
-  }, [operations, selectedResource, selectedStatus, selectedTab]);
+  }, [orderedOperations, operations, selectedResource, selectedStatus, selectedTab]);
+
+  // Initialize ordered operations when operations change
+  useMemo(() => {
+    if (operations.length > 0 && orderedOperations.length === 0) {
+      setOrderedOperations(operations);
+    }
+  }, [operations, orderedOperations.length]);
+
+  // Handle drag and drop reordering
+  const handleMoveOperation = useCallback((dragIndex: number, hoverIndex: number) => {
+    const draggedOperation = filteredOperations[dragIndex];
+    const newOperations = [...filteredOperations];
+    
+    // Remove the dragged operation from its current position
+    newOperations.splice(dragIndex, 1);
+    // Insert it at the new position
+    newOperations.splice(hoverIndex, 0, draggedOperation);
+    
+    setOrderedOperations(newOperations);
+    setHasReorder(true);
+  }, [filteredOperations]);
+
+  // Calculate new start times based on sequence
+  const calculateNewSchedule = useCallback((operationsToSchedule: Operation[]) => {
+    const now = new Date();
+    let currentTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0); // Start at 8 AM
+    
+    return operationsToSchedule.map((operation, index) => {
+      const startTime = new Date(currentTime);
+      const endTime = new Date(currentTime);
+      endTime.setHours(endTime.getHours() + operation.duration);
+      
+      // Move to next operation start time (add 1 hour buffer)
+      currentTime = new Date(endTime);
+      currentTime.setHours(currentTime.getHours() + 1);
+      
+      return {
+        id: operation.id,
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        order: index + 1
+      };
+    });
+  }, []);
+
+  // Handle drop completion - reschedule operations
+  const handleReschedule = useCallback(() => {
+    const newSchedule = calculateNewSchedule(filteredOperations);
+    
+    // Update multiple operations
+    newSchedule.forEach(scheduleItem => {
+      updateOperationMutation.mutate(scheduleItem);
+    });
+    
+    setHasReorder(false);
+  }, [filteredOperations, calculateNewSchedule, updateOperationMutation]);
 
   // Get operation details
   const getOperationDetails = (operation: Operation) => {
@@ -109,10 +336,28 @@ export default function MobileSchedule({
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 p-4 flex-shrink-0">
-        <h1 className="text-xl font-semibold text-gray-800 mb-4">Op Sequencer</h1>
+    <DndProvider backend={HTML5Backend}>
+      <div className="flex flex-col h-full bg-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 p-4 flex-shrink-0">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-xl font-semibold text-gray-800">Op Sequencer</h1>
+            {hasReorder && (
+              <Button
+                onClick={handleReschedule}
+                disabled={updateOperationMutation.isPending}
+                className="bg-primary hover:bg-blue-700 text-white"
+                size="sm"
+              >
+                {updateOperationMutation.isPending ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4 mr-2" />
+                )}
+                Reschedule
+              </Button>
+            )}
+          </div>
         
         {/* Filters */}
         <div className="space-y-3">
@@ -164,108 +409,29 @@ export default function MobileSchedule({
                   </CardContent>
                 </Card>
               ) : (
-                filteredOperations.map(operation => {
+                filteredOperations.map((operation, index) => {
                   const { job, resource, requiredCapabilities } = getOperationDetails(operation);
                   const statusInfo = getStatusInfo(operation.status);
-                  const StatusIcon = statusInfo.icon;
 
                   return (
-                    <Card key={operation.id} className="border-l-4" style={{ borderLeftColor: statusInfo.color.replace('bg-', '#') }}>
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <CardTitle className="text-lg font-medium text-gray-900">
-                              {operation.name}
-                            </CardTitle>
-                            <p className="text-sm text-gray-600 mt-1">
-                              {job?.name}
-                            </p>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Badge className={`${statusInfo.color} text-white`}>
-                              <StatusIcon className="w-3 h-3 mr-1" />
-                              {statusInfo.label}
-                            </Badge>
-                            {job?.priority && (
-                              <Badge variant="outline" className={getPriorityColor(job.priority)}>
-                                {job.priority}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </CardHeader>
-
-                      <CardContent className="pt-0">
-                        <div className="space-y-3">
-                          {/* Description */}
-                          {operation.description && (
-                            <p className="text-sm text-gray-600">
-                              {operation.description}
-                            </p>
-                          )}
-
-                          {/* Time and Duration */}
-                          <div className="flex items-center space-x-4 text-sm text-gray-500">
-                            {operation.startTime && (
-                              <div className="flex items-center">
-                                <Calendar className="w-4 h-4 mr-1" />
-                                {format(new Date(operation.startTime), "MMM d, h:mm a")}
-                              </div>
-                            )}
-                            <div className="flex items-center">
-                              <Clock className="w-4 h-4 mr-1" />
-                              {operation.duration}h
-                            </div>
-                          </div>
-
-                          {/* Resource and Capabilities */}
-                          <div className="space-y-2">
-                            {resource && (
-                              <div className="flex items-center text-sm text-gray-600">
-                                <Wrench className="w-4 h-4 mr-2" />
-                                <span>{resource.name}</span>
-                                <Badge variant="outline" className="ml-2 text-xs">
-                                  {resource.type}
-                                </Badge>
-                              </div>
-                            )}
-                            
-                            {requiredCapabilities.length > 0 && (
-                              <div className="flex items-center text-sm text-gray-600">
-                                <User className="w-4 h-4 mr-2" />
-                                <div className="flex flex-wrap gap-1">
-                                  {requiredCapabilities.map(capability => (
-                                    <Badge key={capability.id} variant="secondary" className="text-xs">
-                                      {capability.name}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Customer */}
-                          {job?.customer && (
-                            <div className="text-sm text-gray-600">
-                              <span className="font-medium">Customer:</span> {job.customer}
-                            </div>
-                          )}
-
-                          {/* Due Date */}
-                          {job?.dueDate && (
-                            <div className="text-sm text-gray-600">
-                              <span className="font-medium">Due:</span> {format(new Date(job.dueDate), "MMM d, yyyy")}
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <DraggableOperationCard
+                      key={operation.id}
+                      operation={operation}
+                      index={index}
+                      job={job}
+                      resource={resource}
+                      requiredCapabilities={requiredCapabilities}
+                      statusInfo={statusInfo}
+                      getPriorityColor={getPriorityColor}
+                      onMove={handleMoveOperation}
+                    />
                   );
                 })
               )}
             </div>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </DndProvider>
   );
 }
