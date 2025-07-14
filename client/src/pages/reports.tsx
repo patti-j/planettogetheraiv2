@@ -649,14 +649,14 @@ export default function Reports() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex-none px-4 py-3 sm:px-6 bg-white border-b border-gray-200">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="md:ml-0 ml-12">
               <h1 className="text-2xl font-semibold text-gray-800">Reports</h1>
               <p className="text-gray-600 mt-1">
                 Create and manage production reports
               </p>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-2 md:gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="min-w-[180px] justify-between">

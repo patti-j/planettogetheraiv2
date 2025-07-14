@@ -147,47 +147,54 @@ export default function Analytics() {
   const PageContent = () => (
     <div className="flex-1 flex flex-col">
         <header className="bg-white shadow-sm border-b border-gray-200 px-4 py-3 sm:px-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="md:ml-0 ml-12">
               <h1 className="text-2xl font-semibold text-gray-800">Analytics</h1>
               <p className="text-gray-600 mt-1">Production performance insights</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-2 md:gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowCustomWidgets(!showCustomWidgets)}
+                className="whitespace-nowrap"
               >
                 <Grid3X3 className="w-4 h-4 mr-2" />
-                {showCustomWidgets ? "Hide Custom" : "Show Custom"}
+                <span className="hidden sm:inline">{showCustomWidgets ? "Hide Custom" : "Show Custom"}</span>
+                <span className="sm:hidden">{showCustomWidgets ? "Hide" : "Show"}</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setLayoutMode(layoutMode === "grid" ? "free" : "grid")}
+                className="whitespace-nowrap"
               >
                 <LayoutGrid className="w-4 h-4 mr-2" />
-                {layoutMode === "grid" ? "Free Layout" : "Grid Layout"}
+                <span className="hidden sm:inline">{layoutMode === "grid" ? "Free Layout" : "Grid Layout"}</span>
+                <span className="sm:hidden">{layoutMode === "grid" ? "Free" : "Grid"}</span>
               </Button>
               <Button
-                className="bg-primary hover:bg-blue-700 text-white"
+                className="bg-primary hover:bg-blue-700 text-white whitespace-nowrap"
                 size="sm"
                 onClick={handleAddManualWidget}
               >
                 <Plus className="w-4 h-4 mr-2" />
-                New Analytic
+                <span className="hidden sm:inline">New Analytic</span>
+                <span className="sm:hidden">New</span>
               </Button>
               <Button
                 onClick={() => setAiAnalyticsOpen(true)}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 whitespace-nowrap"
               >
                 <Sparkles className="w-4 h-4 mr-2" />
-                AI Analytics
+                <span className="hidden sm:inline">AI Analytics</span>
+                <span className="sm:hidden">AI</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setIsMaximized(!isMaximized)}
+                className="whitespace-nowrap"
               >
                 {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
               </Button>
