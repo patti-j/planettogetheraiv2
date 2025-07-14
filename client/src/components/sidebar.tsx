@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings } from "lucide-react";
+import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -115,6 +115,7 @@ export default function Sidebar() {
     { icon: BarChart3, label: "Schedule", href: "/", active: location === "/" },
     { icon: Smartphone, label: "Shop Floor", href: "/shop-floor", active: location === "/shop-floor" },
     { icon: Settings, label: "Operator", href: "/operator", active: location === "/operator" },
+    { icon: Wrench, label: "Maintenance", href: "/maintenance", active: location === "/maintenance" },
     { icon: Columns3, label: "Boards", href: "/boards", active: location === "/boards" },
     { icon: DollarSign, label: "Sales", href: "/sales", active: location === "/sales" },
     { icon: Headphones, label: "Customer Service", href: "/customer-service", active: location === "/customer-service" },
@@ -128,6 +129,7 @@ export default function Sidebar() {
       "/": "View production schedule with interactive Gantt charts",
       "/shop-floor": "Mobile-optimized interface for production schedulers on the floor",
       "/operator": "Review upcoming operations and report status or problems",
+      "/maintenance": "Plan and manage resource maintenance schedules and work orders",
       "/boards": "Organize jobs, operations, and resources with drag-and-drop boards",
       "/sales": "Manage sales leads, orders, and customer relationships",
       "/customer-service": "Handle customer orders, issues, and support requests",

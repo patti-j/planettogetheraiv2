@@ -15,6 +15,7 @@ import ShopFloor from "@/pages/shop-floor";
 import Sales from "@/pages/sales";
 import CustomerService from "@/pages/customer-service";
 import OperatorDashboard from "@/pages/operator-dashboard";
+import Maintenance from "@/pages/maintenance";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/sales" component={Sales} />
       <Route path="/customer-service" component={CustomerService} />
       <Route path="/operator" component={OperatorDashboard} />
+      <Route path="/maintenance" component={Maintenance} />
       <Route component={NotFound} />
     </Switch>
   );
