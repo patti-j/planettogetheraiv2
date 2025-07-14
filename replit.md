@@ -625,6 +625,9 @@ The application uses a modern full-stack architecture with strong typing through
 - Enhanced operation cards with job information, resource details, and duration display
 - Integrated smartphone icon in navigation with tooltip describing mobile-optimized functionality
 - Designed for production schedulers walking the shop floor with mobile devices
+- Fixed hamburger menu overlap with page title using proper mobile margin spacing
+- Implemented proper scrolling behavior with flex layout and overflow-y-auto for operations list
+- Enhanced mobile layout with fixed header and scrollable content area
 
 ✓ **AI-First Button Ordering Enhancement (July 14, 2025)**:
 - Reordered AI and New buttons on both reports and analytics pages to emphasize AI-first approach

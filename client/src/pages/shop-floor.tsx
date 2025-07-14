@@ -132,11 +132,11 @@ export default function ShopFloor() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b px-4 py-3">
+      <div className="bg-white shadow-sm border-b px-4 py-3 sm:px-6 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <div>
+          <div className="ml-12 md:ml-0">
             <h1 className="text-lg font-semibold text-gray-900">Shop Floor</h1>
             <p className="text-sm text-gray-600">Real-time production monitoring</p>
           </div>
@@ -148,7 +148,7 @@ export default function ShopFloor() {
       </div>
 
       {/* Key Metrics */}
-      <div className="px-4 py-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4">
         <div className="grid grid-cols-2 gap-3 mb-4">
           <Card>
             <CardContent className="p-3">
