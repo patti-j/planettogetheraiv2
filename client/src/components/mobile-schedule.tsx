@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Clock, User, Wrench, AlertCircle, CheckCircle2, PlayCircle, PauseCircle } from "lucide-react";
 import { format } from "date-fns";
@@ -109,9 +109,9 @@ export default function MobileSchedule({
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full bg-gray-50 overflow-hidden">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 p-4">
+      <div className="bg-white border-b border-gray-200 p-4 flex-shrink-0">
         <h1 className="text-xl font-semibold text-gray-800 mb-4">Mobile Schedule</h1>
         
         {/* Filters */}
@@ -147,16 +147,15 @@ export default function MobileSchedule({
       </div>
 
       {/* Time Period Tabs */}
-      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="flex-1 flex flex-col">
-        <TabsList className="grid w-full grid-cols-3 mx-4 mt-4">
+      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="flex-1 flex flex-col min-h-0">
+        <TabsList className="grid w-full grid-cols-3 mx-4 mt-4 flex-shrink-0">
           <TabsTrigger value="today">Today</TabsTrigger>
           <TabsTrigger value="week">This Week</TabsTrigger>
           <TabsTrigger value="all">All</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={selectedTab} className="flex-1 px-4 pb-4">
-          <ScrollArea className="h-full">
-            <div className="space-y-3 pt-4">
+        <TabsContent value={selectedTab} className="flex-1 px-4 pb-4 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="space-y-3 pt-4">
               {filteredOperations.length === 0 ? (
                 <Card>
                   <CardContent className="p-6 text-center">
@@ -265,7 +264,6 @@ export default function MobileSchedule({
                 })
               )}
             </div>
-          </ScrollArea>
         </TabsContent>
       </Tabs>
     </div>
