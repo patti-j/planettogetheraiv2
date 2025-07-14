@@ -317,7 +317,7 @@ const KanbanColumn = ({
   return (
     <div
       ref={drop}
-      className={`bg-gray-50 rounded-lg p-2 sm:p-4 h-full w-64 sm:w-80 flex-shrink-0 flex flex-col ${
+      className={`bg-gray-50 rounded-lg p-2 sm:p-4 h-full w-72 sm:w-80 flex-shrink-0 flex flex-col ${
         isOver && canDrop ? "bg-blue-50 border-2 border-blue-300 border-dashed" : ""
       } ${className || ""}`}
     >
@@ -851,10 +851,10 @@ function KanbanBoard({
             </div>
             
             {/* Mobile controls in vertical stack */}
-            <div className="space-y-2">
-              <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-3 w-full">
+              <div className="grid grid-cols-2 gap-3 w-full">
                 <Button 
-                  className="bg-primary hover:bg-blue-700 text-white text-xs" 
+                  className="bg-primary hover:bg-blue-700 text-white text-xs w-full min-w-0" 
                   size="sm"
                   onClick={() => {
                     if (selectedConfig?.viewType === "jobs") {
@@ -866,17 +866,19 @@ function KanbanBoard({
                     }
                   }}
                 >
-                  <Plus className="w-4 h-4 mr-1" />
-                  {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
+                  <Plus className="w-4 h-4 mr-1 flex-shrink-0" />
+                  <span className="truncate">
+                    {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
+                  </span>
                 </Button>
 
                 <Button 
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs" 
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs w-full min-w-0" 
                   size="sm"
                   onClick={onAICreateBoards}
                 >
-                  <Sparkles className="w-4 h-4 mr-1" />
-                  AI Boards
+                  <Sparkles className="w-4 h-4 mr-1 flex-shrink-0" />
+                  <span className="truncate">AI Boards</span>
                 </Button>
               </div>
               
@@ -921,7 +923,7 @@ function KanbanBoard({
         </div>
 
         {/* Kanban Columns */}
-        <div className="flex-1 bg-gray-100 p-2 sm:p-4 overflow-hidden">
+        <div className="flex-1 bg-gray-100 overflow-hidden">
           {!selectedConfig ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
@@ -933,38 +935,76 @@ function KanbanBoard({
               </div>
             </div>
           ) : (
-            <div className="h-full overflow-x-auto overflow-y-hidden">
-              <div className="flex gap-4 h-full" style={{ minWidth: `${columns.length * 272}px` }}>
-                {columns.map((column) => (
-                  <KanbanColumn
-                    key={column.id}
-                    column={column}
-                    onDrop={handleDrop}
-
-                  >
-                    {view === "jobs" ? (
-                      column.items.map((item) => (
-                        <JobCard
-                          key={item.id}
-                          job={item as Job}
-                          onEdit={handleEditJob}
-                          swimLaneField={swimLaneField}
-                        />
-                      ))
-                    ) : (
-                      column.items.map((item) => (
-                        <OperationCard
-                          key={item.id}
-                          operation={item as Operation}
-                          job={jobs.find(j => j.id === (item as Operation).jobId)}
-                          resources={resources}
-                          onEdit={handleEditOperation}
-                          swimLaneField={swimLaneField}
-                        />
-                      ))
-                    )}
-                  </KanbanColumn>
-                ))}
+            <div className="h-full">
+              {/* Mobile columns */}
+              <div className="md:hidden h-full overflow-x-auto p-2" style={{ WebkitOverflowScrolling: 'touch' }}>
+                <div className="flex gap-3 h-full pb-4" style={{ minWidth: `${columns.length * 272}px` }}>
+                  {columns.map((column) => (
+                    <KanbanColumn
+                      key={column.id}
+                      column={column}
+                      onDrop={handleDrop}
+                      className="w-64 flex-shrink-0"
+                    >
+                      {view === "jobs" ? (
+                        column.items.map((item) => (
+                          <JobCard
+                            key={item.id}
+                            job={item as Job}
+                            onEdit={handleEditJob}
+                            swimLaneField={swimLaneField}
+                          />
+                        ))
+                      ) : (
+                        column.items.map((item) => (
+                          <OperationCard
+                            key={item.id}
+                            operation={item as Operation}
+                            job={jobs.find(j => j.id === (item as Operation).jobId)}
+                            resources={resources}
+                            onEdit={handleEditOperation}
+                            swimLaneField={swimLaneField}
+                          />
+                        ))
+                      )}
+                    </KanbanColumn>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Desktop columns */}
+              <div className="hidden md:block h-full overflow-x-auto overflow-y-hidden p-4">
+                <div className="flex gap-4 h-full" style={{ minWidth: `${columns.length * 320}px` }}>
+                  {columns.map((column) => (
+                    <KanbanColumn
+                      key={column.id}
+                      column={column}
+                      onDrop={handleDrop}
+                    >
+                      {view === "jobs" ? (
+                        column.items.map((item) => (
+                          <JobCard
+                            key={item.id}
+                            job={item as Job}
+                            onEdit={handleEditJob}
+                            swimLaneField={swimLaneField}
+                          />
+                        ))
+                      ) : (
+                        column.items.map((item) => (
+                          <OperationCard
+                            key={item.id}
+                            operation={item as Operation}
+                            job={jobs.find(j => j.id === (item as Operation).jobId)}
+                            resources={resources}
+                            onEdit={handleEditOperation}
+                            swimLaneField={swimLaneField}
+                          />
+                        ))
+                      )}
+                    </KanbanColumn>
+                  ))}
+                </div>
               </div>
             </div>
           )}
