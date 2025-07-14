@@ -804,7 +804,7 @@ function KanbanBoard({
     );
   }
 
-  console.log('KanbanBoard render:', { isMobile, isMaximized, showingMobile: isMobile || isMaximized });
+
   
   return (
     <DndProvider backend={HTML5Backend}>
@@ -940,15 +940,15 @@ function KanbanBoard({
             </div>
           ) : (
             <div className="h-full">
-              {/* Mobile columns - show on mobile OR when maximized */}
-              <div className={`${isMobile || isMaximized ? 'block' : 'hidden'} h-full p-2 mobile-scroll-x`} style={{ 
+              {/* Always show mobile view on small screens */}
+              <div className="block md:hidden h-full p-2" style={{ 
                 overflowX: 'scroll',
                 overflowY: 'hidden',
                 WebkitOverflowScrolling: 'touch',
                 scrollbarWidth: 'thin'
               }}>
                 <div className="flex gap-2 pb-4 pr-4" style={{ 
-                  minWidth: `${columns.length * 240}px`,
+                  minWidth: `${columns.length * 280}px`,
                   width: 'max-content',
                   height: 'calc(100vh - 200px)'
                 }}>
@@ -958,7 +958,7 @@ function KanbanBoard({
                       column={column}
                       onDrop={handleDrop}
                       className="flex-shrink-0"
-                      style={{ width: '240px', height: '100%' }}
+                      style={{ width: '280px', height: '100%' }}
                     >
                       {view === "jobs" ? (
                         column.items.map((item) => (
@@ -986,8 +986,8 @@ function KanbanBoard({
                 </div>
               </div>
               
-              {/* Desktop columns - hide on mobile OR when maximized */}
-              <div className={`${isMobile || isMaximized ? 'hidden' : 'block'} h-full overflow-x-auto overflow-y-hidden p-4`}>
+              {/* Desktop columns - hidden on mobile */}
+              <div className="hidden md:block h-full overflow-x-auto overflow-y-hidden p-4">
                 <div className="flex gap-4 h-full" style={{ minWidth: `${columns.length * 320}px` }}>
                   {columns.map((column) => (
                     <KanbanColumn

@@ -28,11 +28,10 @@ export default function Boards() {
   
   // Automatically maximize on mobile devices and keep it maximized
   useEffect(() => {
-    console.log('Mobile state changed:', { isMobile, isMaximized });
-    if (isMobile) {
+    if (isMobile && !isMaximized) {
       setIsMaximized(true);
     }
-  }, [isMobile, isMaximized]);
+  }, [isMobile]);
   
   // Prevent minimizing on mobile
   const handleToggleMaximize = () => {
