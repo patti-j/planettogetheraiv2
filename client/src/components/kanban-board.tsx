@@ -317,7 +317,7 @@ const KanbanColumn = ({
   return (
     <div
       ref={drop}
-      className={`bg-gray-50 rounded-lg p-2 sm:p-4 h-full w-72 sm:w-80 flex-shrink-0 flex flex-col ${
+      className={`bg-gray-50 rounded-lg p-2 sm:p-4 h-full w-64 sm:w-80 flex-shrink-0 flex flex-col ${
         isOver && canDrop ? "bg-blue-50 border-2 border-blue-300 border-dashed" : ""
       } ${className || ""}`}
     >
@@ -803,12 +803,13 @@ function KanbanBoard({
     <DndProvider backend={HTML5Backend}>
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="flex flex-col p-4 border-b border-gray-200 bg-white gap-4">
-          <div className="flex items-center justify-between">
+        <div className="p-4 border-b border-gray-200 bg-white">
+          {/* Desktop header */}
+          <div className="hidden md:flex items-center justify-between mb-4">
             <div className="flex items-center space-x-4">
               <h2 className="text-lg font-medium text-gray-900">Board</h2>
               {selectedConfig && (
-                <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <Badge variant="outline">{selectedConfig.viewType === "jobs" ? "Jobs" : "Operations"}</Badge>
                   <span>•</span>
                   <span>Grouped by {selectedConfig.swimLaneField}</span>
@@ -833,72 +834,59 @@ function KanbanBoard({
               </Tooltip>
             )}
           </div>
-          
-          {/* Mobile-optimized controls */}
-          <div className="kanban-mobile-controls">
-            {/* Primary actions row */}
-            <div className="kanban-mobile-button-row">
-              {/* Create Action Button */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    className="bg-primary hover:bg-blue-700 text-white text-xs mobile-button-text" 
-                    size="sm"
-                    onClick={() => {
-                      if (selectedConfig?.viewType === "jobs") {
-                        onCreateJob && onCreateJob();
-                      } else if (selectedConfig?.viewType === "operations") {
-                        handleAddOperation();
-                      } else if (selectedConfig?.viewType === "resources") {
-                        onCreateResource && onCreateResource();
-                      }
-                    }}
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    <span className="mobile-button-text">
-                      {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
-                    </span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Create new {selectedConfig?.viewType === "jobs" ? "job" : selectedConfig?.viewType === "operations" ? "operation" : "resource"}</p>
-                </TooltipContent>
-              </Tooltip>
 
-              {/* AI Boards Button */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs mobile-button-text" 
-                    size="sm"
-                    onClick={onAICreateBoards}
-                  >
-                    <Sparkles className="w-4 h-4 mr-1" />
-                    <span className="mobile-button-text">AI Boards</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Create boards using AI with natural language descriptions</p>
-                </TooltipContent>
-              </Tooltip>
+          {/* Mobile header */}
+          <div className="md:hidden">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-medium text-gray-900">Board</h2>
+              {onToggleMaximize && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onToggleMaximize}
+                >
+                  {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                </Button>
+              )}
             </div>
+            
+            {/* Mobile controls in vertical stack */}
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  className="bg-primary hover:bg-blue-700 text-white text-xs" 
+                  size="sm"
+                  onClick={() => {
+                    if (selectedConfig?.viewType === "jobs") {
+                      onCreateJob && onCreateJob();
+                    } else if (selectedConfig?.viewType === "operations") {
+                      handleAddOperation();
+                    } else if (selectedConfig?.viewType === "resources") {
+                      onCreateResource && onCreateResource();
+                    }
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
+                </Button>
 
-            {/* Board selection row */}
-            <div className="kanban-mobile-dropdown">
+                <Button 
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs" 
+                  size="sm"
+                  onClick={onAICreateBoards}
+                >
+                  <Sparkles className="w-4 h-4 mr-1" />
+                  AI Boards
+                </Button>
+              </div>
+              
               <DropdownMenu>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="w-full justify-between text-xs">
-                        <span className="truncate mobile-button-text">{selectedConfig?.name || "Select Board"}</span>
-                        <ChevronDown className="w-4 h-4 ml-2 flex-shrink-0" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Switch between different board configurations</p>
-                  </TooltipContent>
-                </Tooltip>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-full justify-between text-xs">
+                    <span className="truncate">{selectedConfig?.name || "Select Board"}</span>
+                    <ChevronDown className="w-4 h-4 ml-2 flex-shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {kanbanConfigs.map((config) => (
                     <DropdownMenuItem
@@ -946,7 +934,7 @@ function KanbanBoard({
             </div>
           ) : (
             <div className="h-full overflow-x-auto overflow-y-hidden">
-              <div className="flex gap-4 h-full" style={{ minWidth: `${columns.length * 288}px` }}>
+              <div className="flex gap-4 h-full" style={{ minWidth: `${columns.length * 272}px` }}>
                 {columns.map((column) => (
                   <KanbanColumn
                     key={column.id}
