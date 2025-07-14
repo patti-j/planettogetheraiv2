@@ -15,6 +15,7 @@ import ResourceForm from "@/components/resource-form";
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
 import AnalyticsWidget from "@/components/analytics-widget";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { apiRequest } from "@/lib/queryClient";
 import type { Job, Operation, Resource, Capability } from "@shared/schema";
 
@@ -45,7 +46,7 @@ export default function Dashboard() {
   const [selectedResourceViewId, setSelectedResourceViewId] = useState<number | null>(null);
   const [rowHeight, setRowHeight] = useState(60);
   const [analyticsManagerOpen, setAnalyticsManagerOpen] = useState(false);
-  const [isMobileView, setIsMobileView] = useState(false);
+  const isMobile = useIsMobile();
   const [customWidgets, setCustomWidgets] = useState<AnalyticsWidget[]>([
     {
       id: "sample-1",
@@ -226,55 +227,24 @@ export default function Dashboard() {
                       <p>Save current schedule configuration</p>
                     </TooltipContent>
                   </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="outline" size="sm" onClick={() => setIsMaximized(false)}>
-                        <Minimize2 className="w-4 h-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Return to normal dashboard view</p>
-                    </TooltipContent>
-                  </Tooltip>
+                  {!isMobile && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="outline" size="sm" onClick={() => setIsMaximized(false)}>
+                          <Minimize2 className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Return to normal dashboard view</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
                 </div>
               </div>
               
               {/* Analytics Controls */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  {/* Mobile View Toggle in Maximized View */}
-                  <div className="flex items-center space-x-2 bg-white rounded-lg shadow-sm border border-gray-200 p-2">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant={isMobileView ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setIsMobileView(true)}
-                        >
-                          <Smartphone className="w-4 h-4 mr-2" />
-                          Op Sequencer
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Switch to operation sequencer view</p>
-                      </TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant={!isMobileView ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setIsMobileView(false)}
-                        >
-                          <Monitor className="w-4 h-4 mr-2" />
-                          Desktop View
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Switch to desktop Gantt chart view</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -395,86 +365,50 @@ export default function Dashboard() {
               )}
             </header>
 
-            {/* Mobile View Toggle - Move to top level */}
-            <div className="mx-6 mb-4 flex justify-end">
-              <div className="flex items-center space-x-2 bg-white rounded-lg shadow-sm border border-gray-200 p-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={isMobileView ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setIsMobileView(true)}
-                    >
-                      <Smartphone className="w-4 h-4 mr-2" />
-                      Op Sequencer
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Switch to operation sequencer view</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={!isMobileView ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setIsMobileView(false)}
-                    >
-                      <Monitor className="w-4 h-4 mr-2" />
-                      Desktop View
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Switch to desktop Gantt chart view</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            </div>
+
 
             {/* Gantt Container */}
-            <div className={`bg-white mx-6 mb-6 rounded-lg shadow-sm border border-gray-200 ${isMobileView ? 'flex-1 min-h-0' : 'flex-1 overflow-hidden'}`}>
-              <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as "operations" | "resources" | "customers")}>
-                {!isMobileView && (
-                  <div className="border-b border-gray-200 bg-gray-50">
-                    <div className="flex items-center justify-between px-4">
-                      <TabsList className="h-auto p-0 bg-transparent">
-                        <TabsTrigger 
-                          value="resources" 
-                          className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
-                        >
-                          <Wrench className="w-4 h-4 mr-2" />
-                          Resource Gantt
-                        </TabsTrigger>
-                        <TabsTrigger 
-                          value="operations" 
-                          className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
-                        >
-                          <Calendar className="w-4 h-4 mr-2" />
-                          Job Gantt
-                        </TabsTrigger>
-                        <TabsTrigger 
-                          value="customers" 
-                          className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
-                        >
-                          <User className="w-4 h-4 mr-2" />
-                          Customer Gantt
-                        </TabsTrigger>
-                      </TabsList>
+            <div className={`bg-white mx-6 mb-6 rounded-lg shadow-sm border border-gray-200 ${isMobile ? 'flex-1 min-h-0' : 'flex-1 overflow-hidden'}`}>
+              {isMobile ? (
+                <div className="h-full flex flex-col">
+                  <MobileSchedule
+                    jobs={jobs}
+                    operations={operations}
+                    resources={resources}
+                    capabilities={capabilities}
+                  />
+                </div>
+              ) : (
+                <div className="flex flex-col h-full">
+                  <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as "operations" | "resources" | "customers")}>
+                    <div className="border-b border-gray-200 bg-gray-50">
+                      <div className="flex items-center justify-between px-4">
+                        <TabsList className="h-auto p-0 bg-transparent">
+                          <TabsTrigger 
+                            value="resources" 
+                            className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
+                          >
+                            <Wrench className="w-4 h-4 mr-2" />
+                            Resource Gantt
+                          </TabsTrigger>
+                          <TabsTrigger 
+                            value="operations" 
+                            className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
+                          >
+                            <Calendar className="w-4 h-4 mr-2" />
+                            Job Gantt
+                          </TabsTrigger>
+                          <TabsTrigger 
+                            value="customers" 
+                            className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
+                          >
+                            <User className="w-4 h-4 mr-2" />
+                            Customer Gantt
+                          </TabsTrigger>
+                        </TabsList>
+                      </div>
                     </div>
-                  </div>
-                )}
-
-                {isMobileView ? (
-                  <div className="h-full flex flex-col">
-                    <MobileSchedule
-                      jobs={jobs}
-                      operations={operations}
-                      resources={resources}
-                      capabilities={capabilities}
-                    />
-                  </div>
-                ) : (
-                  <>
+                    
                     <TabsContent value="resources" className="h-full m-0">
                       <GanttChart
                         jobs={jobs}
@@ -516,9 +450,27 @@ export default function Dashboard() {
                         onRowHeightChange={setRowHeight}
                       />
                     </TabsContent>
-                  </>
-                )}
-              </Tabs>
+                  </Tabs>
+                  
+                  {/* Op Sequencer Section */}
+                  <div className="border-t border-gray-200 h-1/2 flex flex-col">
+                    <div className="border-b border-gray-200 bg-gray-50 px-4 py-2">
+                      <div className="flex items-center">
+                        <Smartphone className="w-4 h-4 mr-2 text-primary" />
+                        <span className="text-sm font-medium text-gray-700">Op Sequencer</span>
+                      </div>
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <MobileSchedule
+                        jobs={jobs}
+                        operations={operations}
+                        resources={resources}
+                        capabilities={capabilities}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -685,20 +637,22 @@ export default function Dashboard() {
                   <p>Create custom analytics widgets using AI</p>
                 </TooltipContent>
               </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsMaximized(!isMaximized)}
-                  >
-                    {isMaximized ? <Minimize2 className="w-3 h-3 md:w-4 md:h-4" /> : <Maximize2 className="w-3 h-3 md:w-4 md:h-4" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Maximize entire production schedule view</p>
-                </TooltipContent>
-              </Tooltip>
+              {!isMobile && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsMaximized(!isMaximized)}
+                    >
+                      {isMaximized ? <Minimize2 className="w-3 h-3 md:w-4 md:h-4" /> : <Maximize2 className="w-3 h-3 md:w-4 md:h-4" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Maximize entire production schedule view</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
             </div>
           </div>
 
@@ -769,89 +723,120 @@ export default function Dashboard() {
 
         {/* Gantt Container */}
         <div className="flex-1 bg-white m-6 rounded-lg shadow-sm border border-gray-200 overflow-hidden min-h-0">
-          <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as "operations" | "resources" | "customers")}>
-            <div className="border-b border-gray-200 bg-gray-50">
-              <div className="flex items-center justify-between">
-                <TabsList className="h-auto p-0 bg-transparent">
-                  <TabsTrigger 
-                    value="resources" 
-                    className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
-                  >
-                    <Wrench className="w-4 h-4 mr-2" />
-                    Resource Gantt
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="operations" 
-                    className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
-                  >
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Job Gantt
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="customers" 
-                    className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
-                  >
-                    <User className="w-4 h-4 mr-2" />
-                    Customer Gantt
-                  </TabsTrigger>
-                </TabsList>
-                <div className="flex items-center space-x-2 px-6">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="outline" size="sm" onClick={() => setIsMaximized(true)}>
-                        <Maximize2 className="w-4 h-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Expand Gantt chart to full screen for better visibility</p>
-                    </TooltipContent>
-                  </Tooltip>
+          {isMobile ? (
+            <div className="h-full flex flex-col">
+              <MobileSchedule
+                jobs={jobs}
+                operations={operations}
+                resources={resources}
+                capabilities={capabilities}
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col h-full">
+              <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as "operations" | "resources" | "customers")}>
+                <div className="border-b border-gray-200 bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <TabsList className="h-auto p-0 bg-transparent">
+                      <TabsTrigger 
+                        value="resources" 
+                        className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
+                      >
+                        <Wrench className="w-4 h-4 mr-2" />
+                        Resource Gantt
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="operations" 
+                        className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
+                      >
+                        <Calendar className="w-4 h-4 mr-2" />
+                        Job Gantt
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="customers" 
+                        className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent"
+                      >
+                        <User className="w-4 h-4 mr-2" />
+                        Customer Gantt
+                      </TabsTrigger>
+                    </TabsList>
+                    <div className="flex items-center space-x-2 px-6">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="sm" onClick={() => setIsMaximized(true)}>
+                            <Maximize2 className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Expand Gantt chart to full screen for better visibility</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </div>
+                </div>
+
+                <TabsContent value="resources" className="h-full m-0">
+                  <GanttChart
+                    jobs={jobs}
+                    operations={operations}
+                    resources={resources}
+                    capabilities={capabilities}
+                    view="resources"
+                    selectedResourceViewId={selectedResourceViewId}
+                    onResourceViewChange={setSelectedResourceViewId}
+                    rowHeight={rowHeight}
+                    onRowHeightChange={setRowHeight}
+                  />
+                </TabsContent>
+
+                <TabsContent value="operations" className="h-full m-0">
+                  <GanttChart
+                    jobs={jobs}
+                    operations={operations}
+                    resources={resources}
+                    capabilities={capabilities}
+                    view="operations"
+                    selectedResourceViewId={selectedResourceViewId}
+                    onResourceViewChange={setSelectedResourceViewId}
+                    rowHeight={rowHeight}
+                    onRowHeightChange={setRowHeight}
+                  />
+                </TabsContent>
+
+                <TabsContent value="customers" className="h-full m-0">
+                  <GanttChart
+                    jobs={jobs}
+                    operations={operations}
+                    resources={resources}
+                    capabilities={capabilities}
+                    view="customers"
+                    selectedResourceViewId={selectedResourceViewId}
+                    onResourceViewChange={setSelectedResourceViewId}
+                    rowHeight={rowHeight}
+                    onRowHeightChange={setRowHeight}
+                  />
+                </TabsContent>
+              </Tabs>
+              
+              {/* Op Sequencer Section */}
+              <div className="border-t border-gray-200 h-1/2 flex flex-col">
+                <div className="border-b border-gray-200 bg-gray-50 px-4 py-2">
+                  <div className="flex items-center">
+                    <Smartphone className="w-4 h-4 mr-2 text-primary" />
+                    <span className="text-sm font-medium text-gray-700">Op Sequencer</span>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <MobileSchedule
+                    jobs={jobs}
+                    operations={operations}
+                    resources={resources}
+                    capabilities={capabilities}
+                  />
                 </div>
               </div>
             </div>
-
-            <TabsContent value="resources" className="h-full m-0">
-              <GanttChart
-                jobs={jobs}
-                operations={operations}
-                resources={resources}
-                capabilities={capabilities}
-                view="resources"
-                selectedResourceViewId={selectedResourceViewId}
-                onResourceViewChange={setSelectedResourceViewId}
-                rowHeight={rowHeight}
-                onRowHeightChange={setRowHeight}
-              />
-            </TabsContent>
-
-            <TabsContent value="operations" className="h-full m-0">
-              <GanttChart
-                jobs={jobs}
-                operations={operations}
-                resources={resources}
-                capabilities={capabilities}
-                view="operations"
-                selectedResourceViewId={selectedResourceViewId}
-                onResourceViewChange={setSelectedResourceViewId}
-                rowHeight={rowHeight}
-                onRowHeightChange={setRowHeight}
-              />
-            </TabsContent>
-
-            <TabsContent value="customers" className="h-full m-0">
-              <GanttChart
-                jobs={jobs}
-                operations={operations}
-                resources={resources}
-                capabilities={capabilities}
-                view="customers"
-                selectedResourceViewId={selectedResourceViewId}
-                onResourceViewChange={setSelectedResourceViewId}
-                rowHeight={rowHeight}
-                onRowHeightChange={setRowHeight}
-              />
-            </TabsContent>
-          </Tabs>
+          )}
         </div>
       </main>
 

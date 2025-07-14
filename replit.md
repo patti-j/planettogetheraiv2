@@ -548,3 +548,13 @@ The application uses a modern full-stack architecture with strong typing through
 - **Mobile Maximize Button Removal**: Hidden maximize/minimize buttons on mobile devices for analytics and reports pages as they're not needed in mobile context
 - **Op Sequencer Rename**: Renamed "Mobile Schedule" to "Op Sequencer" throughout the system for clearer branding and functionality description
 - Mobile experience now fully functional with optimized header spacing and non-overlapping navigation
+
+✓ **Mobile-First Schedule Page Implementation (July 14, 2025)**:
+- Implemented automatic mobile detection using `use-mobile` hook replacing manual mobile view toggle
+- Mobile devices now show only Op Sequencer interface for optimized mobile experience
+- Desktop shows all three views: Op Sequencer + Resource Gantt + Job Gantt for comprehensive workflow
+- Hidden maximize buttons on mobile devices in schedule dashboard view using `!isMobile` condition
+- Schedule page now responsive with mobile-first design: mobile gets streamlined Op Sequencer, desktop gets full dashboard
+- Removed manual mobile/desktop toggle buttons in favor of automatic device detection
+- Op Sequencer integrated as bottom panel in desktop view for consistent access across all screen sizes
+- Mobile-first approach provides optimal experience on phones while maintaining full desktop functionality
