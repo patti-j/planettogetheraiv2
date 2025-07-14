@@ -558,3 +558,19 @@ The application uses a modern full-stack architecture with strong typing through
 - Removed manual mobile/desktop toggle buttons in favor of automatic device detection
 - Op Sequencer integrated as bottom panel in desktop view for consistent access across all screen sizes
 - Mobile-first approach provides optimal experience on phones while maintaining full desktop functionality
+
+✓ **Op Sequencer Drag-and-Drop Enhancement (July 14, 2025)**:
+- Added comprehensive drag-and-drop functionality to Op Sequencer using react-dnd library
+- Implemented DraggableOperationCard component with visual grip handles for intuitive operation reordering
+- Added state management for tracking operation sequence changes with hasReorder flag
+- Integrated Reschedule button that appears when operations are reordered to apply new schedule
+- Created automatic time calculations for rescheduled operations with proper API integration
+- Enhanced mobile experience with touch-friendly drag-and-drop interface for operation prioritization
+
+✓ **UI Simplification and Consistency (July 14, 2025)**:
+- Removed Hide/Show Analytics and Free/Grid Layout toggle buttons from schedule page
+- Simplified analytics to always show custom widgets in free-form layout for optimal user experience
+- Restored full button text removing mobile-specific text truncation for better readability
+- Standardized button styling with consistent icon sizes and spacing across all components
+- Fixed layout mode to permanently use "free" layout for better widget positioning flexibility
+- Cleaned up unused imports and code related to removed layout toggle functionality

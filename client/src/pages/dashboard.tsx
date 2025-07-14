@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Save, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, Grid3X3, LayoutGrid, BarChart3, Wrench, Calendar, User, Smartphone, Monitor } from "lucide-react";
+import { Plus, Save, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, BarChart3, Wrench, Calendar, User, Smartphone, Monitor } from "lucide-react";
 import Sidebar from "@/components/sidebar";
 import GanttChart from "@/components/ui/gantt-chart";
 import MobileSchedule from "@/components/mobile-schedule";
@@ -79,8 +79,8 @@ export default function Dashboard() {
       config: { limit: 5 }
     }
   ]);
-  const [showCustomWidgets, setShowCustomWidgets] = useState(true);
-  const [layoutMode, setLayoutMode] = useState<"grid" | "free">("grid");
+  const showCustomWidgets = true;
+  const layoutMode = "free";
   const { toast } = useToast();
 
   const { data: jobs = [] } = useQuery<Job[]>({
@@ -248,43 +248,6 @@ export default function Dashboard() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowCustomWidgets(!showCustomWidgets)}
-                      >
-                        <Grid3X3 className="w-4 h-4 mr-2" />
-                        {showCustomWidgets ? "Hide" : "Show"} Analytics
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Toggle display of custom analytics widgets</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const newMode = layoutMode === "grid" ? "free" : "grid";
-                          setLayoutMode(newMode);
-                          toast({
-                            title: `Layout switched to ${newMode === "grid" ? "Grid" : "Free"} mode`,
-                            description: newMode === "grid" ? "Widgets organized in columns" : "Single column layout"
-                          });
-                        }}
-                      >
-                        <LayoutGrid className="w-4 h-4 mr-2" />
-                        {layoutMode === "grid" ? "Free Layout" : "Grid Layout"}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Switch between organized grid and free-form layout</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
                         onClick={() => setAnalyticsManagerOpen(true)}
                         className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
                         size="sm"
@@ -301,7 +264,7 @@ export default function Dashboard() {
               </div>
 
               {/* Metrics Cards */}
-              <div className={`grid gap-4 mt-6 ${layoutMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-4" : "grid-cols-1"}`}>
+              <div className="grid gap-4 mt-6 grid-cols-1">
                 <MetricsCard
                   title="Active Jobs"
                   value={metrics?.activeJobs?.toString() || "0"}
@@ -338,7 +301,7 @@ export default function Dashboard() {
               {showCustomWidgets && customWidgets.length > 0 && (
                 <div className="mt-6">
                   <h3 className="text-lg font-semibold mb-4">Custom Analytics Widgets</h3>
-                  <div className={`${layoutMode === "grid" ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3" : "relative min-h-[400px] border-2 border-dashed border-gray-300 rounded-lg"}`}>
+                  <div className="relative min-h-[400px] border-2 border-dashed border-gray-300 rounded-lg">
                     {customWidgets.map((widget) => (
                       <AnalyticsWidget
                         key={widget.id}
@@ -355,11 +318,9 @@ export default function Dashboard() {
                         layoutMode={layoutMode}
                       />
                     ))}
-                    {layoutMode === "free" && (
-                      <div className="absolute top-4 left-4 text-sm text-gray-500 pointer-events-none">
-                        Drag widgets using the move handle (⋮⋮) to reposition them
-                      </div>
-                    )}
+                    <div className="absolute top-4 left-4 text-sm text-gray-500 pointer-events-none">
+                      Drag widgets using the move handle (⋮⋮) to reposition them
+                    </div>
                   </div>
                 </div>
               )}
@@ -556,9 +517,8 @@ export default function Dashboard() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button size="sm" className="w-full md:w-auto">
-                      <Save className="w-3 h-3 md:w-4 md:h-4 mr-2" />
-                      <span className="hidden md:inline">Save Schedule</span>
-                      <span className="md:hidden">Save</span>
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Schedule
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -578,59 +538,12 @@ export default function Dashboard() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const newShow = !showCustomWidgets;
-                      setShowCustomWidgets(newShow);
-                      toast({
-                        title: `Custom widgets ${newShow ? "shown" : "hidden"}`,
-                        description: newShow ? "AI-generated analytics widgets are now visible" : "Custom widgets are now hidden"
-                      });
-                    }}
-                  >
-                    <Grid3X3 className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-                    <span className="hidden md:inline">{showCustomWidgets ? "Hide Custom" : "Show Custom"}</span>
-                    <span className="md:hidden">{showCustomWidgets ? "Hide" : "Show"}</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Toggle display of custom analytics widgets</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const newMode = layoutMode === "grid" ? "free" : "grid";
-                      setLayoutMode(newMode);
-                      toast({
-                        title: `Layout switched to ${newMode === "grid" ? "Grid" : "Free"} mode`,
-                        description: newMode === "grid" ? "Widgets organized in columns" : "Single column layout"
-                      });
-                    }}
-                  >
-                    <LayoutGrid className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-                    <span className="hidden md:inline">{layoutMode === "grid" ? "Free Layout" : "Grid Layout"}</span>
-                    <span className="md:hidden">{layoutMode === "grid" ? "Free" : "Grid"}</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Switch between organized grid and free-form layout</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
                     onClick={() => setAnalyticsManagerOpen(true)}
                     className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
                     size="sm"
                   >
-                    <Sparkles className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-                    <span className="hidden md:inline">AI Analytics</span>
-                    <span className="md:hidden">AI</span>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    AI Analytics
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -645,7 +558,7 @@ export default function Dashboard() {
                       size="sm"
                       onClick={() => setIsMaximized(!isMaximized)}
                     >
-                      {isMaximized ? <Minimize2 className="w-3 h-3 md:w-4 md:h-4" /> : <Maximize2 className="w-3 h-3 md:w-4 md:h-4" />}
+                      {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -657,7 +570,7 @@ export default function Dashboard() {
           </div>
 
           {/* Metrics Cards */}
-          <div className={`grid gap-4 mb-6 ${layoutMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-4" : "grid-cols-1"}`}>
+          <div className="grid gap-4 mb-6 grid-cols-1">
             <MetricsCard
               title="Active Jobs"
               value={metrics?.activeJobs?.toString() || "0"}
@@ -694,7 +607,7 @@ export default function Dashboard() {
           {showCustomWidgets && customWidgets.length > 0 && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-4">Custom Analytics Widgets</h3>
-              <div className={`${layoutMode === "grid" ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3" : "relative min-h-[600px] border-2 border-dashed border-gray-300 rounded-lg"}`}>
+              <div className="relative min-h-[600px] border-2 border-dashed border-gray-300 rounded-lg">
                 {customWidgets.map((widget) => (
                   <AnalyticsWidget
                     key={widget.id}
@@ -711,11 +624,9 @@ export default function Dashboard() {
                     layoutMode={layoutMode}
                   />
                 ))}
-                {layoutMode === "free" && (
-                  <div className="absolute top-4 left-4 text-sm text-gray-500 pointer-events-none">
-                    Drag widgets using the move handle (⋮⋮) to reposition them
-                  </div>
-                )}
+                <div className="absolute top-4 left-4 text-sm text-gray-500 pointer-events-none">
+                  Drag widgets using the move handle (⋮⋮) to reposition them
+                </div>
               </div>
             </div>
           )}
