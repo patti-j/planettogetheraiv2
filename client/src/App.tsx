@@ -11,6 +11,7 @@ import Analytics from "@/pages/analytics";
 import Reports from "@/pages/reports";
 import AIAssistant from "@/pages/ai-assistant";
 import Boards from "@/pages/boards";
+import ShopFloor from "@/pages/shop-floor";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/reports" component={Reports} />
       <Route path="/ai-assistant" component={AIAssistant} />
       <Route path="/boards" component={Boards} />
+      <Route path="/shop-floor" component={ShopFloor} />
       <Route component={NotFound} />
     </Switch>
   );

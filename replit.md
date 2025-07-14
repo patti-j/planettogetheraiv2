@@ -614,6 +614,18 @@ The application uses a modern full-stack architecture with strong typing through
 - Added proper mobile viewport height handling (90vh) for consistent mobile experience
 - Enhanced tab content scrolling to prevent content from being cut off at bottom of screen
 
+✓ **Shop Floor Mobile Page Implementation (July 14, 2025)**:
+- Created dedicated Shop Floor page specifically designed for production schedulers on the manufacturing floor
+- Implemented mobile-first design with touch-optimized interface for smartphone usage
+- Added real-time production metrics dashboard with key performance indicators
+- Integrated live data refresh every 30 seconds for up-to-date production status
+- Created card-based operation layout with priority indicators and status badges
+- Implemented quick action buttons for operation status updates (Start, Pause, Complete)
+- Added resource and time period filtering for focused production monitoring
+- Enhanced operation cards with job information, resource details, and duration display
+- Integrated smartphone icon in navigation with tooltip describing mobile-optimized functionality
+- Designed for production schedulers walking the shop floor with mobile devices
+
 ✓ **AI-First Button Ordering Enhancement (July 14, 2025)**:
 - Reordered AI and New buttons on both reports and analytics pages to emphasize AI-first approach
 - AI buttons now appear before New buttons to prioritize AI-powered features

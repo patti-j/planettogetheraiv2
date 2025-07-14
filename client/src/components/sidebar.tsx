@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X } from "lucide-react";
+import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -113,6 +113,7 @@ export default function Sidebar() {
 
   const navigationItems = [
     { icon: BarChart3, label: "Schedule", href: "/", active: location === "/" },
+    { icon: Smartphone, label: "Shop Floor", href: "/shop-floor", active: location === "/shop-floor" },
     { icon: Columns3, label: "Boards", href: "/boards", active: location === "/boards" },
     { icon: BarChart3, label: "Analytics", href: "/analytics", active: location === "/analytics" },
     { icon: FileText, label: "Reports", href: "/reports", active: location === "/reports" },
@@ -122,6 +123,7 @@ export default function Sidebar() {
   const getNavigationTooltip = (href: string) => {
     const tooltips = {
       "/": "View production schedule with interactive Gantt charts",
+      "/shop-floor": "Mobile-optimized interface for production schedulers on the floor",
       "/boards": "Organize jobs, operations, and resources with drag-and-drop boards",
       "/analytics": "View production metrics and performance analytics",
       "/reports": "Generate detailed production reports and insights",
