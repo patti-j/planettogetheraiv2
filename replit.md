@@ -544,4 +544,5 @@ The application uses a modern full-stack architecture with strong typing through
 - **Title Spacing**: Page titles now have proper margin on mobile (`md:ml-0 ml-12`) to avoid overlap with hamburger menu button
 - **Mobile Button Optimization**: Updated analytics and reports page headers to use flex-wrap layout preventing buttons from scrolling off-screen
 - **Responsive Button Layout**: Command buttons now wrap to new lines on mobile instead of horizontal scrolling
+- **Analytics Page Simplification**: Removed show/hide custom widgets and layout toggle buttons - analytics now permanently shows all custom widgets in free form layout
 - Mobile experience now fully functional with optimized header spacing and non-overlapping navigation

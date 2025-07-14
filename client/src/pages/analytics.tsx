@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BarChart3, TrendingUp, Clock, AlertTriangle, CheckCircle, Sparkles, Settings, Plus, Grid3X3, LayoutGrid, Maximize2, Minimize2 } from "lucide-react";
+import { BarChart3, TrendingUp, Clock, AlertTriangle, CheckCircle, Sparkles, Settings, Plus, Maximize2, Minimize2 } from "lucide-react";
 import Sidebar from "@/components/sidebar";
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
 import AnalyticsWidget from "@/components/analytics-widget";
@@ -30,8 +30,8 @@ interface AnalyticsWidget {
 export default function Analytics() {
   const [aiAnalyticsOpen, setAiAnalyticsOpen] = useState(false);
   const [customWidgets, setCustomWidgets] = useState<AnalyticsWidget[]>([]);
-  const [layoutMode, setLayoutMode] = useState<"grid" | "free">("grid");
-  const [showCustomWidgets, setShowCustomWidgets] = useState(false);
+  const [layoutMode] = useState<"grid" | "free">("free");
+  const [showCustomWidgets] = useState(true);
   const [isMaximized, setIsMaximized] = useState(false);
 
   const { data: metrics } = useQuery<Metrics>({
@@ -153,26 +153,6 @@ export default function Analytics() {
               <p className="text-gray-600 mt-1">Production performance insights</p>
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-2 md:gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowCustomWidgets(!showCustomWidgets)}
-                className="whitespace-nowrap"
-              >
-                <Grid3X3 className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">{showCustomWidgets ? "Hide Custom" : "Show Custom"}</span>
-                <span className="sm:hidden">{showCustomWidgets ? "Hide" : "Show"}</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setLayoutMode(layoutMode === "grid" ? "free" : "grid")}
-                className="whitespace-nowrap"
-              >
-                <LayoutGrid className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">{layoutMode === "grid" ? "Free Layout" : "Grid Layout"}</span>
-                <span className="sm:hidden">{layoutMode === "grid" ? "Free" : "Grid"}</span>
-              </Button>
               <Button
                 className="bg-primary hover:bg-blue-700 text-white whitespace-nowrap"
                 size="sm"
