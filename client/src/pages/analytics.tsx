@@ -159,16 +159,14 @@ export default function Analytics() {
                 onClick={handleAddManualWidget}
               >
                 <Plus className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">New Analytic</span>
-                <span className="sm:hidden">New</span>
+                New Analytic
               </Button>
               <Button
                 onClick={() => setAiAnalyticsOpen(true)}
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 whitespace-nowrap"
               >
                 <Sparkles className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">AI Analytics</span>
-                <span className="sm:hidden">AI</span>
+                AI Analytics
               </Button>
               <Button
                 variant="outline"

@@ -581,3 +581,5 @@ The application uses a modern full-stack architecture with strong typing through
 - Increased dropdown content width from 64 to 80 for enhanced configuration display
 - Reorganized header layout using vertical column structure for improved button placement
 - Enhanced reports page layout with clearer separation between dropdown selection and action buttons
+- Removed duplicate "New Report" and "AI Create" buttons from empty state section
+- Updated empty state text to reference buttons in header for cleaner UI
