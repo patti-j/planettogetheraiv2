@@ -287,4 +287,30 @@
   .mobile-scroll-content {
     padding-right: 1rem;
   }
+  
+  /* Fix button text wrapping on mobile */
+  .mobile-button-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* Kanban board mobile optimization */
+  .kanban-mobile-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  
+  .kanban-mobile-button-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  
+  .kanban-mobile-dropdown {
+    width: 100%;
+  }
 }
