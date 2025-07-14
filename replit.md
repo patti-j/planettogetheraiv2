@@ -532,3 +532,10 @@ The application uses a modern full-stack architecture with strong typing through
 - Mobile view toggle buttons in dashboard header (Mobile View / Desktop View)
 - Vertical scrolling card layout replaces horizontal Gantt charts for mobile usability
 - Maintains all desktop Gantt functionality while providing mobile-optimized alternative
+
+→ **Mobile Boards Horizontal Scrolling Issue (July 14, 2025)**:
+- Multiple attempts to fix mobile horizontal scrolling in boards/kanban view
+- Auto-maximize functionality working but horizontal scrolling not functioning properly
+- Hamburger menu accessible but swim lanes not scrolling horizontally on mobile
+- Various approaches tried: conditional logic, responsive classes, mobile detection
+- Current status: Mobile view shows but horizontal scrolling between swim lanes not working

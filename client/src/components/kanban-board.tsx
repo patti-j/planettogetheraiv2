@@ -940,48 +940,65 @@ function KanbanBoard({
             </div>
           ) : (
             <div className="h-full">
-              {/* Always show mobile view on small screens */}
-              <div className="block md:hidden h-full p-2" style={{ 
-                overflowX: 'scroll',
-                overflowY: 'hidden',
-                WebkitOverflowScrolling: 'touch',
-                scrollbarWidth: 'thin'
-              }}>
-                <div className="flex gap-2 pb-4 pr-4" style={{ 
-                  minWidth: `${columns.length * 280}px`,
-                  width: 'max-content',
-                  height: 'calc(100vh - 200px)'
-                }}>
+              {/* Mobile view - horizontal scrolling */}
+              <div className="block md:hidden h-full">
+                <div 
+                  className="flex overflow-x-auto overflow-y-hidden h-full p-2 gap-3"
+                  style={{ 
+                    WebkitOverflowScrolling: 'touch',
+                    scrollbarWidth: 'thin',
+                    scrollBehavior: 'smooth'
+                  }}
+                >
                   {columns.map((column) => (
-                    <KanbanColumn
+                    <div 
                       key={column.id}
-                      column={column}
-                      onDrop={handleDrop}
-                      className="flex-shrink-0"
-                      style={{ width: '280px', height: '100%' }}
+                      className="flex-shrink-0 bg-gray-50 rounded-lg p-3"
+                      style={{ 
+                        width: '280px',
+                        height: 'calc(100vh - 200px)',
+                        minWidth: '280px'
+                      }}
                     >
-                      {view === "jobs" ? (
-                        column.items.map((item) => (
-                          <JobCard
-                            key={item.id}
-                            job={item as Job}
-                            onEdit={handleEditJob}
-                            swimLaneField={swimLaneField}
-                          />
-                        ))
-                      ) : (
-                        column.items.map((item) => (
-                          <OperationCard
-                            key={item.id}
-                            operation={item as Operation}
-                            job={jobs.find(j => j.id === (item as Operation).jobId)}
-                            resources={resources}
-                            onEdit={handleEditOperation}
-                            swimLaneField={swimLaneField}
-                          />
-                        ))
-                      )}
-                    </KanbanColumn>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-medium text-gray-900 capitalize">
+                          {column.title}
+                        </h3>
+                        <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full">
+                          {column.items.length}
+                        </span>
+                      </div>
+                      
+                      <div 
+                        className="flex flex-col gap-2 overflow-y-auto"
+                        style={{ 
+                          height: 'calc(100vh - 280px)',
+                          WebkitOverflowScrolling: 'touch'
+                        }}
+                      >
+                        {view === "jobs" ? (
+                          column.items.map((item) => (
+                            <JobCard
+                              key={item.id}
+                              job={item as Job}
+                              onEdit={handleEditJob}
+                              swimLaneField={swimLaneField}
+                            />
+                          ))
+                        ) : (
+                          column.items.map((item) => (
+                            <OperationCard
+                              key={item.id}
+                              operation={item as Operation}
+                              job={jobs.find(j => j.id === (item as Operation).jobId)}
+                              resources={resources}
+                              onEdit={handleEditOperation}
+                              swimLaneField={swimLaneField}
+                            />
+                          ))
+                        )}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
