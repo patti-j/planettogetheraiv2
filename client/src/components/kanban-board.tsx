@@ -850,36 +850,33 @@ function KanbanBoard({
               )}
             </div>
             
-            {/* Mobile controls - simplified layout */}
+            {/* Mobile controls - stacked layout */}
             <div className="space-y-2">
-              <div className="flex gap-2">
-                <Button 
-                  className="bg-primary hover:bg-blue-700 text-white text-xs flex-1 min-w-0" 
-                  size="sm"
-                  onClick={() => {
-                    if (selectedConfig?.viewType === "jobs") {
-                      onCreateJob && onCreateJob();
-                    } else if (selectedConfig?.viewType === "operations") {
-                      handleAddOperation();
-                    } else if (selectedConfig?.viewType === "resources") {
-                      onCreateResource && onCreateResource();
-                    }
-                  }}
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  <span className="hidden sm:inline">New </span>
-                  {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Op" : "Resource"}
-                </Button>
+              <Button 
+                className="bg-primary hover:bg-blue-700 text-white text-xs w-full" 
+                size="sm"
+                onClick={() => {
+                  if (selectedConfig?.viewType === "jobs") {
+                    onCreateJob && onCreateJob();
+                  } else if (selectedConfig?.viewType === "operations") {
+                    handleAddOperation();
+                  } else if (selectedConfig?.viewType === "resources") {
+                    onCreateResource && onCreateResource();
+                  }
+                }}
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                New {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
+              </Button>
 
-                <Button 
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs flex-1 min-w-0" 
-                  size="sm"
-                  onClick={onAICreateBoards}
-                >
-                  <Sparkles className="w-4 h-4 mr-1" />
-                  AI
-                </Button>
-              </div>
+              <Button 
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs w-full" 
+                size="sm"
+                onClick={onAICreateBoards}
+              >
+                <Sparkles className="w-4 h-4 mr-1" />
+                AI Boards
+              </Button>
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
