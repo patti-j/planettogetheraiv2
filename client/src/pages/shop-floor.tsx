@@ -277,6 +277,8 @@ export default function ShopFloor() {
     }
   }, [operations, isLivePaused, hasReorder]);
 
+  // Prevent dropdown resets during live updates by not resetting state
+
   // Handle drag and drop reordering
   const handleMoveOperation = (dragIndex: number, hoverIndex: number) => {
     const filteredOps = filteredOperations;
@@ -440,27 +442,29 @@ export default function ShopFloor() {
             <h1 className="text-lg font-semibold text-gray-900">Shop Floor</h1>
             <p className="text-sm text-gray-600">Real-time production monitoring</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsLivePaused(!isLivePaused)}
-              className="flex items-center gap-2 hover:bg-gray-100"
-            >
-              {isLivePaused ? (
-                <>
-                  <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                  <span className="text-sm text-gray-600 font-medium">Paused</span>
-                  <PlayCircle className="w-4 h-4 text-gray-600" />
-                </>
-              ) : (
-                <>
-                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm text-green-600 font-medium">Live</span>
-                  <PauseCircle className="w-4 h-4 text-green-600" />
-                </>
-              )}
-            </Button>
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsLivePaused(!isLivePaused)}
+                className="flex items-center gap-2 hover:bg-gray-100"
+              >
+                {isLivePaused ? (
+                  <>
+                    <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                    <span className="text-sm text-gray-600 font-medium">Paused</span>
+                    <PlayCircle className="w-4 h-4 text-gray-600" />
+                  </>
+                ) : (
+                  <>
+                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-green-600 font-medium">Live</span>
+                    <PauseCircle className="w-4 h-4 text-green-600" />
+                  </>
+                )}
+              </Button>
+            </div>
             
             {/* AI Metrics Configuration */}
             <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>

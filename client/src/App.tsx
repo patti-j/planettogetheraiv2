@@ -12,6 +12,7 @@ import Reports from "@/pages/reports";
 import AIAssistant from "@/pages/ai-assistant";
 import Boards from "@/pages/boards";
 import ShopFloor from "@/pages/shop-floor";
+import Sales from "@/pages/sales";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/ai-assistant" component={AIAssistant} />
       <Route path="/boards" component={Boards} />
       <Route path="/shop-floor" component={ShopFloor} />
+      <Route path="/sales" component={Sales} />
       <Route component={NotFound} />
     </Switch>
   );
