@@ -610,6 +610,9 @@ The application uses a modern full-stack architecture with strong typing through
 - Fixed overlapping elements and improved spacing throughout the mobile interface
 - Enhanced all form controls and settings sections for mobile usability
 - Widget visibility controls now properly scale and truncate text on mobile devices
+- Fixed mobile scrolling issues by adding overflow-y-auto to dialog content and tab sections
+- Added proper mobile viewport height handling (90vh) for consistent mobile experience
+- Enhanced tab content scrolling to prevent content from being cut off at bottom of screen
 
 ✓ **AI-First Button Ordering Enhancement (July 14, 2025)**:
 - Reordered AI and New buttons on both reports and analytics pages to emphasize AI-first approach

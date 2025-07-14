@@ -162,21 +162,21 @@ export default function AIAnalyticsManager({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] sm:max-w-2xl md:max-w-4xl lg:max-w-6xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl md:max-w-4xl lg:max-w-6xl max-h-[90vh] h-[90vh] sm:h-auto flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-lg sm:text-xl">AI Analytics & Dashboard Manager</DialogTitle>
         </DialogHeader>
         
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
           <Tabs defaultValue="ai-create" className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 shrink-0">
               <TabsTrigger value="ai-create" className="text-xs sm:text-sm">AI Create</TabsTrigger>
               <TabsTrigger value="widgets" className="text-xs sm:text-sm">Widgets</TabsTrigger>
               <TabsTrigger value="layout" className="text-xs sm:text-sm hidden sm:flex">Layout</TabsTrigger>
               <TabsTrigger value="settings" className="text-xs sm:text-sm hidden sm:flex">Settings</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="ai-create" className="flex-1 space-y-4">
+            <TabsContent value="ai-create" className="flex-1 space-y-4 overflow-y-auto p-1">
               <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 rounded-lg">
                 <h3 className="font-semibold mb-2">Create Analytics with AI</h3>
                 <p className="text-sm opacity-90">
@@ -290,7 +290,7 @@ export default function AIAnalyticsManager({
               </div>
             </TabsContent>
 
-            <TabsContent value="widgets" className="flex-1 space-y-4">
+            <TabsContent value="widgets" className="flex-1 space-y-4 overflow-y-auto p-1">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <Button 
                   variant="outline" 
@@ -349,7 +349,7 @@ export default function AIAnalyticsManager({
               </div>
             </TabsContent>
 
-            <TabsContent value="layout" className="flex-1 space-y-4">
+            <TabsContent value="layout" className="flex-1 space-y-4 overflow-y-auto p-1">
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
                   <Label>Layout Mode</Label>
@@ -396,7 +396,7 @@ export default function AIAnalyticsManager({
               </div>
             </TabsContent>
 
-            <TabsContent value="settings" className="flex-1 space-y-4">
+            <TabsContent value="settings" className="flex-1 space-y-4 overflow-y-auto p-1">
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
                   <Label>Refresh Interval</Label>
