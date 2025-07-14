@@ -814,7 +814,6 @@ function KanbanBoard({
           {/* Desktop header */}
           <div className="hidden md:flex items-center justify-between mb-2">
             <div className="flex items-center space-x-4">
-              <h2 className="text-lg font-medium text-gray-900">Board</h2>
               {selectedConfig && (
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <Badge variant="outline">{selectedConfig.viewType === "jobs" ? "Jobs" : "Operations"}</Badge>
@@ -845,7 +844,6 @@ function KanbanBoard({
           {/* Mobile header */}
           <div className="md:hidden">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-medium text-gray-900">Board</h2>
               {/* Hide maximize button on mobile since it's automatically maximized */}
               {onToggleMaximize && !isMobile && (
                 <Button
@@ -922,6 +920,92 @@ function KanbanBoard({
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+            </div>
+          </div>
+
+          {/* Desktop controls */}
+          <div className="hidden md:block">
+            <div className="flex items-center justify-between space-x-2 mb-2">
+              {/* Board dropdown */}
+              <div className="flex-1 max-w-xs">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-full justify-between">
+                      <span className="truncate">{selectedConfig?.name || "Select Board"}</span>
+                      <ChevronDown className="w-4 h-4 ml-2 flex-shrink-0" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-80">
+                    {kanbanConfigs.map((config) => (
+                      <DropdownMenuItem
+                        key={config.id}
+                        onClick={() => onConfigChange && onConfigChange(config.id)}
+                        className={selectedConfig?.id === config.id ? "bg-blue-50 text-blue-900" : ""}
+                      >
+                        <div className="flex items-center">
+                          {config.viewType === "jobs" ? (
+                            <Briefcase className="w-4 h-4 mr-2" />
+                          ) : config.viewType === "resources" ? (
+                            <Wrench className="w-4 h-4 mr-2" />
+                          ) : (
+                            <Users className="w-4 h-4 mr-2" />
+                          )}
+                          <div>
+                            <div className="font-medium">{config.name}</div>
+                            <div className="text-xs text-gray-500 capitalize">{config.viewType} board</div>
+                          </div>
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={onConfigureBoards} className="text-blue-600">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Configure Boards
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* AI buttons - smaller and side by side */}
+              <div className="flex items-center space-x-2">
+                <Button 
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white" 
+                  size="sm"
+                  onClick={onConfigureBoards}
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Configure
+                </Button>
+                
+                <Button 
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white" 
+                  size="sm"
+                  onClick={onAICreateBoards}
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  AI Create
+                </Button>
+              </div>
+            </div>
+
+            {/* Command buttons */}
+            <div className="flex items-center space-x-2">
+              <Button 
+                className="bg-primary hover:bg-blue-700 text-white flex-1" 
+                size="sm"
+                onClick={() => {
+                  if (selectedConfig?.viewType === "jobs") {
+                    onCreateJob && onCreateJob();
+                  } else if (selectedConfig?.viewType === "operations") {
+                    handleAddOperation();
+                  } else if (selectedConfig?.viewType === "resources") {
+                    onCreateResource && onCreateResource();
+                  }
+                }}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
+              </Button>
             </div>
           </div>
         </div>
