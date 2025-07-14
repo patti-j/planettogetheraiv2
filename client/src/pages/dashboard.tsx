@@ -242,6 +242,39 @@ export default function Dashboard() {
               {/* Analytics Controls */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
+                  {/* Mobile View Toggle in Maximized View */}
+                  <div className="flex items-center space-x-2 bg-white rounded-lg shadow-sm border border-gray-200 p-2">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={isMobileView ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setIsMobileView(true)}
+                        >
+                          <Smartphone className="w-4 h-4 mr-2" />
+                          Mobile View
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Switch to mobile-optimized schedule view</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={!isMobileView ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setIsMobileView(false)}
+                        >
+                          <Monitor className="w-4 h-4 mr-2" />
+                          Desktop View
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Switch to desktop Gantt chart view</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
