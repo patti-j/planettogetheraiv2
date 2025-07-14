@@ -316,26 +316,33 @@
   
   /* Mobile scrollbar styling */
   .mobile-scroll-x {
-    overflow-x: scroll;
+    overflow-x: scroll !important;
+    overflow-y: hidden !important;
     scrollbar-width: thin;
     -webkit-overflow-scrolling: touch;
   }
   
   .mobile-scroll-x::-webkit-scrollbar {
-    height: 8px;
+    height: 12px;
+    display: block;
   }
   
   .mobile-scroll-x::-webkit-scrollbar-track {
     background: #f1f1f1;
-    border-radius: 4px;
+    border-radius: 6px;
   }
   
   .mobile-scroll-x::-webkit-scrollbar-thumb {
     background: #888;
-    border-radius: 4px;
+    border-radius: 6px;
   }
   
   .mobile-scroll-x::-webkit-scrollbar-thumb:hover {
     background: #555;
+  }
+  
+  /* Force scrollbar to always show on mobile */
+  .mobile-scroll-x::-webkit-scrollbar {
+    -webkit-appearance: none;
   }
 }

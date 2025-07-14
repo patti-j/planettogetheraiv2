@@ -933,14 +933,23 @@ function KanbanBoard({
           ) : (
             <div className="h-full">
               {/* Mobile columns */}
-              <div className="md:hidden h-full mobile-scroll-x p-2">
-                <div className="flex gap-2 h-full pb-4 pr-4" style={{ minWidth: `${columns.length * 240}px` }}>
+              <div className="md:hidden h-full p-2 mobile-scroll-x" style={{ 
+                overflowX: 'scroll',
+                overflowY: 'hidden',
+                WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'thin'
+              }}>
+                <div className="flex gap-2 h-full pb-4 pr-4" style={{ 
+                  minWidth: `${columns.length * 240}px`,
+                  width: 'max-content'
+                }}>
                   {columns.map((column) => (
                     <KanbanColumn
                       key={column.id}
                       column={column}
                       onDrop={handleDrop}
-                      className="w-56 flex-shrink-0"
+                      className="flex-shrink-0"
+                      style={{ width: '240px' }}
                     >
                       {view === "jobs" ? (
                         column.items.map((item) => (
