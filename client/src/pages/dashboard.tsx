@@ -200,7 +200,7 @@ export default function Dashboard() {
             {/* Header */}
             <header className="bg-white shadow-sm border-b border-gray-200 p-6">
               <div className="flex items-center justify-between mb-6">
-                <div>
+                <div className="md:ml-0 ml-12">
                   <h2 className="text-2xl font-semibold text-gray-800">Production Schedule - Maximized</h2>
                   <p className="text-gray-600">Full dashboard view with metrics and Gantt chart</p>
                 </div>
@@ -578,7 +578,7 @@ export default function Dashboard() {
           {/* Header */}
           <header className="bg-white shadow-sm border-b border-gray-200 p-4 md:p-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 md:mb-6">
-              <div className="mb-4 md:mb-0">
+              <div className="mb-4 md:mb-0 md:ml-0 ml-12">
                 <h2 className="text-xl md:text-2xl font-semibold text-gray-800">Schedule</h2>
                 <p className="text-sm md:text-base text-gray-600">Manage operations and resource allocation</p>
               </div>
