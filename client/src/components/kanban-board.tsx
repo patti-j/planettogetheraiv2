@@ -858,32 +858,7 @@ function KanbanBoard({
             
             {/* Mobile controls - stacked layout */}
             <div className="space-y-1.5">
-              <Button 
-                className="bg-primary hover:bg-blue-700 text-white text-xs w-full" 
-                size="sm"
-                onClick={() => {
-                  if (selectedConfig?.viewType === "jobs") {
-                    onCreateJob && onCreateJob();
-                  } else if (selectedConfig?.viewType === "operations") {
-                    handleAddOperation();
-                  } else if (selectedConfig?.viewType === "resources") {
-                    onCreateResource && onCreateResource();
-                  }
-                }}
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                New {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
-              </Button>
-
-              <Button 
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs w-full" 
-                size="sm"
-                onClick={onAICreateBoards}
-              >
-                <Sparkles className="w-4 h-4 mr-1" />
-                AI Boards
-              </Button>
-              
+              {/* Board dropdown first */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="w-full justify-between text-xs">
@@ -920,6 +895,45 @@ function KanbanBoard({
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              {/* AI buttons - side by side */}
+              <div className="flex space-x-2">
+                <Button 
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs flex-1" 
+                  size="sm"
+                  onClick={onConfigureBoards}
+                >
+                  <Settings className="w-4 h-4 mr-1" />
+                  Configure
+                </Button>
+                
+                <Button 
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs flex-1" 
+                  size="sm"
+                  onClick={onAICreateBoards}
+                >
+                  <Sparkles className="w-4 h-4 mr-1" />
+                  AI Create
+                </Button>
+              </div>
+
+              {/* Command button last */}
+              <Button 
+                className="bg-primary hover:bg-blue-700 text-white text-xs w-full" 
+                size="sm"
+                onClick={() => {
+                  if (selectedConfig?.viewType === "jobs") {
+                    onCreateJob && onCreateJob();
+                  } else if (selectedConfig?.viewType === "operations") {
+                    handleAddOperation();
+                  } else if (selectedConfig?.viewType === "resources") {
+                    onCreateResource && onCreateResource();
+                  }
+                }}
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                New {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
+              </Button>
             </div>
           </div>
 
