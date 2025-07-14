@@ -332,8 +332,9 @@ export default function Reports() {
 
   const selectedConfigName = selectedConfig?.name || reportConfigs.find(c => c.isDefault)?.name || "Default Reports";
 
-  if (isMaximized) {
-    return (
+  return (
+    <>
+      {isMaximized ? (
       <div className="fixed inset-0 bg-white z-50 flex flex-col">
         {/* Header */}
         <div className="flex-none px-4 py-3 sm:px-6 bg-white border-b border-gray-200">
@@ -644,10 +645,7 @@ export default function Reports() {
           </DialogContent>
         </Dialog>
       </div>
-    );
-  }
-
-  return (
+      ) : (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -660,48 +658,37 @@ export default function Reports() {
                 Create and manage production reports
               </p>
             </div>
-            <div className="flex flex-col items-end space-y-2">
-              <div className="flex items-center space-x-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="min-w-[280px] justify-between">
-                      {selectedConfigName}
-                      <ChevronDown className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-80">
-                    {reportConfigs.map((config) => (
-                      <DropdownMenuItem
-                        key={config.id}
-                        onClick={() => setSelectedConfigId(config.id)}
-                        className="flex items-center justify-between"
-                      >
-                        <span>{config.name}</span>
-                        {config.isDefault && <Badge variant="secondary" className="text-xs">Default</Badge>}
-                      </DropdownMenuItem>
-                    ))}
-                    <DropdownMenuSeparator />
+            <div className="flex flex-wrap items-center gap-2 sm:gap-2 md:gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="min-w-[280px] justify-between">
+                    {selectedConfigName}
+                    <ChevronDown className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80">
+                  {reportConfigs.map((config) => (
                     <DropdownMenuItem
-                      onClick={() => setShowConfigDialog(true)}
-                      className="text-blue-600 dark:text-blue-400"
+                      key={config.id}
+                      onClick={() => setSelectedConfigId(config.id)}
+                      className="flex items-center justify-between"
                     >
-                      <Settings className="w-4 h-4 mr-2" />
-                      Configure Reports
+                      <span>{config.name}</span>
+                      {config.isDefault && <Badge variant="secondary" className="text-xs">Default</Badge>}
                     </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsMaximized(!isMaximized)} className="hidden sm:flex"
-                >
-                  {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                </Button>
-              </div>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setShowConfigDialog(true)}
+                    className="text-blue-600 dark:text-blue-400"
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Configure Reports
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               
-              <div className="flex flex-wrap items-center gap-2 sm:gap-2 md:gap-2">
-                {reports.length > 0 && (
+              {reports.length > 0 && (
                   <>
                     <Button
                       onClick={() => window.print()}
@@ -744,6 +731,15 @@ export default function Reports() {
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
                   AI Create
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsMaximized(!isMaximized)} 
+                  className="hidden sm:flex"
+                >
+                  {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                 </Button>
               </div>
             </div>
@@ -913,6 +909,7 @@ export default function Reports() {
           </DialogContent>
         </Dialog>
 
+        {/* AI Report Creation Dialog */}
         <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
@@ -941,6 +938,7 @@ export default function Reports() {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+      )}
+    </>
   );
 }
