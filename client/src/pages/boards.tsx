@@ -26,12 +26,22 @@ export default function Boards() {
   const isMobile = useIsMobile();
   const [isMaximized, setIsMaximized] = useState(false);
   
-  // Automatically maximize on mobile devices
+  // Automatically maximize on mobile devices and keep it maximized
   useEffect(() => {
+    console.log('Mobile state changed:', { isMobile, isMaximized });
     if (isMobile) {
       setIsMaximized(true);
     }
-  }, [isMobile]);
+  }, [isMobile, isMaximized]);
+  
+  // Prevent minimizing on mobile
+  const handleToggleMaximize = () => {
+    if (isMobile) {
+      // Don't allow minimizing on mobile
+      return;
+    }
+    setIsMaximized(!isMaximized);
+  };
   const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
   const [showConfigManager, setShowConfigManager] = useState(false);
   const [jobDialogOpen, setJobDialogOpen] = useState(false);
@@ -126,7 +136,7 @@ export default function Boards() {
           onConfigChange={handleConfigSelect}
           kanbanConfigs={kanbanConfigs}
           isMaximized={isMaximized}
-          onToggleMaximize={() => setIsMaximized(!isMaximized)}
+          onToggleMaximize={handleToggleMaximize}
           onCreateJob={() => setJobDialogOpen(true)}
           onCreateResource={() => setResourceDialogOpen(true)}
           onConfigureBoards={() => setShowConfigManager(true)}
