@@ -296,12 +296,14 @@ const KanbanColumn = ({
   column, 
   onDrop, 
   children,
-  className
+  className,
+  style
 }: { 
   column: KanbanColumn; 
   onDrop: (item: DragItem, targetStatus: string, insertAtIndex?: number) => void;
   children: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }) => {
   const [{ isOver, canDrop }, drop] = useDrop({
     accept: ["job", "operation"],
@@ -321,6 +323,7 @@ const KanbanColumn = ({
       className={`bg-gray-50 rounded-lg p-2 sm:p-4 h-full w-72 sm:w-80 flex-shrink-0 flex flex-col ${
         isOver && canDrop ? "bg-blue-50 border-2 border-blue-300 border-dashed" : ""
       } ${className || ""}`}
+      style={style}
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
@@ -942,9 +945,10 @@ function KanbanBoard({
                 WebkitOverflowScrolling: 'touch',
                 scrollbarWidth: 'thin'
               }}>
-                <div className="flex gap-2 h-full pb-4 pr-4" style={{ 
+                <div className="flex gap-2 pb-4 pr-4" style={{ 
                   minWidth: `${columns.length * 240}px`,
-                  width: 'max-content'
+                  width: 'max-content',
+                  height: 'calc(100vh - 200px)'
                 }}>
                   {columns.map((column) => (
                     <KanbanColumn
@@ -952,7 +956,7 @@ function KanbanBoard({
                       column={column}
                       onDrop={handleDrop}
                       className="flex-shrink-0"
-                      style={{ width: '240px' }}
+                      style={{ width: '240px', height: '100%' }}
                     >
                       {view === "jobs" ? (
                         column.items.map((item) => (
