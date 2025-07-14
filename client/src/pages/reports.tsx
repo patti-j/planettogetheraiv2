@@ -415,20 +415,20 @@ export default function Reports() {
                 )}
                 
                 <Button
-                  onClick={() => setShowReportDialog(true)}
-                  className="bg-primary hover:bg-primary/90 text-white"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Report
-                </Button>
-                
-                <Button
                   onClick={() => setShowAIDialog(true)}
                   variant="outline"
                   className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
                   AI Create
+                </Button>
+                
+                <Button
+                  onClick={() => setShowReportDialog(true)}
+                  className="bg-primary hover:bg-primary/90 text-white"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Report
                 </Button>
               </div>
             </div>
@@ -717,20 +717,20 @@ export default function Reports() {
                 )}
                 
                 <Button
-                  onClick={() => setShowReportDialog(true)}
-                  className="bg-primary hover:bg-primary/90 text-white"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Report
-                </Button>
-                
-                <Button
                   onClick={() => setShowAIDialog(true)}
                   variant="outline"
                   className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
                   AI Create
+                </Button>
+                
+                <Button
+                  onClick={() => setShowReportDialog(true)}
+                  className="bg-primary hover:bg-primary/90 text-white"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Report
                 </Button>
                 
                 <Button

@@ -154,19 +154,19 @@ export default function Analytics() {
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-2 md:gap-2">
               <Button
+                onClick={() => setAiAnalyticsOpen(true)}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 whitespace-nowrap"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                AI Analytics
+              </Button>
+              <Button
                 className="bg-primary hover:bg-blue-700 text-white whitespace-nowrap"
                 size="sm"
                 onClick={handleAddManualWidget}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 New Analytic
-              </Button>
-              <Button
-                onClick={() => setAiAnalyticsOpen(true)}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 whitespace-nowrap"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                AI Analytics
               </Button>
               <Button
                 variant="outline"
