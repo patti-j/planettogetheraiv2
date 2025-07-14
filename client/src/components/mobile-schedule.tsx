@@ -154,8 +154,8 @@ export default function MobileSchedule({
           <TabsTrigger value="all">All</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={selectedTab} className="flex-1 px-4 pb-4 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
-          <div className="space-y-3 pt-4">
+        <TabsContent value={selectedTab} className="flex-1 px-4 pb-4 overflow-y-auto min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="space-y-3 pt-4 pb-8">
               {filteredOperations.length === 0 ? (
                 <Card>
                   <CardContent className="p-6 text-center">

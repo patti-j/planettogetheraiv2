@@ -463,7 +463,7 @@ export default function Dashboard() {
                 </div>
 
                 {isMobileView ? (
-                  <div className="h-full">
+                  <div className="h-full flex flex-col min-h-0">
                     <MobileSchedule
                       jobs={jobs}
                       operations={operations}
