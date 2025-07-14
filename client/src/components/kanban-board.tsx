@@ -835,14 +835,14 @@ function KanbanBoard({
           </div>
           
           {/* Mobile-optimized controls */}
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
-            {/* Top row - Primary actions */}
-            <div className="flex items-center gap-2 flex-1">
+          <div className="flex flex-col gap-2">
+            {/* Primary actions row */}
+            <div className="flex items-center gap-2">
               {/* Create Action Button */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button 
-                    className="bg-primary hover:bg-blue-700 text-white flex-1 sm:flex-none" 
+                    className="bg-primary hover:bg-blue-700 text-white flex-1" 
                     size="sm"
                     onClick={() => {
                       if (selectedConfig?.viewType === "jobs") {
@@ -855,7 +855,6 @@ function KanbanBoard({
                     }}
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    <span className="hidden xs:inline">New </span>
                     {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
                   </Button>
                 </TooltipTrigger>
@@ -868,12 +867,12 @@ function KanbanBoard({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button 
-                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white flex-1 sm:flex-none" 
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white flex-1" 
                     size="sm"
                     onClick={onAICreateBoards}
                   >
                     <Sparkles className="w-4 h-4 mr-2" />
-                    <span className="hidden xs:inline">AI </span>Boards
+                    AI Boards
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -882,14 +881,14 @@ function KanbanBoard({
               </Tooltip>
             </div>
 
-            {/* Bottom row - Board selection */}
-            <div className="flex items-center gap-2">
+            {/* Board selection row */}
+            <div className="flex items-center">
               <DropdownMenu>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="flex-1 sm:flex-none min-w-0">
-                        <span className="truncate max-w-[150px] sm:max-w-32">{selectedConfig?.name || "Select Board"}</span>
+                      <Button variant="outline" size="sm" className="w-full justify-between">
+                        <span className="truncate">{selectedConfig?.name || "Select Board"}</span>
                         <ChevronDown className="w-4 h-4 ml-2 flex-shrink-0" />
                       </Button>
                     </DropdownMenuTrigger>
