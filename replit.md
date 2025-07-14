@@ -523,13 +523,13 @@ The application uses a modern full-stack architecture with strong typing through
 - Enhanced overflow handling with proper container hierarchy for mobile devices
 - Both swim lane columns and button controls now properly scroll on mobile devices
 
-✓ **Mobile-Optimized Schedule View (July 13, 2025)**:
-- Created dedicated MobileSchedule component specifically designed for phone usage
+✓ **Op Sequencer (Mobile-Optimized Schedule View) (July 13, 2025)**:
+- Created dedicated Op Sequencer component specifically designed for phone usage
 - Implemented mobile-first card-based layout with comprehensive operation details
 - Added time-period filtering (Today, This Week, All) optimized for mobile navigation
 - Included resource and status filtering with mobile-friendly dropdown selectors
 - Enhanced operation cards with status indicators, priority badges, and resource information
-- Mobile view toggle buttons in dashboard header (Mobile View / Desktop View)
+- Mobile view toggle buttons in dashboard header (Op Sequencer / Desktop View)
 - Vertical scrolling card layout replaces horizontal Gantt charts for mobile usability
 - Maintains all desktop Gantt functionality while providing mobile-optimized alternative
 
@@ -546,4 +546,5 @@ The application uses a modern full-stack architecture with strong typing through
 - **Responsive Button Layout**: Command buttons now wrap to new lines on mobile instead of horizontal scrolling
 - **Analytics Page Simplification**: Removed show/hide custom widgets and layout toggle buttons - analytics now permanently shows all custom widgets in free form layout
 - **Mobile Maximize Button Removal**: Hidden maximize/minimize buttons on mobile devices for analytics and reports pages as they're not needed in mobile context
+- **Op Sequencer Rename**: Renamed "Mobile Schedule" to "Op Sequencer" throughout the system for clearer branding and functionality description
 - Mobile experience now fully functional with optimized header spacing and non-overlapping navigation

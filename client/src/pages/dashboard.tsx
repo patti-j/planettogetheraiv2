@@ -252,11 +252,11 @@ export default function Dashboard() {
                           onClick={() => setIsMobileView(true)}
                         >
                           <Smartphone className="w-4 h-4 mr-2" />
-                          Mobile View
+                          Op Sequencer
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Switch to mobile-optimized schedule view</p>
+                        <p>Switch to operation sequencer view</p>
                       </TooltipContent>
                     </Tooltip>
                     <Tooltip>
@@ -406,11 +406,11 @@ export default function Dashboard() {
                       onClick={() => setIsMobileView(true)}
                     >
                       <Smartphone className="w-4 h-4 mr-2" />
-                      Mobile View
+                      Op Sequencer
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Switch to mobile-optimized schedule view</p>
+                    <p>Switch to operation sequencer view</p>
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>

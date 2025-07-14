@@ -112,7 +112,7 @@ export default function MobileSchedule({
     <div className="flex flex-col h-full bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 p-4 flex-shrink-0">
-        <h1 className="text-xl font-semibold text-gray-800 mb-4">Mobile Schedule</h1>
+        <h1 className="text-xl font-semibold text-gray-800 mb-4">Op Sequencer</h1>
         
         {/* Filters */}
         <div className="space-y-3">
