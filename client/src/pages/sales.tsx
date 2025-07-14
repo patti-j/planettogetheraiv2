@@ -710,9 +710,9 @@ export default function Sales() {
   );
 
   return (
-    <div className={`bg-gray-50 ${isMaximized ? 'fixed inset-0 z-50' : 'min-h-screen'}`}>
+    <div className={`bg-gray-50 ${isMaximized ? 'fixed inset-0 z-50' : 'h-screen'} flex flex-col`}>
       {/* Header */}
-      <div className="bg-white shadow-sm border-b px-4 py-3 sm:px-6">
+      <div className="bg-white shadow-sm border-b px-4 py-3 sm:px-6 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="ml-12 md:ml-0">
             <h1 className="text-2xl font-semibold text-gray-800">Sales Dashboard</h1>
@@ -733,7 +733,7 @@ export default function Sales() {
       </div>
 
       {/* Content */}
-      <div className="p-4 sm:p-6">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
