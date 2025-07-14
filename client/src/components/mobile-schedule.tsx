@@ -109,7 +109,7 @@ export default function MobileSchedule({
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 overflow-hidden">
+    <div className="flex flex-col h-full bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 p-4 flex-shrink-0">
         <h1 className="text-xl font-semibold text-gray-800 mb-4">Mobile Schedule</h1>
@@ -154,8 +154,8 @@ export default function MobileSchedule({
           <TabsTrigger value="all">All</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={selectedTab} className="flex-1 px-4 pb-4 overflow-y-auto min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
-          <div className="space-y-3 pt-4 pb-8">
+        <TabsContent value={selectedTab} className="flex-1 overflow-y-auto min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="space-y-3 p-4 pb-8">
               {filteredOperations.length === 0 ? (
                 <Card>
                   <CardContent className="p-6 text-center">
