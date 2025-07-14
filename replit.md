@@ -545,4 +545,5 @@ The application uses a modern full-stack architecture with strong typing through
 - **Mobile Button Optimization**: Updated analytics and reports page headers to use flex-wrap layout preventing buttons from scrolling off-screen
 - **Responsive Button Layout**: Command buttons now wrap to new lines on mobile instead of horizontal scrolling
 - **Analytics Page Simplification**: Removed show/hide custom widgets and layout toggle buttons - analytics now permanently shows all custom widgets in free form layout
+- **Mobile Maximize Button Removal**: Hidden maximize/minimize buttons on mobile devices for analytics and reports pages as they're not needed in mobile context
 - Mobile experience now fully functional with optimized header spacing and non-overlapping navigation

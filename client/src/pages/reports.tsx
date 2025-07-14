@@ -422,7 +422,7 @@ export default function Reports() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setIsMaximized(!isMaximized)}
+                onClick={() => setIsMaximized(!isMaximized)} className="hidden sm:flex"
               >
                 {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
               </Button>
@@ -734,7 +734,7 @@ export default function Reports() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setIsMaximized(!isMaximized)}
+                onClick={() => setIsMaximized(!isMaximized)} className="hidden sm:flex"
               >
                 {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
               </Button>

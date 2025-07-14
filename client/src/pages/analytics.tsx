@@ -174,7 +174,7 @@ export default function Analytics() {
                 variant="outline"
                 size="sm"
                 onClick={() => setIsMaximized(!isMaximized)}
-                className="whitespace-nowrap"
+                className="whitespace-nowrap hidden sm:flex"
               >
                 {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
               </Button>
