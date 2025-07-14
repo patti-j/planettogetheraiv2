@@ -574,3 +574,10 @@ The application uses a modern full-stack architecture with strong typing through
 - Standardized button styling with consistent icon sizes and spacing across all components
 - Fixed layout mode to permanently use "free" layout for better widget positioning flexibility
 - Cleaned up unused imports and code related to removed layout toggle functionality
+
+✓ **Reports Page Layout Enhancement (July 14, 2025)**:
+- Repositioned "New Report" button below dropdown menu for better visual hierarchy
+- Expanded reports dropdown width from 180px to 280px for better readability
+- Increased dropdown content width from 64 to 80 for enhanced configuration display
+- Reorganized header layout using vertical column structure for improved button placement
+- Enhanced reports page layout with clearer separation between dropdown selection and action buttons

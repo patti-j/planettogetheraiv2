@@ -344,88 +344,92 @@ export default function Reports() {
                 Create and manage production reports
               </p>
             </div>
-            <div className="flex items-center space-x-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="min-w-[180px] justify-between">
-                    {selectedConfigName}
-                    <ChevronDown className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
-                  {reportConfigs.map((config) => (
+            <div className="flex flex-col items-end space-y-2">
+              <div className="flex items-center space-x-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="min-w-[280px] justify-between">
+                      {selectedConfigName}
+                      <ChevronDown className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-80">
+                    {reportConfigs.map((config) => (
+                      <DropdownMenuItem
+                        key={config.id}
+                        onClick={() => setSelectedConfigId(config.id)}
+                        className="flex items-center justify-between"
+                      >
+                        <span>{config.name}</span>
+                        {config.isDefault && <Badge variant="secondary" className="text-xs">Default</Badge>}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      key={config.id}
-                      onClick={() => setSelectedConfigId(config.id)}
-                      className="flex items-center justify-between"
+                      onClick={() => setShowConfigDialog(true)}
+                      className="text-blue-600 dark:text-blue-400"
                     >
-                      <span>{config.name}</span>
-                      {config.isDefault && <Badge variant="secondary" className="text-xs">Default</Badge>}
+                      <Settings className="w-4 h-4 mr-2" />
+                      Configure Reports
                     </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => setShowConfigDialog(true)}
-                    className="text-blue-600 dark:text-blue-400"
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Configure Reports
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsMaximized(!isMaximized)} className="hidden sm:flex"
+                >
+                  {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                </Button>
+              </div>
               
-              {reports.length > 0 && (
-                <>
-                  <Button
-                    onClick={() => window.print()}
-                    variant="outline"
-                  >
-                    <Printer className="w-4 h-4 mr-2" />
-                    Print
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      const reportData = JSON.stringify(reports, null, 2);
-                      const blob = new Blob([reportData], { type: 'application/json' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `reports-${new Date().toISOString().split('T')[0]}.json`;
-                      a.click();
-                      URL.revokeObjectURL(url);
-                    }}
-                    variant="outline"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Export
-                  </Button>
-                </>
-              )}
-              
-              <Button
-                onClick={() => setShowReportDialog(true)}
-                className="bg-primary hover:bg-primary/90 text-white"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Report
-              </Button>
-              
-              <Button
-                onClick={() => setShowAIDialog(true)}
-                variant="outline"
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                AI Create
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsMaximized(!isMaximized)} className="hidden sm:flex"
-              >
-                {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-              </Button>
+              <div className="flex items-center space-x-2">
+                {reports.length > 0 && (
+                  <>
+                    <Button
+                      onClick={() => window.print()}
+                      variant="outline"
+                    >
+                      <Printer className="w-4 h-4 mr-2" />
+                      Print
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        const reportData = JSON.stringify(reports, null, 2);
+                        const blob = new Blob([reportData], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `reports-${new Date().toISOString().split('T')[0]}.json`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }}
+                      variant="outline"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Export
+                    </Button>
+                  </>
+                )}
+                
+                <Button
+                  onClick={() => setShowReportDialog(true)}
+                  className="bg-primary hover:bg-primary/90 text-white"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Report
+                </Button>
+                
+                <Button
+                  onClick={() => setShowAIDialog(true)}
+                  variant="outline"
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  AI Create
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -656,88 +660,92 @@ export default function Reports() {
                 Create and manage production reports
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-2 md:gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="min-w-[180px] justify-between">
-                    {selectedConfigName}
-                    <ChevronDown className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
-                  {reportConfigs.map((config) => (
+            <div className="flex flex-col items-end space-y-2">
+              <div className="flex items-center space-x-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="min-w-[280px] justify-between">
+                      {selectedConfigName}
+                      <ChevronDown className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-80">
+                    {reportConfigs.map((config) => (
+                      <DropdownMenuItem
+                        key={config.id}
+                        onClick={() => setSelectedConfigId(config.id)}
+                        className="flex items-center justify-between"
+                      >
+                        <span>{config.name}</span>
+                        {config.isDefault && <Badge variant="secondary" className="text-xs">Default</Badge>}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      key={config.id}
-                      onClick={() => setSelectedConfigId(config.id)}
-                      className="flex items-center justify-between"
+                      onClick={() => setShowConfigDialog(true)}
+                      className="text-blue-600 dark:text-blue-400"
                     >
-                      <span>{config.name}</span>
-                      {config.isDefault && <Badge variant="secondary" className="text-xs">Default</Badge>}
+                      <Settings className="w-4 h-4 mr-2" />
+                      Configure Reports
                     </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => setShowConfigDialog(true)}
-                    className="text-blue-600 dark:text-blue-400"
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Configure Reports
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsMaximized(!isMaximized)} className="hidden sm:flex"
+                >
+                  {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                </Button>
+              </div>
               
-              {reports.length > 0 && (
-                <>
-                  <Button
-                    onClick={() => window.print()}
-                    variant="outline"
-                  >
-                    <Printer className="w-4 h-4 mr-2" />
-                    Print
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      const reportData = JSON.stringify(reports, null, 2);
-                      const blob = new Blob([reportData], { type: 'application/json' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `reports-${new Date().toISOString().split('T')[0]}.json`;
-                      a.click();
-                      URL.revokeObjectURL(url);
-                    }}
-                    variant="outline"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Export
-                  </Button>
-                </>
-              )}
-              
-              <Button
-                onClick={() => setShowReportDialog(true)}
-                className="bg-primary hover:bg-primary/90 text-white"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Report
-              </Button>
-              
-              <Button
-                onClick={() => setShowAIDialog(true)}
-                variant="outline"
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                AI Create
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsMaximized(!isMaximized)} className="hidden sm:flex"
-              >
-                {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-              </Button>
+              <div className="flex flex-wrap items-center gap-2 sm:gap-2 md:gap-2">
+                {reports.length > 0 && (
+                  <>
+                    <Button
+                      onClick={() => window.print()}
+                      variant="outline"
+                    >
+                      <Printer className="w-4 h-4 mr-2" />
+                      Print
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        const reportData = JSON.stringify(reports, null, 2);
+                        const blob = new Blob([reportData], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `reports-${new Date().toISOString().split('T')[0]}.json`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }}
+                      variant="outline"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Export
+                    </Button>
+                  </>
+                )}
+                
+                <Button
+                  onClick={() => setShowReportDialog(true)}
+                  className="bg-primary hover:bg-primary/90 text-white"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Report
+                </Button>
+                
+                <Button
+                  onClick={() => setShowAIDialog(true)}
+                  variant="outline"
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  AI Create
+                </Button>
+              </div>
             </div>
           </div>
         </div>
