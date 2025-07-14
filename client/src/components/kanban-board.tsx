@@ -12,6 +12,7 @@ import { MoreHorizontal, Plus, Settings, Calendar, User, Building2, Wrench, Chev
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import JobForm from "@/components/job-form";
 import OperationForm from "@/components/operation-form";
 import KanbanConfigManager from "@/components/kanban-config-manager";
@@ -393,6 +394,7 @@ function KanbanBoard({
 }: KanbanBoardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [jobDialogOpen, setJobDialogOpen] = useState(false);
   const [operationDialogOpen, setOperationDialogOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | undefined>();
@@ -839,7 +841,8 @@ function KanbanBoard({
           <div className="md:hidden">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-medium text-gray-900">Board</h2>
-              {onToggleMaximize && (
+              {/* Hide maximize button on mobile since it's automatically maximized */}
+              {onToggleMaximize && !isMobile && (
                 <Button
                   variant="outline"
                   size="sm"

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,6 +9,7 @@ import KanbanConfigManager from "@/components/kanban-config-manager";
 import JobForm from "@/components/job-form";
 import ResourceForm from "@/components/resource-form";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
@@ -22,7 +23,15 @@ import { apiRequest } from "@/lib/queryClient";
 import { type Job, type Operation, type Resource, type KanbanConfig, type Capability } from "@shared/schema";
 
 export default function Boards() {
+  const isMobile = useIsMobile();
   const [isMaximized, setIsMaximized] = useState(false);
+  
+  // Automatically maximize on mobile devices
+  useEffect(() => {
+    if (isMobile) {
+      setIsMaximized(true);
+    }
+  }, [isMobile]);
   const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
   const [showConfigManager, setShowConfigManager] = useState(false);
   const [jobDialogOpen, setJobDialogOpen] = useState(false);
