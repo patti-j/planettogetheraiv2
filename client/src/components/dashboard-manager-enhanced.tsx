@@ -188,11 +188,13 @@ const CustomDragLayer = () => {
     item,
     initialOffset,
     currentOffset,
+    differenceFromInitialOffset,
   } = useDragLayer((monitor) => ({
     item: monitor.getItem(),
     itemType: monitor.getItemType(),
     initialOffset: monitor.getInitialSourceClientOffset(),
     currentOffset: monitor.getSourceClientOffset(),
+    differenceFromInitialOffset: monitor.getDifferenceFromInitialOffset(),
     isDragging: monitor.isDragging(),
   }));
 
@@ -208,11 +210,24 @@ const CustomDragLayer = () => {
         }}
         className="absolute"
       >
-        {itemType === "widget" && (
-          <div className="bg-white border-2 border-blue-500 rounded-lg shadow-lg opacity-80 cursor-move">
-            <div className="p-3">
-              <h4 className="font-medium text-sm">Moving Widget</h4>
-              <div className="text-xs text-gray-500">widget</div>
+        {itemType === "widget" && item.widget && (
+          <div 
+            className="bg-white border-2 border-blue-500 rounded-lg shadow-lg opacity-80 cursor-move"
+            style={{
+              width: item.widget.size.width,
+              height: item.widget.size.height,
+            }}
+          >
+            <div className="p-3 h-full">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-medium text-sm">{item.widget.title}</h4>
+                <div className="flex items-center gap-1">
+                  <Move className="h-3 w-3 text-gray-400" />
+                </div>
+              </div>
+              <div className="text-xs text-gray-500">
+                {item.widget.type} • {item.widget.size.width}x{item.widget.size.height}
+              </div>
             </div>
           </div>
         )}
@@ -230,7 +245,13 @@ const DraggableWidget = ({ widget, isSelected, onSelect, onMove }: {
 }) => {
   const [{ isDragging }, drag, preview] = useDrag({
     type: "widget",
-    item: { id: widget.id, type: "widget", widget },
+    item: { 
+      id: widget.id, 
+      type: "widget", 
+      widget,
+      // Store the initial position when drag starts
+      initialPosition: widget.position
+    },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
@@ -287,16 +308,26 @@ const VisualEditor = ({ widgets, onDrop, onWidgetSelect, selectedWidgetId, onWid
       const dropZoneRect = dropRef.current?.getBoundingClientRect();
       console.log("Drop position:", offset, dropZoneRect);
       if (offset && dropZoneRect) {
-        const x = Math.max(0, offset.x - dropZoneRect.left);
-        const y = Math.max(0, offset.y - dropZoneRect.top);
-        console.log("Calculated position:", { x, y });
+        let x = Math.max(0, offset.x - dropZoneRect.left);
+        let y = Math.max(0, offset.y - dropZoneRect.top);
         
         // Handle existing widget movement vs new widget creation
         if (item.type === "widget") {
-          // This is an existing widget being moved
+          // For existing widgets, calculate the offset from initial drag position
+          const initialOffset = monitor.getInitialSourceClientOffset();
+          const differenceFromInitial = monitor.getDifferenceFromInitialOffset();
+          
+          if (initialOffset && differenceFromInitial && item.initialPosition) {
+            // Calculate new position based on initial widget position and drag difference
+            x = Math.max(0, item.initialPosition.x + differenceFromInitial.x);
+            y = Math.max(0, item.initialPosition.y + differenceFromInitial.y);
+          }
+          
+          console.log("Calculated position:", { x, y });
           onWidgetMove(item.id, { x, y });
         } else {
-          // This is a new widget from template
+          // For new widgets from template, use cursor position
+          console.log("Calculated position:", { x, y });
           onDrop(item, { x, y });
         }
       }
