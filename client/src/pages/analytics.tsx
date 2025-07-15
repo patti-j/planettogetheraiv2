@@ -92,19 +92,19 @@ export default function Analytics() {
     }
   ]);
 
-  const { data: metrics } = useQuery<Metrics>({
+  const { data: metrics, isLoading: metricsLoading } = useQuery<Metrics>({
     queryKey: ["/api/metrics"],
   });
 
-  const { data: jobs = [] } = useQuery<Job[]>({
+  const { data: jobs = [], isLoading: jobsLoading } = useQuery<Job[]>({
     queryKey: ["/api/jobs"],
   });
 
-  const { data: operations = [] } = useQuery<Operation[]>({
+  const { data: operations = [], isLoading: operationsLoading } = useQuery<Operation[]>({
     queryKey: ["/api/operations"],
   });
 
-  const { data: resources = [] } = useQuery<Resource[]>({
+  const { data: resources = [], isLoading: resourcesLoading } = useQuery<Resource[]>({
     queryKey: ["/api/resources"],
   });
 
@@ -196,6 +196,8 @@ export default function Analytics() {
     return jobs.filter(job => new Date(job.dueDate) < now && job.status !== 'completed');
   };
 
+  const isLoading = metricsLoading || jobsLoading || operationsLoading || resourcesLoading;
+  
   const jobsByStatus = getJobsByStatus();
   const operationsByStatus = getOperationsByStatus();
   const resourcesByStatus = getResourcesByStatus();
@@ -342,56 +344,64 @@ export default function Analytics() {
       </header>
 
       <main className="flex-1 overflow-y-auto p-8">
-        {/* Analytics Dashboard - Free Form Layout */}
-        <div className="relative pb-8" style={{ minHeight: '2000px' }}>
-          {/* Standard Widgets */}
-          {standardWidgets.map((widget) => (
-            <AnalyticsWidget
-              key={widget.id}
-              widget={widget}
-              onToggle={handleWidgetToggle}
-              onRemove={handleWidgetRemove}
-              onMove={handleWidgetPositionChange}
-              onResize={handleWidgetResize}
-              onEdit={handleWidgetEdit}
-              data={{
-                jobs,
-                operations,
-                resources,
-                metrics,
-                overdueJobs,
-                resourceUtilization,
-                jobsByStatus,
-                operationsByStatus,
-                resourcesByStatus
-              }}
-            />
-          ))}
-          
-          {/* Custom Widgets */}
-          {showCustomWidgets && customWidgets.map((widget) => (
-            <AnalyticsWidget
-              key={widget.id}
-              widget={widget}
-              onToggle={handleWidgetToggle}
-              onRemove={handleWidgetRemove}
-              onMove={handleWidgetPositionChange}
-              onResize={handleWidgetResize}
-              onEdit={handleWidgetEdit}
-              data={{
-                jobs,
-                operations,
-                resources,
-                metrics,
-                overdueJobs,
-                resourceUtilization,
-                jobsByStatus,
-                operationsByStatus,
-                resourcesByStatus
-              }}
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-lg text-gray-500">Loading analytics...</div>
+          </div>
+        ) : (
+          <>
+            {/* Analytics Dashboard - Free Form Layout */}
+            <div className="relative pb-8" style={{ minHeight: '2000px' }}>
+              {/* Standard Widgets */}
+              {standardWidgets.map((widget) => (
+                <AnalyticsWidget
+                  key={widget.id}
+                  widget={widget}
+                  onToggle={handleWidgetToggle}
+                  onRemove={handleWidgetRemove}
+                  onMove={handleWidgetPositionChange}
+                  onResize={handleWidgetResize}
+                  onEdit={handleWidgetEdit}
+                  data={{
+                    jobs,
+                    operations,
+                    resources,
+                    metrics,
+                    overdueJobs,
+                    resourceUtilization,
+                    jobsByStatus,
+                    operationsByStatus,
+                    resourcesByStatus
+                  }}
+                />
+              ))}
+              
+              {/* Custom Widgets */}
+              {showCustomWidgets && customWidgets.map((widget) => (
+                <AnalyticsWidget
+                  key={widget.id}
+                  widget={widget}
+                  onToggle={handleWidgetToggle}
+                  onRemove={handleWidgetRemove}
+                  onMove={handleWidgetPositionChange}
+                  onResize={handleWidgetResize}
+                  onEdit={handleWidgetEdit}
+                  data={{
+                    jobs,
+                    operations,
+                    resources,
+                    metrics,
+                    overdueJobs,
+                    resourceUtilization,
+                    jobsByStatus,
+                    operationsByStatus,
+                    resourcesByStatus
+                  }}
+                />
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Legacy Analytics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

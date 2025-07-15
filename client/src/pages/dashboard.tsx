@@ -80,7 +80,6 @@ export default function Dashboard() {
     }
   ]);
   const showCustomWidgets = true;
-  const layoutMode = "free";
   const { toast } = useToast();
 
   const { data: jobs = [] } = useQuery<Job[]>({
@@ -310,12 +309,27 @@ export default function Dashboard() {
                         onRemove={handleWidgetRemove}
                         onEdit={handleWidgetEdit}
                         onResize={handleWidgetResize}
-                        onPositionChange={handleWidgetPositionChange}
-                        jobs={jobs}
-                        operations={operations}
-                        resources={resources}
-                        metrics={metrics}
-                        layoutMode={layoutMode}
+                        onMove={handleWidgetPositionChange}
+                        data={{
+                          jobs,
+                          operations,
+                          resources,
+                          metrics,
+                          overdueJobs: jobs.filter(job => new Date(job.dueDate) < new Date() && job.status !== 'completed'),
+                          resourceUtilization: operations.filter(op => op.assignedResourceId).length / operations.length * 100,
+                          jobsByStatus: jobs.reduce((acc, job) => {
+                            acc[job.status] = (acc[job.status] || 0) + 1;
+                            return acc;
+                          }, {} as Record<string, number>),
+                          operationsByStatus: operations.reduce((acc, operation) => {
+                            acc[operation.status] = (acc[operation.status] || 0) + 1;
+                            return acc;
+                          }, {} as Record<string, number>),
+                          resourcesByStatus: resources.reduce((acc, resource) => {
+                            acc[resource.status] = (acc[resource.status] || 0) + 1;
+                            return acc;
+                          }, {} as Record<string, number>)
+                        }}
                       />
                     ))}
                     <div className="absolute top-4 left-4 text-sm text-gray-500 pointer-events-none">
@@ -614,12 +628,27 @@ export default function Dashboard() {
                     onRemove={handleWidgetRemove}
                     onEdit={handleWidgetEdit}
                     onResize={handleWidgetResize}
-                    onPositionChange={handleWidgetPositionChange}
-                    jobs={jobs}
-                    operations={operations}
-                    resources={resources}
-                    metrics={metrics}
-                    layoutMode={layoutMode}
+                    onMove={handleWidgetPositionChange}
+                    data={{
+                      jobs,
+                      operations,
+                      resources,
+                      metrics,
+                      overdueJobs: jobs.filter(job => new Date(job.dueDate) < new Date() && job.status !== 'completed'),
+                      resourceUtilization: operations.length > 0 ? (operations.filter(op => op.assignedResourceId).length / operations.length * 100) : 0,
+                      jobsByStatus: jobs.reduce((acc, job) => {
+                        acc[job.status] = (acc[job.status] || 0) + 1;
+                        return acc;
+                      }, {} as Record<string, number>),
+                      operationsByStatus: operations.reduce((acc, operation) => {
+                        acc[operation.status] = (acc[operation.status] || 0) + 1;
+                        return acc;
+                      }, {} as Record<string, number>),
+                      resourcesByStatus: resources.reduce((acc, resource) => {
+                        acc[resource.status] = (acc[resource.status] || 0) + 1;
+                        return acc;
+                      }, {} as Record<string, number>)
+                    }}
                   />
                 ))}
                 <div className="absolute top-4 left-4 text-sm text-gray-500 pointer-events-none">

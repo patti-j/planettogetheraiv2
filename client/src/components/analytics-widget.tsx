@@ -23,12 +23,18 @@ interface AnalyticsWidgetProps {
   onRemove: (id: string) => void;
   onEdit: (id: string) => void;
   onResize: (id: string, size: { width: number; height: number }) => void;
-  onPositionChange: (id: string, position: { x: number; y: number }) => void;
-  jobs: any[];
-  operations: any[];
-  resources: any[];
-  metrics: any;
-  layoutMode: "grid" | "free";
+  onMove: (id: string, position: { x: number; y: number }) => void;
+  data: {
+    jobs: any[];
+    operations: any[];
+    resources: any[];
+    metrics: any;
+    overdueJobs: any[];
+    resourceUtilization: number;
+    jobsByStatus: Record<string, number>;
+    operationsByStatus: Record<string, number>;
+    resourcesByStatus: Record<string, number>;
+  };
 }
 
 export default function AnalyticsWidget({ 
@@ -37,20 +43,14 @@ export default function AnalyticsWidget({
   onRemove, 
   onEdit, 
   onResize, 
-  onPositionChange,
-  jobs, 
-  operations, 
-  resources, 
-  metrics,
-  layoutMode
+  onMove,
+  data
 }: AnalyticsWidgetProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const widgetRef = useRef<HTMLDivElement>(null);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (layoutMode !== "free") return;
-    
     e.preventDefault();
     e.stopPropagation();
     
@@ -65,7 +65,7 @@ export default function AnalyticsWidget({
   };
 
   const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging || layoutMode !== "free") return;
+    if (!isDragging) return;
     
     e.preventDefault();
     
@@ -80,7 +80,7 @@ export default function AnalyticsWidget({
     const maxX = containerRect.width - widget.size.width;
     const maxY = containerRect.height - widget.size.height;
     
-    onPositionChange(widget.id, { 
+    onMove(widget.id, { 
       x: Math.max(0, Math.min(maxX, newX)), 
       y: Math.max(0, Math.min(maxY, newY)) 
     });
@@ -101,14 +101,14 @@ export default function AnalyticsWidget({
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isDragging, dragOffset, layoutMode, widget.id, onPositionChange]);
+  }, [isDragging, dragOffset, widget.id, onMove]);
   
   const widgetData = useMemo(() => {
     // Generate data based on widget type and configuration
     switch (widget.type) {
       case "metric":
         return {
-          value: jobs.length,
+          value: data.jobs?.length || 0,
           label: "Total Jobs",
           change: "+12%",
           trend: "up"
@@ -126,11 +126,11 @@ export default function AnalyticsWidget({
       case "table":
         return {
           headers: ["Job", "Status", "Progress"],
-          rows: jobs.slice(0, 5).map(job => [
+          rows: data.jobs?.slice(0, 5).map(job => [
             job.name,
             job.status,
             `${Math.round(Math.random() * 100)}%`
-          ])
+          ]) || []
         };
       case "progress":
         return {
@@ -141,7 +141,7 @@ export default function AnalyticsWidget({
       default:
         return {};
     }
-  }, [widget.type, jobs, operations, resources, metrics]);
+  }, [widget.type, data]);
 
   const renderContent = () => {
     switch (widget.type) {
@@ -223,30 +223,28 @@ export default function AnalyticsWidget({
   return (
     <Card 
       ref={widgetRef}
-      className={`h-full ${isDragging ? 'shadow-lg' : ''} ${layoutMode === 'free' ? 'cursor-move' : ''}`}
-      style={layoutMode === 'free' ? {
+      className={`h-full ${isDragging ? 'shadow-lg' : ''} cursor-move`}
+      style={{
         position: 'absolute',
         left: `${widget.position.x}px`,
         top: `${widget.position.y}px`,
         width: `${widget.size.width}px`,
         minHeight: `${widget.size.height}px`,
         zIndex: isDragging ? 1000 : 1
-      } : {}}
+      }}
     >
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {layoutMode === 'free' && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-6 w-6 p-0 cursor-move hover:bg-gray-100"
-                onMouseDown={handleMouseDown}
-                title="Drag to move widget"
-              >
-                <Move className="w-4 h-4 text-gray-400" />
-              </Button>
-            )}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 w-6 p-0 cursor-move hover:bg-gray-100"
+              onMouseDown={handleMouseDown}
+              title="Drag to move widget"
+            >
+              <Move className="w-4 h-4 text-gray-400" />
+            </Button>
             {getIcon()}
             <CardTitle className="text-sm">{widget.title}</CardTitle>
           </div>
