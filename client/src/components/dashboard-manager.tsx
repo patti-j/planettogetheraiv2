@@ -70,7 +70,8 @@ export default function DashboardManager({
 
   const createDashboardMutation = useMutation({
     mutationFn: async (dashboardData: any) => {
-      return await apiRequest("POST", "/api/dashboard-configs", dashboardData);
+      const response = await apiRequest("POST", "/api/dashboard-configs", dashboardData);
+      return await response.json();
     },
     onSuccess: (data) => {
       toast({
@@ -93,7 +94,8 @@ export default function DashboardManager({
 
   const updateDashboardMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      return await apiRequest("PUT", `/api/dashboard-configs/${id}`, data);
+      const response = await apiRequest("PUT", `/api/dashboard-configs/${id}`, data);
+      return await response.json();
     },
     onSuccess: (data) => {
       toast({
@@ -115,7 +117,8 @@ export default function DashboardManager({
 
   const deleteDashboardMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest("DELETE", `/api/dashboard-configs/${id}`);
+      const response = await apiRequest("DELETE", `/api/dashboard-configs/${id}`);
+      return await response.json();
     },
     onSuccess: (data, id) => {
       toast({
@@ -136,7 +139,8 @@ export default function DashboardManager({
 
   const setDefaultMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest("POST", `/api/dashboard-configs/${id}/set-default`);
+      const response = await apiRequest("POST", `/api/dashboard-configs/${id}/set-default`);
+      return await response.json();
     },
     onSuccess: () => {
       toast({
