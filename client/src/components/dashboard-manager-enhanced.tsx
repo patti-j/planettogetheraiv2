@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -188,12 +188,13 @@ const VisualEditor = ({ widgets, onDrop, onWidgetSelect, selectedWidgetId }: {
   onWidgetSelect: (widgetId: string) => void;
   selectedWidgetId: string | null;
 }) => {
+  const dropRef = useRef<HTMLDivElement>(null);
   const [{ isOver }, drop] = useDrop({
     accept: ["widget", "template"],
     drop: (item: any, monitor) => {
       console.log("Drop event triggered:", item);
       const offset = monitor.getClientOffset();
-      const dropZoneRect = drop.current?.getBoundingClientRect();
+      const dropZoneRect = dropRef.current?.getBoundingClientRect();
       console.log("Drop position:", offset, dropZoneRect);
       if (offset && dropZoneRect) {
         const x = Math.max(0, offset.x - dropZoneRect.left);
@@ -207,9 +208,18 @@ const VisualEditor = ({ widgets, onDrop, onWidgetSelect, selectedWidgetId }: {
     }),
   });
 
+  // Combine refs
+  const combinedRef = useCallback(
+    (node: HTMLDivElement) => {
+      dropRef.current = node;
+      drop(node);
+    },
+    [drop]
+  );
+
   return (
     <div
-      ref={drop}
+      ref={combinedRef}
       className={`relative w-full h-96 border-2 border-dashed rounded-lg transition-all ${
         isOver ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-50"
       }`}
