@@ -8,6 +8,7 @@ import {
   insertDashboardConfigSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
+import { emailService } from "./email";
 import multer from "multer";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -765,6 +766,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error setting default dashboard config:", error);
       res.status(500).json({ error: "Failed to set default dashboard config" });
+    }
+  });
+
+  // Email API routes
+  app.post("/api/email/send", async (req, res) => {
+    try {
+      const { to, subject, htmlBody, textBody, from } = req.body;
+      
+      if (!to || !subject || (!htmlBody && !textBody)) {
+        return res.status(400).json({ 
+          error: "Missing required fields: to, subject, and either htmlBody or textBody" 
+        });
+      }
+
+      const success = await emailService.sendEmail({
+        to,
+        subject,
+        htmlBody,
+        textBody,
+        from
+      });
+
+      if (success) {
+        res.json({ success: true, message: "Email sent successfully" });
+      } else {
+        res.status(500).json({ error: "Failed to send email" });
+      }
+    } catch (error) {
+      console.error("Error in email send route:", error);
+      res.status(500).json({ error: "Failed to send email" });
+    }
+  });
+
+  app.post("/api/email/order-confirmation", async (req, res) => {
+    try {
+      const { customerEmail, orderDetails } = req.body;
+      
+      if (!customerEmail || !orderDetails) {
+        return res.status(400).json({ error: "Missing customerEmail or orderDetails" });
+      }
+
+      const success = await emailService.sendOrderConfirmation(customerEmail, orderDetails);
+
+      if (success) {
+        res.json({ success: true, message: "Order confirmation sent successfully" });
+      } else {
+        res.status(500).json({ error: "Failed to send order confirmation" });
+      }
+    } catch (error) {
+      console.error("Error sending order confirmation:", error);
+      res.status(500).json({ error: "Failed to send order confirmation" });
+    }
+  });
+
+  app.post("/api/email/production-update", async (req, res) => {
+    try {
+      const { customerEmail, jobDetails } = req.body;
+      
+      if (!customerEmail || !jobDetails) {
+        return res.status(400).json({ error: "Missing customerEmail or jobDetails" });
+      }
+
+      const success = await emailService.sendProductionStatusUpdate(customerEmail, jobDetails);
+
+      if (success) {
+        res.json({ success: true, message: "Production update sent successfully" });
+      } else {
+        res.status(500).json({ error: "Failed to send production update" });
+      }
+    } catch (error) {
+      console.error("Error sending production update:", error);
+      res.status(500).json({ error: "Failed to send production update" });
+    }
+  });
+
+  app.post("/api/email/maintenance-alert", async (req, res) => {
+    try {
+      const { maintenanceTeamEmail, resourceDetails } = req.body;
+      
+      if (!maintenanceTeamEmail || !resourceDetails) {
+        return res.status(400).json({ error: "Missing maintenanceTeamEmail or resourceDetails" });
+      }
+
+      const success = await emailService.sendMaintenanceAlert(maintenanceTeamEmail, resourceDetails);
+
+      if (success) {
+        res.json({ success: true, message: "Maintenance alert sent successfully" });
+      } else {
+        res.status(500).json({ error: "Failed to send maintenance alert" });
+      }
+    } catch (error) {
+      console.error("Error sending maintenance alert:", error);
+      res.status(500).json({ error: "Failed to send maintenance alert" });
+    }
+  });
+
+  app.post("/api/email/operation-alert", async (req, res) => {
+    try {
+      const { operatorEmail, operationDetails } = req.body;
+      
+      if (!operatorEmail || !operationDetails) {
+        return res.status(400).json({ error: "Missing operatorEmail or operationDetails" });
+      }
+
+      const success = await emailService.sendOperationAlert(operatorEmail, operationDetails);
+
+      if (success) {
+        res.json({ success: true, message: "Operation alert sent successfully" });
+      } else {
+        res.status(500).json({ error: "Failed to send operation alert" });
+      }
+    } catch (error) {
+      console.error("Error sending operation alert:", error);
+      res.status(500).json({ error: "Failed to send operation alert" });
     }
   });
 

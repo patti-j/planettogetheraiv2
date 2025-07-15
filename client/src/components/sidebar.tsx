@@ -235,6 +235,22 @@ export default function Sidebar() {
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
+              <Link href="/email-settings">
+                <a
+                  className="flex items-center px-3 py-2 rounded-lg transition-colors text-sm md:text-base w-full text-gray-600 hover:bg-gray-100"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Send className="w-3 h-3 md:w-4 md:h-4 mr-2" />
+                  Email Settings
+                </a>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>Configure AWS SES for email notifications</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
               <Button 
                 variant="outline" 
                 size="sm" 
