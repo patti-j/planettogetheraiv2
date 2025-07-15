@@ -29,17 +29,19 @@ interface AnalyticsWidget {
 interface AIAnalyticsManagerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  widgets: AnalyticsWidget[];
   onWidgetCreate: (widget: AnalyticsWidget) => void;
-  currentWidgets: AnalyticsWidget[];
-  onWidgetUpdate: (widgets: AnalyticsWidget[]) => void;
+  onWidgetUpdate: (widgetId: string, updates: Partial<AnalyticsWidget>) => void;
+  onWidgetDelete: (widgetId: string) => void;
 }
 
 export default function AIAnalyticsManager({ 
   open, 
   onOpenChange, 
+  widgets, 
   onWidgetCreate, 
-  currentWidgets, 
-  onWidgetUpdate 
+  onWidgetUpdate,
+  onWidgetDelete 
 }: AIAnalyticsManagerProps) {
   const [aiPrompt, setAiPrompt] = useState("");
   const [isAiCreating, setIsAiCreating] = useState(false);
@@ -100,35 +102,22 @@ export default function AIAnalyticsManager({
   };
 
   const handleWidgetToggle = (widgetId: string) => {
-    const updatedWidgets = currentWidgets.map(widget => 
-      widget.id === widgetId 
-        ? { ...widget, visible: !widget.visible }
-        : widget
-    );
-    onWidgetUpdate(updatedWidgets);
+    const widget = (widgets || []).find(w => w.id === widgetId);
+    if (widget) {
+      onWidgetUpdate(widgetId, { visible: !widget.visible });
+    }
   };
 
   const handleWidgetRemove = (widgetId: string) => {
-    const updatedWidgets = currentWidgets.filter(widget => widget.id !== widgetId);
-    onWidgetUpdate(updatedWidgets);
+    onWidgetDelete(widgetId);
   };
 
   const handleWidgetResize = (widgetId: string, newSize: { width: number; height: number }) => {
-    const updatedWidgets = currentWidgets.map(widget => 
-      widget.id === widgetId 
-        ? { ...widget, size: newSize }
-        : widget
-    );
-    onWidgetUpdate(updatedWidgets);
+    onWidgetUpdate(widgetId, { size: newSize });
   };
 
   const handleWidgetMove = (widgetId: string, newPosition: { x: number; y: number }) => {
-    const updatedWidgets = currentWidgets.map(widget => 
-      widget.id === widgetId 
-        ? { ...widget, position: newPosition }
-        : widget
-    );
-    onWidgetUpdate(updatedWidgets);
+    onWidgetUpdate(widgetId, { position: newPosition });
   };
 
   const createManualWidget = (type: string) => {
@@ -147,7 +136,7 @@ export default function AIAnalyticsManager({
 
   const exportDashboard = () => {
     const dashboardData = {
-      widgets: currentWidgets,
+      widgets: widgets || [],
       layout: layoutMode,
       exportedAt: new Date().toISOString()
     };
@@ -251,10 +240,10 @@ export default function AIAnalyticsManager({
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-1">
-                        {currentWidgets.length === 0 ? (
+                        {(widgets || []).length === 0 ? (
                           <p className="text-sm text-gray-500">No widgets created yet</p>
                         ) : (
-                          currentWidgets.map((widget) => (
+                          (widgets || []).map((widget) => (
                             <div key={widget.id} className="flex items-center justify-between">
                               <div className="flex items-center gap-2 flex-1 min-w-0">
                                 <Badge variant="outline" className="text-xs shrink-0">
@@ -382,7 +371,7 @@ export default function AIAnalyticsManager({
                 <div className="border rounded-lg p-3 sm:p-4">
                   <h3 className="font-medium mb-3 text-sm sm:text-base">Widget Visibility</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {currentWidgets.map((widget) => (
+                    {(widgets || []).map((widget) => (
                       <div key={widget.id} className="flex items-center justify-between p-2 border rounded">
                         <span className="text-sm truncate mr-2">{widget.title}</span>
                         <Switch 
