@@ -234,24 +234,24 @@ function DraggableDashboardCard({
           </div>
         )}
       </CardContent>
-      
-      {/* Resize handles */}
-      <div 
-        className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-blue-500 hover:bg-blue-600 rounded-tl-md opacity-80 hover:opacity-100 transition-opacity z-10"
-        onMouseDown={(e) => handleResizeStart(e, 'se')}
-        title="Resize diagonally"
-      />
-      <div 
-        className="absolute bottom-0 right-2 left-2 h-2 cursor-s-resize bg-blue-500 hover:bg-blue-600 opacity-80 hover:opacity-100 transition-opacity z-10"
-        onMouseDown={(e) => handleResizeStart(e, 's')}
-        title="Resize height"
-      />
-      <div 
-        className="absolute top-2 bottom-2 right-0 w-2 cursor-e-resize bg-blue-500 hover:bg-blue-600 opacity-80 hover:opacity-100 transition-opacity z-10"
-        onMouseDown={(e) => handleResizeStart(e, 'e')}
-        title="Resize width"
-      />
     </Card>
+    
+    {/* Resize handles moved to wrapper div */}
+    <div 
+      className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-blue-500 hover:bg-blue-600 rounded-tl-md opacity-80 hover:opacity-100 transition-opacity z-10"
+      onMouseDown={(e) => handleResizeStart(e, 'se')}
+      title="Resize diagonally"
+    />
+    <div 
+      className="absolute bottom-0 right-2 left-2 h-2 cursor-s-resize bg-blue-500 hover:bg-blue-600 opacity-80 hover:opacity-100 transition-opacity z-10"
+      onMouseDown={(e) => handleResizeStart(e, 's')}
+      title="Resize height"
+    />
+    <div 
+      className="absolute top-2 bottom-2 right-0 w-2 cursor-e-resize bg-blue-500 hover:bg-blue-600 opacity-80 hover:opacity-100 transition-opacity z-10"
+      onMouseDown={(e) => handleResizeStart(e, 'e')}
+      title="Resize width"
+    />
     </div>
   );
 }
@@ -264,6 +264,7 @@ export default function Analytics() {
   const [isLivePaused, setIsLivePaused] = useState(false);
   const [dashboardOrder, setDashboardOrder] = useState<number[]>([]);
   const [dashboardSizes, setDashboardSizes] = useState<Map<number, { width: number; height: number }>>(new Map());
+  const [forceRender, setForceRender] = useState(0);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isMobile = useMobile();
@@ -323,13 +324,16 @@ export default function Analytics() {
       const newMap = new Map(prev);
       newMap.set(id, size);
       console.log('Updated dashboard sizes map:', Object.fromEntries(newMap.entries()));
+      
+      // Store the size in localStorage for persistence
+      const currentSizes = Object.fromEntries(newMap.entries());
+      localStorage.setItem('dashboardSizes', JSON.stringify(currentSizes));
+      
       return newMap;
     });
     
-    // Store the size in localStorage for persistence
-    const currentSizes = Object.fromEntries(dashboardSizes.entries());
-    currentSizes[id] = size;
-    localStorage.setItem('dashboardSizes', JSON.stringify(currentSizes));
+    // Force a re-render to ensure visual update
+    setForceRender(prev => prev + 1);
   };
 
   // Get dashboard size with default fallback
@@ -521,7 +525,7 @@ export default function Analytics() {
                 const dashboardSize = getDashboardSize(dashboard.id);
                 return (
                   <DraggableDashboardCard
-                    key={`${dashboard.id}-${dashboardSize.width}-${dashboardSize.height}`}
+                    key={`${dashboard.id}-${dashboardSize.width}-${dashboardSize.height}-${forceRender}`}
                     dashboard={dashboard}
                     index={index}
                     onMove={handleDashboardMove}
