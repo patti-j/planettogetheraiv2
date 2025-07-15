@@ -72,16 +72,8 @@ function DraggableDashboardCard({
 }: DraggableDashboardCardProps) {
   const [isResizing, setIsResizing] = useState(false);
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0, direction: '' });
-  const [currentSize, setCurrentSize] = useState(size);
-  const [resizeId, setResizeId] = useState(0);
-  const [forceRender, setForceRender] = useState(0);
-  
-  // console.log('DraggableDashboardCard render:', dashboard.id, 'prop size:', size, 'currentSize:', currentSize);
-  
-  // Update current size when prop changes
-  useEffect(() => {
-    setCurrentSize(size);
-  }, [size]);
+  // Use size prop directly instead of state
+  const currentSize = size;
   
   const [{ isDragging }, drag] = useDrag({
     type: 'dashboard',
@@ -135,13 +127,8 @@ function DraggableDashboardCard({
     
     // console.log('Resizing:', { newWidth, newHeight, deltaX, deltaY });
     
-    // Update current size immediately for visual feedback
+    // Update size directly through parent component
     const newSize = { width: newWidth, height: newHeight };
-    // console.log('Setting currentSize to:', newSize);
-    setCurrentSize(newSize);
-    setResizeId(prev => prev + 1); // Force re-render
-    setForceRender(prev => prev + 1); // Additional force re-render
-    
     onResize(dashboard.id, newSize);
   };
 
@@ -178,83 +165,79 @@ function DraggableDashboardCard({
     <div
       className={`${isDragging ? 'opacity-50 scale-105' : ''} relative`}
     >
-      <Card 
-        className="border-2 border-blue-500 shadow-sm flex flex-col"
+      <div 
+        className="border-2 border-red-500 shadow-sm flex flex-col bg-white rounded-lg"
         style={{ 
           width: `${currentSize.width}px`, 
           height: `${currentSize.height}px`,
-          minWidth: `${currentSize.width}px`,
-          minHeight: `${currentSize.height}px`,
-          maxWidth: `${currentSize.width}px`,
-          maxHeight: `${currentSize.height}px`,
-          backgroundColor: 'rgba(59, 130, 246, 0.05)', // Light blue background
-          transform: `scale(${1 + forceRender * 0.0001})` // Microscopic scale change to force re-render
+          backgroundColor: 'rgba(255, 0, 0, 0.1)'
         }}
-        key={`dashboard-${dashboard.id}-${resizeId}-${forceRender}`} // Force complete re-render
       >
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div 
-              ref={(node) => drag(drop(node))}
-              className="cursor-move"
-            >
-              <GripVertical className="h-4 w-4 text-gray-400" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span>{dashboard.name}</span>
-                {dashboard.isDefault && (
-                  <Badge variant="secondary">Default</Badge>
-                )}
+        <div className="border-b p-4 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div 
+                ref={(node) => drag(drop(node))}
+                className="cursor-move"
+              >
+                <GripVertical className="h-4 w-4 text-gray-400" />
               </div>
-              <p className="text-sm text-gray-600 mt-1">{dashboard.description}</p>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">{dashboard.name}</span>
+                  {dashboard.isDefault && (
+                    <Badge variant="secondary">Default</Badge>
+                  )}
+                </div>
+                <p className="text-sm text-gray-600 mt-1">{dashboard.description}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">
+                {dashboard.configuration?.customWidgets?.length || 0} widgets
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setDashboardManagerOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                Edit
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline">
-              {dashboard.configuration?.customWidgets?.length || 0} widgets
-            </Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setDashboardManagerOpen(true)}
-              className="flex items-center gap-2"
-            >
-              <Settings className="h-4 w-4" />
-              Edit
-            </Button>
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1 overflow-hidden">
-        {dashboard.configuration?.customWidgets?.length > 0 ? (
-          <div className="relative h-full bg-gray-50 rounded-lg p-4 overflow-hidden">
-            {dashboard.configuration.customWidgets.map((widget: AnalyticsWidget) => (
-              <AnalyticsWidget
-                key={widget.id}
-                widget={widget}
-                onToggle={() => {}} // Read-only mode
-                onRemove={() => {}} // Read-only mode
-                onEdit={() => {}} // Read-only mode
-                onResize={() => {}} // Read-only mode
-                onMove={() => {}} // Read-only mode
-                data={generateWidgetData()}
-                readOnly={true}
-              />
-            ))}
-            <div className="absolute top-2 right-2 text-xs text-gray-500 bg-white px-2 py-1 rounded">
-              {isLivePaused ? "Live View • Paused" : "Live View • Updates every 30s"}
+        </div>
+        <div className="flex-1 p-4 overflow-hidden">
+          {dashboard.configuration?.customWidgets?.length > 0 ? (
+            <div className="relative h-full bg-gray-50 rounded-lg p-4 overflow-hidden">
+              {dashboard.configuration.customWidgets.map((widget: AnalyticsWidget) => (
+                <AnalyticsWidget
+                  key={widget.id}
+                  widget={widget}
+                  onToggle={() => {}} // Read-only mode
+                  onRemove={() => {}} // Read-only mode
+                  onEdit={() => {}} // Read-only mode
+                  onResize={() => {}} // Read-only mode
+                  onMove={() => {}} // Read-only mode
+                  data={generateWidgetData()}
+                  readOnly={true}
+                />
+              ))}
+              <div className="absolute top-2 right-2 text-xs text-gray-500 bg-white px-2 py-1 rounded">
+                {isLivePaused ? "Live View • Paused" : "Live View • Updates every 30s"}
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500 h-full flex items-center justify-center">
-            <FolderOpen className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-            <p className="text-sm">No widgets configured for this dashboard</p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          ) : (
+            <div className="text-center py-8 text-gray-500 h-full flex items-center justify-center">
+              <div>
+                <FolderOpen className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                <p className="text-sm">No widgets configured for this dashboard</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     
     {/* Resize handles moved to wrapper div */}
     <div 
