@@ -1,8 +1,8 @@
 import { 
-  capabilities, resources, jobs, operations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs,
-  type Capability, type Resource, type Job, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig,
+  capabilities, resources, jobs, operations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
+  type Capability, type Resource, type Job, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
   type InsertCapability, type InsertResource, type InsertJob, 
-  type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig
+  type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -73,6 +73,15 @@ export interface IStorage {
   deleteReportConfig(id: number): Promise<boolean>;
   getDefaultReportConfig(): Promise<ReportConfig | undefined>;
   setDefaultReportConfig(id: number): Promise<void>;
+  
+  // Dashboard Configurations
+  getDashboardConfigs(): Promise<DashboardConfig[]>;
+  getDashboardConfig(id: number): Promise<DashboardConfig | undefined>;
+  createDashboardConfig(dashboardConfig: InsertDashboardConfig): Promise<DashboardConfig>;
+  updateDashboardConfig(id: number, dashboardConfig: Partial<InsertDashboardConfig>): Promise<DashboardConfig | undefined>;
+  deleteDashboardConfig(id: number): Promise<boolean>;
+  getDefaultDashboardConfig(): Promise<DashboardConfig | undefined>;
+  setDefaultDashboardConfig(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -766,6 +775,52 @@ export class DatabaseStorage implements IStorage {
     
     // Then set the specified config as default
     await db.update(reportConfigs).set({ isDefault: true }).where(eq(reportConfigs.id, id));
+  }
+
+  async getDashboardConfigs(): Promise<DashboardConfig[]> {
+    return await db.select().from(dashboardConfigs);
+  }
+
+  async getDashboardConfig(id: number): Promise<DashboardConfig | undefined> {
+    const [config] = await db.select().from(dashboardConfigs).where(eq(dashboardConfigs.id, id));
+    return config || undefined;
+  }
+
+  async createDashboardConfig(dashboardConfig: InsertDashboardConfig): Promise<DashboardConfig> {
+    const [config] = await db
+      .insert(dashboardConfigs)
+      .values(dashboardConfig)
+      .returning();
+    return config;
+  }
+
+  async updateDashboardConfig(id: number, dashboardConfig: Partial<InsertDashboardConfig>): Promise<DashboardConfig | undefined> {
+    const [config] = await db
+      .update(dashboardConfigs)
+      .set(dashboardConfig)
+      .where(eq(dashboardConfigs.id, id))
+      .returning();
+    return config || undefined;
+  }
+
+  async deleteDashboardConfig(id: number): Promise<boolean> {
+    const result = await db
+      .delete(dashboardConfigs)
+      .where(eq(dashboardConfigs.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getDefaultDashboardConfig(): Promise<DashboardConfig | undefined> {
+    const [config] = await db.select().from(dashboardConfigs).where(eq(dashboardConfigs.isDefault, true));
+    return config || undefined;
+  }
+
+  async setDefaultDashboardConfig(id: number): Promise<void> {
+    // First, set all existing configs to non-default
+    await db.update(dashboardConfigs).set({ isDefault: false });
+    
+    // Then set the specified config as default
+    await db.update(dashboardConfigs).set({ isDefault: true }).where(eq(dashboardConfigs.id, id));
   }
 }
 

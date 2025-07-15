@@ -4,7 +4,8 @@ import { storage } from "./storage";
 import { 
   insertCapabilitySchema, insertResourceSchema, insertJobSchema, 
   insertOperationSchema, insertDependencySchema, insertResourceViewSchema,
-  insertCustomTextLabelSchema, insertKanbanConfigSchema, insertReportConfigSchema
+  insertCustomTextLabelSchema, insertKanbanConfigSchema, insertReportConfigSchema,
+  insertDashboardConfigSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import multer from "multer";
@@ -672,6 +673,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error setting default report config:", error);
       res.status(500).json({ error: "Failed to set default report config" });
+    }
+  });
+
+  // Dashboard Configurations
+  app.get("/api/dashboard-configs", async (req, res) => {
+    try {
+      const dashboards = await storage.getDashboardConfigs();
+      res.json(dashboards);
+    } catch (error) {
+      console.error("Error fetching dashboard configs:", error);
+      res.status(500).json({ error: "Failed to fetch dashboard configs" });
+    }
+  });
+
+  app.get("/api/dashboard-configs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid dashboard config ID" });
+      }
+
+      const dashboard = await storage.getDashboardConfig(id);
+      if (!dashboard) {
+        return res.status(404).json({ error: "Dashboard config not found" });
+      }
+      res.json(dashboard);
+    } catch (error) {
+      console.error("Error fetching dashboard config:", error);
+      res.status(500).json({ error: "Failed to fetch dashboard config" });
+    }
+  });
+
+  app.post("/api/dashboard-configs", async (req, res) => {
+    try {
+      const dashboardData = insertDashboardConfigSchema.parse(req.body);
+      const newDashboard = await storage.createDashboardConfig(dashboardData);
+      res.status(201).json(newDashboard);
+    } catch (error) {
+      console.error("Error creating dashboard config:", error);
+      res.status(400).json({ error: "Invalid dashboard config data" });
+    }
+  });
+
+  app.put("/api/dashboard-configs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid dashboard config ID" });
+      }
+
+      const updateData = insertDashboardConfigSchema.partial().parse(req.body);
+      const updatedDashboard = await storage.updateDashboardConfig(id, updateData);
+      if (!updatedDashboard) {
+        return res.status(404).json({ error: "Dashboard config not found" });
+      }
+      res.json(updatedDashboard);
+    } catch (error) {
+      console.error("Error updating dashboard config:", error);
+      res.status(400).json({ error: "Invalid dashboard config data" });
+    }
+  });
+
+  app.delete("/api/dashboard-configs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid dashboard config ID" });
+      }
+
+      const deleted = await storage.deleteDashboardConfig(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Dashboard config not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting dashboard config:", error);
+      res.status(500).json({ error: "Failed to delete dashboard config" });
+    }
+  });
+
+  app.post("/api/dashboard-configs/:id/set-default", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid dashboard config ID" });
+      }
+
+      await storage.setDefaultDashboardConfig(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error setting default dashboard config:", error);
+      res.status(500).json({ error: "Failed to set default dashboard config" });
     }
   });
 

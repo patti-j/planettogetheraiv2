@@ -144,6 +144,37 @@ export const reportConfigs = pgTable("report_configs", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const dashboardConfigs = pgTable("dashboard_configs", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  configuration: jsonb("configuration").$type<{
+    standardWidgets: Array<{
+      id: string;
+      title: string;
+      type: "metric" | "chart" | "table" | "progress";
+      data: any;
+      visible: boolean;
+      position: { x: number; y: number };
+      size: { width: number; height: number };
+      config: any;
+    }>;
+    customWidgets: Array<{
+      id: string;
+      title: string;
+      type: "metric" | "chart" | "table" | "progress";
+      data: any;
+      visible: boolean;
+      position: { x: number; y: number };
+      size: { width: number; height: number };
+      config: any;
+    }>;
+  }>().notNull(),
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const insertCapabilitySchema = createInsertSchema(capabilities).omit({
   id: true,
 });
@@ -189,6 +220,12 @@ export const insertReportConfigSchema = createInsertSchema(reportConfigs).omit({
   updatedAt: true,
 });
 
+export const insertDashboardConfigSchema = createInsertSchema(dashboardConfigs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
 export type Capability = typeof capabilities.$inferSelect;
 
@@ -215,3 +252,6 @@ export type KanbanConfig = typeof kanbanConfigs.$inferSelect;
 
 export type InsertReportConfig = z.infer<typeof insertReportConfigSchema>;
 export type ReportConfig = typeof reportConfigs.$inferSelect;
+
+export type InsertDashboardConfig = z.infer<typeof insertDashboardConfigSchema>;
+export type DashboardConfig = typeof dashboardConfigs.$inferSelect;
