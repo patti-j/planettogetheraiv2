@@ -181,12 +181,92 @@ const DraggableTemplate = ({ template }: { template: WidgetTemplate }) => {
   );
 };
 
+// Draggable widget component within the canvas
+const DraggableWidget = ({ widget, isSelected, onSelect, onMove }: {
+  widget: AnalyticsWidget;
+  isSelected: boolean;
+  onSelect: () => void;
+  onMove: (position: { x: number; y: number }) => void;
+}) => {
+  const [{ isDragging }, drag] = useDrag({
+    type: "widget",
+    item: { id: widget.id, type: "widget" },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  const [{ isOver }, drop] = useDrop({
+    accept: "widget",
+    hover: (item: any, monitor) => {
+      const draggedId = item.id;
+      const hoveredId = widget.id;
+      
+      if (draggedId === hoveredId) return;
+      
+      const hoverBoundingRect = drop.current?.getBoundingClientRect();
+      const clientOffset = monitor.getClientOffset();
+      
+      if (hoverBoundingRect && clientOffset) {
+        const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+        const hoverClientY = clientOffset.y - hoverBoundingRect.top;
+        
+        if (hoverClientY > hoverMiddleY) {
+          // Move down
+        } else {
+          // Move up
+        }
+      }
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+    }),
+  });
+
+  const combinedRef = useCallback(
+    (node: HTMLDivElement) => {
+      drag(node);
+      drop(node);
+    },
+    [drag, drop]
+  );
+
+  return (
+    <div
+      ref={combinedRef}
+      className={`absolute border-2 rounded-lg bg-white shadow-sm cursor-move transition-all ${
+        isSelected ? "border-blue-500 shadow-lg" : "border-gray-200 hover:border-gray-300"
+      } ${isDragging ? "opacity-50" : ""}`}
+      style={{
+        left: widget.position.x,
+        top: widget.position.y,
+        width: widget.size.width,
+        height: widget.size.height,
+      }}
+      onClick={onSelect}
+    >
+      <div className="p-3 h-full">
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="font-medium text-sm">{widget.title}</h4>
+          <div className="flex items-center gap-1">
+            <Move className="h-3 w-3 text-gray-400" />
+          </div>
+        </div>
+        <div className="text-xs text-gray-500">
+          {widget.type} • {widget.size.width}x{widget.size.height}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Visual editor drop zone
-const VisualEditor = ({ widgets, onDrop, onWidgetSelect, selectedWidgetId }: {
+const VisualEditor = ({ widgets, onDrop, onWidgetSelect, selectedWidgetId, onWidgetMove }: {
   widgets: AnalyticsWidget[];
   onDrop: (item: any, position: { x: number; y: number }) => void;
   onWidgetSelect: (widgetId: string) => void;
   selectedWidgetId: string | null;
+  onWidgetMove: (widgetId: string, newPosition: { x: number; y: number }) => void;
 }) => {
   const dropRef = useRef<HTMLDivElement>(null);
   const [{ isOver }, drop] = useDrop({
@@ -225,31 +305,13 @@ const VisualEditor = ({ widgets, onDrop, onWidgetSelect, selectedWidgetId }: {
       }`}
     >
       {widgets.map((widget) => (
-        <div
+        <DraggableWidget
           key={widget.id}
-          className={`absolute border-2 rounded-lg bg-white shadow-sm cursor-pointer transition-all ${
-            selectedWidgetId === widget.id ? "border-blue-500 shadow-lg" : "border-gray-200 hover:border-gray-300"
-          }`}
-          style={{
-            left: widget.position.x,
-            top: widget.position.y,
-            width: widget.size.width,
-            height: widget.size.height,
-          }}
-          onClick={() => onWidgetSelect(widget.id)}
-        >
-          <div className="p-3 h-full">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-medium text-sm">{widget.title}</h4>
-              <div className="flex items-center gap-1">
-                <Move className="h-3 w-3 text-gray-400" />
-              </div>
-            </div>
-            <div className="text-xs text-gray-500">
-              {widget.type} • {widget.size.width}x{widget.size.height}
-            </div>
-          </div>
-        </div>
+          widget={widget}
+          isSelected={selectedWidgetId === widget.id}
+          onSelect={() => onWidgetSelect(widget.id)}
+          onMove={(newPosition) => onWidgetMove(widget.id, newPosition)}
+        />
       ))}
       {widgets.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center text-gray-500">
@@ -405,6 +467,15 @@ export default function EnhancedDashboardManager({
         console.log("Template not found for:", item.id);
       }
     }
+  };
+
+  const handleWidgetMove = (widgetId: string, newPosition: { x: number; y: number }) => {
+    console.log("Moving widget:", widgetId, "to position:", newPosition);
+    setWorkingWidgets(prev => 
+      prev.map(widget => 
+        widget.id === widgetId ? { ...widget, position: newPosition } : widget
+      )
+    );
   };
 
   const handleCreateDashboard = () => {
@@ -645,6 +716,7 @@ export default function EnhancedDashboardManager({
                           onDrop={handleDropWidget}
                           onWidgetSelect={setSelectedWidgetId}
                           selectedWidgetId={selectedWidgetId}
+                          onWidgetMove={handleWidgetMove}
                         />
                         <div className="mt-2 flex items-center justify-between">
                           <div className="text-xs text-gray-500">
