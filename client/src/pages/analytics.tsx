@@ -565,18 +565,19 @@ export default function Analytics() {
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="border-b px-4 py-3 sm:px-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="md:ml-0 ml-12">
               <h1 className="text-2xl font-semibold text-gray-800">Analytics</h1>
               <p className="text-gray-600">Manage and view dashboard configurations</p>
             </div>
-            {!isMobile && (
-              <div className="flex items-center gap-3">
+            
+            {/* Mobile controls */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
-                      className="flex items-center gap-2 min-w-[160px] justify-between"
+                      className="flex items-center gap-2 min-w-[160px] justify-between text-sm"
                     >
                       <span>
                         {visibleDashboards.size === 0 
@@ -613,53 +614,58 @@ export default function Analytics() {
                   </PopoverContent>
                 </Popover>
                 
-                <Button
-                  variant="outline"
-                  onClick={() => setDashboardManagerOpen(true)}
-                  className="flex items-center gap-2"
-                >
-                  <Settings className="h-4 w-4" />
-                  Manage
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setAiAnalyticsOpen(true)}
-                  className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  AI Analytics
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setDashboardManagerOpen(true)}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <Settings className="h-4 w-4" />
+                    Manage
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setAiAnalyticsOpen(true)}
+                    className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    AI Analytics
+                  </Button>
+                </div>
 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsLivePaused(!isLivePaused)}
-                  className="flex items-center gap-2 hover:bg-gray-100"
-                >
-                  {isLivePaused ? (
-                    <>
-                      <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                      <span className="text-sm text-gray-600 font-medium">Paused</span>
-                      <PlayCircle className="w-4 h-4 text-gray-600" />
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-sm text-green-600 font-medium">Live</span>
-                      <PauseCircle className="w-4 h-4 text-green-600" />
-                    </>
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsLivePaused(!isLivePaused)}
+                    className="flex items-center gap-2 hover:bg-gray-100 text-sm"
+                  >
+                    {isLivePaused ? (
+                      <>
+                        <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                        <span className="text-sm text-gray-600 font-medium">Paused</span>
+                        <PlayCircle className="w-4 h-4 text-gray-600" />
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-sm text-green-600 font-medium">Live</span>
+                        <PauseCircle className="w-4 h-4 text-green-600" />
+                      </>
+                    )}
+                  </Button>
+
+                  {!isMobile && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsMaximized(!isMaximized)}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                    </Button>
                   )}
-                </Button>
-
-                <Button
-                  variant="outline"
-                  onClick={() => setIsMaximized(!isMaximized)}
-                  className="flex items-center gap-2"
-                >
-                  {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                </Button>
+                </div>
               </div>
-            )}
           </div>
         </div>
 
