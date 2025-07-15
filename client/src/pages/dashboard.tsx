@@ -484,7 +484,8 @@ export default function Dashboard() {
 
   return (
     <TooltipProvider>
-      <main className="flex-1 overflow-y-auto">
+      <div className="h-screen flex flex-col overflow-hidden">
+        <main className="flex-1 overflow-y-auto">
           {/* Header */}
           <header className="bg-white shadow-sm border-b border-gray-200 p-4 md:p-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 md:mb-6">
@@ -771,14 +772,15 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* AI Analytics Manager */}
-      <AIAnalyticsManager
-        open={analyticsManagerOpen}
-        onOpenChange={setAnalyticsManagerOpen}
-        onWidgetCreate={handleWidgetCreate}
-        currentWidgets={customWidgets}
-        onWidgetUpdate={handleWidgetUpdate}
-      />
+        {/* AI Analytics Manager */}
+        <AIAnalyticsManager
+          open={analyticsManagerOpen}
+          onOpenChange={setAnalyticsManagerOpen}
+          onWidgetCreate={handleWidgetCreate}
+          currentWidgets={customWidgets}
+          onWidgetUpdate={handleWidgetUpdate}
+        />
+      </div>
     </TooltipProvider>
   );
 }
