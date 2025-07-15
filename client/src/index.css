@@ -224,6 +224,11 @@
   background: #e5e7eb;
 }
 
+/* Custom cursor for resizing */
+.cursor-resizing {
+  cursor: nw-resize !important;
+}
+
 /* Floating AI Assistant styles */
 .floating-ai-assistant {
   backdrop-filter: blur(10px);

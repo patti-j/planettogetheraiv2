@@ -66,6 +66,12 @@ function DraggableDashboardCard({
   isLivePaused,
   setDashboardManagerOpen
 }: DraggableDashboardCardProps) {
+  const [size, setSize] = useState(() => {
+    const saved = localStorage.getItem(`dashboard-size-${dashboard.id}`);
+    return saved ? JSON.parse(saved) : { width: 600, height: 400 };
+  });
+  
+  const [isResizing, setIsResizing] = useState(false);
   const [{ isDragging }, drag] = useDrag({
     type: 'dashboard',
     item: { index },
@@ -76,10 +82,9 @@ function DraggableDashboardCard({
 
   const [{ isOver }, drop] = useDrop({
     accept: 'dashboard',
-    hover: (item: { index: number }) => {
+    drop: (item: { index: number }) => {
       if (item.index !== index) {
         onMove(item.index, index);
-        item.index = index;
       }
     },
     collect: (monitor) => ({
@@ -87,12 +92,52 @@ function DraggableDashboardCard({
     }),
   });
 
+  const handleResize = (e: React.MouseEvent, direction: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizing(true);
+    
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startWidth = size.width;
+    const startHeight = size.height;
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+      
+      let newWidth = startWidth;
+      let newHeight = startHeight;
+      
+      if (direction.includes('e')) {
+        newWidth = Math.max(300, startWidth + deltaX);
+      }
+      if (direction.includes('s')) {
+        newHeight = Math.max(200, startHeight + deltaY);
+      }
+      
+      const newSize = { width: newWidth, height: newHeight };
+      setSize(newSize);
+      localStorage.setItem(`dashboard-size-${dashboard.id}`, JSON.stringify(newSize));
+    };
+    
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
   return (
     <div
       ref={(node) => drag(drop(node))}
-      className={`${isDragging ? 'opacity-50 scale-105' : ''} ${isOver ? 'ring-2 ring-blue-500' : ''} relative cursor-move transition-all duration-200`}
+      className={`${isDragging ? 'opacity-50 scale-105' : ''} ${isOver ? 'ring-2 ring-blue-500' : ''} relative ${isResizing ? 'cursor-resizing' : 'cursor-move'} transition-all duration-200`}
+      style={{ width: size.width, height: size.height }}
     >
-      <Card className="border border-gray-200 shadow-sm">
+      <Card className="border border-gray-200 shadow-sm h-full">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -125,9 +170,9 @@ function DraggableDashboardCard({
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 overflow-hidden">
           {dashboard.configuration?.customWidgets?.length > 0 ? (
-            <div className="relative min-h-[400px] bg-gray-50 rounded-lg p-4 overflow-hidden">
+            <div className="relative h-full bg-gray-50 rounded-lg p-4 overflow-hidden">
               {dashboard.configuration.customWidgets.map((widget: AnalyticsWidget) => (
                 <AnalyticsWidget
                   key={widget.id}
@@ -146,13 +191,32 @@ function DraggableDashboardCard({
               </div>
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
-              <FolderOpen className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">No widgets configured for this dashboard</p>
+            <div className="text-center py-8 text-gray-500 h-full flex items-center justify-center">
+              <div>
+                <FolderOpen className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                <p className="text-sm">No widgets configured for this dashboard</p>
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
+      
+      {/* Resize handles */}
+      <div 
+        className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-gray-400 hover:bg-gray-600 opacity-50 hover:opacity-100 transition-opacity"
+        onMouseDown={(e) => handleResize(e, 'se')}
+        title="Resize diagonally"
+      />
+      <div 
+        className="absolute bottom-0 left-2 right-2 h-1 cursor-s-resize bg-gray-400 hover:bg-gray-600 opacity-50 hover:opacity-100 transition-opacity"
+        onMouseDown={(e) => handleResize(e, 's')}
+        title="Resize height"
+      />
+      <div 
+        className="absolute top-2 bottom-2 right-0 w-1 cursor-e-resize bg-gray-400 hover:bg-gray-600 opacity-50 hover:opacity-100 transition-opacity"
+        onMouseDown={(e) => handleResize(e, 'e')}
+        title="Resize width"
+      />
     </div>
   );
 }
@@ -201,6 +265,8 @@ export default function Analytics() {
 
   // Handle dashboard reordering
   const handleDashboardMove = (dragIndex: number, dropIndex: number) => {
+    if (dragIndex === dropIndex) return;
+    
     const newOrder = [...dashboardOrder];
     const [removed] = newOrder.splice(dragIndex, 1);
     newOrder.splice(dropIndex, 0, removed);
@@ -383,7 +449,7 @@ export default function Analytics() {
         {/* Live Dashboard Widgets */}
         {visibleDashboardConfigs.length > 0 && (
           <DndProvider backend={HTML5Backend}>
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 min-h-[200px]">
+            <div className="flex flex-wrap gap-6 min-h-[200px]">
               {visibleDashboardConfigs.map((dashboard, index) => (
                 <DraggableDashboardCard
                   key={dashboard.id}
