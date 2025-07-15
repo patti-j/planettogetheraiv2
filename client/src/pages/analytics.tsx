@@ -307,7 +307,12 @@ export default function Analytics() {
   // Handle dashboard resizing
   const handleDashboardResize = (id: number, size: { width: number; height: number }) => {
     console.log('Dashboard resize handler called:', id, size);
-    setDashboardSizes(prev => new Map(prev.set(id, size)));
+    setDashboardSizes(prev => {
+      const newMap = new Map(prev);
+      newMap.set(id, size);
+      console.log('Updated dashboard sizes map:', Object.fromEntries(newMap.entries()));
+      return newMap;
+    });
     
     // Store the size in localStorage for persistence
     const currentSizes = Object.fromEntries(dashboardSizes.entries());
@@ -317,7 +322,9 @@ export default function Analytics() {
 
   // Get dashboard size with default fallback
   const getDashboardSize = (id: number) => {
-    return dashboardSizes.get(id) || { width: 600, height: 500 };
+    const size = dashboardSizes.get(id) || { width: 600, height: 500 };
+    console.log('Getting dashboard size for', id, ':', size);
+    return size;
   };
 
   // Initialize dashboard sizes from localStorage
@@ -498,19 +505,22 @@ export default function Analytics() {
         {visibleDashboardConfigs.length > 0 && (
           <DndProvider backend={HTML5Backend}>
             <div className="flex flex-wrap gap-6">
-              {visibleDashboardConfigs.map((dashboard, index) => (
-                <DraggableDashboardCard
-                  key={dashboard.id}
-                  dashboard={dashboard}
-                  index={index}
-                  onMove={handleDashboardMove}
-                  generateWidgetData={generateWidgetData}
-                  isLivePaused={isLivePaused}
-                  setDashboardManagerOpen={setDashboardManagerOpen}
-                  size={getDashboardSize(dashboard.id)}
-                  onResize={handleDashboardResize}
-                />
-              ))}
+              {visibleDashboardConfigs.map((dashboard, index) => {
+                const dashboardSize = getDashboardSize(dashboard.id);
+                return (
+                  <DraggableDashboardCard
+                    key={`${dashboard.id}-${dashboardSize.width}-${dashboardSize.height}`}
+                    dashboard={dashboard}
+                    index={index}
+                    onMove={handleDashboardMove}
+                    generateWidgetData={generateWidgetData}
+                    isLivePaused={isLivePaused}
+                    setDashboardManagerOpen={setDashboardManagerOpen}
+                    size={dashboardSize}
+                    onResize={handleDashboardResize}
+                  />
+                );
+              })}
             </div>
           </DndProvider>
         )}
