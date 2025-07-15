@@ -73,6 +73,8 @@ function DraggableDashboardCard({
   const [isResizing, setIsResizing] = useState(false);
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0, direction: '' });
   
+  console.log('DraggableDashboardCard render:', dashboard.id, 'size:', size);
+  
   const [{ isDragging }, drag] = useDrag({
     type: 'dashboard',
     item: { index },
@@ -157,10 +159,19 @@ function DraggableDashboardCard({
   }, [isResizing, resizeStart]);
 
   return (
-    <Card 
-      className={`transition-all duration-200 ${isDragging ? 'opacity-50 scale-105' : ''} relative`}
-      style={{ width: size.width, height: size.height }}
+    <div
+      className={`${isDragging ? 'opacity-50 scale-105' : ''} relative`}
+      style={{ 
+        width: `${size.width}px`, 
+        height: `${size.height}px`,
+        minWidth: `${size.width}px`,
+        minHeight: `${size.height}px`,
+        maxWidth: `${size.width}px`,
+        maxHeight: `${size.height}px`
+      }}
     >
+      <Card className="w-full h-full"
+      >
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -241,6 +252,7 @@ function DraggableDashboardCard({
         title="Resize width"
       />
     </Card>
+    </div>
   );
 }
 
