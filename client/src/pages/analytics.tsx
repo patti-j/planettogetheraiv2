@@ -177,14 +177,15 @@ function DraggableDashboardCard({
       className={`${isDragging ? 'opacity-50 scale-105' : ''} relative`}
     >
       <Card 
-        className="border border-gray-200 shadow-sm"
+        className="border-2 border-blue-500 shadow-sm flex flex-col"
         style={{ 
           width: `${currentSize.width}px`, 
           height: `${currentSize.height}px`,
           minWidth: `${currentSize.width}px`,
           minHeight: `${currentSize.height}px`,
           maxWidth: `${currentSize.width}px`,
-          maxHeight: `${currentSize.height}px`
+          maxHeight: `${currentSize.height}px`,
+          backgroundColor: 'rgba(59, 130, 246, 0.05)' // Light blue background
         }}
       >
       <CardHeader>
@@ -222,9 +223,9 @@ function DraggableDashboardCard({
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 overflow-hidden">
         {dashboard.configuration?.customWidgets?.length > 0 ? (
-          <div className="relative min-h-[400px] bg-gray-50 rounded-lg p-4 overflow-hidden">
+          <div className="relative h-full bg-gray-50 rounded-lg p-4 overflow-hidden">
             {dashboard.configuration.customWidgets.map((widget: AnalyticsWidget) => (
               <AnalyticsWidget
                 key={widget.id}
@@ -243,7 +244,7 @@ function DraggableDashboardCard({
             </div>
           </div>
         ) : (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-gray-500 h-full flex items-center justify-center">
             <FolderOpen className="h-12 w-12 mx-auto mb-2 text-gray-300" />
             <p className="text-sm">No widgets configured for this dashboard</p>
           </div>
