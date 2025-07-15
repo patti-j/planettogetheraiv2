@@ -881,3 +881,11 @@ The application uses a modern full-stack architecture with strong typing through
 - Dashboards can now be rearranged both side-by-side and above each other
 - Grid layout automatically adapts to dashboard positioning changes
 - Maintains all existing dashboard functionality while adding intuitive reordering capabilities
+
+✓ **Widget Overflow Fix (July 15, 2025)**:
+- Fixed resource utilization widget overflowing dashboard container bounds
+- Added overflow-hidden constraint to dashboard widget containers
+- Enhanced AnalyticsWidget component with proper maxWidth and flexible layout
+- Implemented truncation for widget titles and improved content containment
+- Added proper flex layout with min-h-0 and min-w-0 constraints for responsive behavior
+- Widgets now properly constrain within their assigned container boundaries

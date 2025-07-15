@@ -235,30 +235,31 @@ export default function AnalyticsWidget({
         width: `${widget.size.width}px`,
         height: `${widget.size.height}px`,
         maxHeight: `${widget.size.height}px`,
+        maxWidth: `${widget.size.width}px`,
         zIndex: isDragging ? 1000 : 1
       }}
     >
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 min-h-0">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             {!readOnly && (
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="h-6 w-6 p-0 cursor-move hover:bg-gray-100"
+                className="h-6 w-6 p-0 cursor-move hover:bg-gray-100 flex-shrink-0"
                 onMouseDown={handleMouseDown}
                 title="Drag to move widget"
               >
                 <Move className="w-4 h-4 text-gray-400" />
               </Button>
             )}
-            {getIcon()}
-            <CardTitle className="text-sm">{widget.title}</CardTitle>
+            <div className="flex-shrink-0">{getIcon()}</div>
+            <CardTitle className="text-sm truncate">{widget.title}</CardTitle>
           </div>
           {!readOnly && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0">
                   <MoreHorizontal className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -284,8 +285,10 @@ export default function AnalyticsWidget({
           )}
         </div>
       </CardHeader>
-      <CardContent className="overflow-y-auto flex-1">
-        {renderContent()}
+      <CardContent className="overflow-hidden flex-1 min-h-0">
+        <div className="h-full overflow-y-auto">
+          {renderContent()}
+        </div>
       </CardContent>
     </Card>
   );
