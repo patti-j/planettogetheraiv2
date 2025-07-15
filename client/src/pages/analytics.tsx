@@ -51,7 +51,7 @@ export default function Analytics() {
   const loadDashboardMutation = useMutation({
     mutationFn: async (dashboardId: string) => {
       const response = await apiRequest("GET", `/api/dashboard-configs/${dashboardId}`);
-      return response;
+      return response.json();
     },
     onSuccess: (data) => {
       console.log("Dashboard loaded:", data);
@@ -90,7 +90,7 @@ export default function Analytics() {
   const createDashboardMutation = useMutation({
     mutationFn: async (dashboardData: any) => {
       const response = await apiRequest("POST", "/api/dashboard-configs", dashboardData);
-      return response;
+      return response.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
