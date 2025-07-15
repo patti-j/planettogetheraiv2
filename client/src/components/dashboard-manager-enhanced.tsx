@@ -231,6 +231,27 @@ const CustomDragLayer = () => {
             </div>
           </div>
         )}
+        {itemType === "template" && item.template && (
+          <div 
+            className="bg-white border-2 border-blue-500 rounded-lg shadow-lg opacity-80 cursor-move"
+            style={{
+              width: 300,
+              height: 200,
+            }}
+          >
+            <div className="p-3 h-full">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-medium text-sm">{item.template.title}</h4>
+                <div className="flex items-center gap-1">
+                  <Move className="h-3 w-3 text-gray-400" />
+                </div>
+              </div>
+              <div className="text-xs text-gray-500">
+                {item.template.type} • 300x200
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -265,7 +286,7 @@ const DraggableWidget = ({ widget, isSelected, onSelect, onMove }: {
   return (
     <div
       ref={drag}
-      className={`absolute border-2 rounded-lg bg-white shadow-sm cursor-move transition-all ${
+      className={`absolute border-2 rounded-lg bg-white shadow-sm cursor-move ${
         isSelected ? "border-blue-500 shadow-lg" : "border-gray-200 hover:border-gray-300"
       } ${isDragging ? "opacity-30" : ""}`}
       style={{
@@ -273,6 +294,7 @@ const DraggableWidget = ({ widget, isSelected, onSelect, onMove }: {
         top: widget.position.y,
         width: widget.size.width,
         height: widget.size.height,
+        transition: isDragging ? 'none' : 'all 0.2s ease',
       }}
       onClick={onSelect}
     >
@@ -325,8 +347,10 @@ const VisualEditor = ({ widgets, onDrop, onWidgetSelect, selectedWidgetId, onWid
           
           console.log("Calculated position:", { x, y });
           onWidgetMove(item.id, { x, y });
-        } else {
-          // For new widgets from template, use cursor position
+        } else if (item.type === "template") {
+          // For new widgets from template, use cursor position minus some offset for better UX
+          x = Math.max(0, x - 150); // Center the widget under cursor
+          y = Math.max(0, y - 100);
           console.log("Calculated position:", { x, y });
           onDrop(item, { x, y });
         }
@@ -521,6 +545,7 @@ export default function EnhancedDashboardManager({
 
   const handleWidgetMove = (widgetId: string, newPosition: { x: number; y: number }) => {
     console.log("Moving widget:", widgetId, "to position:", newPosition);
+    // Update position immediately without animation to prevent sliding
     setWorkingWidgets(prev => 
       prev.map(widget => 
         widget.id === widgetId ? { ...widget, position: newPosition } : widget
