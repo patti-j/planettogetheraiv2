@@ -845,3 +845,13 @@ The application uses a modern full-stack architecture with strong typing through
 - Dashboard selection now accessible from header dropdown instead of separate card
 - Maximized space usage for actual dashboard widgets and live data display
 - Updated empty state messaging to reference header dropdown instead of checkboxes
+
+✓ **Analytics Live/Pause Toggle Implementation (July 15, 2025)**:
+- Added Live/Pause toggle button in analytics page header matching Shop Floor page design
+- Implemented isLivePaused state management to control real-time data updates
+- Updated all queries (dashboards, jobs, operations, resources, capabilities, metrics) with conditional refetchInterval
+- Live state shows green pulsing dot with "Live" text and pause button
+- Paused state shows gray dot with "Paused" text and play button
+- Toggle available in both normal and maximized views for consistency
+- Updated widget status display to show "Live View • Paused" or "Live View • Updates every 30s"
+- Real-time analytics data updates can now be controlled by users during analysis

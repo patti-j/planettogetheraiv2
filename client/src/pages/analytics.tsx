@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Settings, Plus, Maximize2, Minimize2, FolderOpen, Sparkles, Eye, EyeOff, ChevronDown } from "lucide-react";
+import { Settings, Plus, Maximize2, Minimize2, FolderOpen, Sparkles, Eye, EyeOff, ChevronDown, PlayCircle, PauseCircle } from "lucide-react";
 
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
 import EnhancedDashboardManager from "@/components/dashboard-manager-enhanced";
@@ -51,38 +51,44 @@ export default function Analytics() {
   const [dashboardManagerOpen, setDashboardManagerOpen] = useState(false);
   const [aiAnalyticsOpen, setAiAnalyticsOpen] = useState(false);
   const [visibleDashboards, setVisibleDashboards] = useState<Set<number>>(new Set());
+  const [isLivePaused, setIsLivePaused] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isMobile = useMobile();
 
   const { data: dashboards = [] } = useQuery<DashboardConfig[]>({
     queryKey: ["/api/dashboard-configs"],
+    refetchInterval: isLivePaused ? false : 30000, // Refresh every 30 seconds when not paused
   });
 
   // Fetch live data for widgets
   const { data: jobs = [] } = useQuery<Job[]>({
     queryKey: ["/api/jobs"],
     enabled: visibleDashboards.size > 0,
+    refetchInterval: isLivePaused ? false : 30000, // Refresh every 30 seconds when not paused
   });
 
   const { data: operations = [] } = useQuery<Operation[]>({
     queryKey: ["/api/operations"],
     enabled: visibleDashboards.size > 0,
+    refetchInterval: isLivePaused ? false : 30000, // Refresh every 30 seconds when not paused
   });
 
   const { data: resources = [] } = useQuery<Resource[]>({
     queryKey: ["/api/resources"],
     enabled: visibleDashboards.size > 0,
+    refetchInterval: isLivePaused ? false : 30000, // Refresh every 30 seconds when not paused
   });
 
   const { data: capabilities = [] } = useQuery<Capability[]>({
     queryKey: ["/api/capabilities"],
     enabled: visibleDashboards.size > 0,
+    refetchInterval: isLivePaused ? false : 30000, // Refresh every 30 seconds when not paused
   });
 
   const { data: metrics } = useQuery<Metrics>({
     queryKey: ["/api/metrics"],
-    refetchInterval: 30000,
+    refetchInterval: isLivePaused ? false : 30000, // Refresh every 30 seconds when not paused
     enabled: visibleDashboards.size > 0,
   });
 
@@ -187,7 +193,7 @@ export default function Analytics() {
                         />
                       ))}
                       <div className="absolute top-2 right-2 text-xs text-gray-500 bg-white px-2 py-1 rounded">
-                        Live View • Updates every 30s
+                        {isLivePaused ? "Live View • Paused" : "Live View • Updates every 30s"}
                       </div>
                     </div>
                   ) : (
@@ -296,6 +302,27 @@ export default function Analytics() {
                 </Button>
 
                 <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsLivePaused(!isLivePaused)}
+                  className="flex items-center gap-2 hover:bg-gray-100"
+                >
+                  {isLivePaused ? (
+                    <>
+                      <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                      <span className="text-sm text-gray-600 font-medium">Paused</span>
+                      <PlayCircle className="w-4 h-4 text-gray-600" />
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-sm text-green-600 font-medium">Live</span>
+                      <PauseCircle className="w-4 h-4 text-green-600" />
+                    </>
+                  )}
+                </Button>
+
+                <Button
                   variant="outline"
                   onClick={() => setIsMaximized(!isMaximized)}
                   className="flex items-center gap-2"
@@ -371,6 +398,28 @@ export default function Analytics() {
                     <Sparkles className="h-4 w-4" />
                     AI Analytics
                   </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsLivePaused(!isLivePaused)}
+                    className="flex items-center gap-2 hover:bg-gray-100"
+                  >
+                    {isLivePaused ? (
+                      <>
+                        <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                        <span className="text-sm text-gray-600 font-medium">Paused</span>
+                        <PlayCircle className="w-4 h-4 text-gray-600" />
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-sm text-green-600 font-medium">Live</span>
+                        <PauseCircle className="w-4 h-4 text-green-600" />
+                      </>
+                    )}
+                  </Button>
+                  
                   <Button
                     variant="outline"
                     onClick={() => setIsMaximized(false)}
