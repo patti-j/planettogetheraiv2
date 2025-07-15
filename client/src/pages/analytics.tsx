@@ -565,107 +565,110 @@ export default function Analytics() {
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="border-b px-4 py-3 sm:px-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-start justify-between gap-4">
             <div className="md:ml-0 ml-12">
               <h1 className="text-2xl font-semibold text-gray-800">Analytics</h1>
               <p className="text-gray-600">Manage and view dashboard configurations</p>
             </div>
             
-            {/* Mobile controls */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="flex items-center gap-2 min-w-[160px] justify-between text-sm"
-                    >
-                      <span>
-                        {visibleDashboards.size === 0 
-                          ? "Select Dashboards" 
-                          : `${visibleDashboards.size} Selected`}
-                      </span>
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 p-3">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Select Dashboards to Display:</Label>
-                      <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {dashboards.map((dashboard) => (
-                          <div key={dashboard.id} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`header-dashboard-${dashboard.id}`}
-                              checked={visibleDashboards.has(dashboard.id)}
-                              onCheckedChange={() => handleToggleDashboardVisibility(dashboard.id)}
-                            />
-                            <label
-                              htmlFor={`header-dashboard-${dashboard.id}`}
-                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1 cursor-pointer"
-                            >
-                              {dashboard.name}
-                              {dashboard.isDefault && (
-                                <Badge variant="secondary" className="text-xs px-1">Default</Badge>
-                              )}
-                            </label>
-                          </div>
-                        ))}
+            {/* Live indicator in top right */}
+            <div className="flex items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsLivePaused(!isLivePaused)}
+                className="flex items-center gap-2 hover:bg-gray-100 text-sm"
+              >
+                {isLivePaused ? (
+                  <>
+                    <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                    <span className="text-sm text-gray-600 font-medium">Paused</span>
+                    <PlayCircle className="w-4 h-4 text-gray-600" />
+                  </>
+                ) : (
+                  <>
+                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-green-600 font-medium">Live</span>
+                    <PauseCircle className="w-4 h-4 text-green-600" />
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+          
+          {/* Controls row */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-4">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2 min-w-[160px] justify-between text-sm"
+                >
+                  <span>
+                    {visibleDashboards.size === 0 
+                      ? "Select Dashboards" 
+                      : `${visibleDashboards.size} Selected`}
+                  </span>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-3">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Select Dashboards to Display:</Label>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {dashboards.map((dashboard) => (
+                      <div key={dashboard.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`header-dashboard-${dashboard.id}`}
+                          checked={visibleDashboards.has(dashboard.id)}
+                          onCheckedChange={() => handleToggleDashboardVisibility(dashboard.id)}
+                        />
+                        <label
+                          htmlFor={`header-dashboard-${dashboard.id}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1 cursor-pointer"
+                        >
+                          {dashboard.name}
+                          {dashboard.isDefault && (
+                            <Badge variant="secondary" className="text-xs px-1">Default</Badge>
+                          )}
+                        </label>
                       </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-                
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => setDashboardManagerOpen(true)}
-                    className="flex items-center gap-2 text-sm"
-                  >
-                    <Settings className="h-4 w-4" />
-                    Manage
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setAiAnalyticsOpen(true)}
-                    className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    AI Analytics
-                  </Button>
+                    ))}
+                  </div>
                 </div>
+              </PopoverContent>
+            </Popover>
+            
+            <div className="flex flex-row gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setDashboardManagerOpen(true)}
+                className="flex items-center gap-2 text-sm"
+              >
+                <Settings className="h-4 w-4" />
+                Manage
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setAiAnalyticsOpen(true)}
+                className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm"
+              >
+                <Sparkles className="h-4 w-4" />
+                AI Analytics
+              </Button>
+            </div>
 
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsLivePaused(!isLivePaused)}
-                    className="flex items-center gap-2 hover:bg-gray-100 text-sm"
-                  >
-                    {isLivePaused ? (
-                      <>
-                        <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                        <span className="text-sm text-gray-600 font-medium">Paused</span>
-                        <PlayCircle className="w-4 h-4 text-gray-600" />
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                        <span className="text-sm text-green-600 font-medium">Live</span>
-                        <PauseCircle className="w-4 h-4 text-green-600" />
-                      </>
-                    )}
-                  </Button>
-
-                  {!isMobile && (
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsMaximized(!isMaximized)}
-                      className="flex items-center gap-2 text-sm"
-                    >
-                      {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                    </Button>
-                  )}
-                </div>
+            {!isMobile && (
+              <div className="flex items-center ml-auto">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsMaximized(!isMaximized)}
+                  className="flex items-center gap-2 text-sm"
+                >
+                  {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                </Button>
               </div>
+            )}
           </div>
         </div>
 
