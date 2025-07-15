@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import Sidebar from "@/components/sidebar";
+import OnboardingWizard from "@/components/onboarding-wizard";
 import Dashboard from "@/pages/dashboard";
 import Analytics from "@/pages/analytics";
 import Reports from "@/pages/reports";
@@ -49,6 +50,7 @@ function App() {
               <Router />
             </main>
           </div>
+          <OnboardingWizard />
           <Toaster />
         </TooltipProvider>
       </DndProvider>
