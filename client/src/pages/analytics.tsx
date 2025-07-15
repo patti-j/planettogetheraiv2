@@ -7,7 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Settings, Plus, Maximize2, Minimize2, FolderOpen, Sparkles, Eye, EyeOff, ChevronDown, PlayCircle, PauseCircle } from "lucide-react";
+import { Settings, Plus, Maximize2, Minimize2, FolderOpen, Sparkles, Eye, EyeOff, ChevronDown, PlayCircle, PauseCircle, GripVertical } from "lucide-react";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
 import EnhancedDashboardManager from "@/components/dashboard-manager-enhanced";
@@ -46,12 +48,115 @@ interface Metrics {
   avgLeadTime: number;
 }
 
+// Draggable Dashboard Card Component
+interface DraggableDashboardCardProps {
+  dashboard: DashboardConfig;
+  index: number;
+  onMove: (dragIndex: number, dropIndex: number) => void;
+  generateWidgetData: () => any;
+  isLivePaused: boolean;
+  setDashboardManagerOpen: (open: boolean) => void;
+}
+
+function DraggableDashboardCard({ 
+  dashboard, 
+  index, 
+  onMove, 
+  generateWidgetData, 
+  isLivePaused,
+  setDashboardManagerOpen 
+}: DraggableDashboardCardProps) {
+  const [{ isDragging }, drag] = useDrag({
+    type: 'dashboard',
+    item: { index },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  const [, drop] = useDrop({
+    accept: 'dashboard',
+    hover: (item: { index: number }) => {
+      if (item.index !== index) {
+        onMove(item.index, index);
+        item.index = index;
+      }
+    },
+  });
+
+  return (
+    <Card 
+      ref={(node) => drag(drop(node))}
+      className={`transition-all duration-200 ${isDragging ? 'opacity-50 scale-105' : ''}`}
+    >
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <GripVertical className="h-4 w-4 text-gray-400 cursor-move" />
+            <div>
+              <div className="flex items-center gap-2">
+                <span>{dashboard.name}</span>
+                {dashboard.isDefault && (
+                  <Badge variant="secondary">Default</Badge>
+                )}
+              </div>
+              <p className="text-sm text-gray-600 mt-1">{dashboard.description}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">
+              {dashboard.configuration?.customWidgets?.length || 0} widgets
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDashboardManagerOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              Edit
+            </Button>
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {dashboard.configuration?.customWidgets?.length > 0 ? (
+          <div className="relative min-h-[400px] bg-gray-50 rounded-lg p-4">
+            {dashboard.configuration.customWidgets.map((widget: AnalyticsWidget) => (
+              <AnalyticsWidget
+                key={widget.id}
+                widget={widget}
+                onToggle={() => {}} // Read-only mode
+                onRemove={() => {}} // Read-only mode
+                onEdit={() => {}} // Read-only mode
+                onResize={() => {}} // Read-only mode
+                onMove={() => {}} // Read-only mode
+                data={generateWidgetData()}
+                readOnly={true}
+              />
+            ))}
+            <div className="absolute top-2 right-2 text-xs text-gray-500 bg-white px-2 py-1 rounded">
+              {isLivePaused ? "Live View • Paused" : "Live View • Updates every 30s"}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <FolderOpen className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+            <p className="text-sm">No widgets configured for this dashboard</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Analytics() {
   const [isMaximized, setIsMaximized] = useState(false);
   const [dashboardManagerOpen, setDashboardManagerOpen] = useState(false);
   const [aiAnalyticsOpen, setAiAnalyticsOpen] = useState(false);
   const [visibleDashboards, setVisibleDashboards] = useState<Set<number>>(new Set());
   const [isLivePaused, setIsLivePaused] = useState(false);
+  const [dashboardOrder, setDashboardOrder] = useState<number[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isMobile = useMobile();
@@ -60,6 +165,37 @@ export default function Analytics() {
     queryKey: ["/api/dashboard-configs"],
     refetchInterval: isLivePaused ? false : 30000, // Refresh every 30 seconds when not paused
   });
+
+  // Initialize dashboard order when dashboards are loaded
+  useEffect(() => {
+    if (dashboards.length > 0 && dashboardOrder.length === 0) {
+      setDashboardOrder(dashboards.map(d => d.id));
+    }
+  }, [dashboards, dashboardOrder.length]);
+
+  // Handle dashboard reordering
+  const handleDashboardMove = (dragIndex: number, dropIndex: number) => {
+    const newOrder = [...dashboardOrder];
+    const [removed] = newOrder.splice(dragIndex, 1);
+    newOrder.splice(dropIndex, 0, removed);
+    setDashboardOrder(newOrder);
+  };
+
+  // Get ordered visible dashboards
+  const getOrderedVisibleDashboards = () => {
+    const visibleDashboardsArray = dashboards.filter(dashboard => 
+      visibleDashboards.has(dashboard.id)
+    );
+    
+    // Sort by the order array
+    return visibleDashboardsArray.sort((a, b) => {
+      const aIndex = dashboardOrder.indexOf(a.id);
+      const bIndex = dashboardOrder.indexOf(b.id);
+      return aIndex - bIndex;
+    });
+  };
+
+
 
   // Dashboard management mutations
   const createDashboardMutation = useMutation({
@@ -180,9 +316,7 @@ export default function Analytics() {
 
 
 
-  const visibleDashboardConfigs = dashboards.filter(dashboard => 
-    visibleDashboards.has(dashboard.id)
-  );
+  const visibleDashboardConfigs = getOrderedVisibleDashboards();
 
   const generateWidgetData = () => ({
     jobs,
@@ -210,66 +344,21 @@ export default function Analytics() {
       <div className="flex-1 p-6 space-y-6">
         {/* Live Dashboard Widgets */}
         {visibleDashboardConfigs.length > 0 && (
-          <div className="space-y-6">
-            {visibleDashboardConfigs.map((dashboard) => (
-              <Card key={dashboard.id}>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span>{dashboard.name}</span>
-                        {dashboard.isDefault && (
-                          <Badge variant="secondary">Default</Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600 mt-1">{dashboard.description}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">
-                        {dashboard.configuration?.customWidgets?.length || 0} widgets
-                      </Badge>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setDashboardManagerOpen(true)}
-                        className="flex items-center gap-2"
-                      >
-                        <Settings className="h-4 w-4" />
-                        Edit
-                      </Button>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {dashboard.configuration?.customWidgets?.length > 0 ? (
-                    <div className="relative min-h-[400px] bg-gray-50 rounded-lg p-4">
-                      {dashboard.configuration.customWidgets.map((widget: AnalyticsWidget) => (
-                        <AnalyticsWidget
-                          key={widget.id}
-                          widget={widget}
-                          onToggle={() => {}} // Read-only mode
-                          onRemove={() => {}} // Read-only mode
-                          onEdit={() => {}} // Read-only mode
-                          onResize={() => {}} // Read-only mode
-                          onMove={() => {}} // Read-only mode
-                          data={generateWidgetData()}
-                          readOnly={true}
-                        />
-                      ))}
-                      <div className="absolute top-2 right-2 text-xs text-gray-500 bg-white px-2 py-1 rounded">
-                        {isLivePaused ? "Live View • Paused" : "Live View • Updates every 30s"}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <FolderOpen className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                      <p className="text-sm">No widgets configured for this dashboard</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <DndProvider backend={HTML5Backend}>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              {visibleDashboardConfigs.map((dashboard, index) => (
+                <DraggableDashboardCard
+                  key={dashboard.id}
+                  dashboard={dashboard}
+                  index={index}
+                  onMove={handleDashboardMove}
+                  generateWidgetData={generateWidgetData}
+                  isLivePaused={isLivePaused}
+                  setDashboardManagerOpen={setDashboardManagerOpen}
+                />
+              ))}
+            </div>
+          </DndProvider>
         )}
 
         {/* Empty State */}
