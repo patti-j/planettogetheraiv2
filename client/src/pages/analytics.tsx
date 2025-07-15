@@ -74,7 +74,7 @@ function DraggableDashboardCard({
     }),
   });
 
-  const [, drop] = useDrop({
+  const [{ isOver }, drop] = useDrop({
     accept: 'dashboard',
     hover: (item: { index: number }) => {
       if (item.index !== index) {
@@ -82,20 +82,21 @@ function DraggableDashboardCard({
         item.index = index;
       }
     },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+    }),
   });
 
   return (
     <div
-      className={`${isDragging ? 'opacity-50 scale-105' : ''} relative`}
+      ref={(node) => drag(drop(node))}
+      className={`${isDragging ? 'opacity-50 scale-105' : ''} ${isOver ? 'ring-2 ring-blue-500' : ''} relative cursor-move transition-all duration-200`}
     >
       <Card className="border border-gray-200 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div 
-                ref={(node) => drag(drop(node))}
-                className="cursor-move"
-              >
+              <div className="cursor-move">
                 <GripVertical className="h-4 w-4 text-gray-400" />
               </div>
               <div>
@@ -382,7 +383,7 @@ export default function Analytics() {
         {/* Live Dashboard Widgets */}
         {visibleDashboardConfigs.length > 0 && (
           <DndProvider backend={HTML5Backend}>
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 min-h-[200px]">
               {visibleDashboardConfigs.map((dashboard, index) => (
                 <DraggableDashboardCard
                   key={dashboard.id}
