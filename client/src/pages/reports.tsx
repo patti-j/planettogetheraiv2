@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import Sidebar from "@/components/sidebar";
+
 import { 
   Plus, 
   Sparkles, 
@@ -644,8 +644,7 @@ export default function Reports() {
           <PageContent />
         </div>
       ) : (
-        <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-          <Sidebar />
+        <div className="h-screen bg-gray-50 dark:bg-gray-900">
           <PageContent />
         </div>
       )}

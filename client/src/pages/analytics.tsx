@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BarChart3, TrendingUp, Clock, AlertTriangle, CheckCircle, Sparkles, Settings, Plus, Maximize2, Minimize2 } from "lucide-react";
-import Sidebar from "@/components/sidebar";
+
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
 import AnalyticsWidget from "@/components/analytics-widget";
 import type { Job, Operation, Resource } from "@shared/schema";
@@ -376,8 +376,7 @@ export default function Analytics() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
+    <div className="h-screen bg-gray-50">
       <PageContent />
       
       {/* AI Analytics Manager */}

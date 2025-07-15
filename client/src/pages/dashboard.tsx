@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Plus, Save, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, BarChart3, Wrench, Calendar, User, Smartphone, Monitor } from "lucide-react";
-import Sidebar from "@/components/sidebar";
+
 import GanttChart from "@/components/ui/gantt-chart";
 import MobileSchedule from "@/components/mobile-schedule";
 import MetricsCard from "@/components/ui/metrics-card";
@@ -484,10 +484,7 @@ export default function Dashboard() {
 
   return (
     <TooltipProvider>
-      <div className="flex h-screen bg-surface">
-        <Sidebar />
-        
-        <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto">
           {/* Header */}
           <header className="bg-white shadow-sm border-b border-gray-200 p-4 md:p-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 md:mb-6">
@@ -782,7 +779,6 @@ export default function Dashboard() {
         currentWidgets={customWidgets}
         onWidgetUpdate={handleWidgetUpdate}
       />
-      </div>
     </TooltipProvider>
   );
 }

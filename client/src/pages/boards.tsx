@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Maximize2, Minimize2, ChevronDown, Plus, Settings, Users, Briefcase, Wrench, Sparkles } from "lucide-react";
-import Sidebar from "@/components/sidebar";
+
 import KanbanBoard from "@/components/kanban-board";
 import KanbanConfigManager from "@/components/kanban-config-manager";
 import JobForm from "@/components/job-form";
@@ -148,8 +148,7 @@ export default function Boards() {
   if (isMaximized) {
     return (
       <TooltipProvider>
-        <div className="fixed inset-0 bg-white z-50 flex">
-          <Sidebar />
+        <div className="fixed inset-0 bg-white z-50">
           <PageContent />
           
           {/* Dialogs for maximized view */}
@@ -236,8 +235,7 @@ export default function Boards() {
 
   return (
     <TooltipProvider>
-      <div className="flex h-screen bg-gray-50">
-        <Sidebar />
+      <div className="h-screen bg-gray-50">
         <PageContent />
         
         {/* Job Dialog */}
