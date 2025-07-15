@@ -14,8 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Settings, Star, Trash2, Edit3, Eye, Save, Move, Palette, BarChart3, TrendingUp, AlertTriangle, CheckCircle, Clock, Target, PieChart, Activity, Zap, Users, Package, Wrench, ArrowUp, ArrowDown, MoreHorizontal, Grid3x3, Maximize2, Minimize2, RotateCcw } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import { DndProvider, useDrag, useDrop } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
+import { useDrag, useDrop } from "react-dnd";
 
 interface AnalyticsWidget {
   id: string;
@@ -416,17 +415,16 @@ export default function EnhancedDashboardManager({
   };
 
   return (
-    <DndProvider backend={HTML5Backend}>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-7xl h-[95vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>
-              {editingDashboard ? `Edit Dashboard: ${editingDashboard.name}` : "Manage Dashboards"}
-            </DialogTitle>
-            <DialogDescription>
-              Create, edit, and organize your dashboard configurations with comprehensive widget management
-            </DialogDescription>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-7xl h-[95vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>
+            {editingDashboard ? `Edit Dashboard: ${editingDashboard.name}` : "Manage Dashboards"}
+          </DialogTitle>
+          <DialogDescription>
+            Create, edit, and organize your dashboard configurations with comprehensive widget management
+          </DialogDescription>
+        </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
             <TabsList className="grid w-full grid-cols-4">
@@ -671,6 +669,5 @@ export default function EnhancedDashboardManager({
           </Tabs>
         </DialogContent>
       </Dialog>
-    </DndProvider>
   );
 }
