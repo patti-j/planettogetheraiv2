@@ -195,44 +195,9 @@ const DraggableWidget = ({ widget, isSelected, onSelect, onMove }: {
     }),
   });
 
-  const [{ isOver }, drop] = useDrop({
-    accept: "widget",
-    hover: (item: any, monitor) => {
-      const draggedId = item.id;
-      const hoveredId = widget.id;
-      
-      if (draggedId === hoveredId) return;
-      
-      const hoverBoundingRect = drop.current?.getBoundingClientRect();
-      const clientOffset = monitor.getClientOffset();
-      
-      if (hoverBoundingRect && clientOffset) {
-        const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
-        const hoverClientY = clientOffset.y - hoverBoundingRect.top;
-        
-        if (hoverClientY > hoverMiddleY) {
-          // Move down
-        } else {
-          // Move up
-        }
-      }
-    },
-    collect: (monitor) => ({
-      isOver: monitor.isOver(),
-    }),
-  });
-
-  const combinedRef = useCallback(
-    (node: HTMLDivElement) => {
-      drag(node);
-      drop(node);
-    },
-    [drag, drop]
-  );
-
   return (
     <div
-      ref={combinedRef}
+      ref={drag}
       className={`absolute border-2 rounded-lg bg-white shadow-sm cursor-move transition-all ${
         isSelected ? "border-blue-500 shadow-lg" : "border-gray-200 hover:border-gray-300"
       } ${isDragging ? "opacity-50" : ""}`}
@@ -279,7 +244,15 @@ const VisualEditor = ({ widgets, onDrop, onWidgetSelect, selectedWidgetId, onWid
         const x = Math.max(0, offset.x - dropZoneRect.left);
         const y = Math.max(0, offset.y - dropZoneRect.top);
         console.log("Calculated position:", { x, y });
-        onDrop(item, { x, y });
+        
+        // Handle existing widget movement vs new widget creation
+        if (item.type === "widget") {
+          // This is an existing widget being moved
+          onWidgetMove(item.id, { x, y });
+        } else {
+          // This is a new widget from template
+          onDrop(item, { x, y });
+        }
       }
     },
     collect: (monitor) => ({
