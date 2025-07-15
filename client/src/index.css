@@ -75,6 +75,13 @@
   width: 12px;
 }
 
+/* Disable all transitions for draggable widgets */
+.widget-no-transition {
+  transition: none !important;
+  transform: none !important;
+  animation: none !important;
+}
+
 .mobile-scroll::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.1);
   border-radius: 6px;

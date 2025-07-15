@@ -276,13 +276,6 @@ const DraggableWidget = ({ widget, isSelected, onSelect, onMove }: {
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
-    end: (item, monitor) => {
-      // Re-enable transitions after drag ends
-      const element = document.getElementById(`widget-${widget.id}`);
-      if (element) {
-        element.style.transition = 'all 0.2s ease';
-      }
-    },
   });
 
   // Hide the default drag preview
@@ -290,19 +283,10 @@ const DraggableWidget = ({ widget, isSelected, onSelect, onMove }: {
     preview(null);
   }, [preview]);
 
-  // Disable transitions during drag
-  useEffect(() => {
-    const element = document.getElementById(`widget-${widget.id}`);
-    if (element && isDragging) {
-      element.style.transition = 'none';
-    }
-  }, [isDragging, widget.id]);
-
   return (
     <div
-      id={`widget-${widget.id}`}
       ref={drag}
-      className={`absolute border-2 rounded-lg bg-white shadow-sm cursor-move ${
+      className={`absolute border-2 rounded-lg bg-white shadow-sm cursor-move widget-no-transition ${
         isSelected ? "border-blue-500 shadow-lg" : "border-gray-200 hover:border-gray-300"
       } ${isDragging ? "opacity-30" : ""}`}
       style={{
@@ -310,7 +294,10 @@ const DraggableWidget = ({ widget, isSelected, onSelect, onMove }: {
         top: widget.position.y,
         width: widget.size.width,
         height: widget.size.height,
-        transition: 'none', // Always disable transitions initially
+        // Completely remove all transitions
+        transition: 'none !important',
+        transform: 'none !important',
+        animation: 'none !important',
       }}
       onClick={onSelect}
     >
