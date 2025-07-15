@@ -227,13 +227,14 @@ export default function AnalyticsWidget({
   return (
     <Card 
       ref={widgetRef}
-      className={`h-full ${isDragging ? 'shadow-lg' : ''} ${readOnly ? 'cursor-default' : 'cursor-move'}`}
+      className={`${isDragging ? 'shadow-lg' : ''} ${readOnly ? 'cursor-default' : 'cursor-move'} overflow-hidden flex flex-col`}
       style={{
         position: 'absolute',
         left: `${widget.position.x}px`,
         top: `${widget.position.y}px`,
         width: `${widget.size.width}px`,
-        minHeight: `${widget.size.height}px`,
+        height: `${widget.size.height}px`,
+        maxHeight: `${widget.size.height}px`,
         zIndex: isDragging ? 1000 : 1
       }}
     >
@@ -283,7 +284,7 @@ export default function AnalyticsWidget({
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-y-auto flex-1">
         {renderContent()}
       </CardContent>
     </Card>
