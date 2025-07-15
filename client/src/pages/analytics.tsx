@@ -175,16 +175,17 @@ function DraggableDashboardCard({
   return (
     <div
       className={`${isDragging ? 'opacity-50 scale-105' : ''} relative`}
-      style={{ 
-        width: `${currentSize.width}px`, 
-        height: `${currentSize.height}px`,
-        minWidth: `${currentSize.width}px`,
-        minHeight: `${currentSize.height}px`,
-        maxWidth: `${currentSize.width}px`,
-        maxHeight: `${currentSize.height}px`
-      }}
     >
-      <Card className="w-full h-full"
+      <Card 
+        className="border border-gray-200 shadow-sm"
+        style={{ 
+          width: `${currentSize.width}px`, 
+          height: `${currentSize.height}px`,
+          minWidth: `${currentSize.width}px`,
+          minHeight: `${currentSize.height}px`,
+          maxWidth: `${currentSize.width}px`,
+          maxHeight: `${currentSize.height}px`
+        }}
       >
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
