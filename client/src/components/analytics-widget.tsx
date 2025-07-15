@@ -227,7 +227,7 @@ export default function AnalyticsWidget({
   return (
     <Card 
       ref={widgetRef}
-      className={`${isDragging ? 'shadow-lg' : ''} ${readOnly ? 'cursor-default' : 'cursor-move'} overflow-hidden flex flex-col`}
+      className={`${isDragging ? 'shadow-lg' : 'shadow-sm'} ${readOnly ? 'cursor-default' : 'cursor-move'} overflow-hidden flex flex-col border border-gray-200`}
       style={{
         position: 'absolute',
         left: `${widget.position.x}px`,
