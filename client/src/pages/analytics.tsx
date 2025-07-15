@@ -73,8 +73,9 @@ function DraggableDashboardCard({
   const [isResizing, setIsResizing] = useState(false);
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0, direction: '' });
   const [currentSize, setCurrentSize] = useState(size);
+  const [resizeId, setResizeId] = useState(0);
   
-  console.log('DraggableDashboardCard render:', dashboard.id, 'size:', size);
+  console.log('DraggableDashboardCard render:', dashboard.id, 'prop size:', size, 'currentSize:', currentSize);
   
   // Update current size when prop changes
   useEffect(() => {
@@ -134,9 +135,12 @@ function DraggableDashboardCard({
     console.log('Resizing:', { newWidth, newHeight, deltaX, deltaY });
     
     // Update current size immediately for visual feedback
-    setCurrentSize({ width: newWidth, height: newHeight });
+    const newSize = { width: newWidth, height: newHeight };
+    console.log('Setting currentSize to:', newSize);
+    setCurrentSize(newSize);
+    setResizeId(prev => prev + 1); // Force re-render
     
-    onResize(dashboard.id, { width: newWidth, height: newHeight });
+    onResize(dashboard.id, newSize);
   };
 
   const handleResizeEnd = () => {
