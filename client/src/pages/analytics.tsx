@@ -102,27 +102,38 @@ function DraggableDashboardCard({
     const startWidth = size.width;
     const startHeight = size.height;
     
+    let animationFrameId: number;
+    
     const handleMouseMove = (e: MouseEvent) => {
-      const deltaX = e.clientX - startX;
-      const deltaY = e.clientY - startY;
-      
-      let newWidth = startWidth;
-      let newHeight = startHeight;
-      
-      if (direction.includes('e')) {
-        newWidth = Math.max(300, startWidth + deltaX);
-      }
-      if (direction.includes('s')) {
-        newHeight = Math.max(200, startHeight + deltaY);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
       }
       
-      const newSize = { width: newWidth, height: newHeight };
-      setSize(newSize);
-      localStorage.setItem(`dashboard-size-${dashboard.id}`, JSON.stringify(newSize));
+      animationFrameId = requestAnimationFrame(() => {
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+        
+        let newWidth = startWidth;
+        let newHeight = startHeight;
+        
+        if (direction.includes('e')) {
+          newWidth = Math.max(300, startWidth + deltaX);
+        }
+        if (direction.includes('s')) {
+          newHeight = Math.max(200, startHeight + deltaY);
+        }
+        
+        const newSize = { width: newWidth, height: newHeight };
+        setSize(newSize);
+      });
     };
     
     const handleMouseUp = () => {
       setIsResizing(false);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+      localStorage.setItem(`dashboard-size-${dashboard.id}`, JSON.stringify(size));
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
@@ -133,7 +144,7 @@ function DraggableDashboardCard({
 
   return (
     <div
-      className={`${isDragging ? 'opacity-50 scale-105' : ''} ${isOver ? 'ring-2 ring-blue-500' : ''} relative transition-all duration-200`}
+      className={`${isDragging ? 'opacity-50 scale-105' : ''} ${isOver ? 'ring-2 ring-blue-500' : ''} relative transition-all duration-200 resize-smooth ${isResizing ? 'resizing' : ''} group`}
       style={{ width: size.width, height: size.height }}
     >
       <Card className="border border-gray-200 shadow-sm h-full">
@@ -212,22 +223,30 @@ function DraggableDashboardCard({
         </CardContent>
       </Card>
       
-      {/* Resize handles */}
-      <div 
-        className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-gray-400 hover:bg-gray-600 opacity-50 hover:opacity-100 transition-opacity"
-        onMouseDown={(e) => handleResize(e, 'se')}
-        title="Resize diagonally"
-      />
-      <div 
-        className="absolute bottom-0 left-2 right-2 h-1 cursor-s-resize bg-gray-400 hover:bg-gray-600 opacity-50 hover:opacity-100 transition-opacity"
-        onMouseDown={(e) => handleResize(e, 's')}
-        title="Resize height"
-      />
-      <div 
-        className="absolute top-2 bottom-2 right-0 w-1 cursor-e-resize bg-gray-400 hover:bg-gray-600 opacity-50 hover:opacity-100 transition-opacity"
-        onMouseDown={(e) => handleResize(e, 'e')}
-        title="Resize width"
-      />
+      {/* Resize handles - only show when hovering over the dashboard */}
+      <div className="absolute inset-0 pointer-events-none group-hover:block">
+        <div 
+          className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize opacity-0 hover:opacity-100 transition-opacity duration-200 group pointer-events-auto"
+          onMouseDown={(e) => handleResize(e, 'se')}
+          title="Resize diagonally"
+        >
+          <div className="w-3 h-3 bg-blue-500 rounded-tl-lg shadow-lg group-hover:bg-blue-600 transition-colors border border-blue-600" />
+        </div>
+        <div 
+          className="absolute bottom-0 left-4 right-4 h-2 cursor-s-resize opacity-0 hover:opacity-100 transition-opacity duration-200 group flex items-center justify-center pointer-events-auto"
+          onMouseDown={(e) => handleResize(e, 's')}
+          title="Resize height"
+        >
+          <div className="w-12 h-1 bg-blue-500 rounded-full shadow-lg group-hover:bg-blue-600 transition-colors border border-blue-600" />
+        </div>
+        <div 
+          className="absolute top-4 bottom-4 right-0 w-2 cursor-e-resize opacity-0 hover:opacity-100 transition-opacity duration-200 group flex items-center justify-center pointer-events-auto"
+          onMouseDown={(e) => handleResize(e, 'e')}
+          title="Resize width"
+        >
+          <div className="w-1 h-12 bg-blue-500 rounded-full shadow-lg group-hover:bg-blue-600 transition-colors border border-blue-600" />
+        </div>
+      </div>
     </div>
   );
 }

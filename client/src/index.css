@@ -229,6 +229,16 @@
   cursor: nw-resize !important;
 }
 
+/* Smooth resize animation */
+.resize-smooth {
+  will-change: width, height;
+  transition: none;
+}
+
+.resize-smooth:not(.resizing) {
+  transition: width 0.1s ease-out, height 0.1s ease-out;
+}
+
 /* Floating AI Assistant styles */
 .floating-ai-assistant {
   backdrop-filter: blur(10px);
