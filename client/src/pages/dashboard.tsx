@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -47,38 +47,7 @@ export default function Dashboard() {
   const [rowHeight, setRowHeight] = useState(60);
   const [analyticsManagerOpen, setAnalyticsManagerOpen] = useState(false);
   const isMobile = useIsMobile();
-  const [customWidgets, setCustomWidgets] = useState<AnalyticsWidget[]>([
-    {
-      id: "sample-1",
-      title: "Job Status Distribution",
-      type: "chart",
-      data: {},
-      visible: true,
-      position: { x: 20, y: 20 },
-      size: { width: 400, height: 300 },
-      config: { chartType: "pie", field: "status" }
-    },
-    {
-      id: "sample-2", 
-      title: "Resource Efficiency",
-      type: "progress",
-      data: {},
-      visible: true,
-      position: { x: 450, y: 20 },
-      size: { width: 300, height: 200 },
-      config: { target: 85, current: 78 }
-    },
-    {
-      id: "sample-3",
-      title: "Recent Operations",
-      type: "table",
-      data: {},
-      visible: true,
-      position: { x: 20, y: 350 },
-      size: { width: 500, height: 300 },
-      config: { limit: 5 }
-    }
-  ]);
+  const [customWidgets, setCustomWidgets] = useState<AnalyticsWidget[]>([]);
   const showCustomWidgets = true;
   const { toast } = useToast();
 
@@ -102,6 +71,24 @@ export default function Dashboard() {
     queryKey: ["/api/metrics"],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
+
+  // Load default dashboard configuration
+  const { data: dashboardConfigs = [] } = useQuery({
+    queryKey: ["/api/dashboard-configs"],
+  });
+
+  // Load the default dashboard's widgets
+  const { data: defaultDashboard } = useQuery({
+    queryKey: ["/api/dashboard-configs/4"], // Load productivity dashboard
+    enabled: true,
+  });
+
+  // Update custom widgets when dashboard configuration loads
+  useEffect(() => {
+    if (defaultDashboard?.configuration?.customWidgets) {
+      setCustomWidgets(defaultDashboard.configuration.customWidgets);
+    }
+  }, [defaultDashboard]);
 
   const aiMutation = useMutation({
     mutationFn: async (prompt: string) => {
