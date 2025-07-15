@@ -431,7 +431,13 @@ export default function EnhancedDashboardManager({
   // Mutations
   const createDashboardMutation = useMutation({
     mutationFn: async (dashboardData: any) => {
+      console.log("Creating dashboard with data:", dashboardData);
       const response = await apiRequest("POST", "/api/dashboard-configs", dashboardData);
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error("Dashboard creation failed:", response.status, errorData);
+        throw new Error(`Dashboard creation failed: ${response.status} ${errorData}`);
+      }
       return await response.json();
     },
     onSuccess: (data) => {
@@ -451,9 +457,10 @@ export default function EnhancedDashboardManager({
       setNewDashboard({ name: "", description: "" });
     },
     onError: (error) => {
+      console.error("Dashboard creation error:", error);
       toast({
         title: "Error",
-        description: "Failed to create dashboard",
+        description: `Failed to create dashboard: ${error.message}`,
         variant: "destructive",
       });
     },
