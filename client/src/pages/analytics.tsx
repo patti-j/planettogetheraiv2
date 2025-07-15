@@ -54,9 +54,6 @@ export default function Analytics() {
       return response.json();
     },
     onSuccess: (data) => {
-      console.log("Dashboard loaded:", data);
-      console.log("Configuration:", data.configuration);
-      
       // Ensure configuration has the expected structure
       if (!data.configuration) {
         data.configuration = { standardWidgets: [], customWidgets: [] };
@@ -67,10 +64,6 @@ export default function Analytics() {
       if (!data.configuration.customWidgets) {
         data.configuration.customWidgets = [];
       }
-      
-      console.log("After normalization:", data.configuration);
-      console.log("Custom widgets count:", data.configuration.customWidgets?.length || 0);
-      console.log("Standard widgets count:", data.configuration.standardWidgets?.length || 0);
       
       setCurrentDashboard(data);
       toast({
