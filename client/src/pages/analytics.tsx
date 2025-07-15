@@ -119,10 +119,10 @@ function DraggableDashboardCard({
     
     // Handle different resize directions with increased sensitivity
     if (resizeStart.direction.includes('e')) {
-      newWidth = Math.max(300, resizeStart.width + deltaX * 2); // 2x sensitivity
+      newWidth = Math.max(300, resizeStart.width + deltaX * 5); // 5x sensitivity for more responsive resizing
     }
     if (resizeStart.direction.includes('s')) {
-      newHeight = Math.max(200, resizeStart.height + deltaY * 2); // 2x sensitivity
+      newHeight = Math.max(200, resizeStart.height + deltaY * 5); // 5x sensitivity for more responsive resizing
     }
     
     // console.log('Resizing:', { newWidth, newHeight, deltaX, deltaY });
