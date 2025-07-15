@@ -151,7 +151,7 @@ export default function Sidebar() {
         </h1>
       </div>
       
-      <nav className="flex-1 p-3 md:p-4 space-y-1 md:space-y-2">
+      <nav className="flex-1 p-3 md:p-4 space-y-1 md:space-y-2 overflow-y-auto">
         {navigationItems.map((item) => (
           <Tooltip key={item.href}>
             <TooltipTrigger asChild>
@@ -180,7 +180,7 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="p-3 md:p-4 border-t border-gray-200 mt-auto">
+      <div className="p-3 md:p-4 border-t border-gray-200 flex-shrink-0">
         <h3 className="text-xs md:text-sm font-medium text-gray-500 mb-3">Quick Actions</h3>
         <div className="space-y-2">
           <Tooltip>
