@@ -717,6 +717,10 @@ The application uses a modern full-stack architecture with strong typing through
 - Added quick actions for immediate access to key features during onboarding
 - Integrated mark-as-complete functionality with progress persistence across sessions
 - New users are automatically guided through data upload, feature discovery, and system familiarization
+- Added selective display logic: automatic for first-time users, manual access for returning users
+- Implemented localStorage tracking to show onboarding only once automatically
+- Added "Help & Guide" button in sidebar for returning users to access onboarding wizard
+- Different welcome messages for new vs returning users with appropriate context
 
 ✓ **AI-First Button Ordering Enhancement (July 14, 2025)**:
 - Reordered AI and New buttons on both reports and analytics pages to emphasize AI-first approach

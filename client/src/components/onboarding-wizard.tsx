@@ -352,15 +352,36 @@ export default function OnboardingWizard() {
   const totalSteps = onboardingSteps.filter(step => !step.optional).length;
   const progress = (completedSteps / totalSteps) * 100;
 
-  // Check if user should see onboarding
-  const shouldShowOnboarding = jobs.length === 0 && resources.length === 0 && operations.length === 0;
+  // Check if user is new (no existing data)
+  const isNewUser = jobs.length === 0 && resources.length === 0 && operations.length === 0;
+  
+  // Check if user has seen onboarding before
+  const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding') === 'true';
 
-  // Auto-open for new users
+  // Auto-open for new users who haven't seen onboarding
   useEffect(() => {
-    if (shouldShowOnboarding) {
+    if (isNewUser && !hasSeenOnboarding) {
       setIsOpen(true);
     }
-  }, [shouldShowOnboarding]);
+  }, [isNewUser, hasSeenOnboarding]);
+
+  // Listen for custom event to open onboarding
+  useEffect(() => {
+    const handleOpenOnboarding = () => {
+      setIsOpen(true);
+    };
+
+    window.addEventListener('openOnboarding', handleOpenOnboarding);
+    return () => window.removeEventListener('openOnboarding', handleOpenOnboarding);
+  }, []);
+
+  // Mark onboarding as seen when user closes it
+  const handleClose = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      localStorage.setItem('hasSeenOnboarding', 'true');
+    }
+  };
 
   // Mark step as completed
   const markStepCompleted = useMutation({
@@ -454,7 +475,7 @@ export default function OnboardingWizard() {
           className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
         >
           <Book className="w-4 h-4 mr-2" />
-          Getting Started
+          {isNewUser ? "Getting Started" : "Help & Guide"}
         </Button>
       </div>
     );
@@ -462,30 +483,42 @@ export default function OnboardingWizard() {
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-blue-600" />
-              Welcome to PlanetTogether
+              {isNewUser ? "Welcome to PlanetTogether" : "PlanetTogether Help & Guide"}
             </DialogTitle>
           </DialogHeader>
           
           <div className="space-y-6">
-            {/* Progress Overview */}
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-lg">Your Progress</h3>
-                <Badge variant="outline" className="text-blue-600">
-                  {completedSteps} of {totalSteps} completed
-                </Badge>
+            {/* Progress Overview - Only show for new users */}
+            {isNewUser && (
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-lg">Your Progress</h3>
+                  <Badge variant="outline" className="text-blue-600">
+                    {completedSteps} of {totalSteps} completed
+                  </Badge>
+                </div>
+                <Progress value={progress} className="h-2 mb-2" />
+                <p className="text-sm text-gray-600">
+                  {progress === 100 ? "Congratulations! You've completed the essential setup." : 
+                   `${Math.round(progress)}% complete - Keep going!`}
+                </p>
               </div>
-              <Progress value={progress} className="h-2 mb-2" />
-              <p className="text-sm text-gray-600">
-                {progress === 100 ? "Congratulations! You've completed the essential setup." : 
-                 `${Math.round(progress)}% complete - Keep going!`}
-              </p>
-            </div>
+            )}
+
+            {/* Welcome message for returning users */}
+            {!isNewUser && (
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-lg mb-2">Welcome back!</h3>
+                <p className="text-sm text-gray-600">
+                  Use this guide to review features, access tutorials, or explore advanced capabilities.
+                </p>
+              </div>
+            )}
 
             {/* Category Tabs */}
             <Tabs value={activeCategory} onValueChange={setActiveCategory}>

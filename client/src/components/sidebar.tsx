@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare } from "lucide-react";
+import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, Book } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -229,6 +229,25 @@ export default function Sidebar() {
             </TooltipTrigger>
             <TooltipContent side="right">
               <p>Configure AI-powered quick actions</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  const event = new CustomEvent('openOnboarding');
+                  window.dispatchEvent(event);
+                }}
+                className="w-full justify-start text-xs md:text-sm"
+              >
+                <Book className="w-3 h-3 md:w-4 md:h-4 mr-2" />
+                Help & Guide
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>Access help, tutorials, and onboarding guide</p>
             </TooltipContent>
           </Tooltip>
         </div>
