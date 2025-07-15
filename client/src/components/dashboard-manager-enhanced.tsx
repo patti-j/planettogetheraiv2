@@ -288,12 +288,18 @@ export default function EnhancedDashboardManager({
     onSuccess: (data) => {
       toast({
         title: "Success",
-        description: "Dashboard created successfully",
+        description: "Dashboard created successfully. You can now add widgets.",
       });
       onDashboardCreate(data);
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
+      
+      // Switch to edit mode for the newly created dashboard
+      setEditingDashboard(data);
+      setWorkingWidgets([]);
+      setSelectedWidgetId(null);
+      setActiveTab("editor");
+      
       setNewDashboard({ name: "", description: "" });
-      setActiveTab("browse");
     },
     onError: (error) => {
       toast({
@@ -618,8 +624,8 @@ export default function EnhancedDashboardManager({
                   <div className="space-y-6">
                     <SimpleDragTest />
                     
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                      <div className="lg:col-span-3">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                      <div className="lg:col-span-2">
                         <div className="mb-4">
                           <h4 className="font-medium mb-2">Canvas</h4>
                           <p className="text-sm text-gray-600">Drag widgets from the library to the canvas below</p>
@@ -649,7 +655,7 @@ export default function EnhancedDashboardManager({
                       <div className="space-y-4">
                         <h4 className="font-medium">Widget Library</h4>
                         <p className="text-sm text-gray-600">Drag these widgets to the canvas</p>
-                        <ScrollArea className="h-64">
+                        <ScrollArea className="h-80">
                           <div className="space-y-2">
                             {widgetTemplates.map((template) => (
                               <DraggableTemplate key={template.id} template={template} />
