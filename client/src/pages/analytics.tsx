@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BarChart3, TrendingUp, Clock, AlertTriangle, CheckCircle, Sparkles, Settings, Plus, Maximize2, Minimize2 } from "lucide-react";
+import { BarChart3, TrendingUp, Clock, AlertTriangle, CheckCircle, Sparkles, Settings, Plus, Maximize2, Minimize2, Eye, EyeOff, X, Move } from "lucide-react";
 
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
 import AnalyticsWidget from "@/components/analytics-widget";
@@ -25,6 +25,7 @@ interface AnalyticsWidget {
   position: { x: number; y: number };
   size: { width: number; height: number };
   config: any;
+  isStandard?: boolean;
 }
 
 export default function Analytics() {
@@ -33,6 +34,98 @@ export default function Analytics() {
   const [layoutMode] = useState<"grid" | "free">("free");
   const [showCustomWidgets] = useState(true);
   const [isMaximized, setIsMaximized] = useState(false);
+  
+  // Standard widgets state
+  const [standardWidgets, setStandardWidgets] = useState<AnalyticsWidget[]>([
+    {
+      id: "active-jobs",
+      title: "Active Jobs",
+      type: "metric",
+      data: { icon: "BarChart3", description: "Currently in production" },
+      visible: true,
+      position: { x: 0, y: 0 },
+      size: { width: 300, height: 150 },
+      config: {},
+      isStandard: true
+    },
+    {
+      id: "resource-utilization",
+      title: "Resource Utilization",
+      type: "metric",
+      data: { icon: "TrendingUp", description: "Operations assigned to resources" },
+      visible: true,
+      position: { x: 320, y: 0 },
+      size: { width: 300, height: 150 },
+      config: {},
+      isStandard: true
+    },
+    {
+      id: "overdue-jobs",
+      title: "Overdue Jobs",
+      type: "metric",
+      data: { icon: "AlertTriangle", description: "Past due date" },
+      visible: true,
+      position: { x: 640, y: 0 },
+      size: { width: 300, height: 150 },
+      config: {},
+      isStandard: true
+    },
+    {
+      id: "total-operations",
+      title: "Total Operations",
+      type: "metric",
+      data: { icon: "CheckCircle", description: "All operations" },
+      visible: true,
+      position: { x: 960, y: 0 },
+      size: { width: 300, height: 150 },
+      config: {},
+      isStandard: true
+    },
+    {
+      id: "jobs-by-status",
+      title: "Jobs by Status",
+      type: "table",
+      data: {},
+      visible: true,
+      position: { x: 0, y: 180 },
+      size: { width: 400, height: 300 },
+      config: {},
+      isStandard: true
+    },
+    {
+      id: "operations-by-status",
+      title: "Operations by Status",
+      type: "table",
+      data: {},
+      visible: true,
+      position: { x: 420, y: 180 },
+      size: { width: 400, height: 300 },
+      config: {},
+      isStandard: true
+    },
+    {
+      id: "resources-by-status",
+      title: "Resources by Status",
+      type: "table",
+      data: {},
+      visible: true,
+      position: { x: 840, y: 180 },
+      size: { width: 400, height: 300 },
+      config: {},
+      isStandard: true
+    },
+    {
+      id: "overdue-jobs-list",
+      title: "Overdue Jobs List",
+      type: "table",
+      data: {},
+      visible: true,
+      position: { x: 0, y: 500 },
+      size: { width: 800, height: 300 },
+      config: {},
+      isStandard: true
+    }
+  ]);
 
   const { data: metrics } = useQuery<Metrics>({
     queryKey: ["/api/metrics"],
@@ -100,13 +193,27 @@ export default function Analytics() {
   };
 
   const handleWidgetToggle = (id: string) => {
-    setCustomWidgets(prev => prev.map(widget => 
-      widget.id === id ? { ...widget, visible: !widget.visible } : widget
-    ));
+    const standardWidget = standardWidgets.find(w => w.id === id);
+    if (standardWidget) {
+      setStandardWidgets(prev => prev.map(widget => 
+        widget.id === id ? { ...widget, visible: !widget.visible } : widget
+      ));
+    } else {
+      setCustomWidgets(prev => prev.map(widget => 
+        widget.id === id ? { ...widget, visible: !widget.visible } : widget
+      ));
+    }
   };
 
   const handleWidgetRemove = (id: string) => {
-    setCustomWidgets(prev => prev.filter(widget => widget.id !== id));
+    const standardWidget = standardWidgets.find(w => w.id === id);
+    if (standardWidget) {
+      setStandardWidgets(prev => prev.map(widget => 
+        widget.id === id ? { ...widget, visible: false } : widget
+      ));
+    } else {
+      setCustomWidgets(prev => prev.filter(widget => widget.id !== id));
+    }
   };
 
   const handleWidgetEdit = (id: string) => {
@@ -133,15 +240,170 @@ export default function Analytics() {
   };
 
   const handleWidgetResize = (id: string, size: { width: number; height: number }) => {
-    setCustomWidgets(prev => prev.map(widget => 
-      widget.id === id ? { ...widget, size } : widget
-    ));
+    const standardWidget = standardWidgets.find(w => w.id === id);
+    if (standardWidget) {
+      setStandardWidgets(prev => prev.map(widget => 
+        widget.id === id ? { ...widget, size } : widget
+      ));
+    } else {
+      setCustomWidgets(prev => prev.map(widget => 
+        widget.id === id ? { ...widget, size } : widget
+      ));
+    }
   };
 
   const handleWidgetPositionChange = (id: string, position: { x: number; y: number }) => {
-    setCustomWidgets(prev => prev.map(widget => 
-      widget.id === id ? { ...widget, position } : widget
-    ));
+    const standardWidget = standardWidgets.find(w => w.id === id);
+    if (standardWidget) {
+      setStandardWidgets(prev => prev.map(widget => 
+        widget.id === id ? { ...widget, position } : widget
+      ));
+    } else {
+      setCustomWidgets(prev => prev.map(widget => 
+        widget.id === id ? { ...widget, position } : widget
+      ));
+    }
+  };
+
+  // Component to render standard widgets as draggable items
+  const StandardWidget = ({ widget, onToggle, onRemove, onMove, onResize }: {
+    widget: AnalyticsWidget;
+    onToggle: (id: string) => void;
+    onRemove: (id: string) => void;
+    onMove: (id: string, position: { x: number; y: number }) => void;
+    onResize: (id: string, size: { width: number; height: number }) => void;
+  }) => {
+    const getIconComponent = (iconName: string) => {
+      switch (iconName) {
+        case "BarChart3": return <BarChart3 className="h-4 w-4 text-muted-foreground" />;
+        case "TrendingUp": return <TrendingUp className="h-4 w-4 text-muted-foreground" />;
+        case "AlertTriangle": return <AlertTriangle className="h-4 w-4 text-muted-foreground" />;
+        case "CheckCircle": return <CheckCircle className="h-4 w-4 text-muted-foreground" />;
+        default: return <BarChart3 className="h-4 w-4 text-muted-foreground" />;
+      }
+    };
+
+    const getMetricValue = (widgetId: string) => {
+      switch (widgetId) {
+        case "active-jobs": return metrics?.activeJobs || 0;
+        case "resource-utilization": return `${resourceUtilization}%`;
+        case "overdue-jobs": return overdueJobs.length;
+        case "total-operations": return operations.length;
+        default: return 0;
+      }
+    };
+
+    const getTableData = (widgetId: string) => {
+      switch (widgetId) {
+        case "jobs-by-status": return jobsByStatus;
+        case "operations-by-status": return operationsByStatus;
+        case "resources-by-status": return resourcesByStatus;
+        case "overdue-jobs-list": return overdueJobs;
+        default: return {};
+      }
+    };
+
+    if (!widget.visible) return null;
+
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          left: widget.position.x,
+          top: widget.position.y,
+          width: widget.size.width,
+          height: widget.size.height,
+          cursor: 'move'
+        }}
+        onMouseDown={(e) => {
+          const startX = e.clientX - widget.position.x;
+          const startY = e.clientY - widget.position.y;
+          
+          const handleMouseMove = (e: MouseEvent) => {
+            onMove(widget.id, {
+              x: e.clientX - startX,
+              y: e.clientY - startY
+            });
+          };
+          
+          const handleMouseUp = () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+          };
+          
+          document.addEventListener('mousemove', handleMouseMove);
+          document.addEventListener('mouseup', handleMouseUp);
+        }}
+      >
+        <Card className="h-full">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Move className="h-4 w-4 text-gray-400" />
+              {widget.title}
+            </CardTitle>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggle(widget.id);
+                }}
+                className="h-6 w-6 p-0"
+              >
+                {widget.visible ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemove(widget.id);
+                }}
+                className="h-6 w-6 p-0"
+              >
+                <X className="h-3 w-3" />
+              </Button>
+              {widget.type === "metric" && widget.data.icon && getIconComponent(widget.data.icon)}
+            </div>
+          </CardHeader>
+          <CardContent className="overflow-y-auto">
+            {widget.type === "metric" ? (
+              <div>
+                <div className="text-2xl font-bold">{getMetricValue(widget.id)}</div>
+                <p className="text-xs text-muted-foreground">
+                  {widget.data.description}
+                </p>
+              </div>
+            ) : widget.type === "table" ? (
+              <div className="space-y-2">
+                {widget.id === "overdue-jobs-list" ? (
+                  overdueJobs.length > 0 ? (
+                    overdueJobs.map((job) => (
+                      <div key={job.id} className="p-2 bg-red-50 rounded">
+                        <p className="font-medium text-red-900 text-sm">{job.name}</p>
+                        <p className="text-xs text-red-700">Due: {new Date(job.dueDate).toLocaleDateString()}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-500">No overdue jobs</p>
+                  )
+                ) : (
+                  Object.entries(getTableData(widget.id)).map(([key, value]) => (
+                    <div key={key} className="flex items-center justify-between">
+                      <Badge variant="secondary" className="capitalize text-xs">
+                        {key}
+                      </Badge>
+                      <span className="text-sm font-medium">{value}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+      </div>
+    );
   };
 
   const PageContent = () => (
@@ -181,7 +443,41 @@ export default function Analytics() {
         </header>
 
         <main className="flex-1 overflow-y-auto p-8">
-          {/* Key Metrics */}
+          {/* Analytics Dashboard - Free Form Layout */}
+          <div className="relative" style={{ minHeight: '1000px' }}>
+            {/* Standard Widgets */}
+            {standardWidgets.map((widget) => (
+              <StandardWidget
+                key={widget.id}
+                widget={widget}
+                onToggle={handleWidgetToggle}
+                onRemove={handleWidgetRemove}
+                onMove={handleWidgetPositionChange}
+                onResize={handleWidgetResize}
+              />
+            ))}
+
+            {/* Custom Analytics Widgets */}
+            {showCustomWidgets && customWidgets.map((widget) => (
+              <AnalyticsWidget
+                key={widget.id}
+                widget={widget}
+                onToggle={handleWidgetToggle}
+                onRemove={handleWidgetRemove}
+                onEdit={handleWidgetEdit}
+                onPositionChange={handleWidgetPositionChange}
+                onResize={handleWidgetResize}
+                jobs={jobs}
+                operations={operations}
+                resources={resources}
+                metrics={metrics}
+                layoutMode={layoutMode}
+              />
+            ))}
+          </div>
+
+          {/* Legacy Grid Layout - Hidden */}
+          <div className="hidden">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -339,30 +635,7 @@ export default function Analytics() {
               </CardContent>
             </Card>
           )}
-          {/* Custom AI-Generated Widgets */}
-          {showCustomWidgets && customWidgets.length > 0 && (
-            <div className="mt-8">
-              <h2 className="text-lg font-semibold mb-4">Custom Analytics Widgets</h2>
-              <div className={`${layoutMode === "grid" ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3" : "relative min-h-[600px] border-2 border-dashed border-gray-300 rounded-lg"}`}>
-                {customWidgets.map((widget) => (
-                  <AnalyticsWidget
-                    key={widget.id}
-                    widget={widget}
-                    onToggle={handleWidgetToggle}
-                    onRemove={handleWidgetRemove}
-                    onEdit={handleWidgetEdit}
-                    onResize={handleWidgetResize}
-                    onPositionChange={handleWidgetPositionChange}
-                    jobs={jobs}
-                    operations={operations}
-                    resources={resources}
-                    metrics={metrics}
-                    layoutMode={layoutMode}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+          </div>
         </main>
     </div>
   );
