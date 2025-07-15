@@ -70,12 +70,16 @@ function DraggableDashboardCard({
   size,
   onResize
 }: DraggableDashboardCardProps) {
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0, direction: '' });
+  
   const [{ isDragging }, drag] = useDrag({
     type: 'dashboard',
     item: { index },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
+    canDrag: !isResizing,
   });
 
   const [, drop] = useDrop({
@@ -88,12 +92,10 @@ function DraggableDashboardCard({
     },
   });
 
-  const [isResizing, setIsResizing] = useState(false);
-  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0, direction: '' });
-
   const handleResizeStart = (e: React.MouseEvent, direction: string) => {
     e.preventDefault();
     e.stopPropagation();
+    console.log('Resize started:', direction, 'size:', size);
     setIsResizing(true);
     setResizeStart({
       x: e.clientX,
@@ -125,6 +127,7 @@ function DraggableDashboardCard({
   };
 
   const handleResizeEnd = () => {
+    console.log('Resize ended');
     setIsResizing(false);
   };
 
@@ -141,14 +144,18 @@ function DraggableDashboardCard({
 
   return (
     <Card 
-      ref={(node) => drag(drop(node))}
       className={`transition-all duration-200 ${isDragging ? 'opacity-50 scale-105' : ''} relative`}
       style={{ width: size.width, height: size.height }}
     >
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <GripVertical className="h-4 w-4 text-gray-400 cursor-move" />
+            <div 
+              ref={(node) => drag(drop(node))}
+              className="cursor-move"
+            >
+              <GripVertical className="h-4 w-4 text-gray-400" />
+            </div>
             <div>
               <div className="flex items-center gap-2">
                 <span>{dashboard.name}</span>
@@ -205,16 +212,19 @@ function DraggableDashboardCard({
       
       {/* Resize handles */}
       <div 
-        className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-gray-300 hover:bg-gray-400 rounded-tl-md opacity-60 hover:opacity-100 transition-opacity"
+        className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-blue-500 hover:bg-blue-600 rounded-tl-md opacity-80 hover:opacity-100 transition-opacity z-10"
         onMouseDown={(e) => handleResizeStart(e, 'se')}
+        title="Resize diagonally"
       />
       <div 
-        className="absolute bottom-0 right-2 left-2 h-1 cursor-s-resize bg-gray-300 hover:bg-gray-400 opacity-60 hover:opacity-100 transition-opacity"
+        className="absolute bottom-0 right-2 left-2 h-2 cursor-s-resize bg-blue-500 hover:bg-blue-600 opacity-80 hover:opacity-100 transition-opacity z-10"
         onMouseDown={(e) => handleResizeStart(e, 's')}
+        title="Resize height"
       />
       <div 
-        className="absolute top-2 bottom-2 right-0 w-1 cursor-e-resize bg-gray-300 hover:bg-gray-400 opacity-60 hover:opacity-100 transition-opacity"
+        className="absolute top-2 bottom-2 right-0 w-2 cursor-e-resize bg-blue-500 hover:bg-blue-600 opacity-80 hover:opacity-100 transition-opacity z-10"
         onMouseDown={(e) => handleResizeStart(e, 'e')}
+        title="Resize width"
       />
     </Card>
   );
