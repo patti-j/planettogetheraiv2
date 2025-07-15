@@ -242,7 +242,7 @@ export default function Analytics() {
                 </CardHeader>
                 <CardContent>
                   {dashboard.configuration?.customWidgets?.length > 0 ? (
-                    <div className="relative min-h-[400px] border-2 border-dashed border-gray-300 rounded-lg p-4">
+                    <div className="relative min-h-[400px] bg-gray-50 rounded-lg p-4">
                       {dashboard.configuration.customWidgets.map((widget: AnalyticsWidget) => (
                         <AnalyticsWidget
                           key={widget.id}
