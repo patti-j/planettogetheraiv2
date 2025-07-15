@@ -75,7 +75,7 @@ function DraggableDashboardCard({
   const [currentSize, setCurrentSize] = useState(size);
   const [resizeId, setResizeId] = useState(0);
   
-  console.log('DraggableDashboardCard render:', dashboard.id, 'prop size:', size, 'currentSize:', currentSize);
+  // console.log('DraggableDashboardCard render:', dashboard.id, 'prop size:', size, 'currentSize:', currentSize);
   
   // Update current size when prop changes
   useEffect(() => {
@@ -104,7 +104,7 @@ function DraggableDashboardCard({
   const handleResizeStart = (e: React.MouseEvent, direction: string) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('Resize started:', direction, 'size:', size);
+    // console.log('Resize started:', direction, 'size:', size);
     setIsResizing(true);
     setResizeStart({
       x: e.clientX,
@@ -124,19 +124,19 @@ function DraggableDashboardCard({
     let newWidth = resizeStart.width;
     let newHeight = resizeStart.height;
     
-    // Handle different resize directions
+    // Handle different resize directions with increased sensitivity
     if (resizeStart.direction.includes('e')) {
-      newWidth = Math.max(300, resizeStart.width + deltaX);
+      newWidth = Math.max(300, resizeStart.width + deltaX * 2); // 2x sensitivity
     }
     if (resizeStart.direction.includes('s')) {
-      newHeight = Math.max(200, resizeStart.height + deltaY);
+      newHeight = Math.max(200, resizeStart.height + deltaY * 2); // 2x sensitivity
     }
     
-    console.log('Resizing:', { newWidth, newHeight, deltaX, deltaY });
+    // console.log('Resizing:', { newWidth, newHeight, deltaX, deltaY });
     
     // Update current size immediately for visual feedback
     const newSize = { width: newWidth, height: newHeight };
-    console.log('Setting currentSize to:', newSize);
+    // console.log('Setting currentSize to:', newSize);
     setCurrentSize(newSize);
     setResizeId(prev => prev + 1); // Force re-render
     
@@ -174,15 +174,14 @@ function DraggableDashboardCard({
 
   return (
     <div
-      className={`${isDragging ? 'opacity-50 scale-105' : ''} relative border-2 border-red-500`}
+      className={`${isDragging ? 'opacity-50 scale-105' : ''} relative`}
       style={{ 
         width: `${currentSize.width}px`, 
         height: `${currentSize.height}px`,
         minWidth: `${currentSize.width}px`,
         minHeight: `${currentSize.height}px`,
         maxWidth: `${currentSize.width}px`,
-        maxHeight: `${currentSize.height}px`,
-        backgroundColor: 'rgba(255, 0, 0, 0.1)' // Temporary visual indicator
+        maxHeight: `${currentSize.height}px`
       }}
     >
       <Card className="w-full h-full"
