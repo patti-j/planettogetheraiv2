@@ -187,7 +187,7 @@ const DraggableWidget = ({ widget, isSelected, onSelect, onMove }: {
   onSelect: () => void;
   onMove: (position: { x: number; y: number }) => void;
 }) => {
-  const [{ isDragging }, drag] = useDrag({
+  const [{ isDragging }, drag, preview] = useDrag({
     type: "widget",
     item: { id: widget.id, type: "widget" },
     collect: (monitor) => ({
@@ -195,12 +195,17 @@ const DraggableWidget = ({ widget, isSelected, onSelect, onMove }: {
     }),
   });
 
+  const combinedRef = useCallback((node: HTMLDivElement) => {
+    drag(node);
+    preview(node);
+  }, [drag, preview]);
+
   return (
     <div
-      ref={drag}
+      ref={combinedRef}
       className={`absolute border-2 rounded-lg bg-white shadow-sm cursor-move transition-all ${
         isSelected ? "border-blue-500 shadow-lg" : "border-gray-200 hover:border-gray-300"
-      } ${isDragging ? "opacity-50" : ""}`}
+      } ${isDragging ? "opacity-30" : ""}`}
       style={{
         left: widget.position.x,
         top: widget.position.y,
