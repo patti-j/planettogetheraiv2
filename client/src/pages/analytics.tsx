@@ -169,7 +169,25 @@ export default function Analytics() {
   // Initialize dashboard order when dashboards are loaded
   useEffect(() => {
     if (dashboards.length > 0 && dashboardOrder.length === 0) {
-      setDashboardOrder(dashboards.map(d => d.id));
+      // Try to load saved order from localStorage first
+      const savedOrder = localStorage.getItem('dashboardOrder');
+      if (savedOrder) {
+        try {
+          const parsedOrder = JSON.parse(savedOrder);
+          // Filter to only include dashboards that still exist
+          const validOrder = parsedOrder.filter((id: number) => 
+            dashboards.some(d => d.id === id)
+          );
+          // Add any new dashboards that aren't in the saved order
+          const newDashboards = dashboards.filter(d => !validOrder.includes(d.id));
+          setDashboardOrder([...validOrder, ...newDashboards.map(d => d.id)]);
+        } catch (error) {
+          // If parsing fails, use default order
+          setDashboardOrder(dashboards.map(d => d.id));
+        }
+      } else {
+        setDashboardOrder(dashboards.map(d => d.id));
+      }
     }
   }, [dashboards, dashboardOrder.length]);
 
@@ -179,6 +197,16 @@ export default function Analytics() {
     const [removed] = newOrder.splice(dragIndex, 1);
     newOrder.splice(dropIndex, 0, removed);
     setDashboardOrder(newOrder);
+    
+    // Store the new order in localStorage for persistence
+    localStorage.setItem('dashboardOrder', JSON.stringify(newOrder));
+    
+    // Show success feedback
+    toast({
+      title: "Dashboard Order Saved",
+      description: "Dashboard arrangement has been updated",
+      duration: 2000,
+    });
   };
 
   // Get ordered visible dashboards
