@@ -183,9 +183,9 @@ function DraggableDashboardCard({
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 overflow-hidden p-4">
+        <CardContent className="flex-1 p-4">
           {dashboard.configuration?.customWidgets?.length > 0 ? (
-            <div className="relative h-full bg-white overflow-auto" style={{ minHeight: '400px' }}>
+            <div className="relative h-full bg-white overflow-hidden border border-gray-100 rounded-lg" style={{ minHeight: '400px' }}>
               {dashboard.configuration.customWidgets.map((widget: AnalyticsWidget) => (
                 <AnalyticsWidget
                   key={widget.id}
@@ -199,7 +199,7 @@ function DraggableDashboardCard({
                   readOnly={true}
                 />
               ))}
-              <div className="absolute top-2 right-2 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow-sm">
+              <div className="absolute top-2 right-2 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow-sm z-10">
                 {isLivePaused ? "Live View • Paused" : "Live View • Updates every 30s"}
               </div>
             </div>
