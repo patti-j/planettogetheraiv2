@@ -15,7 +15,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Settings, Star, Trash2, Edit3, Eye, Save, Move, Palette, BarChart3, TrendingUp, AlertTriangle, CheckCircle, Clock, Target, PieChart, Activity, Zap, Users, Package, Wrench, ArrowUp, ArrowDown, MoreHorizontal, Grid3x3, Maximize2, Minimize2, RotateCcw } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useDrag, useDrop } from "react-dnd";
-import SimpleDragTest from "./simple-drag-test";
 
 interface AnalyticsWidget {
   id: string;
@@ -702,10 +701,7 @@ export default function EnhancedDashboardManager({
                     </div>
                   </div>
 
-                  <div className="space-y-6">
-                    <SimpleDragTest />
-                    
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                       <div className="lg:col-span-2">
                         <div className="mb-4">
                           <h4 className="font-medium mb-2">Canvas</h4>
@@ -746,7 +742,6 @@ export default function EnhancedDashboardManager({
                         </ScrollArea>
                       </div>
                     </div>
-                  </div>
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-64 text-gray-500">
