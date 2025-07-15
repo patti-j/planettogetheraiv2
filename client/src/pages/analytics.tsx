@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Settings, Plus, Maximize2, Minimize2, FolderOpen, Sparkles, Eye, EyeOff } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Settings, Plus, Maximize2, Minimize2, FolderOpen, Sparkles, Eye, EyeOff, ChevronDown } from "lucide-react";
 
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
 import EnhancedDashboardManager from "@/components/dashboard-manager-enhanced";
@@ -137,41 +138,6 @@ export default function Analytics() {
   const PageContent = () => (
     <div className="h-full flex flex-col">
       <div className="flex-1 p-6 space-y-6">
-        {/* Dashboard Selection */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <FolderOpen className="h-4 w-4" />
-              Dashboard Selection
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Select Dashboards to Display:</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                {dashboards.map((dashboard) => (
-                  <div key={dashboard.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`dashboard-${dashboard.id}`}
-                      checked={visibleDashboards.has(dashboard.id)}
-                      onCheckedChange={() => handleToggleDashboardVisibility(dashboard.id)}
-                    />
-                    <label
-                      htmlFor={`dashboard-${dashboard.id}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1"
-                    >
-                      {dashboard.name}
-                      {dashboard.isDefault && (
-                        <Badge variant="secondary" className="text-xs px-1">Default</Badge>
-                      )}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Live Dashboard Widgets */}
         {visibleDashboardConfigs.length > 0 && (
           <div className="space-y-6">
@@ -243,7 +209,7 @@ export default function Analytics() {
               <FolderOpen className="h-16 w-16 mx-auto mb-4 text-gray-300" />
               <h3 className="text-lg font-medium mb-2">No Dashboards Selected</h3>
               <p className="text-sm mb-4">
-                Select one or more dashboards from the checkboxes above to view their live widgets.
+                Select one or more dashboards from the dropdown above to view their live widgets.
               </p>
               <Button
                 onClick={() => setDashboardManagerOpen(true)}
@@ -271,6 +237,47 @@ export default function Analytics() {
             </div>
             {!isMobile && (
               <div className="flex items-center gap-3">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="flex items-center gap-2 min-w-[160px] justify-between"
+                    >
+                      <span>
+                        {visibleDashboards.size === 0 
+                          ? "Select Dashboards" 
+                          : `${visibleDashboards.size} Selected`}
+                      </span>
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-3">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Select Dashboards to Display:</Label>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {dashboards.map((dashboard) => (
+                          <div key={dashboard.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`header-dashboard-${dashboard.id}`}
+                              checked={visibleDashboards.has(dashboard.id)}
+                              onCheckedChange={() => handleToggleDashboardVisibility(dashboard.id)}
+                            />
+                            <label
+                              htmlFor={`header-dashboard-${dashboard.id}`}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1 cursor-pointer"
+                            >
+                              {dashboard.name}
+                              {dashboard.isDefault && (
+                                <Badge variant="secondary" className="text-xs px-1">Default</Badge>
+                              )}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                
                 <Button
                   variant="outline"
                   onClick={() => setDashboardManagerOpen(true)}
@@ -306,14 +313,73 @@ export default function Analytics() {
             <div className="border-b px-6 py-4">
               <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold text-gray-800">Analytics - Maximized</h1>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsMaximized(false)}
-                  className="flex items-center gap-2"
-                >
-                  <Minimize2 className="h-4 w-4" />
-                  Minimize
-                </Button>
+                <div className="flex items-center gap-3">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="flex items-center gap-2 min-w-[160px] justify-between"
+                      >
+                        <span>
+                          {visibleDashboards.size === 0 
+                            ? "Select Dashboards" 
+                            : `${visibleDashboards.size} Selected`}
+                        </span>
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 p-3">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Select Dashboards to Display:</Label>
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {dashboards.map((dashboard) => (
+                            <div key={dashboard.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`max-dashboard-${dashboard.id}`}
+                                checked={visibleDashboards.has(dashboard.id)}
+                                onCheckedChange={() => handleToggleDashboardVisibility(dashboard.id)}
+                              />
+                              <label
+                                htmlFor={`max-dashboard-${dashboard.id}`}
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1 cursor-pointer"
+                              >
+                                {dashboard.name}
+                                {dashboard.isDefault && (
+                                  <Badge variant="secondary" className="text-xs px-1">Default</Badge>
+                                )}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={() => setDashboardManagerOpen(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <Settings className="h-4 w-4" />
+                    Manage
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setAiAnalyticsOpen(true)}
+                    className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    AI Analytics
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsMaximized(false)}
+                    className="flex items-center gap-2"
+                  >
+                    <Minimize2 className="h-4 w-4" />
+                    Minimize
+                  </Button>
+                </div>
               </div>
             </div>
             <div className="flex-1 overflow-y-auto">

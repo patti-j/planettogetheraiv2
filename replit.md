@@ -835,3 +835,13 @@ The application uses a modern full-stack architecture with strong typing through
 - Enhanced dashboard display with live widget functionality for selected dashboards
 - Consolidated interface reduces vertical space usage by approximately 40%
 - All dashboard functionality preserved while improving user experience
+
+✓ **Analytics Page Header Multi-Select Dropdown & Panel Removal (July 15, 2025)**:
+- Added multi-select checkbox dropdown in header using Popover component
+- Removed entire Dashboard Selection panel to maximize space for dashboard display
+- Dropdown shows "Select Dashboards" or "X Selected" based on current selection
+- Implemented scrollable dropdown with max height for large dashboard lists
+- Added dropdown to both normal and maximized views for consistency
+- Dashboard selection now accessible from header dropdown instead of separate card
+- Maximized space usage for actual dashboard widgets and live data display
+- Updated empty state messaging to reference header dropdown instead of checkboxes
