@@ -133,12 +133,14 @@ function DraggableDashboardCard({
 
   return (
     <div
-      ref={(node) => drag(drop(node))}
-      className={`${isDragging ? 'opacity-50 scale-105' : ''} ${isOver ? 'ring-2 ring-blue-500' : ''} relative ${isResizing ? 'cursor-resizing' : 'cursor-move'} transition-all duration-200`}
+      className={`${isDragging ? 'opacity-50 scale-105' : ''} ${isOver ? 'ring-2 ring-blue-500' : ''} relative transition-all duration-200`}
       style={{ width: size.width, height: size.height }}
     >
       <Card className="border border-gray-200 shadow-sm h-full">
-        <CardHeader>
+        <CardHeader
+          ref={(node) => drag(drop(node))}
+          className="cursor-move"
+        >
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="cursor-move">
@@ -170,22 +172,31 @@ function DraggableDashboardCard({
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 overflow-hidden">
+        <CardContent className="flex-1 overflow-hidden p-4">
           {dashboard.configuration?.customWidgets?.length > 0 ? (
-            <div className="relative h-full bg-gray-50 rounded-lg p-4 overflow-hidden">
-              {dashboard.configuration.customWidgets.map((widget: AnalyticsWidget) => (
-                <AnalyticsWidget
-                  key={widget.id}
-                  widget={widget}
-                  onToggle={() => {}} // Read-only mode
-                  onRemove={() => {}} // Read-only mode
-                  onEdit={() => {}} // Read-only mode
-                  onResize={() => {}} // Read-only mode
-                  onMove={() => {}} // Read-only mode
-                  data={generateWidgetData()}
-                  readOnly={true}
-                />
-              ))}
+            <div className="relative h-full bg-gray-50 rounded-lg p-4 overflow-y-auto">
+              <div className="space-y-4">
+                {dashboard.configuration.customWidgets.map((widget: AnalyticsWidget) => (
+                  <div key={widget.id} className="bg-white rounded-lg p-4 shadow-sm">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-medium text-gray-900">{widget.title}</h3>
+                      <div className="text-xs text-gray-500">
+                        {widget.type}
+                      </div>
+                    </div>
+                    <AnalyticsWidget
+                      widget={widget}
+                      onToggle={() => {}} // Read-only mode
+                      onRemove={() => {}} // Read-only mode
+                      onEdit={() => {}} // Read-only mode
+                      onResize={() => {}} // Read-only mode
+                      onMove={() => {}} // Read-only mode
+                      data={generateWidgetData()}
+                      readOnly={true}
+                    />
+                  </div>
+                ))}
+              </div>
               <div className="absolute top-2 right-2 text-xs text-gray-500 bg-white px-2 py-1 rounded">
                 {isLivePaused ? "Live View • Paused" : "Live View • Updates every 30s"}
               </div>
@@ -267,20 +278,31 @@ export default function Analytics() {
   const handleDashboardMove = (dragIndex: number, dropIndex: number) => {
     if (dragIndex === dropIndex) return;
     
+    const visibleDashboardsArray = getOrderedVisibleDashboards();
+    const draggedDashboard = visibleDashboardsArray[dragIndex];
+    const targetDashboard = visibleDashboardsArray[dropIndex];
+    
+    if (!draggedDashboard || !targetDashboard) return;
+    
     const newOrder = [...dashboardOrder];
-    const [removed] = newOrder.splice(dragIndex, 1);
-    newOrder.splice(dropIndex, 0, removed);
-    setDashboardOrder(newOrder);
+    const draggedIndex = newOrder.indexOf(draggedDashboard.id);
+    const targetIndex = newOrder.indexOf(targetDashboard.id);
     
-    // Store the new order in localStorage for persistence
-    localStorage.setItem('dashboardOrder', JSON.stringify(newOrder));
-    
-    // Show success feedback
-    toast({
-      title: "Dashboard Order Saved",
-      description: "Dashboard arrangement has been updated",
-      duration: 2000,
-    });
+    if (draggedIndex !== -1 && targetIndex !== -1) {
+      const [removed] = newOrder.splice(draggedIndex, 1);
+      newOrder.splice(targetIndex, 0, removed);
+      setDashboardOrder(newOrder);
+      
+      // Store the new order in localStorage for persistence
+      localStorage.setItem('dashboardOrder', JSON.stringify(newOrder));
+      
+      // Show success feedback
+      toast({
+        title: "Dashboard Order Saved",
+        description: "Dashboard arrangement has been updated",
+        duration: 2000,
+      });
+    }
   };
 
 
