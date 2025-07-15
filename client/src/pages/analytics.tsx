@@ -8,7 +8,7 @@ import { BarChart3, TrendingUp, Clock, AlertTriangle, CheckCircle, Sparkles, Set
 
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
 import AnalyticsWidget from "@/components/analytics-widget";
-import DashboardManager from "@/components/dashboard-manager";
+import EnhancedDashboardManager from "@/components/dashboard-manager-enhanced";
 import type { Job, Operation, Resource } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -574,7 +574,7 @@ export default function Analytics() {
         />
         
         {/* Dashboard Manager */}
-        <DashboardManager
+        <EnhancedDashboardManager
           open={dashboardManagerOpen}
           onOpenChange={setDashboardManagerOpen}
           dashboards={dashboards}
@@ -604,7 +604,7 @@ export default function Analytics() {
       />
       
       {/* Dashboard Manager */}
-      <DashboardManager
+      <EnhancedDashboardManager
         open={dashboardManagerOpen}
         onOpenChange={setDashboardManagerOpen}
         dashboards={dashboards}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,10 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Settings, Star, Trash2, Edit3, Eye, Save } from "lucide-react";
+import { Plus, Settings, Star, Trash2, Edit3, Eye, Save, Move, Palette, BarChart3, TrendingUp, AlertTriangle, CheckCircle, Clock, Target, PieChart, Activity, Zap, Users, Package, Wrench, ArrowUp, ArrowDown, MoreHorizontal, Grid3x3, Maximize2, Minimize2, RotateCcw } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 
 interface AnalyticsWidget {
   id: string;
@@ -22,6 +26,17 @@ interface AnalyticsWidget {
   position: { x: number; y: number };
   size: { width: number; height: number };
   config: any;
+  isStandard?: boolean;
+}
+
+interface WidgetTemplate {
+  id: string;
+  title: string;
+  type: "metric" | "chart" | "table" | "progress";
+  icon: string;
+  description: string;
+  defaultConfig: any;
+  defaultData: any;
 }
 
 interface DashboardConfig {
@@ -50,6 +65,161 @@ interface DashboardManagerProps {
   customWidgets: AnalyticsWidget[];
 }
 
+// Widget templates for easy widget creation
+const widgetTemplates: WidgetTemplate[] = [
+  {
+    id: "active-jobs",
+    title: "Active Jobs",
+    type: "metric",
+    icon: "BarChart3",
+    description: "Shows number of currently active jobs",
+    defaultConfig: { color: "blue" },
+    defaultData: { icon: "BarChart3", description: "Currently in production" }
+  },
+  {
+    id: "resource-utilization",
+    title: "Resource Utilization",
+    type: "metric",
+    icon: "TrendingUp",
+    description: "Shows percentage of resources being used",
+    defaultConfig: { color: "green" },
+    defaultData: { icon: "TrendingUp", description: "Operations assigned to resources" }
+  },
+  {
+    id: "overdue-jobs",
+    title: "Overdue Jobs",
+    type: "metric",
+    icon: "AlertTriangle",
+    description: "Shows number of jobs past due date",
+    defaultConfig: { color: "red" },
+    defaultData: { icon: "AlertTriangle", description: "Past due date" }
+  },
+  {
+    id: "completion-rate",
+    title: "Completion Rate",
+    type: "progress",
+    icon: "CheckCircle",
+    description: "Shows percentage of completed operations",
+    defaultConfig: { color: "green" },
+    defaultData: { icon: "CheckCircle", description: "Operations completed" }
+  },
+  {
+    id: "jobs-by-status",
+    title: "Jobs by Status",
+    type: "chart",
+    icon: "PieChart",
+    description: "Chart showing job distribution by status",
+    defaultConfig: { chartType: "pie" },
+    defaultData: { icon: "PieChart", description: "Job status distribution" }
+  },
+  {
+    id: "operations-timeline",
+    title: "Operations Timeline",
+    type: "chart",
+    icon: "Activity",
+    description: "Timeline chart of operations",
+    defaultConfig: { chartType: "timeline" },
+    defaultData: { icon: "Activity", description: "Operation timeline" }
+  },
+  {
+    id: "resource-status",
+    title: "Resource Status",
+    type: "table",
+    icon: "Wrench",
+    description: "Table showing all resources and their status",
+    defaultConfig: { columns: ["name", "type", "status"] },
+    defaultData: { icon: "Wrench", description: "Resource status table" }
+  }
+];
+
+// Draggable widget component for the editor
+const DraggableWidget = ({ widget, onMove, onResize, onEdit, onDelete, isSelected, onSelect }: any) => {
+  const [{ isDragging }, drag] = useDrag({
+    type: "widget",
+    item: { id: widget.id, type: "widget" },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  return (
+    <div
+      ref={drag}
+      className={`absolute border-2 rounded-lg bg-white shadow-sm cursor-move ${
+        isDragging ? "opacity-50" : ""
+      } ${isSelected ? "border-blue-500" : "border-gray-200"}`}
+      style={{
+        left: widget.position.x,
+        top: widget.position.y,
+        width: widget.size.width,
+        height: widget.size.height,
+      }}
+      onClick={() => onSelect(widget.id)}
+    >
+      <div className="p-3 h-full">
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="font-medium text-sm">{widget.title}</h4>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(widget);
+              }}
+            >
+              <Edit3 className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(widget.id);
+              }}
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+        <div className="text-xs text-gray-500">
+          {widget.type} • {widget.size.width}x{widget.size.height}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Drop zone for the visual editor
+const DropZone = ({ children, onDrop }: any) => {
+  const [{ isOver }, drop] = useDrop({
+    accept: ["widget", "template"],
+    drop: (item: any, monitor) => {
+      const offset = monitor.getClientOffset();
+      const dropZoneRect = drop.current?.getBoundingClientRect();
+      if (offset && dropZoneRect) {
+        const x = offset.x - dropZoneRect.left;
+        const y = offset.y - dropZoneRect.top;
+        onDrop(item, { x, y });
+      }
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+    }),
+  });
+
+  return (
+    <div
+      ref={drop}
+      className={`relative w-full h-96 border-2 border-dashed rounded-lg ${
+        isOver ? "border-blue-500 bg-blue-50" : "border-gray-300"
+      }`}
+    >
+      {children}
+    </div>
+  );
+};
+
 export default function DashboardManager({
   open,
   onOpenChange,
@@ -65,8 +235,90 @@ export default function DashboardManager({
   const [activeTab, setActiveTab] = useState("browse");
   const [newDashboard, setNewDashboard] = useState({ name: "", description: "" });
   const [editingDashboard, setEditingDashboard] = useState<DashboardConfig | null>(null);
+  const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
+  const [workingWidgets, setWorkingWidgets] = useState<AnalyticsWidget[]>([]);
+  const [editingWidget, setEditingWidget] = useState<AnalyticsWidget | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Initialize working widgets when editing a dashboard
+  useEffect(() => {
+    if (editingDashboard) {
+      setWorkingWidgets([
+        ...editingDashboard.configuration.standardWidgets,
+        ...editingDashboard.configuration.customWidgets
+      ]);
+    } else {
+      setWorkingWidgets([...standardWidgets, ...customWidgets]);
+    }
+  }, [editingDashboard, standardWidgets, customWidgets]);
+
+  // Widget management functions
+  const handleAddWidget = (template: WidgetTemplate, position: { x: number; y: number }) => {
+    const newWidget: AnalyticsWidget = {
+      id: `${template.id}-${Date.now()}`,
+      title: template.title,
+      type: template.type,
+      data: template.defaultData,
+      visible: true,
+      position: position,
+      size: { width: 300, height: 200 },
+      config: template.defaultConfig,
+      isStandard: false
+    };
+    setWorkingWidgets([...workingWidgets, newWidget]);
+  };
+
+  const handleMoveWidget = (widgetId: string, newPosition: { x: number; y: number }) => {
+    setWorkingWidgets(widgets =>
+      widgets.map(widget =>
+        widget.id === widgetId
+          ? { ...widget, position: newPosition }
+          : widget
+      )
+    );
+  };
+
+  const handleResizeWidget = (widgetId: string, newSize: { width: number; height: number }) => {
+    setWorkingWidgets(widgets =>
+      widgets.map(widget =>
+        widget.id === widgetId
+          ? { ...widget, size: newSize }
+          : widget
+      )
+    );
+  };
+
+  const handleEditWidget = (widget: AnalyticsWidget) => {
+    setEditingWidget(widget);
+  };
+
+  const handleUpdateWidget = (updatedWidget: AnalyticsWidget) => {
+    setWorkingWidgets(widgets =>
+      widgets.map(widget =>
+        widget.id === updatedWidget.id ? updatedWidget : widget
+      )
+    );
+    setEditingWidget(null);
+  };
+
+  const handleDeleteWidget = (widgetId: string) => {
+    setWorkingWidgets(widgets => widgets.filter(widget => widget.id !== widgetId));
+    if (selectedWidgetId === widgetId) {
+      setSelectedWidgetId(null);
+    }
+  };
+
+  const handleDropWidget = (item: any, position: { x: number; y: number }) => {
+    if (item.type === "template") {
+      const template = widgetTemplates.find(t => t.id === item.id);
+      if (template) {
+        handleAddWidget(template, position);
+      }
+    } else if (item.type === "widget") {
+      handleMoveWidget(item.id, position);
+    }
+  };
 
   const createDashboardMutation = useMutation({
     mutationFn: async (dashboardData: any) => {
@@ -172,13 +424,40 @@ export default function DashboardManager({
       name: newDashboard.name,
       description: newDashboard.description,
       configuration: {
-        standardWidgets: standardWidgets,
-        customWidgets: customWidgets
+        standardWidgets: workingWidgets.filter(w => w.isStandard),
+        customWidgets: workingWidgets.filter(w => !w.isStandard)
       },
       isDefault: false
     };
 
     createDashboardMutation.mutate(dashboardData);
+  };
+
+  const handleStartEditing = (dashboard: DashboardConfig) => {
+    setEditingDashboard(dashboard);
+    setActiveTab("editor");
+  };
+
+  const handleCancelEditing = () => {
+    setEditingDashboard(null);
+    setWorkingWidgets([...standardWidgets, ...customWidgets]);
+    setSelectedWidgetId(null);
+    setActiveTab("browse");
+  };
+
+  const handleSaveEditing = () => {
+    if (!editingDashboard) return;
+
+    const updatedData = {
+      name: editingDashboard.name,
+      description: editingDashboard.description,
+      configuration: {
+        standardWidgets: workingWidgets.filter(w => w.isStandard),
+        customWidgets: workingWidgets.filter(w => !w.isStandard)
+      }
+    };
+
+    updateDashboardMutation.mutate({ id: editingDashboard.id, data: updatedData });
   };
 
   const handleUpdateDashboard = () => {
@@ -210,21 +489,25 @@ export default function DashboardManager({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Dashboard Manager</DialogTitle>
-          <DialogDescription>
-            Create, manage, and switch between custom analytics dashboards
-          </DialogDescription>
-        </DialogHeader>
+    <DndProvider backend={HTML5Backend}>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-7xl h-[95vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              {editingDashboard ? `Edit Dashboard: ${editingDashboard.name}` : "Manage Dashboards"}
+            </DialogTitle>
+            <DialogDescription>
+              Create, edit, and organize your dashboard configurations with comprehensive widget management
+            </DialogDescription>
+          </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="browse">Browse</TabsTrigger>
-            <TabsTrigger value="create">Create New</TabsTrigger>
-            <TabsTrigger value="current">Current Layout</TabsTrigger>
-          </TabsList>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="browse">Browse</TabsTrigger>
+              <TabsTrigger value="create">Create New</TabsTrigger>
+              <TabsTrigger value="editor">Visual Editor</TabsTrigger>
+              <TabsTrigger value="templates">Widget Library</TabsTrigger>
+            </TabsList>
 
           <TabsContent value="browse" className="space-y-4">
             <div className="flex items-center justify-between">
