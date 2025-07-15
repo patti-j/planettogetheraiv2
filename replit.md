@@ -721,6 +721,22 @@ The application uses a modern full-stack architecture with strong typing through
 - Implemented localStorage tracking to show onboarding only once automatically
 - Added "Help & Guide" button in sidebar for returning users to access onboarding wizard
 - Different welcome messages for new vs returning users with appropriate context
+- Fixed sidebar scrolling to make Help & Guide button always visible in Quick Actions section
+
+✓ **Forklift Driver Material Movement System (July 15, 2025)**:
+- Created comprehensive forklift driver interface for material movement tracking
+- Implemented intelligent material movement generation based on completed operations and dependencies
+- Added operation sequencing logic to determine next destination (next operation, storage, or shipping)
+- Created material movement cards with detailed job, operation, and movement information
+- Integrated priority-based filtering and status tracking (pending, in-progress, completed, blocked)
+- Added real-time movement updates with 30-second auto-refresh functionality
+- Implemented movement path visualization showing from/to locations with estimated time and distance
+- Added special handling instructions for final products going to shipping
+- Created summary dashboard with movement counts by status and priority
+- Integrated search functionality across jobs, materials, and locations
+- Added mobile-responsive design with maximize functionality for warehouse environments
+- Included customer and due date information for proper priority handling
+- Added forklift driver navigation item to sidebar with truck icon and appropriate tooltip
 
 ✓ **AI-First Button Ordering Enhancement (July 14, 2025)**:
 - Reordered AI and New buttons on both reports and analytics pages to emphasize AI-first approach

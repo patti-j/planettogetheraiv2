@@ -18,6 +18,7 @@ import CustomerService from "@/pages/customer-service";
 import OperatorDashboard from "@/pages/operator-dashboard";
 import Maintenance from "@/pages/maintenance";
 import Feedback from "@/pages/feedback";
+import ForkliftDriver from "@/pages/forklift-driver";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/operator" component={OperatorDashboard} />
       <Route path="/maintenance" component={Maintenance} />
       <Route path="/feedback" component={Feedback} />
+      <Route path="/forklift" component={ForkliftDriver} />
       <Route component={NotFound} />
     </Switch>
   );
