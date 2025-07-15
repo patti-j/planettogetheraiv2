@@ -15,6 +15,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Settings, Star, Trash2, Edit3, Eye, Save, Move, Palette, BarChart3, TrendingUp, AlertTriangle, CheckCircle, Clock, Target, PieChart, Activity, Zap, Users, Package, Wrench, ArrowUp, ArrowDown, MoreHorizontal, Grid3x3, Maximize2, Minimize2, RotateCcw } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useDrag, useDrop } from "react-dnd";
+import SimpleDragTest from "./simple-drag-test";
 
 interface AnalyticsWidget {
   id: string;
@@ -157,18 +158,25 @@ const DraggableTemplate = ({ template }: { template: WidgetTemplate }) => {
   return (
     <div
       ref={drag}
-      className={`p-4 border rounded-lg cursor-move bg-white hover:bg-gray-50 ${
-        isDragging ? "opacity-50" : ""
+      className={`p-4 border rounded-lg cursor-move bg-white hover:bg-gray-50 transition-all ${
+        isDragging ? "opacity-50 scale-105" : ""
       }`}
+      style={{ touchAction: 'none' }}
+      onMouseDown={() => console.log("Mouse down on template:", template.id)}
     >
       <div className="flex items-center gap-3 mb-2">
         <IconComponent className="h-5 w-5 text-blue-600" />
         <h4 className="font-medium">{template.title}</h4>
       </div>
       <p className="text-sm text-gray-600 mb-2">{template.description}</p>
-      <Badge variant="outline" className="text-xs">
-        {template.type}
-      </Badge>
+      <div className="flex items-center justify-between">
+        <Badge variant="outline" className="text-xs">
+          {template.type}
+        </Badge>
+        <div className="text-xs text-gray-400">
+          {isDragging ? "Dragging..." : "Drag me"}
+        </div>
+      </div>
     </div>
   );
 };
@@ -607,24 +615,48 @@ export default function EnhancedDashboardManager({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                    <div className="lg:col-span-3">
-                      <VisualEditor
-                        widgets={workingWidgets}
-                        onDrop={handleDropWidget}
-                        onWidgetSelect={setSelectedWidgetId}
-                        selectedWidgetId={selectedWidgetId}
-                      />
-                    </div>
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Widget Library</h4>
-                      <ScrollArea className="h-64">
-                        <div className="space-y-2">
-                          {widgetTemplates.map((template) => (
-                            <DraggableTemplate key={template.id} template={template} />
-                          ))}
+                  <div className="space-y-6">
+                    <SimpleDragTest />
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                      <div className="lg:col-span-3">
+                        <div className="mb-4">
+                          <h4 className="font-medium mb-2">Canvas</h4>
+                          <p className="text-sm text-gray-600">Drag widgets from the library to the canvas below</p>
                         </div>
-                      </ScrollArea>
+                        <VisualEditor
+                          widgets={workingWidgets}
+                          onDrop={handleDropWidget}
+                          onWidgetSelect={setSelectedWidgetId}
+                          selectedWidgetId={selectedWidgetId}
+                        />
+                        <div className="mt-2 flex items-center justify-between">
+                          <div className="text-xs text-gray-500">
+                            Canvas has {workingWidgets.length} widgets
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              const template = widgetTemplates[0];
+                              handleAddWidget(template, { x: 10, y: 10 });
+                            }}
+                          >
+                            Test Add Widget
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <h4 className="font-medium">Widget Library</h4>
+                        <p className="text-sm text-gray-600">Drag these widgets to the canvas</p>
+                        <ScrollArea className="h-64">
+                          <div className="space-y-2">
+                            {widgetTemplates.map((template) => (
+                              <DraggableTemplate key={template.id} template={template} />
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </div>
                     </div>
                   </div>
                 </div>
