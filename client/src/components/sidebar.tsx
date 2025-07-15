@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench } from "lucide-react";
+import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -121,6 +121,7 @@ export default function Sidebar() {
     { icon: Headphones, label: "Customer Service", href: "/customer-service", active: location === "/customer-service" },
     { icon: BarChart3, label: "Analytics", href: "/analytics", active: location === "/analytics" },
     { icon: FileText, label: "Reports", href: "/reports", active: location === "/reports" },
+    { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback" },
     { icon: Bot, label: "Max", href: "/ai-assistant", active: location === "/ai-assistant" },
   ];
 
@@ -135,6 +136,7 @@ export default function Sidebar() {
       "/customer-service": "Handle customer orders, issues, and support requests",
       "/analytics": "View production metrics and performance analytics",
       "/reports": "Generate detailed production reports and insights",
+      "/feedback": "Submit feedback and suggestions to help improve the system",
       "/ai-assistant": "Chat with Max for schedule optimization and analysis"
     };
     return tooltips[href] || "Navigate to this page";
