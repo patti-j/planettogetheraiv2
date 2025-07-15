@@ -123,6 +123,7 @@ function DraggableDashboardCard({
       newHeight = Math.max(200, resizeStart.height + deltaY);
     }
     
+    console.log('Resizing:', { newWidth, newHeight, deltaX, deltaY });
     onResize(dashboard.id, { width: newWidth, height: newHeight });
   };
 
@@ -133,11 +134,24 @@ function DraggableDashboardCard({
 
   useEffect(() => {
     if (isResizing) {
-      document.addEventListener('mousemove', handleResizeMove);
-      document.addEventListener('mouseup', handleResizeEnd);
+      console.log('Adding resize event listeners');
+      const handleMouseMove = (e: MouseEvent) => {
+        e.preventDefault();
+        handleResizeMove(e);
+      };
+      
+      const handleMouseUp = () => {
+        console.log('Mouse up - ending resize');
+        handleResizeEnd();
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+
       return () => {
-        document.removeEventListener('mousemove', handleResizeMove);
-        document.removeEventListener('mouseup', handleResizeEnd);
+        console.log('Removing resize event listeners');
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
       };
     }
   }, [isResizing, resizeStart]);
@@ -292,6 +306,7 @@ export default function Analytics() {
 
   // Handle dashboard resizing
   const handleDashboardResize = (id: number, size: { width: number; height: number }) => {
+    console.log('Dashboard resize handler called:', id, size);
     setDashboardSizes(prev => new Map(prev.set(id, size)));
     
     // Store the size in localStorage for persistence
