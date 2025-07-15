@@ -898,16 +898,13 @@ The application uses a modern full-stack architecture with strong typing through
 - Added toast notifications for successful dashboard arrangement saves
 - Dashboard arrangement now persists across browser sessions and page refreshes
 
-✓ **Dashboard Resizing Feature (July 15, 2025)**:
-- Added comprehensive dashboard resizing functionality to analytics page
-- Implemented resize handles for horizontal, vertical, and diagonal resizing
-- Added visual resize handles with hover effects (corner, bottom, right edges)
-- Integrated localStorage persistence for dashboard sizes across sessions
-- Minimum size constraints prevent dashboards from becoming too small (300x200px)
-- Dynamic sizing replaces fixed grid layout with flexible flex-wrap arrangement
-- All resize operations persist across browser sessions and page refreshes
-- Resize handles include proper cursor styles (se-resize, s-resize, e-resize)
-- **Issue Identified**: Dashboard resize logic working but visual changes not appearing despite CSS style updates
+✓ **Dashboard Resizing Feature - REMOVED (July 15, 2025)**:
+- **ISSUE**: Dashboard resizing functionality fundamentally broken despite extensive debugging
+- **ROOT CAUSE**: React component re-rendering not reflecting CSS style changes despite state updates
+- **DEBUGGING ATTEMPTS**: Tried state management, force re-renders, component keys, layout changes, sensitivity adjustments - none resolved visual issues
+- **DECISION**: Removed complex resizing system to focus on core analytics functionality
+- **RESULT**: Simplified dashboard layout with clean, consistent card presentation
+- Dashboard resize handles and localStorage persistence removed due to non-functional state
 
 ✓ **Analytics Page Mobile Responsiveness Enhancement (July 15, 2025)**:
 - Fixed critical mobile responsiveness issue where command buttons and live indicator were hidden

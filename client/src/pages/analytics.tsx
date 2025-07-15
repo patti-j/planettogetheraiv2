@@ -56,8 +56,6 @@ interface DraggableDashboardCardProps {
   generateWidgetData: () => any;
   isLivePaused: boolean;
   setDashboardManagerOpen: (open: boolean) => void;
-  size: { width: number; height: number };
-  onResize: (id: number, size: { width: number; height: number }) => void;
 }
 
 function DraggableDashboardCard({ 
@@ -66,22 +64,14 @@ function DraggableDashboardCard({
   onMove, 
   generateWidgetData, 
   isLivePaused,
-  setDashboardManagerOpen,
-  size,
-  onResize
+  setDashboardManagerOpen
 }: DraggableDashboardCardProps) {
-  const [isResizing, setIsResizing] = useState(false);
-  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0, direction: '' });
-  // Use size prop directly instead of state
-  const currentSize = size;
-  
   const [{ isDragging }, drag] = useDrag({
     type: 'dashboard',
     item: { index },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
-    canDrag: !isResizing,
   });
 
   const [, drop] = useDrop({
@@ -94,87 +84,13 @@ function DraggableDashboardCard({
     },
   });
 
-  const handleResizeStart = (e: React.MouseEvent, direction: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    // console.log('Resize started:', direction, 'size:', size);
-    setIsResizing(true);
-    setResizeStart({
-      x: e.clientX,
-      y: e.clientY,
-      width: size.width,
-      height: size.height,
-      direction
-    });
-  };
-
-  const handleResizeMove = (e: MouseEvent) => {
-    if (!isResizing) return;
-    
-    const deltaX = e.clientX - resizeStart.x;
-    const deltaY = e.clientY - resizeStart.y;
-    
-    let newWidth = resizeStart.width;
-    let newHeight = resizeStart.height;
-    
-    // Handle different resize directions with increased sensitivity
-    if (resizeStart.direction.includes('e')) {
-      newWidth = Math.max(300, resizeStart.width + deltaX * 5); // 5x sensitivity for more responsive resizing
-    }
-    if (resizeStart.direction.includes('s')) {
-      newHeight = Math.max(200, resizeStart.height + deltaY * 5); // 5x sensitivity for more responsive resizing
-    }
-    
-    // console.log('Resizing:', { newWidth, newHeight, deltaX, deltaY });
-    
-    // Update size directly through parent component
-    const newSize = { width: newWidth, height: newHeight };
-    onResize(dashboard.id, newSize);
-  };
-
-  const handleResizeEnd = () => {
-    console.log('Resize ended');
-    setIsResizing(false);
-  };
-
-  useEffect(() => {
-    if (isResizing) {
-      console.log('Adding resize event listeners');
-      const handleMouseMove = (e: MouseEvent) => {
-        e.preventDefault();
-        handleResizeMove(e);
-      };
-      
-      const handleMouseUp = () => {
-        console.log('Mouse up - ending resize');
-        handleResizeEnd();
-      };
-
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-
-      return () => {
-        console.log('Removing resize event listeners');
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isResizing, resizeStart]);
-
   return (
     <div
       className={`${isDragging ? 'opacity-50 scale-105' : ''} relative`}
     >
-      <div 
-        className="border-2 border-red-500 shadow-sm flex flex-col bg-white rounded-lg"
-        style={{ 
-          width: `${currentSize.width}px`, 
-          height: `${currentSize.height}px`,
-          backgroundColor: 'rgba(255, 0, 0, 0.1)'
-        }}
-      >
-        <div className="border-b p-4 flex-shrink-0">
-          <div className="flex items-center justify-between">
+      <Card className="border border-gray-200 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div 
                 ref={(node) => drag(drop(node))}
@@ -184,7 +100,7 @@ function DraggableDashboardCard({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold">{dashboard.name}</span>
+                  <span>{dashboard.name}</span>
                   {dashboard.isDefault && (
                     <Badge variant="secondary">Default</Badge>
                   )}
@@ -206,11 +122,11 @@ function DraggableDashboardCard({
                 Edit
               </Button>
             </div>
-          </div>
-        </div>
-        <div className="flex-1 p-4 overflow-hidden">
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
           {dashboard.configuration?.customWidgets?.length > 0 ? (
-            <div className="relative h-full bg-gray-50 rounded-lg p-4 overflow-hidden">
+            <div className="relative min-h-[400px] bg-gray-50 rounded-lg p-4 overflow-hidden">
               {dashboard.configuration.customWidgets.map((widget: AnalyticsWidget) => (
                 <AnalyticsWidget
                   key={widget.id}
@@ -229,32 +145,13 @@ function DraggableDashboardCard({
               </div>
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500 h-full flex items-center justify-center">
-              <div>
-                <FolderOpen className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                <p className="text-sm">No widgets configured for this dashboard</p>
-              </div>
+            <div className="text-center py-8 text-gray-500">
+              <FolderOpen className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+              <p className="text-sm">No widgets configured for this dashboard</p>
             </div>
           )}
-        </div>
-      </div>
-    
-    {/* Resize handles moved to wrapper div */}
-    <div 
-      className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-blue-500 hover:bg-blue-600 rounded-tl-md opacity-80 hover:opacity-100 transition-opacity z-10"
-      onMouseDown={(e) => handleResizeStart(e, 'se')}
-      title="Resize diagonally"
-    />
-    <div 
-      className="absolute bottom-0 right-2 left-2 h-2 cursor-s-resize bg-blue-500 hover:bg-blue-600 opacity-80 hover:opacity-100 transition-opacity z-10"
-      onMouseDown={(e) => handleResizeStart(e, 's')}
-      title="Resize height"
-    />
-    <div 
-      className="absolute top-2 bottom-2 right-0 w-2 cursor-e-resize bg-blue-500 hover:bg-blue-600 opacity-80 hover:opacity-100 transition-opacity z-10"
-      onMouseDown={(e) => handleResizeStart(e, 'e')}
-      title="Resize width"
-    />
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -266,8 +163,7 @@ export default function Analytics() {
   const [visibleDashboards, setVisibleDashboards] = useState<Set<number>>(new Set());
   const [isLivePaused, setIsLivePaused] = useState(false);
   const [dashboardOrder, setDashboardOrder] = useState<number[]>([]);
-  const [dashboardSizes, setDashboardSizes] = useState<Map<number, { width: number; height: number }>>(new Map());
-  const [forceRender, setForceRender] = useState(0);
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isMobile = useMobile();
@@ -320,44 +216,7 @@ export default function Analytics() {
     });
   };
 
-  // Handle dashboard resizing
-  const handleDashboardResize = (id: number, size: { width: number; height: number }) => {
-    console.log('Dashboard resize handler called:', id, size);
-    setDashboardSizes(prev => {
-      const newMap = new Map(prev);
-      newMap.set(id, size);
-      console.log('Updated dashboard sizes map:', Object.fromEntries(newMap.entries()));
-      
-      // Store the size in localStorage for persistence
-      const currentSizes = Object.fromEntries(newMap.entries());
-      localStorage.setItem('dashboardSizes', JSON.stringify(currentSizes));
-      
-      return newMap;
-    });
-    
-    // Force a re-render to ensure visual update
-    setForceRender(prev => prev + 1);
-  };
 
-  // Get dashboard size with default fallback
-  const getDashboardSize = (id: number) => {
-    const size = dashboardSizes.get(id) || { width: 600, height: 500 };
-    console.log('Getting dashboard size for', id, ':', size);
-    return size;
-  };
-
-  // Initialize dashboard sizes from localStorage
-  useEffect(() => {
-    const savedSizes = localStorage.getItem('dashboardSizes');
-    if (savedSizes) {
-      try {
-        const parsedSizes = JSON.parse(savedSizes);
-        setDashboardSizes(new Map(Object.entries(parsedSizes).map(([id, size]) => [parseInt(id), size as { width: number; height: number }])));
-      } catch (error) {
-        console.error('Failed to parse saved dashboard sizes:', error);
-      }
-    }
-  }, []);
 
   // Get ordered visible dashboards
   const getOrderedVisibleDashboards = () => {
@@ -523,23 +382,18 @@ export default function Analytics() {
         {/* Live Dashboard Widgets */}
         {visibleDashboardConfigs.length > 0 && (
           <DndProvider backend={HTML5Backend}>
-            <div className="flex flex-wrap gap-6">
-              {visibleDashboardConfigs.map((dashboard, index) => {
-                const dashboardSize = getDashboardSize(dashboard.id);
-                return (
-                  <DraggableDashboardCard
-                    key={`${dashboard.id}-${dashboardSize.width}-${dashboardSize.height}-${forceRender}`}
-                    dashboard={dashboard}
-                    index={index}
-                    onMove={handleDashboardMove}
-                    generateWidgetData={generateWidgetData}
-                    isLivePaused={isLivePaused}
-                    setDashboardManagerOpen={setDashboardManagerOpen}
-                    size={dashboardSize}
-                    onResize={handleDashboardResize}
-                  />
-                );
-              })}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              {visibleDashboardConfigs.map((dashboard, index) => (
+                <DraggableDashboardCard
+                  key={dashboard.id}
+                  dashboard={dashboard}
+                  index={index}
+                  onMove={handleDashboardMove}
+                  generateWidgetData={generateWidgetData}
+                  isLivePaused={isLivePaused}
+                  setDashboardManagerOpen={setDashboardManagerOpen}
+                />
+              ))}
             </div>
           </DndProvider>
         )}
