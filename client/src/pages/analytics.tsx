@@ -72,8 +72,14 @@ function DraggableDashboardCard({
 }: DraggableDashboardCardProps) {
   const [isResizing, setIsResizing] = useState(false);
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0, direction: '' });
+  const [currentSize, setCurrentSize] = useState(size);
   
   console.log('DraggableDashboardCard render:', dashboard.id, 'size:', size);
+  
+  // Update current size when prop changes
+  useEffect(() => {
+    setCurrentSize(size);
+  }, [size]);
   
   const [{ isDragging }, drag] = useDrag({
     type: 'dashboard',
@@ -126,6 +132,10 @@ function DraggableDashboardCard({
     }
     
     console.log('Resizing:', { newWidth, newHeight, deltaX, deltaY });
+    
+    // Update current size immediately for visual feedback
+    setCurrentSize({ width: newWidth, height: newHeight });
+    
     onResize(dashboard.id, { width: newWidth, height: newHeight });
   };
 
@@ -162,12 +172,12 @@ function DraggableDashboardCard({
     <div
       className={`${isDragging ? 'opacity-50 scale-105' : ''} relative`}
       style={{ 
-        width: `${size.width}px`, 
-        height: `${size.height}px`,
-        minWidth: `${size.width}px`,
-        minHeight: `${size.height}px`,
-        maxWidth: `${size.width}px`,
-        maxHeight: `${size.height}px`
+        width: `${currentSize.width}px`, 
+        height: `${currentSize.height}px`,
+        minWidth: `${currentSize.width}px`,
+        minHeight: `${currentSize.height}px`,
+        maxWidth: `${currentSize.width}px`,
+        maxHeight: `${currentSize.height}px`
       }}
     >
       <Card className="w-full h-full"
@@ -547,16 +557,9 @@ export default function Analytics() {
             <CardContent className="text-center py-12 text-gray-500">
               <FolderOpen className="h-16 w-16 mx-auto mb-4 text-gray-300" />
               <h3 className="text-lg font-medium mb-2">No Dashboards Selected</h3>
-              <p className="text-sm mb-4">
+              <p className="text-sm">
                 Select one or more dashboards from the dropdown above to view their live widgets.
               </p>
-              <Button
-                onClick={() => setDashboardManagerOpen(true)}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Create New Dashboard
-              </Button>
             </CardContent>
           </Card>
         )}
