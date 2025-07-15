@@ -723,6 +723,17 @@ The application uses a modern full-stack architecture with strong typing through
 - Different welcome messages for new vs returning users with appropriate context
 - Fixed sidebar scrolling to make Help & Guide button always visible in Quick Actions section
 
+✓ **Enhanced Drag-and-Drop Visual Editor (July 15, 2025)**:
+- Implemented custom drag layer with useDragLayer for real-time drag preview functionality
+- Fixed drag preview sizing to match actual widget dimensions with proper content display
+- Enhanced drag positioning to account for cursor offset within widget for natural placement
+- Added smooth drag support for both existing widgets and new templates from library
+- Eliminated visual sliding/jumping by controlling CSS transitions during drag operations
+- Created seamless drag experience from widget library directly to canvas without intermediate drops
+- Fixed drop positioning calculations using difference from initial position for accurate placement
+- Disabled transitions during drag operations to prevent widgets sliding from original to new position
+- Added proper drag state management with transition control for professional UX experience
+
 ✓ **Forklift Driver Material Movement System (July 15, 2025)**:
 - Created comprehensive forklift driver interface for material movement tracking
 - Implemented intelligent material movement generation based on completed operations and dependencies
