@@ -174,14 +174,15 @@ function DraggableDashboardCard({
 
   return (
     <div
-      className={`${isDragging ? 'opacity-50 scale-105' : ''} relative`}
+      className={`${isDragging ? 'opacity-50 scale-105' : ''} relative border-2 border-red-500`}
       style={{ 
         width: `${currentSize.width}px`, 
         height: `${currentSize.height}px`,
         minWidth: `${currentSize.width}px`,
         minHeight: `${currentSize.height}px`,
         maxWidth: `${currentSize.width}px`,
-        maxHeight: `${currentSize.height}px`
+        maxHeight: `${currentSize.height}px`,
+        backgroundColor: 'rgba(255, 0, 0, 0.1)' // Temporary visual indicator
       }}
     >
       <Card className="w-full h-full"
