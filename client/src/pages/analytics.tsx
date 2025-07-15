@@ -56,6 +56,8 @@ interface DraggableDashboardCardProps {
   generateWidgetData: () => any;
   isLivePaused: boolean;
   setDashboardManagerOpen: (open: boolean) => void;
+  size: { width: number; height: number };
+  onResize: (id: number, size: { width: number; height: number }) => void;
 }
 
 function DraggableDashboardCard({ 
@@ -64,7 +66,9 @@ function DraggableDashboardCard({
   onMove, 
   generateWidgetData, 
   isLivePaused,
-  setDashboardManagerOpen 
+  setDashboardManagerOpen,
+  size,
+  onResize
 }: DraggableDashboardCardProps) {
   const [{ isDragging }, drag] = useDrag({
     type: 'dashboard',
@@ -84,10 +88,62 @@ function DraggableDashboardCard({
     },
   });
 
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0, direction: '' });
+
+  const handleResizeStart = (e: React.MouseEvent, direction: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizing(true);
+    setResizeStart({
+      x: e.clientX,
+      y: e.clientY,
+      width: size.width,
+      height: size.height,
+      direction
+    });
+  };
+
+  const handleResizeMove = (e: MouseEvent) => {
+    if (!isResizing) return;
+    
+    const deltaX = e.clientX - resizeStart.x;
+    const deltaY = e.clientY - resizeStart.y;
+    
+    let newWidth = resizeStart.width;
+    let newHeight = resizeStart.height;
+    
+    // Handle different resize directions
+    if (resizeStart.direction.includes('e')) {
+      newWidth = Math.max(300, resizeStart.width + deltaX);
+    }
+    if (resizeStart.direction.includes('s')) {
+      newHeight = Math.max(200, resizeStart.height + deltaY);
+    }
+    
+    onResize(dashboard.id, { width: newWidth, height: newHeight });
+  };
+
+  const handleResizeEnd = () => {
+    setIsResizing(false);
+  };
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleResizeMove);
+      document.addEventListener('mouseup', handleResizeEnd);
+      return () => {
+        document.removeEventListener('mousemove', handleResizeMove);
+        document.removeEventListener('mouseup', handleResizeEnd);
+      };
+    }
+  }, [isResizing, resizeStart]);
+
   return (
     <Card 
       ref={(node) => drag(drop(node))}
-      className={`transition-all duration-200 ${isDragging ? 'opacity-50 scale-105' : ''}`}
+      className={`transition-all duration-200 ${isDragging ? 'opacity-50 scale-105' : ''} relative`}
+      style={{ width: size.width, height: size.height }}
     >
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
@@ -146,6 +202,20 @@ function DraggableDashboardCard({
           </div>
         )}
       </CardContent>
+      
+      {/* Resize handles */}
+      <div 
+        className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-gray-300 hover:bg-gray-400 rounded-tl-md opacity-60 hover:opacity-100 transition-opacity"
+        onMouseDown={(e) => handleResizeStart(e, 'se')}
+      />
+      <div 
+        className="absolute bottom-0 right-2 left-2 h-1 cursor-s-resize bg-gray-300 hover:bg-gray-400 opacity-60 hover:opacity-100 transition-opacity"
+        onMouseDown={(e) => handleResizeStart(e, 's')}
+      />
+      <div 
+        className="absolute top-2 bottom-2 right-0 w-1 cursor-e-resize bg-gray-300 hover:bg-gray-400 opacity-60 hover:opacity-100 transition-opacity"
+        onMouseDown={(e) => handleResizeStart(e, 'e')}
+      />
     </Card>
   );
 }
@@ -157,6 +227,7 @@ export default function Analytics() {
   const [visibleDashboards, setVisibleDashboards] = useState<Set<number>>(new Set());
   const [isLivePaused, setIsLivePaused] = useState(false);
   const [dashboardOrder, setDashboardOrder] = useState<number[]>([]);
+  const [dashboardSizes, setDashboardSizes] = useState<Map<number, { width: number; height: number }>>(new Map());
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isMobile = useMobile();
@@ -208,6 +279,34 @@ export default function Analytics() {
       duration: 2000,
     });
   };
+
+  // Handle dashboard resizing
+  const handleDashboardResize = (id: number, size: { width: number; height: number }) => {
+    setDashboardSizes(prev => new Map(prev.set(id, size)));
+    
+    // Store the size in localStorage for persistence
+    const currentSizes = Object.fromEntries(dashboardSizes.entries());
+    currentSizes[id] = size;
+    localStorage.setItem('dashboardSizes', JSON.stringify(currentSizes));
+  };
+
+  // Get dashboard size with default fallback
+  const getDashboardSize = (id: number) => {
+    return dashboardSizes.get(id) || { width: 600, height: 500 };
+  };
+
+  // Initialize dashboard sizes from localStorage
+  useEffect(() => {
+    const savedSizes = localStorage.getItem('dashboardSizes');
+    if (savedSizes) {
+      try {
+        const parsedSizes = JSON.parse(savedSizes);
+        setDashboardSizes(new Map(Object.entries(parsedSizes).map(([id, size]) => [parseInt(id), size as { width: number; height: number }])));
+      } catch (error) {
+        console.error('Failed to parse saved dashboard sizes:', error);
+      }
+    }
+  }, []);
 
   // Get ordered visible dashboards
   const getOrderedVisibleDashboards = () => {
@@ -373,7 +472,7 @@ export default function Analytics() {
         {/* Live Dashboard Widgets */}
         {visibleDashboardConfigs.length > 0 && (
           <DndProvider backend={HTML5Backend}>
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="flex flex-wrap gap-6">
               {visibleDashboardConfigs.map((dashboard, index) => (
                 <DraggableDashboardCard
                   key={dashboard.id}
@@ -383,6 +482,8 @@ export default function Analytics() {
                   generateWidgetData={generateWidgetData}
                   isLivePaused={isLivePaused}
                   setDashboardManagerOpen={setDashboardManagerOpen}
+                  size={getDashboardSize(dashboard.id)}
+                  onResize={handleDashboardResize}
                 />
               ))}
             </div>
