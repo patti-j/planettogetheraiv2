@@ -248,15 +248,15 @@ export default function Analytics() {
                 <FolderOpen className="h-16 w-16 mx-auto mb-4 text-gray-300" />
                 <h3 className="text-lg font-medium mb-2">Dashboard Preview</h3>
                 <p className="text-sm">
-                  This dashboard contains {currentDashboard.configuration.standardWidgets.length} standard widgets 
-                  and {currentDashboard.configuration.customWidgets.length} custom widgets.
+                  This dashboard contains {currentDashboard?.configuration?.standardWidgets?.length || 0} standard widgets 
+                  and {currentDashboard?.configuration?.customWidgets?.length || 0} custom widgets.
                 </p>
                 <div className="mt-4 flex justify-center gap-4">
                   <Badge variant="outline">
-                    Standard: {currentDashboard.configuration.standardWidgets.length}
+                    Standard: {currentDashboard?.configuration?.standardWidgets?.length || 0}
                   </Badge>
                   <Badge variant="outline">
-                    Custom: {currentDashboard.configuration.customWidgets.length}
+                    Custom: {currentDashboard?.configuration?.customWidgets?.length || 0}
                   </Badge>
                 </div>
               </div>
@@ -361,8 +361,8 @@ export default function Analytics() {
         onDashboardCreate={handleDashboardCreate}
         onDashboardUpdate={handleDashboardUpdate}
         onDashboardDelete={handleDashboardDelete}
-        standardWidgets={currentDashboard?.configuration.standardWidgets || []}
-        customWidgets={currentDashboard?.configuration.customWidgets || []}
+        standardWidgets={currentDashboard?.configuration?.standardWidgets || []}
+        customWidgets={currentDashboard?.configuration?.customWidgets || []}
       />
 
       <AIAnalyticsManager
