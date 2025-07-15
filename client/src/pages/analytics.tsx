@@ -185,23 +185,20 @@ function DraggableDashboardCard({
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden p-4">
           {dashboard.configuration?.customWidgets?.length > 0 ? (
-            <div className="relative h-full bg-gray-50 rounded-lg p-4 overflow-y-auto">
-              <div className="space-y-4">
-                {dashboard.configuration.customWidgets.map((widget: AnalyticsWidget) => (
-                  <div key={widget.id} className="bg-white rounded-lg shadow-sm">
-                    <AnalyticsWidget
-                      widget={widget}
-                      onToggle={() => {}} // Read-only mode
-                      onRemove={() => {}} // Read-only mode
-                      onEdit={() => {}} // Read-only mode
-                      onResize={() => {}} // Read-only mode
-                      onMove={() => {}} // Read-only mode
-                      data={generateWidgetData()}
-                      readOnly={true}
-                    />
-                  </div>
-                ))}
-              </div>
+            <div className="relative h-full bg-gray-50 rounded-lg overflow-auto">
+              {dashboard.configuration.customWidgets.map((widget: AnalyticsWidget) => (
+                <AnalyticsWidget
+                  key={widget.id}
+                  widget={widget}
+                  onToggle={() => {}} // Read-only mode
+                  onRemove={() => {}} // Read-only mode
+                  onEdit={() => {}} // Read-only mode
+                  onResize={() => {}} // Read-only mode
+                  onMove={() => {}} // Read-only mode
+                  data={generateWidgetData()}
+                  readOnly={true}
+                />
+              ))}
               <div className="absolute top-2 right-2 text-xs text-gray-500 bg-white px-2 py-1 rounded">
                 {isLivePaused ? "Live View • Paused" : "Live View • Updates every 30s"}
               </div>
