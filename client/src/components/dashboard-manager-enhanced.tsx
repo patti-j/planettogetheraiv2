@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Settings, Star, Trash2, Edit3, Eye, Save, Move, Palette, BarChart3, TrendingUp, AlertTriangle, CheckCircle, Clock, Target, PieChart, Activity, Zap, Users, Package, Wrench, ArrowUp, ArrowDown, MoreHorizontal, Grid3x3, Maximize2, Minimize2, RotateCcw } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import { useDrag, useDrop } from "react-dnd";
+import { useDrag, useDrop, useDragLayer } from "react-dnd";
 
 interface AnalyticsWidget {
   id: string;
@@ -180,6 +180,47 @@ const DraggableTemplate = ({ template }: { template: WidgetTemplate }) => {
   );
 };
 
+// Custom drag layer for smooth drag preview
+const CustomDragLayer = () => {
+  const {
+    itemType,
+    isDragging,
+    item,
+    initialOffset,
+    currentOffset,
+  } = useDragLayer((monitor) => ({
+    item: monitor.getItem(),
+    itemType: monitor.getItemType(),
+    initialOffset: monitor.getInitialSourceClientOffset(),
+    currentOffset: monitor.getSourceClientOffset(),
+    isDragging: monitor.isDragging(),
+  }));
+
+  if (!isDragging || !currentOffset) {
+    return null;
+  }
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-50">
+      <div
+        style={{
+          transform: `translate(${currentOffset.x}px, ${currentOffset.y}px)`,
+        }}
+        className="absolute"
+      >
+        {itemType === "widget" && (
+          <div className="bg-white border-2 border-blue-500 rounded-lg shadow-lg opacity-80 cursor-move">
+            <div className="p-3">
+              <h4 className="font-medium text-sm">Moving Widget</h4>
+              <div className="text-xs text-gray-500">widget</div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // Draggable widget component within the canvas
 const DraggableWidget = ({ widget, isSelected, onSelect, onMove }: {
   widget: AnalyticsWidget;
@@ -189,20 +230,20 @@ const DraggableWidget = ({ widget, isSelected, onSelect, onMove }: {
 }) => {
   const [{ isDragging }, drag, preview] = useDrag({
     type: "widget",
-    item: { id: widget.id, type: "widget" },
+    item: { id: widget.id, type: "widget", widget },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
   });
 
-  const combinedRef = useCallback((node: HTMLDivElement) => {
-    drag(node);
-    preview(node);
-  }, [drag, preview]);
+  // Hide the default drag preview
+  useEffect(() => {
+    preview(null);
+  }, [preview]);
 
   return (
     <div
-      ref={combinedRef}
+      ref={drag}
       className={`absolute border-2 rounded-lg bg-white shadow-sm cursor-move transition-all ${
         isSelected ? "border-blue-500 shadow-lg" : "border-gray-200 hover:border-gray-300"
       } ${isDragging ? "opacity-30" : ""}`}
@@ -304,6 +345,7 @@ const VisualEditor = ({ widgets, onDrop, onWidgetSelect, selectedWidgetId, onWid
           <div className="text-blue-700 font-medium">Drop widget here</div>
         </div>
       )}
+      <CustomDragLayer />
     </div>
   );
 };
