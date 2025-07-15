@@ -1,16 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Settings, Plus, Maximize2, Minimize2, FolderOpen, Sparkles } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Settings, Plus, Maximize2, Minimize2, FolderOpen, Sparkles, Eye, EyeOff } from "lucide-react";
 
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
 import EnhancedDashboardManager from "@/components/dashboard-manager-enhanced";
+import AnalyticsWidget from "@/components/analytics-widget";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useMobile } from "@/hooks/use-mobile";
+import type { Job, Operation, Resource, Capability } from "@shared/schema";
 
 interface AnalyticsWidget {
   id: string;
@@ -34,18 +37,54 @@ interface DashboardConfig {
   updatedAt: string;
 }
 
+interface Metrics {
+  activeJobs: number;
+  utilization: number;
+  overdueOperations: number;
+  avgLeadTime: number;
+}
+
 export default function Analytics() {
   const [isMaximized, setIsMaximized] = useState(false);
   const [dashboardManagerOpen, setDashboardManagerOpen] = useState(false);
   const [aiAnalyticsOpen, setAiAnalyticsOpen] = useState(false);
   const [currentDashboard, setCurrentDashboard] = useState<DashboardConfig | null>(null);
   const [selectedDashboardId, setSelectedDashboardId] = useState<string>("");
+  const [visibleDashboards, setVisibleDashboards] = useState<Set<number>>(new Set());
+  const [showLiveView, setShowLiveView] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isMobile = useMobile();
 
   const { data: dashboards = [] } = useQuery<DashboardConfig[]>({
     queryKey: ["/api/dashboard-configs"],
+  });
+
+  // Fetch live data for widgets
+  const { data: jobs = [] } = useQuery<Job[]>({
+    queryKey: ["/api/jobs"],
+    enabled: showLiveView,
+  });
+
+  const { data: operations = [] } = useQuery<Operation[]>({
+    queryKey: ["/api/operations"],
+    enabled: showLiveView,
+  });
+
+  const { data: resources = [] } = useQuery<Resource[]>({
+    queryKey: ["/api/resources"],
+    enabled: showLiveView,
+  });
+
+  const { data: capabilities = [] } = useQuery<Capability[]>({
+    queryKey: ["/api/capabilities"],
+    enabled: showLiveView,
+  });
+
+  const { data: metrics } = useQuery<Metrics>({
+    queryKey: ["/api/metrics"],
+    refetchInterval: 30000,
+    enabled: showLiveView,
   });
 
   const loadDashboardMutation = useMutation({
@@ -172,6 +211,53 @@ export default function Analytics() {
     deleteDashboardMutation.mutate(dashboardId);
   };
 
+  const handleToggleDashboardVisibility = (dashboardId: number) => {
+    setVisibleDashboards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(dashboardId)) {
+        newSet.delete(dashboardId);
+      } else {
+        newSet.add(dashboardId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleToggleLiveView = () => {
+    setShowLiveView(!showLiveView);
+    if (!showLiveView) {
+      // When enabling live view, show the selected dashboard by default
+      if (currentDashboard) {
+        setVisibleDashboards(new Set([currentDashboard.id]));
+      }
+    }
+  };
+
+  const visibleDashboardConfigs = dashboards.filter(dashboard => 
+    visibleDashboards.has(dashboard.id)
+  );
+
+  const generateWidgetData = () => ({
+    jobs,
+    operations,
+    resources,
+    metrics,
+    overdueJobs: jobs.filter(job => new Date(job.dueDate) < new Date() && job.status !== 'completed'),
+    resourceUtilization: operations.length > 0 ? (operations.filter(op => op.assignedResourceId).length / operations.length * 100) : 0,
+    jobsByStatus: jobs.reduce((acc, job) => {
+      acc[job.status] = (acc[job.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>),
+    operationsByStatus: operations.reduce((acc, operation) => {
+      acc[operation.status] = (acc[operation.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>),
+    resourcesByStatus: resources.reduce((acc, resource) => {
+      acc[resource.status] = (acc[resource.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>)
+  });
+
   const PageContent = () => (
     <div className="h-full flex flex-col">
       <div className="flex-1 p-6 space-y-6">
@@ -225,8 +311,119 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        {/* Dashboard Display */}
-        {currentDashboard ? (
+        {/* Live Dashboard Toggle */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span>Live Dashboard View</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleToggleLiveView}
+                  className="flex items-center gap-2"
+                >
+                  {showLiveView ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showLiveView ? 'Hide Live View' : 'Show Live View'}
+                </Button>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          {showLiveView && (
+            <CardContent>
+              <div className="mb-4">
+                <h4 className="font-medium mb-2">Select Dashboards to Display:</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {dashboards.map((dashboard) => (
+                    <div key={dashboard.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`dashboard-${dashboard.id}`}
+                        checked={visibleDashboards.has(dashboard.id)}
+                        onCheckedChange={() => handleToggleDashboardVisibility(dashboard.id)}
+                      />
+                      <label
+                        htmlFor={`dashboard-${dashboard.id}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        {dashboard.name}
+                        {dashboard.isDefault && (
+                          <Badge variant="secondary" className="ml-2 text-xs">Default</Badge>
+                        )}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+
+        {/* Live Dashboard Widgets */}
+        {showLiveView && visibleDashboardConfigs.length > 0 && (
+          <div className="space-y-6">
+            {visibleDashboardConfigs.map((dashboard) => (
+              <Card key={dashboard.id}>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span>{dashboard.name}</span>
+                        {dashboard.isDefault && (
+                          <Badge variant="secondary">Default</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">{dashboard.description}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">
+                        {dashboard.configuration?.customWidgets?.length || 0} widgets
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDashboardManagerOpen(true)}
+                        className="flex items-center gap-2"
+                      >
+                        <Settings className="h-4 w-4" />
+                        Edit
+                      </Button>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {dashboard.configuration?.customWidgets?.length > 0 ? (
+                    <div className="relative min-h-[400px] border-2 border-dashed border-gray-300 rounded-lg p-4">
+                      {dashboard.configuration.customWidgets.map((widget: AnalyticsWidget) => (
+                        <AnalyticsWidget
+                          key={widget.id}
+                          widget={widget}
+                          onToggle={() => {}} // Read-only mode
+                          onRemove={() => {}} // Read-only mode
+                          onEdit={() => {}} // Read-only mode
+                          onResize={() => {}} // Read-only mode
+                          onMove={() => {}} // Read-only mode
+                          data={generateWidgetData()}
+                          readOnly={true}
+                        />
+                      ))}
+                      <div className="absolute top-2 right-2 text-xs text-gray-500 bg-white px-2 py-1 rounded">
+                        Live View • Updates every 30s
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <FolderOpen className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                      <p className="text-sm">No widgets configured for this dashboard</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Dashboard Configuration Preview */}
+        {currentDashboard && !showLiveView && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -254,7 +451,7 @@ export default function Analytics() {
             <CardContent>
               <div className="text-center py-12 text-gray-500">
                 <FolderOpen className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-lg font-medium mb-2">Dashboard Preview</h3>
+                <h3 className="text-lg font-medium mb-2">Dashboard Configuration</h3>
                 <p className="text-sm">
                   This dashboard contains {currentDashboard?.configuration?.standardWidgets?.length || 0} standard widgets 
                   and {currentDashboard?.configuration?.customWidgets?.length || 0} custom widgets.
@@ -267,24 +464,46 @@ export default function Analytics() {
                     Custom: {currentDashboard?.configuration?.customWidgets?.length || 0}
                   </Badge>
                 </div>
+                <div className="mt-4">
+                  <Button
+                    onClick={handleToggleLiveView}
+                    className="flex items-center gap-2"
+                  >
+                    <Eye className="h-4 w-4" />
+                    View Live Widgets
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
-        ) : (
+        )}
+
+        {/* Empty State */}
+        {!currentDashboard && !showLiveView && (
           <Card>
             <CardContent className="text-center py-12 text-gray-500">
               <FolderOpen className="h-16 w-16 mx-auto mb-4 text-gray-300" />
               <h3 className="text-lg font-medium mb-2">No Dashboard Selected</h3>
               <p className="text-sm mb-4">
-                Select a dashboard from the dropdown above to view its configuration.
+                Select a dashboard from the dropdown above to view its configuration, or enable live view to see widgets in action.
               </p>
-              <Button
-                onClick={() => setDashboardManagerOpen(true)}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Create New Dashboard
-              </Button>
+              <div className="flex justify-center gap-2">
+                <Button
+                  onClick={() => setDashboardManagerOpen(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Create New Dashboard
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleToggleLiveView}
+                  className="flex items-center gap-2"
+                >
+                  <Eye className="h-4 w-4" />
+                  View Live Widgets
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -319,6 +538,14 @@ export default function Analytics() {
                 >
                   <Plus className="h-4 w-4" />
                   New Dashboard
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleToggleLiveView}
+                  className="flex items-center gap-2"
+                >
+                  {showLiveView ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showLiveView ? 'Hide Live' : 'Live View'}
                 </Button>
                 <Button
                   variant="outline"

@@ -35,6 +35,7 @@ interface AnalyticsWidgetProps {
     operationsByStatus: Record<string, number>;
     resourcesByStatus: Record<string, number>;
   };
+  readOnly?: boolean;
 }
 
 export default function AnalyticsWidget({ 
@@ -44,13 +45,16 @@ export default function AnalyticsWidget({
   onEdit, 
   onResize, 
   onMove,
-  data
+  data,
+  readOnly = false
 }: AnalyticsWidgetProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const widgetRef = useRef<HTMLDivElement>(null);
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (readOnly) return;
+    
     e.preventDefault();
     e.stopPropagation();
     
@@ -223,7 +227,7 @@ export default function AnalyticsWidget({
   return (
     <Card 
       ref={widgetRef}
-      className={`h-full ${isDragging ? 'shadow-lg' : ''} cursor-move`}
+      className={`h-full ${isDragging ? 'shadow-lg' : ''} ${readOnly ? 'cursor-default' : 'cursor-move'}`}
       style={{
         position: 'absolute',
         left: `${widget.position.x}px`,
@@ -236,43 +240,47 @@ export default function AnalyticsWidget({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-6 w-6 p-0 cursor-move hover:bg-gray-100"
-              onMouseDown={handleMouseDown}
-              title="Drag to move widget"
-            >
-              <Move className="w-4 h-4 text-gray-400" />
-            </Button>
+            {!readOnly && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 w-6 p-0 cursor-move hover:bg-gray-100"
+                onMouseDown={handleMouseDown}
+                title="Drag to move widget"
+              >
+                <Move className="w-4 h-4 text-gray-400" />
+              </Button>
+            )}
             {getIcon()}
             <CardTitle className="text-sm">{widget.title}</CardTitle>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onToggle(widget.id)}>
-                {widget.visible ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
-                {widget.visible ? "Hide" : "Show"}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit(widget.id)}>
-                <Settings className="w-4 h-4 mr-2" />
-                Configure
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Maximize2 className="w-4 h-4 mr-2" />
-                Expand
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onRemove(widget.id)} className="text-red-600">
-                <X className="w-4 h-4 mr-2" />
-                Remove
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {!readOnly && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onToggle(widget.id)}>
+                  {widget.visible ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+                  {widget.visible ? "Hide" : "Show"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onEdit(widget.id)}>
+                  <Settings className="w-4 h-4 mr-2" />
+                  Configure
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Maximize2 className="w-4 h-4 mr-2" />
+                  Expand
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onRemove(widget.id)} className="text-red-600">
+                  <X className="w-4 h-4 mr-2" />
+                  Remove
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </CardHeader>
       <CardContent>

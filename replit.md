@@ -790,6 +790,17 @@ The application uses a modern full-stack architecture with strong typing through
 - Schedule page now loads and displays actual 3 custom widgets with real-time manufacturing metrics
 - System designed with separation of concerns: Analytics for configuration, Schedule for display
 
+✓ **Enhanced Analytics Page with Live Multi-Dashboard View (July 15, 2025)**:
+- Added comprehensive live dashboard view capability to analytics page
+- Implemented multi-dashboard selection system with checkbox interface
+- Users can now view multiple dashboards simultaneously with live widgets
+- Added real-time data fetching (30-second intervals) for live widget display
+- Enhanced AnalyticsWidget component with readOnly mode for live view
+- Added toggle between configuration view and live widget view
+- Live widgets display real manufacturing data without editing capabilities
+- Multiple dashboard configurations can be displayed side-by-side for comparison
+- Added "Show Live View" button in header for quick access to live dashboard monitoring
+
 ✓ **AI-First Button Ordering Enhancement (July 14, 2025)**:
 - Reordered AI and New buttons on both reports and analytics pages to emphasize AI-first approach
 - AI buttons now appear before New buttons to prioritize AI-powered features
