@@ -801,6 +801,14 @@ The application uses a modern full-stack architecture with strong typing through
 - Multiple dashboard configurations can be displayed side-by-side for comparison
 - Added "Show Live View" button in header for quick access to live dashboard monitoring
 
+✓ **Analytics Page Compactification (July 15, 2025)**:
+- Consolidated dashboard selection and live view controls into single compact card
+- Implemented two-column grid layout for dashboard controls and live view options
+- Reduced button sizes and padding for more efficient space utilization
+- Added scrollable dashboard selection area with max height constraints
+- Moved action buttons to card header for better visual organization
+- Streamlined interface reduces vertical space usage while maintaining full functionality
+
 ✓ **AI-First Button Ordering Enhancement (July 14, 2025)**:
 - Reordered AI and New buttons on both reports and analytics pages to emphasize AI-first approach
 - AI buttons now appear before New buttons to prioritize AI-powered features

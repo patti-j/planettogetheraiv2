@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Settings, Plus, Maximize2, Minimize2, FolderOpen, Sparkles, Eye, EyeOff } from "lucide-react";
 
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
@@ -261,17 +262,40 @@ export default function Analytics() {
   const PageContent = () => (
     <div className="h-full flex flex-col">
       <div className="flex-1 p-6 space-y-6">
-        {/* Dashboard Selection */}
+        {/* Compact Dashboard Controls */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FolderOpen className="h-5 w-5" />
-              Dashboard Selection
-            </CardTitle>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <FolderOpen className="h-4 w-4" />
+                Dashboard Controls
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDashboardManagerOpen(true)}
+                  className="flex items-center gap-1 text-xs px-2"
+                >
+                  <Settings className="h-3 w-3" />
+                  Manage
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setAiAnalyticsOpen(true)}
+                  className="flex items-center gap-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs px-2"
+                >
+                  <Sparkles className="h-3 w-3" />
+                  AI Analytics
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Dashboard Selection */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Current Dashboard:</Label>
                 <Select value={selectedDashboardId} onValueChange={handleLoadDashboard}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a dashboard to view" />
@@ -290,72 +314,50 @@ export default function Analytics() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setDashboardManagerOpen(true)}
-                  className="flex items-center gap-2"
-                >
-                  <Settings className="h-4 w-4" />
-                  Manage
-                </Button>
-                <Button
-                  onClick={() => setAiAnalyticsOpen(true)}
-                  className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  AI Analytics
-                </Button>
+              
+              {/* Live View Controls */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Live Dashboard View:</Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleToggleLiveView}
+                    className="flex items-center gap-1 text-xs px-2"
+                  >
+                    {showLiveView ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                    {showLiveView ? 'Hide' : 'Show'}
+                  </Button>
+                </div>
+                
+                {showLiveView && (
+                  <div className="space-y-2">
+                    <div className="text-xs text-gray-600">Select dashboards to display:</div>
+                    <div className="grid grid-cols-1 gap-1 max-h-24 overflow-y-auto">
+                      {dashboards.map((dashboard) => (
+                        <div key={dashboard.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`dashboard-${dashboard.id}`}
+                            checked={visibleDashboards.has(dashboard.id)}
+                            onCheckedChange={() => handleToggleDashboardVisibility(dashboard.id)}
+                          />
+                          <label
+                            htmlFor={`dashboard-${dashboard.id}`}
+                            className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1"
+                          >
+                            {dashboard.name}
+                            {dashboard.isDefault && (
+                              <Badge variant="secondary" className="text-xs px-1">Default</Badge>
+                            )}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
-        </Card>
-
-        {/* Live Dashboard Toggle */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span>Live Dashboard View</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleToggleLiveView}
-                  className="flex items-center gap-2"
-                >
-                  {showLiveView ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  {showLiveView ? 'Hide Live View' : 'Show Live View'}
-                </Button>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          {showLiveView && (
-            <CardContent>
-              <div className="mb-4">
-                <h4 className="font-medium mb-2">Select Dashboards to Display:</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {dashboards.map((dashboard) => (
-                    <div key={dashboard.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`dashboard-${dashboard.id}`}
-                        checked={visibleDashboards.has(dashboard.id)}
-                        onCheckedChange={() => handleToggleDashboardVisibility(dashboard.id)}
-                      />
-                      <label
-                        htmlFor={`dashboard-${dashboard.id}`}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        {dashboard.name}
-                        {dashboard.isDefault && (
-                          <Badge variant="secondary" className="ml-2 text-xs">Default</Badge>
-                        )}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          )}
         </Card>
 
         {/* Live Dashboard Widgets */}
