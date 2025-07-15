@@ -135,7 +135,10 @@ const widgetTemplates: WidgetTemplate[] = [
 const DraggableTemplate = ({ template }: { template: WidgetTemplate }) => {
   const [{ isDragging }, drag] = useDrag({
     type: "template",
-    item: { id: template.id, type: "template" },
+    item: () => {
+      console.log("Starting drag for template:", template.id);
+      return { id: template.id, type: "template", template };
+    },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
@@ -180,11 +183,14 @@ const VisualEditor = ({ widgets, onDrop, onWidgetSelect, selectedWidgetId }: {
   const [{ isOver }, drop] = useDrop({
     accept: ["widget", "template"],
     drop: (item: any, monitor) => {
+      console.log("Drop event triggered:", item);
       const offset = monitor.getClientOffset();
       const dropZoneRect = drop.current?.getBoundingClientRect();
+      console.log("Drop position:", offset, dropZoneRect);
       if (offset && dropZoneRect) {
-        const x = offset.x - dropZoneRect.left;
-        const y = offset.y - dropZoneRect.top;
+        const x = Math.max(0, offset.x - dropZoneRect.left);
+        const y = Math.max(0, offset.y - dropZoneRect.top);
+        console.log("Calculated position:", { x, y });
         onDrop(item, { x, y });
       }
     },
@@ -196,15 +202,15 @@ const VisualEditor = ({ widgets, onDrop, onWidgetSelect, selectedWidgetId }: {
   return (
     <div
       ref={drop}
-      className={`relative w-full h-96 border-2 border-dashed rounded-lg ${
-        isOver ? "border-blue-500 bg-blue-50" : "border-gray-300"
+      className={`relative w-full h-96 border-2 border-dashed rounded-lg transition-all ${
+        isOver ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-50"
       }`}
     >
       {widgets.map((widget) => (
         <div
           key={widget.id}
-          className={`absolute border-2 rounded-lg bg-white shadow-sm cursor-pointer ${
-            selectedWidgetId === widget.id ? "border-blue-500" : "border-gray-200"
+          className={`absolute border-2 rounded-lg bg-white shadow-sm cursor-pointer transition-all ${
+            selectedWidgetId === widget.id ? "border-blue-500 shadow-lg" : "border-gray-200 hover:border-gray-300"
           }`}
           style={{
             left: widget.position.x,
@@ -229,7 +235,16 @@ const VisualEditor = ({ widgets, onDrop, onWidgetSelect, selectedWidgetId }: {
       ))}
       {widgets.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-          Drag widgets from the Widget Library to get started
+          <div className="text-center">
+            <div className="text-lg mb-2">📋</div>
+            <div>Drag widgets from the Widget Library to get started</div>
+            <div className="text-sm mt-1">Drop zone is ready for widgets</div>
+          </div>
+        </div>
+      )}
+      {isOver && (
+        <div className="absolute inset-0 flex items-center justify-center bg-blue-100 bg-opacity-50 border-2 border-blue-500 rounded-lg">
+          <div className="text-blue-700 font-medium">Drop widget here</div>
         </div>
       )}
     </div>
@@ -356,10 +371,14 @@ export default function EnhancedDashboardManager({
   };
 
   const handleDropWidget = (item: any, position: { x: number; y: number }) => {
+    console.log("handleDropWidget called with:", item, position);
     if (item.type === "template") {
-      const template = widgetTemplates.find(t => t.id === item.id);
+      const template = item.template || widgetTemplates.find(t => t.id === item.id);
       if (template) {
+        console.log("Adding widget from template:", template);
         handleAddWidget(template, position);
+      } else {
+        console.log("Template not found for:", item.id);
       }
     }
   };
