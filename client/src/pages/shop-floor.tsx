@@ -10,8 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AlertCircle, CheckCircle, Clock, Users, Settings, Wrench, Building2, Play, Pause, AlertTriangle, GripVertical, RotateCcw, PauseCircle, PlayCircle, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { useDrag, useDrop, DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
+import { useDrag, useDrop } from "react-dnd";
 import type { Operation, Job, Resource } from "@shared/schema";
 
 interface DraggableOperationCardProps {
@@ -645,27 +644,25 @@ export default function ShopFloor() {
         )}
 
         {/* Operations List */}
-        <DndProvider backend={HTML5Backend}>
-          <div className="space-y-3">
-            {filteredOperations.map((operation, index) => {
-              const job = getJob(operation.jobId);
-              const resource = getResource(operation.resourceId);
-              
-              return (
-                <DraggableOperationCard
-                  key={operation.id}
-                  operation={operation}
-                  job={job}
-                  resource={resource}
-                  index={index}
-                  onMove={handleMoveOperation}
-                  onStatusUpdate={handleStatusUpdate}
-                  isUpdating={updateOperationMutation.isPending}
-                />
-              );
-            })}
-          </div>
-        </DndProvider>
+        <div className="space-y-3">
+          {filteredOperations.map((operation, index) => {
+            const job = getJob(operation.jobId);
+            const resource = getResource(operation.resourceId);
+            
+            return (
+              <DraggableOperationCard
+                key={operation.id}
+                operation={operation}
+                job={job}
+                resource={resource}
+                index={index}
+                onMove={handleMoveOperation}
+                onStatusUpdate={handleStatusUpdate}
+                isUpdating={updateOperationMutation.isPending}
+              />
+            );
+          })}
+        </div>
 
         {filteredOperations.length === 0 && (
           <Card>
