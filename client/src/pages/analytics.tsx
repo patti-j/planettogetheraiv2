@@ -188,13 +188,7 @@ function DraggableDashboardCard({
             <div className="relative h-full bg-gray-50 rounded-lg p-4 overflow-y-auto">
               <div className="space-y-4">
                 {dashboard.configuration.customWidgets.map((widget: AnalyticsWidget) => (
-                  <div key={widget.id} className="bg-white rounded-lg p-4 shadow-sm">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-medium text-gray-900">{widget.title}</h3>
-                      <div className="text-xs text-gray-500">
-                        {widget.type}
-                      </div>
-                    </div>
+                  <div key={widget.id} className="bg-white rounded-lg shadow-sm">
                     <AnalyticsWidget
                       widget={widget}
                       onToggle={() => {}} // Read-only mode

@@ -228,7 +228,12 @@ export default function AnalyticsWidget({
     <Card 
       ref={widgetRef}
       className={`${isDragging ? 'shadow-lg' : ''} ${readOnly ? 'cursor-default' : 'cursor-move'} overflow-hidden flex flex-col`}
-      style={{
+      style={readOnly ? {
+        position: 'relative',
+        width: '100%',
+        height: 'auto',
+        minHeight: '150px'
+      } : {
         position: 'absolute',
         left: `${widget.position.x}px`,
         top: `${widget.position.y}px`,
