@@ -61,6 +61,70 @@ export default function Analytics() {
     refetchInterval: isLivePaused ? false : 30000, // Refresh every 30 seconds when not paused
   });
 
+  // Dashboard management mutations
+  const createDashboardMutation = useMutation({
+    mutationFn: async (dashboardData: any) => {
+      const response = await apiRequest("POST", "/api/dashboard-configs", dashboardData);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
+      toast({
+        title: "Success",
+        description: "Dashboard created successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create dashboard",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateDashboardMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const response = await apiRequest("PUT", `/api/dashboard-configs/${id}`, data);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
+      toast({
+        title: "Success",
+        description: "Dashboard updated successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update dashboard",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteDashboardMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest("DELETE", `/api/dashboard-configs/${id}`);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
+      toast({
+        title: "Success",
+        description: "Dashboard deleted successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete dashboard",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Fetch live data for widgets
   const { data: jobs = [] } = useQuery<Job[]>({
     queryKey: ["/api/jobs"],
@@ -447,6 +511,19 @@ export default function Analytics() {
         open={dashboardManagerOpen}
         onOpenChange={setDashboardManagerOpen}
         dashboards={dashboards}
+        currentDashboard={null}
+        onDashboardSelect={() => {}}
+        onDashboardCreate={(dashboard) => {
+          createDashboardMutation.mutate(dashboard);
+        }}
+        onDashboardUpdate={(dashboard) => {
+          updateDashboardMutation.mutate({ id: dashboard.id, data: dashboard });
+        }}
+        onDashboardDelete={(dashboardId) => {
+          deleteDashboardMutation.mutate(dashboardId);
+        }}
+        standardWidgets={[]}
+        customWidgets={[]}
       />
 
       <AIAnalyticsManager
