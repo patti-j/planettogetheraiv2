@@ -97,51 +97,60 @@ export default function ForkliftDriver() {
 
       // Create movement if operation is completed and needs to move
       if (operation.status === "completed" || operation.status === "active") {
-        const movementId = `${operation.id}-${Date.now()}`;
+        // Generate multiple movements per operation for testing
+        const movementCount = Math.floor(Math.random() * 3) + 1; // 1-3 movements per operation
         
-        // Determine destination
-        let toLocation = "Storage";
-        let nextOperationName = "Complete - Send to Storage";
-        
-        if (nextOperation && nextResource) {
-          toLocation = nextResource.name;
-          nextOperationName = nextOperation.name;
-        } else if (!nextOperation) {
-          // Check if this is the last operation
-          const isLastOperation = !dependencies.some(d => d.dependsOnOperationId === operation.id);
-          if (isLastOperation) {
-            toLocation = "Shipping";
-            nextOperationName = "Complete - Send to Shipping";
+        for (let i = 0; i < movementCount; i++) {
+          const movementId = `${operation.id}-${Date.now()}-${i}`;
+          
+          // Determine destination
+          let toLocation = "Storage";
+          let nextOperationName = "Complete - Send to Storage";
+          
+          if (nextOperation && nextResource) {
+            toLocation = nextResource.name;
+            nextOperationName = nextOperation.name;
+          } else if (!nextOperation) {
+            // Check if this is the last operation
+            const isLastOperation = !dependencies.some(d => d.dependsOnOperationId === operation.id);
+            if (isLastOperation) {
+              toLocation = "Shipping";
+              nextOperationName = "Complete - Send to Shipping";
+            }
           }
+
+          // Generate realistic material data
+          const materialTypes = ["Sheet Metal", "Machined Parts", "Welded Assembly", "Painted Components", "Packaged Goods"];
+          const materialType = materialTypes[Math.floor(Math.random() * materialTypes.length)];
+          
+          // Vary the status for testing
+          const statuses = ["pending", "in-progress", "completed", "blocked"];
+          const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+          
+          const movement: MaterialMovement = {
+            id: movementId,
+            jobId: job.id,
+            jobName: job.name,
+            operationId: operation.id,
+            operationName: operation.name,
+            materialType,
+            quantity: Math.floor(Math.random() * 50) + 1,
+            unit: "pcs",
+            fromLocation: resource.name,
+            toLocation,
+            priority: job.priority as "high" | "medium" | "low",
+            status: randomStatus as "pending" | "in-progress" | "completed" | "blocked",
+            estimatedTime: Math.floor(Math.random() * 15) + 5,
+            distance: Math.floor(Math.random() * 200) + 50,
+            nextOperation: nextOperationName,
+            specialInstructions: toLocation === "Shipping" ? "Handle with care - final product" : undefined,
+            isCompleted: operation.status === "completed",
+            customer: job.customer,
+            dueDate: job.dueDate,
+          };
+
+          movements.push(movement);
         }
-
-        // Generate realistic material data
-        const materialTypes = ["Sheet Metal", "Machined Parts", "Welded Assembly", "Painted Components", "Packaged Goods"];
-        const materialType = materialTypes[Math.floor(Math.random() * materialTypes.length)];
-        
-        const movement: MaterialMovement = {
-          id: movementId,
-          jobId: job.id,
-          jobName: job.name,
-          operationId: operation.id,
-          operationName: operation.name,
-          materialType,
-          quantity: Math.floor(Math.random() * 50) + 1,
-          unit: "pcs",
-          fromLocation: resource.name,
-          toLocation,
-          priority: job.priority as "high" | "medium" | "low",
-          status: operation.status === "completed" ? "pending" : "in-progress",
-          estimatedTime: Math.floor(Math.random() * 15) + 5,
-          distance: Math.floor(Math.random() * 200) + 50,
-          nextOperation: nextOperationName,
-          specialInstructions: toLocation === "Shipping" ? "Handle with care - final product" : undefined,
-          isCompleted: operation.status === "completed",
-          customer: job.customer,
-          dueDate: job.dueDate,
-        };
-
-        movements.push(movement);
       }
     });
 
@@ -336,7 +345,7 @@ export default function ForkliftDriver() {
   );
 
   const PageContent = () => (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -490,7 +499,7 @@ export default function ForkliftDriver() {
   if (isMaximized) {
     return (
       <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-4 py-6 max-h-screen">
           <PageContent />
         </div>
       </div>
@@ -498,8 +507,12 @@ export default function ForkliftDriver() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 overflow-y-auto">
-      <PageContent />
+    <div className="flex flex-col h-screen">
+      <div className="flex-1 overflow-y-auto">
+        <div className="container mx-auto px-4 py-6">
+          <PageContent />
+        </div>
+      </div>
     </div>
   );
 }
