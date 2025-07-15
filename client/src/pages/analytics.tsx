@@ -407,7 +407,7 @@ export default function Analytics() {
   };
 
   const PageContent = () => (
-    <div className="flex-1 flex flex-col">
+    <div className="h-full flex flex-col">
         <header className="bg-white shadow-sm border-b border-gray-200 px-4 py-3 sm:px-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="md:ml-0 ml-12">
@@ -444,7 +444,7 @@ export default function Analytics() {
 
         <main className="flex-1 overflow-y-auto p-8">
           {/* Analytics Dashboard - Free Form Layout */}
-          <div className="relative" style={{ minHeight: '1000px' }}>
+          <div className="relative pb-8" style={{ minHeight: '2000px' }}>
             {/* Standard Widgets */}
             {standardWidgets.map((widget) => (
               <StandardWidget
