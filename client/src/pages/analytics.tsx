@@ -74,6 +74,7 @@ function DraggableDashboardCard({
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0, direction: '' });
   const [currentSize, setCurrentSize] = useState(size);
   const [resizeId, setResizeId] = useState(0);
+  const [forceRender, setForceRender] = useState(0);
   
   // console.log('DraggableDashboardCard render:', dashboard.id, 'prop size:', size, 'currentSize:', currentSize);
   
@@ -139,6 +140,7 @@ function DraggableDashboardCard({
     // console.log('Setting currentSize to:', newSize);
     setCurrentSize(newSize);
     setResizeId(prev => prev + 1); // Force re-render
+    setForceRender(prev => prev + 1); // Additional force re-render
     
     onResize(dashboard.id, newSize);
   };
@@ -185,8 +187,10 @@ function DraggableDashboardCard({
           minHeight: `${currentSize.height}px`,
           maxWidth: `${currentSize.width}px`,
           maxHeight: `${currentSize.height}px`,
-          backgroundColor: 'rgba(59, 130, 246, 0.05)' // Light blue background
+          backgroundColor: 'rgba(59, 130, 246, 0.05)', // Light blue background
+          transform: `scale(${1 + forceRender * 0.0001})` // Microscopic scale change to force re-render
         }}
+        key={`dashboard-${dashboard.id}-${resizeId}-${forceRender}`} // Force complete re-render
       >
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
