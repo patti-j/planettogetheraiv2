@@ -81,7 +81,16 @@ const DraggableOperationCard = ({
 
   if (isCompact) {
     return (
-      <div ref={(node) => drag(drop(node))} style={{ opacity: isDragging ? 0.5 : 1 }}>
+      <div 
+        ref={(node) => drag(drop(node))} 
+        style={{ 
+          opacity: isDragging ? 0.5 : 1,
+          backgroundColor: isOver && canDrop ? '#f0f9ff' : 'transparent',
+          borderRadius: '8px',
+          transition: 'background-color 0.2s ease'
+        }}
+        className={`${isOver && canDrop ? 'border-2 border-blue-300 border-dashed' : ''}`}
+      >
         <Card className="border-l-4 cursor-move hover:bg-gray-50 transition-colors" style={{ borderLeftColor: statusInfo.color.replace('bg-', '#') }}>
           <CardContent className="p-3">
             <div className="flex items-center justify-between min-w-0">
@@ -269,7 +278,8 @@ export default function MobileSchedule({
 
   // Filter operations based on selected filters
   const filteredOperations = useMemo(() => {
-    let filtered = hasReorder ? orderedOperations : operations;
+    let filtered = hasReorder && orderedOperations.length > 0 ? orderedOperations : operations;
+    console.log(`Filtering operations: hasReorder=${hasReorder}, orderedOperations.length=${orderedOperations.length}, using ${filtered === orderedOperations ? 'orderedOperations' : 'operations'}`);
 
     // Filter by resource
     if (selectedResource !== "all") {
@@ -312,6 +322,7 @@ export default function MobileSchedule({
   // Initialize ordered operations when operations change (but not during reorder)
   useEffect(() => {
     if (operations.length > 0 && !hasReorder) {
+      console.log(`Setting ordered operations to original operations (hasReorder=${hasReorder})`);
       setOrderedOperations(operations);
     }
   }, [operations, hasReorder]);
@@ -319,8 +330,11 @@ export default function MobileSchedule({
   // Handle drag and drop reordering
   const handleMoveOperation = useCallback((dragIndex: number, hoverIndex: number) => {
     console.log(`handleMoveOperation called: ${dragIndex} -> ${hoverIndex}`);
-    const draggedOperation = filteredOperations[dragIndex];
-    const newOperations = [...filteredOperations];
+    
+    // Use the current ordered operations or original operations
+    const currentOperations = hasReorder && orderedOperations.length > 0 ? orderedOperations : operations;
+    const draggedOperation = currentOperations[dragIndex];
+    const newOperations = [...currentOperations];
     
     // Remove the dragged operation from its current position
     newOperations.splice(dragIndex, 1);
@@ -330,8 +344,8 @@ export default function MobileSchedule({
     console.log(`Updated operations order:`, newOperations.map(op => op.name));
     setOrderedOperations(newOperations);
     setHasReorder(true);
-    console.log(`hasReorder set to true`);
-  }, [filteredOperations]);
+    console.log(`hasReorder set to true, orderedOperations updated`);
+  }, [hasReorder, orderedOperations, operations]);
 
   // Calculate new start times based on sequence
   const calculateNewSchedule = useCallback((operationsToSchedule: Operation[]) => {
