@@ -708,28 +708,30 @@ export default function EnhancedDashboardManager({
   return (
     <DndProvider backend={HTML5Backend}>
       <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] md:max-w-7xl h-[90vh] flex flex-col p-0 overflow-hidden">
-        <DialogHeader className="px-6 py-4 border-b">
-          <DialogTitle>
-            {editingDashboard ? `Edit Dashboard: ${editingDashboard.name}` : "Manage Dashboards"}
-          </DialogTitle>
-          <DialogDescription>
-            Create, edit, and organize your dashboard configurations with comprehensive widget management
-          </DialogDescription>
-        </DialogHeader>
+        <DialogContent className="max-w-[95vw] md:max-w-7xl h-[90vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="px-4 sm:px-6 py-4 border-b">
+            <DialogTitle>
+              {editingDashboard ? `Edit Dashboard: ${editingDashboard.name}` : "Manage Dashboards"}
+            </DialogTitle>
+            <DialogDescription>
+              Create, edit, and organize your dashboard configurations with comprehensive widget management
+            </DialogDescription>
+          </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 mx-4 sm:mx-6 mt-4 h-12 sm:h-auto">
-              <TabsTrigger value="browse" className="text-xs sm:text-sm py-2 sm:py-1 min-h-[44px] sm:min-h-auto">Browse</TabsTrigger>
-              <TabsTrigger value="create" className="text-xs sm:text-sm py-2 sm:py-1 min-h-[44px] sm:min-h-auto">Create New</TabsTrigger>
-              <TabsTrigger value="editor" className="text-xs sm:text-sm py-2 sm:py-1 min-h-[44px] sm:min-h-auto">Visual Editor</TabsTrigger>
-              <TabsTrigger value="templates" className="text-xs sm:text-sm py-2 sm:py-1 min-h-[44px] sm:min-h-auto">Widget Library</TabsTrigger>
-              <TabsTrigger value="ai" className="text-xs sm:text-sm py-2 sm:py-1 min-h-[44px] sm:min-h-auto">
-                <Sparkles className="w-3 h-3 mr-1" />
-                <span className="hidden sm:inline">AI Assistant</span>
-                <span className="sm:hidden">AI</span>
-              </TabsTrigger>
-            </TabsList>
+            <div className="px-4 sm:px-6 pt-4 pb-2 relative z-10">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-12 sm:h-auto">
+                <TabsTrigger value="browse" className="text-xs sm:text-sm py-2 sm:py-1 min-h-[44px] sm:min-h-auto touch-manipulation relative z-10">Browse</TabsTrigger>
+                <TabsTrigger value="create" className="text-xs sm:text-sm py-2 sm:py-1 min-h-[44px] sm:min-h-auto touch-manipulation relative z-10">Create New</TabsTrigger>
+                <TabsTrigger value="editor" className="text-xs sm:text-sm py-2 sm:py-1 min-h-[44px] sm:min-h-auto touch-manipulation relative z-10">Visual Editor</TabsTrigger>
+                <TabsTrigger value="templates" className="text-xs sm:text-sm py-2 sm:py-1 min-h-[44px] sm:min-h-auto touch-manipulation relative z-10">Widget Library</TabsTrigger>
+                <TabsTrigger value="ai" className="text-xs sm:text-sm py-2 sm:py-1 min-h-[44px] sm:min-h-auto touch-manipulation relative z-10">
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  <span className="hidden sm:inline">AI Assistant</span>
+                  <span className="sm:hidden">AI</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
             <TabsContent value="browse" className="flex-1 overflow-y-auto">
               <div className="p-4 sm:p-6 space-y-4">
                 <div className="flex items-center justify-between">
@@ -1010,14 +1012,14 @@ export default function EnhancedDashboardManager({
                     <div className="space-y-3">
                       <textarea
                         placeholder="Describe the dashboard you want to create... (e.g., 'Create a production dashboard with job status, resource utilization, and completion rates')"
-                        className="w-full h-32 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
+                        className="w-full h-32 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base touch-manipulation"
                         value={aiDashboardPrompt}
                         onChange={(e) => setAiDashboardPrompt(e.target.value)}
                       />
                       <Button
                         onClick={handleCreateDashboardWithAI}
                         disabled={!aiDashboardPrompt.trim() || aiDashboardMutation.isPending}
-                        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white min-h-[48px] text-sm sm:text-base"
+                        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white min-h-[48px] text-sm sm:text-base touch-manipulation relative z-10"
                       >
                         {aiDashboardMutation.isPending ? (
                           <div className="flex items-center">
@@ -1041,14 +1043,14 @@ export default function EnhancedDashboardManager({
                     <div className="space-y-3">
                       <textarea
                         placeholder="Describe the widgets you want to add... (e.g., 'Add a chart showing daily production trends and a metric for current efficiency')"
-                        className="w-full h-32 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
+                        className="w-full h-32 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base touch-manipulation"
                         value={aiWidgetPrompt}
                         onChange={(e) => setAiWidgetPrompt(e.target.value)}
                       />
                       <Button
                         onClick={handleCreateWidgetsWithAI}
                         disabled={!aiWidgetPrompt.trim() || !editingDashboard || aiWidgetMutation.isPending}
-                        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white min-h-[48px] text-sm sm:text-base"
+                        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white min-h-[48px] text-sm sm:text-base touch-manipulation relative z-10"
                       >
                         {aiWidgetMutation.isPending ? (
                           <div className="flex items-center">
