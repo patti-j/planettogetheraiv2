@@ -346,6 +346,20 @@ const DraggableAreaBubble = ({
   initialPosition?: { x: number; y: number };
 }) => {
   const [areaLayout, setAreaLayout] = useState<AreaLayout>(() => {
+    // Always prioritize saved layout from localStorage first
+    const savedLayout = localStorage.getItem(`area-layout-${areaKey}`);
+    if (savedLayout) {
+      const parsed = JSON.parse(savedLayout);
+      // Update width and height based on current resources
+      const areaWidth = Math.max(300, resources.length * 80 + 100);
+      const areaHeight = Math.max(200, Math.ceil(resources.length / 4) * 80 + 100);
+      return {
+        ...parsed,
+        width: areaWidth,
+        height: areaHeight
+      };
+    }
+    
     // Check if we have an initial position from parent
     if (initialPosition) {
       const areaWidth = Math.max(300, resources.length * 80 + 100);
@@ -357,11 +371,6 @@ const DraggableAreaBubble = ({
         width: areaWidth,
         height: areaHeight
       };
-    }
-    
-    const savedLayout = localStorage.getItem(`area-layout-${areaKey}`);
-    if (savedLayout) {
-      return JSON.parse(savedLayout);
     }
     
     // Smart initial positioning to prevent overlaps
@@ -407,16 +416,7 @@ const DraggableAreaBubble = ({
     };
   });
 
-  // Update layout when initialPosition changes
-  useEffect(() => {
-    if (initialPosition) {
-      setAreaLayout(prev => ({
-        ...prev,
-        x: initialPosition.x,
-        y: initialPosition.y
-      }));
-    }
-  }, [initialPosition]);
+  // Don't override position from localStorage - let saved positions persist
 
   const [{ isDragging }, drag] = useDrag({
     type: "area",
@@ -452,10 +452,7 @@ const DraggableAreaBubble = ({
     }),
   });
 
-  // Save area layout to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem(`area-layout-${areaKey}`, JSON.stringify(areaLayout));
-  }, [areaKey, areaLayout]);
+  // Position is saved in drag end handler - no need for additional useEffect
 
   const getResourceIcon = (type: string) => {
     switch (type.toLowerCase()) {
