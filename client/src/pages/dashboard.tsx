@@ -247,16 +247,7 @@ export default function Dashboard() {
                   <p className="text-gray-600">Full dashboard view with metrics and Gantt chart</p>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <div className="text-sm text-gray-500 flex items-center">
-                    <Factory className="w-4 h-4 mr-1" />
-                    {new Date().toLocaleDateString('en-US', { 
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </div>
-
+                  {/* Live button in top right corner */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -618,54 +609,35 @@ export default function Dashboard() {
                 <h2 className="text-xl md:text-2xl font-semibold text-gray-800">Schedule</h2>
                 <p className="text-sm md:text-base text-gray-600">Manage operations and resource allocation</p>
               </div>
-              <div className="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-4">
-                <div className="text-xs md:text-sm text-gray-500 flex items-center">
-                  <Factory className="w-3 h-3 md:w-4 md:h-4 mr-1" />
-                  <span className="hidden md:inline">
-                    {new Date().toLocaleDateString('en-US', { 
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </span>
-                  <span className="md:hidden">
-                    {new Date().toLocaleDateString('en-US', { 
-                      month: 'short',
-                      day: 'numeric'
-                    })}
-                  </span>
-                </div>
-
-                {/* Live button moved to top right corner */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsLivePaused(!isLivePaused)}
-                      className="flex items-center gap-2 hover:bg-gray-100 text-sm"
-                    >
-                      {isLivePaused ? (
-                        <>
-                          <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                          <span className="text-sm text-gray-600 font-medium">Paused</span>
-                          <PlayCircle className="w-4 h-4 text-gray-600" />
-                        </>
-                      ) : (
-                        <>
-                          <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                          <span className="text-sm text-green-600 font-medium">Live</span>
-                          <PauseCircle className="w-4 h-4 text-green-600" />
-                        </>
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Toggle live data updates</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
+              
+              {/* Live button in top right corner */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsLivePaused(!isLivePaused)}
+                    className="flex items-center gap-2 hover:bg-gray-100 text-sm"
+                  >
+                    {isLivePaused ? (
+                      <>
+                        <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                        <span className="text-sm text-gray-600 font-medium">Paused</span>
+                        <PlayCircle className="w-4 h-4 text-gray-600" />
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-sm text-green-600 font-medium">Live</span>
+                        <PauseCircle className="w-4 h-4 text-green-600" />
+                      </>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Toggle live data updates</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
 
           {/* Analytics Controls */}
@@ -716,21 +688,24 @@ export default function Dashboard() {
                 </PopoverContent>
               </Popover>
               
+              {/* Dashboard Manager button next to dropdown */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setAnalyticsManagerOpen(true)}
+                    onClick={() => setDashboardManagerOpen(true)}
                   >
-                    <Settings className="w-4 h-4 mr-2" />
+                    <Settings className="w-4 h-4 mr-1" />
                     Dashboard Manager
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Manage dashboard configurations and widgets</p>
+                  <p>Manage dashboards and widgets</p>
                 </TooltipContent>
               </Tooltip>
+              
+
               
               {!isMobile && (
                 <Tooltip>

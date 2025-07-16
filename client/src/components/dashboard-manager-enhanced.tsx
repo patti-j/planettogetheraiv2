@@ -371,39 +371,21 @@ export function EnhancedDashboardManager({
                 <div className="p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold">Dashboards</h3>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setEditingDashboard(null);
-                          setEditingWidget(null);
-                          setNewDashboardName("");
-                          setNewDashboardDescription("");
-                          setAiDashboardPrompt("");
-                          setEditMode("ai");
-                          setIsEditDialogOpen(true);
-                        }}
-                        className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
-                      >
-                        <Sparkles className="w-4 h-4" />
-                        AI Create
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setEditingDashboard(null);
-                          setEditingWidget(null);
-                          setNewDashboardName("");
-                          setNewDashboardDescription("");
-                          setAiDashboardPrompt("");
-                          setEditMode("manual");
-                          setIsEditDialogOpen(true);
-                        }}
-                        className="flex items-center gap-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        New Dashboard
-                      </Button>
-                    </div>
+                    <Button
+                      onClick={() => {
+                        setEditingDashboard(null);
+                        setEditingWidget(null);
+                        setNewDashboardName("");
+                        setNewDashboardDescription("");
+                        setAiDashboardPrompt("");
+                        setEditMode("manual");
+                        setIsEditDialogOpen(true);
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      New Dashboard
+                    </Button>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -468,43 +450,23 @@ export function EnhancedDashboardManager({
                 <div className="p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold">Widgets</h3>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setEditingWidget(null);
-                          setEditingDashboard(null);
-                          setNewWidgetName("");
-                          setNewWidgetType("metric");
-                          setNewWidgetConfig({});
-                          setNewWidgetData({});
-                          setAiWidgetPrompt("");
-                          setEditMode("ai");
-                          setIsEditDialogOpen(true);
-                        }}
-                        className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
-                      >
-                        <Sparkles className="w-4 h-4" />
-                        AI Create
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setEditingWidget(null);
-                          setEditingDashboard(null);
-                          setNewWidgetName("");
-                          setNewWidgetType("metric");
-                          setNewWidgetConfig({});
-                          setNewWidgetData({});
-                          setAiWidgetPrompt("");
-                          setEditMode("manual");
-                          setIsEditDialogOpen(true);
-                        }}
-                        className="flex items-center gap-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        New Widget
-                      </Button>
-                    </div>
+                    <Button
+                      onClick={() => {
+                        setEditingWidget(null);
+                        setEditingDashboard(null);
+                        setNewWidgetName("");
+                        setNewWidgetType("metric");
+                        setNewWidgetConfig({});
+                        setNewWidgetData({});
+                        setAiWidgetPrompt("");
+                        setEditMode("manual");
+                        setIsEditDialogOpen(true);
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      New Widget
+                    </Button>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
