@@ -330,6 +330,7 @@ export default function MobileSchedule({
     console.log(`Updated operations order:`, newOperations.map(op => op.name));
     setOrderedOperations(newOperations);
     setHasReorder(true);
+    console.log(`hasReorder set to true`);
   }, [filteredOperations]);
 
   // Calculate new start times based on sequence
