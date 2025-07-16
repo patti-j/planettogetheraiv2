@@ -343,23 +343,19 @@ const DraggableAreaBubble = ({
 }: DraggableAreaBubbleProps & { 
   onResourceMove: (resourceId: number, newArea: string) => void;
 }) => {
-  const bubbleRef = useRef<HTMLDivElement>(null);
-  const positionRef = useRef<{ x: number; y: number }>({ x: 50, y: 50 });
-  
   // Calculate dimensions
   const areaWidth = Math.max(300, resources.length * 80 + 100);
   const areaHeight = Math.max(200, Math.ceil(resources.length / 4) * 80 + 100);
   
-  // Initialize position from localStorage or calculate new position
-  const initializePosition = () => {
+  // Get position from localStorage
+  const getPosition = () => {
     const savedLayout = localStorage.getItem(`area-layout-${areaKey}`);
     if (savedLayout) {
       const parsed = JSON.parse(savedLayout);
-      positionRef.current = { x: parsed.x, y: parsed.y };
-      return;
+      return { x: parsed.x, y: parsed.y };
     }
     
-    // Calculate non-overlapping position
+    // Calculate non-overlapping position for new areas
     const existingAreas = Object.keys(localStorage)
       .filter(key => key.startsWith('area-layout-'))
       .map(key => JSON.parse(localStorage.getItem(key)!));
@@ -388,36 +384,16 @@ const DraggableAreaBubble = ({
       }
     }
     
-    positionRef.current = { x, y };
+    return { x, y };
   };
   
-  // Initialize position on first render and apply it
-  useEffect(() => {
-    initializePosition();
-    if (bubbleRef.current) {
-      bubbleRef.current.style.transform = `translate(${positionRef.current.x}px, ${positionRef.current.y}px)`;
-    }
-  }, [areaKey]);
-  
-  // Also update position when resources change (for area resizing)
-  useEffect(() => {
-    if (bubbleRef.current) {
-      bubbleRef.current.style.transform = `translate(${positionRef.current.x}px, ${positionRef.current.y}px)`;
-    }
-  }, [resources.length]);
-  
-  // Save position to localStorage
-  const savePosition = (x: number, y: number) => {
-    const layout = { areaKey, x, y, width: areaWidth, height: areaHeight };
-    localStorage.setItem(`area-layout-${areaKey}`, JSON.stringify(layout));
-    positionRef.current = { x, y };
-  };
+  const position = getPosition();
 
   // Don't override position from localStorage - let saved positions persist
 
   const [{ isDragging }, drag] = useDrag({
     type: "area",
-    item: () => ({ areaKey, x: positionRef.current.x, y: positionRef.current.y }),
+    item: () => ({ areaKey, x: position.x, y: position.y }),
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
@@ -427,18 +403,11 @@ const DraggableAreaBubble = ({
         const newX = Math.max(0, item.x + offset.x);
         const newY = Math.max(0, item.y + offset.y);
         
-        // Update position ref
-        positionRef.current = { x: newX, y: newY };
-        
-        // Update DOM position directly
-        if (bubbleRef.current) {
-          bubbleRef.current.style.transform = `translate(${newX}px, ${newY}px)`;
-        }
-        
         // Save position to localStorage
-        savePosition(newX, newY);
+        const layout = { areaKey, x: newX, y: newY, width: areaWidth, height: areaHeight };
+        localStorage.setItem(`area-layout-${areaKey}`, JSON.stringify(layout));
         
-        // Notify parent
+        // Notify parent to trigger re-render
         onMove(areaKey, newX, newY);
       }
     },
@@ -491,7 +460,6 @@ const DraggableAreaBubble = ({
   const combinedRef = (el: HTMLDivElement | null) => {
     drag(el);
     drop(el);
-    bubbleRef.current = el;
   };
 
   return (
@@ -501,8 +469,8 @@ const DraggableAreaBubble = ({
         isDragging ? 'opacity-50 scale-105' : 'opacity-100 scale-100'
       } ${isOver ? 'ring-2 ring-blue-500' : ''}`}
       style={{
-        left: 0,
-        top: 0,
+        left: position.x,
+        top: position.y,
         width: areaWidth,
         minHeight: areaHeight,
       }}
