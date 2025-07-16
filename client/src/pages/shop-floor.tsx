@@ -81,6 +81,25 @@ interface DraggableResourceProps {
   photo?: string;
 }
 
+interface DraggableAreaBubbleProps {
+  areaKey: string;
+  area: {name: string, resources: number[]};
+  resources: Resource[];
+  onMove: (areaKey: string, x: number, y: number) => void;
+  onResourceDetails: (resource: Resource, status: ResourceStatus) => void;
+  resourcePhotos: { [key: number]: string };
+  generateResourceStatus: (resource: Resource) => ResourceStatus;
+  isNoArea?: boolean;
+}
+
+interface AreaLayout {
+  areaKey: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo }: DraggableResourceProps) => {
   const [{ isDragging }, drag] = useDrag({
     type: "resource",
@@ -208,6 +227,173 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo 
               {status.issues.length > 0 && (
                 <p className="text-sm text-red-400">{status.issues.length} issues</p>
               )}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
+  );
+};
+
+const DraggableAreaBubble = ({ 
+  areaKey, 
+  area, 
+  resources, 
+  onMove, 
+  onResourceDetails, 
+  resourcePhotos, 
+  generateResourceStatus, 
+  isNoArea = false 
+}: DraggableAreaBubbleProps) => {
+  const [areaLayout, setAreaLayout] = useState<AreaLayout>({
+    areaKey,
+    x: Math.random() * 300 + 50,
+    y: Math.random() * 300 + 50,
+    width: Math.max(300, resources.length * 80 + 100),
+    height: Math.max(200, Math.ceil(resources.length / 4) * 80 + 100)
+  });
+
+  const [{ isDragging }, drag] = useDrag({
+    type: "area",
+    item: { areaKey, x: areaLayout.x, y: areaLayout.y },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  // Load area layout from localStorage
+  useEffect(() => {
+    const savedLayout = localStorage.getItem(`area-layout-${areaKey}`);
+    if (savedLayout) {
+      const layout = JSON.parse(savedLayout);
+      setAreaLayout(layout);
+    }
+  }, [areaKey]);
+
+  // Save area layout to localStorage
+  useEffect(() => {
+    localStorage.setItem(`area-layout-${areaKey}`, JSON.stringify(areaLayout));
+  }, [areaKey, areaLayout]);
+
+  const getResourceIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case "machine":
+        return <Wrench className="w-4 h-4" />;
+      case "operator":
+        return <Users className="w-4 h-4" />;
+      case "facility":
+        return <Building2 className="w-4 h-4" />;
+      default:
+        return <Settings className="w-4 h-4" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "operational":
+        return "bg-green-100 border-green-300";
+      case "warning":
+        return "bg-yellow-100 border-yellow-300";
+      case "error":
+        return "bg-red-100 border-red-300";
+      case "maintenance":
+        return "bg-blue-100 border-blue-300";
+      case "offline":
+        return "bg-gray-100 border-gray-300";
+      default:
+        return "bg-gray-100 border-gray-300";
+    }
+  };
+
+  return (
+    <div
+      ref={drag}
+      className={`absolute cursor-move select-none transition-all duration-200 ${
+        isDragging ? 'opacity-50 scale-105' : 'opacity-100 scale-100'
+      }`}
+      style={{
+        left: areaLayout.x,
+        top: areaLayout.y,
+        width: areaLayout.width,
+        minHeight: areaLayout.height,
+      }}
+    >
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className={`relative w-full min-h-full ${
+              isNoArea ? 'bg-gray-50 border-gray-300' : 'bg-white border-blue-300'
+            } border-2 border-dashed rounded-lg p-4 shadow-lg hover:shadow-xl transition-shadow`}>
+              {/* Area Header */}
+              <div className={`flex items-center justify-between mb-3 pb-2 border-b ${
+                isNoArea ? 'border-gray-300' : 'border-blue-200'
+              }`}>
+                <div className="flex items-center gap-2">
+                  <Layers className={`w-5 h-5 ${isNoArea ? 'text-gray-600' : 'text-blue-600'}`} />
+                  <h3 className={`font-semibold ${isNoArea ? 'text-gray-800' : 'text-blue-800'}`}>
+                    {area.name}
+                  </h3>
+                </div>
+                <Badge variant="outline" className={isNoArea ? 'text-gray-600' : 'text-blue-600'}>
+                  {resources.length} resources
+                </Badge>
+              </div>
+
+              {/* Resources Grid */}
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                {resources.map((resource, index) => {
+                  const status = generateResourceStatus(resource);
+                  const photo = resourcePhotos[resource.id];
+                  
+                  return (
+                    <div
+                      key={resource.id}
+                      className={`relative ${getStatusColor(status.status)} rounded-lg border-2 p-3 cursor-pointer hover:shadow-md transition-shadow`}
+                      onClick={() => onResourceDetails(resource, status)}
+                    >
+                      {/* Resource Icon/Photo */}
+                      <div className="flex items-center justify-center mb-2">
+                        {photo ? (
+                          <img 
+                            src={photo} 
+                            alt={resource.name}
+                            className="w-8 h-8 object-cover rounded"
+                          />
+                        ) : (
+                          getResourceIcon(resource.type)
+                        )}
+                      </div>
+                      
+                      {/* Resource Name */}
+                      <div className="text-xs font-medium text-center truncate">
+                        {resource.name}
+                      </div>
+                      
+                      {/* Status Indicator */}
+                      <div className="absolute top-1 right-1 w-2 h-2 rounded-full" 
+                           style={{ backgroundColor: status.status === 'operational' ? '#10b981' : 
+                                                    status.status === 'warning' ? '#f59e0b' : 
+                                                    status.status === 'error' ? '#ef4444' : 
+                                                    status.status === 'maintenance' ? '#3b82f6' : '#6b7280' }}
+                      />
+                      
+                      {/* Issue Count */}
+                      {status.issues.length > 0 && (
+                        <div className="absolute top-1 left-1 bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                          {status.issues.length}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <div className="space-y-1">
+              <p className="font-medium">{area.name}</p>
+              <p className="text-sm">{resources.length} resources</p>
+              <p className="text-sm">Drag to move area</p>
             </div>
           </TooltipContent>
         </Tooltip>
@@ -713,15 +899,34 @@ export default function ShopFloor() {
     );
   };
 
+  // Handle area movement
+  const handleAreaMove = (areaKey: string, x: number, y: number) => {
+    // Update area layout in localStorage
+    const savedLayout = localStorage.getItem(`area-layout-${areaKey}`);
+    if (savedLayout) {
+      const layout = JSON.parse(savedLayout);
+      layout.x = x;
+      layout.y = y;
+      localStorage.setItem(`area-layout-${areaKey}`, JSON.stringify(layout));
+    }
+  };
+
   // Drop zone for the shop floor container
   const [, drop] = useDrop({
-    accept: "resource",
-    drop: (item: { id: string; x: number; y: number }, monitor) => {
+    accept: ["resource", "area"],
+    drop: (item: { id?: string; areaKey?: string; x: number; y: number }, monitor) => {
       const offset = monitor.getDifferenceFromInitialOffset();
       if (offset) {
         const newX = item.x + offset.x;
         const newY = item.y + offset.y;
-        handleResourceMove(item.id, Math.max(0, newX), Math.max(0, newY));
+        
+        if (item.id) {
+          // Handle resource drop
+          handleResourceMove(item.id, Math.max(0, newX), Math.max(0, newY));
+        } else if (item.areaKey) {
+          // Handle area drop
+          handleAreaMove(item.areaKey, Math.max(0, newX), Math.max(0, newY));
+        }
       }
     },
   });
@@ -1125,24 +1330,70 @@ export default function ShopFloor() {
                 minHeight: '100%'
               }}
             >
-              {shopFloorLayout.map((layout) => {
-                const resource = filteredResources.find(r => r.id === layout.resourceId);
-                if (!resource) return null;
-                
-                const status = generateResourceStatus(resource);
-                
-                return (
-                  <DraggableResource
-                    key={layout.id}
-                    resource={resource}
-                    layout={layout}
-                    status={status}
-                    onMove={handleResourceMove}
-                    onDetails={handleResourceDetails}
-                    photo={resourcePhotos[resource.id]}
-                  />
-                );
-              })}
+              {currentArea === 'all' ? (
+                // Show resources grouped by areas when viewing all resources
+                <>
+                  {Object.entries(areas).filter(([key]) => key !== 'all').map(([areaKey, area]) => (
+                    <DraggableAreaBubble
+                      key={areaKey}
+                      areaKey={areaKey}
+                      area={area}
+                      resources={filteredResources.filter(r => area.resources.includes(r.id))}
+                      onMove={handleAreaMove}
+                      onResourceDetails={handleResourceDetails}
+                      resourcePhotos={resourcePhotos}
+                      generateResourceStatus={generateResourceStatus}
+                    />
+                  ))}
+                  
+                  {/* Resources not in any area - "No Area" bubble */}
+                  {(() => {
+                    const assignedResourceIds = new Set(
+                      Object.values(areas)
+                        .filter(area => area.resources)
+                        .flatMap(area => area.resources)
+                    );
+                    const unassignedResources = filteredResources.filter(r => !assignedResourceIds.has(r.id));
+                    
+                    if (unassignedResources.length > 0) {
+                      return (
+                        <DraggableAreaBubble
+                          key="no-area"
+                          areaKey="no-area"
+                          area={{ name: 'No Area', resources: unassignedResources.map(r => r.id) }}
+                          resources={unassignedResources}
+                          onMove={handleAreaMove}
+                          onResourceDetails={handleResourceDetails}
+                          resourcePhotos={resourcePhotos}
+                          generateResourceStatus={generateResourceStatus}
+                          isNoArea={true}
+                        />
+                      );
+                    }
+                    return null;
+                  })()}
+                </>
+              ) : (
+                // Show individual resources for specific area selection
+                shopFloorLayout.map((layout) => {
+                  const resource = filteredResources.find(r => r.id === layout.resourceId);
+                  if (!resource) return null;
+                  
+                  const status = generateResourceStatus(resource);
+                  
+                  return (
+                    <DraggableResource
+                      key={layout.id}
+                      resource={resource}
+                      layout={layout}
+                      status={status}
+                      onMove={handleResourceMove}
+                      onDetails={handleResourceDetails}
+                      photo={resourcePhotos[resource.id]}
+                    />
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
