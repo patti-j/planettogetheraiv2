@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Save, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, BarChart3, Wrench, Calendar, User, Smartphone, Monitor, ChevronDown, Play, Pause } from "lucide-react";
+import { Plus, Save, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, BarChart3, Wrench, Calendar, User, Smartphone, Monitor, ChevronDown, Play, Pause, PlayCircle, PauseCircle } from "lucide-react";
 
 import GanttChart from "@/components/ui/gantt-chart";
 import MobileSchedule from "@/components/mobile-schedule";
@@ -50,10 +50,13 @@ export default function Dashboard() {
   const [selectedResourceViewId, setSelectedResourceViewId] = useState<number | null>(null);
   const [rowHeight, setRowHeight] = useState(60);
   const [analyticsManagerOpen, setAnalyticsManagerOpen] = useState(false);
+  const [visibleDashboards, setVisibleDashboards] = useState<Set<number>>(new Set());
+  const [isLivePaused, setIsLivePaused] = useState(false);
   const isMobile = useIsMobile();
   const [customWidgets, setCustomWidgets] = useState<AnalyticsWidget[]>([]);
   const showCustomWidgets = true;
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: jobs = [] } = useQuery<Job[]>({
     queryKey: ["/api/jobs"],
@@ -73,26 +76,41 @@ export default function Dashboard() {
 
   const { data: metrics } = useQuery<Metrics>({
     queryKey: ["/api/metrics"],
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: isLivePaused ? false : 30000, // Refresh every 30 seconds when not paused
   });
 
-  // Load default dashboard configuration
-  const { data: dashboardConfigs = [] } = useQuery({
+  // Load dashboard configurations
+  const { data: dashboards = [] } = useQuery({
     queryKey: ["/api/dashboard-configs"],
   });
 
-  // Load the default dashboard's widgets
-  const { data: defaultDashboard } = useQuery({
-    queryKey: ["/api/dashboard-configs/4"], // Load productivity dashboard
-    enabled: true,
-  });
+  // Dashboard toggle visibility function
+  const handleToggleDashboardVisibility = (dashboardId: number) => {
+    setVisibleDashboards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(dashboardId)) {
+        newSet.delete(dashboardId);
+      } else {
+        newSet.add(dashboardId);
+      }
+      return newSet;
+    });
+  };
+
+  // Get visible dashboards
+  const visibleDashboardConfigs = dashboards.filter(dashboard => 
+    visibleDashboards.has(dashboard.id)
+  );
 
   // Update custom widgets when dashboard configuration loads
   useEffect(() => {
-    if (defaultDashboard?.configuration?.customWidgets) {
-      setCustomWidgets(defaultDashboard.configuration.customWidgets);
+    if (visibleDashboardConfigs.length > 0) {
+      const allWidgets = visibleDashboardConfigs.flatMap(dashboard => 
+        dashboard.configuration?.customWidgets || []
+      );
+      setCustomWidgets(allWidgets);
     }
-  }, [defaultDashboard]);
+  }, [visibleDashboardConfigs]);
 
   const aiMutation = useMutation({
     mutationFn: async (prompt: string) => {
@@ -181,6 +199,28 @@ export default function Dashboard() {
       handleAiPrompt();
     }
   };
+
+  // Generate widget data for analytics
+  const generateWidgetData = () => ({
+    jobs,
+    operations,
+    resources,
+    metrics,
+    overdueJobs: jobs.filter(job => new Date(job.dueDate) < new Date() && job.status !== 'completed'),
+    resourceUtilization: operations.length > 0 ? (operations.filter(op => op.assignedResourceId).length / operations.length * 100) : 0,
+    jobsByStatus: jobs.reduce((acc, job) => {
+      acc[job.status] = (acc[job.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>),
+    operationsByStatus: operations.reduce((acc, operation) => {
+      acc[operation.status] = (acc[operation.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>),
+    resourcesByStatus: resources.reduce((acc, resource) => {
+      acc[resource.status] = (acc[resource.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>)
+  });
 
   if (isMaximized) {
     return (
@@ -536,8 +576,69 @@ export default function Dashboard() {
             <div className="flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-gray-500" />
               <span className="text-sm font-medium text-gray-700">Analytics Dashboard</span>
+              {/* Live/Pause toggle */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsLivePaused(!isLivePaused)}
+                className="flex items-center gap-2 hover:bg-gray-100 text-sm"
+              >
+                {isLivePaused ? (
+                  <>
+                    <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                    <span className="text-sm text-gray-600 font-medium">Paused</span>
+                    <PlayCircle className="w-4 h-4 text-gray-600" />
+                  </>
+                ) : (
+                  <>
+                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-green-600 font-medium">Live</span>
+                    <PauseCircle className="w-4 h-4 text-green-600" />
+                  </>
+                )}
+              </Button>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-2 min-w-[160px] justify-between text-sm"
+                  >
+                    <span>
+                      {visibleDashboards.size === 0 
+                        ? "Select Dashboards" 
+                        : `${visibleDashboards.size} Selected`}
+                    </span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-3">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Select Dashboards to Display:</Label>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {dashboards.map((dashboard) => (
+                        <div key={dashboard.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`dashboard-${dashboard.id}`}
+                            checked={visibleDashboards.has(dashboard.id)}
+                            onCheckedChange={() => handleToggleDashboardVisibility(dashboard.id)}
+                          />
+                          <label
+                            htmlFor={`dashboard-${dashboard.id}`}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1 cursor-pointer"
+                          >
+                            {dashboard.name}
+                            {dashboard.isDefault && (
+                              <Badge variant="secondary" className="text-xs px-1">Default</Badge>
+                            )}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -572,79 +673,63 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Metrics Cards */}
-          <div className="grid gap-4 mb-6 grid-cols-1">
-            <MetricsCard
-              title="Active Jobs"
-              value={metrics?.activeJobs?.toString() || "0"}
-              change="+8% from last week"
-              icon="briefcase"
-              color="blue"
-            />
-            <MetricsCard
-              title="Resource Utilization"
-              value={`${metrics?.utilization || 0}%`}
-              change=""
-              icon="chart-line"
-              color="green"
-              showProgress={true}
-              progressValue={metrics?.utilization || 0}
-            />
-            <MetricsCard
-              title="Overdue Operations"
-              value={metrics?.overdueOperations?.toString() || "0"}
-              change="Requires attention"
-              icon="exclamation-triangle"
-              color="red"
-            />
-            <MetricsCard
-              title="Avg. Lead Time"
-              value={`${metrics?.avgLeadTime || 0} days`}
-              change="-0.3 days improved"
-              icon="clock"
-              color="orange"
-            />
-          </div>
-
-          {/* Custom AI-Generated Widgets */}
-          {showCustomWidgets && customWidgets.length > 0 && (
+          {/* Selected Dashboards */}
+          {visibleDashboardConfigs.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-4">Custom Analytics Widgets</h3>
-              <div className="relative min-h-[600px] border-2 border-dashed border-gray-300 rounded-lg">
-                {customWidgets.map((widget) => (
-                  <AnalyticsWidget
-                    key={widget.id}
-                    widget={widget}
-                    onToggle={handleWidgetToggle}
-                    onRemove={handleWidgetRemove}
-                    onEdit={handleWidgetEdit}
-                    onResize={handleWidgetResize}
-                    onMove={handleWidgetPositionChange}
-                    data={{
-                      jobs,
-                      operations,
-                      resources,
-                      metrics,
-                      overdueJobs: jobs.filter(job => new Date(job.dueDate) < new Date() && job.status !== 'completed'),
-                      resourceUtilization: operations.length > 0 ? (operations.filter(op => op.assignedResourceId).length / operations.length * 100) : 0,
-                      jobsByStatus: jobs.reduce((acc, job) => {
-                        acc[job.status] = (acc[job.status] || 0) + 1;
-                        return acc;
-                      }, {} as Record<string, number>),
-                      operationsByStatus: operations.reduce((acc, operation) => {
-                        acc[operation.status] = (acc[operation.status] || 0) + 1;
-                        return acc;
-                      }, {} as Record<string, number>),
-                      resourcesByStatus: resources.reduce((acc, resource) => {
-                        acc[resource.status] = (acc[resource.status] || 0) + 1;
-                        return acc;
-                      }, {} as Record<string, number>)
-                    }}
-                  />
+              <div className="grid gap-6">
+                {visibleDashboardConfigs.map((dashboard) => (
+                  <div key={dashboard.id} className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-semibold">{dashboard.name}</h3>
+                        {dashboard.isDefault && (
+                          <Badge variant="secondary" className="text-xs">Default</Badge>
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {dashboard.configuration?.customWidgets?.length || 0} widgets
+                      </div>
+                    </div>
+                    
+                    {dashboard.configuration?.customWidgets?.length > 0 ? (
+                      <div className="relative min-h-[400px] bg-white border border-gray-200 rounded-lg overflow-hidden">
+                        {dashboard.configuration.customWidgets.map((widget: AnalyticsWidget) => (
+                          <AnalyticsWidget
+                            key={widget.id}
+                            widget={widget}
+                            onToggle={() => {}} // Read-only mode
+                            onRemove={() => {}} // Read-only mode
+                            onEdit={() => {}} // Read-only mode
+                            onResize={() => {}} // Read-only mode
+                            onMove={() => {}} // Read-only mode
+                            data={generateWidgetData()}
+                            readOnly={true}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500 border border-gray-200 rounded-lg">
+                        <div>
+                          <BarChart3 className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                          <p className="text-sm">No widgets configured for this dashboard</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 ))}
-                <div className="absolute top-4 left-4 text-sm text-gray-500 pointer-events-none">
-                  Drag widgets using the move handle (⋮⋮) to reposition them
-                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {visibleDashboards.size === 0 && (
+            <div className="mb-6">
+              <div className="text-center py-12 text-gray-500 border border-gray-200 rounded-lg">
+                <BarChart3 className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                <h3 className="text-lg font-medium mb-2">No Dashboards Selected</h3>
+                <p className="text-sm">
+                  Select one or more dashboards from the dropdown above to view their widgets.
+                </p>
               </div>
             </div>
           )}

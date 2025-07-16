@@ -619,48 +619,50 @@ export default function EnhancedDashboardManager({
         </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="browse">Browse</TabsTrigger>
-              <TabsTrigger value="create">Create New</TabsTrigger>
-              <TabsTrigger value="editor">Visual Editor</TabsTrigger>
-              <TabsTrigger value="templates">Widget Library</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+              <TabsTrigger value="browse" className="text-xs sm:text-sm">Browse</TabsTrigger>
+              <TabsTrigger value="create" className="text-xs sm:text-sm">Create New</TabsTrigger>
+              <TabsTrigger value="editor" className="text-xs sm:text-sm">Visual Editor</TabsTrigger>
+              <TabsTrigger value="templates" className="text-xs sm:text-sm">Widget Library</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="browse" className="flex-1 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Saved Dashboards</h3>
-                <Button
-                  variant="outline"
-                  onClick={() => setActiveTab("create")}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Dashboard
-                </Button>
-              </div>
+            <TabsContent value="browse" className="flex-1 overflow-y-auto">
+              <div className="p-1 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base sm:text-lg font-semibold">Saved Dashboards</h3>
+                  <Button
+                    variant="outline"
+                    onClick={() => setActiveTab("create")}
+                    className="text-sm"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    <span className="hidden sm:inline">New Dashboard</span>
+                    <span className="sm:hidden">New</span>
+                  </Button>
+                </div>
 
-              <ScrollArea className="flex-1">
                 <div className="grid gap-4">
                   {dashboards.map((dashboard) => (
-                    <Card key={dashboard.id} className="p-4">
+                    <Card key={dashboard.id} className="p-3 sm:p-4">
                       <div className="flex items-start justify-between">
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
-                            <h4 className="font-medium">{dashboard.name}</h4>
+                            <h4 className="font-medium text-sm sm:text-base truncate">{dashboard.name}</h4>
                             {dashboard.isDefault && (
-                              <Badge variant="secondary">
+                              <Badge variant="secondary" className="text-xs">
                                 <Star className="w-3 h-3 mr-1" />
                                 Default
                               </Badge>
                             )}
                           </div>
-                          <p className="text-sm text-gray-600 mb-2">{dashboard.description}</p>
-                          <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <p className="text-xs sm:text-sm text-gray-600 mb-2">{dashboard.description}</p>
+                          <div className="flex items-center gap-2 sm:gap-4 text-xs text-gray-500">
                             <span>
                               Created: {new Date(dashboard.createdAt).toLocaleDateString()}
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 sm:gap-2 ml-2">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -692,7 +694,7 @@ export default function EnhancedDashboardManager({
                     </div>
                   )}
                 </div>
-              </ScrollArea>
+              </div>
             </TabsContent>
 
             <TabsContent value="create" className="flex-1 space-y-4">

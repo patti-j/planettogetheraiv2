@@ -66,11 +66,13 @@ const DraggableOperationCard = ({
   if (isCompact) {
     return (
       <div ref={(node) => drag(drop(node))} style={{ opacity: isDragging ? 0.5 : 1 }}>
-        <Card className="border-l-4 cursor-move" style={{ borderLeftColor: statusInfo.color.replace('bg-', '#') }}>
+        <Card className="border-l-4 cursor-move hover:bg-gray-50 transition-colors" style={{ borderLeftColor: statusInfo.color.replace('bg-', '#') }}>
           <CardContent className="p-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3 flex-1">
-                <GripVertical className="w-3 h-3 text-gray-400" />
+                <div className="cursor-grab active:cursor-grabbing p-1 -m-1 hover:bg-gray-100 rounded">
+                  <GripVertical className="w-4 h-4 text-gray-400" />
+                </div>
                 <div className="flex-1">
                   <div className="flex items-center space-x-2">
                     <h3 className="font-medium text-sm text-gray-900 truncate">{operation.name}</h3>
