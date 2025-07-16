@@ -731,13 +731,13 @@ export default function EnhancedDashboardManager({
               </TabsTrigger>
             </TabsList>
             <TabsContent value="browse" className="flex-1 overflow-y-auto">
-              <div className="p-6 space-y-4">
+              <div className="p-4 sm:p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-base sm:text-lg font-semibold">Saved Dashboards</h3>
                   <Button
                     variant="outline"
                     onClick={() => setActiveTab("create")}
-                    className="text-sm"
+                    className="text-sm min-h-[36px]"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     <span className="hidden sm:inline">New Dashboard</span>
@@ -857,10 +857,10 @@ export default function EnhancedDashboardManager({
             </TabsContent>
 
             <TabsContent value="editor" className="flex-1 overflow-y-auto">
-              <div className="p-6 space-y-4">
+              <div className="p-4 sm:p-6 space-y-4">
                 {editingDashboard ? (
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       <div>
                         <h3 className="text-base sm:text-lg font-semibold">Visual Editor</h3>
                         <p className="text-xs sm:text-sm text-gray-600">
@@ -872,7 +872,7 @@ export default function EnhancedDashboardManager({
                           onClick={handleSaveEditing}
                           disabled={updateDashboardMutation.isPending}
                           size="sm"
-                          className="text-sm"
+                          className="text-sm min-h-[36px]"
                         >
                           {updateDashboardMutation.isPending ? "Saving..." : "Save"}
                         </Button>
@@ -880,7 +880,7 @@ export default function EnhancedDashboardManager({
                           variant="outline"
                           onClick={handleCancelEditing}
                           size="sm"
-                          className="text-sm"
+                          className="text-sm min-h-[36px]"
                         >
                           Cancel
                         </Button>
@@ -888,7 +888,7 @@ export default function EnhancedDashboardManager({
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                        <div className="lg:col-span-2">
+                        <div className="lg:col-span-2 order-2 lg:order-1">
                           <div className="mb-4">
                             <h4 className="font-medium mb-2 text-sm sm:text-base">Canvas</h4>
                             <p className="text-xs sm:text-sm text-gray-600">Drag widgets from the library to the canvas below</p>
@@ -911,13 +911,13 @@ export default function EnhancedDashboardManager({
                                 const template = widgetTemplates[0];
                                 handleAddWidget(template, { x: 10, y: 10 });
                               }}
-                              className="text-xs"
+                              className="text-xs min-h-[32px]"
                             >
                               Test Add Widget
                             </Button>
                           </div>
                         </div>
-                        <div className="space-y-4">
+                        <div className="space-y-4 order-1 lg:order-2">
                           <h4 className="font-medium text-sm sm:text-base">Widget Library</h4>
                           <p className="text-xs sm:text-sm text-gray-600">Drag these widgets to the canvas</p>
                           <div className="max-h-64 overflow-y-auto">
@@ -939,19 +939,19 @@ export default function EnhancedDashboardManager({
             </TabsContent>
 
             <TabsContent value="templates" className="flex-1 overflow-y-auto">
-              <div className="p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">Widget Library</h3>
-                  <p className="text-sm text-gray-600">
+              <div className="p-4 sm:p-6 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <h3 className="text-base sm:text-lg font-semibold">Widget Library</h3>
+                  <p className="text-xs sm:text-sm text-gray-600">
                     Available widgets for your dashboards
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {widgetTemplates.map((template) => (
-                    <Card key={template.id} className="p-4">
+                    <Card key={template.id} className="p-3 sm:p-4">
                       <div className="flex items-center gap-3 mb-2">
-                        <div className="text-blue-600">
+                        <div className="text-blue-600 flex-shrink-0">
                           {template.icon === "BarChart3" && <BarChart3 className="h-5 w-5" />}
                           {template.icon === "TrendingUp" && <TrendingUp className="h-5 w-5" />}
                           {template.icon === "AlertTriangle" && <AlertTriangle className="h-5 w-5" />}
@@ -960,9 +960,9 @@ export default function EnhancedDashboardManager({
                           {template.icon === "Activity" && <Activity className="h-5 w-5" />}
                           {template.icon === "Wrench" && <Wrench className="h-5 w-5" />}
                         </div>
-                        <h4 className="font-medium">{template.title}</h4>
+                        <h4 className="font-medium text-sm sm:text-base truncate">{template.title}</h4>
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">{template.description}</p>
+                      <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2">{template.description}</p>
                       <div className="flex items-center justify-between">
                         <Badge variant="outline" className="text-xs">
                           {template.type}
@@ -979,6 +979,7 @@ export default function EnhancedDashboardManager({
                               });
                             }
                           }}
+                          className="min-h-[36px] min-w-[36px] flex-shrink-0"
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
