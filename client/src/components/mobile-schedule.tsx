@@ -51,16 +51,32 @@ const DraggableOperationCard = ({
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
+    canDrag: () => {
+      console.log(`Can drag operation ${operation.id} at index ${index}`);
+      return true;
+    },
+    end: (item, monitor) => {
+      console.log(`Drag ended for operation ${operation.id}`, monitor.getDropResult());
+    }
   });
 
-  const [, drop] = useDrop({
+  const [{ canDrop, isOver }, drop] = useDrop({
     accept: "operation",
+    drop: (item: { index: number; id: number }) => {
+      console.log(`Drop operation ${item.id} from ${item.index} to ${index}`);
+      return { index };
+    },
     hover: (item: { index: number; id: number }) => {
       if (item.index !== index) {
+        console.log(`Moving operation from ${item.index} to ${index}`);
         onMove(item.index, index);
         item.index = index;
       }
     },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+      canDrop: monitor.canDrop(),
+    }),
   });
 
   if (isCompact) {
@@ -302,6 +318,7 @@ export default function MobileSchedule({
 
   // Handle drag and drop reordering
   const handleMoveOperation = useCallback((dragIndex: number, hoverIndex: number) => {
+    console.log(`handleMoveOperation called: ${dragIndex} -> ${hoverIndex}`);
     const draggedOperation = filteredOperations[dragIndex];
     const newOperations = [...filteredOperations];
     
@@ -310,6 +327,7 @@ export default function MobileSchedule({
     // Insert it at the new position
     newOperations.splice(hoverIndex, 0, draggedOperation);
     
+    console.log(`Updated operations order:`, newOperations.map(op => op.name));
     setOrderedOperations(newOperations);
     setHasReorder(true);
   }, [filteredOperations]);
