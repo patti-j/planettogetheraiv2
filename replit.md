@@ -885,6 +885,17 @@ The application uses a modern full-stack architecture with strong typing through
 - Maximized space usage for actual dashboard widgets and live data display
 - Updated empty state messaging to reference header dropdown instead of checkboxes
 
+✓ **Shop Floor Legend Toggle Implementation (July 16, 2025)**:
+- Added hideable legend functionality with showLegend state for mobile layout optimization
+- Implemented legend toggle button in secondary controls with InfoIcon
+- Mobile-optimized legend with responsive padding and text sizes (p-3 vs p-4, text-xs vs text-sm)
+- Added mobile-only close button (X) visible only on small screens for quick dismissal
+- Responsive color indicators (w-3 h-3 on mobile, w-4 h-4 on desktop)
+- Fixed JSX structure issues by removing duplicate TooltipProvider wrapping
+- Reorganized header controls into primary and secondary sections for better layout
+- Legend starts visible but can be hidden to save precious screen space on mobile devices
+- Enhanced mobile experience with touch-friendly controls and optimized layout
+
 ✓ **Analytics Live/Pause Toggle Implementation (July 15, 2025)**:
 - Added Live/Pause toggle button in analytics page header matching Shop Floor page design
 - Implemented isLivePaused state management to control real-time data updates

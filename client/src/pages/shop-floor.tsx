@@ -629,6 +629,7 @@ export default function ShopFloor() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [shopFloorLayout, setShopFloorLayout] = useState<ShopFloorLayout[]>([]);
   const [showHelp, setShowHelp] = useState(true);
+  const [showLegend, setShowLegend] = useState(true);
   const [resourcePhotos, setResourcePhotos] = useState<{ [key: number]: string }>({});
   const [zoomLevel, setZoomLevel] = useState(1);
   const [currentArea, setCurrentArea] = useState<string>('all');
@@ -863,23 +864,25 @@ export default function ShopFloor() {
   }
 
   return (
-    <TooltipProvider>
-      <div className="h-screen bg-gray-50 flex flex-col">
+    <div className="h-screen bg-gray-50 flex flex-col">
         {/* Header */}
-        <div className="bg-white shadow-sm border-b px-4 py-3 sm:px-6 flex-shrink-0">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="ml-12 md:ml-0">
-              <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Shop Floor</h1>
-              <p className="text-sm md:text-base text-gray-600">Production oversight and equipment monitoring</p>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-2">
-              {/* First row: Area controls */}
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="bg-white shadow-sm border-b px-4 py-2 sm:py-3 sm:px-6 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            {/* Left side: Title and controls */}
+            <div className="flex-1 min-w-0">
+              <div className="ml-12 md:ml-0 flex items-center gap-4">
+                <div>
+                  <h1 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-800">Shop Floor</h1>
+                  <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Production oversight and equipment monitoring</p>
+                </div>
+              </div>
+              
+              {/* Mobile controls row */}
+              <div className="flex items-center gap-2 mt-2 sm:mt-1 flex-wrap ml-12 md:ml-0">
                 {/* Area selector */}
                 <Select value={currentArea} onValueChange={setCurrentArea}>
-                  <SelectTrigger className="w-[140px] sm:w-[180px]">
-                    <SelectValue placeholder="Select area" />
+                  <SelectTrigger className="w-[120px] sm:w-[140px] text-xs sm:text-sm h-8 sm:h-9">
+                    <SelectValue placeholder="Area" />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(areas).map(([key, area]) => (
@@ -897,19 +900,181 @@ export default function ShopFloor() {
                       variant="outline"
                       size="sm"
                       onClick={() => setShowAreaManager(true)}
-                      className="flex items-center gap-1 px-2"
+                      className="h-8 px-2 sm:px-3"
                     >
-                      <Layers className="w-4 h-4" />
-                      <span className="hidden sm:inline">Areas</span>
+                      <Layers className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline ml-1">Areas</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Manage named areas</p>
                   </TooltipContent>
                 </Tooltip>
+                
+                {/* Zoom controls */}
+                <div className="flex items-center gap-1 border rounded-lg p-1">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleZoomOut}
+                        disabled={zoomLevel <= 0.5}
+                        className="p-1 h-6 w-6"
+                      >
+                        <ZoomOut className="w-3 h-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Zoom out</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  
+                  <span className="text-xs font-medium px-1 min-w-[35px] text-center">
+                    {Math.round(zoomLevel * 100)}%
+                  </span>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleZoomIn}
+                        disabled={zoomLevel >= 3}
+                        className="p-1 h-6 w-6"
+                      >
+                        <ZoomIn className="w-3 h-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Zoom in</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={resetZoom}
+                        className="p-1 h-6 w-6"
+                      >
+                        <Grid className="w-3 h-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Reset zoom</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                
+                {/* Help toggle button */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowHelp(!showHelp)}
+                      className="h-8 px-2 hover:bg-gray-100"
+                    >
+                      <HelpCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="text-xs hidden sm:inline ml-1">Help</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Toggle help instructions</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* Legend toggle button */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowLegend(!showLegend)}
+                      className="h-8 px-2 hover:bg-gray-100"
+                    >
+                      <InfoIcon className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="text-xs hidden sm:inline ml-1">Legend</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Toggle status legend</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
-              
-              {/* Second row: Zoom and utility controls */}
+            </div>
+            
+            {/* Right side: Live indicator */}
+            <div className="flex items-center gap-2 ml-4">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsLivePaused(!isLivePaused)}
+                    className="flex items-center gap-1 px-2 sm:px-3 h-8"
+                  >
+                    {isLivePaused ? (
+                      <>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                        <PlayCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="text-xs sm:text-sm hidden sm:inline">Paused</span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <PauseCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="text-xs sm:text-sm hidden sm:inline">Live</span>
+                      </>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isLivePaused ? "Resume live updates" : "Pause live updates"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+        </div>
+        
+        {/* Secondary Controls */}
+        <div className="bg-gray-50 border-b px-4 py-2 sm:px-6">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Area selector */}
+            <Select value={currentArea} onValueChange={setCurrentArea}>
+              <SelectTrigger className="w-[140px] sm:w-[180px]">
+                <SelectValue placeholder="Select area" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(areas).map(([key, area]) => (
+                  <SelectItem key={key} value={key}>
+                    {area.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Area manager button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAreaManager(true)}
+                  className="flex items-center gap-1 px-2"
+                >
+                  <Layers className="w-4 h-4" />
+                  <span className="hidden sm:inline">Areas</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Manage named areas</p>
+              </TooltipContent>
+            </Tooltip>
+          
+            {/* Zoom and utility controls */}
               <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
                 {/* Zoom controls */}
                 <div className="flex items-center gap-1 border rounded-lg p-1">
@@ -985,36 +1150,25 @@ export default function ShopFloor() {
                     <p>Toggle help instructions</p>
                   </TooltipContent>
                 </Tooltip>
+                
+                {/* Legend toggle button */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowLegend(!showLegend)}
+                      className="flex items-center gap-1 hover:bg-gray-100 px-2"
+                    >
+                      <InfoIcon className="w-4 h-4" />
+                      <span className="text-xs sm:text-sm hidden sm:inline">Legend</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Toggle status legend</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
-              
-              {/* Live button */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsLivePaused(!isLivePaused)}
-                    className="flex items-center gap-2 hover:bg-gray-100 text-sm"
-                  >
-                    {isLivePaused ? (
-                      <>
-                        <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                        <span className="text-sm text-gray-600 font-medium">Paused</span>
-                        <PlayCircle className="w-4 h-4 text-gray-600" />
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                        <span className="text-sm text-green-600 font-medium">Live</span>
-                        <PauseCircle className="w-4 h-4 text-green-600" />
-                      </>
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Toggle live data updates</p>
-                </TooltipContent>
-              </Tooltip>
             </div>
           </div>
         </div>
@@ -1056,31 +1210,43 @@ export default function ShopFloor() {
             )}
 
             {/* Status Legend */}
-            <div className="absolute top-4 right-4 bg-white p-4 rounded-lg shadow-lg z-10">
-              <h3 className="font-semibold text-gray-800 mb-2">Status Legend</h3>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-green-500 rounded"></div>
-                  <span className="text-sm">Operational</span>
+            {showLegend && (
+              <div className="absolute top-4 right-4 bg-white p-3 sm:p-4 rounded-lg shadow-lg z-10">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold text-gray-800 text-sm sm:text-base">Status Legend</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowLegend(false)}
+                    className="h-6 w-6 p-0 hover:bg-gray-100 sm:hidden"
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-                  <span className="text-sm">Warning</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-red-500 rounded"></div>
-                  <span className="text-sm">Error</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-500 rounded"></div>
-                  <span className="text-sm">Maintenance</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-gray-500 rounded"></div>
-                  <span className="text-sm">Offline</span>
+                <div className="space-y-1 sm:space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded"></div>
+                    <span className="text-xs sm:text-sm">Operational</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 bg-yellow-500 rounded"></div>
+                    <span className="text-xs sm:text-sm">Warning</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 bg-red-500 rounded"></div>
+                    <span className="text-xs sm:text-sm">Error</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 rounded"></div>
+                    <span className="text-xs sm:text-sm">Maintenance</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gray-500 rounded"></div>
+                    <span className="text-xs sm:text-sm">Offline</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Resources */}
             <div 
@@ -1140,7 +1306,6 @@ export default function ShopFloor() {
           </DialogContent>
         </Dialog>
       </div>
-    </TooltipProvider>
   );
 }
 
@@ -1260,3 +1425,5 @@ const AreaManagerDialog: React.FC<AreaManagerDialogProps> = ({
     </div>
   );
 };
+
+export default ShopFloor;
