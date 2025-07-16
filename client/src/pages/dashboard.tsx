@@ -345,7 +345,7 @@ export default function Dashboard() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setDashboardManagerOpen(true)}
+                          onClick={() => setAnalyticsManagerOpen(true)}
                         >
                           <Settings className="w-4 h-4 mr-1" />
                           Dashboard Manager
@@ -698,7 +698,7 @@ export default function Dashboard() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setDashboardManagerOpen(true)}
+                      onClick={() => setAnalyticsManagerOpen(true)}
                     >
                       <Settings className="w-4 h-4 mr-1" />
                       Dashboard Manager
