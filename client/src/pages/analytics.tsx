@@ -167,9 +167,7 @@ function DraggableDashboardCard({
             </div>
             <div className="flex items-center gap-2">
 
-              <div className="text-xs text-gray-500">
-                {isLivePaused ? "Live View • Paused" : "Live View • Updates every 30s"}
-              </div>
+
               <Button
                 variant="outline"
                 size="sm"
