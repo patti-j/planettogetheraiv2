@@ -25,7 +25,9 @@ import {
   WrenchIcon,
   MoveIcon,
   InfoIcon,
-  RefreshCw
+  RefreshCw,
+  HelpCircle,
+  X
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -70,20 +72,6 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails }: Drag
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
-  });
-
-  const [, drop] = useDrop({
-    accept: "resource",
-    drop: (item: { id: string; x: number; y: number }, monitor) => {
-      const offset = monitor.getClientOffset();
-      const container = document.getElementById('shop-floor-container');
-      if (offset && container) {
-        const containerRect = container.getBoundingClientRect();
-        const newX = offset.x - containerRect.left - 50; // Adjust for icon size
-        const newY = offset.y - containerRect.top - 50;
-        onMove(item.id, Math.max(0, newX), Math.max(0, newY));
-      }
-    },
   });
 
   // Get resource icon based on type
@@ -138,7 +126,7 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails }: Drag
 
   return (
     <div
-      ref={(node) => drag(drop(node))}
+      ref={drag}
       className={`absolute cursor-move select-none transition-all duration-200 ${
         isDragging ? 'opacity-50 scale-105' : 'opacity-100 scale-100'
       }`}
@@ -379,6 +367,7 @@ export default function ShopFloor() {
   const [selectedStatus, setSelectedStatus] = useState<ResourceStatus | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [shopFloorLayout, setShopFloorLayout] = useState<ShopFloorLayout[]>([]);
+  const [showHelp, setShowHelp] = useState(true);
   const queryClient = useQueryClient();
 
   // Fetch data
@@ -454,6 +443,19 @@ export default function ShopFloor() {
     );
   };
 
+  // Drop zone for the shop floor container
+  const [, drop] = useDrop({
+    accept: "resource",
+    drop: (item: { id: string; x: number; y: number }, monitor) => {
+      const offset = monitor.getDifferenceFromInitialOffset();
+      if (offset) {
+        const newX = item.x + offset.x;
+        const newY = item.y + offset.y;
+        handleResourceMove(item.id, Math.max(0, newX), Math.max(0, newY));
+      }
+    },
+  });
+
   // Handle resource details
   const handleResourceDetails = (resource: Resource, status: ResourceStatus) => {
     setSelectedResource(resource);
@@ -520,40 +522,61 @@ export default function ShopFloor() {
               <p className="text-sm md:text-base text-gray-600">Production oversight and equipment monitoring</p>
             </div>
             
-            {/* Live button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsLivePaused(!isLivePaused)}
-                  className="flex items-center gap-2 hover:bg-gray-100 text-sm"
-                >
-                  {isLivePaused ? (
-                    <>
-                      <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                      <span className="text-sm text-gray-600 font-medium">Paused</span>
-                      <PlayCircle className="w-4 h-4 text-gray-600" />
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-sm text-green-600 font-medium">Live</span>
-                      <PauseCircle className="w-4 h-4 text-green-600" />
-                    </>
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Toggle live data updates</p>
-              </TooltipContent>
-            </Tooltip>
+            <div className="flex items-center gap-2">
+              {/* Help toggle button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowHelp(!showHelp)}
+                    className="flex items-center gap-2 hover:bg-gray-100 text-sm"
+                  >
+                    <HelpCircle className="w-4 h-4" />
+                    <span className="text-sm">Help</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Toggle help instructions</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              {/* Live button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsLivePaused(!isLivePaused)}
+                    className="flex items-center gap-2 hover:bg-gray-100 text-sm"
+                  >
+                    {isLivePaused ? (
+                      <>
+                        <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                        <span className="text-sm text-gray-600 font-medium">Paused</span>
+                        <PlayCircle className="w-4 h-4 text-gray-600" />
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-sm text-green-600 font-medium">Live</span>
+                        <PauseCircle className="w-4 h-4 text-green-600" />
+                      </>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Toggle live data updates</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </div>
         </div>
 
         {/* Shop Floor View */}
         <div className="flex-1 overflow-hidden relative">
           <div 
+            ref={drop}
             id="shop-floor-container"
             className="absolute inset-0 bg-gray-100 overflow-auto"
             style={{
@@ -562,16 +585,28 @@ export default function ShopFloor() {
             }}
           >
             {/* Instructions */}
-            <div className="absolute top-4 left-4 bg-white p-4 rounded-lg shadow-lg max-w-md z-10">
-              <h3 className="font-semibold text-gray-800 mb-2">Shop Floor Controls</h3>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Drag equipment icons to rearrange the shop floor</li>
-                <li>• Click any equipment to view detailed status and issues</li>
-                <li>• Color indicates status: Green (operational), Yellow (warning), Red (error)</li>
-                <li>• White bar shows current utilization percentage</li>
-                <li>• Red badge shows number of active issues</li>
-              </ul>
-            </div>
+            {showHelp && (
+              <div className="absolute top-4 left-4 bg-white p-4 rounded-lg shadow-lg max-w-md z-10">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold text-gray-800">Shop Floor Controls</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowHelp(false)}
+                    className="h-6 w-6 p-0 hover:bg-gray-100"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• Drag equipment icons to rearrange the shop floor</li>
+                  <li>• Click any equipment to view detailed status and issues</li>
+                  <li>• Color indicates status: Green (operational), Yellow (warning), Red (error)</li>
+                  <li>• White bar shows current utilization percentage</li>
+                  <li>• Red badge shows number of active issues</li>
+                </ul>
+              </div>
+            )}
 
             {/* Status Legend */}
             <div className="absolute top-4 right-4 bg-white p-4 rounded-lg shadow-lg z-10">
