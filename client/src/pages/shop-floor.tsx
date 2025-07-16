@@ -235,6 +235,101 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo 
   );
 };
 
+const DraggableResourceCard = ({ 
+  resource, 
+  status, 
+  photo, 
+  onResourceDetails, 
+  currentArea 
+}: { 
+  resource: Resource; 
+  status: ResourceStatus; 
+  photo?: string; 
+  onResourceDetails: (resource: Resource, status: ResourceStatus) => void; 
+  currentArea?: { name: string; id?: number }; 
+}) => {
+  const [{ isDragging }, drag] = useDrag({
+    type: "resource-card",
+    item: { resourceId: resource.id, currentArea: currentArea?.name || "No Area" },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  const getResourceIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case "machine":
+        return <Wrench className="w-4 h-4" />;
+      case "operator":
+        return <Users className="w-4 h-4" />;
+      case "facility":
+        return <Building2 className="w-4 h-4" />;
+      default:
+        return <Settings className="w-4 h-4" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "operational":
+        return "bg-green-100 border-green-300";
+      case "warning":
+        return "bg-yellow-100 border-yellow-300";
+      case "error":
+        return "bg-red-100 border-red-300";
+      case "maintenance":
+        return "bg-blue-100 border-blue-300";
+      case "offline":
+        return "bg-gray-100 border-gray-300";
+      default:
+        return "bg-gray-100 border-gray-300";
+    }
+  };
+
+  return (
+    <div
+      ref={drag}
+      className={`relative ${getStatusColor(status.status)} rounded-lg border-2 p-3 cursor-pointer hover:shadow-md transition-all ${
+        isDragging ? 'opacity-50 scale-95' : 'opacity-100 scale-100'
+      }`}
+      onClick={() => onResourceDetails(resource, status)}
+    >
+      {/* Resource Icon/Photo */}
+      <div className="flex items-center justify-center mb-2">
+        {photo ? (
+          <img 
+            src={photo} 
+            alt={resource.name}
+            className="w-8 h-8 object-cover rounded"
+          />
+        ) : (
+          getResourceIcon(resource.type)
+        )}
+      </div>
+      
+      {/* Resource Name */}
+      <div className="text-xs font-medium text-center truncate">
+        {resource.name}
+      </div>
+      
+      {/* Status Indicator */}
+      <div className="absolute top-1 right-1 w-2 h-2 rounded-full" 
+           style={{ backgroundColor: status.status === 'operational' ? '#10b981' : 
+                                    status.status === 'warning' ? '#f59e0b' : 
+                                    status.status === 'error' ? '#ef4444' : 
+                                    status.status === 'maintenance' ? '#3b82f6' : '#6b7280' }}
+      />
+      
+      {/* Issue Count */}
+      {status.issues.length > 0 && (
+        <div className="absolute top-1 left-1 bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
+          {status.issues.length}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const DraggableAreaBubble = ({ 
   areaKey, 
   area, 
@@ -243,8 +338,9 @@ const DraggableAreaBubble = ({
   onResourceDetails, 
   resourcePhotos, 
   generateResourceStatus, 
-  isNoArea = false 
-}: DraggableAreaBubbleProps) => {
+  isNoArea = false,
+  onResourceMove 
+}: DraggableAreaBubbleProps & { onResourceMove: (resourceId: number, newArea: string) => void }) => {
   const [areaLayout, setAreaLayout] = useState<AreaLayout>(() => {
     const savedLayout = localStorage.getItem(`area-layout-${areaKey}`);
     if (savedLayout) {
@@ -301,17 +397,29 @@ const DraggableAreaBubble = ({
       isDragging: monitor.isDragging(),
     }),
     end: (item, monitor) => {
-      const dropResult = monitor.getDropResult();
-      if (!dropResult) {
-        // If no drop result, calculate new position based on the final offset
-        const offset = monitor.getDifferenceFromInitialOffset();
-        if (offset) {
-          const newX = Math.max(0, item.x + offset.x);
-          const newY = Math.max(0, item.y + offset.y);
-          setAreaLayout(prev => ({ ...prev, x: newX, y: newY }));
-        }
+      // Always calculate new position based on the final offset
+      const offset = monitor.getDifferenceFromInitialOffset();
+      if (offset) {
+        const newX = Math.max(0, item.x + offset.x);
+        const newY = Math.max(0, item.y + offset.y);
+        const newLayout = { ...areaLayout, x: newX, y: newY };
+        setAreaLayout(newLayout);
+        // Immediately save to localStorage
+        localStorage.setItem(`area-layout-${areaKey}`, JSON.stringify(newLayout));
       }
     },
+  });
+
+  const [{ isOver }, drop] = useDrop({
+    accept: "resource-card",
+    drop: (item: { resourceId: number; currentArea: string }) => {
+      if (item.currentArea !== area.name) {
+        onResourceMove(item.resourceId, area.name);
+      }
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+    }),
   });
 
   // Save area layout to localStorage whenever it changes
@@ -349,12 +457,17 @@ const DraggableAreaBubble = ({
     }
   };
 
+  const combinedRef = (el: HTMLDivElement | null) => {
+    drag(el);
+    drop(el);
+  };
+
   return (
     <div
-      ref={drag}
+      ref={combinedRef}
       className={`absolute cursor-move select-none transition-all duration-200 ${
         isDragging ? 'opacity-50 scale-105' : 'opacity-100 scale-100'
-      }`}
+      } ${isOver ? 'ring-2 ring-blue-500' : ''}`}
       style={{
         left: areaLayout.x,
         top: areaLayout.y,
@@ -367,7 +480,9 @@ const DraggableAreaBubble = ({
           <TooltipTrigger asChild>
             <div className={`relative w-full min-h-full ${
               isNoArea ? 'bg-gray-50 border-gray-300' : 'bg-white border-blue-300'
-            } border-2 border-dashed rounded-lg p-4 shadow-lg hover:shadow-xl transition-shadow`}>
+            } border-2 border-dashed rounded-lg p-4 shadow-lg hover:shadow-xl transition-shadow ${
+              isOver ? 'bg-blue-50 border-blue-400' : ''
+            }`}>
               {/* Area Header */}
               <div className={`flex items-center justify-between mb-3 pb-2 border-b ${
                 isNoArea ? 'border-gray-300' : 'border-blue-200'
@@ -390,44 +505,14 @@ const DraggableAreaBubble = ({
                   const photo = resourcePhotos[resource.id];
                   
                   return (
-                    <div
+                    <DraggableResourceCard
                       key={resource.id}
-                      className={`relative ${getStatusColor(status.status)} rounded-lg border-2 p-3 cursor-pointer hover:shadow-md transition-shadow`}
-                      onClick={() => onResourceDetails(resource, status)}
-                    >
-                      {/* Resource Icon/Photo */}
-                      <div className="flex items-center justify-center mb-2">
-                        {photo ? (
-                          <img 
-                            src={photo} 
-                            alt={resource.name}
-                            className="w-8 h-8 object-cover rounded"
-                          />
-                        ) : (
-                          getResourceIcon(resource.type)
-                        )}
-                      </div>
-                      
-                      {/* Resource Name */}
-                      <div className="text-xs font-medium text-center truncate">
-                        {resource.name}
-                      </div>
-                      
-                      {/* Status Indicator */}
-                      <div className="absolute top-1 right-1 w-2 h-2 rounded-full" 
-                           style={{ backgroundColor: status.status === 'operational' ? '#10b981' : 
-                                                    status.status === 'warning' ? '#f59e0b' : 
-                                                    status.status === 'error' ? '#ef4444' : 
-                                                    status.status === 'maintenance' ? '#3b82f6' : '#6b7280' }}
-                      />
-                      
-                      {/* Issue Count */}
-                      {status.issues.length > 0 && (
-                        <div className="absolute top-1 left-1 bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                          {status.issues.length}
-                        </div>
-                      )}
-                    </div>
+                      resource={resource}
+                      status={status}
+                      photo={photo}
+                      onResourceDetails={onResourceDetails}
+                      currentArea={area}
+                    />
                   );
                 })}
               </div>
@@ -437,7 +522,7 @@ const DraggableAreaBubble = ({
             <div className="space-y-1">
               <p className="font-medium">{area.name}</p>
               <p className="text-sm">{resources.length} resources</p>
-              <p className="text-sm">Drag to move area</p>
+              <p className="text-sm">Drag to move area or drop resources here</p>
             </div>
           </TooltipContent>
         </Tooltip>
@@ -935,7 +1020,7 @@ export default function ShopFloor() {
   }, [resources, shopFloorLayout.length]);
 
   // Handle resource movement
-  const handleResourceMove = (id: string, x: number, y: number) => {
+  const handleResourcePositionMove = (id: string, x: number, y: number) => {
     setShopFloorLayout(prev => 
       prev.map(layout => 
         layout.id === id ? { ...layout, x, y } : layout
@@ -950,6 +1035,43 @@ export default function ShopFloor() {
     // component to ensure proper state management
   };
 
+  // Handle resource movement between areas
+  const updateResourceMutation = useMutation({
+    mutationFn: async (data: { resourceId: number; area: string }) => {
+      const response = await fetch(`/api/resources/${data.resourceId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ area: data.area === "No Area" ? null : data.area }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update resource area');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/resources'] });
+      toast({
+        title: "Resource Moved",
+        description: "Resource successfully moved to new area",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to move resource. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleResourceMove = (resourceId: number, newAreaName: string) => {
+    updateResourceMutation.mutate({ resourceId, area: newAreaName });
+  };
+
   // Drop zone for the shop floor container
   const [, drop] = useDrop({
     accept: ["resource", "area"],
@@ -960,7 +1082,7 @@ export default function ShopFloor() {
         if (offset) {
           const newX = item.x + offset.x;
           const newY = item.y + offset.y;
-          handleResourceMove(item.id, Math.max(0, newX), Math.max(0, newY));
+          handleResourcePositionMove(item.id, Math.max(0, newX), Math.max(0, newY));
         }
       }
       // Area drops are handled by the drag end event in DraggableAreaBubble
@@ -1380,6 +1502,7 @@ export default function ShopFloor() {
                       onResourceDetails={handleResourceDetails}
                       resourcePhotos={resourcePhotos}
                       generateResourceStatus={generateResourceStatus}
+                      onResourceMove={handleResourceMove}
                     />
                   ))}
                   
@@ -1404,6 +1527,7 @@ export default function ShopFloor() {
                           resourcePhotos={resourcePhotos}
                           generateResourceStatus={generateResourceStatus}
                           isNoArea={true}
+                          onResourceMove={handleResourceMove}
                         />
                       );
                     }
