@@ -172,10 +172,9 @@ function DraggableDashboardCard({
                 variant="outline"
                 size="sm"
                 onClick={() => setDashboardManagerOpen(true)}
-                className="flex items-center gap-2"
+                className="flex items-center"
               >
                 <Settings className="h-4 w-4" />
-                Edit
               </Button>
             </div>
           </CardTitle>

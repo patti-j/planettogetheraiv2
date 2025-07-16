@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, User, Wrench, AlertCircle, CheckCircle2, PlayCircle, PauseCircle, GripVertical, Save, RefreshCw } from "lucide-react";
+import { Calendar, Clock, User, Wrench, AlertCircle, CheckCircle2, PlayCircle, PauseCircle, GripVertical, Save, RefreshCw, LayoutGrid, List } from "lucide-react";
 import { format } from "date-fns";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -29,6 +29,7 @@ interface DraggableOperationCardProps {
   statusInfo: { color: string; icon: any; label: string };
   getPriorityColor: (priority: string) => string;
   onMove: (dragIndex: number, hoverIndex: number) => void;
+  isCompact?: boolean;
 }
 
 const DraggableOperationCard = ({ 
@@ -39,7 +40,8 @@ const DraggableOperationCard = ({
   requiredCapabilities, 
   statusInfo, 
   getPriorityColor,
-  onMove 
+  onMove,
+  isCompact = false
 }: DraggableOperationCardProps) => {
   const StatusIcon = statusInfo.icon;
 
@@ -60,6 +62,54 @@ const DraggableOperationCard = ({
       }
     },
   });
+
+  if (isCompact) {
+    return (
+      <div ref={(node) => drag(drop(node))} style={{ opacity: isDragging ? 0.5 : 1 }}>
+        <Card className="border-l-4 cursor-move" style={{ borderLeftColor: statusInfo.color.replace('bg-', '#') }}>
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3 flex-1">
+                <GripVertical className="w-3 h-3 text-gray-400" />
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2">
+                    <h3 className="font-medium text-sm text-gray-900 truncate">{operation.name}</h3>
+                    <Badge variant="outline" className="text-xs px-1 py-0">{operation.status}</Badge>
+                  </div>
+                  <div className="flex items-center space-x-3 text-xs text-gray-500 mt-1">
+                    {job && (
+                      <span className="truncate">{job.name}</span>
+                    )}
+                    <span className="flex items-center">
+                      <Clock className="w-3 h-3 mr-1" />
+                      {operation.duration}h
+                    </span>
+                    {resource && (
+                      <span className="flex items-center">
+                        <Wrench className="w-3 h-3 mr-1" />
+                        {resource.name}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <StatusIcon className="w-4 h-4" style={{ color: statusInfo.color.replace('bg-', '#') }} />
+                {job && (
+                  <Badge 
+                    variant="outline" 
+                    className={`text-xs px-1 py-0 ${getPriorityColor(job.priority)}`}
+                  >
+                    {job.priority}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div ref={(node) => drag(drop(node))} style={{ opacity: isDragging ? 0.5 : 1 }}>
@@ -173,6 +223,7 @@ export default function MobileSchedule({
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [orderedOperations, setOrderedOperations] = useState<Operation[]>([]);
   const [hasReorder, setHasReorder] = useState(false);
+  const [isCompactView, setIsCompactView] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -342,21 +393,42 @@ export default function MobileSchedule({
         <div className="bg-white border-b border-gray-200 p-4 flex-shrink-0">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-xl font-semibold text-gray-800">Op Sequencer</h1>
-            {hasReorder && (
-              <Button
-                onClick={handleReschedule}
-                disabled={updateOperationMutation.isPending}
-                className="bg-primary hover:bg-blue-700 text-white"
-                size="sm"
-              >
-                {updateOperationMutation.isPending ? (
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4 mr-2" />
-                )}
-                Reschedule
-              </Button>
-            )}
+            <div className="flex items-center space-x-2">
+              {/* View Toggle */}
+              <div className="flex items-center border rounded-lg p-1">
+                <Button
+                  variant={isCompactView ? "ghost" : "default"}
+                  size="sm"
+                  onClick={() => setIsCompactView(false)}
+                  className="h-7 px-2"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={isCompactView ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setIsCompactView(true)}
+                  className="h-7 px-2"
+                >
+                  <List className="w-4 h-4" />
+                </Button>
+              </div>
+              {hasReorder && (
+                <Button
+                  onClick={handleReschedule}
+                  disabled={updateOperationMutation.isPending}
+                  className="bg-primary hover:bg-blue-700 text-white"
+                  size="sm"
+                >
+                  {updateOperationMutation.isPending ? (
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4 mr-2" />
+                  )}
+                  Reschedule
+                </Button>
+              )}
+            </div>
           </div>
         
         {/* Filters */}
@@ -424,6 +496,7 @@ export default function MobileSchedule({
                       statusInfo={statusInfo}
                       getPriorityColor={getPriorityColor}
                       onMove={handleMoveOperation}
+                      isCompact={isCompactView}
                     />
                   );
                 })
