@@ -687,7 +687,9 @@ export default function Dashboard() {
                     </div>
                     
                     {dashboard.configuration?.customWidgets?.length > 0 ? (
-                      <div className="relative min-h-[400px] bg-white border border-gray-200 rounded-lg overflow-hidden">
+                      <div className={`relative bg-white border border-gray-200 rounded-lg overflow-hidden ${
+                        isMobile ? 'min-h-[600px] p-2' : 'min-h-[400px]'
+                      }`}>
                         {dashboard.configuration.customWidgets.map((widget: AnalyticsWidget) => (
                           <AnalyticsWidget
                             key={widget.id}

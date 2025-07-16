@@ -155,34 +155,36 @@ export default function AnalyticsWidget({
         return (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">{widgetData.value}</div>
-              <div className={`text-sm ${widgetData.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{widgetData.value}</div>
+              <div className={`text-xs ${widgetData.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
                 {widgetData.change}
               </div>
             </div>
-            <div className="text-sm text-gray-600">{widgetData.label}</div>
+            <div className={`text-gray-600 ${isMobile ? 'text-xs' : 'text-sm'}`}>{widgetData.label}</div>
           </div>
         );
       
       case "chart":
         return (
-          <div className="h-32 bg-gray-50 rounded flex items-center justify-center">
-            <TrendingUp className="w-8 h-8 text-gray-400" />
-            <span className="ml-2 text-sm text-gray-500">Chart visualization</span>
+          <div className={`bg-gray-50 rounded flex items-center justify-center ${isMobile ? 'h-20' : 'h-32'}`}>
+            <TrendingUp className={`text-gray-400 ${isMobile ? 'w-6 h-6' : 'w-8 h-8'}`} />
+            <span className={`ml-2 text-gray-500 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+              {isMobile ? 'Chart' : 'Chart visualization'}
+            </span>
           </div>
         );
       
       case "table":
         return (
           <div className="space-y-2">
-            <div className="grid grid-cols-3 gap-2 text-xs font-medium text-gray-500">
+            <div className={`grid grid-cols-3 gap-1 font-medium text-gray-500 ${isMobile ? 'text-xs' : 'text-xs'}`}>
               {widgetData.headers?.map((header: string, i: number) => (
-                <div key={i}>{header}</div>
+                <div key={i} className="truncate">{header}</div>
               ))}
             </div>
             <div className="space-y-1">
-              {widgetData.rows?.map((row: string[], i: number) => (
-                <div key={i} className="grid grid-cols-3 gap-2 text-sm">
+              {widgetData.rows?.slice(0, isMobile ? 3 : 5).map((row: string[], i: number) => (
+                <div key={i} className={`grid grid-cols-3 gap-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>
                   {row.map((cell, j) => (
                     <div key={j} className="truncate">{cell}</div>
                   ))}
@@ -194,18 +196,18 @@ export default function AnalyticsWidget({
       
       case "progress":
         return (
-          <div className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span>{widgetData.label}</span>
+          <div className={`space-y-2 ${isMobile ? 'space-y-1' : 'space-y-3'}`}>
+            <div className={`flex justify-between ${isMobile ? 'text-xs' : 'text-sm'}`}>
+              <span className="truncate">{widgetData.label}</span>
               <span>{widgetData.value}%</span>
             </div>
-            <Progress value={widgetData.value} className="h-2" />
-            <div className="text-xs text-gray-500">Target: {widgetData.target}%</div>
+            <Progress value={widgetData.value} className={`${isMobile ? 'h-1' : 'h-2'}`} />
+            <div className={`text-gray-500 ${isMobile ? 'text-xs' : 'text-xs'}`}>Target: {widgetData.target}%</div>
           </div>
         );
       
       default:
-        return <div className="text-sm text-gray-500">No data available</div>;
+        return <div className={`text-gray-500 ${isMobile ? 'text-xs' : 'text-sm'}`}>No data available</div>;
     }
   };
 
@@ -226,43 +228,95 @@ export default function AnalyticsWidget({
 
   if (!widget.visible) return null;
 
+  // Calculate mobile-optimized dimensions
+  const mobileOptimizedSize = useMemo(() => {
+    if (!isMobile) return widget.size;
+    
+    // For mobile, use responsive sizing based on widget type
+    const mobileWidths = {
+      metric: 160,
+      chart: 320,
+      table: 320,
+      progress: 280
+    };
+    
+    const mobileHeights = {
+      metric: 120,
+      chart: 180,
+      table: 200,
+      progress: 140
+    };
+    
+    return {
+      width: mobileWidths[widget.type] || 160,
+      height: mobileHeights[widget.type] || 120
+    };
+  }, [isMobile, widget.type, widget.size]);
+
+  // Calculate mobile-optimized position
+  const mobileOptimizedPosition = useMemo(() => {
+    if (!isMobile) return widget.position;
+    
+    // For mobile, arrange widgets in a responsive grid
+    const containerWidth = window.innerWidth - 32; // Account for padding
+    const spacing = 8;
+    const widgetWidth = mobileOptimizedSize.width;
+    
+    // Calculate how many widgets can fit per row
+    const widgetsPerRow = Math.floor(containerWidth / (widgetWidth + spacing));
+    const effectiveWidgetsPerRow = Math.max(1, Math.min(widgetsPerRow, 2)); // Min 1, max 2
+    
+    const widgetIndex = parseInt(widget.id.split('-')[1] || '0');
+    const row = Math.floor(widgetIndex / effectiveWidgetsPerRow);
+    const col = widgetIndex % effectiveWidgetsPerRow;
+    
+    // Center widgets if there's only one per row
+    const totalRowWidth = effectiveWidgetsPerRow * widgetWidth + (effectiveWidgetsPerRow - 1) * spacing;
+    const leftOffset = Math.max(0, (containerWidth - totalRowWidth) / 2);
+    
+    return {
+      x: leftOffset + col * (widgetWidth + spacing),
+      y: row * (mobileOptimizedSize.height + spacing)
+    };
+  }, [isMobile, widget.position, widget.id, mobileOptimizedSize]);
+
   return (
     <Card 
       ref={widgetRef}
       className={`${isDragging ? 'shadow-lg' : 'shadow-sm'} ${readOnly ? 'cursor-default' : 'cursor-move'} overflow-hidden flex flex-col border border-gray-200`}
       style={{
         position: 'absolute',
-        left: `${Math.max(0, Math.min(widget.position.x, isMobile ? 120 : 480))}px`,
-        top: `${Math.max(0, Math.min(widget.position.y, isMobile ? 100 : 320))}px`,
-        width: `${Math.min(widget.size.width, isMobile ? 140 : 280)}px`,
-        height: `${Math.min(widget.size.height, isMobile ? 100 : 160)}px`,
-        maxHeight: `${Math.min(widget.size.height, isMobile ? 100 : 160)}px`,
-        maxWidth: `${Math.min(widget.size.width, isMobile ? 140 : 280)}px`,
+        left: `${Math.max(0, mobileOptimizedPosition.x)}px`,
+        top: `${Math.max(0, mobileOptimizedPosition.y)}px`,
+        width: `${mobileOptimizedSize.width}px`,
+        height: `${mobileOptimizedSize.height}px`,
+        maxHeight: `${mobileOptimizedSize.height}px`,
+        maxWidth: `${mobileOptimizedSize.width}px`,
         zIndex: isDragging ? 1000 : 1
       }}
     >
-      <CardHeader className="pb-3 min-h-0">
+      <CardHeader className={`min-h-0 ${isMobile ? 'pb-2 pt-2' : 'pb-3'}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0 flex-1">
             {!readOnly && (
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="h-6 w-6 p-0 cursor-move hover:bg-gray-100 flex-shrink-0"
+                className={`p-0 cursor-move hover:bg-gray-100 flex-shrink-0 ${isMobile ? 'h-5 w-5' : 'h-6 w-6'}`}
                 onMouseDown={handleMouseDown}
                 title="Drag to move widget"
               >
-                <Move className="w-4 h-4 text-gray-400" />
+                <Move className={`text-gray-400 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
               </Button>
             )}
             <div className="flex-shrink-0">{getIcon()}</div>
-            <CardTitle className="text-sm truncate">{widget.title}</CardTitle>
+            <CardTitle className={`truncate ${isMobile ? 'text-xs' : 'text-sm'}`}>{widget.title}</CardTitle>
           </div>
           {!readOnly && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0">
-                  <MoreHorizontal className="w-4 h-4" />
+                <Button variant="ghost" size="sm" className={`p-0 flex-shrink-0 ${isMobile ? 'h-5 w-5' : 'h-6 w-6'}`}>
+                  <MoreHorizontal className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -287,7 +341,7 @@ export default function AnalyticsWidget({
           )}
         </div>
       </CardHeader>
-      <CardContent className="overflow-hidden flex-1 min-h-0">
+      <CardContent className={`overflow-hidden flex-1 min-h-0 ${isMobile ? 'p-2' : 'p-6'}`}>
         <div className="h-full overflow-y-auto">
           {renderContent()}
         </div>
