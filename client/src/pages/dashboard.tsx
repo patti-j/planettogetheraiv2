@@ -271,19 +271,32 @@ export default function Dashboard() {
                   
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="ghost"
                         size="sm"
-                        onClick={() => setAnalyticsManagerOpen(true)}
+                        onClick={() => setIsLivePaused(!isLivePaused)}
+                        className="flex items-center gap-2 hover:bg-gray-100 text-sm"
                       >
-                        <Settings className="w-4 h-4 mr-2" />
-                        Dashboard Manager
+                        {isLivePaused ? (
+                          <>
+                            <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                            <span className="text-sm text-gray-600 font-medium">Paused</span>
+                            <PlayCircle className="w-4 h-4 text-gray-600" />
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                            <span className="text-sm text-green-600 font-medium">Live</span>
+                            <PauseCircle className="w-4 h-4 text-green-600" />
+                          </>
+                        )}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Manage dashboard configurations and widgets</p>
+                      <p>Toggle live data updates</p>
                     </TooltipContent>
                   </Tooltip>
+                  
                   {!isMobile && (
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -301,8 +314,67 @@ export default function Dashboard() {
               
               {/* Analytics Controls */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  {/* AI Analytics button removed */}
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">Analytics Dashboard</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="flex items-center gap-2 min-w-[160px] justify-between text-sm"
+                      >
+                        <span>
+                          {visibleDashboards.size === 0 
+                            ? "Select Dashboards" 
+                            : `${visibleDashboards.size} Selected`}
+                        </span>
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 p-3">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Select Dashboards to Display:</Label>
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {dashboards.map((dashboard) => (
+                            <div key={dashboard.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`dashboard-${dashboard.id}`}
+                                checked={visibleDashboards.has(dashboard.id)}
+                                onCheckedChange={() => handleToggleDashboardVisibility(dashboard.id)}
+                              />
+                              <label
+                                htmlFor={`dashboard-${dashboard.id}`}
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1 cursor-pointer"
+                              >
+                                {dashboard.name}
+                                {dashboard.isDefault && (
+                                  <Badge variant="secondary" className="text-xs px-1">Default</Badge>
+                                )}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAnalyticsManagerOpen(true)}
+                      >
+                        <Settings className="w-4 h-4 mr-2" />
+                        Dashboard Manager
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Manage dashboard configurations and widgets</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
 
@@ -588,6 +660,35 @@ export default function Dashboard() {
                     <p>Save current schedule configuration</p>
                   </TooltipContent>
                 </Tooltip>
+
+                {/* Live button moved to top right corner */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsLivePaused(!isLivePaused)}
+                      className="flex items-center gap-2 hover:bg-gray-100 text-sm"
+                    >
+                      {isLivePaused ? (
+                        <>
+                          <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                          <span className="text-sm text-gray-600 font-medium">Paused</span>
+                          <PlayCircle className="w-4 h-4 text-gray-600" />
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                          <span className="text-sm text-green-600 font-medium">Live</span>
+                          <PauseCircle className="w-4 h-4 text-green-600" />
+                        </>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Toggle live data updates</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
             </div>
 
@@ -596,27 +697,6 @@ export default function Dashboard() {
             <div className="flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-gray-500" />
               <span className="text-sm font-medium text-gray-700">Analytics Dashboard</span>
-              {/* Live/Pause toggle */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsLivePaused(!isLivePaused)}
-                className="flex items-center gap-2 hover:bg-gray-100 text-sm"
-              >
-                {isLivePaused ? (
-                  <>
-                    <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                    <span className="text-sm text-gray-600 font-medium">Paused</span>
-                    <PlayCircle className="w-4 h-4 text-gray-600" />
-                  </>
-                ) : (
-                  <>
-                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm text-green-600 font-medium">Live</span>
-                    <PauseCircle className="w-4 h-4 text-green-600" />
-                  </>
-                )}
-              </Button>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Popover>
@@ -659,6 +739,7 @@ export default function Dashboard() {
                   </div>
                 </PopoverContent>
               </Popover>
+              
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
