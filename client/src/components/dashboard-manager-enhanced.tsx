@@ -708,7 +708,7 @@ export default function EnhancedDashboardManager({
   return (
     <DndProvider backend={HTML5Backend}>
       <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] md:max-w-7xl h-[90vh] flex flex-col p-0">
+      <DialogContent className="max-w-[95vw] md:max-w-7xl h-[90vh] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle>
             {editingDashboard ? `Edit Dashboard: ${editingDashboard.name}` : "Manage Dashboards"}
@@ -719,14 +719,15 @@ export default function EnhancedDashboardManager({
         </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 mx-6 mt-4">
-              <TabsTrigger value="browse" className="text-xs sm:text-sm">Browse</TabsTrigger>
-              <TabsTrigger value="create" className="text-xs sm:text-sm">Create New</TabsTrigger>
-              <TabsTrigger value="editor" className="text-xs sm:text-sm">Visual Editor</TabsTrigger>
-              <TabsTrigger value="templates" className="text-xs sm:text-sm">Widget Library</TabsTrigger>
-              <TabsTrigger value="ai" className="text-xs sm:text-sm">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 mx-4 sm:mx-6 mt-4 h-12 sm:h-auto">
+              <TabsTrigger value="browse" className="text-xs sm:text-sm py-2 sm:py-1 min-h-[44px] sm:min-h-auto">Browse</TabsTrigger>
+              <TabsTrigger value="create" className="text-xs sm:text-sm py-2 sm:py-1 min-h-[44px] sm:min-h-auto">Create New</TabsTrigger>
+              <TabsTrigger value="editor" className="text-xs sm:text-sm py-2 sm:py-1 min-h-[44px] sm:min-h-auto">Visual Editor</TabsTrigger>
+              <TabsTrigger value="templates" className="text-xs sm:text-sm py-2 sm:py-1 min-h-[44px] sm:min-h-auto">Widget Library</TabsTrigger>
+              <TabsTrigger value="ai" className="text-xs sm:text-sm py-2 sm:py-1 min-h-[44px] sm:min-h-auto">
                 <Sparkles className="w-3 h-3 mr-1" />
-                AI Assistant
+                <span className="hidden sm:inline">AI Assistant</span>
+                <span className="sm:hidden">AI</span>
               </TabsTrigger>
             </TabsList>
             <TabsContent value="browse" className="flex-1 overflow-y-auto">
@@ -989,43 +990,45 @@ export default function EnhancedDashboardManager({
             </TabsContent>
 
             <TabsContent value="ai" className="flex-1 overflow-y-auto">
-              <div className="p-6 space-y-6">
+              <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                 <div className="text-center space-y-2">
                   <div className="flex items-center justify-center mb-4">
                     <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
                       <Sparkles className="w-6 h-6 text-white" />
                     </div>
                   </div>
-                  <h3 className="text-xl font-semibold">AI Dashboard Assistant</h3>
-                  <p className="text-gray-600">
+                  <h3 className="text-lg sm:text-xl font-semibold">AI Dashboard Assistant</h3>
+                  <p className="text-sm sm:text-base text-gray-600 px-2">
                     Create dashboards and widgets using natural language. Describe what you want and I'll build it for you.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-4">
-                    <h4 className="font-medium text-lg">Dashboard Creation</h4>
+                    <h4 className="font-medium text-base sm:text-lg">Dashboard Creation</h4>
                     <div className="space-y-3">
                       <textarea
                         placeholder="Describe the dashboard you want to create... (e.g., 'Create a production dashboard with job status, resource utilization, and completion rates')"
-                        className="w-full h-32 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        className="w-full h-32 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
                         value={aiDashboardPrompt}
                         onChange={(e) => setAiDashboardPrompt(e.target.value)}
                       />
                       <Button
                         onClick={handleCreateDashboardWithAI}
                         disabled={!aiDashboardPrompt.trim() || aiDashboardMutation.isPending}
-                        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white min-h-[48px] text-sm sm:text-base"
                       >
                         {aiDashboardMutation.isPending ? (
                           <div className="flex items-center">
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                            Creating Dashboard...
+                            <span className="hidden sm:inline">Creating Dashboard...</span>
+                            <span className="sm:hidden">Creating...</span>
                           </div>
                         ) : (
                           <>
                             <Sparkles className="w-4 h-4 mr-2" />
-                            Create Dashboard with AI
+                            <span className="hidden sm:inline">Create Dashboard with AI</span>
+                            <span className="sm:hidden">Create Dashboard</span>
                           </>
                         )}
                       </Button>
@@ -1033,33 +1036,35 @@ export default function EnhancedDashboardManager({
                   </div>
 
                   <div className="space-y-4">
-                    <h4 className="font-medium text-lg">Widget Creation</h4>
+                    <h4 className="font-medium text-base sm:text-lg">Widget Creation</h4>
                     <div className="space-y-3">
                       <textarea
                         placeholder="Describe the widgets you want to add... (e.g., 'Add a chart showing daily production trends and a metric for current efficiency')"
-                        className="w-full h-32 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        className="w-full h-32 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
                         value={aiWidgetPrompt}
                         onChange={(e) => setAiWidgetPrompt(e.target.value)}
                       />
                       <Button
                         onClick={handleCreateWidgetsWithAI}
                         disabled={!aiWidgetPrompt.trim() || !editingDashboard || aiWidgetMutation.isPending}
-                        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white min-h-[48px] text-sm sm:text-base"
                       >
                         {aiWidgetMutation.isPending ? (
                           <div className="flex items-center">
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                            Creating Widgets...
+                            <span className="hidden sm:inline">Creating Widgets...</span>
+                            <span className="sm:hidden">Creating...</span>
                           </div>
                         ) : (
                           <>
                             <Sparkles className="w-4 h-4 mr-2" />
-                            Add Widgets with AI
+                            <span className="hidden sm:inline">Add Widgets with AI</span>
+                            <span className="sm:hidden">Add Widgets</span>
                           </>
                         )}
                       </Button>
                       {!editingDashboard && (
-                        <p className="text-sm text-gray-500 text-center">
+                        <p className="text-xs sm:text-sm text-gray-500 text-center">
                           Select a dashboard to edit first, or create a new one
                         </p>
                       )}
@@ -1067,21 +1072,21 @@ export default function EnhancedDashboardManager({
                   </div>
                 </div>
 
-                <div className="border-t pt-6">
-                  <h4 className="font-medium text-lg mb-4">AI Examples</h4>
+                <div className="border-t pt-4 sm:pt-6">
+                  <h4 className="font-medium text-base sm:text-lg mb-4">AI Examples</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <h5 className="font-medium mb-2">Dashboard Examples</h5>
-                      <ul className="text-sm space-y-1 text-gray-600">
+                    <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
+                      <h5 className="font-medium mb-2 text-sm sm:text-base">Dashboard Examples</h5>
+                      <ul className="text-xs sm:text-sm space-y-1 text-gray-600">
                         <li>• "Create a production overview dashboard"</li>
                         <li>• "Make a resource utilization dashboard"</li>
                         <li>• "Build a quality control dashboard"</li>
                         <li>• "Create a maintenance planning dashboard"</li>
                       </ul>
                     </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <h5 className="font-medium mb-2">Widget Examples</h5>
-                      <ul className="text-sm space-y-1 text-gray-600">
+                    <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
+                      <h5 className="font-medium mb-2 text-sm sm:text-base">Widget Examples</h5>
+                      <ul className="text-xs sm:text-sm space-y-1 text-gray-600">
                         <li>• "Add a chart showing production trends"</li>
                         <li>• "Create metrics for efficiency and uptime"</li>
                         <li>• "Add a table of upcoming deadlines"</li>
