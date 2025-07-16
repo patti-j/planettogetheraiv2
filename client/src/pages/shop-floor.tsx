@@ -1040,140 +1040,6 @@ export default function ShopFloor() {
           </div>
         </div>
         
-        {/* Secondary Controls */}
-        <div className="bg-gray-50 border-b px-4 py-2 sm:px-6">
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Area selector */}
-            <Select value={currentArea} onValueChange={setCurrentArea}>
-              <SelectTrigger className="w-[140px] sm:w-[180px]">
-                <SelectValue placeholder="Select area" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(areas).map(([key, area]) => (
-                  <SelectItem key={key} value={key}>
-                    {area.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            {/* Area manager button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAreaManager(true)}
-                  className="flex items-center gap-1 px-2"
-                >
-                  <Layers className="w-4 h-4" />
-                  <span className="hidden sm:inline">Areas</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Manage named areas</p>
-              </TooltipContent>
-            </Tooltip>
-          
-            {/* Zoom and utility controls */}
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
-                {/* Zoom controls */}
-                <div className="flex items-center gap-1 border rounded-lg p-1">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleZoomOut}
-                        disabled={zoomLevel <= 0.5}
-                        className="p-1 h-6 w-6 sm:h-8 sm:w-8"
-                      >
-                        <ZoomOut className="w-3 h-3 sm:w-4 sm:h-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Zoom out</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  
-                  <span className="text-xs sm:text-sm font-medium px-1 sm:px-2 min-w-[40px] sm:min-w-[50px] text-center">
-                    {Math.round(zoomLevel * 100)}%
-                  </span>
-                  
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleZoomIn}
-                        disabled={zoomLevel >= 3}
-                        className="p-1 h-6 w-6 sm:h-8 sm:w-8"
-                      >
-                        <ZoomIn className="w-3 h-3 sm:w-4 sm:h-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Zoom in</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={resetZoom}
-                        className="p-1 h-6 w-6 sm:h-8 sm:w-8"
-                      >
-                        <Grid className="w-3 h-3 sm:w-4 sm:h-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Reset zoom</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                
-                {/* Help toggle button */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowHelp(!showHelp)}
-                      className="flex items-center gap-1 hover:bg-gray-100 px-2"
-                    >
-                      <HelpCircle className="w-4 h-4" />
-                      <span className="text-xs sm:text-sm hidden sm:inline">Help</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Toggle help instructions</p>
-                  </TooltipContent>
-                </Tooltip>
-                
-                {/* Legend toggle button */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowLegend(!showLegend)}
-                      className="flex items-center gap-1 hover:bg-gray-100 px-2"
-                    >
-                      <InfoIcon className="w-4 h-4" />
-                      <span className="text-xs sm:text-sm hidden sm:inline">Legend</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Toggle status legend</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div className="flex-1 overflow-hidden relative">
           <div 
             ref={drop}
@@ -1305,6 +1171,7 @@ export default function ShopFloor() {
             />
           </DialogContent>
         </Dialog>
+      </div>
     </>
   );
 }
