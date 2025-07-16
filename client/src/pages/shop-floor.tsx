@@ -245,12 +245,53 @@ const DraggableAreaBubble = ({
   generateResourceStatus, 
   isNoArea = false 
 }: DraggableAreaBubbleProps) => {
-  const [areaLayout, setAreaLayout] = useState<AreaLayout>({
-    areaKey,
-    x: Math.random() * 300 + 50,
-    y: Math.random() * 300 + 50,
-    width: Math.max(300, resources.length * 80 + 100),
-    height: Math.max(200, Math.ceil(resources.length / 4) * 80 + 100)
+  const [areaLayout, setAreaLayout] = useState<AreaLayout>(() => {
+    const savedLayout = localStorage.getItem(`area-layout-${areaKey}`);
+    if (savedLayout) {
+      return JSON.parse(savedLayout);
+    }
+    
+    // Smart initial positioning to prevent overlaps
+    const existingAreas = Object.keys(localStorage)
+      .filter(key => key.startsWith('area-layout-'))
+      .map(key => JSON.parse(localStorage.getItem(key)!));
+    
+    const areaWidth = Math.max(300, resources.length * 80 + 100);
+    const areaHeight = Math.max(200, Math.ceil(resources.length / 4) * 80 + 100);
+    
+    // Find a non-overlapping position
+    let x = 50;
+    let y = 50;
+    let placed = false;
+    
+    for (let row = 0; row < 10 && !placed; row++) {
+      for (let col = 0; col < 4 && !placed; col++) {
+        const testX = 50 + col * 370;
+        const testY = 50 + row * 320;
+        
+        // Check if this position overlaps with any existing area
+        const overlaps = existingAreas.some(area => {
+          return !(testX + areaWidth < area.x || 
+                   testX > area.x + area.width ||
+                   testY + areaHeight < area.y || 
+                   testY > area.y + area.height);
+        });
+        
+        if (!overlaps) {
+          x = testX;
+          y = testY;
+          placed = true;
+        }
+      }
+    }
+    
+    return {
+      areaKey,
+      x,
+      y,
+      width: areaWidth,
+      height: areaHeight
+    };
   });
 
   const [{ isDragging }, drag] = useDrag({
@@ -259,18 +300,21 @@ const DraggableAreaBubble = ({
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
+    end: (item, monitor) => {
+      const dropResult = monitor.getDropResult();
+      if (!dropResult) {
+        // If no drop result, calculate new position based on the final offset
+        const offset = monitor.getDifferenceFromInitialOffset();
+        if (offset) {
+          const newX = Math.max(0, item.x + offset.x);
+          const newY = Math.max(0, item.y + offset.y);
+          setAreaLayout(prev => ({ ...prev, x: newX, y: newY }));
+        }
+      }
+    },
   });
 
-  // Load area layout from localStorage
-  useEffect(() => {
-    const savedLayout = localStorage.getItem(`area-layout-${areaKey}`);
-    if (savedLayout) {
-      const layout = JSON.parse(savedLayout);
-      setAreaLayout(layout);
-    }
-  }, [areaKey]);
-
-  // Save area layout to localStorage
+  // Save area layout to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem(`area-layout-${areaKey}`, JSON.stringify(areaLayout));
   }, [areaKey, areaLayout]);
@@ -901,33 +945,26 @@ export default function ShopFloor() {
 
   // Handle area movement
   const handleAreaMove = (areaKey: string, x: number, y: number) => {
-    // Update area layout in localStorage
-    const savedLayout = localStorage.getItem(`area-layout-${areaKey}`);
-    if (savedLayout) {
-      const layout = JSON.parse(savedLayout);
-      layout.x = x;
-      layout.y = y;
-      localStorage.setItem(`area-layout-${areaKey}`, JSON.stringify(layout));
-    }
+    // This function is called by the drop handler, but the actual position
+    // update is now handled by the drag end event in the DraggableAreaBubble
+    // component to ensure proper state management
   };
 
   // Drop zone for the shop floor container
   const [, drop] = useDrop({
     accept: ["resource", "area"],
     drop: (item: { id?: string; areaKey?: string; x: number; y: number }, monitor) => {
-      const offset = monitor.getDifferenceFromInitialOffset();
-      if (offset) {
-        const newX = item.x + offset.x;
-        const newY = item.y + offset.y;
-        
-        if (item.id) {
-          // Handle resource drop
+      if (item.id) {
+        // Handle resource drop
+        const offset = monitor.getDifferenceFromInitialOffset();
+        if (offset) {
+          const newX = item.x + offset.x;
+          const newY = item.y + offset.y;
           handleResourceMove(item.id, Math.max(0, newX), Math.max(0, newY));
-        } else if (item.areaKey) {
-          // Handle area drop
-          handleAreaMove(item.areaKey, Math.max(0, newX), Math.max(0, newY));
         }
       }
+      // Area drops are handled by the drag end event in DraggableAreaBubble
+      return { moved: true };
     },
   });
 
