@@ -1006,7 +1006,7 @@ export default function EnhancedDashboardManager({
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                <div className="space-y-6">
                   <div className="space-y-4">
                     <h4 className="font-medium text-base sm:text-lg">Dashboard Creation</h4>
                     <div className="space-y-3">
@@ -1077,7 +1077,7 @@ export default function EnhancedDashboardManager({
 
                 <div className="border-t pt-4 sm:pt-6">
                   <h4 className="font-medium text-base sm:text-lg mb-4">AI Examples</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
                     <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
                       <h5 className="font-medium mb-2 text-sm sm:text-base">Dashboard Examples</h5>
                       <ul className="text-xs sm:text-sm space-y-1 text-gray-600">

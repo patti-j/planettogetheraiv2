@@ -585,17 +585,14 @@ export default function Analytics() {
               </PopoverContent>
             </Popover>
             
-            <div className="flex flex-row gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setDashboardManagerOpen(true)}
-                className="flex items-center gap-2 text-sm"
-              >
-                <Settings className="h-4 w-4" />
-                Dashboard Manager
-              </Button>
-
-            </div>
+            <Button
+              variant="outline"
+              onClick={() => setDashboardManagerOpen(true)}
+              className="flex items-center gap-2 text-sm"
+            >
+              <Settings className="h-4 w-4" />
+              Dashboard Manager
+            </Button>
 
             {!isMobile && (
               <div className="flex items-center ml-auto">
