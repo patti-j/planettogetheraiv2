@@ -112,7 +112,18 @@ Preferred communication style: Simple, everyday language.
 
 The application uses a modern full-stack architecture with strong typing throughout, real-time updates, and an intuitive drag-and-drop interface for manufacturing production scheduling.
 
-## Recent Changes (July 13, 2025)
+## Recent Changes (July 16, 2025)
+
+✓ **Dashboard Manager Integration (July 16, 2025)**:
+- Removed standalone AI analytics buttons from both analytics and dashboard/schedule pages
+- Consolidated AI analytics functionality into dashboard manager's AI Assistant tab
+- Renamed "Manage" button to "Dashboard Manager" for clarity
+- Added "Dashboard Manager" button to schedule page for consistent access
+- Streamlined user interface by reducing duplicate AI access points
+- AI features now centralized in dashboard manager for better user experience
+- Dashboard management now consistently accessible across Analytics and Schedule pages
+
+## Previous Changes (July 13, 2025)
 
 ✓ **Database Integration**: 
 - Successfully migrated from in-memory storage to PostgreSQL database

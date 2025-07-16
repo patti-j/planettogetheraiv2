@@ -592,16 +592,9 @@ export default function Analytics() {
                 className="flex items-center gap-2 text-sm"
               >
                 <Settings className="h-4 w-4" />
-                Manage
+                Dashboard Manager
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => setAiAnalyticsOpen(true)}
-                className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm"
-              >
-                <Sparkles className="h-4 w-4" />
-                AI Analytics
-              </Button>
+
             </div>
 
             {!isMobile && (
@@ -672,16 +665,9 @@ export default function Analytics() {
                     className="flex items-center gap-2"
                   >
                     <Settings className="h-4 w-4" />
-                    Manage
+                    Dashboard Manager
                   </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setAiAnalyticsOpen(true)}
-                    className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    AI Analytics
-                  </Button>
+
                   
                   <Button
                     variant="ghost"

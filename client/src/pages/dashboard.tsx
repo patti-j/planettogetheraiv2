@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Save, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, BarChart3, Wrench, Calendar, User, Smartphone, Monitor, ChevronDown, Play, Pause, PlayCircle, PauseCircle } from "lucide-react";
+import { Plus, Save, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, BarChart3, Wrench, Calendar, User, Smartphone, Monitor, ChevronDown, Play, Pause, PlayCircle, PauseCircle, Settings } from "lucide-react";
 
 import GanttChart from "@/components/ui/gantt-chart";
 import MobileSchedule from "@/components/mobile-schedule";
@@ -17,6 +17,7 @@ import MetricsCard from "@/components/ui/metrics-card";
 import JobForm from "@/components/job-form";
 import ResourceForm from "@/components/resource-form";
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
+import EnhancedDashboardManager from "@/components/dashboard-manager-enhanced";
 import AnalyticsWidget from "@/components/analytics-widget";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -39,6 +40,16 @@ interface AnalyticsWidget {
   position: { x: number; y: number };
   size: { width: number; height: number };
   config: any;
+}
+
+interface DashboardConfig {
+  id: number;
+  name: string;
+  description: string;
+  configuration: any;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function Dashboard() {
@@ -80,7 +91,7 @@ export default function Dashboard() {
   });
 
   // Load dashboard configurations
-  const { data: dashboards = [] } = useQuery({
+  const { data: dashboards = [] } = useQuery<DashboardConfig[]>({
     queryKey: ["/api/dashboard-configs"],
   });
 
@@ -257,6 +268,22 @@ export default function Dashboard() {
                       <p>Save current schedule configuration</p>
                     </TooltipContent>
                   </Tooltip>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setAnalyticsManagerOpen(true)}
+                      >
+                        <Settings className="w-4 h-4 mr-2" />
+                        Dashboard Manager
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Manage dashboard configurations and widgets</p>
+                    </TooltipContent>
+                  </Tooltip>
                   {!isMobile && (
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -275,21 +302,7 @@ export default function Dashboard() {
               {/* Analytics Controls */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={() => setAnalyticsManagerOpen(true)}
-                        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                        size="sm"
-                      >
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        AI Analytics
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Create custom analytics widgets using AI</p>
-                    </TooltipContent>
-                  </Tooltip>
+                  {/* AI Analytics button removed */}
                 </div>
               </div>
 
@@ -515,12 +528,9 @@ export default function Dashboard() {
           </div>
 
           {/* AI Analytics Manager */}
-          <AIAnalyticsManager
+          <EnhancedDashboardManager
             open={analyticsManagerOpen}
             onOpenChange={setAnalyticsManagerOpen}
-            onWidgetCreate={handleWidgetCreate}
-            currentWidgets={customWidgets}
-            onWidgetUpdate={handleWidgetUpdate}
           />
         </div>
       </TooltipProvider>
@@ -642,18 +652,19 @@ export default function Dashboard() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    onClick={() => setAnalyticsManagerOpen(true)}
-                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                    variant="outline"
                     size="sm"
+                    onClick={() => setAnalyticsManagerOpen(true)}
                   >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    AI Analytics
+                    <Settings className="w-4 h-4 mr-2" />
+                    Dashboard Manager
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Create custom analytics widgets using AI</p>
+                  <p>Manage dashboard configurations and widgets</p>
                 </TooltipContent>
               </Tooltip>
+              
               {!isMobile && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -875,12 +886,9 @@ export default function Dashboard() {
       </Dialog>
 
         {/* AI Analytics Manager */}
-        <AIAnalyticsManager
+        <EnhancedDashboardManager
           open={analyticsManagerOpen}
           onOpenChange={setAnalyticsManagerOpen}
-          onWidgetCreate={handleWidgetCreate}
-          currentWidgets={customWidgets}
-          onWidgetUpdate={handleWidgetUpdate}
         />
       </div>
     </TooltipProvider>
