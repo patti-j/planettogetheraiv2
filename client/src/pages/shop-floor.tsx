@@ -864,6 +864,7 @@ export default function ShopFloor() {
   }
 
   return (
+    <>
     <div className="h-screen bg-gray-50 flex flex-col">
         {/* Header */}
         <div className="bg-white shadow-sm border-b px-4 py-2 sm:py-3 sm:px-6 flex-shrink-0">
@@ -1173,7 +1174,6 @@ export default function ShopFloor() {
           </div>
         </div>
 
-        {/* Shop Floor View */}
         <div className="flex-1 overflow-hidden relative">
           <div 
             ref={drop}
@@ -1305,7 +1305,7 @@ export default function ShopFloor() {
             />
           </DialogContent>
         </Dialog>
-      </div>
+    </>
   );
 }
 
@@ -1426,4 +1426,3 @@ const AreaManagerDialog: React.FC<AreaManagerDialogProps> = ({
   );
 };
 
-export default ShopFloor;
