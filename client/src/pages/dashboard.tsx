@@ -528,10 +528,20 @@ export default function Dashboard() {
           </div>
 
           {/* AI Analytics Manager */}
-          <EnhancedDashboardManager
-            open={analyticsManagerOpen}
-            onOpenChange={setAnalyticsManagerOpen}
-          />
+          {dashboards && (
+            <EnhancedDashboardManager
+              open={analyticsManagerOpen}
+              onOpenChange={setAnalyticsManagerOpen}
+              dashboards={dashboards}
+              currentDashboard={null}
+              onDashboardSelect={() => {}}
+              onDashboardCreate={() => {}}
+              onDashboardUpdate={() => {}}
+              onDashboardDelete={() => {}}
+              standardWidgets={[]}
+              customWidgets={customWidgets}
+            />
+          )}
         </div>
       </TooltipProvider>
     );
@@ -886,10 +896,20 @@ export default function Dashboard() {
       </Dialog>
 
         {/* AI Analytics Manager */}
-        <EnhancedDashboardManager
-          open={analyticsManagerOpen}
-          onOpenChange={setAnalyticsManagerOpen}
-        />
+        {dashboards && (
+          <EnhancedDashboardManager
+            open={analyticsManagerOpen}
+            onOpenChange={setAnalyticsManagerOpen}
+            dashboards={dashboards}
+            currentDashboard={null}
+            onDashboardSelect={() => {}}
+            onDashboardCreate={() => {}}
+            onDashboardUpdate={() => {}}
+            onDashboardDelete={() => {}}
+            standardWidgets={[]}
+            customWidgets={customWidgets}
+          />
+        )}
       </div>
     </TooltipProvider>
   );
