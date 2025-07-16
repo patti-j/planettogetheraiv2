@@ -94,13 +94,13 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo 
   const getResourceIcon = (type: string) => {
     switch (type.toLowerCase()) {
       case "machine":
-        return <Wrench className="w-8 h-8" />;
+        return <Wrench className="w-6 h-6 sm:w-8 sm:h-8" />;
       case "operator":
-        return <Users className="w-8 h-8" />;
+        return <Users className="w-6 h-6 sm:w-8 sm:h-8" />;
       case "facility":
-        return <Building2 className="w-8 h-8" />;
+        return <Building2 className="w-6 h-6 sm:w-8 sm:h-8" />;
       default:
-        return <Settings className="w-8 h-8" />;
+        return <Settings className="w-6 h-6 sm:w-8 sm:h-8" />;
     }
   };
 
@@ -158,7 +158,7 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo 
         <Tooltip>
           <TooltipTrigger asChild>
             <div
-              className={`relative w-full h-full ${getStatusColor(status.status)} rounded-lg border-2 shadow-lg hover:shadow-xl transition-shadow cursor-pointer`}
+              className={`relative w-full h-full ${getStatusColor(status.status)} rounded-lg border-2 shadow-lg hover:shadow-xl transition-shadow cursor-pointer touch-manipulation`}
               onClick={() => onDetails(resource, status)}
             >
               {/* Resource Icon/Photo */}
@@ -313,15 +313,15 @@ const ResourceDetailsDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
+          <DialogTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2">
                 {resource.type === "machine" && <Wrench className="w-5 h-5" />}
                 {resource.type === "operator" && <Users className="w-5 h-5" />}
                 {resource.type === "facility" && <Building2 className="w-5 h-5" />}
-                {resource.name}
+                <span className="text-lg sm:text-xl font-bold">{resource.name}</span>
               </div>
               <Badge variant={status.status === "operational" ? "default" : "destructive"}>
                 {status.status}
@@ -745,19 +745,14 @@ export default function ShopFloor() {
     localStorage.setItem('resourcePhotos', JSON.stringify(savedPhotos));
   };
 
-  // Save layout mutation
+  // Save layout mutation (silent save without toast)
   const saveLayoutMutation = useMutation({
     mutationFn: async (layout: ShopFloorLayout[]) => {
       // In real app, save to database
       localStorage.setItem('shopFloorLayout', JSON.stringify(layout));
       return layout;
     },
-    onSuccess: () => {
-      toast({
-        title: "Layout Saved",
-        description: "Shop floor layout has been saved successfully.",
-      });
-    },
+    // Remove toast notification for auto-save
   });
 
   // Load layout and photos from localStorage
@@ -872,119 +867,125 @@ export default function ShopFloor() {
       <div className="h-screen bg-gray-50 flex flex-col">
         {/* Header */}
         <div className="bg-white shadow-sm border-b px-4 py-3 sm:px-6 flex-shrink-0">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="ml-12 md:ml-0">
               <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Shop Floor</h1>
               <p className="text-sm md:text-base text-gray-600">Production oversight and equipment monitoring</p>
             </div>
             
-            <div className="flex items-center gap-2">
-              {/* Area selector */}
-              <Select value={currentArea} onValueChange={setCurrentArea}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Select area" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(areas).map(([key, area]) => (
-                    <SelectItem key={key} value={key}>
-                      {area.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              {/* Area manager button */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowAreaManager(true)}
-                    className="flex items-center gap-2"
-                  >
-                    <Layers className="w-4 h-4" />
-                    Areas
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Manage named areas</p>
-                </TooltipContent>
-              </Tooltip>
-              
-              {/* Zoom controls */}
-              <div className="flex items-center gap-1 border rounded-lg p-1">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-2">
+              {/* First row: Area controls */}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                {/* Area selector */}
+                <Select value={currentArea} onValueChange={setCurrentArea}>
+                  <SelectTrigger className="w-[140px] sm:w-[180px]">
+                    <SelectValue placeholder="Select area" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(areas).map(([key, area]) => (
+                      <SelectItem key={key} value={key}>
+                        {area.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {/* Area manager button */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      onClick={handleZoomOut}
-                      disabled={zoomLevel <= 0.5}
-                      className="p-1 h-8 w-8"
+                      onClick={() => setShowAreaManager(true)}
+                      className="flex items-center gap-1 px-2"
                     >
-                      <ZoomOut className="w-4 h-4" />
+                      <Layers className="w-4 h-4" />
+                      <span className="hidden sm:inline">Areas</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Zoom out</p>
-                  </TooltipContent>
-                </Tooltip>
-                
-                <span className="text-sm font-medium px-2 min-w-[50px] text-center">
-                  {Math.round(zoomLevel * 100)}%
-                </span>
-                
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleZoomIn}
-                      disabled={zoomLevel >= 3}
-                      className="p-1 h-8 w-8"
-                    >
-                      <ZoomIn className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Zoom in</p>
-                  </TooltipContent>
-                </Tooltip>
-                
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={resetZoom}
-                      className="p-1 h-8 w-8"
-                    >
-                      <Grid className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Reset zoom</p>
+                    <p>Manage named areas</p>
                   </TooltipContent>
                 </Tooltip>
               </div>
               
-              {/* Help toggle button */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowHelp(!showHelp)}
-                    className="flex items-center gap-2 hover:bg-gray-100 text-sm"
-                  >
-                    <HelpCircle className="w-4 h-4" />
-                    <span className="text-sm">Help</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Toggle help instructions</p>
-                </TooltipContent>
-              </Tooltip>
+              {/* Second row: Zoom and utility controls */}
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+                {/* Zoom controls */}
+                <div className="flex items-center gap-1 border rounded-lg p-1">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleZoomOut}
+                        disabled={zoomLevel <= 0.5}
+                        className="p-1 h-6 w-6 sm:h-8 sm:w-8"
+                      >
+                        <ZoomOut className="w-3 h-3 sm:w-4 sm:h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Zoom out</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  
+                  <span className="text-xs sm:text-sm font-medium px-1 sm:px-2 min-w-[40px] sm:min-w-[50px] text-center">
+                    {Math.round(zoomLevel * 100)}%
+                  </span>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleZoomIn}
+                        disabled={zoomLevel >= 3}
+                        className="p-1 h-6 w-6 sm:h-8 sm:w-8"
+                      >
+                        <ZoomIn className="w-3 h-3 sm:w-4 sm:h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Zoom in</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={resetZoom}
+                        className="p-1 h-6 w-6 sm:h-8 sm:w-8"
+                      >
+                        <Grid className="w-3 h-3 sm:w-4 sm:h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Reset zoom</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                
+                {/* Help toggle button */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowHelp(!showHelp)}
+                      className="flex items-center gap-1 hover:bg-gray-100 px-2"
+                    >
+                      <HelpCircle className="w-4 h-4" />
+                      <span className="text-xs sm:text-sm hidden sm:inline">Help</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Toggle help instructions</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               
               {/* Live button */}
               <Tooltip>
@@ -1031,7 +1032,7 @@ export default function ShopFloor() {
           >
             {/* Instructions */}
             {showHelp && (
-              <div className="absolute top-4 left-4 bg-white p-4 rounded-lg shadow-lg max-w-md z-10">
+              <div className="absolute top-4 left-4 right-4 sm:right-auto bg-white p-4 rounded-lg shadow-lg sm:max-w-md z-10">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold text-gray-800">Shop Floor Controls</h3>
                   <Button
@@ -1045,10 +1046,11 @@ export default function ShopFloor() {
                 </div>
                 <ul className="text-sm text-gray-600 space-y-1">
                   <li>• Drag equipment icons to rearrange the shop floor</li>
-                  <li>• Click any equipment to view detailed status and issues</li>
+                  <li>• Tap any equipment to view detailed status and issues</li>
+                  <li>• Use zoom controls to focus on specific areas</li>
+                  <li>• Create areas to group related equipment</li>
                   <li>• Color indicates status: Green (operational), Yellow (warning), Red (error)</li>
                   <li>• White bar shows current utilization percentage</li>
-                  <li>• Red badge shows number of active issues</li>
                 </ul>
               </div>
             )}
@@ -1124,9 +1126,9 @@ export default function ShopFloor() {
         />
         {/* Area Manager Dialog */}
         <Dialog open={showAreaManager} onOpenChange={setShowAreaManager}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Area Manager</DialogTitle>
+              <DialogTitle className="text-lg sm:text-xl">Area Manager</DialogTitle>
             </DialogHeader>
             <AreaManagerDialog 
               areas={areas}
@@ -1198,7 +1200,7 @@ const AreaManagerDialog: React.FC<AreaManagerDialogProps> = ({
             
             <div>
               <Label>Select Resources</Label>
-              <div className="grid grid-cols-2 gap-2 mt-2 max-h-48 overflow-y-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 max-h-48 overflow-y-auto">
                 {resources.map(resource => (
                   <div key={resource.id} className="flex items-center space-x-2">
                     <Checkbox
