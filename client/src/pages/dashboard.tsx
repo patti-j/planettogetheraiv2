@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Save, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, BarChart3, Wrench, Calendar, User, Smartphone, Monitor, ChevronDown, Play, Pause, PlayCircle, PauseCircle, Settings } from "lucide-react";
+import { Plus, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, BarChart3, Wrench, Calendar, User, Smartphone, Monitor, ChevronDown, Play, Pause, PlayCircle, PauseCircle, Settings } from "lucide-react";
 
 import GanttChart from "@/components/ui/gantt-chart";
 import MobileSchedule from "@/components/mobile-schedule";
@@ -257,18 +257,6 @@ export default function Dashboard() {
                     })}
                   </div>
 
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button size="sm">
-                        <Save className="w-4 h-4 mr-2" />
-                        Save Schedule
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Save current schedule configuration</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -648,18 +636,6 @@ export default function Dashboard() {
                     })}
                   </span>
                 </div>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button size="sm" className="w-full md:w-auto">
-                      <Save className="w-4 h-4 mr-2" />
-                      Save Schedule
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Save current schedule configuration</p>
-                  </TooltipContent>
-                </Tooltip>
 
                 {/* Live button moved to top right corner */}
                 <Tooltip>
