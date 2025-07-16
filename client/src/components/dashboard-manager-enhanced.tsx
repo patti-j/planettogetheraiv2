@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Settings, Star, Trash2, Edit3, Eye, Save, Move, Palette, BarChart3, TrendingUp, AlertTriangle, CheckCircle, Clock, Target, PieChart, Activity, Zap, Users, Package, Wrench, ArrowUp, ArrowDown, MoreHorizontal, Grid3x3, Maximize2, Minimize2, RotateCcw, Sparkles, Bot } from "lucide-react";
@@ -709,70 +710,80 @@ export default function EnhancedDashboardManager({
     <DndProvider backend={HTML5Backend}>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-[95vw] md:max-w-7xl h-[90vh] flex flex-col p-0 overflow-hidden">
-          <DialogHeader className="px-4 sm:px-6 py-4 border-b">
-            <DialogTitle>
-              {editingDashboard ? `Edit Dashboard: ${editingDashboard.name}` : "Manage Dashboards"}
-            </DialogTitle>
-            <DialogDescription>
-              Create, edit, and organize your dashboard configurations with comprehensive widget management
-            </DialogDescription>
-          </DialogHeader>
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-            <div className="px-4 sm:px-6 pt-4 pb-2 relative z-10">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-12 sm:h-auto">
-                <TabsTrigger value="browse" className="text-xs sm:text-sm py-2 sm:py-1 min-h-[44px] sm:min-h-auto touch-manipulation relative z-10">Browse</TabsTrigger>
-                <TabsTrigger value="create" className="text-xs sm:text-sm py-2 sm:py-1 min-h-[44px] sm:min-h-auto touch-manipulation relative z-10">Create New</TabsTrigger>
-                <TabsTrigger value="editor" className="text-xs sm:text-sm py-2 sm:py-1 min-h-[44px] sm:min-h-auto touch-manipulation relative z-10">Visual Editor</TabsTrigger>
-                <TabsTrigger value="templates" className="text-xs sm:text-sm py-2 sm:py-1 min-h-[44px] sm:min-h-auto touch-manipulation relative z-10">Widget Library</TabsTrigger>
-                <TabsTrigger value="ai" className="text-xs sm:text-sm py-2 sm:py-1 min-h-[44px] sm:min-h-auto touch-manipulation relative z-10">
-                  <Sparkles className="w-3 h-3 mr-1" />
-                  <span className="hidden sm:inline">AI Assistant</span>
-                  <span className="sm:hidden">AI</span>
-                </TabsTrigger>
-              </TabsList>
+          <DialogHeader className="px-3 sm:px-4 py-3 border-b">
+            <div className="flex items-center justify-between">
+              <div className="flex-1 min-w-0">
+                <DialogTitle className="text-lg sm:text-xl truncate">
+                  {editingDashboard ? `Edit: ${editingDashboard.name}` : "Dashboard Manager"}
+                </DialogTitle>
+                <DialogDescription className="text-xs sm:text-sm text-gray-600">
+                  {editingDashboard ? "Drag widgets to design your dashboard" : "Manage dashboard configurations"}
+                </DialogDescription>
+              </div>
+              
+              {/* Compact Action Controls */}
+              <div className="flex items-center gap-2 ml-4">
+                <Select value={activeTab} onValueChange={setActiveTab}>
+                  <SelectTrigger className="w-[120px] sm:w-[140px] h-8 text-xs sm:text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="browse">Browse</SelectItem>
+                    <SelectItem value="create">Create New</SelectItem>
+                    <SelectItem value="editor">Visual Editor</SelectItem>
+                    <SelectItem value="templates">Widget Library</SelectItem>
+                    <SelectItem value="ai">
+                      <div className="flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" />
+                        <span>AI Assistant</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <TabsContent value="browse" className="flex-1 overflow-y-auto mt-8 sm:mt-4">
-              <div className="p-4 sm:p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-base sm:text-lg font-semibold">Saved Dashboards</h3>
+          </DialogHeader>
+          {/* Content Area - Conditional Rendering */}
+          <div className="flex-1 overflow-hidden">
+            {activeTab === "browse" && (
+              <div className="p-3 sm:p-4 h-full overflow-y-auto">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm sm:text-base font-semibold">Saved Dashboards</h3>
                   <Button
                     variant="outline"
                     onClick={() => setActiveTab("create")}
-                    className="text-sm min-h-[36px] touch-manipulation"
+                    className="text-xs sm:text-sm h-8 px-3 touch-manipulation"
                   >
-                    <Plus className="w-4 h-4 mr-2" />
-                    <span className="hidden sm:inline">New Dashboard</span>
-                    <span className="sm:hidden">New</span>
+                    <Plus className="w-3 h-3 mr-1" />
+                    <span>New</span>
                   </Button>
                 </div>
 
-                <div className="grid gap-4">
+                <div className="grid gap-3">
                   {dashboards.map((dashboard) => (
-                    <Card key={dashboard.id} className="p-3 sm:p-4">
+                    <Card key={dashboard.id} className="p-3">
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h4 className="font-medium text-sm sm:text-base truncate">{dashboard.name}</h4>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium text-sm truncate">{dashboard.name}</h4>
                             {dashboard.isDefault && (
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge variant="secondary" className="text-xs px-1">
                                 <Star className="w-3 h-3 mr-1" />
                                 Default
                               </Badge>
                             )}
                           </div>
-                          <p className="text-xs sm:text-sm text-gray-600 mb-2">{dashboard.description}</p>
-                          <div className="flex items-center gap-2 sm:gap-4 text-xs text-gray-500">
-                            <span>
-                              Created: {new Date(dashboard.createdAt).toLocaleDateString()}
-                            </span>
+                          <p className="text-xs text-gray-600 mb-1">{dashboard.description}</p>
+                          <div className="text-xs text-gray-500">
+                            {new Date(dashboard.createdAt).toLocaleDateString()}
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 sm:gap-2 ml-2">
+                        <div className="flex items-center gap-1 ml-2">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => onDashboardSelect(dashboard)}
+                            className="h-8 w-8 p-0"
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
@@ -780,6 +791,7 @@ export default function EnhancedDashboardManager({
                             variant="ghost"
                             size="sm"
                             onClick={() => handleStartEditing(dashboard)}
+                            className="h-8 w-8 p-0"
                           >
                             <Edit3 className="w-4 h-4" />
                           </Button>
@@ -787,6 +799,7 @@ export default function EnhancedDashboardManager({
                             variant="ghost"
                             size="sm"
                             onClick={() => deleteDashboardMutation.mutate(dashboard.id)}
+                            className="h-8 w-8 p-0"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -795,86 +808,112 @@ export default function EnhancedDashboardManager({
                     </Card>
                   ))}
                   {dashboards.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-gray-500 text-sm">
                       No dashboards created yet. Create your first dashboard to get started.
                     </div>
                   )}
                 </div>
               </div>
-            </TabsContent>
+            )}
 
-            <TabsContent value="create" className="flex-1 overflow-y-auto mt-8 sm:mt-4">
-              <div className="p-4 sm:p-6 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Dashboard Details</h3>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Dashboard Name</Label>
-                    <Input
-                      id="name"
-                      value={newDashboard.name}
-                      onChange={(e) => setNewDashboard({...newDashboard, name: e.target.value})}
-                      placeholder="Enter dashboard name"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={newDashboard.description}
-                      onChange={(e) => setNewDashboard({...newDashboard, description: e.target.value})}
-                      placeholder="Enter dashboard description"
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleCreateDashboard}
-                      disabled={createDashboardMutation.isPending}
-                    >
-                      {createDashboardMutation.isPending ? "Creating..." : "Create Dashboard"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => setActiveTab("browse")}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-
+            {activeTab === "create" && (
+              <div className="p-3 sm:p-4 h-full overflow-y-auto">
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Widget Preview</h3>
-                  <div className="min-h-[200px] bg-gray-50 rounded-lg p-4">
-                    <p className="text-sm text-gray-600">
-                      After creating your dashboard, use the Visual Editor to add and arrange widgets.
-                    </p>
+                  <h3 className="text-sm sm:text-base font-semibold">Create New Dashboard</h3>
+                  
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="name" className="text-xs sm:text-sm">Dashboard Name</Label>
+                      <Input
+                        id="name"
+                        value={newDashboard.name}
+                        onChange={(e) => setNewDashboard({...newDashboard, name: e.target.value})}
+                        placeholder="Enter dashboard name"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label htmlFor="description" className="text-xs sm:text-sm">Description</Label>
+                      <Textarea
+                        id="description"
+                        value={newDashboard.description}
+                        onChange={(e) => setNewDashboard({...newDashboard, description: e.target.value})}
+                        placeholder="Enter dashboard description"
+                        rows={2}
+                        className="text-sm resize-none"
+                      />
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="isDefault"
+                        checked={newDashboard.isDefault}
+                        onCheckedChange={(checked) => setNewDashboard({...newDashboard, isDefault: checked as boolean})}
+                      />
+                      <Label htmlFor="isDefault" className="text-xs sm:text-sm">Set as default dashboard</Label>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleCreateDashboard}
+                        disabled={!newDashboard.name.trim() || createDashboardMutation.isPending}
+                        className="flex-1 h-8 text-sm"
+                      >
+                        {createDashboardMutation.isPending ? "Creating..." : "Create Dashboard"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setActiveTab("browse")}
+                        className="h-8 text-sm"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
-                </div>
+
+                  <div className="border-t pt-4">
+                    <h4 className="text-xs sm:text-sm font-medium mb-2">Quick AI Create</h4>
+                    <div className="space-y-2">
+                      <textarea
+                        placeholder="Describe dashboard (e.g., 'Production overview with jobs, resources, and efficiency metrics')"
+                        className="w-full h-20 p-2 border rounded-lg resize-none text-sm"
+                        value={aiDashboardPrompt}
+                        onChange={(e) => setAiDashboardPrompt(e.target.value)}
+                      />
+                      <Button
+                        onClick={handleCreateDashboardWithAI}
+                        disabled={!aiDashboardPrompt.trim() || aiDashboardMutation.isPending}
+                        className="w-full h-8 text-sm bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                      >
+                        {aiDashboardMutation.isPending ? "Creating..." : (
+                          <div className="flex items-center">
+                            <Sparkles className="w-3 h-3 mr-1" />
+                            AI Create
+                          </div>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </TabsContent>
+            )}
 
-            <TabsContent value="editor" className="flex-1 overflow-y-auto mt-8 sm:mt-4">
-              <div className="p-4 sm:p-6 space-y-4">
+            {activeTab === "editor" && (
+              <div className="p-2 sm:p-3 h-full overflow-hidden">
                 {editingDashboard ? (
-                  <div className="space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                      <div>
-                        <h3 className="text-base sm:text-lg font-semibold">Visual Editor</h3>
-                        <p className="text-xs sm:text-sm text-gray-600">
-                          Drag widgets from the Widget Library to design your dashboard
-                        </p>
+                  <div className="h-full flex flex-col">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-semibold truncate">Visual Editor</h3>
+                        <p className="text-xs text-gray-600">Drag widgets to design your dashboard</p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1 ml-2">
                         <Button
                           onClick={handleSaveEditing}
                           disabled={updateDashboardMutation.isPending}
                           size="sm"
-                          className="text-sm min-h-[36px]"
+                          className="h-7 px-3 text-xs"
                         >
                           {updateDashboardMutation.isPending ? "Saving..." : "Save"}
                         </Button>
@@ -882,19 +921,22 @@ export default function EnhancedDashboardManager({
                           variant="outline"
                           onClick={handleCancelEditing}
                           size="sm"
-                          className="text-sm min-h-[36px]"
+                          className="h-7 px-3 text-xs"
                         >
                           Cancel
                         </Button>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                        <div className="lg:col-span-2 order-2 lg:order-1">
-                          <div className="mb-4">
-                            <h4 className="font-medium mb-2 text-sm sm:text-base">Canvas</h4>
-                            <p className="text-xs sm:text-sm text-gray-600">Drag widgets from the library to the canvas below</p>
+                    <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-2 overflow-hidden">
+                      <div className="lg:col-span-3 order-2 lg:order-1 flex flex-col">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-xs font-medium">Canvas</h4>
+                          <div className="text-xs text-gray-500">
+                            {workingWidgets.length} widgets
                           </div>
+                        </div>
+                        <div className="flex-1 overflow-hidden">
                           <VisualEditor
                             widgets={workingWidgets}
                             onDrop={handleDropWidget}
@@ -902,69 +944,51 @@ export default function EnhancedDashboardManager({
                             selectedWidgetId={selectedWidgetId}
                             onWidgetMove={handleWidgetMove}
                           />
-                          <div className="mt-2 flex items-center justify-between">
-                            <div className="text-xs text-gray-500">
-                              Canvas has {workingWidgets.length} widgets
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                const template = widgetTemplates[0];
-                                handleAddWidget(template, { x: 10, y: 10 });
-                              }}
-                              className="text-xs min-h-[32px]"
-                            >
-                              Test Add Widget
-                            </Button>
-                          </div>
                         </div>
-                        <div className="space-y-4 order-1 lg:order-2">
-                          <h4 className="font-medium text-sm sm:text-base">Widget Library</h4>
-                          <p className="text-xs sm:text-sm text-gray-600">Drag these widgets to the canvas</p>
-                          <div className="max-h-64 overflow-y-auto">
-                            <div className="space-y-2">
-                              {widgetTemplates.map((template) => (
-                                <DraggableTemplate key={template.id} template={template} />
-                              ))}
-                            </div>
+                      </div>
+                      <div className="order-1 lg:order-2 flex flex-col">
+                        <h4 className="text-xs font-medium mb-2">Widget Library</h4>
+                        <div className="flex-1 overflow-y-auto">
+                          <div className="space-y-1">
+                            {widgetTemplates.map((template) => (
+                              <DraggableTemplate key={template.id} template={template} />
+                            ))}
                           </div>
                         </div>
                       </div>
+                    </div>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-64 text-gray-500">
-                    Select a dashboard to edit from the Browse tab
+                  <div className="flex items-center justify-center h-full text-gray-500 text-sm">
+                    Select a dashboard to edit from Browse
                   </div>
                 )}
               </div>
-            </TabsContent>
+            )}
 
-            <TabsContent value="templates" className="flex-1 overflow-y-auto mt-8 sm:mt-4">
-              <div className="p-4 sm:p-6 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <h3 className="text-base sm:text-lg font-semibold">Widget Library</h3>
-                  <p className="text-xs sm:text-sm text-gray-600">
-                    Available widgets for your dashboards
-                  </p>
+            {activeTab === "templates" && (
+              <div className="p-3 sm:p-4 h-full overflow-y-auto">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm sm:text-base font-semibold">Widget Library</h3>
+                  <p className="text-xs text-gray-600">Available widgets</p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {widgetTemplates.map((template) => (
-                    <Card key={template.id} className="p-3 sm:p-4">
-                      <div className="flex items-center gap-3 mb-2">
+                    <Card key={template.id} className="p-3">
+                      <div className="flex items-center gap-2 mb-2">
                         <div className="text-blue-600 flex-shrink-0">
-                          {template.icon === "BarChart3" && <BarChart3 className="h-5 w-5" />}
-                          {template.icon === "TrendingUp" && <TrendingUp className="h-5 w-5" />}
-                          {template.icon === "AlertTriangle" && <AlertTriangle className="h-5 w-5" />}
-                          {template.icon === "CheckCircle" && <CheckCircle className="h-5 w-5" />}
-                          {template.icon === "PieChart" && <PieChart className="h-5 w-5" />}
-                          {template.icon === "Activity" && <Activity className="h-5 w-5" />}
-                          {template.icon === "Wrench" && <Wrench className="h-5 w-5" />}
+                          {template.icon === "BarChart3" && <BarChart3 className="h-4 w-4" />}
+                          {template.icon === "TrendingUp" && <TrendingUp className="h-4 w-4" />}
+                          {template.icon === "AlertTriangle" && <AlertTriangle className="h-4 w-4" />}
+                          {template.icon === "CheckCircle" && <CheckCircle className="h-4 w-4" />}
+                          {template.icon === "PieChart" && <PieChart className="h-4 w-4" />}
+                          {template.icon === "Activity" && <Activity className="h-4 w-4" />}
+                          {template.icon === "Wrench" && <Wrench className="h-4 w-4" />}
                         </div>
-                        <h4 className="font-medium text-sm sm:text-base truncate">{template.title}</h4>
+                        <h4 className="font-medium text-sm truncate">{template.title}</h4>
                       </div>
-                      <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2">{template.description}</p>
+                      <p className="text-xs text-gray-600 mb-2 line-clamp-2">{template.description}</p>
                       <div className="flex items-center justify-between">
                         <Badge variant="outline" className="text-xs">
                           {template.type}
@@ -981,126 +1005,116 @@ export default function EnhancedDashboardManager({
                               });
                             }
                           }}
-                          className="min-h-[36px] min-w-[36px] flex-shrink-0"
+                          className="h-7 w-7 p-0"
                         >
-                          <Plus className="h-4 w-4" />
+                          <Plus className="h-3 w-3" />
                         </Button>
                       </div>
                     </Card>
                   ))}
                 </div>
               </div>
-            </TabsContent>
+            )}
 
-            <TabsContent value="ai" className="flex-1 overflow-y-auto mt-8 sm:mt-4">
-              <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                <div className="text-center space-y-2">
-                  <div className="flex items-center justify-center mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                      <Sparkles className="w-6 h-6 text-white" />
+            {activeTab === "ai" && (
+              <div className="p-3 sm:p-4 h-full overflow-y-auto">
+                <div className="text-center mb-4">
+                  <div className="flex items-center justify-center mb-2">
+                    <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                      <Sparkles className="w-4 h-4 text-white" />
                     </div>
                   </div>
-                  <h3 className="text-lg sm:text-xl font-semibold">AI Dashboard Assistant</h3>
-                  <p className="text-sm sm:text-base text-gray-600 px-2">
-                    Create dashboards and widgets using natural language. Describe what you want and I'll build it for you.
-                  </p>
+                  <h3 className="text-sm sm:text-base font-semibold">AI Dashboard Assistant</h3>
+                  <p className="text-xs text-gray-600">Create dashboards and widgets using natural language</p>
                 </div>
 
-                <div className="space-y-6">
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-base sm:text-lg">Dashboard Creation</h4>
-                    <div className="space-y-3">
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    <h4 className="text-xs sm:text-sm font-medium">Dashboard Creation</h4>
+                    <div className="space-y-2">
                       <textarea
-                        placeholder="Describe the dashboard you want to create... (e.g., 'Create a production dashboard with job status, resource utilization, and completion rates')"
-                        className="w-full h-32 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base touch-manipulation"
+                        placeholder="Describe the dashboard you want to create..."
+                        className="w-full h-20 p-2 border rounded-lg resize-none text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                         value={aiDashboardPrompt}
                         onChange={(e) => setAiDashboardPrompt(e.target.value)}
                       />
                       <Button
                         onClick={handleCreateDashboardWithAI}
                         disabled={!aiDashboardPrompt.trim() || aiDashboardMutation.isPending}
-                        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white min-h-[48px] text-sm sm:text-base touch-manipulation relative z-10"
+                        className="w-full h-8 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm"
                       >
                         {aiDashboardMutation.isPending ? (
                           <div className="flex items-center">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                            <span className="hidden sm:inline">Creating Dashboard...</span>
-                            <span className="sm:hidden">Creating...</span>
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
+                            Creating...
                           </div>
                         ) : (
-                          <>
-                            <Sparkles className="w-4 h-4 mr-2" />
-                            <span className="hidden sm:inline">Create Dashboard with AI</span>
-                            <span className="sm:hidden">Create Dashboard</span>
-                          </>
+                          <div className="flex items-center">
+                            <Sparkles className="w-3 h-3 mr-1" />
+                            Create Dashboard
+                          </div>
                         )}
                       </Button>
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <h4 className="font-medium text-base sm:text-lg">Widget Creation</h4>
-                    <div className="space-y-3">
+                  <div className="space-y-3">
+                    <h4 className="text-xs sm:text-sm font-medium">Widget Creation</h4>
+                    <div className="space-y-2">
                       <textarea
-                        placeholder="Describe the widgets you want to add... (e.g., 'Add a chart showing daily production trends and a metric for current efficiency')"
-                        className="w-full h-32 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base touch-manipulation"
+                        placeholder="Describe the widgets you want to add..."
+                        className="w-full h-20 p-2 border rounded-lg resize-none text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                         value={aiWidgetPrompt}
                         onChange={(e) => setAiWidgetPrompt(e.target.value)}
                       />
                       <Button
                         onClick={handleCreateWidgetsWithAI}
                         disabled={!aiWidgetPrompt.trim() || !editingDashboard || aiWidgetMutation.isPending}
-                        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white min-h-[48px] text-sm sm:text-base touch-manipulation relative z-10"
+                        className="w-full h-8 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm"
                       >
                         {aiWidgetMutation.isPending ? (
                           <div className="flex items-center">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                            <span className="hidden sm:inline">Creating Widgets...</span>
-                            <span className="sm:hidden">Creating...</span>
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
+                            Creating...
                           </div>
                         ) : (
-                          <>
-                            <Sparkles className="w-4 h-4 mr-2" />
-                            <span className="hidden sm:inline">Add Widgets with AI</span>
-                            <span className="sm:hidden">Add Widgets</span>
-                          </>
+                          <div className="flex items-center">
+                            <Sparkles className="w-3 h-3 mr-1" />
+                            Add Widgets
+                          </div>
                         )}
                       </Button>
                       {!editingDashboard && (
-                        <p className="text-xs sm:text-sm text-gray-500 text-center">
-                          Select a dashboard to edit first, or create a new one
+                        <p className="text-xs text-gray-500 text-center">
+                          Select a dashboard to edit first
                         </p>
                       )}
                     </div>
                   </div>
                 </div>
 
-                <div className="border-t pt-4 sm:pt-6">
-                  <h4 className="font-medium text-base sm:text-lg mb-4">AI Examples</h4>
-                  <div className="space-y-4">
-                    <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
-                      <h5 className="font-medium mb-2 text-sm sm:text-base">Dashboard Examples</h5>
-                      <ul className="text-xs sm:text-sm space-y-1 text-gray-600">
-                        <li>• "Create a production overview dashboard"</li>
-                        <li>• "Make a resource utilization dashboard"</li>
-                        <li>• "Build a quality control dashboard"</li>
-                        <li>• "Create a maintenance planning dashboard"</li>
+                <div className="border-t pt-3 mt-4">
+                  <h4 className="text-xs font-medium mb-2">Quick Examples</h4>
+                  <div className="space-y-2">
+                    <div className="p-2 bg-gray-50 rounded-lg">
+                      <ul className="text-xs space-y-1 text-gray-600">
+                        <li>• "Production overview dashboard"</li>
+                        <li>• "Resource utilization dashboard"</li>
+                        <li>• "Quality control dashboard"</li>
                       </ul>
                     </div>
-                    <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
-                      <h5 className="font-medium mb-2 text-sm sm:text-base">Widget Examples</h5>
-                      <ul className="text-xs sm:text-sm space-y-1 text-gray-600">
-                        <li>• "Add a chart showing production trends"</li>
-                        <li>• "Create metrics for efficiency and uptime"</li>
-                        <li>• "Add a table of upcoming deadlines"</li>
-                        <li>• "Show progress bars for job completion"</li>
+                    <div className="p-2 bg-gray-50 rounded-lg">
+                      <ul className="text-xs space-y-1 text-gray-600">
+                        <li>• "Chart showing production trends"</li>
+                        <li>• "Metrics for efficiency and uptime"</li>
+                        <li>• "Table of upcoming deadlines"</li>
                       </ul>
                     </div>
                   </div>
                 </div>
               </div>
-            </TabsContent>
-          </Tabs>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </DndProvider>
