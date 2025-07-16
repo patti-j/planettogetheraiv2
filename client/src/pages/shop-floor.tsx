@@ -3,677 +3,632 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { AlertCircle, CheckCircle, Clock, Users, Settings, Wrench, Building2, Play, Pause, AlertTriangle, GripVertical, RotateCcw, PauseCircle, PlayCircle, Sparkles } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { 
+  AlertCircle, 
+  CheckCircle, 
+  Clock, 
+  Users, 
+  Settings, 
+  Wrench, 
+  Building2, 
+  Play, 
+  Pause, 
+  AlertTriangle, 
+  PauseCircle, 
+  PlayCircle,
+  Activity,
+  Zap,
+  Thermometer,
+  Gauge,
+  WrenchIcon,
+  MoveIcon,
+  InfoIcon,
+  RefreshCw
+} from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useDrag, useDrop } from "react-dnd";
 import type { Operation, Job, Resource } from "@shared/schema";
 
-interface DraggableOperationCardProps {
-  operation: Operation;
-  job: Job | undefined;
-  resource: Resource | undefined;
-  index: number;
-  onMove: (dragIndex: number, hoverIndex: number) => void;
-  onStatusUpdate: (operationId: number, newStatus: string) => void;
-  isUpdating: boolean;
+interface ShopFloorLayout {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  resourceId: number;
+  rotation: number;
 }
 
-const DraggableOperationCard = ({ 
-  operation, 
-  job, 
-  resource, 
-  index, 
-  onMove, 
-  onStatusUpdate,
-  isUpdating 
-}: DraggableOperationCardProps) => {
-  const [{ isDragging }, drag, preview] = useDrag({
-    type: "operation",
-    item: { id: operation.id, index },
+interface ResourceStatus {
+  id: number;
+  status: 'operational' | 'warning' | 'error' | 'maintenance' | 'offline';
+  utilization: number;
+  temperature?: number;
+  pressure?: number;
+  vibration?: number;
+  currentOperation?: Operation;
+  issues: string[];
+  lastMaintenance?: Date;
+  nextMaintenance?: Date;
+}
+
+interface DraggableResourceProps {
+  resource: Resource;
+  layout: ShopFloorLayout;
+  status: ResourceStatus;
+  onMove: (id: string, x: number, y: number) => void;
+  onDetails: (resource: Resource, status: ResourceStatus) => void;
+}
+
+const DraggableResource = ({ resource, layout, status, onMove, onDetails }: DraggableResourceProps) => {
+  const [{ isDragging }, drag] = useDrag({
+    type: "resource",
+    item: { id: layout.id, x: layout.x, y: layout.y },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
   });
 
   const [, drop] = useDrop({
-    accept: "operation",
-    hover: (item: { id: number; index: number }) => {
-      if (item.index !== index) {
-        onMove(item.index, index);
-        item.index = index;
+    accept: "resource",
+    drop: (item: { id: string; x: number; y: number }, monitor) => {
+      const offset = monitor.getClientOffset();
+      const container = document.getElementById('shop-floor-container');
+      if (offset && container) {
+        const containerRect = container.getBoundingClientRect();
+        const newX = offset.x - containerRect.left - 50; // Adjust for icon size
+        const newY = offset.y - containerRect.top - 50;
+        onMove(item.id, Math.max(0, newX), Math.max(0, newY));
       }
     },
   });
 
-  // Get priority color
-  const getPriorityColor = (priority: string) => {
-    switch (priority.toLowerCase()) {
-      case "high":
-        return "bg-red-500";
-      case "medium":
-        return "bg-yellow-500";
-      case "low":
-        return "bg-green-500";
+  // Get resource icon based on type
+  const getResourceIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case "machine":
+        return <Wrench className="w-8 h-8" />;
+      case "operator":
+        return <Users className="w-8 h-8" />;
+      case "facility":
+        return <Building2 className="w-8 h-8" />;
       default:
-        return "bg-gray-500";
+        return <Settings className="w-8 h-8" />;
     }
   };
 
   // Get status color
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "completed":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "in-progress":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "pending":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "overdue":
-        return "bg-red-100 text-red-800 border-red-200";
+    switch (status) {
+      case "operational":
+        return "bg-green-500 border-green-600";
+      case "warning":
+        return "bg-yellow-500 border-yellow-600";
+      case "error":
+        return "bg-red-500 border-red-600";
+      case "maintenance":
+        return "bg-blue-500 border-blue-600";
+      case "offline":
+        return "bg-gray-500 border-gray-600";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return "bg-gray-500 border-gray-600";
     }
   };
 
-  // Get resource icon
-  const getResourceIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case "machine":
-        return <Wrench className="w-4 h-4" />;
-      case "operator":
-        return <Users className="w-4 h-4" />;
-      case "facility":
-        return <Building2 className="w-4 h-4" />;
+  // Get status indicator
+  const getStatusIndicator = (status: string) => {
+    switch (status) {
+      case "operational":
+        return <CheckCircle className="w-4 h-4 text-white" />;
+      case "warning":
+        return <AlertTriangle className="w-4 h-4 text-white" />;
+      case "error":
+        return <AlertCircle className="w-4 h-4 text-white" />;
+      case "maintenance":
+        return <WrenchIcon className="w-4 h-4 text-white" />;
+      case "offline":
+        return <Pause className="w-4 h-4 text-white" />;
       default:
-        return <Settings className="w-4 h-4" />;
+        return <Activity className="w-4 h-4 text-white" />;
     }
   };
 
   return (
     <div
-      ref={(node) => {
-        drag(drop(node));
+      ref={(node) => drag(drop(node))}
+      className={`absolute cursor-move select-none transition-all duration-200 ${
+        isDragging ? 'opacity-50 scale-105' : 'opacity-100 scale-100'
+      }`}
+      style={{
+        left: layout.x,
+        top: layout.y,
+        width: layout.width,
+        height: layout.height,
+        transform: `rotate(${layout.rotation}deg)`,
       }}
-      style={{ opacity: isDragging ? 0.5 : 1 }}
     >
-      <Card className="border-l-4 touch-manipulation" style={{ borderLeftColor: getPriorityColor(job?.priority || "medium") }}>
-        <CardContent className="p-4">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-start gap-3 flex-1">
-              <div className="mt-1 cursor-grab active:cursor-grabbing">
-                <GripVertical className="w-4 h-4 text-gray-400" />
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              className={`relative w-full h-full ${getStatusColor(status.status)} rounded-lg border-2 shadow-lg hover:shadow-xl transition-shadow cursor-pointer`}
+              onClick={() => onDetails(resource, status)}
+            >
+              {/* Resource Icon */}
+              <div className="absolute inset-0 flex items-center justify-center text-white">
+                {getResourceIcon(resource.type)}
               </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-900 mb-1">{operation.name}</h3>
-                <p className="text-sm text-gray-600 mb-1">{job?.name}</p>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  {getResourceIcon(resource?.type || "")}
-                  <span>{resource?.name}</span>
+              
+              {/* Status Indicator */}
+              <div className="absolute top-1 right-1 bg-black bg-opacity-30 rounded-full p-1">
+                {getStatusIndicator(status.status)}
+              </div>
+              
+              {/* Utilization Bar */}
+              <div className="absolute bottom-0 left-0 right-0 h-2 bg-black bg-opacity-30 rounded-b-lg">
+                <div 
+                  className="h-full bg-white bg-opacity-80 rounded-b-lg transition-all duration-300"
+                  style={{ width: `${status.utilization}%` }}
+                />
+              </div>
+              
+              {/* Issue Count */}
+              {status.issues.length > 0 && (
+                <div className="absolute top-1 left-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {status.issues.length}
                 </div>
+              )}
+              
+              {/* Resource Name */}
+              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs font-medium text-gray-700 bg-white px-2 py-1 rounded shadow-sm whitespace-nowrap">
+                {resource.name}
               </div>
             </div>
-            <Badge className={getStatusColor(operation.status)} variant="outline">
-              {operation.status}
-            </Badge>
-          </div>
-
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-sm text-gray-500">
-              <span className="font-medium">Duration:</span> {operation.duration}h
+          </TooltipTrigger>
+          <TooltipContent>
+            <div className="space-y-1">
+              <p className="font-medium">{resource.name}</p>
+              <p className="text-sm">Status: {status.status}</p>
+              <p className="text-sm">Utilization: {status.utilization}%</p>
+              {status.issues.length > 0 && (
+                <p className="text-sm text-red-400">{status.issues.length} issues</p>
+              )}
             </div>
-            <div className="text-sm text-gray-500">
-              <span className="font-medium">Start:</span> {new Date(operation.startTime).toLocaleTimeString()}
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="flex gap-2">
-            {operation.status === "Pending" && (
-              <Button 
-                size="sm" 
-                onClick={() => onStatusUpdate(operation.id, "In-Progress")}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-                disabled={isUpdating}
-              >
-                <Play className="w-4 h-4 mr-1" />
-                Start
-              </Button>
-            )}
-            
-            {operation.status === "In-Progress" && (
-              <>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => onStatusUpdate(operation.id, "Pending")}
-                  className="flex-1"
-                  disabled={isUpdating}
-                >
-                  <Pause className="w-4 h-4 mr-1" />
-                  Pause
-                </Button>
-                <Button 
-                  size="sm" 
-                  onClick={() => onStatusUpdate(operation.id, "Completed")}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                  disabled={isUpdating}
-                >
-                  <CheckCircle className="w-4 h-4 mr-1" />
-                  Complete
-                </Button>
-              </>
-            )}
-
-            {operation.status === "Completed" && (
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => onStatusUpdate(operation.id, "In-Progress")}
-                className="flex-1"
-                disabled={isUpdating}
-              >
-                Reopen
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 };
 
+const ResourceDetailsDialog = ({ 
+  resource, 
+  status, 
+  isOpen, 
+  onClose 
+}: { 
+  resource: Resource | null; 
+  status: ResourceStatus | null; 
+  isOpen: boolean; 
+  onClose: () => void; 
+}) => {
+  if (!resource || !status) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              {resource.type === "machine" && <Wrench className="w-5 h-5" />}
+              {resource.type === "operator" && <Users className="w-5 h-5" />}
+              {resource.type === "facility" && <Building2 className="w-5 h-5" />}
+              {resource.name}
+            </div>
+            <Badge variant={status.status === "operational" ? "default" : "destructive"}>
+              {status.status}
+            </Badge>
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          {/* Status Overview */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <Gauge className="w-4 h-4 text-blue-500" />
+                  <div>
+                    <p className="text-sm font-medium">Utilization</p>
+                    <p className="text-2xl font-bold">{status.utilization}%</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {status.temperature && (
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Thermometer className="w-4 h-4 text-red-500" />
+                    <div>
+                      <p className="text-sm font-medium">Temperature</p>
+                      <p className="text-2xl font-bold">{status.temperature}°C</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {status.pressure && (
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-yellow-500" />
+                    <div>
+                      <p className="text-sm font-medium">Pressure</p>
+                      <p className="text-2xl font-bold">{status.pressure} PSI</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {status.vibration && (
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-purple-500" />
+                    <div>
+                      <p className="text-sm font-medium">Vibration</p>
+                      <p className="text-2xl font-bold">{status.vibration} Hz</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Current Operation */}
+          {status.currentOperation && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Current Operation</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <p className="font-medium">{status.currentOperation.name}</p>
+                  <p className="text-sm text-gray-600">{status.currentOperation.description}</p>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span>Duration: {status.currentOperation.duration}h</span>
+                    <span>Status: {status.currentOperation.status}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Issues */}
+          {status.issues.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-500" />
+                  Issues ({status.issues.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {status.issues.map((issue, index) => (
+                    <div key={index} className="flex items-start gap-2 p-2 bg-red-50 rounded">
+                      <AlertCircle className="w-4 h-4 text-red-500 mt-0.5" />
+                      <span className="text-sm">{issue}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Maintenance */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Maintenance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {status.lastMaintenance && (
+                  <p className="text-sm">
+                    Last Maintenance: {status.lastMaintenance.toLocaleDateString()}
+                  </p>
+                )}
+                {status.nextMaintenance && (
+                  <p className="text-sm">
+                    Next Maintenance: {status.nextMaintenance.toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Resource Details */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Resource Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <p className="text-sm"><strong>Type:</strong> {resource.type}</p>
+                <p className="text-sm"><strong>Capabilities:</strong> {resource.capabilities}</p>
+                <p className="text-sm"><strong>Status:</strong> {resource.status}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 export default function ShopFloor() {
-  const [selectedResource, setSelectedResource] = useState<string>("all");
-  const [timeFilter, setTimeFilter] = useState<string>("today");
-  const [localOperations, setLocalOperations] = useState<Operation[]>([]);
-  const [hasReorder, setHasReorder] = useState(false);
   const [isLivePaused, setIsLivePaused] = useState(false);
-  const [aiDialogOpen, setAiDialogOpen] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState("");
-  const [customMetrics, setCustomMetrics] = useState<any[]>([]);
+  const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<ResourceStatus | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [shopFloorLayout, setShopFloorLayout] = useState<ShopFloorLayout[]>([]);
   const queryClient = useQueryClient();
 
   // Fetch data
-  const { data: operations = [], isLoading: operationsLoading } = useQuery<Operation[]>({
-    queryKey: ["/api/operations"],
-    refetchInterval: isLivePaused ? false : 30000, // Refresh every 30 seconds when not paused
-  });
-
-  const { data: jobs = [], isLoading: jobsLoading } = useQuery<Job[]>({
-    queryKey: ["/api/jobs"],
-    refetchInterval: isLivePaused ? false : 30000, // Refresh every 30 seconds when not paused
-  });
-
   const { data: resources = [], isLoading: resourcesLoading } = useQuery<Resource[]>({
     queryKey: ["/api/resources"],
-    refetchInterval: isLivePaused ? false : 30000, // Refresh every 30 seconds when not paused
+    refetchInterval: isLivePaused ? false : 30000,
   });
 
-  const { data: metrics } = useQuery({
-    queryKey: ["/api/metrics"],
-    refetchInterval: isLivePaused ? false : 30000, // Refresh every 30 seconds when not paused
+  const { data: operations = [] } = useQuery<Operation[]>({
+    queryKey: ["/api/operations"],
+    refetchInterval: isLivePaused ? false : 30000,
   });
 
-  // Update operation status mutation
-  const updateOperationMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      return apiRequest("PATCH", `/api/operations/${id}`, { status });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
-      toast({
-        title: "Operation Updated",
-        description: "Operation status has been updated successfully.",
-      });
-    },
+  const { data: jobs = [] } = useQuery<Job[]>({
+    queryKey: ["/api/jobs"],
+    refetchInterval: isLivePaused ? false : 30000,
   });
 
-  // Reschedule operations mutation
-  const rescheduleOperationsMutation = useMutation({
-    mutationFn: async (operationsData: { id: number; startTime: string; endTime: string }[]) => {
-      const promises = operationsData.map(op => 
-        apiRequest("PATCH", `/api/operations/${op.id}`, { 
-          startTime: op.startTime,
-          endTime: op.endTime
-        })
-      );
-      return Promise.all(promises);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
-      setHasReorder(false);
-      toast({
-        title: "Schedule Updated",
-        description: "Operations have been rescheduled successfully.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to reschedule operations. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
+  // Generate mock resource status data (in real app, this would come from sensors/API)
+  const generateResourceStatus = (resource: Resource): ResourceStatus => {
+    const currentOp = operations.find(op => op.resourceId === resource.id && op.status === "In-Progress");
+    const issues = [];
+    
+    // Generate mock issues based on resource type and status
+    if (resource.type === "machine") {
+      if (Math.random() > 0.7) issues.push("High vibration detected");
+      if (Math.random() > 0.8) issues.push("Temperature above normal range");
+      if (Math.random() > 0.9) issues.push("Low coolant level");
+    }
+    
+    const baseStatus: ResourceStatus = {
+      id: resource.id,
+      status: issues.length > 0 ? "warning" : (currentOp ? "operational" : "offline"),
+      utilization: currentOp ? Math.floor(Math.random() * 40) + 60 : Math.floor(Math.random() * 20),
+      currentOperation: currentOp,
+      issues,
+      lastMaintenance: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
+      nextMaintenance: new Date(Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000),
+    };
 
-  // Sync local operations with server data (only when not paused and no reorder)
+    // Add sensor data for machines
+    if (resource.type === "machine") {
+      baseStatus.temperature = Math.floor(Math.random() * 50) + 70;
+      baseStatus.pressure = Math.floor(Math.random() * 100) + 150;
+      baseStatus.vibration = Math.floor(Math.random() * 20) + 10;
+    }
+
+    return baseStatus;
+  };
+
+  // Initialize shop floor layout
   useEffect(() => {
-    if (!isLivePaused && !hasReorder && operations.length > 0) {
-      setLocalOperations(prev => {
-        // Only update if operations actually changed
-        if (JSON.stringify(prev) !== JSON.stringify(operations)) {
-          return operations;
-        }
-        return prev;
-      });
+    if (resources.length > 0 && shopFloorLayout.length === 0) {
+      const newLayout = resources.map((resource, index) => ({
+        id: `resource-${resource.id}`,
+        x: 100 + (index % 4) * 150,
+        y: 100 + Math.floor(index / 4) * 150,
+        width: 100,
+        height: 100,
+        resourceId: resource.id,
+        rotation: 0,
+      }));
+      setShopFloorLayout(newLayout);
     }
-  }, [operations, isLivePaused, hasReorder]);
+  }, [resources, shopFloorLayout.length]);
 
-  // Prevent dropdown resets during live updates by not resetting state
-
-  // Handle drag and drop reordering
-  const handleMoveOperation = (dragIndex: number, hoverIndex: number) => {
-    const filteredOps = filteredOperations;
-    const newOperations = [...localOperations];
-    
-    // Find the actual indices in the full operations array
-    const dragOp = filteredOps[dragIndex];
-    const hoverOp = filteredOps[hoverIndex];
-    
-    const dragOpIndex = newOperations.findIndex(op => op.id === dragOp.id);
-    const hoverOpIndex = newOperations.findIndex(op => op.id === hoverOp.id);
-    
-    // Swap the operations
-    [newOperations[dragOpIndex], newOperations[hoverOpIndex]] = [newOperations[hoverOpIndex], newOperations[dragOpIndex]];
-    
-    setLocalOperations(newOperations);
-    setHasReorder(true);
+  // Handle resource movement
+  const handleResourceMove = (id: string, x: number, y: number) => {
+    setShopFloorLayout(prev => 
+      prev.map(layout => 
+        layout.id === id ? { ...layout, x, y } : layout
+      )
+    );
   };
 
-  // Handle reschedule operations
-  const handleReschedule = () => {
-    const operationsToUpdate = localOperations.map((op, index) => {
-      // Calculate new start time based on position and duration
-      const baseTime = new Date();
-      baseTime.setHours(8, 0, 0, 0); // Start at 8 AM
-      const startTime = new Date(baseTime.getTime() + (index * 2 * 60 * 60 * 1000)); // 2 hours apart
-      const endTime = new Date(startTime.getTime() + (op.duration * 60 * 60 * 1000));
-      
-      return {
-        id: op.id,
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString()
-      };
-    });
-    
-    rescheduleOperationsMutation.mutate(operationsToUpdate);
+  // Handle resource details
+  const handleResourceDetails = (resource: Resource, status: ResourceStatus) => {
+    setSelectedResource(resource);
+    setSelectedStatus(status);
+    setDetailsOpen(true);
   };
 
-  // AI metrics configuration mutation
-  const aiMetricsMutation = useMutation({
-    mutationFn: async (prompt: string) => {
-      return apiRequest("POST", "/api/ai/command", { 
-        command: `CREATE_CUSTOM_METRICS: ${prompt}` 
-      });
+  // Save layout mutation
+  const saveLayoutMutation = useMutation({
+    mutationFn: async (layout: ShopFloorLayout[]) => {
+      // In real app, save to database
+      localStorage.setItem('shopFloorLayout', JSON.stringify(layout));
+      return layout;
     },
-    onSuccess: (data) => {
-      if (data.success && data.data) {
-        setCustomMetrics(data.data);
-        toast({
-          title: "Metrics Updated",
-          description: "Custom metrics have been created successfully.",
-        });
-      }
-      setAiDialogOpen(false);
-      setAiPrompt("");
-    },
-    onError: () => {
+    onSuccess: () => {
       toast({
-        title: "Error",
-        description: "Failed to create custom metrics. Please try again.",
-        variant: "destructive",
+        title: "Layout Saved",
+        description: "Shop floor layout has been saved successfully.",
       });
     },
   });
 
-  // Handle AI metrics creation
-  const handleAiMetrics = () => {
-    if (!aiPrompt.trim()) return;
-    aiMetricsMutation.mutate(aiPrompt);
-  };
-
-  // Filter operations based on selected resource and time
-  const filteredOperations = localOperations.filter(op => {
-    if (selectedResource !== "all" && op.resourceId !== parseInt(selectedResource)) {
-      return false;
+  // Load layout from localStorage
+  useEffect(() => {
+    const savedLayout = localStorage.getItem('shopFloorLayout');
+    if (savedLayout) {
+      try {
+        setShopFloorLayout(JSON.parse(savedLayout));
+      } catch (error) {
+        console.error('Failed to load shop floor layout:', error);
+      }
     }
-    
-    if (timeFilter === "today") {
-      const today = new Date();
-      const opDate = new Date(op.startTime);
-      return opDate.toDateString() === today.toDateString();
-    } else if (timeFilter === "thisWeek") {
-      const today = new Date();
-      const weekStart = new Date(today.setDate(today.getDate() - today.getDay()));
-      const opDate = new Date(op.startTime);
-      return opDate >= weekStart;
+  }, []);
+
+  // Auto-save layout changes
+  useEffect(() => {
+    if (shopFloorLayout.length > 0) {
+      const timeoutId = setTimeout(() => {
+        saveLayoutMutation.mutate(shopFloorLayout);
+      }, 2000);
+      return () => clearTimeout(timeoutId);
     }
-    
-    return true;
-  });
+  }, [shopFloorLayout, saveLayoutMutation]);
 
-  // Get resource icon
-  const getResourceIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case "machine":
-        return <Wrench className="w-4 h-4" />;
-      case "operator":
-        return <Users className="w-4 h-4" />;
-      case "facility":
-        return <Building2 className="w-4 h-4" />;
-      default:
-        return <Settings className="w-4 h-4" />;
-    }
-  };
-
-  // Get status color
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "completed":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "in-progress":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "pending":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "overdue":
-        return "bg-red-100 text-red-800 border-red-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
-
-  // Get priority color
-  const getPriorityColor = (priority: string) => {
-    switch (priority.toLowerCase()) {
-      case "high":
-        return "bg-red-500";
-      case "medium":
-        return "bg-yellow-500";
-      case "low":
-        return "bg-green-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
-  // Quick action to update operation status
-  const handleStatusUpdate = (operationId: number, newStatus: string) => {
-    updateOperationMutation.mutate({ id: operationId, status: newStatus });
-  };
-
-  const getJob = (jobId: number) => jobs.find(j => j.id === jobId);
-  const getResource = (resourceId: number) => resources.find(r => r.id === resourceId);
-
-  if (operationsLoading || jobsLoading || resourcesLoading) {
+  if (resourcesLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading shop floor data...</p>
+          <p className="text-gray-600">Loading shop floor...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b px-4 py-3 sm:px-6 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="ml-12 md:ml-0">
-            <h1 className="text-lg font-semibold text-gray-900">Shop Floor</h1>
-            <p className="text-sm text-gray-600">Real-time production monitoring</p>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsLivePaused(!isLivePaused)}
-                className="flex items-center gap-2 hover:bg-gray-100"
-              >
-                {isLivePaused ? (
-                  <>
-                    <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                    <span className="text-sm text-gray-600 font-medium">Paused</span>
-                    <PlayCircle className="w-4 h-4 text-gray-600" />
-                  </>
-                ) : (
-                  <>
-                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm text-green-600 font-medium">Live</span>
-                    <PauseCircle className="w-4 h-4 text-green-600" />
-                  </>
-                )}
-              </Button>
+    <TooltipProvider>
+      <div className="h-screen bg-gray-50 flex flex-col">
+        {/* Header */}
+        <div className="bg-white shadow-sm border-b px-4 py-3 sm:px-6 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="ml-12 md:ml-0">
+              <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Shop Floor</h1>
+              <p className="text-sm md:text-base text-gray-600">Production oversight and equipment monitoring</p>
             </div>
             
-            {/* AI Metrics Configuration */}
-            <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
-              <DialogTrigger asChild>
+            {/* Live button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-none"
+                  onClick={() => setIsLivePaused(!isLivePaused)}
+                  className="flex items-center gap-2 hover:bg-gray-100 text-sm"
                 >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  AI Metrics
+                  {isLivePaused ? (
+                    <>
+                      <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                      <span className="text-sm text-gray-600 font-medium">Paused</span>
+                      <PlayCircle className="w-4 h-4 text-gray-600" />
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-sm text-green-600 font-medium">Live</span>
+                      <PauseCircle className="w-4 h-4 text-green-600" />
+                    </>
+                  )}
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Configure Metrics with AI</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Describe the metrics you want to see on the shop floor:
-                    </label>
-                    <Textarea
-                      placeholder="e.g., Show efficiency metrics, completion rates by resource type, or queue depths by priority..."
-                      value={aiPrompt}
-                      onChange={(e) => setAiPrompt(e.target.value)}
-                      className="min-h-[100px]"
-                    />
-                  </div>
-                  <div className="flex gap-2 justify-end">
-                    <Button
-                      variant="outline"
-                      onClick={() => setAiDialogOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={handleAiMetrics}
-                      disabled={!aiPrompt.trim() || aiMetricsMutation.isPending}
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-                    >
-                      {aiMetricsMutation.isPending ? "Creating..." : "Create Metrics"}
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Toggle live data updates</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
+
+        {/* Shop Floor View */}
+        <div className="flex-1 overflow-hidden relative">
+          <div 
+            id="shop-floor-container"
+            className="absolute inset-0 bg-gray-100 overflow-auto"
+            style={{
+              backgroundImage: 'radial-gradient(circle, #d1d5db 1px, transparent 1px)',
+              backgroundSize: '20px 20px'
+            }}
+          >
+            {/* Instructions */}
+            <div className="absolute top-4 left-4 bg-white p-4 rounded-lg shadow-lg max-w-md z-10">
+              <h3 className="font-semibold text-gray-800 mb-2">Shop Floor Controls</h3>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• Drag equipment icons to rearrange the shop floor</li>
+                <li>• Click any equipment to view detailed status and issues</li>
+                <li>• Color indicates status: Green (operational), Yellow (warning), Red (error)</li>
+                <li>• White bar shows current utilization percentage</li>
+                <li>• Red badge shows number of active issues</li>
+              </ul>
+            </div>
+
+            {/* Status Legend */}
+            <div className="absolute top-4 right-4 bg-white p-4 rounded-lg shadow-lg z-10">
+              <h3 className="font-semibold text-gray-800 mb-2">Status Legend</h3>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-green-500 rounded"></div>
+                  <span className="text-sm">Operational</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-yellow-500 rounded"></div>
+                  <span className="text-sm">Warning</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-red-500 rounded"></div>
+                  <span className="text-sm">Error</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-blue-500 rounded"></div>
+                  <span className="text-sm">Maintenance</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-gray-500 rounded"></div>
+                  <span className="text-sm">Offline</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Resources */}
+            {shopFloorLayout.map((layout) => {
+              const resource = resources.find(r => r.id === layout.resourceId);
+              if (!resource) return null;
+              
+              const status = generateResourceStatus(resource);
+              
+              return (
+                <DraggableResource
+                  key={layout.id}
+                  resource={resource}
+                  layout={layout}
+                  status={status}
+                  onMove={handleResourceMove}
+                  onDetails={handleResourceDetails}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Resource Details Dialog */}
+        <ResourceDetailsDialog
+          resource={selectedResource}
+          status={selectedStatus}
+          isOpen={detailsOpen}
+          onClose={() => setDetailsOpen(false)}
+        />
       </div>
-
-      {/* Key Metrics */}
-      <div className="flex-1 overflow-y-auto px-4 py-4">
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <Card>
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Active Jobs</p>
-                  <p className="text-2xl font-bold text-gray-900">{metrics?.activeJobs || 0}</p>
-                </div>
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Clock className="w-4 h-4 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Utilization</p>
-                  <p className="text-2xl font-bold text-gray-900">{metrics?.utilization || 0}%</p>
-                </div>
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <Card>
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Overdue</p>
-                  <p className="text-2xl font-bold text-red-600">{metrics?.overdueOperations || 0}</p>
-                </div>
-                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                  <AlertTriangle className="w-4 h-4 text-red-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Completed</p>
-                  <p className="text-2xl font-bold text-green-600">{metrics?.completedOperations || 0}</p>
-                </div>
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Custom AI Metrics */}
-        {customMetrics.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
-            {customMetrics.map((metric, index) => (
-              <Card key={index}>
-                <CardContent className="p-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">{metric.title}</p>
-                      <p className="text-2xl font-bold text-blue-600">{metric.value}</p>
-                      {metric.subtitle && (
-                        <p className="text-xs text-gray-500">{metric.subtitle}</p>
-                      )}
-                    </div>
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Sparkles className="w-4 h-4 text-blue-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {/* Filters */}
-        <div className="flex gap-2 mb-4">
-          <Select value={timeFilter} onValueChange={setTimeFilter}>
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Time Period" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="today">Today</SelectItem>
-              <SelectItem value="thisWeek">This Week</SelectItem>
-              <SelectItem value="all">All Time</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={selectedResource} onValueChange={setSelectedResource}>
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Resource" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Resources</SelectItem>
-              {resources.map(resource => (
-                <SelectItem key={resource.id} value={resource.id.toString()}>
-                  {resource.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Reschedule Button */}
-        {hasReorder && (
-          <div className="mb-4">
-            <Button 
-              onClick={handleReschedule}
-              disabled={rescheduleOperationsMutation.isPending}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              {rescheduleOperationsMutation.isPending ? "Rescheduling..." : "Reschedule Operations"}
-            </Button>
-          </div>
-        )}
-
-        {/* Operations List */}
-        <div className="space-y-3">
-          {filteredOperations.map((operation, index) => {
-            const job = getJob(operation.jobId);
-            const resource = getResource(operation.resourceId);
-            
-            return (
-              <DraggableOperationCard
-                key={operation.id}
-                operation={operation}
-                job={job}
-                resource={resource}
-                index={index}
-                onMove={handleMoveOperation}
-                onStatusUpdate={handleStatusUpdate}
-                isUpdating={updateOperationMutation.isPending}
-              />
-            );
-          })}
-        </div>
-
-        {filteredOperations.length === 0 && (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Operations Found</h3>
-              <p className="text-gray-600">No operations match your current filters. Try adjusting the time period or resource selection.</p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </div>
+    </TooltipProvider>
   );
 }
