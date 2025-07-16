@@ -371,21 +371,39 @@ export function EnhancedDashboardManager({
                 <div className="p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold">Dashboards</h3>
-                    <Button
-                      onClick={() => {
-                        setEditingDashboard(null);
-                        setEditingWidget(null);
-                        setNewDashboardName("");
-                        setNewDashboardDescription("");
-                        setAiDashboardPrompt("");
-                        setEditMode("manual");
-                        setIsEditDialogOpen(true);
-                      }}
-                      className="flex items-center gap-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      New Dashboard
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setEditingDashboard(null);
+                          setEditingWidget(null);
+                          setNewDashboardName("");
+                          setNewDashboardDescription("");
+                          setAiDashboardPrompt("");
+                          setEditMode("ai");
+                          setIsEditDialogOpen(true);
+                        }}
+                        className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        AI Create
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setEditingDashboard(null);
+                          setEditingWidget(null);
+                          setNewDashboardName("");
+                          setNewDashboardDescription("");
+                          setAiDashboardPrompt("");
+                          setEditMode("manual");
+                          setIsEditDialogOpen(true);
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        New Dashboard
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -450,23 +468,43 @@ export function EnhancedDashboardManager({
                 <div className="p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold">Widgets</h3>
-                    <Button
-                      onClick={() => {
-                        setEditingWidget(null);
-                        setEditingDashboard(null);
-                        setNewWidgetName("");
-                        setNewWidgetType("metric");
-                        setNewWidgetConfig({});
-                        setNewWidgetData({});
-                        setAiWidgetPrompt("");
-                        setEditMode("manual");
-                        setIsEditDialogOpen(true);
-                      }}
-                      className="flex items-center gap-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      New Widget
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setEditingWidget(null);
+                          setEditingDashboard(null);
+                          setNewWidgetName("");
+                          setNewWidgetType("metric");
+                          setNewWidgetConfig({});
+                          setNewWidgetData({});
+                          setAiWidgetPrompt("");
+                          setEditMode("ai");
+                          setIsEditDialogOpen(true);
+                        }}
+                        className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        AI Create
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setEditingWidget(null);
+                          setEditingDashboard(null);
+                          setNewWidgetName("");
+                          setNewWidgetType("metric");
+                          setNewWidgetConfig({});
+                          setNewWidgetData({});
+                          setAiWidgetPrompt("");
+                          setEditMode("manual");
+                          setIsEditDialogOpen(true);
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        New Widget
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -597,6 +635,137 @@ export function EnhancedDashboardManager({
                           rows={3}
                         />
                       </div>
+                      
+                      {/* Visual Dashboard Editor */}
+                      <div className="space-y-2">
+                        <Label>Dashboard Layout</Label>
+                        <div className="border rounded-lg p-4 bg-gray-50">
+                          <div className="mb-4">
+                            <h4 className="text-sm font-medium mb-2">Widget Library</h4>
+                            <div className="grid grid-cols-2 gap-2">
+                              {['metric', 'chart', 'table', 'progress'].map((type) => (
+                                <div
+                                  key={type}
+                                  className="p-2 bg-white border rounded cursor-pointer hover:bg-gray-100 text-center text-sm capitalize"
+                                  draggable
+                                  onDragStart={(e) => {
+                                    e.dataTransfer.setData('text/plain', JSON.stringify({
+                                      type: 'widget',
+                                      widgetType: type,
+                                      title: `New ${type.charAt(0).toUpperCase() + type.slice(1)}`
+                                    }));
+                                  }}
+                                >
+                                  {type === 'metric' && <BarChart3 className="w-4 h-4 mx-auto mb-1" />}
+                                  {type === 'chart' && <TrendingUp className="w-4 h-4 mx-auto mb-1" />}
+                                  {type === 'table' && <Grid3x3 className="w-4 h-4 mx-auto mb-1" />}
+                                  {type === 'progress' && <Target className="w-4 h-4 mx-auto mb-1" />}
+                                  {type}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-medium">Dashboard Canvas</h4>
+                            <div 
+                              className="min-h-[300px] border-2 border-dashed border-gray-300 rounded-lg bg-white p-4 relative"
+                              onDragOver={(e) => {
+                                e.preventDefault();
+                                e.currentTarget.classList.add('border-blue-500', 'bg-blue-50');
+                              }}
+                              onDragLeave={(e) => {
+                                e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50');
+                              }}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50');
+                                
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const x = e.clientX - rect.left;
+                                const y = e.clientY - rect.top;
+                                
+                                try {
+                                  const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                                  if (data.type === 'widget') {
+                                    const newWidget = {
+                                      id: `widget-${Date.now()}`,
+                                      title: data.title,
+                                      type: data.widgetType,
+                                      position: { x, y },
+                                      size: { width: 200, height: 150 },
+                                      visible: true,
+                                      data: {},
+                                      config: {}
+                                    };
+                                    
+                                    // Add to dashboard configuration
+                                    if (editingDashboard) {
+                                      const updatedConfig = {
+                                        ...editingDashboard.configuration,
+                                        customWidgets: [...(editingDashboard.configuration.customWidgets || []), newWidget]
+                                      };
+                                      setEditingDashboard({ ...editingDashboard, configuration: updatedConfig });
+                                    }
+                                  }
+                                } catch (error) {
+                                  console.error('Error parsing drop data:', error);
+                                }
+                              }}
+                            >
+                              {editingDashboard && editingDashboard.configuration.customWidgets?.map((widget: any) => (
+                                <div
+                                  key={widget.id}
+                                  className="absolute bg-white border rounded-lg shadow-sm p-2 cursor-move"
+                                  style={{
+                                    left: widget.position.x,
+                                    top: widget.position.y,
+                                    width: widget.size.width,
+                                    height: widget.size.height
+                                  }}
+                                  draggable
+                                  onDragStart={(e) => {
+                                    e.dataTransfer.setData('text/plain', JSON.stringify({
+                                      type: 'move',
+                                      widgetId: widget.id
+                                    }));
+                                  }}
+                                >
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs font-medium truncate">{widget.title}</span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-4 w-4 p-0"
+                                      onClick={() => {
+                                        if (editingDashboard) {
+                                          const updatedConfig = {
+                                            ...editingDashboard.configuration,
+                                            customWidgets: editingDashboard.configuration.customWidgets?.filter((w: any) => w.id !== widget.id)
+                                          };
+                                          setEditingDashboard({ ...editingDashboard, configuration: updatedConfig });
+                                        }
+                                      }}
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                  <div className="text-xs text-gray-500 capitalize">{widget.type}</div>
+                                </div>
+                              ))}
+                              
+                              {(!editingDashboard || !editingDashboard.configuration.customWidgets?.length) && (
+                                <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+                                  <div className="text-center">
+                                    <Grid3x3 className="w-8 h-8 mx-auto mb-2" />
+                                    <p className="text-sm">Drag widgets here to build your dashboard</p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </>
                   )}
 
@@ -624,6 +793,209 @@ export function EnhancedDashboardManager({
                             <SelectItem value="progress">Progress</SelectItem>
                           </SelectContent>
                         </Select>
+                      </div>
+                      
+                      {/* Widget Configuration */}
+                      <div className="space-y-2">
+                        <Label>Widget Configuration</Label>
+                        <div className="border rounded-lg p-4 bg-gray-50">
+                          {newWidgetType === 'metric' && (
+                            <div className="space-y-3">
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <Label htmlFor="metric-value">Value</Label>
+                                  <Input
+                                    id="metric-value"
+                                    value={newWidgetConfig.value || ''}
+                                    onChange={(e) => setNewWidgetConfig({...newWidgetConfig, value: e.target.value})}
+                                    placeholder="e.g., 42"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="metric-unit">Unit</Label>
+                                  <Input
+                                    id="metric-unit"
+                                    value={newWidgetConfig.unit || ''}
+                                    onChange={(e) => setNewWidgetConfig({...newWidgetConfig, unit: e.target.value})}
+                                    placeholder="e.g., %"
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <Label htmlFor="metric-change">Change Text</Label>
+                                <Input
+                                  id="metric-change"
+                                  value={newWidgetConfig.change || ''}
+                                  onChange={(e) => setNewWidgetConfig({...newWidgetConfig, change: e.target.value})}
+                                  placeholder="e.g., +5% from last week"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="metric-color">Color</Label>
+                                <Select value={newWidgetConfig.color} onValueChange={(value: any) => setNewWidgetConfig({...newWidgetConfig, color: value})}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select color" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="blue">Blue</SelectItem>
+                                    <SelectItem value="green">Green</SelectItem>
+                                    <SelectItem value="orange">Orange</SelectItem>
+                                    <SelectItem value="red">Red</SelectItem>
+                                    <SelectItem value="purple">Purple</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {newWidgetType === 'chart' && (
+                            <div className="space-y-3">
+                              <div>
+                                <Label htmlFor="chart-type">Chart Type</Label>
+                                <Select value={newWidgetConfig.chartType} onValueChange={(value: any) => setNewWidgetConfig({...newWidgetConfig, chartType: value})}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select chart type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="line">Line Chart</SelectItem>
+                                    <SelectItem value="bar">Bar Chart</SelectItem>
+                                    <SelectItem value="area">Area Chart</SelectItem>
+                                    <SelectItem value="pie">Pie Chart</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label htmlFor="chart-data">Data Source</Label>
+                                <Select value={newWidgetConfig.dataSource} onValueChange={(value: any) => setNewWidgetConfig({...newWidgetConfig, dataSource: value})}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select data source" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="jobs">Jobs Data</SelectItem>
+                                    <SelectItem value="operations">Operations Data</SelectItem>
+                                    <SelectItem value="resources">Resources Data</SelectItem>
+                                    <SelectItem value="metrics">Metrics Data</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {newWidgetType === 'table' && (
+                            <div className="space-y-3">
+                              <div>
+                                <Label htmlFor="table-data">Data Source</Label>
+                                <Select value={newWidgetConfig.dataSource} onValueChange={(value: any) => setNewWidgetConfig({...newWidgetConfig, dataSource: value})}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select data source" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="jobs">Jobs Table</SelectItem>
+                                    <SelectItem value="operations">Operations Table</SelectItem>
+                                    <SelectItem value="resources">Resources Table</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label htmlFor="table-columns">Columns (comma-separated)</Label>
+                                <Input
+                                  id="table-columns"
+                                  value={newWidgetConfig.columns || ''}
+                                  onChange={(e) => setNewWidgetConfig({...newWidgetConfig, columns: e.target.value})}
+                                  placeholder="e.g., name, status, priority"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="table-rows">Max Rows</Label>
+                                <Input
+                                  id="table-rows"
+                                  type="number"
+                                  value={newWidgetConfig.maxRows || ''}
+                                  onChange={(e) => setNewWidgetConfig({...newWidgetConfig, maxRows: e.target.value})}
+                                  placeholder="e.g., 10"
+                                />
+                              </div>
+                            </div>
+                          )}
+                          
+                          {newWidgetType === 'progress' && (
+                            <div className="space-y-3">
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <Label htmlFor="progress-value">Current Value</Label>
+                                  <Input
+                                    id="progress-value"
+                                    type="number"
+                                    value={newWidgetConfig.value || ''}
+                                    onChange={(e) => setNewWidgetConfig({...newWidgetConfig, value: e.target.value})}
+                                    placeholder="e.g., 75"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="progress-max">Max Value</Label>
+                                  <Input
+                                    id="progress-max"
+                                    type="number"
+                                    value={newWidgetConfig.maxValue || ''}
+                                    onChange={(e) => setNewWidgetConfig({...newWidgetConfig, maxValue: e.target.value})}
+                                    placeholder="e.g., 100"
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <Label htmlFor="progress-label">Label</Label>
+                                <Input
+                                  id="progress-label"
+                                  value={newWidgetConfig.label || ''}
+                                  onChange={(e) => setNewWidgetConfig({...newWidgetConfig, label: e.target.value})}
+                                  placeholder="e.g., Completion Rate"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="progress-color">Color</Label>
+                                <Select value={newWidgetConfig.color} onValueChange={(value: any) => setNewWidgetConfig({...newWidgetConfig, color: value})}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select color" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="blue">Blue</SelectItem>
+                                    <SelectItem value="green">Green</SelectItem>
+                                    <SelectItem value="orange">Orange</SelectItem>
+                                    <SelectItem value="red">Red</SelectItem>
+                                    <SelectItem value="purple">Purple</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Widget Size and Position */}
+                      <div className="space-y-2">
+                        <Label>Widget Dimensions</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label htmlFor="widget-width">Width (px)</Label>
+                            <Input
+                              id="widget-width"
+                              type="number"
+                              value={newWidgetConfig.width || '300'}
+                              onChange={(e) => setNewWidgetConfig({...newWidgetConfig, width: e.target.value})}
+                              placeholder="300"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="widget-height">Height (px)</Label>
+                            <Input
+                              id="widget-height"
+                              type="number"
+                              value={newWidgetConfig.height || '200'}
+                              onChange={(e) => setNewWidgetConfig({...newWidgetConfig, height: e.target.value})}
+                              placeholder="200"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </>
                   )}
