@@ -544,55 +544,57 @@ export default function Analytics() {
           
           {/* Controls row */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-4">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="flex items-center gap-2 min-w-[160px] justify-between text-sm"
-                >
-                  <span>
-                    {visibleDashboards.size === 0 
-                      ? "Select Dashboards" 
-                      : `${visibleDashboards.size} Selected`}
-                  </span>
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-3">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Select Dashboards to Display:</Label>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {dashboards.map((dashboard) => (
-                      <div key={dashboard.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`header-dashboard-${dashboard.id}`}
-                          checked={visibleDashboards.has(dashboard.id)}
-                          onCheckedChange={() => handleToggleDashboardVisibility(dashboard.id)}
-                        />
-                        <label
-                          htmlFor={`header-dashboard-${dashboard.id}`}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1 cursor-pointer"
-                        >
-                          {dashboard.name}
-                          {dashboard.isDefault && (
-                            <Badge variant="secondary" className="text-xs px-1">Default</Badge>
-                          )}
-                        </label>
-                      </div>
-                    ))}
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-2 min-w-[160px] justify-between text-sm"
+                  >
+                    <span>
+                      {visibleDashboards.size === 0 
+                        ? "Select Dashboards" 
+                        : `${visibleDashboards.size} Selected`}
+                    </span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-3">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Select Dashboards to Display:</Label>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {dashboards.map((dashboard) => (
+                        <div key={dashboard.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`header-dashboard-${dashboard.id}`}
+                            checked={visibleDashboards.has(dashboard.id)}
+                            onCheckedChange={() => handleToggleDashboardVisibility(dashboard.id)}
+                          />
+                          <label
+                            htmlFor={`header-dashboard-${dashboard.id}`}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1 cursor-pointer"
+                          >
+                            {dashboard.name}
+                            {dashboard.isDefault && (
+                              <Badge variant="secondary" className="text-xs px-1">Default</Badge>
+                            )}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-            
-            <Button
-              variant="outline"
-              onClick={() => setDashboardManagerOpen(true)}
-              className="flex items-center gap-2 text-sm"
-            >
-              <Settings className="h-4 w-4" />
-              Dashboard Manager
-            </Button>
+                </PopoverContent>
+              </Popover>
+              
+              <Button
+                variant="outline"
+                onClick={() => setDashboardManagerOpen(true)}
+                className="flex items-center gap-2 text-sm"
+              >
+                <Settings className="h-4 w-4" />
+                Dashboard Manager
+              </Button>
+            </div>
 
             {!isMobile && (
               <div className="flex items-center ml-auto">
