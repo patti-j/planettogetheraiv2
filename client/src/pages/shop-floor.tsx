@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   AlertCircle, 
   CheckCircle, 
@@ -35,7 +36,13 @@ import {
   Upload,
   Camera,
   Edit,
-  Save
+  Save,
+  ZoomIn,
+  ZoomOut,
+  Grid,
+  Layers,
+  Plus,
+  Minus
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -623,6 +630,12 @@ export default function ShopFloor() {
   const [shopFloorLayout, setShopFloorLayout] = useState<ShopFloorLayout[]>([]);
   const [showHelp, setShowHelp] = useState(true);
   const [resourcePhotos, setResourcePhotos] = useState<{ [key: number]: string }>({});
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [currentArea, setCurrentArea] = useState<string>('all');
+  const [areas, setAreas] = useState<{[key: string]: {name: string, resources: number[]}}>({
+    all: { name: 'All Resources', resources: [] }
+  });
+  const [showAreaManager, setShowAreaManager] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -766,7 +779,72 @@ export default function ShopFloor() {
         console.error('Failed to load resource photos:', error);
       }
     }
+    
+    const savedAreas = localStorage.getItem('shopFloorAreas');
+    if (savedAreas) {
+      try {
+        setAreas(JSON.parse(savedAreas));
+      } catch (error) {
+        console.error('Failed to load shop floor areas:', error);
+      }
+    }
   }, []);
+
+  // Zoom controls
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 0.2, 3));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 0.2, 0.5));
+  };
+
+  const resetZoom = () => {
+    setZoomLevel(1);
+  };
+
+  // Area management
+  const saveAreas = (newAreas: typeof areas) => {
+    setAreas(newAreas);
+    localStorage.setItem('shopFloorAreas', JSON.stringify(newAreas));
+  };
+
+  const createArea = (name: string, resourceIds: number[]) => {
+    const newAreas = {
+      ...areas,
+      [name.toLowerCase().replace(/\s+/g, '-')]: {
+        name,
+        resources: resourceIds
+      }
+    };
+    saveAreas(newAreas);
+    toast({
+      title: "Area Created",
+      description: `Area "${name}" has been created successfully.`,
+    });
+  };
+
+  const deleteArea = (areaKey: string) => {
+    if (areaKey === 'all') return;
+    
+    const newAreas = { ...areas };
+    delete newAreas[areaKey];
+    saveAreas(newAreas);
+    
+    if (currentArea === areaKey) {
+      setCurrentArea('all');
+    }
+    
+    toast({
+      title: "Area Deleted",
+      description: `Area has been deleted successfully.`,
+    });
+  };
+
+  // Filter resources by current area
+  const filteredResources = currentArea === 'all' 
+    ? resources 
+    : resources.filter(resource => areas[currentArea]?.resources.includes(resource.id));
 
   // Auto-save layout changes
   useEffect(() => {
@@ -801,6 +879,95 @@ export default function ShopFloor() {
             </div>
             
             <div className="flex items-center gap-2">
+              {/* Area selector */}
+              <Select value={currentArea} onValueChange={setCurrentArea}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select area" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(areas).map(([key, area]) => (
+                    <SelectItem key={key} value={key}>
+                      {area.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {/* Area manager button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAreaManager(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <Layers className="w-4 h-4" />
+                    Areas
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Manage named areas</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              {/* Zoom controls */}
+              <div className="flex items-center gap-1 border rounded-lg p-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleZoomOut}
+                      disabled={zoomLevel <= 0.5}
+                      className="p-1 h-8 w-8"
+                    >
+                      <ZoomOut className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Zoom out</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <span className="text-sm font-medium px-2 min-w-[50px] text-center">
+                  {Math.round(zoomLevel * 100)}%
+                </span>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleZoomIn}
+                      disabled={zoomLevel >= 3}
+                      className="p-1 h-8 w-8"
+                    >
+                      <ZoomIn className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Zoom in</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={resetZoom}
+                      className="p-1 h-8 w-8"
+                    >
+                      <Grid className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Reset zoom</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              
               {/* Help toggle button */}
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -914,24 +1081,35 @@ export default function ShopFloor() {
             </div>
 
             {/* Resources */}
-            {shopFloorLayout.map((layout) => {
-              const resource = resources.find(r => r.id === layout.resourceId);
-              if (!resource) return null;
-              
-              const status = generateResourceStatus(resource);
-              
-              return (
-                <DraggableResource
-                  key={layout.id}
-                  resource={resource}
-                  layout={layout}
-                  status={status}
-                  onMove={handleResourceMove}
-                  onDetails={handleResourceDetails}
-                  photo={resourcePhotos[resource.id]}
-                />
-              );
-            })}
+            <div 
+              style={{ 
+                transform: `scale(${zoomLevel})`, 
+                transformOrigin: 'top left',
+                width: `${100 / zoomLevel}%`,
+                height: `${100 / zoomLevel}%`,
+                minWidth: '100%',
+                minHeight: '100%'
+              }}
+            >
+              {shopFloorLayout.map((layout) => {
+                const resource = filteredResources.find(r => r.id === layout.resourceId);
+                if (!resource) return null;
+                
+                const status = generateResourceStatus(resource);
+                
+                return (
+                  <DraggableResource
+                    key={layout.id}
+                    resource={resource}
+                    layout={layout}
+                    status={status}
+                    onMove={handleResourceMove}
+                    onDetails={handleResourceDetails}
+                    photo={resourcePhotos[resource.id]}
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -944,7 +1122,139 @@ export default function ShopFloor() {
           photo={selectedResource ? resourcePhotos[selectedResource.id] : undefined}
           onPhotoUpload={handlePhotoUpload}
         />
+        {/* Area Manager Dialog */}
+        <Dialog open={showAreaManager} onOpenChange={setShowAreaManager}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Area Manager</DialogTitle>
+            </DialogHeader>
+            <AreaManagerDialog 
+              areas={areas}
+              resources={resources}
+              onCreateArea={createArea}
+              onDeleteArea={deleteArea}
+              onClose={() => setShowAreaManager(false)}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </TooltipProvider>
   );
 }
+
+// Area Manager Dialog Component
+interface AreaManagerDialogProps {
+  areas: {[key: string]: {name: string, resources: number[]}};
+  resources: Resource[];
+  onCreateArea: (name: string, resourceIds: number[]) => void;
+  onDeleteArea: (areaKey: string) => void;
+  onClose: () => void;
+}
+
+const AreaManagerDialog: React.FC<AreaManagerDialogProps> = ({ 
+  areas, 
+  resources, 
+  onCreateArea, 
+  onDeleteArea, 
+  onClose 
+}) => {
+  const [newAreaName, setNewAreaName] = useState('');
+  const [selectedResources, setSelectedResources] = useState<number[]>([]);
+
+  const handleCreateArea = () => {
+    if (newAreaName.trim() && selectedResources.length > 0) {
+      onCreateArea(newAreaName.trim(), selectedResources);
+      setNewAreaName('');
+      setSelectedResources([]);
+    }
+  };
+
+  const handleResourceToggle = (resourceId: number) => {
+    setSelectedResources(prev => 
+      prev.includes(resourceId) 
+        ? prev.filter(id => id !== resourceId)
+        : [...prev, resourceId]
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Create New Area */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Create New Area</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="area-name">Area Name</Label>
+              <Input
+                id="area-name"
+                value={newAreaName}
+                onChange={(e) => setNewAreaName(e.target.value)}
+                placeholder="Enter area name"
+              />
+            </div>
+            
+            <div>
+              <Label>Select Resources</Label>
+              <div className="grid grid-cols-2 gap-2 mt-2 max-h-48 overflow-y-auto">
+                {resources.map(resource => (
+                  <div key={resource.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`resource-${resource.id}`}
+                      checked={selectedResources.includes(resource.id)}
+                      onCheckedChange={() => handleResourceToggle(resource.id)}
+                    />
+                    <Label htmlFor={`resource-${resource.id}`} className="text-sm">
+                      {resource.name} ({resource.type})
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <Button 
+              onClick={handleCreateArea}
+              disabled={!newAreaName.trim() || selectedResources.length === 0}
+              className="w-full"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Area
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Existing Areas */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Existing Areas</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {Object.entries(areas).map(([key, area]) => (
+              <div key={key} className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <h4 className="font-medium">{area.name}</h4>
+                  <p className="text-sm text-gray-600">
+                    {area.resources.length} resources
+                  </p>
+                </div>
+                {key !== 'all' && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => onDeleteArea(key)}
+                  >
+                    <Minus className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
