@@ -468,17 +468,7 @@ export default function OnboardingWizard() {
   };
 
   if (!isOpen) {
-    return (
-      <div className="fixed bottom-4 right-4 z-50">
-        <Button
-          onClick={() => setIsOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
-        >
-          <Book className="w-4 h-4 mr-2" />
-          {isNewUser ? "Getting Started" : "Help & Guide"}
-        </Button>
-      </div>
-    );
+    return null;
   }
 
   return (

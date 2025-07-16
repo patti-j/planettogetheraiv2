@@ -63,9 +63,13 @@ const DraggableOperationCard = ({
     },
   });
 
+  const ref = (node: HTMLDivElement) => {
+    drag(drop(node));
+  };
+
   if (isCompact) {
     return (
-      <div ref={(node) => drag(drop(node))} style={{ opacity: isDragging ? 0.5 : 1 }}>
+      <div ref={ref} style={{ opacity: isDragging ? 0.5 : 1 }}>
         <Card className="border-l-4 cursor-move hover:bg-gray-50 transition-colors" style={{ borderLeftColor: statusInfo.color.replace('bg-', '#') }}>
           <CardContent className="p-3">
             <div className="flex items-center justify-between">
