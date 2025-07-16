@@ -269,7 +269,7 @@ export default function MobileSchedule({
 
   // Filter operations based on selected filters
   const filteredOperations = useMemo(() => {
-    let filtered = orderedOperations.length > 0 ? orderedOperations : operations;
+    let filtered = hasReorder ? orderedOperations : operations;
 
     // Filter by resource
     if (selectedResource !== "all") {
@@ -309,12 +309,12 @@ export default function MobileSchedule({
     });
   }, [orderedOperations, operations, selectedResource, selectedStatus, selectedTab]);
 
-  // Initialize ordered operations when operations change
+  // Initialize ordered operations when operations change (but not during reorder)
   useEffect(() => {
-    if (operations.length > 0) {
+    if (operations.length > 0 && !hasReorder) {
       setOrderedOperations(operations);
     }
-  }, [operations]);
+  }, [operations, hasReorder]);
 
   // Handle drag and drop reordering
   const handleMoveOperation = useCallback((dragIndex: number, hoverIndex: number) => {
@@ -365,7 +365,9 @@ export default function MobileSchedule({
       updateOperationMutation.mutate(scheduleItem);
     });
     
+    // Reset reorder state after successful update
     setHasReorder(false);
+    setOrderedOperations([]);
   }, [filteredOperations, calculateNewSchedule, updateOperationMutation]);
 
   // Get operation details
