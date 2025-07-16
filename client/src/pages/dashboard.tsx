@@ -298,62 +298,64 @@ export default function Dashboard() {
                   <span className="text-sm font-medium text-gray-700">Analytics Dashboard</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="flex items-center gap-2 min-w-[160px] justify-between text-sm"
-                      >
-                        <span>
-                          {visibleDashboards.size === 0 
-                            ? "Select Dashboards" 
-                            : `${visibleDashboards.size} Selected`}
-                        </span>
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 p-3">
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Select Dashboards to Display:</Label>
-                        <div className="space-y-2 max-h-48 overflow-y-auto">
-                          {dashboards.map((dashboard) => (
-                            <div key={dashboard.id} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`dashboard-${dashboard.id}`}
-                                checked={visibleDashboards.has(dashboard.id)}
-                                onCheckedChange={() => handleToggleDashboardVisibility(dashboard.id)}
-                              />
-                              <label
-                                htmlFor={`dashboard-${dashboard.id}`}
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1 cursor-pointer"
-                              >
-                                {dashboard.name}
-                                {dashboard.isDefault && (
-                                  <Badge variant="secondary" className="text-xs px-1">Default</Badge>
-                                )}
-                              </label>
-                            </div>
-                          ))}
+                  <div className="flex items-center gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="flex items-center gap-2 min-w-[160px] justify-between text-sm"
+                        >
+                          <span>
+                            {visibleDashboards.size === 0 
+                              ? "Select Dashboards" 
+                              : `${visibleDashboards.size} Selected`}
+                          </span>
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80 p-3">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Select Dashboards to Display:</Label>
+                          <div className="space-y-2 max-h-48 overflow-y-auto">
+                            {dashboards.map((dashboard) => (
+                              <div key={dashboard.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`dashboard-${dashboard.id}`}
+                                  checked={visibleDashboards.has(dashboard.id)}
+                                  onCheckedChange={() => handleToggleDashboardVisibility(dashboard.id)}
+                                />
+                                <label
+                                  htmlFor={`dashboard-${dashboard.id}`}
+                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1 cursor-pointer"
+                                >
+                                  {dashboard.name}
+                                  {dashboard.isDefault && (
+                                    <Badge variant="secondary" className="text-xs px-1">Default</Badge>
+                                  )}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                  
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setDashboardManagerOpen(true)}
-                      >
-                        <Settings className="w-4 h-4 mr-1" />
-                        Dashboard Manager
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Manage dashboards and widgets</p>
-                    </TooltipContent>
-                  </Tooltip>
+                      </PopoverContent>
+                    </Popover>
+                    
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setDashboardManagerOpen(true)}
+                        >
+                          <Settings className="w-4 h-4 mr-1" />
+                          Dashboard Manager
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Manage dashboards and widgets</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                 </div>
               </div>
 
@@ -647,64 +649,66 @@ export default function Dashboard() {
               <BarChart3 className="w-5 h-5 text-gray-500" />
               <span className="text-sm font-medium text-gray-700">Analytics Dashboard</span>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="flex items-center gap-2 min-w-[160px] justify-between text-sm"
-                  >
-                    <span>
-                      {visibleDashboards.size === 0 
-                        ? "Select Dashboards" 
-                        : `${visibleDashboards.size} Selected`}
-                    </span>
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 p-3">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Select Dashboards to Display:</Label>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {dashboards.map((dashboard) => (
-                        <div key={dashboard.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`dashboard-${dashboard.id}`}
-                            checked={visibleDashboards.has(dashboard.id)}
-                            onCheckedChange={() => handleToggleDashboardVisibility(dashboard.id)}
-                          />
-                          <label
-                            htmlFor={`dashboard-${dashboard.id}`}
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1 cursor-pointer"
-                          >
-                            {dashboard.name}
-                            {dashboard.isDefault && (
-                              <Badge variant="secondary" className="text-xs px-1">Default</Badge>
-                            )}
-                          </label>
-                        </div>
-                      ))}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="flex items-center gap-2 min-w-[160px] justify-between text-sm"
+                    >
+                      <span>
+                        {visibleDashboards.size === 0 
+                          ? "Select Dashboards" 
+                          : `${visibleDashboards.size} Selected`}
+                      </span>
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-3">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Select Dashboards to Display:</Label>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {dashboards.map((dashboard) => (
+                          <div key={dashboard.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`dashboard-${dashboard.id}`}
+                              checked={visibleDashboards.has(dashboard.id)}
+                              onCheckedChange={() => handleToggleDashboardVisibility(dashboard.id)}
+                            />
+                            <label
+                              htmlFor={`dashboard-${dashboard.id}`}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1 cursor-pointer"
+                            >
+                              {dashboard.name}
+                              {dashboard.isDefault && (
+                                <Badge variant="secondary" className="text-xs px-1">Default</Badge>
+                              )}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-              
-              {/* Dashboard Manager button next to dropdown */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setDashboardManagerOpen(true)}
-                  >
-                    <Settings className="w-4 h-4 mr-1" />
-                    Dashboard Manager
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Manage dashboards and widgets</p>
-                </TooltipContent>
-              </Tooltip>
+                  </PopoverContent>
+                </Popover>
+                
+                {/* Dashboard Manager button next to dropdown */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDashboardManagerOpen(true)}
+                    >
+                      <Settings className="w-4 h-4 mr-1" />
+                      Dashboard Manager
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Manage dashboards and widgets</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               
               {!isMobile && (
                 <Tooltip>
