@@ -17,7 +17,7 @@ import MetricsCard from "@/components/ui/metrics-card";
 import JobForm from "@/components/job-form";
 import ResourceForm from "@/components/resource-form";
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
-import EnhancedDashboardManager from "@/components/dashboard-manager-enhanced";
+import { EnhancedDashboardManager } from "@/components/dashboard-manager-enhanced";
 import AnalyticsWidget from "@/components/analytics-widget";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";

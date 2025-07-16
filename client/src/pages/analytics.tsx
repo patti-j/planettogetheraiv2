@@ -12,7 +12,7 @@ import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
-import EnhancedDashboardManager from "@/components/dashboard-manager-enhanced";
+import { EnhancedDashboardManager } from "@/components/dashboard-manager-enhanced";
 import AnalyticsWidget from "@/components/analytics-widget";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";

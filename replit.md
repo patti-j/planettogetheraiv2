@@ -139,6 +139,18 @@ The application uses a modern full-stack architecture with strong typing through
 - Optimized all tab content to use conditional rendering instead of heavy tab components
 - Significantly reduced vertical space usage while maintaining all existing functionality
 
+✓ **Dashboard Manager Toggle Architecture Redesign (July 16, 2025)**:
+- Implemented complete toggle-based architecture with "Dashboards" and "Widgets" views
+- Added toggle controls at top of window for switching between dashboard and widget management
+- Each dashboard and widget now has individual edit and delete buttons for direct management
+- Created unified edit dialog supporting both manual and AI editing modes
+- Manual editing provides form fields for direct input, AI editing uses natural language prompts
+- Dashboards view shows all dashboards in grid layout with widget counts and status badges
+- Widgets view displays all widgets from all dashboards with type and visibility indicators
+- Edit dialog dynamically changes based on what's being edited (dashboard vs widget)
+- Unified delete confirmation dialog handles both dashboard and widget deletion
+- Streamlined user experience with clear separation between dashboard and widget management
+
 ## Previous Changes (July 13, 2025)
 
 ✓ **Database Integration**: 
