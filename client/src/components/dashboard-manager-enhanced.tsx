@@ -14,7 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Settings, Star, Trash2, Edit3, Eye, Save, Move, Palette, BarChart3, TrendingUp, AlertTriangle, CheckCircle, Clock, Target, PieChart, Activity, Zap, Users, Package, Wrench, ArrowUp, ArrowDown, MoreHorizontal, Grid3x3, Maximize2, Minimize2, RotateCcw, Sparkles, Bot } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import { useDrag, useDrop, useDragLayer } from "react-dnd";
+import { useDrag, useDrop, useDragLayer, DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 
 interface AnalyticsWidget {
   id: string;
@@ -612,7 +613,8 @@ export default function EnhancedDashboardManager({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <DndProvider backend={HTML5Backend}>
+      <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] md:max-w-7xl h-[95vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>
@@ -702,9 +704,10 @@ export default function EnhancedDashboardManager({
               </div>
             </TabsContent>
 
-            <TabsContent value="create" className="flex-1 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
+            <TabsContent value="create" className="flex-1 overflow-y-auto">
+              <div className="p-1 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Dashboard Details</h3>
                   
                   <div className="space-y-2">
@@ -751,6 +754,7 @@ export default function EnhancedDashboardManager({
                       After creating your dashboard, use the Visual Editor to add and arrange widgets.
                     </p>
                   </div>
+                </div>
                 </div>
               </div>
             </TabsContent>
@@ -837,8 +841,8 @@ export default function EnhancedDashboardManager({
               </div>
             </TabsContent>
 
-            <TabsContent value="templates" className="flex-1 space-y-4">
-              <div className="space-y-4">
+            <TabsContent value="templates" className="flex-1 overflow-y-auto">
+              <div className="p-1 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold">Widget Library</h3>
                   <p className="text-sm text-gray-600">
@@ -890,5 +894,6 @@ export default function EnhancedDashboardManager({
           </Tabs>
         </DialogContent>
       </Dialog>
+    </DndProvider>
   );
 }

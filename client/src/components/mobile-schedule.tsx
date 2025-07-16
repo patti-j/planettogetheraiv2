@@ -251,6 +251,7 @@ export default function MobileSchedule({
   const [orderedOperations, setOrderedOperations] = useState<Operation[]>([]);
   const [hasReorder, setHasReorder] = useState(false);
   const [isCompactView, setIsCompactView] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -278,8 +279,9 @@ export default function MobileSchedule({
 
   // Filter operations based on selected filters
   const filteredOperations = useMemo(() => {
-    let filtered = hasReorder && orderedOperations.length > 0 ? orderedOperations : operations;
-    console.log(`Filtering operations: hasReorder=${hasReorder}, orderedOperations.length=${orderedOperations.length}, using ${filtered === orderedOperations ? 'orderedOperations' : 'operations'}`);
+    // Always use ordered operations if we have them, otherwise use original operations
+    let filtered = hasReorder && orderedOperations.length > 0 ? [...orderedOperations] : [...operations];
+    console.log(`Filtering operations: hasReorder=${hasReorder}, orderedOperations.length=${orderedOperations.length}, using ${hasReorder && orderedOperations.length > 0 ? 'orderedOperations' : 'operations'}`);
 
     // Filter by resource
     if (selectedResource !== "all") {
@@ -313,19 +315,24 @@ export default function MobileSchedule({
       });
     }
 
-    return filtered.sort((a, b) => {
-      if (!a.startTime || !b.startTime) return 0;
-      return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
-    });
-  }, [orderedOperations, operations, selectedResource, selectedStatus, selectedTab]);
+    // If we're in reorder mode, preserve the order; otherwise sort by start time
+    if (!hasReorder) {
+      return filtered.sort((a, b) => {
+        if (!a.startTime || !b.startTime) return 0;
+        return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+      });
+    }
+    
+    return filtered;
+  }, [hasReorder, orderedOperations, operations, selectedResource, selectedStatus, selectedTab]);
 
   // Initialize ordered operations when operations change (but not during reorder)
   useEffect(() => {
-    if (operations.length > 0 && !hasReorder) {
+    if (operations.length > 0 && !hasReorder && orderedOperations.length === 0) {
       console.log(`Setting ordered operations to original operations (hasReorder=${hasReorder})`);
       setOrderedOperations(operations);
     }
-  }, [operations, hasReorder]);
+  }, [operations, hasReorder, orderedOperations.length]);
 
   // Handle drag and drop reordering
   const handleMoveOperation = useCallback((dragIndex: number, hoverIndex: number) => {
