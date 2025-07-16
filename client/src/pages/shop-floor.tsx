@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   AlertCircle, 
   CheckCircle, 
@@ -27,9 +29,11 @@ import {
   InfoIcon,
   RefreshCw,
   HelpCircle,
-  X
+  X,
+  Upload,
+  Camera
 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useDrag, useDrop } from "react-dnd";
 import type { Operation, Job, Resource } from "@shared/schema";
@@ -63,9 +67,10 @@ interface DraggableResourceProps {
   status: ResourceStatus;
   onMove: (id: string, x: number, y: number) => void;
   onDetails: (resource: Resource, status: ResourceStatus) => void;
+  photo?: string;
 }
 
-const DraggableResource = ({ resource, layout, status, onMove, onDetails }: DraggableResourceProps) => {
+const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo }: DraggableResourceProps) => {
   const [{ isDragging }, drag] = useDrag({
     type: "resource",
     item: { id: layout.id, x: layout.x, y: layout.y },
@@ -145,9 +150,17 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails }: Drag
               className={`relative w-full h-full ${getStatusColor(status.status)} rounded-lg border-2 shadow-lg hover:shadow-xl transition-shadow cursor-pointer`}
               onClick={() => onDetails(resource, status)}
             >
-              {/* Resource Icon */}
+              {/* Resource Icon/Photo */}
               <div className="absolute inset-0 flex items-center justify-center text-white">
-                {getResourceIcon(resource.type)}
+                {photo ? (
+                  <img 
+                    src={photo} 
+                    alt={resource.name}
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                ) : (
+                  getResourceIcon(resource.type)
+                )}
               </div>
               
               {/* Status Indicator */}
@@ -158,7 +171,7 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails }: Drag
               {/* Utilization Bar */}
               <div className="absolute bottom-0 left-0 right-0 h-2 bg-black bg-opacity-30 rounded-b-lg">
                 <div 
-                  className="h-full bg-white bg-opacity-80 rounded-b-lg transition-all duration-300"
+                  className="h-full bg-green-500 rounded-b-lg transition-all duration-300"
                   style={{ width: `${status.utilization}%` }}
                 />
               </div>
@@ -196,14 +209,50 @@ const ResourceDetailsDialog = ({
   resource, 
   status, 
   isOpen, 
-  onClose 
+  onClose,
+  photo,
+  onPhotoUpload
 }: { 
   resource: Resource | null; 
   status: ResourceStatus | null; 
   isOpen: boolean; 
   onClose: () => void; 
+  photo?: string;
+  onPhotoUpload: (resourceId: number, photoUrl: string) => void;
 }) => {
+  const [uploading, setUploading] = useState(false);
+  const { toast } = useToast();
+  
   if (!resource || !status) return null;
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    
+    try {
+      // Convert file to base64 for storage
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        onPhotoUpload(resource.id, result);
+        setUploading(false);
+        toast({
+          title: "Photo Updated",
+          description: "Resource photo has been updated successfully.",
+        });
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      setUploading(false);
+      toast({
+        title: "Upload Error",
+        description: "Failed to upload photo. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -223,6 +272,46 @@ const ResourceDetailsDialog = ({
         </DialogHeader>
         
         <div className="space-y-6">
+          {/* Photo Upload Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Camera className="w-5 h-5" />
+                Resource Photo
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {photo && (
+                  <div className="flex justify-center">
+                    <img 
+                      src={photo} 
+                      alt={resource.name}
+                      className="w-32 h-32 object-cover rounded-lg border-2 border-gray-200"
+                    />
+                  </div>
+                )}
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="photo-upload">Upload Resource Photo</Label>
+                  <Input
+                    id="photo-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    disabled={uploading}
+                    className="cursor-pointer"
+                  />
+                  {uploading && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      Uploading photo...
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Status Overview */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card>
@@ -368,7 +457,9 @@ export default function ShopFloor() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [shopFloorLayout, setShopFloorLayout] = useState<ShopFloorLayout[]>([]);
   const [showHelp, setShowHelp] = useState(true);
+  const [resourcePhotos, setResourcePhotos] = useState<{ [key: number]: string }>({});
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Fetch data
   const { data: resources = [], isLoading: resourcesLoading } = useQuery<Resource[]>({
@@ -463,6 +554,19 @@ export default function ShopFloor() {
     setDetailsOpen(true);
   };
 
+  // Handle photo upload
+  const handlePhotoUpload = (resourceId: number, photoUrl: string) => {
+    setResourcePhotos(prev => ({
+      ...prev,
+      [resourceId]: photoUrl
+    }));
+    
+    // Save to localStorage for persistence
+    const savedPhotos = JSON.parse(localStorage.getItem('resourcePhotos') || '{}');
+    savedPhotos[resourceId] = photoUrl;
+    localStorage.setItem('resourcePhotos', JSON.stringify(savedPhotos));
+  };
+
   // Save layout mutation
   const saveLayoutMutation = useMutation({
     mutationFn: async (layout: ShopFloorLayout[]) => {
@@ -478,7 +582,7 @@ export default function ShopFloor() {
     },
   });
 
-  // Load layout from localStorage
+  // Load layout and photos from localStorage
   useEffect(() => {
     const savedLayout = localStorage.getItem('shopFloorLayout');
     if (savedLayout) {
@@ -486,6 +590,15 @@ export default function ShopFloor() {
         setShopFloorLayout(JSON.parse(savedLayout));
       } catch (error) {
         console.error('Failed to load shop floor layout:', error);
+      }
+    }
+    
+    const savedPhotos = localStorage.getItem('resourcePhotos');
+    if (savedPhotos) {
+      try {
+        setResourcePhotos(JSON.parse(savedPhotos));
+      } catch (error) {
+        console.error('Failed to load resource photos:', error);
       }
     }
   }, []);
@@ -650,6 +763,7 @@ export default function ShopFloor() {
                   status={status}
                   onMove={handleResourceMove}
                   onDetails={handleResourceDetails}
+                  photo={resourcePhotos[resource.id]}
                 />
               );
             })}
@@ -662,6 +776,8 @@ export default function ShopFloor() {
           status={selectedStatus}
           isOpen={detailsOpen}
           onClose={() => setDetailsOpen(false)}
+          photo={selectedResource ? resourcePhotos[selectedResource.id] : undefined}
+          onPhotoUpload={handlePhotoUpload}
         />
       </div>
     </TooltipProvider>
