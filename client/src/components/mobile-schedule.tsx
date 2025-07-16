@@ -72,34 +72,34 @@ const DraggableOperationCard = ({
       <div ref={ref} style={{ opacity: isDragging ? 0.5 : 1 }}>
         <Card className="border-l-4 cursor-move hover:bg-gray-50 transition-colors" style={{ borderLeftColor: statusInfo.color.replace('bg-', '#') }}>
           <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3 flex-1">
-                <div className="cursor-grab active:cursor-grabbing p-1 -m-1 hover:bg-gray-100 rounded">
+            <div className="flex items-center justify-between min-w-0">
+              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                <div className="cursor-grab active:cursor-grabbing p-1 -m-1 hover:bg-gray-100 rounded flex-shrink-0">
                   <GripVertical className="w-4 h-4 text-gray-400" />
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-2 min-w-0">
                     <h3 className="font-medium text-sm text-gray-900 truncate">{operation.name}</h3>
-                    <Badge variant="outline" className="text-xs px-1 py-0">{operation.status}</Badge>
+                    <Badge variant="outline" className="text-xs px-1 py-0 flex-shrink-0">{operation.status}</Badge>
                   </div>
-                  <div className="flex items-center space-x-3 text-xs text-gray-500 mt-1">
+                  <div className="flex items-center space-x-3 text-xs text-gray-500 mt-1 min-w-0">
                     {job && (
-                      <span className="truncate">{job.name}</span>
+                      <span className="truncate flex-shrink">{job.name}</span>
                     )}
-                    <span className="flex items-center">
+                    <span className="flex items-center flex-shrink-0">
                       <Clock className="w-3 h-3 mr-1" />
                       {operation.duration}h
                     </span>
                     {resource && (
-                      <span className="flex items-center">
-                        <Wrench className="w-3 h-3 mr-1" />
-                        {resource.name}
+                      <span className="flex items-center truncate">
+                        <Wrench className="w-3 h-3 mr-1 flex-shrink-0" />
+                        <span className="truncate">{resource.name}</span>
                       </span>
                     )}
                   </div>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1 ml-2 flex-shrink-0">
                 <StatusIcon className="w-4 h-4" style={{ color: statusInfo.color.replace('bg-', '#') }} />
                 {job && (
                   <Badge 
