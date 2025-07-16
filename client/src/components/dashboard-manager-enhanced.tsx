@@ -750,79 +750,86 @@ export default function EnhancedDashboardManager({
               </div>
             </TabsContent>
 
-            <TabsContent value="editor" className="flex-1 space-y-4">
-              {editingDashboard ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold">Visual Editor</h3>
-                      <p className="text-sm text-gray-600">
-                        Drag widgets from the Widget Library to design your dashboard
-                      </p>
+            <TabsContent value="editor" className="flex-1 overflow-y-auto">
+              <div className="p-1 space-y-4">
+                {editingDashboard ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-base sm:text-lg font-semibold">Visual Editor</h3>
+                        <p className="text-xs sm:text-sm text-gray-600">
+                          Drag widgets from the Widget Library to design your dashboard
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleSaveEditing}
+                          disabled={updateDashboardMutation.isPending}
+                          size="sm"
+                          className="text-sm"
+                        >
+                          {updateDashboardMutation.isPending ? "Saving..." : "Save"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={handleCancelEditing}
+                          size="sm"
+                          className="text-sm"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={handleSaveEditing}
-                        disabled={updateDashboardMutation.isPending}
-                      >
-                        {updateDashboardMutation.isPending ? "Saving..." : "Save Changes"}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={handleCancelEditing}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                      <div className="lg:col-span-2">
-                        <div className="mb-4">
-                          <h4 className="font-medium mb-2">Canvas</h4>
-                          <p className="text-sm text-gray-600">Drag widgets from the library to the canvas below</p>
-                        </div>
-                        <VisualEditor
-                          widgets={workingWidgets}
-                          onDrop={handleDropWidget}
-                          onWidgetSelect={setSelectedWidgetId}
-                          selectedWidgetId={selectedWidgetId}
-                          onWidgetMove={handleWidgetMove}
-                        />
-                        <div className="mt-2 flex items-center justify-between">
-                          <div className="text-xs text-gray-500">
-                            Canvas has {workingWidgets.length} widgets
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        <div className="lg:col-span-2">
+                          <div className="mb-4">
+                            <h4 className="font-medium mb-2 text-sm sm:text-base">Canvas</h4>
+                            <p className="text-xs sm:text-sm text-gray-600">Drag widgets from the library to the canvas below</p>
                           </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              const template = widgetTemplates[0];
-                              handleAddWidget(template, { x: 10, y: 10 });
-                            }}
-                          >
-                            Test Add Widget
-                          </Button>
+                          <VisualEditor
+                            widgets={workingWidgets}
+                            onDrop={handleDropWidget}
+                            onWidgetSelect={setSelectedWidgetId}
+                            selectedWidgetId={selectedWidgetId}
+                            onWidgetMove={handleWidgetMove}
+                          />
+                          <div className="mt-2 flex items-center justify-between">
+                            <div className="text-xs text-gray-500">
+                              Canvas has {workingWidgets.length} widgets
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                const template = widgetTemplates[0];
+                                handleAddWidget(template, { x: 10, y: 10 });
+                              }}
+                              className="text-xs"
+                            >
+                              Test Add Widget
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="space-y-4">
+                          <h4 className="font-medium text-sm sm:text-base">Widget Library</h4>
+                          <p className="text-xs sm:text-sm text-gray-600">Drag these widgets to the canvas</p>
+                          <div className="max-h-64 overflow-y-auto">
+                            <div className="space-y-2">
+                              {widgetTemplates.map((template) => (
+                                <DraggableTemplate key={template.id} template={template} />
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <div className="space-y-4">
-                        <h4 className="font-medium">Widget Library</h4>
-                        <p className="text-sm text-gray-600">Drag these widgets to the canvas</p>
-                        <ScrollArea className="h-80">
-                          <div className="space-y-2">
-                            {widgetTemplates.map((template) => (
-                              <DraggableTemplate key={template.id} template={template} />
-                            ))}
-                          </div>
-                        </ScrollArea>
-                      </div>
-                    </div>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-64 text-gray-500">
-                  Select a dashboard to edit from the Browse tab
-                </div>
-              )}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-64 text-gray-500">
+                    Select a dashboard to edit from the Browse tab
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
             <TabsContent value="templates" className="flex-1 space-y-4">

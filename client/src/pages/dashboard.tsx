@@ -679,16 +679,11 @@ export default function Dashboard() {
               <div className="grid gap-6">
                 {visibleDashboardConfigs.map((dashboard) => (
                   <div key={dashboard.id} className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-semibold">{dashboard.name}</h3>
-                        {dashboard.isDefault && (
-                          <Badge variant="secondary" className="text-xs">Default</Badge>
-                        )}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {dashboard.configuration?.customWidgets?.length || 0} widgets
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-semibold">{dashboard.name}</h3>
+                      {dashboard.isDefault && (
+                        <Badge variant="secondary" className="text-xs">Default</Badge>
+                      )}
                     </div>
                     
                     {dashboard.configuration?.customWidgets?.length > 0 ? (
