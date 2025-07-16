@@ -391,13 +391,20 @@ const DraggableAreaBubble = ({
     positionRef.current = { x, y };
   };
   
-  // Initialize position on first render
+  // Initialize position on first render and apply it
   useEffect(() => {
     initializePosition();
     if (bubbleRef.current) {
       bubbleRef.current.style.transform = `translate(${positionRef.current.x}px, ${positionRef.current.y}px)`;
     }
   }, [areaKey]);
+  
+  // Also update position when resources change (for area resizing)
+  useEffect(() => {
+    if (bubbleRef.current) {
+      bubbleRef.current.style.transform = `translate(${positionRef.current.x}px, ${positionRef.current.y}px)`;
+    }
+  }, [resources.length]);
   
   // Save position to localStorage
   const savePosition = (x: number, y: number) => {
@@ -416,14 +423,19 @@ const DraggableAreaBubble = ({
     }),
     end: (item, monitor) => {
       const offset = monitor.getDifferenceFromInitialOffset();
-      if (offset && bubbleRef.current) {
+      if (offset) {
         const newX = Math.max(0, item.x + offset.x);
         const newY = Math.max(0, item.y + offset.y);
         
-        // Update DOM position directly
-        bubbleRef.current.style.transform = `translate(${newX}px, ${newY}px)`;
+        // Update position ref
+        positionRef.current = { x: newX, y: newY };
         
-        // Save position
+        // Update DOM position directly
+        if (bubbleRef.current) {
+          bubbleRef.current.style.transform = `translate(${newX}px, ${newY}px)`;
+        }
+        
+        // Save position to localStorage
         savePosition(newX, newY);
         
         // Notify parent
@@ -489,9 +501,10 @@ const DraggableAreaBubble = ({
         isDragging ? 'opacity-50 scale-105' : 'opacity-100 scale-100'
       } ${isOver ? 'ring-2 ring-blue-500' : ''}`}
       style={{
+        left: 0,
+        top: 0,
         width: areaWidth,
         minHeight: areaHeight,
-        transform: `translate(${positionRef.current.x}px, ${positionRef.current.y}px)`,
       }}
     >
       <TooltipProvider>
