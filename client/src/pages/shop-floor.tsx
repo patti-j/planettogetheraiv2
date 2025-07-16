@@ -339,9 +339,26 @@ const DraggableAreaBubble = ({
   resourcePhotos, 
   generateResourceStatus, 
   isNoArea = false,
-  onResourceMove 
-}: DraggableAreaBubbleProps & { onResourceMove: (resourceId: number, newArea: string) => void }) => {
+  onResourceMove,
+  initialPosition 
+}: DraggableAreaBubbleProps & { 
+  onResourceMove: (resourceId: number, newArea: string) => void;
+  initialPosition?: { x: number; y: number };
+}) => {
   const [areaLayout, setAreaLayout] = useState<AreaLayout>(() => {
+    // Check if we have an initial position from parent
+    if (initialPosition) {
+      const areaWidth = Math.max(300, resources.length * 80 + 100);
+      const areaHeight = Math.max(200, Math.ceil(resources.length / 4) * 80 + 100);
+      return {
+        areaKey,
+        x: initialPosition.x,
+        y: initialPosition.y,
+        width: areaWidth,
+        height: areaHeight
+      };
+    }
+    
     const savedLayout = localStorage.getItem(`area-layout-${areaKey}`);
     if (savedLayout) {
       return JSON.parse(savedLayout);
@@ -390,9 +407,20 @@ const DraggableAreaBubble = ({
     };
   });
 
+  // Update layout when initialPosition changes
+  useEffect(() => {
+    if (initialPosition) {
+      setAreaLayout(prev => ({
+        ...prev,
+        x: initialPosition.x,
+        y: initialPosition.y
+      }));
+    }
+  }, [initialPosition]);
+
   const [{ isDragging }, drag] = useDrag({
     type: "area",
-    item: { areaKey, x: areaLayout.x, y: areaLayout.y },
+    item: () => ({ areaKey, x: areaLayout.x, y: areaLayout.y }),
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
@@ -404,8 +432,10 @@ const DraggableAreaBubble = ({
         const newY = Math.max(0, item.y + offset.y);
         const newLayout = { ...areaLayout, x: newX, y: newY };
         setAreaLayout(newLayout);
-        // Immediately save to localStorage
+        // Save to localStorage immediately
         localStorage.setItem(`area-layout-${areaKey}`, JSON.stringify(newLayout));
+        // Force a re-render by updating the key
+        onMove(areaKey, newX, newY);
       }
     },
   });
@@ -952,6 +982,9 @@ export default function ShopFloor() {
     all: { name: 'All Resources', resources: [] }
   });
   const [showAreaManager, setShowAreaManager] = useState(false);
+  const [forceUpdate, setForceUpdate] = useState(0);
+  const [areaBubblePositions, setAreaBubblePositions] = useState<Record<string, { x: number; y: number }>>({});
+  const [resourcePositions, setResourcePositions] = useState<Record<number, { x: number; y: number }>>({});
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -1030,9 +1063,11 @@ export default function ShopFloor() {
 
   // Handle area movement
   const handleAreaMove = (areaKey: string, x: number, y: number) => {
-    // This function is called by the drop handler, but the actual position
-    // update is now handled by the drag end event in the DraggableAreaBubble
-    // component to ensure proper state management
+    setAreaBubblePositions(prev => ({
+      ...prev,
+      [areaKey]: { x, y }
+    }));
+    setForceUpdate(prev => prev + 1);
   };
 
   // Handle resource movement between areas
@@ -1503,6 +1538,7 @@ export default function ShopFloor() {
                       resourcePhotos={resourcePhotos}
                       generateResourceStatus={generateResourceStatus}
                       onResourceMove={handleResourceMove}
+                      initialPosition={areaBubblePositions[areaKey]}
                     />
                   ))}
                   
@@ -1528,6 +1564,7 @@ export default function ShopFloor() {
                           generateResourceStatus={generateResourceStatus}
                           isNoArea={true}
                           onResourceMove={handleResourceMove}
+                          initialPosition={areaBubblePositions['no-area']}
                         />
                       );
                     }
