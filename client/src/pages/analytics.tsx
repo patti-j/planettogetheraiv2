@@ -166,9 +166,7 @@ function DraggableDashboardCard({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="outline">
-                {dashboard.configuration?.customWidgets?.length || 0} widgets
-              </Badge>
+
               <div className="text-xs text-gray-500">
                 {isLivePaused ? "Live View • Paused" : "Live View • Updates every 30s"}
               </div>

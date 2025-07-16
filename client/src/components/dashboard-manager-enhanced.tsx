@@ -656,12 +656,6 @@ export default function EnhancedDashboardManager({
                           <p className="text-sm text-gray-600 mb-2">{dashboard.description}</p>
                           <div className="flex items-center gap-4 text-xs text-gray-500">
                             <span>
-                              Standard: {dashboard.configuration.standardWidgets.length} widgets
-                            </span>
-                            <span>
-                              Custom: {dashboard.configuration.customWidgets.length} widgets
-                            </span>
-                            <span>
                               Created: {new Date(dashboard.createdAt).toLocaleDateString()}
                             </span>
                           </div>
