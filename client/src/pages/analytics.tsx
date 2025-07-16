@@ -144,14 +144,12 @@ function DraggableDashboardCard({
 
   return (
     <div
-      className={`${isDragging ? 'opacity-50 scale-105' : ''} ${isOver ? 'ring-2 ring-blue-500' : ''} relative transition-all duration-200 resize-smooth ${isResizing ? 'resizing' : ''} group`}
+      ref={(node) => drag(drop(node))}
+      className={`${isDragging ? 'opacity-50 scale-105' : ''} ${isOver ? 'ring-2 ring-blue-500' : ''} relative transition-all duration-200 resize-smooth ${isResizing ? 'resizing' : ''} group cursor-move`}
       style={{ width: size.width, height: size.height }}
     >
       <Card className="border border-gray-200 shadow-sm h-full">
-        <CardHeader
-          ref={(node) => drag(drop(node))}
-          className="cursor-move"
-        >
+        <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="cursor-move">
@@ -188,7 +186,7 @@ function DraggableDashboardCard({
         </CardHeader>
         <CardContent className="flex-1 p-4">
           {dashboard.configuration?.customWidgets?.length > 0 ? (
-            <div className="relative h-full bg-white overflow-hidden border border-gray-100 rounded-lg" style={{ minHeight: '400px' }}>
+            <div className="relative w-full h-full bg-white overflow-hidden border border-gray-100 rounded-lg" style={{ minHeight: '400px', maxHeight: '500px' }}>
               {dashboard.configuration.customWidgets.map((widget: AnalyticsWidget) => (
                 <AnalyticsWidget
                   key={widget.id}
