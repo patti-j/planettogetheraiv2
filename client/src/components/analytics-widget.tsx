@@ -232,12 +232,12 @@ export default function AnalyticsWidget({
       className={`${isDragging ? 'shadow-lg' : 'shadow-sm'} ${readOnly ? 'cursor-default' : 'cursor-move'} overflow-hidden flex flex-col border border-gray-200`}
       style={{
         position: 'absolute',
-        left: `${Math.max(0, Math.min(widget.position.x, isMobile ? 200 : 480))}px`,
-        top: `${Math.max(0, Math.min(widget.position.y, isMobile ? 200 : 320))}px`,
-        width: `${Math.min(widget.size.width, isMobile ? 160 : 280)}px`,
-        height: `${Math.min(widget.size.height, isMobile ? 120 : 160)}px`,
-        maxHeight: `${Math.min(widget.size.height, isMobile ? 120 : 160)}px`,
-        maxWidth: `${Math.min(widget.size.width, isMobile ? 160 : 280)}px`,
+        left: `${Math.max(0, Math.min(widget.position.x, isMobile ? 120 : 480))}px`,
+        top: `${Math.max(0, Math.min(widget.position.y, isMobile ? 100 : 320))}px`,
+        width: `${Math.min(widget.size.width, isMobile ? 140 : 280)}px`,
+        height: `${Math.min(widget.size.height, isMobile ? 100 : 160)}px`,
+        maxHeight: `${Math.min(widget.size.height, isMobile ? 100 : 160)}px`,
+        maxWidth: `${Math.min(widget.size.width, isMobile ? 140 : 280)}px`,
         zIndex: isDragging ? 1000 : 1
       }}
     >
