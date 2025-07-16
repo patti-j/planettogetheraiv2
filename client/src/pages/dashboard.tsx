@@ -344,14 +344,14 @@ export default function Dashboard() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setAnalyticsManagerOpen(true)}
+                        onClick={() => setDashboardManagerOpen(true)}
                       >
-                        <Settings className="w-4 h-4 mr-2" />
+                        <Settings className="w-4 h-4 mr-1" />
                         Dashboard Manager
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Manage dashboard configurations and widgets</p>
+                      <p>Manage dashboards and widgets</p>
                     </TooltipContent>
                   </Tooltip>
                 </div>
@@ -604,8 +604,9 @@ export default function Dashboard() {
         <main className="flex-1 overflow-y-auto">
           {/* Header */}
           <header className="bg-white shadow-sm border-b border-gray-200 p-4 md:p-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 md:mb-6">
-              <div className="mb-4 md:mb-0 md:ml-0 ml-12">
+            {/* Title and Live Button Row */}
+            <div className="flex items-center justify-between mb-4 md:mb-6">
+              <div className="md:ml-0 ml-12">
                 <h2 className="text-xl md:text-2xl font-semibold text-gray-800">Schedule</h2>
                 <p className="text-sm md:text-base text-gray-600">Manage operations and resource allocation</p>
               </div>
@@ -704,8 +705,6 @@ export default function Dashboard() {
                   <p>Manage dashboards and widgets</p>
                 </TooltipContent>
               </Tooltip>
-              
-
               
               {!isMobile && (
                 <Tooltip>
