@@ -230,12 +230,12 @@ export default function AnalyticsWidget({
       className={`${isDragging ? 'shadow-lg' : 'shadow-sm'} ${readOnly ? 'cursor-default' : 'cursor-move'} overflow-hidden flex flex-col border border-gray-200`}
       style={{
         position: 'absolute',
-        left: `${Math.max(0, widget.position.x)}px`,
-        top: `${Math.max(0, widget.position.y)}px`,
-        width: `${Math.min(widget.size.width, 300)}px`,
-        height: `${Math.min(widget.size.height, 200)}px`,
-        maxHeight: `${Math.min(widget.size.height, 200)}px`,
-        maxWidth: `${Math.min(widget.size.width, 300)}px`,
+        left: `${Math.max(8, Math.min(widget.position.x, 600 - widget.size.width - 8))}px`,
+        top: `${Math.max(8, Math.min(widget.position.y, 400 - widget.size.height - 8))}px`,
+        width: `${widget.size.width}px`,
+        height: `${widget.size.height}px`,
+        maxHeight: `${widget.size.height}px`,
+        maxWidth: `${widget.size.width}px`,
         zIndex: isDragging ? 1000 : 1
       }}
     >

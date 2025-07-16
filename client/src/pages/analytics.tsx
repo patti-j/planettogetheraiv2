@@ -171,6 +171,9 @@ function DraggableDashboardCard({
               <Badge variant="outline">
                 {dashboard.configuration?.customWidgets?.length || 0} widgets
               </Badge>
+              <div className="text-xs text-gray-500">
+                {isLivePaused ? "Live View • Paused" : "Live View • Updates every 30s"}
+              </div>
               <Button
                 variant="outline"
                 size="sm"
@@ -199,9 +202,6 @@ function DraggableDashboardCard({
                   readOnly={true}
                 />
               ))}
-              <div className="absolute top-2 right-2 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow-sm z-10">
-                {isLivePaused ? "Live View • Paused" : "Live View • Updates every 30s"}
-              </div>
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500 h-full flex items-center justify-center">
