@@ -249,25 +249,7 @@ export default function Sidebar() {
               <p>Configure AWS SES for email notifications</p>
             </TooltipContent>
           </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => {
-                  const event = new CustomEvent('openOnboarding');
-                  window.dispatchEvent(event);
-                }}
-                className="w-full justify-start text-xs md:text-sm"
-              >
-                <Book className="w-3 h-3 md:w-4 md:h-4 mr-2" />
-                Help & Guide
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>Access help, tutorials, and onboarding guide</p>
-            </TooltipContent>
-          </Tooltip>
+
         </div>
 
         <div className="mt-4 space-y-2">

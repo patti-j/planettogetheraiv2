@@ -608,7 +608,7 @@ export default function EnhancedDashboardManager({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl h-[95vh] flex flex-col">
+      <DialogContent className="max-w-[95vw] md:max-w-7xl h-[95vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>
             {editingDashboard ? `Edit Dashboard: ${editingDashboard.name}` : "Manage Dashboards"}
