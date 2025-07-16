@@ -430,6 +430,7 @@ export default function EnhancedDashboardManager({
   const [aiPrompt, setAiPrompt] = useState("");
   const [isAiProcessing, setIsAiProcessing] = useState(false);
   const [aiWidgetOpen, setAiWidgetOpen] = useState(false);
+  const [aiDashboardPrompt, setAiDashboardPrompt] = useState("");
   const [aiWidgetPrompt, setAiWidgetPrompt] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -506,6 +507,87 @@ export default function EnhancedDashboardManager({
       toast({
         title: "Error",
         description: "Failed to delete dashboard",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // AI Dashboard Creation Mutation
+  const aiDashboardMutation = useMutation({
+    mutationFn: async (prompt: string) => {
+      const response = await apiRequest("POST", "/api/ai-agent/command", { 
+        command: `Create a dashboard: ${prompt}` 
+      });
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "AI Dashboard Created",
+        description: data.message || "Dashboard created successfully with AI assistance",
+      });
+      
+      // Create the dashboard with AI-generated configuration
+      if (data.success) {
+        const dashboardData = {
+          name: data.data?.name || "AI Generated Dashboard",
+          description: data.data?.description || "Created with AI assistance",
+          configuration: {
+            standardWidgets: data.data?.widgets?.filter((w: any) => w.isStandard) || [],
+            customWidgets: data.data?.widgets?.filter((w: any) => !w.isStandard) || []
+          }
+        };
+        
+        createDashboardMutation.mutate(dashboardData);
+      }
+      
+      setAiDashboardPrompt("");
+    },
+    onError: (error) => {
+      toast({
+        title: "AI Error",
+        description: "Failed to create dashboard with AI. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // AI Widget Creation Mutation
+  const aiWidgetMutation = useMutation({
+    mutationFn: async (prompt: string) => {
+      const response = await apiRequest("POST", "/api/ai-agent/command", { 
+        command: `Create analytics widgets: ${prompt}` 
+      });
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "AI Widgets Created",
+        description: data.message || "Widgets created successfully with AI assistance",
+      });
+      
+      // Add AI-generated widgets to the working widgets
+      if (data.success && data.data?.widgets) {
+        const newWidgets = data.data.widgets.map((widget: any) => ({
+          id: Math.random().toString(36).substr(2, 9),
+          title: widget.title || "AI Widget",
+          type: widget.type || "metric",
+          data: widget.data || {},
+          visible: true,
+          position: { x: Math.random() * 200, y: Math.random() * 200 },
+          size: { width: widget.width || 300, height: widget.height || 200 },
+          config: widget.config || {},
+          isStandard: false
+        }));
+        
+        setWorkingWidgets(prev => [...prev, ...newWidgets]);
+      }
+      
+      setAiWidgetPrompt("");
+    },
+    onError: (error) => {
+      toast({
+        title: "AI Error",
+        description: "Failed to create widgets with AI. Please try again.",
         variant: "destructive",
       });
     },
@@ -612,6 +694,17 @@ export default function EnhancedDashboardManager({
     setActiveTab("browse");
   };
 
+  // AI Handler Functions
+  const handleCreateDashboardWithAI = () => {
+    if (!aiDashboardPrompt.trim()) return;
+    aiDashboardMutation.mutate(aiDashboardPrompt);
+  };
+
+  const handleCreateWidgetsWithAI = () => {
+    if (!aiWidgetPrompt.trim() || !editingDashboard) return;
+    aiWidgetMutation.mutate(aiWidgetPrompt);
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -626,11 +719,15 @@ export default function EnhancedDashboardManager({
         </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mx-6 mt-4">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 mx-6 mt-4">
               <TabsTrigger value="browse" className="text-xs sm:text-sm">Browse</TabsTrigger>
               <TabsTrigger value="create" className="text-xs sm:text-sm">Create New</TabsTrigger>
               <TabsTrigger value="editor" className="text-xs sm:text-sm">Visual Editor</TabsTrigger>
               <TabsTrigger value="templates" className="text-xs sm:text-sm">Widget Library</TabsTrigger>
+              <TabsTrigger value="ai" className="text-xs sm:text-sm">
+                <Sparkles className="w-3 h-3 mr-1" />
+                AI Assistant
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="browse" className="flex-1 overflow-y-auto">
               <div className="p-6 space-y-4">
@@ -887,6 +984,111 @@ export default function EnhancedDashboardManager({
                       </div>
                     </Card>
                   ))}
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="ai" className="flex-1 overflow-y-auto">
+              <div className="p-6 space-y-6">
+                <div className="text-center space-y-2">
+                  <div className="flex items-center justify-center mb-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                      <Sparkles className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-semibold">AI Dashboard Assistant</h3>
+                  <p className="text-gray-600">
+                    Create dashboards and widgets using natural language. Describe what you want and I'll build it for you.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-lg">Dashboard Creation</h4>
+                    <div className="space-y-3">
+                      <textarea
+                        placeholder="Describe the dashboard you want to create... (e.g., 'Create a production dashboard with job status, resource utilization, and completion rates')"
+                        className="w-full h-32 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        value={aiDashboardPrompt}
+                        onChange={(e) => setAiDashboardPrompt(e.target.value)}
+                      />
+                      <Button
+                        onClick={handleCreateDashboardWithAI}
+                        disabled={!aiDashboardPrompt.trim() || aiDashboardMutation.isPending}
+                        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                      >
+                        {aiDashboardMutation.isPending ? (
+                          <div className="flex items-center">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Creating Dashboard...
+                          </div>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Create Dashboard with AI
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-lg">Widget Creation</h4>
+                    <div className="space-y-3">
+                      <textarea
+                        placeholder="Describe the widgets you want to add... (e.g., 'Add a chart showing daily production trends and a metric for current efficiency')"
+                        className="w-full h-32 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        value={aiWidgetPrompt}
+                        onChange={(e) => setAiWidgetPrompt(e.target.value)}
+                      />
+                      <Button
+                        onClick={handleCreateWidgetsWithAI}
+                        disabled={!aiWidgetPrompt.trim() || !editingDashboard || aiWidgetMutation.isPending}
+                        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                      >
+                        {aiWidgetMutation.isPending ? (
+                          <div className="flex items-center">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Creating Widgets...
+                          </div>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Add Widgets with AI
+                          </>
+                        )}
+                      </Button>
+                      {!editingDashboard && (
+                        <p className="text-sm text-gray-500 text-center">
+                          Select a dashboard to edit first, or create a new one
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-6">
+                  <h4 className="font-medium text-lg mb-4">AI Examples</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <h5 className="font-medium mb-2">Dashboard Examples</h5>
+                      <ul className="text-sm space-y-1 text-gray-600">
+                        <li>• "Create a production overview dashboard"</li>
+                        <li>• "Make a resource utilization dashboard"</li>
+                        <li>• "Build a quality control dashboard"</li>
+                        <li>• "Create a maintenance planning dashboard"</li>
+                      </ul>
+                    </div>
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <h5 className="font-medium mb-2">Widget Examples</h5>
+                      <ul className="text-sm space-y-1 text-gray-600">
+                        <li>• "Add a chart showing production trends"</li>
+                        <li>• "Create metrics for efficiency and uptime"</li>
+                        <li>• "Add a table of upcoming deadlines"</li>
+                        <li>• "Show progress bars for job completion"</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               </div>
             </TabsContent>
