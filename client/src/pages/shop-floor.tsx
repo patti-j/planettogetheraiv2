@@ -339,11 +339,9 @@ const DraggableAreaBubble = ({
   resourcePhotos, 
   generateResourceStatus, 
   isNoArea = false,
-  onResourceMove,
-  initialPosition 
+  onResourceMove
 }: DraggableAreaBubbleProps & { 
   onResourceMove: (resourceId: number, newArea: string) => void;
-  initialPosition?: { x: number; y: number };
 }) => {
   const [areaLayout, setAreaLayout] = useState<AreaLayout>(() => {
     // Always prioritize saved layout from localStorage first
@@ -360,18 +358,7 @@ const DraggableAreaBubble = ({
       };
     }
     
-    // Check if we have an initial position from parent
-    if (initialPosition) {
-      const areaWidth = Math.max(300, resources.length * 80 + 100);
-      const areaHeight = Math.max(200, Math.ceil(resources.length / 4) * 80 + 100);
-      return {
-        areaKey,
-        x: initialPosition.x,
-        y: initialPosition.y,
-        width: areaWidth,
-        height: areaHeight
-      };
-    }
+    // No initial position from parent - use fallback positioning
     
     // Smart initial positioning to prevent overlaps
     const existingAreas = Object.keys(localStorage)
@@ -980,8 +967,6 @@ export default function ShopFloor() {
   });
   const [showAreaManager, setShowAreaManager] = useState(false);
   const [forceUpdate, setForceUpdate] = useState(0);
-  const [areaBubblePositions, setAreaBubblePositions] = useState<Record<string, { x: number; y: number }>>({});
-  const [resourcePositions, setResourcePositions] = useState<Record<number, { x: number; y: number }>>({});
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -1060,10 +1045,7 @@ export default function ShopFloor() {
 
   // Handle area movement
   const handleAreaMove = (areaKey: string, x: number, y: number) => {
-    setAreaBubblePositions(prev => ({
-      ...prev,
-      [areaKey]: { x, y }
-    }));
+    // Force re-render to show new position
     setForceUpdate(prev => prev + 1);
   };
 
@@ -1535,7 +1517,7 @@ export default function ShopFloor() {
                       resourcePhotos={resourcePhotos}
                       generateResourceStatus={generateResourceStatus}
                       onResourceMove={handleResourceMove}
-                      initialPosition={areaBubblePositions[areaKey]}
+
                     />
                   ))}
                   
@@ -1561,7 +1543,7 @@ export default function ShopFloor() {
                           generateResourceStatus={generateResourceStatus}
                           isNoArea={true}
                           onResourceMove={handleResourceMove}
-                          initialPosition={areaBubblePositions['no-area']}
+
                         />
                       );
                     }
