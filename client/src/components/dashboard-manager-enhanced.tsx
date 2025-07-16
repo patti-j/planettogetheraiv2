@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Settings, Star, Trash2, Edit3, Eye, Save, Move, Palette, BarChart3, TrendingUp, AlertTriangle, CheckCircle, Clock, Target, PieChart, Activity, Zap, Users, Package, Wrench, ArrowUp, ArrowDown, MoreHorizontal, Grid3x3, Maximize2, Minimize2, RotateCcw } from "lucide-react";
+import { Plus, Settings, Star, Trash2, Edit3, Eye, Save, Move, Palette, BarChart3, TrendingUp, AlertTriangle, CheckCircle, Clock, Target, PieChart, Activity, Zap, Users, Package, Wrench, ArrowUp, ArrowDown, MoreHorizontal, Grid3x3, Maximize2, Minimize2, RotateCcw, Sparkles, Bot } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useDrag, useDrop, useDragLayer } from "react-dnd";
 
@@ -425,6 +425,11 @@ export default function EnhancedDashboardManager({
   const [editingDashboard, setEditingDashboard] = useState<DashboardConfig | null>(null);
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
   const [workingWidgets, setWorkingWidgets] = useState<AnalyticsWidget[]>([]);
+  const [aiAnalyticsOpen, setAiAnalyticsOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [isAiProcessing, setIsAiProcessing] = useState(false);
+  const [aiWidgetOpen, setAiWidgetOpen] = useState(false);
+  const [aiWidgetPrompt, setAiWidgetPrompt] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 

@@ -166,10 +166,10 @@ export default function AnalyticsWidget({
       
       case "chart":
         return (
-          <div className={`bg-gray-50 rounded flex items-center justify-center ${isMobile ? 'h-20' : 'h-32'}`}>
-            <TrendingUp className={`text-gray-400 ${isMobile ? 'w-6 h-6' : 'w-8 h-8'}`} />
-            <span className={`ml-2 text-gray-500 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-              {isMobile ? 'Chart' : 'Chart visualization'}
+          <div className={`bg-gray-50 rounded flex items-center justify-center ${isMobile ? 'h-32' : 'h-32'}`}>
+            <TrendingUp className={`text-gray-400 ${isMobile ? 'w-8 h-8' : 'w-8 h-8'}`} />
+            <span className={`ml-2 text-gray-500 ${isMobile ? 'text-sm' : 'text-sm'}`}>
+              Chart visualization
             </span>
           </div>
         );
@@ -232,24 +232,27 @@ export default function AnalyticsWidget({
   const mobileOptimizedSize = useMemo(() => {
     if (!isMobile) return widget.size;
     
-    // For mobile, use responsive sizing based on widget type
+    // For mobile, use larger responsive sizing to maximize space utilization
+    const containerWidth = window.innerWidth - 48; // Account for padding and margins
+    const maxWidgetWidth = Math.min(containerWidth, 350); // Maximum widget width
+    
     const mobileWidths = {
-      metric: 160,
-      chart: 320,
-      table: 320,
-      progress: 280
+      metric: Math.min(maxWidgetWidth * 0.45, 200), // 45% of container or 200px max
+      chart: Math.min(maxWidgetWidth * 0.95, 350), // 95% of container for charts
+      table: Math.min(maxWidgetWidth * 0.95, 350), // 95% of container for tables
+      progress: Math.min(maxWidgetWidth * 0.7, 280) // 70% of container for progress
     };
     
     const mobileHeights = {
-      metric: 120,
-      chart: 180,
-      table: 200,
-      progress: 140
+      metric: 140,
+      chart: 220,
+      table: 240,
+      progress: 160
     };
     
     return {
-      width: mobileWidths[widget.type] || 160,
-      height: mobileHeights[widget.type] || 120
+      width: mobileWidths[widget.type] || 200,
+      height: mobileHeights[widget.type] || 140
     };
   }, [isMobile, widget.type, widget.size]);
 
@@ -259,7 +262,7 @@ export default function AnalyticsWidget({
     
     // For mobile, arrange widgets in a responsive grid
     const containerWidth = window.innerWidth - 32; // Account for padding
-    const spacing = 8;
+    const spacing = 12; // Increased spacing for better visual separation
     const widgetWidth = mobileOptimizedSize.width;
     
     // Calculate how many widgets can fit per row
@@ -270,13 +273,13 @@ export default function AnalyticsWidget({
     const row = Math.floor(widgetIndex / effectiveWidgetsPerRow);
     const col = widgetIndex % effectiveWidgetsPerRow;
     
-    // Center widgets if there's only one per row
+    // Center widgets in the available space
     const totalRowWidth = effectiveWidgetsPerRow * widgetWidth + (effectiveWidgetsPerRow - 1) * spacing;
-    const leftOffset = Math.max(0, (containerWidth - totalRowWidth) / 2);
+    const leftOffset = Math.max(4, (containerWidth - totalRowWidth) / 2); // Min 4px offset
     
     return {
       x: leftOffset + col * (widgetWidth + spacing),
-      y: row * (mobileOptimizedSize.height + spacing)
+      y: row * (mobileOptimizedSize.height + spacing + 8) // Extra spacing between rows
     };
   }, [isMobile, widget.position, widget.id, mobileOptimizedSize]);
 

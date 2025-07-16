@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -63,13 +63,9 @@ const DraggableOperationCard = ({
     },
   });
 
-  const ref = (node: HTMLDivElement) => {
-    drag(drop(node));
-  };
-
   if (isCompact) {
     return (
-      <div ref={ref} style={{ opacity: isDragging ? 0.5 : 1 }}>
+      <div ref={(node) => drag(drop(node))} style={{ opacity: isDragging ? 0.5 : 1 }}>
         <Card className="border-l-4 cursor-move hover:bg-gray-50 transition-colors" style={{ borderLeftColor: statusInfo.color.replace('bg-', '#') }}>
           <CardContent className="p-3">
             <div className="flex items-center justify-between min-w-0">
@@ -298,11 +294,11 @@ export default function MobileSchedule({
   }, [orderedOperations, operations, selectedResource, selectedStatus, selectedTab]);
 
   // Initialize ordered operations when operations change
-  useMemo(() => {
-    if (operations.length > 0 && orderedOperations.length === 0) {
+  useEffect(() => {
+    if (operations.length > 0) {
       setOrderedOperations(operations);
     }
-  }, [operations, orderedOperations.length]);
+  }, [operations]);
 
   // Handle drag and drop reordering
   const handleMoveOperation = useCallback((dragIndex: number, hoverIndex: number) => {
