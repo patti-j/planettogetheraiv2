@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, useEffect } from "react";
+import { useMobile } from "@/hooks/use-mobile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ export default function AnalyticsWidget({
   data,
   readOnly = false
 }: AnalyticsWidgetProps) {
+  const isMobile = useMobile();
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const widgetRef = useRef<HTMLDivElement>(null);
@@ -230,12 +232,12 @@ export default function AnalyticsWidget({
       className={`${isDragging ? 'shadow-lg' : 'shadow-sm'} ${readOnly ? 'cursor-default' : 'cursor-move'} overflow-hidden flex flex-col border border-gray-200`}
       style={{
         position: 'absolute',
-        left: `${Math.max(0, Math.min(widget.position.x, 480))}px`,
-        top: `${Math.max(0, Math.min(widget.position.y, 320))}px`,
-        width: `${Math.min(widget.size.width, 280)}px`,
-        height: `${Math.min(widget.size.height, 160)}px`,
-        maxHeight: `${Math.min(widget.size.height, 160)}px`,
-        maxWidth: `${Math.min(widget.size.width, 280)}px`,
+        left: `${Math.max(0, Math.min(widget.position.x, isMobile ? 200 : 480))}px`,
+        top: `${Math.max(0, Math.min(widget.position.y, isMobile ? 200 : 320))}px`,
+        width: `${Math.min(widget.size.width, isMobile ? 160 : 280)}px`,
+        height: `${Math.min(widget.size.height, isMobile ? 120 : 160)}px`,
+        maxHeight: `${Math.min(widget.size.height, isMobile ? 120 : 160)}px`,
+        maxWidth: `${Math.min(widget.size.width, isMobile ? 160 : 280)}px`,
         zIndex: isDragging ? 1000 : 1
       }}
     >
