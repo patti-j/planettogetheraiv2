@@ -47,6 +47,86 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useDrag, useDrop } from "react-dnd";
+
+// Custom hook for mobile-friendly drag and drop
+const useMobileDrag = (
+  item: any,
+  onMove: (x: number, y: number) => void,
+  disabled = false
+) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  
+  // Set up global event listeners for drag operations
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaX = e.clientX - startPos.x;
+      const deltaY = e.clientY - startPos.y;
+      setDragOffset({ x: deltaX, y: deltaY });
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - startPos.x;
+      const deltaY = touch.clientY - startPos.y;
+      setDragOffset({ x: deltaX, y: deltaY });
+    };
+
+    const handleEnd = () => {
+      if (!isDragging) return;
+      setIsDragging(false);
+      
+      const newX = Math.max(0, item.x + dragOffset.x);
+      const newY = Math.max(0, item.y + dragOffset.y);
+      
+      onMove(newX, newY);
+      setDragOffset({ x: 0, y: 0 });
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleEnd);
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleEnd);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleEnd);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleEnd);
+    };
+  }, [isDragging, startPos, dragOffset, item, onMove]);
+
+  const handleStart = (clientX: number, clientY: number) => {
+    if (disabled) return;
+    setIsDragging(true);
+    setStartPos({ x: clientX, y: clientY });
+    setDragOffset({ x: 0, y: 0 });
+  };
+
+  const listeners = {
+    onMouseDown: (e: React.MouseEvent) => {
+      e.preventDefault();
+      handleStart(e.clientX, e.clientY);
+    },
+    onTouchStart: (e: React.TouchEvent) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      handleStart(touch.clientX, touch.clientY);
+    }
+  };
+
+  // Calculate current position during drag
+  const currentPosition = {
+    x: item.x + dragOffset.x,
+    y: item.y + dragOffset.y
+  };
+
+  return { isDragging, position: currentPosition, listeners };
+};
 import type { Operation, Job, Resource } from "@shared/schema";
 
 interface ShopFloorLayout {
@@ -101,6 +181,15 @@ interface AreaLayout {
 }
 
 const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo }: DraggableResourceProps) => {
+  // Mobile-friendly drag implementation
+  const mobileDrag = useMobileDrag(
+    { x: layout.x, y: layout.y, id: layout.id },
+    (newX: number, newY: number) => {
+      onMove(layout.id, newX, newY);
+    }
+  );
+
+  // Fallback to react-dnd for desktop
   const [{ isDragging }, drag] = useDrag({
     type: "resource",
     item: { id: layout.id, x: layout.x, y: layout.y },
@@ -108,6 +197,10 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo 
       isDragging: monitor.isDragging(),
     }),
   });
+
+  // Use mobile drag position if dragging, otherwise use layout position
+  const currentPosition = mobileDrag.isDragging ? mobileDrag.position : { x: layout.x, y: layout.y };
+  const isCurrentlyDragging = isDragging || mobileDrag.isDragging;
 
   // Get resource icon based on type
   const getResourceIcon = (type: string) => {
@@ -159,19 +252,24 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo 
     }
   };
 
+  const combinedRef = (el: HTMLDivElement | null) => {
+    drag(el);
+  };
+
   return (
     <div
-      ref={drag}
+      ref={combinedRef}
       className={`absolute cursor-move select-none transition-all duration-200 ${
-        isDragging ? 'opacity-50 scale-105' : 'opacity-100 scale-100'
+        isCurrentlyDragging ? 'opacity-50 scale-105' : 'opacity-100 scale-100'
       }`}
       style={{
-        left: layout.x,
-        top: layout.y,
+        left: currentPosition.x,
+        top: currentPosition.y,
         width: layout.width,
         height: layout.height,
         transform: `rotate(${layout.rotation}deg)`,
       }}
+      {...mobileDrag.listeners}
     >
       <TooltipProvider>
         <Tooltip>
@@ -387,10 +485,25 @@ const DraggableAreaBubble = ({
     return { x, y };
   };
   
-  const position = getPosition();
+  const initialPosition = getPosition();
 
-  // Don't override position from localStorage - let saved positions persist
+  // Mobile-friendly drag implementation
+  const mobileDrag = useMobileDrag(
+    { x: initialPosition.x, y: initialPosition.y, areaKey },
+    (newX: number, newY: number) => {
+      // Save position to localStorage
+      const layout = { areaKey, x: newX, y: newY, width: areaWidth, height: areaHeight };
+      localStorage.setItem(`area-layout-${areaKey}`, JSON.stringify(layout));
+      
+      // Notify parent to trigger re-render
+      onMove(areaKey, newX, newY);
+    }
+  );
 
+  // Use mobile drag position if dragging, otherwise use stored position
+  const position = mobileDrag.isDragging ? mobileDrag.position : initialPosition;
+
+  // Fallback to react-dnd for desktop
   const [{ isDragging }, drag] = useDrag({
     type: "area",
     item: () => ({ areaKey, x: position.x, y: position.y }),
@@ -462,11 +575,14 @@ const DraggableAreaBubble = ({
     drop(el);
   };
 
+  // Combined drag state for visual feedback
+  const isCurrentlyDragging = isDragging || mobileDrag.isDragging;
+
   return (
     <div
       ref={combinedRef}
       className={`absolute cursor-move select-none transition-all duration-200 ${
-        isDragging ? 'opacity-50 scale-105' : 'opacity-100 scale-100'
+        isCurrentlyDragging ? 'opacity-50 scale-105' : 'opacity-100 scale-100'
       } ${isOver ? 'ring-2 ring-blue-500' : ''}`}
       style={{
         left: position.x,
@@ -474,6 +590,7 @@ const DraggableAreaBubble = ({
         width: areaWidth,
         minHeight: areaHeight,
       }}
+      {...mobileDrag.listeners}
     >
       <TooltipProvider>
         <Tooltip>
