@@ -615,8 +615,8 @@ export default function EnhancedDashboardManager({
   return (
     <DndProvider backend={HTML5Backend}>
       <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] md:max-w-7xl h-[95vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-[95vw] md:max-w-7xl h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle>
             {editingDashboard ? `Edit Dashboard: ${editingDashboard.name}` : "Manage Dashboards"}
           </DialogTitle>
@@ -625,16 +625,15 @@ export default function EnhancedDashboardManager({
           </DialogDescription>
         </DialogHeader>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mx-6 mt-4">
               <TabsTrigger value="browse" className="text-xs sm:text-sm">Browse</TabsTrigger>
               <TabsTrigger value="create" className="text-xs sm:text-sm">Create New</TabsTrigger>
               <TabsTrigger value="editor" className="text-xs sm:text-sm">Visual Editor</TabsTrigger>
               <TabsTrigger value="templates" className="text-xs sm:text-sm">Widget Library</TabsTrigger>
             </TabsList>
-
             <TabsContent value="browse" className="flex-1 overflow-y-auto">
-              <div className="p-1 space-y-4">
+              <div className="p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-base sm:text-lg font-semibold">Saved Dashboards</h3>
                   <Button
@@ -705,7 +704,7 @@ export default function EnhancedDashboardManager({
             </TabsContent>
 
             <TabsContent value="create" className="flex-1 overflow-y-auto">
-              <div className="p-1 space-y-4">
+              <div className="p-6 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Dashboard Details</h3>
@@ -760,7 +759,7 @@ export default function EnhancedDashboardManager({
             </TabsContent>
 
             <TabsContent value="editor" className="flex-1 overflow-y-auto">
-              <div className="p-1 space-y-4">
+              <div className="p-6 space-y-4">
                 {editingDashboard ? (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -842,7 +841,7 @@ export default function EnhancedDashboardManager({
             </TabsContent>
 
             <TabsContent value="templates" className="flex-1 overflow-y-auto">
-              <div className="p-1 space-y-4">
+              <div className="p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold">Widget Library</h3>
                   <p className="text-sm text-gray-600">
