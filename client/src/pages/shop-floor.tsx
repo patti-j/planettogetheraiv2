@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   AlertCircle, 
   CheckCircle, 
@@ -31,10 +33,12 @@ import {
   HelpCircle,
   X,
   Upload,
-  Camera
+  Camera,
+  Edit,
+  Save
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useDrag, useDrop } from "react-dnd";
 import type { Operation, Job, Resource } from "@shared/schema";
 
@@ -221,9 +225,55 @@ const ResourceDetailsDialog = ({
   onPhotoUpload: (resourceId: number, photoUrl: string) => void;
 }) => {
   const [uploading, setUploading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedResource, setEditedResource] = useState<Resource | null>(null);
   const { toast } = useToast();
   
   if (!resource || !status) return null;
+
+  // Initialize edit form when entering edit mode
+  const startEdit = () => {
+    setEditedResource({ ...resource });
+    setIsEditing(true);
+  };
+
+  // Cancel edit mode
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setEditedResource(null);
+  };
+
+  // Save changes
+  const saveChanges = async () => {
+    if (!editedResource) return;
+    
+    try {
+      // Update resource via API
+      const response = await apiRequest("PUT", `/api/resources/${resource.id}`, editedResource);
+      
+      toast({
+        title: "Resource Updated",
+        description: "Resource details have been updated successfully.",
+      });
+      
+      setIsEditing(false);
+      setEditedResource(null);
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/resources'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/operations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/jobs'] });
+      
+      // Close the dialog
+      onClose();
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: "Failed to update resource. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -258,16 +308,49 @@ const ResourceDetailsDialog = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {resource.type === "machine" && <Wrench className="w-5 h-5" />}
-              {resource.type === "operator" && <Users className="w-5 h-5" />}
-              {resource.type === "facility" && <Building2 className="w-5 h-5" />}
-              {resource.name}
+              <div className="flex items-center gap-2">
+                {resource.type === "machine" && <Wrench className="w-5 h-5" />}
+                {resource.type === "operator" && <Users className="w-5 h-5" />}
+                {resource.type === "facility" && <Building2 className="w-5 h-5" />}
+                {resource.name}
+              </div>
+              <Badge variant={status.status === "operational" ? "default" : "destructive"}>
+                {status.status}
+              </Badge>
             </div>
-            <Badge variant={status.status === "operational" ? "default" : "destructive"}>
-              {status.status}
-            </Badge>
+            <div className="flex items-center gap-2">
+              {isEditing ? (
+                <>
+                  <Button 
+                    onClick={saveChanges} 
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <Save className="w-4 h-4" />
+                    Save
+                  </Button>
+                  <Button 
+                    onClick={cancelEdit} 
+                    variant="outline" 
+                    size="sm"
+                  >
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <Button 
+                  onClick={startEdit} 
+                  variant="outline" 
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Edit className="w-4 h-4" />
+                  Edit
+                </Button>
+              )}
+            </div>
           </DialogTitle>
         </DialogHeader>
         
@@ -311,6 +394,88 @@ const ResourceDetailsDialog = ({
               </div>
             </CardContent>
           </Card>
+
+          {/* Edit Form Section */}
+          {isEditing && editedResource && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Edit className="w-5 h-5" />
+                  Edit Resource Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-name">Resource Name</Label>
+                    <Input
+                      id="edit-name"
+                      value={editedResource.name}
+                      onChange={(e) => setEditedResource({...editedResource, name: e.target.value})}
+                      placeholder="Enter resource name"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-type">Resource Type</Label>
+                    <Select 
+                      value={editedResource.type} 
+                      onValueChange={(value) => setEditedResource({...editedResource, type: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select resource type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Machine">Machine</SelectItem>
+                        <SelectItem value="Operator">Operator</SelectItem>
+                        <SelectItem value="Facility">Facility</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-status">Status</Label>
+                    <Select 
+                      value={editedResource.status} 
+                      onValueChange={(value) => setEditedResource({...editedResource, status: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="available">Available</SelectItem>
+                        <SelectItem value="busy">Busy</SelectItem>
+                        <SelectItem value="maintenance">Maintenance</SelectItem>
+                        <SelectItem value="offline">Offline</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-capacity">Capacity</Label>
+                    <Input
+                      id="edit-capacity"
+                      type="number"
+                      value={editedResource.capacity}
+                      onChange={(e) => setEditedResource({...editedResource, capacity: parseInt(e.target.value)})}
+                      placeholder="Enter capacity"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="edit-description">Description</Label>
+                    <Textarea
+                      id="edit-description"
+                      value={editedResource.description || ''}
+                      onChange={(e) => setEditedResource({...editedResource, description: e.target.value})}
+                      placeholder="Enter resource description"
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Status Overview */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
