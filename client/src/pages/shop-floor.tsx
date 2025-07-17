@@ -1456,7 +1456,7 @@ export default function ShopFloor() {
         const batch = resourcesWithoutPhotos.slice(i, i + batchSize);
         
         const batchPromises = batch.map(async (resource) => {
-          const prompt = `Professional industrial photograph of a ${resource.type.toLowerCase()} named ${resource.name} in a manufacturing facility. The ${resource.type.toLowerCase()} should be modern, well-maintained, and suitable for ${resource.capabilities} operations. Studio lighting, high resolution, industrial setting.`;
+          const prompt = `Cartoon illustration of a ${resource.type.toLowerCase()} named ${resource.name} in a manufacturing facility. The ${resource.type.toLowerCase()} should be colorful, friendly, and cartoon-style, suitable for ${resource.capabilities} operations. Bright colors, cartoon style, animated look, fun and approachable design.`;
           
           try {
             const response = await apiRequest('POST', '/api/ai/generate-image', {
@@ -1464,21 +1464,8 @@ export default function ShopFloor() {
               resourceId: resource.id
             });
             
-            // Convert the image URL to base64 for persistent storage
-            const imageUrl = response.imageUrl;
-            const imageResponse = await fetch(imageUrl);
-            
-            if (!imageResponse.ok) {
-              throw new Error(`Failed to fetch image: ${imageResponse.status}`);
-            }
-            
-            const imageBlob = await imageResponse.blob();
-            const base64Image = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result as string);
-              reader.onerror = reject;
-              reader.readAsDataURL(imageBlob);
-            });
+            // The image is already in base64 format from the server
+            const base64Image = response.imageUrl;
             
             // Immediately add the base64 image to the UI
             handlePhotoUpload(resource.id, base64Image);
@@ -1490,7 +1477,7 @@ export default function ShopFloor() {
             // Show progress toast
             toast({
               title: "Image Generated",
-              description: `Generated image for ${resource.name} (${successCount}/${resourcesWithoutPhotos.length})`,
+              description: `Generated cartoon image for ${resource.name} (${successCount}/${resourcesWithoutPhotos.length})`,
             });
             
             return { resourceId: resource.id, imageUrl: base64Image };

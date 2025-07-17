@@ -454,10 +454,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         n: 1,
         size: "1024x1024",
         quality: "standard",
+        style: "natural", // DALL-E 3 doesn't have a "cartoon" style, but we can use prompt engineering
       });
       
       const imageUrl = response.data[0].url;
-      res.json({ imageUrl, resourceId });
+      
+      // Fetch the image and convert to base64 to avoid CORS issues
+      const imageResponse = await fetch(imageUrl);
+      const imageBuffer = await imageResponse.arrayBuffer();
+      const base64Image = `data:image/png;base64,${Buffer.from(imageBuffer).toString('base64')}`;
+      
+      res.json({ imageUrl: base64Image, resourceId });
     } catch (error) {
       console.error("AI Image generation error:", error);
       res.status(500).json({ 
