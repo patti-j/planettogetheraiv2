@@ -114,6 +114,13 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 17, 2025)
 
+✓ **Dashboard Manager Window Controls Reorganization (July 17, 2025)**:
+- Removed window maximization functionality from main dashboard manager interface
+- Added maximize/minimize buttons to dashboard edit dialog for better user workflow
+- Dashboard edit dialog now supports maximized view (95vw x 95vh) for enhanced editing experience
+- Maintained consistent arrow icon styling (↗️↗️ for maximize, ↙️↙️ for minimize) across all maximize buttons
+- Edit dialog maximization provides more space for dashboard configuration and widget management
+
 ✓ **Single Area Auto-Zoom Enhancement (July 17, 2025)**:
 - Implemented automatic screen-filling for individual area views to improve resource image visibility
 - Container size now dynamically adjusts to available screen space (up to 1200x800px) when viewing single areas

@@ -73,10 +73,11 @@ export function EnhancedDashboardManager({
   const [editMode, setEditMode] = useState<"manual" | "ai">("manual");
   const [newDashboardName, setNewDashboardName] = useState("");
   const [newDashboardDescription, setNewDashboardDescription] = useState("");
-  const [isMaximized, setIsMaximized] = useState(false);
+
   const [aiDashboardPrompt, setAiDashboardPrompt] = useState("");
   const [aiWidgetPrompt, setAiWidgetPrompt] = useState("");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isEditDialogMaximized, setIsEditDialogMaximized] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [dashboardToDelete, setDashboardToDelete] = useState<DashboardConfig | null>(null);
   const [widgetToDelete, setWidgetToDelete] = useState<AnalyticsWidget | null>(null);
@@ -333,33 +334,13 @@ export function EnhancedDashboardManager({
   return (
     <DndProvider backend={HTML5Backend}>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className={`${isMaximized ? 'max-w-[95vw] w-[95vw] h-[95vh]' : 'max-w-4xl h-[90vh] max-h-[90vh]'} flex flex-col`}>
+        <DialogContent className="max-w-4xl h-[90vh] max-h-[90vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
-            <div className="flex items-center justify-between">
-              <div>
-                <DialogTitle>Dashboard Manager</DialogTitle>
-                <DialogDescription>
-                  Manage your dashboards and widgets
-                </DialogDescription>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsMaximized(!isMaximized)}
-                className="h-8 w-8 p-0"
-              >
-                {isMaximized ? (
-                  <>
-                    <ArrowDownLeft className="w-3 h-3" />
-                    <ArrowDownLeft className="w-3 h-3 -ml-1" />
-                  </>
-                ) : (
-                  <>
-                    <ArrowUpRight className="w-3 h-3" />
-                    <ArrowUpRight className="w-3 h-3 -ml-1" />
-                  </>
-                )}
-              </Button>
+            <div>
+              <DialogTitle>Dashboard Manager</DialogTitle>
+              <DialogDescription>
+                Manage your dashboards and widgets
+              </DialogDescription>
             </div>
           </DialogHeader>
 
@@ -562,14 +543,36 @@ export function EnhancedDashboardManager({
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogContent className={`${isEditDialogMaximized ? 'max-w-[95vw] w-[95vw] h-[95vh]' : 'max-w-2xl max-h-[90vh]'} flex flex-col`}>
           <DialogHeader className="flex-shrink-0">
-            <DialogTitle>
-              {editingDashboard ? "Edit Dashboard" : editingWidget ? "Edit Widget" : viewMode === "dashboards" ? "New Dashboard" : "New Widget"}
-            </DialogTitle>
-            <DialogDescription>
-              {editingDashboard ? "Edit your dashboard settings" : editingWidget ? "Edit your widget settings" : viewMode === "dashboards" ? "Create a new dashboard" : "Create a new widget"}
-            </DialogDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle>
+                  {editingDashboard ? "Edit Dashboard" : editingWidget ? "Edit Widget" : viewMode === "dashboards" ? "New Dashboard" : "New Widget"}
+                </DialogTitle>
+                <DialogDescription>
+                  {editingDashboard ? "Edit your dashboard settings" : editingWidget ? "Edit your widget settings" : viewMode === "dashboards" ? "Create a new dashboard" : "Create a new widget"}
+                </DialogDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEditDialogMaximized(!isEditDialogMaximized)}
+                className="h-8 w-8 p-0"
+              >
+                {isEditDialogMaximized ? (
+                  <>
+                    <ArrowDownLeft className="w-3 h-3" />
+                    <ArrowDownLeft className="w-3 h-3 -ml-1" />
+                  </>
+                ) : (
+                  <>
+                    <ArrowUpRight className="w-3 h-3" />
+                    <ArrowUpRight className="w-3 h-3 -ml-1" />
+                  </>
+                )}
+              </Button>
+            </div>
           </DialogHeader>
 
           <div className="flex-1 flex flex-col min-h-0">
