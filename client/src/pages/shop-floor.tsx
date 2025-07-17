@@ -319,6 +319,9 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo 
                     src={photo} 
                     alt={resource.name}
                     className="w-full h-full object-cover rounded-lg"
+                    key={`${resource.id}-${Date.now()}`}
+                    onLoad={() => console.log(`Image loaded for ${resource.name}`)}
+                    onError={() => console.log(`Image failed to load for ${resource.name}`)}
                   />
                 ) : (
                   getResourceIcon(resource.type)
@@ -1463,8 +1466,12 @@ export default function ShopFloor() {
             });
             
             // Immediately add the image to the UI
+            console.log(`Generated image for ${resource.name}:`, response.imageUrl);
             handlePhotoUpload(resource.id, response.imageUrl);
             successCount++;
+            
+            // Force immediate UI update
+            setForceUpdate(prev => prev + 1);
             
             // Show progress toast
             toast({
@@ -1547,15 +1554,21 @@ export default function ShopFloor() {
 
   // Handle photo upload
   const handlePhotoUpload = (resourceId: number, photoUrl: string) => {
-    setResourcePhotos(prev => ({
-      ...prev,
-      [resourceId]: photoUrl
-    }));
+    console.log(`handlePhotoUpload called for resource ${resourceId} with URL:`, photoUrl);
+    setResourcePhotos(prev => {
+      const newPhotos = {
+        ...prev,
+        [resourceId]: photoUrl
+      };
+      console.log('Updated resourcePhotos:', newPhotos);
+      return newPhotos;
+    });
     
     // Save to localStorage for persistence
     const savedPhotos = JSON.parse(localStorage.getItem('resourcePhotos') || '{}');
     savedPhotos[resourceId] = photoUrl;
     localStorage.setItem('resourcePhotos', JSON.stringify(savedPhotos));
+    console.log('Saved to localStorage:', savedPhotos);
   };
 
   // Save layout mutation (silent save without toast)
