@@ -114,6 +114,12 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 17, 2025)
 
+✓ **Single Area Auto-Zoom Enhancement (July 17, 2025)**:
+- Implemented automatic screen-filling for individual area views to improve resource image visibility
+- Container size now dynamically adjusts to available screen space (up to 1200x800px) when viewing single areas
+- Enhanced user experience by maximizing area display space while maintaining existing zoom controls
+- Resources appear larger and more clearly visible in individual area views
+
 ✓ **Area Rectangle Sizing Consistency Fix (July 17, 2025)**:
 - Fixed area rectangle sizing mismatch between "all resources" view and individual area views
 - Updated DraggableAreaBubble to use same full-size layout calculations as individual area views instead of scaled-down versions
