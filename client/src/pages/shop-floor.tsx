@@ -166,6 +166,9 @@ interface DraggableResourceProps {
   onMove: (id: string, x: number, y: number) => void;
   onDetails: (resource: Resource, status: ResourceStatus) => void;
   photo?: string;
+  globalImageSize: number;
+  individualImageSizes: { [key: number]: number };
+  onImageSizeChange: (resourceId: number, size: number) => void;
 }
 
 interface DraggableAreaBubbleProps {
@@ -177,6 +180,9 @@ interface DraggableAreaBubbleProps {
   resourcePhotos: { [key: number]: string };
   generateResourceStatus: (resource: Resource) => ResourceStatus;
   isNoArea?: boolean;
+  globalImageSize: number;
+  individualImageSizes: { [key: number]: number };
+  onImageSizeChange: (resourceId: number, size: number) => void;
 }
 
 interface AreaLayout {
@@ -187,9 +193,13 @@ interface AreaLayout {
   height: number;
 }
 
-const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo }: DraggableResourceProps) => {
+const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo, globalImageSize, individualImageSizes, onImageSizeChange }: DraggableResourceProps) => {
   const [hasDragged, setHasDragged] = useState(false);
   const [clickBlocked, setClickBlocked] = useState(false);
+  const [showImageControls, setShowImageControls] = useState(false);
+  
+  // Calculate effective image size (individual override or global)
+  const effectiveImageSize = individualImageSizes[resource.id] || globalImageSize;
   
   // Mobile-friendly drag implementation with immediate position updates
   const mobileDrag = useMobileDrag(
@@ -316,12 +326,55 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo 
               {/* Resource Icon/Photo */}
               <div className="absolute inset-0 flex items-center justify-center text-white">
                 {photo ? (
-                  <img 
-                    src={photo} 
-                    alt={resource.name}
-                    className="w-full h-full object-cover rounded-lg"
-                    key={`${resource.id}-${Date.now()}`}
-                  />
+                  <div 
+                    className="relative w-full h-full group"
+                    onMouseEnter={() => setShowImageControls(true)}
+                    onMouseLeave={() => setShowImageControls(false)}
+                  >
+                    <img 
+                      src={photo} 
+                      alt={resource.name}
+                      className="w-full h-full object-cover rounded-lg"
+                      style={{
+                        transform: `scale(${effectiveImageSize / 100})`,
+                        transformOrigin: 'center'
+                      }}
+                      key={`${resource.id}-${Date.now()}`}
+                    />
+                    {/* Individual image size controls */}
+                    <div 
+                      className="absolute -top-8 -right-8 bg-white rounded-lg shadow-lg p-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onImageSizeChange(resource.id, Math.max(50, effectiveImageSize - 10))}
+                        className="h-5 w-5 p-0"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </Button>
+                      <span className="text-xs font-mono min-w-[2.5rem] text-center text-gray-700">
+                        {effectiveImageSize}%
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onImageSizeChange(resource.id, Math.min(200, effectiveImageSize + 10))}
+                        className="h-5 w-5 p-0"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onImageSizeChange(resource.id, 0)} // Reset to global
+                        className="h-5 w-5 p-0"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
                 ) : (
                   getResourceIcon(resource.type)
                 )}
@@ -492,6 +545,9 @@ const DraggableAreaBubble = ({
   resourcePhotos, 
   generateResourceStatus, 
   isNoArea = false,
+  globalImageSize,
+  individualImageSizes,
+  onImageSizeChange,
   onResourceMove,
   shopFloorLayout
 }: DraggableAreaBubbleProps & { 
@@ -822,13 +878,49 @@ const DraggableAreaBubble = ({
                                 <TooltipTrigger asChild>
                                   <div className={`relative w-full h-full ${getStatusColor(status.status)} rounded-lg border-2 shadow-lg hover:shadow-xl transition-shadow`}>
                                     {/* Resource Icon/Photo */}
-                                    <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="absolute inset-0 flex items-center justify-center group">
                                       {photo ? (
-                                        <img 
-                                          src={photo} 
-                                          alt={resource.name}
-                                          className="w-full h-full object-cover rounded-lg"
-                                        />
+                                        <div className="relative">
+                                          <img 
+                                            src={photo} 
+                                            alt={resource.name}
+                                            className="object-cover rounded-lg"
+                                            style={{
+                                              width: `${individualImageSizes[resource.id] || globalImageSize}px`,
+                                              height: `${individualImageSizes[resource.id] || globalImageSize}px`
+                                            }}
+                                          />
+                                          {/* Individual resize controls */}
+                                          <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-75 rounded px-2 py-1 flex items-center space-x-2">
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const currentSize = individualImageSizes[resource.id] || globalImageSize;
+                                                if (currentSize > 20) {
+                                                  onImageSizeChange(resource.id, currentSize - 10);
+                                                }
+                                              }}
+                                              className="text-white hover:text-gray-300 text-xs"
+                                            >
+                                              -
+                                            </button>
+                                            <span className="text-white text-xs">
+                                              {individualImageSizes[resource.id] || globalImageSize}px
+                                            </span>
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const currentSize = individualImageSizes[resource.id] || globalImageSize;
+                                                if (currentSize < 200) {
+                                                  onImageSizeChange(resource.id, currentSize + 10);
+                                                }
+                                              }}
+                                              className="text-white hover:text-gray-300 text-xs"
+                                            >
+                                              +
+                                            </button>
+                                          </div>
+                                        </div>
                                       ) : (
                                         getResourceIcon(resource.type)
                                       )}
@@ -1316,6 +1408,8 @@ export default function ShopFloor() {
   });
   const [showAreaManager, setShowAreaManager] = useState(false);
   const [forceUpdate, setForceUpdate] = useState(0);
+  const [globalImageSize, setGlobalImageSize] = useState(100); // Global image size percentage
+  const [individualImageSizes, setIndividualImageSizes] = useState<{ [key: number]: number }>({}); // Individual resource image sizes
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -1579,6 +1673,24 @@ export default function ShopFloor() {
     savedPhotos[resourceId] = photoUrl;
     localStorage.setItem('resourcePhotos', JSON.stringify(savedPhotos));
     console.log('Saved to localStorage:', savedPhotos);
+  };
+
+  // Handle individual image size changes
+  const handleImageSizeChange = (resourceId: number, size: number) => {
+    if (size === 0) {
+      // Remove individual override to use global size
+      setIndividualImageSizes(prev => {
+        const newSizes = { ...prev };
+        delete newSizes[resourceId];
+        return newSizes;
+      });
+    } else {
+      // Set individual size
+      setIndividualImageSizes(prev => ({
+        ...prev,
+        [resourceId]: size
+      }));
+    }
   };
 
   // Save layout mutation (silent save without toast)
@@ -1891,6 +2003,60 @@ export default function ShopFloor() {
                     <p>Clear all cached resource images</p>
                   </TooltipContent>
                 </Tooltip>
+
+                {/* Image Size Controls */}
+                <div className="flex items-center gap-1 ml-2 px-2 py-1 bg-gray-50 rounded-lg">
+                  <span className="text-xs font-medium text-gray-600">Image Size:</span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setGlobalImageSize(prev => Math.max(50, prev - 10))}
+                        className="h-6 w-6 p-0 hover:bg-gray-200"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Decrease all image sizes</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <span className="text-xs font-mono min-w-[3rem] text-center">{globalImageSize}%</span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setGlobalImageSize(prev => Math.min(200, prev + 10))}
+                        className="h-6 w-6 p-0 hover:bg-gray-200"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Increase all image sizes</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setGlobalImageSize(100);
+                          setIndividualImageSizes({});
+                        }}
+                        className="h-6 w-6 p-0 hover:bg-gray-200 ml-1"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Reset all image sizes to default</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
               </div>
             </div>
             
@@ -2025,6 +2191,9 @@ export default function ShopFloor() {
                       onResourceDetails={handleResourceDetails}
                       resourcePhotos={resourcePhotos}
                       generateResourceStatus={generateResourceStatus}
+                      globalImageSize={globalImageSize}
+                      individualImageSizes={individualImageSizes}
+                      onImageSizeChange={handleImageSizeChange}
                       onResourceMove={handleResourceMove}
                       shopFloorLayout={shopFloorLayout}
                     />
@@ -2050,6 +2219,9 @@ export default function ShopFloor() {
                           onResourceDetails={handleResourceDetails}
                           resourcePhotos={resourcePhotos}
                           generateResourceStatus={generateResourceStatus}
+                          globalImageSize={globalImageSize}
+                          individualImageSizes={individualImageSizes}
+                          onImageSizeChange={handleImageSizeChange}
                           isNoArea={true}
                           onResourceMove={handleResourceMove}
                           shopFloorLayout={shopFloorLayout}
@@ -2076,6 +2248,9 @@ export default function ShopFloor() {
                       onMove={handleResourcePositionMove}
                       onDetails={handleResourceDetails}
                       photo={resourcePhotos[resource.id]}
+                      globalImageSize={globalImageSize}
+                      individualImageSizes={individualImageSizes}
+                      onImageSizeChange={handleImageSizeChange}
                     />
                   );
                 })
