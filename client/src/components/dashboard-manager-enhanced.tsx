@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Settings, Star, Trash2, Edit3, Eye, Save, Move, Palette, BarChart3, TrendingUp, AlertTriangle, CheckCircle, Clock, Target, PieChart, Activity, Zap, Users, Package, Wrench, ArrowUp, ArrowDown, MoreHorizontal, Grid3x3, Maximize2, Minimize2, RotateCcw, Sparkles, Bot } from "lucide-react";
+import { Plus, Settings, Star, Trash2, Edit3, Eye, Save, Move, Palette, BarChart3, TrendingUp, AlertTriangle, CheckCircle, Clock, Target, PieChart, Activity, Zap, Users, Package, Wrench, ArrowUp, ArrowDown, MoreHorizontal, Grid3x3, Maximize2, Minimize2, RotateCcw, Sparkles, Bot, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useDrag, useDrop, useDragLayer, DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -73,6 +73,7 @@ export function EnhancedDashboardManager({
   const [editMode, setEditMode] = useState<"manual" | "ai">("manual");
   const [newDashboardName, setNewDashboardName] = useState("");
   const [newDashboardDescription, setNewDashboardDescription] = useState("");
+  const [isMaximized, setIsMaximized] = useState(false);
   const [aiDashboardPrompt, setAiDashboardPrompt] = useState("");
   const [aiWidgetPrompt, setAiWidgetPrompt] = useState("");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -332,12 +333,28 @@ export function EnhancedDashboardManager({
   return (
     <DndProvider backend={HTML5Backend}>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl h-[90vh] max-h-[90vh] flex flex-col">
+        <DialogContent className={`${isMaximized ? 'max-w-[95vw] w-[95vw] h-[95vh]' : 'max-w-4xl h-[90vh] max-h-[90vh]'} flex flex-col`}>
           <DialogHeader className="flex-shrink-0">
-            <DialogTitle>Dashboard Manager</DialogTitle>
-            <DialogDescription>
-              Manage your dashboards and widgets
-            </DialogDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle>Dashboard Manager</DialogTitle>
+                <DialogDescription>
+                  Manage your dashboards and widgets
+                </DialogDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsMaximized(!isMaximized)}
+                className="h-8 w-8 p-0"
+              >
+                {isMaximized ? (
+                  <ArrowDownLeft className="w-4 h-4" />
+                ) : (
+                  <ArrowUpRight className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
           </DialogHeader>
 
           <div className="flex-1 flex flex-col min-h-0">

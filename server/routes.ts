@@ -436,6 +436,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Image Generation
+  app.post("/api/ai/generate-image", async (req, res) => {
+    try {
+      const { prompt, resourceId } = req.body;
+      if (!prompt || typeof prompt !== "string") {
+        return res.status(400).json({ message: "Prompt is required" });
+      }
+      
+      // Import OpenAI dynamically
+      const OpenAI = (await import("openai")).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      
+      const response = await openai.images.generate({
+        model: "dall-e-3",
+        prompt: prompt,
+        n: 1,
+        size: "1024x1024",
+        quality: "standard",
+      });
+      
+      const imageUrl = response.data[0].url;
+      res.json({ imageUrl, resourceId });
+    } catch (error) {
+      console.error("AI Image generation error:", error);
+      res.status(500).json({ 
+        message: "Failed to generate image" 
+      });
+    }
+  });
+
   // Custom Text Labels
   app.get("/api/custom-text-labels", async (req, res) => {
     try {

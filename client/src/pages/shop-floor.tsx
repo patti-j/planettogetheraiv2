@@ -42,7 +42,9 @@ import {
   Grid,
   Layers,
   Plus,
-  Minus
+  Minus,
+  ImageIcon,
+  Sparkles
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -1399,6 +1401,48 @@ export default function ShopFloor() {
     updateResourceMutation.mutate({ resourceId, area: newAreaName });
   };
 
+  // AI Image Generation Mutation
+  const aiImageGenerationMutation = useMutation({
+    mutationFn: async () => {
+      const resourcesWithoutPhotos = resources.filter(resource => !resourcePhotos[resource.id]);
+      
+      if (resourcesWithoutPhotos.length === 0) {
+        throw new Error("All resources already have photos");
+      }
+
+      const results = [];
+      for (const resource of resourcesWithoutPhotos) {
+        const prompt = `Professional industrial photograph of a ${resource.type.toLowerCase()} named ${resource.name} in a manufacturing facility. The ${resource.type.toLowerCase()} should be modern, well-maintained, and suitable for ${resource.capabilities} operations. Studio lighting, high resolution, industrial setting.`;
+        
+        const response = await apiRequest('POST', '/api/ai/generate-image', {
+          prompt,
+          resourceId: resource.id
+        });
+        
+        results.push({ resourceId: resource.id, imageUrl: response.imageUrl });
+      }
+      
+      return results;
+    },
+    onSuccess: (results) => {
+      results.forEach(({ resourceId, imageUrl }) => {
+        handlePhotoUpload(resourceId, imageUrl);
+      });
+      
+      toast({
+        title: "AI Images Generated",
+        description: `Successfully generated ${results.length} resource images`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate AI images",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Handle resource position movement within the shop floor layout
   const handleResourcePositionMove = (layoutId: string, x: number, y: number) => {
     setShopFloorLayout(prev => 
@@ -1702,6 +1746,29 @@ export default function ShopFloor() {
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Toggle status legend</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* AI Image Generation button */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => aiImageGenerationMutation.mutate()}
+                      disabled={aiImageGenerationMutation.isPending || resources.filter(r => !resourcePhotos[r.id]).length === 0}
+                      className="h-8 px-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-purple-500 hover:border-purple-600"
+                    >
+                      {aiImageGenerationMutation.isPending ? (
+                        <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
+                      )}
+                      <span className="text-xs hidden sm:inline ml-1">AI Images</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Generate AI images for resources missing photos</p>
                   </TooltipContent>
                 </Tooltip>
               </div>
