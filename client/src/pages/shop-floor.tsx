@@ -1430,7 +1430,7 @@ export default function ShopFloor() {
     updateResourceMutation.mutate({ resourceId, area: newAreaName });
   };
 
-  // AI Image Generation Mutation
+  // AI Image Generation Mutation with progressive updates
   const aiImageGenerationMutation = useMutation({
     mutationFn: async () => {
       const resourcesWithoutPhotos = resources.filter(resource => !resourcePhotos[resource.id]);
@@ -1440,36 +1440,59 @@ export default function ShopFloor() {
       }
 
       const results = [];
-      for (const resource of resourcesWithoutPhotos) {
-        const prompt = `Professional industrial photograph of a ${resource.type.toLowerCase()} named ${resource.name} in a manufacturing facility. The ${resource.type.toLowerCase()} should be modern, well-maintained, and suitable for ${resource.capabilities} operations. Studio lighting, high resolution, industrial setting.`;
+      let successCount = 0;
+      
+      // Show initial progress toast
+      toast({
+        title: "AI Image Generation Started",
+        description: `Generating ${resourcesWithoutPhotos.length} resource images...`,
+      });
+      
+      // Process images in parallel batches of 2 for better speed
+      const batchSize = 2;
+      for (let i = 0; i < resourcesWithoutPhotos.length; i += batchSize) {
+        const batch = resourcesWithoutPhotos.slice(i, i + batchSize);
         
-        try {
-          const response = await apiRequest('POST', '/api/ai/generate-image', {
-            prompt,
-            resourceId: resource.id
-          });
+        const batchPromises = batch.map(async (resource) => {
+          const prompt = `Professional industrial photograph of a ${resource.type.toLowerCase()} named ${resource.name} in a manufacturing facility. The ${resource.type.toLowerCase()} should be modern, well-maintained, and suitable for ${resource.capabilities} operations. Studio lighting, high resolution, industrial setting.`;
           
-          results.push({ resourceId: resource.id, imageUrl: response.imageUrl });
-        } catch (error) {
-          console.error(`Failed to generate image for ${resource.name}:`, error);
-          // Continue with other resources even if one fails
-        }
+          try {
+            const response = await apiRequest('POST', '/api/ai/generate-image', {
+              prompt,
+              resourceId: resource.id
+            });
+            
+            // Immediately add the image to the UI
+            handlePhotoUpload(resource.id, response.imageUrl);
+            successCount++;
+            
+            // Show progress toast
+            toast({
+              title: "Image Generated",
+              description: `Generated image for ${resource.name} (${successCount}/${resourcesWithoutPhotos.length})`,
+            });
+            
+            return { resourceId: resource.id, imageUrl: response.imageUrl };
+          } catch (error) {
+            console.error(`Failed to generate image for ${resource.name}:`, error);
+            return null;
+          }
+        });
+        
+        const batchResults = await Promise.all(batchPromises);
+        results.push(...batchResults.filter(result => result !== null));
       }
       
       return results;
     },
     onSuccess: (results) => {
       if (results.length > 0) {
-        results.forEach(({ resourceId, imageUrl }) => {
-          handlePhotoUpload(resourceId, imageUrl);
-        });
-        
         toast({
-          title: "AI Images Generated",
+          title: "AI Image Generation Complete",
           description: `Successfully generated ${results.length} resource images`,
         });
         
-        // Force a re-render to show the new images
+        // Force a final re-render to ensure all images are visible
         queryClient.invalidateQueries({ queryKey: ['/api/resources'] });
       } else {
         toast({
