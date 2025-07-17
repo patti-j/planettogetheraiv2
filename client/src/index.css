@@ -69,12 +69,29 @@
   scroll-behavior: smooth;
 }
 
-/* ULTIMATE TOOLTIP Z-INDEX FIX - Force tooltip to be above everything */
-[data-radix-tooltip-content] {
-  z-index: 2147483647 !important;
+/* NUCLEAR TOOLTIP Z-INDEX FIX - Override everything */
+* {
+  --tooltip-z-index: 2147483647;
+}
+
+/* Force ONLY tooltip elements to maximum z-index */
+[data-radix-tooltip-content],
+[role="tooltip"]:not([data-radix-select-content]),
+.tooltip-content {
+  z-index: var(--tooltip-z-index) !important;
   position: fixed !important;
   isolation: isolate !important;
   transform: translateZ(0) !important;
+}
+
+/* Target tooltip portals but not dropdown portals */
+div[data-radix-portal][data-radix-tooltip-portal] {
+  z-index: var(--tooltip-z-index) !important;
+}
+
+/* Force portal containers to highest z-index */
+body > div[data-radix-portal] {
+  z-index: var(--tooltip-z-index) !important;
 }
 
 /* Ensure tooltip portal appears above everything */

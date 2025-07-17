@@ -429,9 +429,17 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo,
               </div>
             </div>
           </TooltipTrigger>
-          <TooltipContent>
-            <div className="space-y-1">
-              <p className="font-medium">{resource.name}</p>
+          <TooltipContent 
+            className="z-[2147483647] bg-black text-white border-none shadow-xl tooltip-content"
+            style={{ 
+              zIndex: 2147483647, 
+              position: 'fixed',
+              isolation: 'isolate',
+              transform: 'translateZ(0)'
+            }}
+            sideOffset={5}
+          >
+            <div className="space-y-1" style={{ zIndex: 2147483647 }}>
               <p className="text-sm">Status: {status.status}</p>
               <p className="text-sm">Utilization: {status.utilization}%</p>
               {status.issues.length > 0 && (
