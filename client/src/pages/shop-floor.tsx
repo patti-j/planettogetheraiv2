@@ -1137,14 +1137,7 @@ export default function ShopFloor() {
     }
   }, [resources, shopFloorLayout.length]);
 
-  // Handle resource movement
-  const handleResourcePositionMove = (id: string, x: number, y: number) => {
-    setShopFloorLayout(prev => 
-      prev.map(layout => 
-        layout.id === id ? { ...layout, x, y } : layout
-      )
-    );
-  };
+  // Remove duplicate function - this is handled below
 
   // Handle area movement
   const handleAreaMove = (areaKey: string, x: number, y: number) => {
@@ -1185,8 +1178,18 @@ export default function ShopFloor() {
     },
   });
 
+  // Handle resource movement between areas
   const handleResourceMove = (resourceId: number, newAreaName: string) => {
     updateResourceMutation.mutate({ resourceId, area: newAreaName });
+  };
+
+  // Handle resource position movement within the shop floor layout
+  const handleResourcePositionMove = (layoutId: string, x: number, y: number) => {
+    setShopFloorLayout(prev => 
+      prev.map(layout => 
+        layout.id === layoutId ? { ...layout, x, y } : layout
+      )
+    );
   };
 
   // Drop zone for the shop floor container
@@ -1667,7 +1670,7 @@ export default function ShopFloor() {
                       resource={resource}
                       layout={layout}
                       status={status}
-                      onMove={handleResourceMove}
+                      onMove={handleResourcePositionMove}
                       onDetails={handleResourceDetails}
                       photo={resourcePhotos[resource.id]}
                     />
