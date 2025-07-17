@@ -582,10 +582,12 @@ const DraggableAreaBubble = ({
   onImageSizeChange,
   onResourceMove,
   shopFloorLayout,
-  setCurrentArea
+  setCurrentArea,
+  handleResourcePositionMove
 }: DraggableAreaBubbleProps & { 
   onResourceMove: (resourceId: number, newArea: string) => void;
   shopFloorLayout: ShopFloorLayout[];
+  handleResourcePositionMove: (layoutId: string, x: number, y: number) => void;
 }) => {
   // Calculate dimensions based on actual resource sizes
   const avgResourceSize = resources.reduce((sum, r) => sum + (individualImageSizes[r.id] || globalImageSize), 0) / Math.max(1, resources.length);
@@ -917,7 +919,7 @@ const DraggableAreaBubble = ({
                             layout={adjustedLayout}
                             status={status}
                             onMove={handleResourcePositionMove}
-                            onDetails={handleResourceDetails}
+                            onDetails={onResourceDetails}
                             photo={photo}
                             globalImageSize={globalImageSize}
                             individualImageSizes={individualImageSizes}
@@ -2112,6 +2114,7 @@ export default function ShopFloor() {
                       onResourceMove={handleResourceMove}
                       shopFloorLayout={shopFloorLayout}
                       setCurrentArea={setCurrentArea}
+                      handleResourcePositionMove={handleResourcePositionMove}
                     />
                   ))}
                   
