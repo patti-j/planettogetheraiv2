@@ -69,6 +69,27 @@
   scroll-behavior: smooth;
 }
 
+/* Fix tooltip z-index issues */
+[data-radix-tooltip-content] {
+  z-index: 99999 !important;
+}
+
+/* Ensure tooltip portal appears above everything */
+[data-radix-popper-content-wrapper] {
+  z-index: 99999 !important;
+}
+
+/* Additional tooltip positioning fixes */
+div[data-radix-portal] {
+  z-index: 99999 !important;
+}
+
+/* Ensure tooltip trigger containers don't interfere */
+[data-radix-tooltip-trigger] {
+  position: relative;
+  z-index: 1;
+}
+
 /* Force visible scrollbars on mobile */
 .mobile-scroll::-webkit-scrollbar {
   height: 12px;
