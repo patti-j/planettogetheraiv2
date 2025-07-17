@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, Book, Truck } from "lucide-react";
+import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, Book, Truck, ChevronDown } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -21,11 +21,38 @@ export default function Sidebar() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiActionsPrompt, setAiActionsPrompt] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+  const navRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const { data: capabilities = [] } = useQuery<Capability[]>({
     queryKey: ["/api/capabilities"],
   });
+
+  // Check for scroll indicator on mount and resize
+  useEffect(() => {
+    const checkScrollIndicator = () => {
+      if (navRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = navRef.current;
+        setShowScrollIndicator(scrollHeight > clientHeight && scrollTop < scrollHeight - clientHeight - 10);
+      }
+    };
+
+    checkScrollIndicator();
+    window.addEventListener('resize', checkScrollIndicator);
+    
+    const navElement = navRef.current;
+    if (navElement) {
+      navElement.addEventListener('scroll', checkScrollIndicator);
+    }
+
+    return () => {
+      window.removeEventListener('resize', checkScrollIndicator);
+      if (navElement) {
+        navElement.removeEventListener('scroll', checkScrollIndicator);
+      }
+    };
+  }, []);
 
   const aiMutation = useMutation({
     mutationFn: async (prompt: string) => {
@@ -153,34 +180,45 @@ export default function Sidebar() {
         </h1>
       </div>
       
-      <nav className="flex-1 p-3 md:p-4 space-y-1 md:space-y-2 overflow-y-auto">
-        {navigationItems.map((item) => (
-          <Tooltip key={item.href}>
-            <TooltipTrigger asChild>
-              <Link href={item.href}>
-                <a
-                  className={`flex items-center px-3 py-2 rounded-lg transition-colors text-sm md:text-base ${
-                    item.href === "/ai-assistant"
-                      ? item.active
-                        ? "text-white bg-gradient-to-r from-purple-500 to-pink-500 border-l-4 border-purple-600"
-                        : "text-gray-600 hover:text-white hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500"
-                      : item.active
-                        ? "text-gray-700 bg-blue-50 border-l-4 border-primary"
-                        : "text-gray-600 hover:bg-gray-100"
-                  }`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <item.icon className="w-4 h-4 md:w-5 md:h-5 mr-3" />
-                  {item.label}
-                </a>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>{getNavigationTooltip(item.href)}</p>
-            </TooltipContent>
-          </Tooltip>
-        ))}
-      </nav>
+      <div className="flex-1 relative">
+        <nav ref={navRef} className="h-full p-3 md:p-4 space-y-1 md:space-y-2 overflow-y-auto">
+          {navigationItems.map((item) => (
+            <Tooltip key={item.href}>
+              <TooltipTrigger asChild>
+                <Link href={item.href}>
+                  <a
+                    className={`flex items-center px-3 py-2 rounded-lg transition-colors text-sm md:text-base ${
+                      item.href === "/ai-assistant"
+                        ? item.active
+                          ? "text-white bg-gradient-to-r from-purple-500 to-pink-500 border-l-4 border-purple-600"
+                          : "text-gray-600 hover:text-white hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500"
+                        : item.active
+                          ? "text-gray-700 bg-blue-50 border-l-4 border-primary"
+                          : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <item.icon className="w-4 h-4 md:w-5 md:h-5 mr-3" />
+                    {item.label}
+                  </a>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>{getNavigationTooltip(item.href)}</p>
+              </TooltipContent>
+            </Tooltip>
+          ))}
+        </nav>
+        
+        {/* Scroll Indicator */}
+        {showScrollIndicator && (
+          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none flex items-end justify-center pb-1">
+            <div className="animate-bounce">
+              <ChevronDown className="w-4 h-4 text-gray-400" />
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="p-3 md:p-4 border-t border-gray-200 flex-shrink-0">
         <h3 className="text-xs md:text-sm font-medium text-gray-500 mb-3">Quick Actions</h3>
