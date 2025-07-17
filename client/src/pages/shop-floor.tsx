@@ -1833,6 +1833,7 @@ export default function ShopFloor() {
                         {area.name}
                       </SelectItem>
                     ))}
+                    <SelectItem value="no-area">No Area</SelectItem>
                   </SelectContent>
                 </Select>
                 
@@ -2226,11 +2227,58 @@ export default function ShopFloor() {
                     return null;
                   })()}
                 </>
+              ) : currentArea === 'no-area' ? (
+                // Show individual unassigned resources for "No Area" view
+                (() => {
+                  const assignedResourceIds = new Set(
+                    Object.values(areas)
+                      .filter(area => area.resources)
+                      .flatMap(area => area.resources)
+                  );
+                  const unassignedResources = filteredResources
+                    .filter(r => !assignedResourceIds.has(r.id))
+                    .sort((a, b) => a.name.localeCompare(b.name));
+                  
+                  return unassignedResources.map((resource) => {
+                    const layout = shopFloorLayout.find(l => l.resourceId === resource.id) || {
+                      id: `resource-${resource.id}`,
+                      x: 100 + (unassignedResources.indexOf(resource) % 4) * 150,
+                      y: 100 + Math.floor(unassignedResources.indexOf(resource) / 4) * 150,
+                      width: 100,
+                      height: 100,
+                      resourceId: resource.id,
+                      rotation: 0,
+                    };
+                    
+                    const status = generateResourceStatus(resource);
+                    
+                    return (
+                      <DraggableResource
+                        key={layout.id}
+                        resource={resource}
+                        layout={layout}
+                        status={status}
+                        onMove={handleResourcePositionMove}
+                        onDetails={handleResourceDetails}
+                        photo={resourcePhotos[resource.id]}
+                        globalImageSize={globalImageSize}
+                        individualImageSizes={individualImageSizes}
+                        onImageSizeChange={handleImageSizeChange}
+                      />
+                    );
+                  });
+                })()
               ) : (
                 // Show individual resources for specific area selection
                 shopFloorLayout.map((layout) => {
                   const resource = filteredResources.find(r => r.id === layout.resourceId);
                   if (!resource) return null;
+                  
+                  // Check if this resource belongs to the current area
+                  const currentAreaData = areas[currentArea];
+                  if (!currentAreaData || !currentAreaData.resources.includes(resource.id)) {
+                    return null;
+                  }
                   
                   const status = generateResourceStatus(resource);
                   
