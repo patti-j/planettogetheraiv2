@@ -734,8 +734,8 @@ const DraggableAreaBubble = ({
                             className="h-6 w-6 p-0 hover:bg-blue-100"
                             onClick={(e) => {
                               e.stopPropagation();
-                              // Set the current area to the area name
-                              setCurrentArea(area.name.toLowerCase().replace(/\s+/g, '-'));
+                              // Set the current area to the area key
+                              setCurrentArea(areaKey);
                             }}
                           >
                             <ZoomIn className="w-4 h-4 text-blue-600" />
