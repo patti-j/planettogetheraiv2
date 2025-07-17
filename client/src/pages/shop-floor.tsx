@@ -810,9 +810,9 @@ const DraggableAreaBubble = ({
                       width: effectiveSize,
                       height: effectiveSize
                     } : {
-                      // For No Area, arrange in orderly grid pattern with globalImageSize
-                      left: 10 + (index % 4) * 120, // Use default spacing
-                      top: 10 + Math.floor(index / 4) * 120, // Rows of 4
+                      // For No Area, use minimal spacing from container edge only
+                      left: 10 + (index % 4) * (effectiveSize + 10), // Just enough space to prevent overlap
+                      top: 10 + Math.floor(index / 4) * (effectiveSize + 10), // Rows of 4
                       width: effectiveSize,
                       height: effectiveSize
                     };
@@ -827,24 +827,13 @@ const DraggableAreaBubble = ({
                   const maxRight = positions.length > 0 ? Math.max(...positions.map(p => p.left + p.width)) : 0;
                   const maxBottom = positions.length > 0 ? Math.max(...positions.map(p => p.top + p.height)) : 0;
                   
-                  // Calculate container size with generous margins, accounting for variable resource sizes
-                  const margin = 50;
-                  const containerWidth = Math.max(400, maxRight - minLeft + margin * 2);
-                  const containerHeight = Math.max(300, maxBottom - minTop + margin * 2);
+                  // Calculate container size with minimal margins, only at edges
+                  const margin = 20; // Reduced margin for tighter layout
+                  const containerWidth = Math.max(400, maxRight + margin);
+                  const containerHeight = Math.max(300, maxBottom + margin);
                   
-                  // Calculate offset to center the resources (same as individual area view)
-                  const offsetX = margin - minLeft;
-                  const offsetY = margin - minTop;
-                  
-                  // Normalize positions using the same logic as individual area view
-                  const normalizedPositions = resourcesWithPositions.map(item => ({
-                    ...item,
-                    position: {
-                      ...item.position,
-                      left: item.position.left + offsetX,
-                      top: item.position.top + offsetY
-                    }
-                  }));
+                  // Keep original positions without normalization to prevent resources from moving
+                  const normalizedPositions = resourcesWithPositions;
                   
                   return (
                     <div 
