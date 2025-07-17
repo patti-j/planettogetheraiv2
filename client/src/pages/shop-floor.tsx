@@ -199,7 +199,7 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo,
   const [showImageControls, setShowImageControls] = useState(false);
   
   // Calculate effective image size (individual override or global)
-  const effectiveImageSize = individualImageSizes[resource.id] || globalImageSize;
+  const effectiveResourceSize = individualImageSizes[resource.id] || globalImageSize;
   
   // Mobile-friendly drag implementation with immediate position updates
   const mobileDrag = useMobileDrag(
@@ -309,8 +309,8 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo,
       style={{
         left: currentPosition.x,
         top: currentPosition.y,
-        width: layout.width,
-        height: layout.height,
+        width: effectiveResourceSize,
+        height: effectiveResourceSize,
         transform: `rotate(${layout.rotation}deg)`,
         transition: isCurrentlyDragging ? 'none' : 'all 0.2s ease',
       }}
@@ -335,10 +335,6 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo,
                       src={photo} 
                       alt={resource.name}
                       className="w-full h-full object-cover rounded-lg"
-                      style={{
-                        transform: `scale(${effectiveImageSize / 100})`,
-                        transformOrigin: 'center'
-                      }}
                       key={`${resource.id}-${Date.now()}`}
                     />
                     {/* Individual image size controls */}
@@ -349,18 +345,18 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo,
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onImageSizeChange(resource.id, Math.max(50, effectiveImageSize - 10))}
+                        onClick={() => onImageSizeChange(resource.id, Math.max(20, effectiveResourceSize - 10))}
                         className="h-5 w-5 p-0"
                       >
                         <Minus className="w-3 h-3" />
                       </Button>
                       <span className="text-xs font-mono min-w-[2.5rem] text-center text-gray-700">
-                        {effectiveImageSize}%
+                        {effectiveResourceSize}px
                       </span>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onImageSizeChange(resource.id, Math.min(200, effectiveImageSize + 10))}
+                        onClick={() => onImageSizeChange(resource.id, Math.min(200, effectiveResourceSize + 10))}
                         className="h-5 w-5 p-0"
                       >
                         <Plus className="w-3 h-3" />
@@ -868,8 +864,8 @@ const DraggableAreaBubble = ({
                             style={{
                               left: position.left,
                               top: position.top,
-                              width: position.width,
-                              height: position.height
+                              width: `${individualImageSizes[resource.id] || globalImageSize}px`,
+                              height: `${individualImageSizes[resource.id] || globalImageSize}px`
                             }}
                             onClick={() => onResourceDetails(resource, status)}
                           >
@@ -884,11 +880,7 @@ const DraggableAreaBubble = ({
                                           <img 
                                             src={photo} 
                                             alt={resource.name}
-                                            className="object-cover rounded-lg"
-                                            style={{
-                                              width: `${individualImageSizes[resource.id] || globalImageSize}px`,
-                                              height: `${individualImageSizes[resource.id] || globalImageSize}px`
-                                            }}
+                                            className="w-full h-full object-cover rounded-lg"
                                           />
                                           {/* Individual resize controls */}
                                           <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-75 rounded px-2 py-1 flex items-center space-x-2">
