@@ -126,6 +126,8 @@ The application uses a modern full-stack architecture with strong typing through
 - Improved layout synchronization between "all resources" and individual area views with exact scaling ratios
 - Updated shop floor area bubble scaling to use /2 factor for consistent proportional display
 - Enhanced resource layout consistency across all view modes (all resources vs individual areas)
+- Updated dashboard manager maximize button to use double arrows (↗️↗️/↙️↙️) for consistency with other windows
+- Changed AI images button text to "Generate Missing Resource Images" with AI star icon positioning
 
 ✓ **Dashboard Manager Integration (July 16, 2025)**:
 - Removed standalone AI analytics buttons from both analytics and dashboard/schedule pages

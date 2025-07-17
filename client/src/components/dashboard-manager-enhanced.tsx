@@ -349,9 +349,15 @@ export function EnhancedDashboardManager({
                 className="h-8 w-8 p-0"
               >
                 {isMaximized ? (
-                  <ArrowDownLeft className="w-4 h-4" />
+                  <>
+                    <ArrowDownLeft className="w-3 h-3" />
+                    <ArrowDownLeft className="w-3 h-3 -ml-1" />
+                  </>
                 ) : (
-                  <ArrowUpRight className="w-4 h-4" />
+                  <>
+                    <ArrowUpRight className="w-3 h-3" />
+                    <ArrowUpRight className="w-3 h-3 -ml-1" />
+                  </>
                 )}
               </Button>
             </div>

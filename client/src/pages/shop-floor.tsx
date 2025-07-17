@@ -1810,7 +1810,7 @@ export default function ShopFloor() {
                         <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
                       )}
                       <span className="text-xs hidden sm:inline ml-1">
-                        AI Images ({resources.filter(r => !resourcePhotos[r.id]).length})
+                        Generate Missing Resource Images
                       </span>
                     </Button>
                   </TooltipTrigger>
