@@ -798,129 +798,93 @@ const DraggableAreaBubble = ({
               {/* Resources positioned based on saved layout */}
               <div className="relative overflow-hidden">
                 {(() => {
-                  // Use the same calculation as individual area views for consistent sizing
-                  const resourcesWithPositions = resources.map((resource, index) => {
-                    const layoutPosition = shopFloorLayout.find(
-                      layout => layout.resourceId === resource.id
-                    );
-                    
-                    // Use globalImageSize for scaling, same as individual resources
-                    const effectiveSize = individualImageSizes[resource.id] || globalImageSize;
-                    const position = layoutPosition ? {
-                      left: layoutPosition.x,
-                      top: layoutPosition.y,
-                      width: effectiveSize,
-                      height: effectiveSize
-                    } : {
-                      // For No Area, use minimal spacing from container edge only
-                      left: 10 + (index % 4) * (effectiveSize + 10), // Just enough space to prevent overlap
-                      top: 10 + Math.floor(index / 4) * (effectiveSize + 10), // Rows of 4
-                      width: effectiveSize,
-                      height: effectiveSize
-                    };
-                    
-                    return { resource, position, index };
-                  });
+                  // Use the EXACT same calculation as individual area views for consistent sizing
+                  const areaResources = shopFloorLayout
+                    .filter(layout => {
+                      const resource = resources.find(r => r.id === layout.resourceId);
+                      return resource;
+                    })
+                    .map(layout => {
+                      const resource = resources.find(r => r.id === layout.resourceId);
+                      return { resource, layout };
+                    });
+
+                  if (areaResources.length === 0) return null;
                   
-                  // Calculate the bounding box for automatic area sizing (same as individual area view)
-                  const positions = resourcesWithPositions.map(r => r.position);
-                  const minLeft = positions.length > 0 ? Math.min(...positions.map(p => p.left)) : 0;
-                  const minTop = positions.length > 0 ? Math.min(...positions.map(p => p.top)) : 0;
-                  const maxRight = positions.length > 0 ? Math.max(...positions.map(p => p.left + p.width)) : 0;
-                  const maxBottom = positions.length > 0 ? Math.max(...positions.map(p => p.top + p.height)) : 0;
+                  // Calculate the bounding box for automatic area sizing (EXACT same as individual area view)
+                  const positions = areaResources.map(({ layout }) => ({
+                    left: layout.x,
+                    top: layout.y,
+                    width: layout.width,
+                    height: layout.height
+                  }));
                   
-                  // Calculate container size with minimal margins, only at edges
-                  const margin = 20; // Reduced margin for tighter layout
-                  const containerWidth = Math.max(400, maxRight + margin);
-                  const containerHeight = Math.max(300, maxBottom + margin);
+                  const minLeft = Math.min(...positions.map(p => p.left));
+                  const minTop = Math.min(...positions.map(p => p.top));
+                  const maxRight = Math.max(...positions.map(p => p.left + p.width));
+                  const maxBottom = Math.max(...positions.map(p => p.top + p.height));
                   
-                  // Keep original positions without normalization to prevent resources from moving
-                  const normalizedPositions = resourcesWithPositions;
+                  // Calculate resource bounds
+                  const resourceWidth = maxRight - minLeft;
+                  const resourceHeight = maxBottom - minTop;
+                  
+                  // Add padding around resources (same as individual area view)
+                  const padding = 40;
+                  const paddedWidth = resourceWidth + (padding * 2);
+                  const paddedHeight = resourceHeight + (padding * 2);
+                  
+                  // Calculate scale to fit the area bubble container (smaller scale for bubble view)
+                  const bubbleMaxWidth = areaWidth - 40; // Account for area bubble padding
+                  const bubbleMaxHeight = areaHeight - 80; // Account for area bubble padding and header
+                  
+                  const scaleX = bubbleMaxWidth / paddedWidth;
+                  const scaleY = bubbleMaxHeight / paddedHeight;
+                  const scale = Math.min(scaleX, scaleY, 1); // Max 1x scale for bubble view
+                  
+                  // Apply scale to dimensions
+                  const scaledWidth = paddedWidth * scale;
+                  const scaledHeight = paddedHeight * scale;
+                  const scaledPadding = padding * scale;
+                  
+                  // Calculate offset to center or position resources (same as individual area view)
+                  const offsetX = -minLeft * scale + scaledPadding;
+                  const offsetY = -minTop * scale + scaledPadding;
                   
                   return (
                     <div 
                       className="relative"
                       style={{ 
-                        width: containerWidth,
-                        height: containerHeight,
-                        minWidth: '400px',
-                        minHeight: '300px'
+                        width: scaledWidth,
+                        height: scaledHeight,
+                        minWidth: '300px',
+                        minHeight: '200px'
                       }}
                     >
-                      {normalizedPositions.map(({ resource, position, index }) => {
+                      {/* Resources */}
+                      {areaResources.map(({ resource, layout }) => {
                         const status = generateResourceStatus(resource);
-                        const photo = resourcePhotos[resource.id];
-                        
-                        // Get resource icon based on type
-                        const getResourceIcon = (type: string) => {
-                          switch (type.toLowerCase()) {
-                            case "machine":
-                              return <Wrench className="w-4 h-4 text-white" />;
-                            case "operator":
-                              return <Users className="w-4 h-4 text-white" />;
-                            case "facility":
-                              return <Building2 className="w-4 h-4 text-white" />;
-                            default:
-                              return <Settings className="w-4 h-4 text-white" />;
-                          }
-                        };
-
-                        // Get status color
-                        const getStatusColor = (status: string) => {
-                          switch (status) {
-                            case "operational":
-                              return "bg-green-500 border-green-600";
-                            case "warning":
-                              return "bg-yellow-500 border-yellow-600";
-                            case "error":
-                              return "bg-red-500 border-red-600";
-                            case "maintenance":
-                              return "bg-blue-500 border-blue-600";
-                            case "offline":
-                              return "bg-gray-500 border-gray-600";
-                            default:
-                              return "bg-gray-500 border-gray-600";
-                          }
-                        };
-
-                        const getStatusIndicator = (status: string) => {
-                          switch (status) {
-                            case "operational":
-                              return <CheckCircle className="w-3 h-3 text-white" />;
-                            case "warning":
-                              return <AlertTriangle className="w-3 h-3 text-white" />;
-                            case "error":
-                              return <AlertCircle className="w-3 h-3 text-white" />;
-                            case "maintenance":
-                              return <WrenchIcon className="w-3 h-3 text-white" />;
-                            case "offline":
-                              return <Pause className="w-3 h-3 text-white" />;
-                            default:
-                              return <Activity className="w-3 h-3 text-white" />;
-                          }
-                        };
-
-                        // Create a layout object for the DraggableResource
-                        const layoutForResource = shopFloorLayout.find(l => l.resourceId === resource.id);
-                        if (!layoutForResource) return null;
-                        
                         const adjustedLayout = {
-                          ...layoutForResource,
-                          x: position.left,
-                          y: position.top,
-                          width: position.width,
-                          height: position.height
+                          ...layout,
+                          x: (layout.x * scale) + offsetX,
+                          y: (layout.y * scale) + offsetY,
+                          width: layout.width * scale,
+                          height: layout.height * scale
                         };
                         
                         return (
                           <DraggableResource
-                            key={resource.id}
+                            key={layout.id}
                             resource={resource}
                             layout={adjustedLayout}
                             status={status}
-                            onMove={handleResourcePositionMove}
+                            onMove={(layoutId: string, scaledX: number, scaledY: number) => {
+                              // Convert scaled coordinates back to original coordinates for storage
+                              const originalX = (scaledX - offsetX) / scale;
+                              const originalY = (scaledY - offsetY) / scale;
+                              handleResourcePositionMove(layoutId, originalX, originalY);
+                            }}
                             onDetails={onResourceDetails}
-                            photo={photo}
+                            photo={resourcePhotos[resource.id]}
                             globalImageSize={globalImageSize}
                             individualImageSizes={individualImageSizes}
                             onImageSizeChange={onImageSizeChange}
