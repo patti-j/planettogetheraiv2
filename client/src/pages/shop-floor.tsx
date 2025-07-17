@@ -2260,7 +2260,12 @@ export default function ShopFloor() {
                             resource={resource}
                             layout={adjustedLayout}
                             status={status}
-                            onMove={handleResourcePositionMove}
+                            onMove={(layoutId: string, scaledX: number, scaledY: number) => {
+                              // Convert scaled coordinates back to original coordinates
+                              const originalX = (scaledX - offsetX) / scale;
+                              const originalY = (scaledY - offsetY) / scale;
+                              handleResourcePositionMove(layoutId, originalX, originalY);
+                            }}
                             onDetails={handleResourceDetails}
                             photo={resourcePhotos[resource.id]}
                             globalImageSize={globalImageSize}
