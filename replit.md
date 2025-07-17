@@ -114,6 +114,15 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 17, 2025)
 
+✓ **Shop Floor Tooltip and Drag-Drop Positioning Fixes (July 17, 2025)**:
+- Completely disabled tooltips on resource icons to prevent continuous display issues
+- Fixed drag-and-drop positioning calculations by using current position instead of item position
+- Enhanced mobile drag implementation with proper position persistence
+- Improved area size calculations for all-resources view with correct scaling (0.5x)
+- Fixed layout persistence by adding immediate localStorage saving alongside API calls
+- Resources now properly drop exactly where user releases them with accurate positioning
+- Area rectangles now scale correctly to show resources in their actual user-defined layouts
+
 ✓ **Comprehensive Area Rectangle Resizing & UX Improvements (July 17, 2025)**:
 - Implemented dynamic area rectangle sizing to ensure all resources fit with adequate margins
 - Enhanced all-areas view with improved container sizing logic using actual resource image sizes

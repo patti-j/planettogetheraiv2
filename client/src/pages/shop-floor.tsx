@@ -120,6 +120,7 @@ const useMobileDrag = (
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      // Save to localStorage immediately for persistence
       onMove(currentPosition.x, currentPosition.y);
     };
 
@@ -143,9 +144,8 @@ const useMobileDrag = (
     if (disabled) return;
     setIsDragging(true);
     startPosRef.current = { x: clientX, y: clientY };
-    initialItemPosRef.current = { x: item.x, y: item.y };
-    setCurrentPosition({ x: item.x, y: item.y });
-  }, [disabled, item.x, item.y]);
+    initialItemPosRef.current = { x: currentPosition.x, y: currentPosition.y };
+  }, [disabled, currentPosition.x, currentPosition.y]);
 
   const listeners = {
     onMouseDown: (e: React.MouseEvent) => {
@@ -344,7 +344,7 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo,
       {...mobileDrag.listeners}
     >
       <TooltipProvider>
-        <Tooltip open={!isCurrentlyDragging && !showImageControls}>
+        <Tooltip open={false}>
           <TooltipTrigger asChild>
             <div
               className={`relative w-full h-full ${getStatusColor(status.status)} rounded-lg border-2 shadow-lg hover:shadow-xl transition-shadow cursor-pointer touch-manipulation`}
@@ -799,22 +799,21 @@ const DraggableAreaBubble = ({
                       layout => layout.resourceId === resource.id
                     );
                     
-                    // Calculate actual resource size based on global and individual image sizes
+                    // Use the actual resource size directly for proper scaling
                     const effectiveResourceSize = individualImageSizes[resource.id] || globalImageSize;
-                    const baseSize = 60;
-                    const actualSize = (baseSize * effectiveResourceSize) / 100;
+                    const scaledSize = effectiveResourceSize * 0.5; // Scale down for all areas view
                     
                     const position = layoutPosition ? {
-                      left: layoutPosition.x / 2, // Match individual area scaling exactly
-                      top: layoutPosition.y / 2,
-                      width: Math.max(actualSize, layoutPosition.width / 2), // Use actual size
-                      height: Math.max(actualSize, layoutPosition.height / 2)
+                      left: layoutPosition.x * 0.5, // Scale down exact layout position
+                      top: layoutPosition.y * 0.5,
+                      width: scaledSize,
+                      height: scaledSize
                     } : {
                       // For No Area, arrange in orderly grid pattern with proper spacing
-                      left: 10 + (index % 4) * (actualSize + 20), // Adjust spacing for actual size
-                      top: 10 + Math.floor(index / 4) * (actualSize + 20), // Rows of 4
-                      width: actualSize,
-                      height: actualSize
+                      left: 10 + (index % 4) * (scaledSize + 10), // Adjust spacing for scaled size
+                      top: 10 + Math.floor(index / 4) * (scaledSize + 10), // Rows of 4
+                      width: scaledSize,
+                      height: scaledSize
                     };
                     
                     return { resource, position, index };
@@ -938,7 +937,7 @@ const DraggableAreaBubble = ({
                             onClick={() => onResourceDetails(resource, status)}
                           >
                             <TooltipProvider>
-                              <Tooltip delayDuration={300}>
+                              <Tooltip open={false}>
                                 <TooltipTrigger asChild>
                                   <div className={`relative w-full h-full ${getStatusColor(status.status)} rounded-lg border-2 shadow-lg hover:shadow-xl transition-shadow`}>
                                     {/* Resource Icon/Photo */}
@@ -1891,7 +1890,9 @@ export default function ShopFloor() {
     if (shopFloorLayout.length > 0) {
       const timeoutId = setTimeout(() => {
         saveLayoutMutation.mutate(shopFloorLayout);
-      }, 2000);
+        // Also save to localStorage for immediate persistence
+        localStorage.setItem('shopFloorLayout', JSON.stringify(shopFloorLayout));
+      }, 500); // Reduced delay for faster saving
       return () => clearTimeout(timeoutId);
     }
   }, [shopFloorLayout, saveLayoutMutation]);
