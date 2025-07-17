@@ -681,11 +681,8 @@ const DraggableAreaBubble = ({
                             className="h-6 w-6 p-0 hover:bg-blue-100"
                             onClick={(e) => {
                               e.stopPropagation();
-                              // Find the area key to switch to
-                              const areaKey = Object.keys(areas).find(key => areas[key].name === area.name);
-                              if (areaKey) {
-                                setCurrentArea(areaKey);
-                              }
+                              // Set the current area to the area name
+                              setCurrentArea(area.name.toLowerCase().replace(/\s+/g, '-'));
                             }}
                           >
                             <ZoomIn className="w-4 h-4 text-blue-600" />
@@ -995,7 +992,7 @@ const ResourceDetailsDialog = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <DialogTitle className="flex flex-col gap-2 pr-8">
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2">
                 {resource.type === "machine" && <Wrench className="w-5 h-5" />}
@@ -1007,7 +1004,7 @@ const ResourceDetailsDialog = ({
                 {status.status}
               </Badge>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 justify-start">
               {isEditing ? (
                 <>
                   <Button 
@@ -1559,15 +1556,21 @@ export default function ShopFloor() {
 
   // Handle photo upload
   const handlePhotoUpload = (resourceId: number, photoUrl: string) => {
-    setResourcePhotos(prev => ({
-      ...prev,
-      [resourceId]: photoUrl
-    }));
+    console.log('Setting photo for resource', resourceId, 'URL:', photoUrl);
+    setResourcePhotos(prev => {
+      const newPhotos = {
+        ...prev,
+        [resourceId]: photoUrl
+      };
+      console.log('Updated resourcePhotos state:', newPhotos);
+      return newPhotos;
+    });
     
     // Save to localStorage for persistence
     const savedPhotos = JSON.parse(localStorage.getItem('resourcePhotos') || '{}');
     savedPhotos[resourceId] = photoUrl;
     localStorage.setItem('resourcePhotos', JSON.stringify(savedPhotos));
+    console.log('Saved to localStorage:', savedPhotos);
   };
 
   // Save layout mutation (silent save without toast)
@@ -1594,7 +1597,9 @@ export default function ShopFloor() {
     const savedPhotos = localStorage.getItem('resourcePhotos');
     if (savedPhotos) {
       try {
-        setResourcePhotos(JSON.parse(savedPhotos));
+        const photos = JSON.parse(savedPhotos);
+        console.log('Loading resource photos from localStorage:', photos);
+        setResourcePhotos(photos);
       } catch (error) {
         console.error('Failed to load resource photos:', error);
       }
