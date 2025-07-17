@@ -659,6 +659,25 @@ export function EnhancedDashboardManager({
                             <div className="flex items-center justify-between">
                               <h4 className="text-sm font-medium">Dashboard Canvas</h4>
                               <div className="flex items-center gap-2 text-xs">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    if (editingDashboard?.configuration?.customWidgets) {
+                                      const widgets = editingDashboard.configuration.customWidgets;
+                                      if (widgets.length > 0) {
+                                        const maxX = Math.max(...widgets.map((w: any) => w.position.x + w.size.width));
+                                        const maxY = Math.max(...widgets.map((w: any) => w.position.y + w.size.height));
+                                        const padding = 40;
+                                        setCanvasWidth(Math.max(400, maxX + padding));
+                                        setCanvasHeight(Math.max(300, maxY + padding));
+                                      }
+                                    }
+                                  }}
+                                  className="h-6 px-2 text-xs"
+                                >
+                                  Auto-size
+                                </Button>
                                 <Label htmlFor="canvas-width">W:</Label>
                                 <Input
                                   id="canvas-width"
@@ -691,7 +710,16 @@ export function EnhancedDashboardManager({
                             </div>
                             <div 
                               className="border-2 border-dashed border-gray-300 rounded-lg bg-white p-4 relative overflow-hidden"
-                              style={{ width: canvasWidth, height: canvasHeight, minHeight: '300px' }}
+                              style={{ 
+                                width: canvasWidth, 
+                                height: canvasHeight, 
+                                minHeight: '300px',
+                                backgroundImage: `
+                                  linear-gradient(to right, #e5e7eb 1px, transparent 1px),
+                                  linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)
+                                `,
+                                backgroundSize: '20px 20px'
+                              }}
                               onDragOver={(e) => {
                                 e.preventDefault();
                                 e.currentTarget.classList.add('border-blue-500', 'bg-blue-50');
@@ -752,8 +780,13 @@ export function EnhancedDashboardManager({
                                       const startY = e.clientY - widget.position.y;
                                       
                                       const handleMouseMove = (e: MouseEvent) => {
-                                        const newX = Math.max(0, Math.min(canvasWidth - widget.size.width, e.clientX - startX));
-                                        const newY = Math.max(0, Math.min(canvasHeight - widget.size.height, e.clientY - startY));
+                                        const snapSize = 20; // Grid size for snapping
+                                        const rawX = Math.max(0, Math.min(canvasWidth - widget.size.width, e.clientX - startX));
+                                        const rawY = Math.max(0, Math.min(canvasHeight - widget.size.height, e.clientY - startY));
+                                        
+                                        // Snap to grid
+                                        const newX = Math.round(rawX / snapSize) * snapSize;
+                                        const newY = Math.round(rawY / snapSize) * snapSize;
                                         
                                         if (editingDashboard) {
                                           const updatedConfig = {

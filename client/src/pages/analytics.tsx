@@ -68,7 +68,23 @@ function DraggableDashboardCard({
 }: DraggableDashboardCardProps) {
   const [size, setSize] = useState(() => {
     const saved = localStorage.getItem(`dashboard-size-${dashboard.id}`);
-    return saved ? JSON.parse(saved) : { width: 600, height: 400 };
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    
+    // Auto-calculate size based on widgets
+    if (dashboard.configuration?.customWidgets?.length > 0) {
+      const widgets = dashboard.configuration.customWidgets;
+      const maxX = Math.max(...widgets.map((w: any) => w.position.x + w.size.width));
+      const maxY = Math.max(...widgets.map((w: any) => w.position.y + w.size.height));
+      const padding = 40;
+      return { 
+        width: Math.max(400, maxX + padding), 
+        height: Math.max(300, maxY + padding) 
+      };
+    }
+    
+    return { width: 600, height: 400 };
   });
   
   const [isResizing, setIsResizing] = useState(false);
@@ -181,7 +197,7 @@ function DraggableDashboardCard({
         </CardHeader>
         <CardContent className="flex-1 p-4">
           {dashboard.configuration?.customWidgets?.length > 0 ? (
-            <div className="relative w-full bg-white overflow-hidden border border-gray-100 rounded-lg h-64 md:h-[480px]">
+            <div className="relative w-full bg-white overflow-hidden border border-gray-100 rounded-lg" style={{ height: Math.max(200, size.height - 200) }}>
               {dashboard.configuration.customWidgets.map((widget: AnalyticsWidget) => (
                 <AnalyticsWidget
                   key={widget.id}

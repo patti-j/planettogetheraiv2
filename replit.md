@@ -114,6 +114,21 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 17, 2025)
 
+✓ **Dashboard Auto-Sizing and Widget Alignment System (July 17, 2025)**:
+- Added automatic dashboard sizing with "Auto-size" button that calculates optimal canvas dimensions based on widget positions
+- Implemented widget snap-to-grid functionality with 20px grid alignment for precise positioning
+- Added visual grid lines to dashboard canvas for better alignment guidance
+- Enhanced analytics page to automatically calculate dashboard sizes based on widget content instead of fixed dimensions
+- Dashboard containers now automatically adjust to fit widgets with appropriate 40px padding borders
+- Widget dragging now snaps to grid for neat alignment and professional appearance
+- Auto-sizing ensures dashboards show attractive borders around widgets without excessive empty space
+
+✓ **Dashboard Name Layout and Alphabetical Sorting (July 17, 2025)**:
+- Updated dashboard cards to display name and description horizontally with bullet separator to save vertical space
+- Added alphabetical sorting for dashboards in both dashboard manager and analytics page
+- Enhanced dashboard organization with consistent sorting across all dashboard views
+- Improved space utilization in dashboard management interface
+
 ✓ **Dashboard Editor Canvas and Widget Resizing System (July 17, 2025)**:
 - Added comprehensive canvas size controls with width/height inputs (400-1600px width, 300-1200px height)
 - Implemented intuitive widget resizing with visual resize handles (corner, right edge, bottom edge)
