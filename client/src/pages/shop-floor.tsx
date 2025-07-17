@@ -1998,7 +1998,7 @@ export default function ShopFloor() {
 
                 {/* Image Size Controls */}
                 <div className="flex items-center gap-1 ml-2 px-2 py-1 bg-gray-50 rounded-lg">
-                  <span className="text-xs font-medium text-gray-600">Image Size:</span>
+                  <span className="text-xs font-medium text-gray-600">Size:</span>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
