@@ -69,9 +69,10 @@
   scroll-behavior: smooth;
 }
 
-/* Fix tooltip z-index issues */
+/* Fix tooltip z-index issues - comprehensive approach */
 [data-radix-tooltip-content] {
   z-index: 99999 !important;
+  position: relative !important;
 }
 
 /* Ensure tooltip portal appears above everything */
@@ -79,15 +80,43 @@
   z-index: 99999 !important;
 }
 
-/* Additional tooltip positioning fixes */
+/* Target all tooltip portals */
 div[data-radix-portal] {
   z-index: 99999 !important;
+}
+
+/* Radix UI tooltip wrapper */
+[data-radix-tooltip-portal] {
+  z-index: 99999 !important;
+}
+
+/* All tooltip content variants */
+[role="tooltip"] {
+  z-index: 99999 !important;
+  position: relative !important;
 }
 
 /* Ensure tooltip trigger containers don't interfere */
 [data-radix-tooltip-trigger] {
   position: relative;
   z-index: 1;
+}
+
+/* Force tooltip above resource containers */
+.tooltip-content {
+  z-index: 99999 !important;
+  position: relative !important;
+}
+
+/* Ensure resource containers have lower z-index than tooltips */
+.absolute.cursor-pointer {
+  z-index: 1;
+}
+
+/* Force tooltip content above all elements */
+[data-radix-tooltip-content] {
+  z-index: 99999 !important;
+  position: fixed !important;
 }
 
 /* Force visible scrollbars on mobile */

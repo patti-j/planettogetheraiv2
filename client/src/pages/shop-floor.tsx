@@ -901,7 +901,8 @@ const DraggableAreaBubble = ({
                               left: position.left,
                               top: position.top,
                               width: `${individualImageSizes[resource.id] || globalImageSize}px`,
-                              height: `${individualImageSizes[resource.id] || globalImageSize}px`
+                              height: `${individualImageSizes[resource.id] || globalImageSize}px`,
+                              zIndex: 1
                             }}
                             onClick={() => onResourceDetails(resource, status)}
                           >
@@ -980,7 +981,7 @@ const DraggableAreaBubble = ({
                                     </div>
                                   </div>
                                 </TooltipTrigger>
-                                <TooltipContent className="z-[9999] relative">
+                                <TooltipContent className="z-[9999] relative tooltip-content">
                                   <div className="space-y-1">
                                     <p className="font-medium">{resource.name}</p>
                                     <p className="text-sm">Status: {status.status}</p>
@@ -1001,7 +1002,7 @@ const DraggableAreaBubble = ({
               </div>
             </div>
           </TooltipTrigger>
-          <TooltipContent className="z-[9999] relative">
+          <TooltipContent className="z-[9999] relative tooltip-content">
             <div className="space-y-1">
               <p className="font-medium">{area.name}</p>
               <p className="text-sm">{resources.length} resources</p>
