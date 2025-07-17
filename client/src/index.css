@@ -77,32 +77,21 @@
   transform: translateZ(0) !important;
 }
 
-/* Ensure tooltip portal appears above everything - only for tooltips */
-[data-radix-popper-content-wrapper][data-radix-tooltip-content] {
+/* Ensure tooltip portal appears above everything */
+[data-radix-popper-content-wrapper] {
+  z-index: 2147483647 !important;
+}
+
+/* Target tooltip portals specifically */
+div[data-radix-portal]:has([data-radix-tooltip-content]) {
   z-index: 2147483647 !important;
   position: fixed !important;
   isolation: isolate !important;
   transform: translateZ(0) !important;
 }
 
-/* Target only tooltip portals - not dropdown portals */
-div[data-radix-portal][data-radix-tooltip-portal] {
-  z-index: 2147483647 !important;
-  position: fixed !important;
-  isolation: isolate !important;
-  transform: translateZ(0) !important;
-}
-
-/* Radix UI tooltip wrapper */
-[data-radix-tooltip-portal] {
-  z-index: 2147483647 !important;
-  position: fixed !important;
-  isolation: isolate !important;
-  transform: translateZ(0) !important;
-}
-
-/* All tooltip content variants - only for actual tooltips */
-[role="tooltip"][data-radix-tooltip-content] {
+/* All tooltip content variants */
+[role="tooltip"] {
   z-index: 2147483647 !important;
   position: fixed !important;
   isolation: isolate !important;
@@ -111,6 +100,15 @@ div[data-radix-portal][data-radix-tooltip-portal] {
 
 /* Force tooltip above resource containers */
 .tooltip-content {
+  z-index: 2147483647 !important;
+  position: fixed !important;
+  isolation: isolate !important;
+  transform: translateZ(0) !important;
+}
+
+/* Backup approach - target by class and role */
+[data-state="delayed-open"][role="tooltip"],
+[data-state="instant-open"][role="tooltip"] {
   z-index: 2147483647 !important;
   position: fixed !important;
   isolation: isolate !important;
@@ -126,26 +124,39 @@ div[data-radix-portal][data-radix-tooltip-portal] {
 
 /* Ensure all resource containers are in lower stacking context */
 .absolute.cursor-pointer {
-  z-index: 1;
-  position: relative;
+  z-index: 1 !important;
+  position: relative !important;
 }
 
 /* Force all resource icons to low z-index */
 .relative.cursor-pointer {
-  z-index: 1;
-  position: relative;
+  z-index: 1 !important;
+  position: relative !important;
 }
 
 /* Ensure shop floor containers don't create stacking contexts above tooltips */
 .relative.overflow-hidden {
-  z-index: 1;
-  position: relative;
+  z-index: 1 !important;
+  position: relative !important;
 }
 
 /* Force area containers to have lower z-index */
 .border-2.border-dashed.rounded-lg {
-  z-index: 1;
-  position: relative;
+  z-index: 1 !important;
+  position: relative !important;
+}
+
+/* Force all resource status elements to stay below tooltips */
+.bg-green-500, .bg-yellow-500, .bg-red-500, .bg-blue-500, .bg-gray-500 {
+  z-index: 1 !important;
+}
+
+/* Additional tooltip forcing - use !important everywhere */
+div[data-radix-tooltip-content] {
+  z-index: 2147483647 !important;
+  position: fixed !important;
+  isolation: isolate !important;
+  transform: translateZ(0) !important;
 }
 
 /* Force visible scrollbars on mobile */

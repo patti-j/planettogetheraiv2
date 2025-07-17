@@ -979,8 +979,8 @@ const DraggableAreaBubble = ({
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent 
-                                  className="z-[2147483647] bg-black text-white border-none shadow-xl"
-                                  style={{ zIndex: 2147483647 }}
+                                  className="z-[2147483647] bg-black text-white border-none shadow-xl tooltip-content"
+                                  style={{ zIndex: 2147483647, position: 'fixed' }}
                                 >
                                   <div className="space-y-1">
                                     <p className="text-sm">Status: {status.status}</p>
