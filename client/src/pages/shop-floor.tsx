@@ -1833,7 +1833,6 @@ export default function ShopFloor() {
                         {area.name}
                       </SelectItem>
                     ))}
-                    <SelectItem value="no-area">No Area</SelectItem>
                   </SelectContent>
                 </Select>
                 
@@ -2175,6 +2174,7 @@ export default function ShopFloor() {
               {currentArea === 'all' ? (
                 // Show resources grouped by areas when viewing all resources
                 <>
+                  {/* Area bubbles */}
                   {Object.entries(areas).filter(([key]) => key !== 'all').map(([areaKey, area]) => (
                     <DraggableAreaBubble
                       key={areaKey}
@@ -2193,7 +2193,7 @@ export default function ShopFloor() {
                     />
                   ))}
                   
-                  {/* Resources not in any area - "No Area" bubble */}
+                  {/* Unassigned resources displayed directly on background */}
                   {(() => {
                     const assignedResourceIds = new Set(
                       Object.values(areas)
@@ -2204,70 +2204,36 @@ export default function ShopFloor() {
                       .filter(r => !assignedResourceIds.has(r.id))
                       .sort((a, b) => a.name.localeCompare(b.name));
                     
-                    if (unassignedResources.length > 0) {
+                    return unassignedResources.map((resource) => {
+                      const layout = shopFloorLayout.find(l => l.resourceId === resource.id) || {
+                        id: `resource-${resource.id}`,
+                        x: 100 + (unassignedResources.indexOf(resource) % 4) * 150,
+                        y: 100 + Math.floor(unassignedResources.indexOf(resource) / 4) * 150,
+                        width: 100,
+                        height: 100,
+                        resourceId: resource.id,
+                        rotation: 0,
+                      };
+                      
+                      const status = generateResourceStatus(resource);
+                      
                       return (
-                        <DraggableAreaBubble
-                          key="no-area"
-                          areaKey="no-area"
-                          area={{ name: 'No Area', resources: unassignedResources.map(r => r.id) }}
-                          resources={unassignedResources}
-                          onMove={handleAreaMove}
-                          onResourceDetails={handleResourceDetails}
-                          resourcePhotos={resourcePhotos}
-                          generateResourceStatus={generateResourceStatus}
+                        <DraggableResource
+                          key={layout.id}
+                          resource={resource}
+                          layout={layout}
+                          status={status}
+                          onMove={handleResourcePositionMove}
+                          onDetails={handleResourceDetails}
+                          photo={resourcePhotos[resource.id]}
                           globalImageSize={globalImageSize}
                           individualImageSizes={individualImageSizes}
                           onImageSizeChange={handleImageSizeChange}
-                          isNoArea={true}
-                          onResourceMove={handleResourceMove}
-                          shopFloorLayout={shopFloorLayout}
                         />
                       );
-                    }
-                    return null;
+                    });
                   })()}
                 </>
-              ) : currentArea === 'no-area' ? (
-                // Show individual unassigned resources for "No Area" view
-                (() => {
-                  const assignedResourceIds = new Set(
-                    Object.values(areas)
-                      .filter(area => area.resources)
-                      .flatMap(area => area.resources)
-                  );
-                  const unassignedResources = filteredResources
-                    .filter(r => !assignedResourceIds.has(r.id))
-                    .sort((a, b) => a.name.localeCompare(b.name));
-                  
-                  return unassignedResources.map((resource) => {
-                    const layout = shopFloorLayout.find(l => l.resourceId === resource.id) || {
-                      id: `resource-${resource.id}`,
-                      x: 100 + (unassignedResources.indexOf(resource) % 4) * 150,
-                      y: 100 + Math.floor(unassignedResources.indexOf(resource) / 4) * 150,
-                      width: 100,
-                      height: 100,
-                      resourceId: resource.id,
-                      rotation: 0,
-                    };
-                    
-                    const status = generateResourceStatus(resource);
-                    
-                    return (
-                      <DraggableResource
-                        key={layout.id}
-                        resource={resource}
-                        layout={layout}
-                        status={status}
-                        onMove={handleResourcePositionMove}
-                        onDetails={handleResourceDetails}
-                        photo={resourcePhotos[resource.id]}
-                        globalImageSize={globalImageSize}
-                        individualImageSizes={individualImageSizes}
-                        onImageSizeChange={handleImageSizeChange}
-                      />
-                    );
-                  });
-                })()
               ) : (
                 // Show individual resources for specific area selection
                 shopFloorLayout.map((layout) => {
