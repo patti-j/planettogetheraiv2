@@ -1429,7 +1429,7 @@ export default function ShopFloor() {
     updateResourceMutation.mutate({ resourceId, area: newAreaName });
   };
 
-  // AI Image Generation Mutation with progressive updates
+  // AI Image Generation Mutation - generates one image at a time
   const aiImageGenerationMutation = useMutation({
     mutationFn: async () => {
       const resourcesWithoutPhotos = resources.filter(resource => !resourcePhotos[resource.id]);
@@ -1438,92 +1438,54 @@ export default function ShopFloor() {
         throw new Error("All resources already have photos");
       }
       
-      // Clear any existing invalid URLs from localStorage
-      localStorage.removeItem('resourcePhotos');
-      setResourcePhotos({});
-      
-      // Show clearing message
-      toast({
-        title: "Clearing Previous Images",
-        description: "Removing any expired images before generating new ones...",
-      });
-
-      const results = [];
-      let successCount = 0;
+      // Only generate for the first resource without a photo
+      const resource = resourcesWithoutPhotos[0];
       
       // Show initial progress toast
       toast({
         title: "AI Image Generation Started",
-        description: `Generating ${resourcesWithoutPhotos.length} resource images...`,
+        description: `Generating image for ${resource.name}...`,
       });
       
-      // Process images in parallel batches of 2 for better speed
-      const batchSize = 2;
-      for (let i = 0; i < resourcesWithoutPhotos.length; i += batchSize) {
-        const batch = resourcesWithoutPhotos.slice(i, i + batchSize);
-        
-        const batchPromises = batch.map(async (resource) => {
-          const prompt = `Cartoon illustration of a ${resource.type.toLowerCase()} named ${resource.name} in a manufacturing facility. The ${resource.type.toLowerCase()} should be colorful, friendly, and cartoon-style, suitable for ${resource.capabilities} operations. Bright colors, cartoon style, animated look, fun and approachable design.`;
-          
-          try {
-            const response = await apiRequest('POST', '/api/ai/generate-image', {
-              prompt,
-              resourceId: resource.id
-            });
-            
-            console.log('AI API response:', response);
-            
-            // The image is already in base64 format from the server
-            const base64Image = response.imageUrl;
-            
-            // Immediately add the base64 image to the UI
-            console.log('About to upload photo for resource', resource.id, 'with URL:', base64Image);
-            handlePhotoUpload(resource.id, base64Image);
-            successCount++;
-            
-            // Force immediate UI update
-            setForceUpdate(prev => prev + 1);
-            
-            // Show progress toast
-            toast({
-              title: "Image Generated",
-              description: `Generated cartoon image for ${resource.name} (${successCount}/${resourcesWithoutPhotos.length})`,
-            });
-            
-            return { resourceId: resource.id, imageUrl: base64Image };
-          } catch (error) {
-            console.error(`Failed to generate image for ${resource.name}:`, error);
-            
-            // Show error toast with more details
-            toast({
-              title: "Image Generation Error",
-              description: `Failed to generate image for ${resource.name}: ${error.message || 'Unknown error'}`,
-              variant: "destructive",
-            });
-            
-            return null;
-          }
+      const prompt = `Cartoon illustration of a ${resource.type.toLowerCase()} named ${resource.name} in a manufacturing facility. The ${resource.type.toLowerCase()} should be colorful, friendly, and cartoon-style, suitable for ${resource.capabilities} operations. Bright colors, cartoon style, animated look, fun and approachable design.`;
+      
+      try {
+        const response = await apiRequest('POST', '/api/ai/generate-image', {
+          prompt,
+          resourceId: resource.id
         });
         
-        const batchResults = await Promise.all(batchPromises);
-        results.push(...batchResults.filter(result => result !== null));
+        console.log('AI API response:', response);
+        
+        // The image is already in base64 format from the server
+        const base64Image = response.imageUrl;
+        
+        // Immediately add the base64 image to the UI
+        console.log('About to upload photo for resource', resource.id, 'with URL:', base64Image);
+        handlePhotoUpload(resource.id, base64Image);
+        
+        // Force immediate UI update
+        setForceUpdate(prev => prev + 1);
+        
+        return { resourceId: resource.id, imageUrl: base64Image };
+      } catch (error) {
+        console.error(`Failed to generate image for ${resource.name}:`, error);
+        throw error;
       }
-      
-      return results;
     },
-    onSuccess: (results) => {
-      if (results.length > 0) {
+    onSuccess: (result) => {
+      if (result && result.resourceId) {
         toast({
           title: "AI Image Generation Complete",
-          description: `Successfully generated ${results.length} resource images`,
+          description: `Successfully generated image for resource`,
         });
         
         // Force a final re-render to ensure all images are visible
         queryClient.invalidateQueries({ queryKey: ['/api/resources'] });
       } else {
         toast({
-          title: "No Images Generated",
-          description: "Failed to generate any images. Please try again.",
+          title: "No Image Generated",
+          description: "Failed to generate image. Please try again.",
           variant: "destructive",
         });
       }
@@ -1867,7 +1829,7 @@ export default function ShopFloor() {
                         <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
                       )}
                       <span className="text-xs hidden sm:inline ml-1">
-                        Generate Cartoon Images ({resources.filter(r => !resourcePhotos[r.id]).length})
+                        Generate Missing Resource Images ({resources.filter(r => !resourcePhotos[r.id]).length})
                       </span>
                     </Button>
                   </TooltipTrigger>
