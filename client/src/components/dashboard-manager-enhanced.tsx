@@ -397,13 +397,16 @@ export function EnhancedDashboardManager({
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {dashboards.map((dashboard) => (
+                    {dashboards.sort((a, b) => a.name.localeCompare(b.name)).map((dashboard) => (
                       <Card key={dashboard.id} className="relative">
                         <CardHeader className="pb-3">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <CardTitle className="text-base">{dashboard.name}</CardTitle>
-                              <p className="text-sm text-gray-600 mt-1">{dashboard.description}</p>
+                              <div className="flex items-center gap-3 mb-1">
+                                <CardTitle className="text-base">{dashboard.name}</CardTitle>
+                                <p className="text-sm text-gray-600">•</p>
+                                <p className="text-sm text-gray-600">{dashboard.description}</p>
+                              </div>
                             </div>
                             <div className="flex items-center gap-1 ml-2">
                               <Button

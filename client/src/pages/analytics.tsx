@@ -255,25 +255,9 @@ export default function Analytics() {
   // Initialize dashboard order when dashboards are loaded
   useEffect(() => {
     if (dashboards.length > 0 && dashboardOrder.length === 0) {
-      // Try to load saved order from localStorage first
-      const savedOrder = localStorage.getItem('dashboardOrder');
-      if (savedOrder) {
-        try {
-          const parsedOrder = JSON.parse(savedOrder);
-          // Filter to only include dashboards that still exist
-          const validOrder = parsedOrder.filter((id: number) => 
-            dashboards.some(d => d.id === id)
-          );
-          // Add any new dashboards that aren't in the saved order
-          const newDashboards = dashboards.filter(d => !validOrder.includes(d.id));
-          setDashboardOrder([...validOrder, ...newDashboards.map(d => d.id)]);
-        } catch (error) {
-          // If parsing fails, use default order
-          setDashboardOrder(dashboards.map(d => d.id));
-        }
-      } else {
-        setDashboardOrder(dashboards.map(d => d.id));
-      }
+      // Sort dashboards alphabetically by default
+      const sortedDashboards = [...dashboards].sort((a, b) => a.name.localeCompare(b.name));
+      setDashboardOrder(sortedDashboards.map(d => d.id));
     }
   }, [dashboards, dashboardOrder.length]);
 
