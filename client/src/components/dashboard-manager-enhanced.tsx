@@ -847,8 +847,12 @@ export function EnhancedDashboardManager({
                                         const startHeight = widget.size.height;
                                         
                                         const handleMouseMove = (e: MouseEvent) => {
-                                          const newWidth = Math.max(100, Math.min(canvasWidth - widget.position.x, startWidth + (e.clientX - startX)));
-                                          const newHeight = Math.max(80, Math.min(canvasHeight - widget.position.y, startHeight + (e.clientY - startY)));
+                                          const rawWidth = Math.max(100, Math.min(canvasWidth - widget.position.x, startWidth + (e.clientX - startX)));
+                                          const rawHeight = Math.max(80, Math.min(canvasHeight - widget.position.y, startHeight + (e.clientY - startY)));
+                                          
+                                          // Snap to grid
+                                          const newWidth = Math.round(rawWidth / snapSize) * snapSize;
+                                          const newHeight = Math.round(rawHeight / snapSize) * snapSize;
                                           
                                           if (editingDashboard) {
                                             const updatedConfig = {
@@ -880,7 +884,10 @@ export function EnhancedDashboardManager({
                                         const startWidth = widget.size.width;
                                         
                                         const handleMouseMove = (e: MouseEvent) => {
-                                          const newWidth = Math.max(100, Math.min(canvasWidth - widget.position.x, startWidth + (e.clientX - startX)));
+                                          const rawWidth = Math.max(100, Math.min(canvasWidth - widget.position.x, startWidth + (e.clientX - startX)));
+                                          
+                                          // Snap to grid
+                                          const newWidth = Math.round(rawWidth / snapSize) * snapSize;
                                           
                                           if (editingDashboard) {
                                             const updatedConfig = {
@@ -912,7 +919,10 @@ export function EnhancedDashboardManager({
                                         const startHeight = widget.size.height;
                                         
                                         const handleMouseMove = (e: MouseEvent) => {
-                                          const newHeight = Math.max(80, Math.min(canvasHeight - widget.position.y, startHeight + (e.clientY - startY)));
+                                          const rawHeight = Math.max(80, Math.min(canvasHeight - widget.position.y, startHeight + (e.clientY - startY)));
+                                          
+                                          // Snap to grid
+                                          const newHeight = Math.round(rawHeight / snapSize) * snapSize;
                                           
                                           if (editingDashboard) {
                                             const updatedConfig = {

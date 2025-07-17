@@ -143,6 +143,12 @@ The application uses a modern full-stack architecture with strong typing through
 - Updated dashboard name and description fields to use horizontal layout (side-by-side) to save vertical space
 - Changed description field from textarea to input for consistent horizontal layout in dashboard creation form
 
+✓ **Widget Resize Snap-to-Grid Enhancement (July 17, 2025)**:
+- Added snap-to-grid functionality to widget resizing in dashboard editor for better alignment
+- Implemented 20px grid snapping for all resize handles: corner, right edge, and bottom edge
+- Widget dimensions now snap to grid during resize operations making edge alignment easier
+- Enhanced user experience by providing consistent grid-based sizing for professional dashboard layouts
+
 ✓ **Dashboard Name Layout and Alphabetical Sorting (July 17, 2025)**:
 - Updated dashboard cards to display name and description horizontally with bullet separator to save vertical space
 - Added alphabetical sorting for dashboards in both dashboard manager and analytics page
