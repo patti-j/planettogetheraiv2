@@ -795,81 +795,63 @@ const DraggableAreaBubble = ({
               {/* Resources positioned based on saved layout */}
               <div className="relative overflow-hidden">
                 {(() => {
-                  // Calculate the bounding box of all resources to optimize container size
+                  // Use the same calculation as individual area views for consistent sizing
                   const resourcesWithPositions = resources.map((resource, index) => {
                     const layoutPosition = shopFloorLayout.find(
                       layout => layout.resourceId === resource.id
                     );
                     
-                    // Use the actual resource size directly for proper scaling
-                    const effectiveResourceSize = individualImageSizes[resource.id] || globalImageSize;
-                    const scaledSize = effectiveResourceSize * 0.5; // Scale down for all areas view
-                    
+                    // Use full layout dimensions (same as individual area view)
                     const position = layoutPosition ? {
-                      left: layoutPosition.x * 0.5, // Scale down exact layout position
-                      top: layoutPosition.y * 0.5,
-                      width: scaledSize,
-                      height: scaledSize
+                      left: layoutPosition.x,
+                      top: layoutPosition.y,
+                      width: layoutPosition.width,
+                      height: layoutPosition.height
                     } : {
-                      // For No Area, arrange in orderly grid pattern with proper spacing
-                      left: 10 + (index % 4) * (scaledSize + 10), // Adjust spacing for scaled size
-                      top: 10 + Math.floor(index / 4) * (scaledSize + 10), // Rows of 4
-                      width: scaledSize,
-                      height: scaledSize
+                      // For No Area, arrange in orderly grid pattern with default sizing
+                      left: 10 + (index % 4) * 120, // Use default spacing
+                      top: 10 + Math.floor(index / 4) * 120, // Rows of 4
+                      width: 100,
+                      height: 100
                     };
                     
                     return { resource, position, index };
                   });
                   
-                  // Find the minimum positions to normalize the layout (remove excess whitespace)
-                  const minLeft = resources.length > 0 ? Math.min(...resourcesWithPositions.map(r => r.position.left)) : 0;
-                  const minTop = resources.length > 0 ? Math.min(...resourcesWithPositions.map(r => r.position.top)) : 0;
+                  // Calculate the bounding box for automatic area sizing (same as individual area view)
+                  const positions = resourcesWithPositions.map(r => r.position);
+                  const minLeft = positions.length > 0 ? Math.min(...positions.map(p => p.left)) : 0;
+                  const minTop = positions.length > 0 ? Math.min(...positions.map(p => p.top)) : 0;
+                  const maxRight = positions.length > 0 ? Math.max(...positions.map(p => p.left + p.width)) : 0;
+                  const maxBottom = positions.length > 0 ? Math.max(...positions.map(p => p.top + p.height)) : 0;
                   
-                  // Normalize positions to remove excess whitespace
+                  // Calculate container size with generous margins (same as individual area view)
+                  const margin = 50;
+                  const containerWidth = Math.max(400, maxRight - minLeft + margin * 2);
+                  const containerHeight = Math.max(300, maxBottom - minTop + margin * 2);
+                  
+                  // Calculate offset to center the resources (same as individual area view)
+                  const offsetX = margin - minLeft;
+                  const offsetY = margin - minTop;
+                  
+                  // Normalize positions using the same logic as individual area view
                   const normalizedPositions = resourcesWithPositions.map(item => ({
                     ...item,
                     position: {
                       ...item.position,
-                      left: item.position.left - minLeft + 10, // Add small padding
-                      top: item.position.top - minTop + 10
+                      left: item.position.left + offsetX,
+                      top: item.position.top + offsetY
                     }
                   }));
-                  
-                  // Calculate optimal container size using normalized positions with better margins
-                  const margin = 30; // Increased margin for better visual spacing
-                  const minContainerWidth = 240; // Slightly larger minimum width
-                  const minContainerHeight = 150; // Slightly larger minimum height
-                  
-                  let calculatedWidth: number;
-                  let calculatedHeight: number;
-                  
-                  if (resources.length > 0) {
-                    const maxRight = Math.max(...normalizedPositions.map(r => r.position.left + r.position.width));
-                    const maxBottom = Math.max(...normalizedPositions.map(r => r.position.top + r.position.height));
-                    const containerWidth = Math.max(minContainerWidth, maxRight + margin);
-                    const containerHeight = Math.max(minContainerHeight, maxBottom + margin);
-                    
-                    // For areas with many resources, provide extra space
-                    const resourceSpacing = resources.length > 4 ? 40 : margin;
-                    const finalWidth = Math.max(containerWidth, maxRight + resourceSpacing);
-                    const finalHeight = Math.max(containerHeight, maxBottom + resourceSpacing);
-                    
-                    calculatedWidth = finalWidth;
-                    calculatedHeight = finalHeight;
-                  } else {
-                    // Empty area defaults
-                    calculatedWidth = minContainerWidth;
-                    calculatedHeight = minContainerHeight;
-                  }
                   
                   return (
                     <div 
                       className="relative"
                       style={{ 
-                        width: calculatedWidth,
-                        height: calculatedHeight,
-                        minWidth: '240px',
-                        minHeight: '150px'
+                        width: containerWidth,
+                        height: containerHeight,
+                        minWidth: '400px',
+                        minHeight: '300px'
                       }}
                     >
                       {normalizedPositions.map(({ resource, position, index }) => {
@@ -932,8 +914,8 @@ const DraggableAreaBubble = ({
                             style={{
                               left: position.left,
                               top: position.top,
-                              width: `${individualImageSizes[resource.id] || globalImageSize}px`,
-                              height: `${individualImageSizes[resource.id] || globalImageSize}px`,
+                              width: position.width,
+                              height: position.height,
                               zIndex: 1
                             }}
                             onClick={() => onResourceDetails(resource, status)}

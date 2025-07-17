@@ -114,6 +114,13 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 17, 2025)
 
+✓ **Area Rectangle Sizing Consistency Fix (July 17, 2025)**:
+- Fixed area rectangle sizing mismatch between "all resources" view and individual area views
+- Updated DraggableAreaBubble to use same full-size layout calculations as individual area views instead of scaled-down versions
+- Area rectangles now maintain consistent dimensions across all view modes preventing resource truncation
+- Resources display at proper full size in area rectangles matching individual area view experience
+- Fixed magnifying glass click error by adding missing setCurrentArea prop to DraggableAreaBubbleProps interface
+
 ✓ **Shop Floor Tooltip and Drag-Drop Positioning Fixes (July 17, 2025)**:
 - Completely disabled tooltips on resource icons to prevent continuous display issues
 - Fixed drag-and-drop positioning calculations by using current position instead of item position
