@@ -128,6 +128,13 @@ The application uses a modern full-stack architecture with strong typing through
 - Maintains consistency with all other maximize buttons across the application
 - Simplified button design removes duplicate arrows for cleaner interface
 
+✓ **Area Bubble Positioning Consistency Fix (July 17, 2025)**:
+- Fixed packaging icons overlap issue in area bubble view by standardizing offset calculations
+- Updated area bubble positioning to use exact same offset formula as individual area views
+- Changed from "-minLeft * scale + scaledPadding" to "scaledPadding - (minLeft * scale)" for consistency
+- Resources now display with identical positioning across all view modes (area bubbles vs individual areas)
+- Eliminated visual discrepancies between "all resources" view and specific area views
+
 ✓ **Operator Dashboard Resource Filtering Fix (July 17, 2025)**:
 - Fixed operator page statistics to properly reflect filtered operations based on selected resource
 - Statistics now update correctly when switching between "All Resources" and specific resource selection

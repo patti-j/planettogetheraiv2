@@ -846,9 +846,9 @@ const DraggableAreaBubble = ({
                   const scaledHeight = paddedHeight * scale;
                   const scaledPadding = padding * scale;
                   
-                  // Calculate offset to center or position resources (same as individual area view)
-                  const offsetX = -minLeft * scale + scaledPadding;
-                  const offsetY = -minTop * scale + scaledPadding;
+                  // Calculate offset to center or position resources (EXACT same as individual area view)
+                  const offsetX = scaledPadding - (minLeft * scale);
+                  const offsetY = scaledPadding - (minTop * scale);
                   
                   return (
                     <div 
