@@ -2275,10 +2275,18 @@ export default function ShopFloor() {
                   const maxRight = Math.max(...positions.map(p => p.left + p.width));
                   const maxBottom = Math.max(...positions.map(p => p.top + p.height));
                   
-                  // Calculate container size with generous margins
+                  // Calculate container size to fill available screen space for single area view
                   const margin = 50;
-                  const containerWidth = Math.max(400, maxRight - minLeft + margin * 2);
-                  const containerHeight = Math.max(300, maxBottom - minTop + margin * 2);
+                  const baseContainerWidth = Math.max(400, maxRight - minLeft + margin * 2);
+                  const baseContainerHeight = Math.max(300, maxBottom - minTop + margin * 2);
+                  
+                  // Calculate available screen space (subtract headers, margins, etc.)
+                  const availableWidth = window.innerWidth - 100; // Account for page margins
+                  const availableHeight = window.innerHeight - 250; // Account for headers and controls
+                  
+                  // Use larger container size for single area view to fill screen better
+                  const containerWidth = Math.max(baseContainerWidth, Math.min(availableWidth, 1200));
+                  const containerHeight = Math.max(baseContainerHeight, Math.min(availableHeight, 800));
                   
                   // Calculate offset to center the resources
                   const offsetX = margin - minLeft;
