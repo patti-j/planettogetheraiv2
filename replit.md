@@ -123,13 +123,19 @@ The application uses a modern full-stack architecture with strong typing through
 - Simplified interface with cleaner header layout and organized control management
 
 ✓ **Area Drag Performance Optimization (July 17, 2025)**:
-- Optimized useMobileDrag hook with 60fps throttling for smoother area dragging
+- Optimized useMobileDrag hook with immediate updates for ultra-smooth area dragging
 - Reduced state updates by using refs for non-render-triggering values
 - Added proper animation frame management with cancellation to prevent frame drops
 - Implemented hardware acceleration (translate3d) for dragging elements
 - Optimized localStorage operations with debounced saves
 - Enhanced event handling with passive event listeners for better performance
 - Area dragging now matches resource icon smoothness with significantly improved responsiveness
+
+✓ **UI/UX Improvements (July 17, 2025)**:
+- Fixed tooltip z-index issues where resource tooltips appeared underneath other icons
+- Added close button (X) to status legend visible on all screen sizes for better user control
+- Enhanced tooltip visibility with z-[100] class for proper layering
+- Improved user experience with clickable legend controls
 
 ✓ **Shop Floor Area Management & AI Image Generation Enhancements (July 17, 2025)**:
 - Added clickable area icons (zoom-in button) in "all resources" view for easy switching to specific area views

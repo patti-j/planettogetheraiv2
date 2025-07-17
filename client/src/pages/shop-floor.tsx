@@ -75,13 +75,9 @@ const useMobileDrag = (
     }
   }, [item.x, item.y, isDragging]);
 
-  // Throttled position update for smoother performance
+  // Immediate position update for ultra-smooth performance
   const updatePosition = useCallback((newX: number, newY: number) => {
-    const now = Date.now();
-    if (now - lastUpdateTimeRef.current > 16) { // ~60fps throttling
-      lastUpdateTimeRef.current = now;
-      setCurrentPosition({ x: newX, y: newY });
-    }
+    setCurrentPosition({ x: newX, y: newY });
   }, []);
 
   // Set up global event listeners for drag operations
@@ -984,7 +980,7 @@ const DraggableAreaBubble = ({
                                     </div>
                                   </div>
                                 </TooltipTrigger>
-                                <TooltipContent>
+                                <TooltipContent className="z-[100] relative">
                                   <div className="space-y-1">
                                     <p className="font-medium">{resource.name}</p>
                                     <p className="text-sm">Status: {status.status}</p>
@@ -1005,7 +1001,7 @@ const DraggableAreaBubble = ({
               </div>
             </div>
           </TooltipTrigger>
-          <TooltipContent>
+          <TooltipContent className="z-[100] relative">
             <div className="space-y-1">
               <p className="font-medium">{area.name}</p>
               <p className="text-sm">{resources.length} resources</p>
@@ -2084,7 +2080,7 @@ export default function ShopFloor() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowLegend(false)}
-                    className="h-6 w-6 p-0 hover:bg-gray-100 sm:hidden"
+                    className="h-6 w-6 p-0 hover:bg-gray-100"
                   >
                     <X className="w-3 h-3" />
                   </Button>
