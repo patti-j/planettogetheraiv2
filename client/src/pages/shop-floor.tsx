@@ -2275,32 +2275,48 @@ export default function ShopFloor() {
                   const maxRight = Math.max(...positions.map(p => p.left + p.width));
                   const maxBottom = Math.max(...positions.map(p => p.top + p.height));
                   
-                  // Calculate container size to fill available screen space for single area view
-                  const margin = 50;
-                  const baseContainerWidth = Math.max(400, maxRight - minLeft + margin * 2);
-                  const baseContainerHeight = Math.max(300, maxBottom - minTop + margin * 2);
-                  
                   // Calculate available screen space (subtract headers, margins, etc.)
-                  const availableWidth = window.innerWidth - 100; // Account for page margins
-                  const availableHeight = window.innerHeight - 250; // Account for headers and controls
+                  const availableWidth = window.innerWidth - 40; // Minimal side margins
+                  const availableHeight = window.innerHeight - 200; // Account for headers and controls
                   
-                  // Use larger container size for single area view to fill screen better
-                  const containerWidth = Math.max(baseContainerWidth, Math.min(availableWidth, 1200));
-                  const containerHeight = Math.max(baseContainerHeight, Math.min(availableHeight, 800));
+                  // Calculate resource bounds
+                  const resourceWidth = maxRight - minLeft;
+                  const resourceHeight = maxBottom - minTop;
                   
-                  // Calculate offset to center the resources
-                  const offsetX = margin - minLeft;
-                  const offsetY = margin - minTop;
+                  // Add padding around resources
+                  const padding = 40;
+                  const paddedWidth = resourceWidth + (padding * 2);
+                  const paddedHeight = resourceHeight + (padding * 2);
+                  
+                  // Calculate scale to fit screen while maintaining aspect ratio
+                  const scaleX = availableWidth / paddedWidth;
+                  const scaleY = availableHeight / paddedHeight;
+                  const scale = Math.min(scaleX, scaleY, 3); // Max 3x scale to prevent overly large images
+                  
+                  // Apply scale to dimensions
+                  const scaledWidth = paddedWidth * scale;
+                  const scaledHeight = paddedHeight * scale;
+                  const scaledPadding = padding * scale;
+                  
+                  // Position container in top-left with minimal margin
+                  const containerStyle = {
+                    width: scaledWidth,
+                    height: scaledHeight,
+                    margin: '10px',
+                    padding: '0px',
+                    position: 'relative' as const,
+                    left: '0',
+                    top: '0'
+                  };
+                  
+                  // Calculate offset to position resources with scaled padding
+                  const offsetX = scaledPadding - (minLeft * scale);
+                  const offsetY = scaledPadding - (minTop * scale);
                   
                   return (
                     <div
                       className="relative bg-white border-2 border-dashed border-blue-300 rounded-lg shadow-lg"
-                      style={{
-                        width: containerWidth,
-                        height: containerHeight,
-                        margin: '20px auto',
-                        padding: '20px'
-                      }}
+                      style={containerStyle}
                     >
                       {/* Area title */}
                       <div className="absolute top-4 left-4 flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
@@ -2316,8 +2332,10 @@ export default function ShopFloor() {
                         const status = generateResourceStatus(resource);
                         const adjustedLayout = {
                           ...layout,
-                          x: layout.x + offsetX,
-                          y: layout.y + offsetY
+                          x: (layout.x * scale) + offsetX,
+                          y: (layout.y * scale) + offsetY,
+                          width: layout.width * scale,
+                          height: layout.height * scale
                         };
                         
                         return (
@@ -2329,7 +2347,7 @@ export default function ShopFloor() {
                             onMove={handleResourcePositionMove}
                             onDetails={handleResourceDetails}
                             photo={resourcePhotos[resource.id]}
-                            globalImageSize={globalImageSize}
+                            globalImageSize={globalImageSize * scale}
                             individualImageSizes={individualImageSizes}
                             onImageSizeChange={handleImageSizeChange}
                           />
