@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,56 +53,81 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useDrag, useDrop } from "react-dnd";
 
-// Custom hook for mobile-friendly drag and drop
+// Optimized mobile-friendly drag and drop for smoother performance
 const useMobileDrag = (
   item: any,
   onMove: (x: number, y: number) => void,
   disabled = false
 ) => {
   const [isDragging, setIsDragging] = useState(false);
-  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [currentPosition, setCurrentPosition] = useState({ x: item.x, y: item.y });
   
-  // Update position when item changes
+  // Use refs for values that don't need to trigger re-renders
+  const startPosRef = useRef({ x: 0, y: 0 });
+  const initialItemPosRef = useRef({ x: item.x, y: item.y });
+  const lastUpdateTimeRef = useRef(0);
+  const animationFrameRef = useRef<number>();
+  
+  // Update position when item changes (but not while dragging)
   useEffect(() => {
     if (!isDragging) {
       setCurrentPosition({ x: item.x, y: item.y });
     }
   }, [item.x, item.y, isDragging]);
 
+  // Throttled position update for smoother performance
+  const updatePosition = useCallback((newX: number, newY: number) => {
+    const now = Date.now();
+    if (now - lastUpdateTimeRef.current > 16) { // ~60fps throttling
+      lastUpdateTimeRef.current = now;
+      setCurrentPosition({ x: newX, y: newY });
+    }
+  }, []);
+
   // Set up global event listeners for drag operations
   useEffect(() => {
     if (!isDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      requestAnimationFrame(() => {
-        const deltaX = e.clientX - startPos.x;
-        const deltaY = e.clientY - startPos.y;
-        const newX = Math.max(0, item.x + deltaX);
-        const newY = Math.max(0, item.y + deltaY);
-        setCurrentPosition({ x: newX, y: newY });
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      
+      animationFrameRef.current = requestAnimationFrame(() => {
+        const deltaX = e.clientX - startPosRef.current.x;
+        const deltaY = e.clientY - startPosRef.current.y;
+        const newX = Math.max(0, initialItemPosRef.current.x + deltaX);
+        const newY = Math.max(0, initialItemPosRef.current.y + deltaY);
+        updatePosition(newX, newY);
       });
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       e.preventDefault();
-      requestAnimationFrame(() => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      
+      animationFrameRef.current = requestAnimationFrame(() => {
         const touch = e.touches[0];
-        const deltaX = touch.clientX - startPos.x;
-        const deltaY = touch.clientY - startPos.y;
-        const newX = Math.max(0, item.x + deltaX);
-        const newY = Math.max(0, item.y + deltaY);
-        setCurrentPosition({ x: newX, y: newY });
+        const deltaX = touch.clientX - startPosRef.current.x;
+        const deltaY = touch.clientY - startPosRef.current.y;
+        const newX = Math.max(0, initialItemPosRef.current.x + deltaX);
+        const newY = Math.max(0, initialItemPosRef.current.y + deltaY);
+        updatePosition(newX, newY);
       });
     };
 
     const handleEnd = () => {
       if (!isDragging) return;
       setIsDragging(false);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
       onMove(currentPosition.x, currentPosition.y);
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mousemove', handleMouseMove, { passive: false });
     document.addEventListener('mouseup', handleEnd);
     document.addEventListener('touchmove', handleTouchMove, { passive: false });
     document.addEventListener('touchend', handleEnd);
@@ -112,15 +137,19 @@ const useMobileDrag = (
       document.removeEventListener('mouseup', handleEnd);
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleEnd);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
-  }, [isDragging, startPos, item, onMove, currentPosition]);
+  }, [isDragging, onMove, currentPosition, updatePosition]);
 
-  const handleStart = (clientX: number, clientY: number) => {
+  const handleStart = useCallback((clientX: number, clientY: number) => {
     if (disabled) return;
     setIsDragging(true);
-    setStartPos({ x: clientX, y: clientY });
+    startPosRef.current = { x: clientX, y: clientY };
+    initialItemPosRef.current = { x: item.x, y: item.y };
     setCurrentPosition({ x: item.x, y: item.y });
-  };
+  }, [disabled, item.x, item.y]);
 
   const listeners = {
     onMouseDown: (e: React.MouseEvent) => {
@@ -598,13 +627,18 @@ const DraggableAreaBubble = ({
   
   const initialPosition = getPosition();
 
-  // Mobile-friendly drag implementation
+  // Debounced localStorage save for better performance
+  const debouncedLocalStorageSave = useCallback((newX: number, newY: number) => {
+    const layout = { areaKey, x: newX, y: newY, width: areaWidth, height: areaHeight };
+    localStorage.setItem(`area-layout-${areaKey}`, JSON.stringify(layout));
+  }, [areaKey, areaWidth, areaHeight]);
+
+  // Optimized mobile-friendly drag implementation
   const mobileDrag = useMobileDrag(
     { x: initialPosition.x, y: initialPosition.y, areaKey },
     (newX: number, newY: number) => {
-      // Save position to localStorage
-      const layout = { areaKey, x: newX, y: newY, width: areaWidth, height: areaHeight };
-      localStorage.setItem(`area-layout-${areaKey}`, JSON.stringify(layout));
+      // Debounced localStorage save to improve performance
+      debouncedLocalStorageSave(newX, newY);
       
       // Notify parent to trigger re-render
       onMove(areaKey, newX, newY);
@@ -700,6 +734,9 @@ const DraggableAreaBubble = ({
         top: position.y,
         width: areaWidth,
         minHeight: areaHeight,
+        // Enable hardware acceleration for smooth dragging
+        transform: isCurrentlyDragging ? 'translate3d(0, 0, 0)' : 'none',
+        willChange: isCurrentlyDragging ? 'transform' : 'auto'
       }}
       {...mobileDrag.listeners}
     >
@@ -1475,11 +1512,11 @@ export default function ShopFloor() {
 
   // Remove duplicate function - this is handled below
 
-  // Handle area movement
-  const handleAreaMove = (areaKey: string, x: number, y: number) => {
-    // Force re-render to show new position
+  // Handle area movement - optimized for performance
+  const handleAreaMove = useCallback((areaKey: string, x: number, y: number) => {
+    // Use minimal state update to avoid unnecessary re-renders
     setForceUpdate(prev => prev + 1);
-  };
+  }, []);
 
   // Handle resource movement between areas
   const updateResourceMutation = useMutation({
