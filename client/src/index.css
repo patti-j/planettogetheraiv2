@@ -69,57 +69,83 @@
   scroll-behavior: smooth;
 }
 
-/* ULTIMATE TOOLTIP Z-INDEX FIX - Use maximum z-index values */
+/* ULTIMATE TOOLTIP Z-INDEX FIX - Force tooltip to be above everything */
 [data-radix-tooltip-content] {
   z-index: 2147483647 !important;
   position: fixed !important;
+  isolation: isolate !important;
+  transform: translateZ(0) !important;
 }
 
 /* Ensure tooltip portal appears above everything */
 [data-radix-popper-content-wrapper] {
   z-index: 2147483647 !important;
+  position: fixed !important;
+  isolation: isolate !important;
+  transform: translateZ(0) !important;
 }
 
-/* Target all tooltip portals */
+/* Target all tooltip portals - highest priority */
 div[data-radix-portal] {
   z-index: 2147483647 !important;
+  position: fixed !important;
+  isolation: isolate !important;
+  transform: translateZ(0) !important;
 }
 
 /* Radix UI tooltip wrapper */
 [data-radix-tooltip-portal] {
   z-index: 2147483647 !important;
+  position: fixed !important;
+  isolation: isolate !important;
+  transform: translateZ(0) !important;
 }
 
 /* All tooltip content variants */
 [role="tooltip"] {
   z-index: 2147483647 !important;
   position: fixed !important;
+  isolation: isolate !important;
+  transform: translateZ(0) !important;
 }
 
 /* Force tooltip above resource containers */
 .tooltip-content {
   z-index: 2147483647 !important;
   position: fixed !important;
+  isolation: isolate !important;
+  transform: translateZ(0) !important;
 }
 
-/* Ensure resource containers have much lower z-index than tooltips */
+/* Create new stacking context for shop floor to isolate it below tooltips */
+.shop-floor-container {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+}
+
+/* Ensure all resource containers are in lower stacking context */
 .absolute.cursor-pointer {
   z-index: 1;
+  position: relative;
 }
 
 /* Force all resource icons to low z-index */
 .relative.cursor-pointer {
   z-index: 1;
+  position: relative;
 }
 
 /* Ensure shop floor containers don't create stacking contexts above tooltips */
 .relative.overflow-hidden {
-  z-index: auto;
+  z-index: 1;
+  position: relative;
 }
 
 /* Force area containers to have lower z-index */
 .border-2.border-dashed.rounded-lg {
   z-index: 1;
+  position: relative;
 }
 
 /* Force visible scrollbars on mobile */
