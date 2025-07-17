@@ -452,7 +452,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         model: "dall-e-3",
         prompt: prompt,
         n: 1,
-        size: "512x512", // Smaller size for faster generation
+        size: "1024x1024",
         quality: "standard",
       });
       
