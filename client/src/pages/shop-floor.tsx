@@ -765,8 +765,9 @@ const DraggableAreaBubble = ({
                       width: Math.max(60, layoutPosition.width / 2), // Exact proportional scaling
                       height: Math.max(60, layoutPosition.height / 2)
                     } : {
-                      left: 10 + (index % 3) * 80,
-                      top: 10 + Math.floor(index / 3) * 80,
+                      // For No Area, arrange in orderly grid pattern
+                      left: 10 + (index % 4) * 70, // 4 columns for better organization
+                      top: 10 + Math.floor(index / 4) * 70, // Rows of 4
                       width: 60,
                       height: 60
                     };
@@ -2198,7 +2199,9 @@ export default function ShopFloor() {
                         .filter(area => area.resources)
                         .flatMap(area => area.resources)
                     );
-                    const unassignedResources = filteredResources.filter(r => !assignedResourceIds.has(r.id));
+                    const unassignedResources = filteredResources
+                      .filter(r => !assignedResourceIds.has(r.id))
+                      .sort((a, b) => a.name.localeCompare(b.name));
                     
                     if (unassignedResources.length > 0) {
                       return (
