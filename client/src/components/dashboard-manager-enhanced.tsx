@@ -766,7 +766,7 @@ export function EnhancedDashboardManager({
                               {editingDashboard && editingDashboard.configuration.customWidgets?.map((widget: any) => (
                                 <div
                                   key={widget.id}
-                                  className="absolute bg-white border rounded-lg shadow-sm group hover:border-blue-500"
+                                  className="absolute bg-white border rounded-lg shadow-sm group hover:border-blue-500 cursor-move"
                                   style={{
                                     left: widget.position.x,
                                     top: widget.position.y,
@@ -774,7 +774,7 @@ export function EnhancedDashboardManager({
                                     height: widget.size.height
                                   }}
                                   onMouseDown={(e) => {
-                                    if (e.target === e.currentTarget || e.target.closest('.widget-header')) {
+                                    if (e.target === e.currentTarget || e.target.closest('.widget-header') || e.target.closest('.widget-content')) {
                                       // Handle widget dragging
                                       const startX = e.clientX - widget.position.x;
                                       const startY = e.clientY - widget.position.y;
@@ -814,8 +814,9 @@ export function EnhancedDashboardManager({
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                      onClick={() => {
+                                      className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
                                         if (editingDashboard) {
                                           const updatedConfig = {
                                             ...editingDashboard.configuration,
@@ -828,7 +829,7 @@ export function EnhancedDashboardManager({
                                       <Trash2 className="w-3 h-3" />
                                     </Button>
                                   </div>
-                                  <div className="px-2 pb-2">
+                                  <div className="widget-content px-2 pb-2 cursor-move">
                                     <div className="text-xs text-gray-500 capitalize">{widget.type}</div>
                                   </div>
                                   

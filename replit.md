@@ -130,6 +130,12 @@ The application uses a modern full-stack architecture with strong typing through
 - Scroll indicator automatically hides when user scrolls to bottom or when all items are visible
 - Enhanced user experience by making it clear that additional navigation options are available
 
+✓ **Dashboard Editor Widget Cursor Fix (July 17, 2025)**:
+- Fixed cursor behavior in dashboard editor so widgets consistently show move cursor when hovering anywhere over the widget
+- Applied cursor-move class to entire widget container and content areas for consistent drag indication
+- Added proper event handling to prevent cursor conflicts between drag actions and button interactions
+- Enhanced user experience with intuitive cursor feedback throughout the entire widget area
+
 ✓ **Dashboard Name Layout and Alphabetical Sorting (July 17, 2025)**:
 - Updated dashboard cards to display name and description horizontally with bullet separator to save vertical space
 - Added alphabetical sorting for dashboards in both dashboard manager and analytics page
