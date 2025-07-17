@@ -2082,7 +2082,7 @@ export default function ShopFloor() {
                     onClick={() => setShowLegend(false)}
                     className="h-6 w-6 p-0 hover:bg-gray-100"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
                   </Button>
                 </div>
                 <div className="space-y-1 sm:space-y-2">
