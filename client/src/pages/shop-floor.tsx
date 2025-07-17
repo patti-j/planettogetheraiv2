@@ -437,9 +437,11 @@ const DraggableAreaBubble = ({
   resourcePhotos, 
   generateResourceStatus, 
   isNoArea = false,
-  onResourceMove
+  onResourceMove,
+  shopFloorLayout
 }: DraggableAreaBubbleProps & { 
   onResourceMove: (resourceId: number, newArea: string) => void;
+  shopFloorLayout: ShopFloorLayout[];
 }) => {
   // Calculate dimensions
   const areaWidth = Math.max(300, resources.length * 80 + 100);
@@ -615,21 +617,49 @@ const DraggableAreaBubble = ({
                 </Badge>
               </div>
 
-              {/* Resources Grid */}
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+              {/* Resources positioned based on saved layout */}
+              <div className="relative" style={{ minHeight: '200px' }}>
                 {resources.map((resource, index) => {
                   const status = generateResourceStatus(resource);
                   const photo = resourcePhotos[resource.id];
                   
+                  // Find the saved layout position for this resource
+                  const layoutPosition = shopFloorLayout.find(
+                    layout => layout.resourceId === resource.id
+                  );
+                  
+                  // If no saved position, use grid positioning as fallback
+                  const position = layoutPosition ? {
+                    left: Math.max(0, (layoutPosition.x / 6)), // Scale down for area bubble
+                    top: Math.max(0, (layoutPosition.y / 6)), // Scale down for area bubble
+                    width: Math.max(40, (layoutPosition.width / 3)), // Scale down size
+                    height: Math.max(40, (layoutPosition.height / 3)) // Scale down size
+                  } : {
+                    left: 10 + (index % 3) * 70,
+                    top: 10 + Math.floor(index / 3) * 70,
+                    width: 60,
+                    height: 60
+                  };
+                  
                   return (
-                    <DraggableResourceCard
+                    <div
                       key={resource.id}
-                      resource={resource}
-                      status={status}
-                      photo={photo}
-                      onResourceDetails={onResourceDetails}
-                      currentArea={area}
-                    />
+                      className="absolute"
+                      style={{
+                        left: position.left,
+                        top: position.top,
+                        width: position.width,
+                        height: position.height
+                      }}
+                    >
+                      <DraggableResourceCard
+                        resource={resource}
+                        status={status}
+                        photo={photo}
+                        onResourceDetails={onResourceDetails}
+                        currentArea={area}
+                      />
+                    </div>
                   );
                 })}
               </div>
@@ -1623,7 +1653,7 @@ export default function ShopFloor() {
                       resourcePhotos={resourcePhotos}
                       generateResourceStatus={generateResourceStatus}
                       onResourceMove={handleResourceMove}
-
+                      shopFloorLayout={shopFloorLayout}
                     />
                   ))}
                   
@@ -1649,7 +1679,7 @@ export default function ShopFloor() {
                           generateResourceStatus={generateResourceStatus}
                           isNoArea={true}
                           onResourceMove={handleResourceMove}
-
+                          shopFloorLayout={shopFloorLayout}
                         />
                       );
                     }
