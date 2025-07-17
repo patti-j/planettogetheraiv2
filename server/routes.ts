@@ -467,10 +467,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ imageUrl: base64Image, resourceId });
     } catch (error) {
       console.error("AI Image generation error:", error);
-      res.status(500).json({ 
-        message: "Failed to generate image",
-        error: error.message || "Unknown error"
-      });
+      
+      // Check if this is a quota/rate limit error
+      const errorMessage = error.message || "Unknown error";
+      const isQuotaError = errorMessage.includes('quota') || 
+                          errorMessage.includes('limit') || 
+                          errorMessage.includes('exceeded') ||
+                          errorMessage.includes('insufficient_quota') ||
+                          errorMessage.includes('rate_limit');
+      
+      if (isQuotaError) {
+        res.status(429).json({ 
+          message: "Quota exceeded",
+          error: errorMessage,
+          quotaExceeded: true
+        });
+      } else {
+        res.status(500).json({ 
+          message: "Failed to generate image",
+          error: errorMessage
+        });
+      }
     }
   });
 

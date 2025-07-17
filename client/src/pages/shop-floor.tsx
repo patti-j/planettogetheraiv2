@@ -1561,6 +1561,7 @@ export default function ShopFloor() {
       
       const results = [];
       let successCount = 0;
+      let quotaExceeded = false;
       
       // Show initial progress toast
       toast({
@@ -1571,6 +1572,11 @@ export default function ShopFloor() {
       // Process images in parallel batches of 2 for better speed
       const batchSize = 2;
       for (let i = 0; i < resourcesWithoutPhotos.length; i += batchSize) {
+        // Stop processing if quota has been exceeded
+        if (quotaExceeded) {
+          break;
+        }
+        
         const batch = resourcesWithoutPhotos.slice(i, i + batchSize);
         
         const batchPromises = batch.map(async (resource) => {
@@ -1582,8 +1588,21 @@ export default function ShopFloor() {
               resourceId: resource.id
             });
             
+            // Check for quota exceeded status first
+            if (response.status === 429) {
+              quotaExceeded = true;
+              const data = await response.json();
+              throw new Error(`Quota exceeded: ${data.error || 'API quota limit reached'}`);
+            }
+            
             const data = await response.json();
             console.log('AI API response:', data);
+            
+            // Check for quota exceeded error in response data
+            if (data.error && (data.error.includes('quota') || data.error.includes('limit') || data.error.includes('exceeded'))) {
+              quotaExceeded = true;
+              throw new Error(`Quota exceeded: ${data.error}`);
+            }
             
             // The image is already in base64 format from the server
             const base64Image = data.imageUrl;
@@ -1606,6 +1625,20 @@ export default function ShopFloor() {
           } catch (error) {
             console.error(`Failed to generate image for ${resource.name}:`, error);
             
+            // Check if this is a quota error
+            if (error.message && (error.message.includes('quota') || error.message.includes('limit') || error.message.includes('exceeded'))) {
+              quotaExceeded = true;
+              
+              // Show quota exceeded error
+              toast({
+                title: "Quota Exceeded",
+                description: "AI image generation quota has been exceeded. Stopping generation process.",
+                variant: "destructive",
+              });
+              
+              return null;
+            }
+            
             // Show error toast with more details
             toast({
               title: "Image Generation Error",
@@ -1619,6 +1652,11 @@ export default function ShopFloor() {
         
         const batchResults = await Promise.all(batchPromises);
         results.push(...batchResults.filter(result => result !== null));
+        
+        // If quota exceeded, stop processing
+        if (quotaExceeded) {
+          break;
+        }
       }
       
       return results;
