@@ -618,50 +618,87 @@ const DraggableAreaBubble = ({
               </div>
 
               {/* Resources positioned based on saved layout */}
-              <div className="relative" style={{ minHeight: '200px' }}>
-                {resources.map((resource, index) => {
-                  const status = generateResourceStatus(resource);
-                  const photo = resourcePhotos[resource.id];
+              <div className="relative overflow-hidden">
+                {(() => {
+                  // Calculate the bounding box of all resources to optimize container size
+                  const resourcesWithPositions = resources.map((resource, index) => {
+                    const layoutPosition = shopFloorLayout.find(
+                      layout => layout.resourceId === resource.id
+                    );
+                    
+                    const position = layoutPosition ? {
+                      left: layoutPosition.x / 5, // Better scaling to match individual area proportions
+                      top: layoutPosition.y / 5,
+                      width: Math.max(70, layoutPosition.width / 3), // Readable but properly scaled
+                      height: Math.max(70, layoutPosition.height / 3)
+                    } : {
+                      left: 10 + (index % 3) * 90,
+                      top: 10 + Math.floor(index / 3) * 90,
+                      width: 70,
+                      height: 70
+                    };
+                    
+                    return { resource, position, index };
+                  });
                   
-                  // Find the saved layout position for this resource
-                  const layoutPosition = shopFloorLayout.find(
-                    layout => layout.resourceId === resource.id
-                  );
+                  // Find the minimum positions to normalize the layout (remove excess whitespace)
+                  const minLeft = resources.length > 0 ? Math.min(...resourcesWithPositions.map(r => r.position.left)) : 0;
+                  const minTop = resources.length > 0 ? Math.min(...resourcesWithPositions.map(r => r.position.top)) : 0;
                   
-                  // If no saved position, use grid positioning as fallback
-                  const position = layoutPosition ? {
-                    left: Math.max(0, (layoutPosition.x / 6)), // Scale down for area bubble
-                    top: Math.max(0, (layoutPosition.y / 6)), // Scale down for area bubble
-                    width: Math.max(40, (layoutPosition.width / 3)), // Scale down size
-                    height: Math.max(40, (layoutPosition.height / 3)) // Scale down size
-                  } : {
-                    left: 10 + (index % 3) * 70,
-                    top: 10 + Math.floor(index / 3) * 70,
-                    width: 60,
-                    height: 60
-                  };
+                  // Normalize positions to remove excess whitespace
+                  const normalizedPositions = resourcesWithPositions.map(item => ({
+                    ...item,
+                    position: {
+                      ...item.position,
+                      left: item.position.left - minLeft + 10, // Add small padding
+                      top: item.position.top - minTop + 10
+                    }
+                  }));
+                  
+                  // Calculate optimal container size using normalized positions
+                  const maxRight = resources.length > 0 ? Math.max(...normalizedPositions.map(r => r.position.left + r.position.width)) : 200;
+                  const maxBottom = resources.length > 0 ? Math.max(...normalizedPositions.map(r => r.position.top + r.position.height)) : 120;
+                  const containerWidth = Math.max(200, maxRight + 20);
+                  const containerHeight = Math.max(120, maxBottom + 20);
                   
                   return (
-                    <div
-                      key={resource.id}
-                      className="absolute"
-                      style={{
-                        left: position.left,
-                        top: position.top,
-                        width: position.width,
-                        height: position.height
+                    <div 
+                      className="relative"
+                      style={{ 
+                        width: containerWidth,
+                        height: containerHeight,
+                        minWidth: '200px',
+                        minHeight: '120px'
                       }}
                     >
-                      <DraggableResourceCard
-                        resource={resource}
-                        status={status}
-                        photo={photo}
-                        onResourceDetails={onResourceDetails}
-                        currentArea={area}
-                      />
+                      {normalizedPositions.map(({ resource, position, index }) => {
+                        const status = generateResourceStatus(resource);
+                        const photo = resourcePhotos[resource.id];
+                        
+                        return (
+                          <div
+                            key={resource.id}
+                            className="absolute"
+                            style={{
+                              left: position.left,
+                              top: position.top,
+                              width: position.width,
+                              height: position.height
+                            }}
+                          >
+                            <DraggableResourceCard
+                              resource={resource}
+                              status={status}
+                              photo={photo}
+                              onResourceDetails={onResourceDetails}
+                              currentArea={area}
+                            />
+                          </div>
+                        );
+                      })}
                     </div>
                   );
-                })}
+                })()}
               </div>
             </div>
           </TooltipTrigger>
