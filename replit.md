@@ -114,6 +114,14 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 17, 2025)
 
+✓ **Comprehensive Tooltip System Fix (July 17, 2025)**:
+- Eliminated duplicate tooltip text by removing redundant resource name display in tooltip content
+- Implemented maximum z-index values (2147483647) across all tooltip elements and portals
+- Added comprehensive CSS rules targeting all Radix UI tooltip components and portals
+- Fixed stacking context issues by ensuring resource containers use lower z-index values
+- Enhanced tooltip appearance with black background, white text, and improved shadow styling
+- Tooltips now properly appear above all shop floor elements including overlapping resources
+
 ✓ **Layout Manager Dialog Implementation (July 17, 2025)**:
 - Created comprehensive Layout Manager dialog to consolidate shop floor controls
 - Added Layout Manager button to replace old "Areas" button in header
