@@ -114,6 +114,14 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 17, 2025)
 
+✓ **Layout Manager Dialog Implementation (July 17, 2025)**:
+- Created comprehensive Layout Manager dialog to consolidate shop floor controls
+- Added Layout Manager button to replace old "Areas" button in header
+- Dialog includes Help & Instructions, Image Management, and Area Management sections
+- Moved global image sizing controls back to shop floor header per user request
+- Header now contains only essential controls: area selector, Layout Manager, zoom controls, image sizing, and live indicator
+- Simplified interface with cleaner header layout and organized control management
+
 ✓ **Shop Floor Area Management & AI Image Generation Enhancements (July 17, 2025)**:
 - Added clickable area icons (zoom-in button) in "all resources" view for easy switching to specific area views
 - Fixed AI image generation feedback system with proper success/error notifications and resource count display

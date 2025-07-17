@@ -1913,6 +1913,60 @@ export default function ShopFloor() {
                     </TooltipContent>
                   </Tooltip>
                 </div>
+
+                {/* Image Size Controls */}
+                <div className="flex items-center gap-1 ml-2 px-2 py-1 bg-gray-50 rounded-lg">
+                  <span className="text-xs font-medium text-gray-600">Size:</span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setGlobalImageSize(prev => Math.max(50, prev - 10))}
+                        className="h-6 w-6 p-0 hover:bg-gray-200"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Decrease all image sizes</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <span className="text-xs font-mono min-w-[3rem] text-center">{globalImageSize}%</span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setGlobalImageSize(prev => Math.min(200, prev + 10))}
+                        className="h-6 w-6 p-0 hover:bg-gray-200"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Increase all image sizes</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setGlobalImageSize(100);
+                          setIndividualImageSizes({});
+                        }}
+                        className="h-6 w-6 p-0 hover:bg-gray-200 ml-1"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Reset all image sizes to default</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
               </div>
             </div>
             
@@ -2453,68 +2507,7 @@ const LayoutManagerDialog: React.FC<LayoutManagerDialogProps> = ({
               </Tooltip>
             </div>
 
-            {/* Image Size Controls */}
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Global Image Size</p>
-              <div className="flex items-center gap-3">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setGlobalImageSize(prev => Math.max(50, prev - 10))}
-                      className="px-2"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Decrease all image sizes</p>
-                  </TooltipContent>
-                </Tooltip>
-                
-                <div className="flex-1 text-center">
-                  <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
-                    {globalImageSize}%
-                  </span>
-                </div>
-                
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setGlobalImageSize(prev => Math.min(200, prev + 10))}
-                      className="px-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Increase all image sizes</p>
-                  </TooltipContent>
-                </Tooltip>
-                
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setGlobalImageSize(100);
-                        setIndividualImageSizes({});
-                      }}
-                      className="px-2"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Reset all image sizes to default</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            </div>
+
           </div>
         </CardContent>
       </Card>
