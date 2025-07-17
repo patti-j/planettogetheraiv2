@@ -194,13 +194,13 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo 
   // Fallback to react-dnd for desktop
   const [{ isDragging }, drag] = useDrag({
     type: "resource",
-    item: { id: layout.id, x: layout.x, y: layout.y },
+    item: () => {
+      setHasDragged(true);
+      return { id: layout.id, x: layout.x, y: layout.y };
+    },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
-    begin: () => {
-      setHasDragged(true);
-    },
     end: () => {
       // Reset drag state after a short delay to prevent click
       setTimeout(() => setHasDragged(false), 100);
@@ -370,13 +370,13 @@ const DraggableResourceCard = ({
   
   const [{ isDragging }, drag] = useDrag({
     type: "resource-card",
-    item: { resourceId: resource.id, currentArea: currentArea?.name || "No Area" },
+    item: () => {
+      setHasDragged(true);
+      return { resourceId: resource.id, currentArea: currentArea?.name || "No Area" };
+    },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
-    begin: () => {
-      setHasDragged(true);
-    },
     end: () => {
       // Reset drag state after a short delay to prevent click
       setTimeout(() => setHasDragged(false), 100);
