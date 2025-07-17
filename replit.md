@@ -134,7 +134,8 @@ The application uses a modern full-stack architecture with strong typing through
 ✓ **UI/UX Improvements (July 17, 2025)**:
 - Fixed tooltip z-index issues where resource tooltips appeared underneath other icons
 - Added close button (X) to status legend visible on all screen sizes for better user control
-- Enhanced tooltip visibility with z-[100] class for proper layering
+- Enhanced tooltip visibility with z-[9999] class for proper layering above all elements
+- Made status legend close button gray and less intrusive with hover effects
 - Improved user experience with clickable legend controls
 
 ✓ **Shop Floor Area Management & AI Image Generation Enhancements (July 17, 2025)**:

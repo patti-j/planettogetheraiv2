@@ -980,7 +980,7 @@ const DraggableAreaBubble = ({
                                     </div>
                                   </div>
                                 </TooltipTrigger>
-                                <TooltipContent className="z-[100] relative">
+                                <TooltipContent className="z-[9999] relative">
                                   <div className="space-y-1">
                                     <p className="font-medium">{resource.name}</p>
                                     <p className="text-sm">Status: {status.status}</p>
@@ -1001,7 +1001,7 @@ const DraggableAreaBubble = ({
               </div>
             </div>
           </TooltipTrigger>
-          <TooltipContent className="z-[100] relative">
+          <TooltipContent className="z-[9999] relative">
             <div className="space-y-1">
               <p className="font-medium">{area.name}</p>
               <p className="text-sm">{resources.length} resources</p>
@@ -2074,13 +2074,13 @@ export default function ShopFloor() {
             {/* Status Legend */}
             {showLegend && (
               <div className="absolute top-4 right-4 bg-white p-3 sm:p-4 rounded-lg shadow-lg z-10">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-start justify-between mb-2">
                   <h3 className="font-semibold text-gray-800 text-sm sm:text-base">Status Legend</h3>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowLegend(false)}
-                    className="h-6 w-6 p-0 hover:bg-gray-100"
+                    className="h-6 w-6 p-0 hover:bg-gray-100 -mt-1 ml-3"
                   >
                     <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
                   </Button>
