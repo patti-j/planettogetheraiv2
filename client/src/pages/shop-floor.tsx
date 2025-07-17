@@ -56,8 +56,15 @@ const useMobileDrag = (
 ) => {
   const [isDragging, setIsDragging] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [currentPosition, setCurrentPosition] = useState({ x: item.x, y: item.y });
   
+  // Update position when item changes
+  useEffect(() => {
+    if (!isDragging) {
+      setCurrentPosition({ x: item.x, y: item.y });
+    }
+  }, [item.x, item.y, isDragging]);
+
   // Set up global event listeners for drag operations
   useEffect(() => {
     if (!isDragging) return;
@@ -65,7 +72,9 @@ const useMobileDrag = (
     const handleMouseMove = (e: MouseEvent) => {
       const deltaX = e.clientX - startPos.x;
       const deltaY = e.clientY - startPos.y;
-      setDragOffset({ x: deltaX, y: deltaY });
+      const newX = Math.max(0, item.x + deltaX);
+      const newY = Math.max(0, item.y + deltaY);
+      setCurrentPosition({ x: newX, y: newY });
     };
 
     const handleTouchMove = (e: TouchEvent) => {
@@ -73,18 +82,15 @@ const useMobileDrag = (
       const touch = e.touches[0];
       const deltaX = touch.clientX - startPos.x;
       const deltaY = touch.clientY - startPos.y;
-      setDragOffset({ x: deltaX, y: deltaY });
+      const newX = Math.max(0, item.x + deltaX);
+      const newY = Math.max(0, item.y + deltaY);
+      setCurrentPosition({ x: newX, y: newY });
     };
 
     const handleEnd = () => {
       if (!isDragging) return;
       setIsDragging(false);
-      
-      const newX = Math.max(0, item.x + dragOffset.x);
-      const newY = Math.max(0, item.y + dragOffset.y);
-      
-      onMove(newX, newY);
-      setDragOffset({ x: 0, y: 0 });
+      onMove(currentPosition.x, currentPosition.y);
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -98,13 +104,13 @@ const useMobileDrag = (
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleEnd);
     };
-  }, [isDragging, startPos, dragOffset, item, onMove]);
+  }, [isDragging, startPos, item, onMove, currentPosition]);
 
   const handleStart = (clientX: number, clientY: number) => {
     if (disabled) return;
     setIsDragging(true);
     setStartPos({ x: clientX, y: clientY });
-    setDragOffset({ x: 0, y: 0 });
+    setCurrentPosition({ x: item.x, y: item.y });
   };
 
   const listeners = {
@@ -117,12 +123,6 @@ const useMobileDrag = (
       const touch = e.touches[0];
       handleStart(touch.clientX, touch.clientY);
     }
-  };
-
-  // Calculate current position during drag
-  const currentPosition = {
-    x: item.x + dragOffset.x,
-    y: item.y + dragOffset.y
   };
 
   return { isDragging, position: currentPosition, listeners };
@@ -184,7 +184,7 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo 
   const [hasDragged, setHasDragged] = useState(false);
   const [clickBlocked, setClickBlocked] = useState(false);
   
-  // Mobile-friendly drag implementation
+  // Mobile-friendly drag implementation with immediate position updates
   const mobileDrag = useMobileDrag(
     { x: layout.x, y: layout.y, id: layout.id },
     (newX: number, newY: number) => {
