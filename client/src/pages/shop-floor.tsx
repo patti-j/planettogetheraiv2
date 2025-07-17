@@ -182,12 +182,17 @@ interface AreaLayout {
 
 const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo }: DraggableResourceProps) => {
   const [hasDragged, setHasDragged] = useState(false);
+  const [clickBlocked, setClickBlocked] = useState(false);
   
   // Mobile-friendly drag implementation
   const mobileDrag = useMobileDrag(
     { x: layout.x, y: layout.y, id: layout.id },
     (newX: number, newY: number) => {
+      setHasDragged(true);
+      setClickBlocked(true);
       onMove(layout.id, newX, newY);
+      // Clear click blocking after position change
+      setTimeout(() => setClickBlocked(false), 500);
     }
   );
 
@@ -202,8 +207,8 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo 
       isDragging: monitor.isDragging(),
     }),
     end: () => {
-      // Reset drag state after a short delay to prevent click
-      setTimeout(() => setHasDragged(false), 100);
+      // Reset drag state after a longer delay to prevent click
+      setTimeout(() => setHasDragged(false), 300);
     },
   });
 
@@ -213,8 +218,8 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo 
   
   // Handle click to prevent opening dialog after drag
   const handleClick = (e: React.MouseEvent) => {
-    // Prevent click if we just finished dragging
-    if (hasDragged || mobileDrag.isDragging) {
+    // Prevent click if we just finished dragging or are currently dragging
+    if (hasDragged || mobileDrag.isDragging || isDragging || clickBlocked) {
       e.preventDefault();
       e.stopPropagation();
       return;
@@ -378,8 +383,8 @@ const DraggableResourceCard = ({
       isDragging: monitor.isDragging(),
     }),
     end: () => {
-      // Reset drag state after a short delay to prevent click
-      setTimeout(() => setHasDragged(false), 100);
+      // Reset drag state after a longer delay to prevent click
+      setTimeout(() => setHasDragged(false), 300);
     },
   });
 
