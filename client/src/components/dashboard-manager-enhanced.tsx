@@ -605,24 +605,25 @@ export function EnhancedDashboardManager({
                 <div className="space-y-4">
                   {(editingDashboard || (!editingWidget && viewMode === "dashboards")) && (
                     <>
-                      <div className="space-y-2">
-                        <Label htmlFor="dashboard-name">Dashboard Name</Label>
-                        <Input
-                          id="dashboard-name"
-                          value={newDashboardName}
-                          onChange={(e) => setNewDashboardName(e.target.value)}
-                          placeholder="Enter dashboard name"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="dashboard-description">Description</Label>
-                        <Textarea
-                          id="dashboard-description"
-                          value={newDashboardDescription}
-                          onChange={(e) => setNewDashboardDescription(e.target.value)}
-                          placeholder="Enter dashboard description"
-                          rows={3}
-                        />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="dashboard-name">Dashboard Name</Label>
+                          <Input
+                            id="dashboard-name"
+                            value={newDashboardName}
+                            onChange={(e) => setNewDashboardName(e.target.value)}
+                            placeholder="Enter dashboard name"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="dashboard-description">Description</Label>
+                          <Input
+                            id="dashboard-description"
+                            value={newDashboardDescription}
+                            onChange={(e) => setNewDashboardDescription(e.target.value)}
+                            placeholder="Enter dashboard description"
+                          />
+                        </div>
                       </div>
                       
                       {/* Visual Dashboard Editor */}

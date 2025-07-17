@@ -136,6 +136,13 @@ The application uses a modern full-stack architecture with strong typing through
 - Added proper event handling to prevent cursor conflicts between drag actions and button interactions
 - Enhanced user experience with intuitive cursor feedback throughout the entire widget area
 
+✓ **Dashboard Name Layout and Sidebar Navigation Fix (July 17, 2025)**:
+- Fixed sidebar navigation menu overflow issue when window is resized by adding proper containment and scrolling behavior
+- Added min-h-0 to navigation container and overflow-x-hidden to prevent menu items from appearing outside the sidebar panel
+- Enhanced navigation items with whitespace-nowrap and text truncation for better responsive behavior
+- Updated dashboard name and description fields to use horizontal layout (side-by-side) to save vertical space
+- Changed description field from textarea to input for consistent horizontal layout in dashboard creation form
+
 ✓ **Dashboard Name Layout and Alphabetical Sorting (July 17, 2025)**:
 - Updated dashboard cards to display name and description horizontally with bullet separator to save vertical space
 - Added alphabetical sorting for dashboards in both dashboard manager and analytics page

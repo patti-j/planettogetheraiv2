@@ -180,14 +180,14 @@ export default function Sidebar() {
         </h1>
       </div>
       
-      <div className="flex-1 relative">
-        <nav ref={navRef} className="h-full p-3 md:p-4 space-y-1 md:space-y-2 overflow-y-auto">
+      <div className="flex-1 relative min-h-0">
+        <nav ref={navRef} className="h-full p-3 md:p-4 space-y-1 md:space-y-2 overflow-y-auto overflow-x-hidden">
           {navigationItems.map((item) => (
             <Tooltip key={item.href}>
               <TooltipTrigger asChild>
                 <Link href={item.href}>
                   <a
-                    className={`flex items-center px-3 py-2 rounded-lg transition-colors text-sm md:text-base ${
+                    className={`flex items-center px-3 py-2 rounded-lg transition-colors text-sm md:text-base whitespace-nowrap ${
                       item.href === "/ai-assistant"
                         ? item.active
                           ? "text-white bg-gradient-to-r from-purple-500 to-pink-500 border-l-4 border-purple-600"
@@ -198,8 +198,8 @@ export default function Sidebar() {
                     }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <item.icon className="w-4 h-4 md:w-5 md:h-5 mr-3" />
-                    {item.label}
+                    <item.icon className="w-4 h-4 md:w-5 md:h-5 mr-3 flex-shrink-0" />
+                    <span className="truncate">{item.label}</span>
                   </a>
                 </Link>
               </TooltipTrigger>
