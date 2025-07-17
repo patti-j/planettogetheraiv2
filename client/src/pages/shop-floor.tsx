@@ -44,7 +44,8 @@ import {
   Plus,
   Minus,
   ImageIcon,
-  Sparkles
+  Sparkles,
+  Trash2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -1440,6 +1441,12 @@ export default function ShopFloor() {
       // Clear any existing invalid URLs from localStorage
       localStorage.removeItem('resourcePhotos');
       setResourcePhotos({});
+      
+      // Show clearing message
+      toast({
+        title: "Clearing Previous Images",
+        description: "Removing any expired images before generating new ones...",
+      });
 
       const results = [];
       let successCount = 0;
@@ -1857,12 +1864,37 @@ export default function ShopFloor() {
                         <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
                       )}
                       <span className="text-xs hidden sm:inline ml-1">
-                        Generate Missing Resource Images
+                        Generate Cartoon Images ({resources.filter(r => !resourcePhotos[r.id]).length})
                       </span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Generate AI images for resources missing photos</p>
+                    <p>Generate cartoon-style AI images for resources missing photos</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                {/* Clear cache button */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        localStorage.removeItem('resourcePhotos');
+                        setResourcePhotos({});
+                        toast({
+                          title: "Cache Cleared",
+                          description: "All resource images have been cleared from storage.",
+                        });
+                      }}
+                      className="h-8 px-2 hover:bg-red-50 border-red-300 text-red-700 hover:border-red-400"
+                    >
+                      <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="text-xs hidden sm:inline ml-1">Clear Images</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Clear all cached resource images</p>
                   </TooltipContent>
                 </Tooltip>
               </div>
