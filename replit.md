@@ -114,6 +114,17 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 17, 2025)
 
+✓ **Dashboard Manager Maximize Button Icon Consistency Fix (July 17, 2025)**:
+- Updated dashboard edit dialog maximize button to use Maximize2/Minimize2 icons instead of double ArrowUpRight/ArrowDownLeft
+- Maintains consistency with all other maximize buttons across the application
+- Simplified button design removes duplicate arrows for cleaner interface
+
+✓ **Operator Dashboard Resource Filtering Fix (July 17, 2025)**:
+- Fixed operator page statistics to properly reflect filtered operations based on selected resource
+- Statistics now update correctly when switching between "All Resources" and specific resource selection
+- Added resourceFilteredOperations to calculate counts based on current resource selection
+- Ensures accurate upcoming, in-progress, and completed counts for selected resource
+
 ✓ **Dashboard Manager Window Controls Reorganization (July 17, 2025)**:
 - Removed window maximization functionality from main dashboard manager interface
 - Added maximize/minimize buttons to dashboard edit dialog for better user workflow

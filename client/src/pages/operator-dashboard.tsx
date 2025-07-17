@@ -269,10 +269,14 @@ export default function OperatorDashboard() {
     });
   };
 
-  // Get upcoming operations count
-  const upcomingCount = operatorOperations.filter(op => op.status === "pending").length;
-  const inProgressCount = operatorOperations.filter(op => op.status === "in_progress").length;
-  const completedTodayCount = operatorOperations.filter(op => op.status === "completed").length;
+  // Get operation counts based on current resource selection
+  const resourceFilteredOperations = operatorOperations.filter(op => 
+    selectedResource === "all" || op.resourceId?.toString() === selectedResource
+  );
+  
+  const upcomingCount = resourceFilteredOperations.filter(op => op.status === "pending").length;
+  const inProgressCount = resourceFilteredOperations.filter(op => op.status === "in_progress").length;
+  const completedTodayCount = resourceFilteredOperations.filter(op => op.status === "completed").length;
 
   return (
     <div className={`bg-gray-50 ${isMaximized ? 'fixed inset-0 z-50' : 'h-screen'} flex flex-col`}>

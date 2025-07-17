@@ -561,15 +561,9 @@ export function EnhancedDashboardManager({
                 className="h-8 w-8 p-0"
               >
                 {isEditDialogMaximized ? (
-                  <>
-                    <ArrowDownLeft className="w-3 h-3" />
-                    <ArrowDownLeft className="w-3 h-3 -ml-1" />
-                  </>
+                  <Minimize2 className="w-4 h-4" />
                 ) : (
-                  <>
-                    <ArrowUpRight className="w-3 h-3" />
-                    <ArrowUpRight className="w-3 h-3 -ml-1" />
-                  </>
+                  <Maximize2 className="w-4 h-4" />
                 )}
               </Button>
             </div>
