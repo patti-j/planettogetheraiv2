@@ -736,14 +736,11 @@ const DraggableAreaBubble = ({
       }}
       {...mobileDrag.listeners}
     >
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className={`relative w-full min-h-full ${
-              isNoArea ? 'bg-gray-50 border-gray-300' : 'bg-white border-blue-300'
-            } border-2 border-dashed rounded-lg p-4 shadow-lg hover:shadow-xl transition-shadow ${
-              isOver ? 'bg-blue-50 border-blue-400' : ''
-            }`}>
+      <div className={`relative w-full min-h-full ${
+        isNoArea ? 'bg-gray-50 border-gray-300' : 'bg-white border-blue-300'
+      } border-2 border-dashed rounded-lg p-4 shadow-lg hover:shadow-xl transition-shadow ${
+        isOver ? 'bg-blue-50 border-blue-400' : ''
+      }`}>
               {/* Area Header */}
               <div className={`flex items-center justify-between mb-3 pb-2 border-b ${
                 isNoArea ? 'border-gray-300' : 'border-blue-200'
@@ -981,7 +978,7 @@ const DraggableAreaBubble = ({
                                     </div>
                                   </div>
                                 </TooltipTrigger>
-                                <TooltipContent className="z-[9999] relative tooltip-content">
+                                <TooltipContent className="z-[99999] bg-black text-white border-none shadow-xl">
                                   <div className="space-y-1">
                                     <p className="font-medium">{resource.name}</p>
                                     <p className="text-sm">Status: {status.status}</p>
@@ -1000,17 +997,7 @@ const DraggableAreaBubble = ({
                   );
                 })()}
               </div>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent className="z-[9999] relative tooltip-content">
-            <div className="space-y-1">
-              <p className="font-medium">{area.name}</p>
-              <p className="text-sm">{resources.length} resources</p>
-              <p className="text-sm">Drag to move area or drop resources here</p>
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      </div>
     </div>
   );
 };
