@@ -112,7 +112,20 @@ Preferred communication style: Simple, everyday language.
 
 The application uses a modern full-stack architecture with strong typing throughout, real-time updates, and an intuitive drag-and-drop interface for manufacturing production scheduling.
 
-## Recent Changes (July 16, 2025)
+## Recent Changes (July 17, 2025)
+
+✓ **Shop Floor Area Management & AI Image Generation Enhancements (July 17, 2025)**:
+- Added clickable area icons (zoom-in button) in "all resources" view for easy switching to specific area views
+- Fixed AI image generation feedback system with proper success/error notifications and resource count display
+- Enhanced AI image generation button to show count of resources without photos: "AI Images (3)"
+- Added proper error handling and progress feedback for AI image generation process
+- Improved resource photo persistence by forcing cache invalidation after image generation
+- Fixed dashboard manager maximize button functionality with 95% viewport sizing
+- Enhanced dashboard manager with toggle between normal (max-width-4xl) and maximized (95vw x 95vh) views
+- Added arrow icons (↗️ for maximize, ↙️ for minimize) to dashboard manager header
+- Improved layout synchronization between "all resources" and individual area views with exact scaling ratios
+- Updated shop floor area bubble scaling to use /2 factor for consistent proportional display
+- Enhanced resource layout consistency across all view modes (all resources vs individual areas)
 
 ✓ **Dashboard Manager Integration (July 16, 2025)**:
 - Removed standalone AI analytics buttons from both analytics and dashboard/schedule pages

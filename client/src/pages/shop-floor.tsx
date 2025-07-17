@@ -665,9 +665,38 @@ const DraggableAreaBubble = ({
                     {area.name}
                   </h3>
                 </div>
-                <Badge variant="outline" className={isNoArea ? 'text-gray-600' : 'text-blue-600'}>
-                  {resources.length} resources
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className={isNoArea ? 'text-gray-600' : 'text-blue-600'}>
+                    {resources.length} resources
+                  </Badge>
+                  {/* Clickable area icon to switch to specific area view */}
+                  {!isNoArea && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 hover:bg-blue-100"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Find the area key to switch to
+                              const areaKey = Object.keys(areas).find(key => areas[key].name === area.name);
+                              if (areaKey) {
+                                setCurrentArea(areaKey);
+                              }
+                            }}
+                          >
+                            <ZoomIn className="w-4 h-4 text-blue-600" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Switch to {area.name} view</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
               </div>
 
               {/* Resources positioned based on saved layout */}
@@ -680,10 +709,10 @@ const DraggableAreaBubble = ({
                     );
                     
                     const position = layoutPosition ? {
-                      left: layoutPosition.x / 3, // Better scaling to match individual area proportions
-                      top: layoutPosition.y / 3,
-                      width: Math.max(60, layoutPosition.width / 4), // Readable but properly scaled
-                      height: Math.max(60, layoutPosition.height / 4)
+                      left: layoutPosition.x / 2, // Match individual area scaling exactly
+                      top: layoutPosition.y / 2,
+                      width: Math.max(60, layoutPosition.width / 2), // Exact proportional scaling
+                      height: Math.max(60, layoutPosition.height / 2)
                     } : {
                       left: 10 + (index % 3) * 80,
                       top: 10 + Math.floor(index / 3) * 80,
@@ -1414,25 +1443,41 @@ export default function ShopFloor() {
       for (const resource of resourcesWithoutPhotos) {
         const prompt = `Professional industrial photograph of a ${resource.type.toLowerCase()} named ${resource.name} in a manufacturing facility. The ${resource.type.toLowerCase()} should be modern, well-maintained, and suitable for ${resource.capabilities} operations. Studio lighting, high resolution, industrial setting.`;
         
-        const response = await apiRequest('POST', '/api/ai/generate-image', {
-          prompt,
-          resourceId: resource.id
-        });
-        
-        results.push({ resourceId: resource.id, imageUrl: response.imageUrl });
+        try {
+          const response = await apiRequest('POST', '/api/ai/generate-image', {
+            prompt,
+            resourceId: resource.id
+          });
+          
+          results.push({ resourceId: resource.id, imageUrl: response.imageUrl });
+        } catch (error) {
+          console.error(`Failed to generate image for ${resource.name}:`, error);
+          // Continue with other resources even if one fails
+        }
       }
       
       return results;
     },
     onSuccess: (results) => {
-      results.forEach(({ resourceId, imageUrl }) => {
-        handlePhotoUpload(resourceId, imageUrl);
-      });
-      
-      toast({
-        title: "AI Images Generated",
-        description: `Successfully generated ${results.length} resource images`,
-      });
+      if (results.length > 0) {
+        results.forEach(({ resourceId, imageUrl }) => {
+          handlePhotoUpload(resourceId, imageUrl);
+        });
+        
+        toast({
+          title: "AI Images Generated",
+          description: `Successfully generated ${results.length} resource images`,
+        });
+        
+        // Force a re-render to show the new images
+        queryClient.invalidateQueries({ queryKey: ['/api/resources'] });
+      } else {
+        toast({
+          title: "No Images Generated",
+          description: "Failed to generate any images. Please try again.",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error: any) => {
       toast({
@@ -1764,7 +1809,9 @@ export default function ShopFloor() {
                       ) : (
                         <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
                       )}
-                      <span className="text-xs hidden sm:inline ml-1">AI Images</span>
+                      <span className="text-xs hidden sm:inline ml-1">
+                        AI Images ({resources.filter(r => !resourcePhotos[r.id]).length})
+                      </span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
