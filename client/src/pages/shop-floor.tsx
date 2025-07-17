@@ -210,6 +210,7 @@ interface DraggableAreaBubbleProps {
   globalImageSize: number;
   individualImageSizes: { [key: number]: number };
   onImageSizeChange: (resourceId: number, size: number) => void;
+  setCurrentArea: (area: string) => void;
 }
 
 interface AreaLayout {
@@ -580,7 +581,8 @@ const DraggableAreaBubble = ({
   individualImageSizes,
   onImageSizeChange,
   onResourceMove,
-  shopFloorLayout
+  shopFloorLayout,
+  setCurrentArea
 }: DraggableAreaBubbleProps & { 
   onResourceMove: (resourceId: number, newArea: string) => void;
   shopFloorLayout: ShopFloorLayout[];
@@ -2214,6 +2216,7 @@ export default function ShopFloor() {
                       onImageSizeChange={handleImageSizeChange}
                       onResourceMove={handleResourceMove}
                       shopFloorLayout={shopFloorLayout}
+                      setCurrentArea={setCurrentArea}
                     />
                   ))}
                   
