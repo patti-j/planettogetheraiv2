@@ -85,6 +85,10 @@ export function EnhancedDashboardManager({
   const [newWidgetType, setNewWidgetType] = useState<"metric" | "chart" | "table" | "progress">("metric");
   const [newWidgetConfig, setNewWidgetConfig] = useState<any>({});
   const [newWidgetData, setNewWidgetData] = useState<any>({});
+  const [canvasWidth, setCanvasWidth] = useState(800);
+  const [canvasHeight, setCanvasHeight] = useState(600);
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizingWidget, setResizingWidget] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -558,7 +562,7 @@ export function EnhancedDashboardManager({
                 variant="outline"
                 size="sm"
                 onClick={() => setIsEditDialogMaximized(!isEditDialogMaximized)}
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 mr-2"
               >
                 {isEditDialogMaximized ? (
                   <Minimize2 className="w-4 h-4" />
@@ -649,9 +653,42 @@ export function EnhancedDashboardManager({
                           </div>
                           
                           <div className="space-y-2">
-                            <h4 className="text-sm font-medium">Dashboard Canvas</h4>
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-sm font-medium">Dashboard Canvas</h4>
+                              <div className="flex items-center gap-2 text-xs">
+                                <Label htmlFor="canvas-width">W:</Label>
+                                <Input
+                                  id="canvas-width"
+                                  type="number"
+                                  value={canvasWidth}
+                                  onChange={(e) => setCanvasWidth(Number(e.target.value))}
+                                  className="w-16 h-6 text-xs"
+                                  min="400"
+                                  max="1600"
+                                />
+                                <Label htmlFor="canvas-height">H:</Label>
+                                <Input
+                                  id="canvas-height"
+                                  type="number"
+                                  value={canvasHeight}
+                                  onChange={(e) => setCanvasHeight(Number(e.target.value))}
+                                  className="w-16 h-6 text-xs"
+                                  min="300"
+                                  max="1200"
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => { setCanvasWidth(800); setCanvasHeight(600); }}
+                                  className="h-6 px-2 text-xs"
+                                >
+                                  <RotateCcw className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            </div>
                             <div 
-                              className="min-h-[300px] border-2 border-dashed border-gray-300 rounded-lg bg-white p-4 relative"
+                              className="border-2 border-dashed border-gray-300 rounded-lg bg-white p-4 relative overflow-hidden"
+                              style={{ width: canvasWidth, height: canvasHeight, minHeight: '300px' }}
                               onDragOver={(e) => {
                                 e.preventDefault();
                                 e.currentTarget.classList.add('border-blue-500', 'bg-blue-50');
@@ -698,27 +735,50 @@ export function EnhancedDashboardManager({
                               {editingDashboard && editingDashboard.configuration.customWidgets?.map((widget: any) => (
                                 <div
                                   key={widget.id}
-                                  className="absolute bg-white border rounded-lg shadow-sm p-2 cursor-move"
+                                  className="absolute bg-white border rounded-lg shadow-sm group hover:border-blue-500"
                                   style={{
                                     left: widget.position.x,
                                     top: widget.position.y,
                                     width: widget.size.width,
                                     height: widget.size.height
                                   }}
-                                  draggable
-                                  onDragStart={(e) => {
-                                    e.dataTransfer.setData('text/plain', JSON.stringify({
-                                      type: 'move',
-                                      widgetId: widget.id
-                                    }));
+                                  onMouseDown={(e) => {
+                                    if (e.target === e.currentTarget || e.target.closest('.widget-header')) {
+                                      // Handle widget dragging
+                                      const startX = e.clientX - widget.position.x;
+                                      const startY = e.clientY - widget.position.y;
+                                      
+                                      const handleMouseMove = (e: MouseEvent) => {
+                                        const newX = Math.max(0, Math.min(canvasWidth - widget.size.width, e.clientX - startX));
+                                        const newY = Math.max(0, Math.min(canvasHeight - widget.size.height, e.clientY - startY));
+                                        
+                                        if (editingDashboard) {
+                                          const updatedConfig = {
+                                            ...editingDashboard.configuration,
+                                            customWidgets: editingDashboard.configuration.customWidgets?.map((w: any) => 
+                                              w.id === widget.id ? { ...w, position: { x: newX, y: newY } } : w
+                                            )
+                                          };
+                                          setEditingDashboard({ ...editingDashboard, configuration: updatedConfig });
+                                        }
+                                      };
+                                      
+                                      const handleMouseUp = () => {
+                                        document.removeEventListener('mousemove', handleMouseMove);
+                                        document.removeEventListener('mouseup', handleMouseUp);
+                                      };
+                                      
+                                      document.addEventListener('mousemove', handleMouseMove);
+                                      document.addEventListener('mouseup', handleMouseUp);
+                                    }
                                   }}
                                 >
-                                  <div className="flex items-center justify-between mb-1">
+                                  <div className="widget-header flex items-center justify-between mb-1 p-2 cursor-move">
                                     <span className="text-xs font-medium truncate">{widget.title}</span>
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      className="h-4 w-4 p-0"
+                                      className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                       onClick={() => {
                                         if (editingDashboard) {
                                           const updatedConfig = {
@@ -732,7 +792,111 @@ export function EnhancedDashboardManager({
                                       <Trash2 className="w-3 h-3" />
                                     </Button>
                                   </div>
-                                  <div className="text-xs text-gray-500 capitalize">{widget.type}</div>
+                                  <div className="px-2 pb-2">
+                                    <div className="text-xs text-gray-500 capitalize">{widget.type}</div>
+                                  </div>
+                                  
+                                  {/* Resize Handles */}
+                                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                    {/* Corner resize handles */}
+                                    <div 
+                                      className="absolute -bottom-1 -right-1 w-3 h-3 bg-blue-500 rounded-full cursor-nw-resize pointer-events-auto"
+                                      onMouseDown={(e) => {
+                                        e.stopPropagation();
+                                        const startX = e.clientX;
+                                        const startY = e.clientY;
+                                        const startWidth = widget.size.width;
+                                        const startHeight = widget.size.height;
+                                        
+                                        const handleMouseMove = (e: MouseEvent) => {
+                                          const newWidth = Math.max(100, Math.min(canvasWidth - widget.position.x, startWidth + (e.clientX - startX)));
+                                          const newHeight = Math.max(80, Math.min(canvasHeight - widget.position.y, startHeight + (e.clientY - startY)));
+                                          
+                                          if (editingDashboard) {
+                                            const updatedConfig = {
+                                              ...editingDashboard.configuration,
+                                              customWidgets: editingDashboard.configuration.customWidgets?.map((w: any) => 
+                                                w.id === widget.id ? { ...w, size: { width: newWidth, height: newHeight } } : w
+                                              )
+                                            };
+                                            setEditingDashboard({ ...editingDashboard, configuration: updatedConfig });
+                                          }
+                                        };
+                                        
+                                        const handleMouseUp = () => {
+                                          document.removeEventListener('mousemove', handleMouseMove);
+                                          document.removeEventListener('mouseup', handleMouseUp);
+                                        };
+                                        
+                                        document.addEventListener('mousemove', handleMouseMove);
+                                        document.addEventListener('mouseup', handleMouseUp);
+                                      }}
+                                    />
+                                    
+                                    {/* Right edge resize handle */}
+                                    <div 
+                                      className="absolute top-1/2 -right-1 w-2 h-6 bg-blue-500 rounded cursor-ew-resize pointer-events-auto transform -translate-y-1/2"
+                                      onMouseDown={(e) => {
+                                        e.stopPropagation();
+                                        const startX = e.clientX;
+                                        const startWidth = widget.size.width;
+                                        
+                                        const handleMouseMove = (e: MouseEvent) => {
+                                          const newWidth = Math.max(100, Math.min(canvasWidth - widget.position.x, startWidth + (e.clientX - startX)));
+                                          
+                                          if (editingDashboard) {
+                                            const updatedConfig = {
+                                              ...editingDashboard.configuration,
+                                              customWidgets: editingDashboard.configuration.customWidgets?.map((w: any) => 
+                                                w.id === widget.id ? { ...w, size: { width: newWidth, height: widget.size.height } } : w
+                                              )
+                                            };
+                                            setEditingDashboard({ ...editingDashboard, configuration: updatedConfig });
+                                          }
+                                        };
+                                        
+                                        const handleMouseUp = () => {
+                                          document.removeEventListener('mousemove', handleMouseMove);
+                                          document.removeEventListener('mouseup', handleMouseUp);
+                                        };
+                                        
+                                        document.addEventListener('mousemove', handleMouseMove);
+                                        document.addEventListener('mouseup', handleMouseUp);
+                                      }}
+                                    />
+                                    
+                                    {/* Bottom edge resize handle */}
+                                    <div 
+                                      className="absolute -bottom-1 left-1/2 w-6 h-2 bg-blue-500 rounded cursor-ns-resize pointer-events-auto transform -translate-x-1/2"
+                                      onMouseDown={(e) => {
+                                        e.stopPropagation();
+                                        const startY = e.clientY;
+                                        const startHeight = widget.size.height;
+                                        
+                                        const handleMouseMove = (e: MouseEvent) => {
+                                          const newHeight = Math.max(80, Math.min(canvasHeight - widget.position.y, startHeight + (e.clientY - startY)));
+                                          
+                                          if (editingDashboard) {
+                                            const updatedConfig = {
+                                              ...editingDashboard.configuration,
+                                              customWidgets: editingDashboard.configuration.customWidgets?.map((w: any) => 
+                                                w.id === widget.id ? { ...w, size: { width: widget.size.width, height: newHeight } } : w
+                                              )
+                                            };
+                                            setEditingDashboard({ ...editingDashboard, configuration: updatedConfig });
+                                          }
+                                        };
+                                        
+                                        const handleMouseUp = () => {
+                                          document.removeEventListener('mousemove', handleMouseMove);
+                                          document.removeEventListener('mouseup', handleMouseUp);
+                                        };
+                                        
+                                        document.addEventListener('mousemove', handleMouseMove);
+                                        document.addEventListener('mouseup', handleMouseUp);
+                                      }}
+                                    />
+                                  </div>
                                 </div>
                               ))}
                               

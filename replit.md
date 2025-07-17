@@ -114,6 +114,15 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 17, 2025)
 
+✓ **Dashboard Editor Canvas and Widget Resizing System (July 17, 2025)**:
+- Added comprehensive canvas size controls with width/height inputs (400-1600px width, 300-1200px height)
+- Implemented intuitive widget resizing with visual resize handles (corner, right edge, bottom edge)
+- Added real-time canvas dimension adjustment with reset button for default 800x600 size
+- Enhanced widget interaction with hover states showing resize handles and improved drag functionality
+- Widgets now constrain to canvas boundaries during drag and resize operations
+- Added proper cursor indicators for different resize directions (nw-resize, ew-resize, ns-resize)
+- Improved button spacing with margin-right on maximize button for better visual separation from close button
+
 ✓ **Dashboard Manager Maximize Button Icon Consistency Fix (July 17, 2025)**:
 - Updated dashboard edit dialog maximize button to use Maximize2/Minimize2 icons instead of double ArrowUpRight/ArrowDownLeft
 - Maintains consistency with all other maximize buttons across the application
