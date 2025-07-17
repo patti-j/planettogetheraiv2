@@ -555,7 +555,7 @@ export function EnhancedDashboardManager({
                 </DialogDescription>
               </div>
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={() => setIsEditDialogMaximized(!isEditDialogMaximized)}
                 className="h-8 w-8 p-0"
