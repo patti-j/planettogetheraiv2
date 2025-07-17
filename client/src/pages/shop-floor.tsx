@@ -829,20 +829,41 @@ const DraggableAreaBubble = ({
                     }
                   }));
                   
-                  // Calculate optimal container size using normalized positions
-                  const maxRight = resources.length > 0 ? Math.max(...normalizedPositions.map(r => r.position.left + r.position.width)) : 200;
-                  const maxBottom = resources.length > 0 ? Math.max(...normalizedPositions.map(r => r.position.top + r.position.height)) : 120;
-                  const containerWidth = Math.max(200, maxRight + 20);
-                  const containerHeight = Math.max(120, maxBottom + 20);
+                  // Calculate optimal container size using normalized positions with better margins
+                  const margin = 30; // Increased margin for better visual spacing
+                  const minContainerWidth = 240; // Slightly larger minimum width
+                  const minContainerHeight = 150; // Slightly larger minimum height
+                  
+                  let calculatedWidth: number;
+                  let calculatedHeight: number;
+                  
+                  if (resources.length > 0) {
+                    const maxRight = Math.max(...normalizedPositions.map(r => r.position.left + r.position.width));
+                    const maxBottom = Math.max(...normalizedPositions.map(r => r.position.top + r.position.height));
+                    const containerWidth = Math.max(minContainerWidth, maxRight + margin);
+                    const containerHeight = Math.max(minContainerHeight, maxBottom + margin);
+                    
+                    // For areas with many resources, provide extra space
+                    const resourceSpacing = resources.length > 4 ? 40 : margin;
+                    const finalWidth = Math.max(containerWidth, maxRight + resourceSpacing);
+                    const finalHeight = Math.max(containerHeight, maxBottom + resourceSpacing);
+                    
+                    calculatedWidth = finalWidth;
+                    calculatedHeight = finalHeight;
+                  } else {
+                    // Empty area defaults
+                    calculatedWidth = minContainerWidth;
+                    calculatedHeight = minContainerHeight;
+                  }
                   
                   return (
                     <div 
                       className="relative"
                       style={{ 
-                        width: containerWidth,
-                        height: containerHeight,
-                        minWidth: '200px',
-                        minHeight: '120px'
+                        width: calculatedWidth,
+                        height: calculatedHeight,
+                        minWidth: '240px',
+                        minHeight: '150px'
                       }}
                     >
                       {normalizedPositions.map(({ resource, position, index }) => {
@@ -2221,34 +2242,92 @@ export default function ShopFloor() {
                   })()}
                 </>
               ) : (
-                // Show individual resources for specific area selection
-                shopFloorLayout.map((layout) => {
-                  const resource = filteredResources.find(r => r.id === layout.resourceId);
-                  if (!resource) return null;
-                  
-                  // Check if this resource belongs to the current area
+                // Show individual resources for specific area selection with automatic sizing
+                (() => {
                   const currentAreaData = areas[currentArea];
-                  if (!currentAreaData || !currentAreaData.resources.includes(resource.id)) {
-                    return null;
-                  }
+                  if (!currentAreaData) return null;
                   
-                  const status = generateResourceStatus(resource);
+                  // Get all resources in the current area
+                  const areaResources = shopFloorLayout
+                    .filter(layout => {
+                      const resource = filteredResources.find(r => r.id === layout.resourceId);
+                      return resource && currentAreaData.resources.includes(resource.id);
+                    })
+                    .map(layout => {
+                      const resource = filteredResources.find(r => r.id === layout.resourceId);
+                      return { resource, layout };
+                    });
+                  
+                  if (areaResources.length === 0) return null;
+                  
+                  // Calculate the bounding box for automatic area sizing
+                  const positions = areaResources.map(({ layout }) => ({
+                    left: layout.x,
+                    top: layout.y,
+                    width: layout.width,
+                    height: layout.height
+                  }));
+                  
+                  const minLeft = Math.min(...positions.map(p => p.left));
+                  const minTop = Math.min(...positions.map(p => p.top));
+                  const maxRight = Math.max(...positions.map(p => p.left + p.width));
+                  const maxBottom = Math.max(...positions.map(p => p.top + p.height));
+                  
+                  // Calculate container size with generous margins
+                  const margin = 50;
+                  const containerWidth = Math.max(400, maxRight - minLeft + margin * 2);
+                  const containerHeight = Math.max(300, maxBottom - minTop + margin * 2);
+                  
+                  // Calculate offset to center the resources
+                  const offsetX = margin - minLeft;
+                  const offsetY = margin - minTop;
                   
                   return (
-                    <DraggableResource
-                      key={layout.id}
-                      resource={resource}
-                      layout={layout}
-                      status={status}
-                      onMove={handleResourcePositionMove}
-                      onDetails={handleResourceDetails}
-                      photo={resourcePhotos[resource.id]}
-                      globalImageSize={globalImageSize}
-                      individualImageSizes={individualImageSizes}
-                      onImageSizeChange={handleImageSizeChange}
-                    />
+                    <div
+                      className="relative bg-white border-2 border-dashed border-blue-300 rounded-lg shadow-lg"
+                      style={{
+                        width: containerWidth,
+                        height: containerHeight,
+                        margin: '20px auto',
+                        padding: '20px'
+                      }}
+                    >
+                      {/* Area title */}
+                      <div className="absolute top-4 left-4 flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
+                        <Layers className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm font-semibold text-blue-800">{currentAreaData.name}</span>
+                        <Badge variant="outline" className="text-blue-600">
+                          {areaResources.length} resources
+                        </Badge>
+                      </div>
+                      
+                      {/* Resources */}
+                      {areaResources.map(({ resource, layout }) => {
+                        const status = generateResourceStatus(resource);
+                        const adjustedLayout = {
+                          ...layout,
+                          x: layout.x + offsetX,
+                          y: layout.y + offsetY
+                        };
+                        
+                        return (
+                          <DraggableResource
+                            key={layout.id}
+                            resource={resource}
+                            layout={adjustedLayout}
+                            status={status}
+                            onMove={handleResourcePositionMove}
+                            onDetails={handleResourceDetails}
+                            photo={resourcePhotos[resource.id]}
+                            globalImageSize={globalImageSize}
+                            individualImageSizes={individualImageSizes}
+                            onImageSizeChange={handleImageSizeChange}
+                          />
+                        );
+                      })}
+                    </div>
                   );
-                })
+                })()
               )}
             </div>
           </div>

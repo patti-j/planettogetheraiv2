@@ -114,6 +114,14 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 17, 2025)
 
+✓ **Automatic Area Rectangle Resizing (July 17, 2025)**:
+- Implemented dynamic area rectangle sizing to ensure all resources fit with adequate margins
+- Enhanced all-areas view with improved container sizing logic using 30px margins and resource-based spacing
+- Added automatic individual area view sizing with centered resources and generous 50px margins
+- Improved minimum container dimensions for better visual appearance (240px x 150px minimum)
+- Enhanced resource spacing for areas with many resources (40px spacing for 4+ resources)
+- Area rectangles now automatically adjust to contain all resources with proper visual spacing
+
 ✓ **AI Image Generation Quota Error Handling (July 17, 2025)**:
 - Added intelligent quota exceeded detection to prevent endless error loops
 - Enhanced server-side error handling to return 429 status code for quota errors
