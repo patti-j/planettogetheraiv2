@@ -1436,6 +1436,10 @@ export default function ShopFloor() {
       if (resourcesWithoutPhotos.length === 0) {
         throw new Error("All resources already have photos");
       }
+      
+      // Clear any existing invalid URLs from localStorage
+      localStorage.removeItem('resourcePhotos');
+      setResourcePhotos({});
 
       const results = [];
       let successCount = 0;
@@ -1460,8 +1464,24 @@ export default function ShopFloor() {
               resourceId: resource.id
             });
             
-            // Immediately add the image to the UI
-            handlePhotoUpload(resource.id, response.imageUrl);
+            // Convert the image URL to base64 for persistent storage
+            const imageUrl = response.imageUrl;
+            const imageResponse = await fetch(imageUrl);
+            
+            if (!imageResponse.ok) {
+              throw new Error(`Failed to fetch image: ${imageResponse.status}`);
+            }
+            
+            const imageBlob = await imageResponse.blob();
+            const base64Image = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(imageBlob);
+            });
+            
+            // Immediately add the base64 image to the UI
+            handlePhotoUpload(resource.id, base64Image);
             successCount++;
             
             // Force immediate UI update
@@ -1473,7 +1493,7 @@ export default function ShopFloor() {
               description: `Generated image for ${resource.name} (${successCount}/${resourcesWithoutPhotos.length})`,
             });
             
-            return { resourceId: resource.id, imageUrl: response.imageUrl };
+            return { resourceId: resource.id, imageUrl: base64Image };
           } catch (error) {
             console.error(`Failed to generate image for ${resource.name}:`, error);
             
