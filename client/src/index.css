@@ -77,16 +77,16 @@
   transform: translateZ(0) !important;
 }
 
-/* Ensure tooltip portal appears above everything */
-[data-radix-popper-content-wrapper] {
+/* Ensure tooltip portal appears above everything - only for tooltips */
+[data-radix-popper-content-wrapper][data-radix-tooltip-content] {
   z-index: 2147483647 !important;
   position: fixed !important;
   isolation: isolate !important;
   transform: translateZ(0) !important;
 }
 
-/* Target all tooltip portals - highest priority */
-div[data-radix-portal] {
+/* Target only tooltip portals - not dropdown portals */
+div[data-radix-portal][data-radix-tooltip-portal] {
   z-index: 2147483647 !important;
   position: fixed !important;
   isolation: isolate !important;
@@ -101,8 +101,8 @@ div[data-radix-portal] {
   transform: translateZ(0) !important;
 }
 
-/* All tooltip content variants */
-[role="tooltip"] {
+/* All tooltip content variants - only for actual tooltips */
+[role="tooltip"][data-radix-tooltip-content] {
   z-index: 2147483647 !important;
   position: fixed !important;
   isolation: isolate !important;
