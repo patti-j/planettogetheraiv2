@@ -461,7 +461,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("AI Image generation error:", error);
       res.status(500).json({ 
-        message: "Failed to generate image" 
+        message: "Failed to generate image",
+        error: error.message || "Unknown error"
       });
     }
   });

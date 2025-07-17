@@ -1479,6 +1479,14 @@ export default function ShopFloor() {
             return { resourceId: resource.id, imageUrl: response.imageUrl };
           } catch (error) {
             console.error(`Failed to generate image for ${resource.name}:`, error);
+            
+            // Show error toast with more details
+            toast({
+              title: "Image Generation Error",
+              description: `Failed to generate image for ${resource.name}: ${error.message || 'Unknown error'}`,
+              variant: "destructive",
+            });
+            
             return null;
           }
         });
