@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { 
   AlertCircle, 
   CheckCircle, 
@@ -44,6 +45,7 @@ import {
   Plus,
   Minus,
   ImageIcon,
+  Image,
   Sparkles,
   Trash2
 } from "lucide-react";
@@ -1400,6 +1402,7 @@ export default function ShopFloor() {
     all: { name: 'All Resources', resources: [] }
   });
   const [showAreaManager, setShowAreaManager] = useState(false);
+  const [showLayoutManager, setShowLayoutManager] = useState(false);
   const [forceUpdate, setForceUpdate] = useState(0);
   const [globalImageSize, setGlobalImageSize] = useState(100); // Global image size percentage
   const [individualImageSizes, setIndividualImageSizes] = useState<{ [key: number]: number }>({}); // Individual resource image sizes
@@ -1836,21 +1839,21 @@ export default function ShopFloor() {
                   </SelectContent>
                 </Select>
                 
-                {/* Area manager button */}
+                {/* Layout Manager button */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setShowAreaManager(true)}
+                      onClick={() => setShowLayoutManager(true)}
                       className="h-8 px-2 sm:px-3"
                     >
-                      <Layers className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="hidden sm:inline ml-1">Areas</span>
+                      <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline ml-1">Layout Manager</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Manage named areas</p>
+                    <p>Manage shop floor layout and controls</p>
                   </TooltipContent>
                 </Tooltip>
                 
@@ -1907,146 +1910,6 @@ export default function ShopFloor() {
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>Reset zoom</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                
-                {/* Help toggle button */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowHelp(!showHelp)}
-                      className="h-8 px-2 hover:bg-gray-100"
-                    >
-                      <HelpCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="text-xs hidden sm:inline ml-1">Help</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Toggle help instructions</p>
-                  </TooltipContent>
-                </Tooltip>
-
-                {/* Legend toggle button */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowLegend(!showLegend)}
-                      className="h-8 px-2 hover:bg-gray-100"
-                    >
-                      <InfoIcon className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="text-xs hidden sm:inline ml-1">Legend</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Toggle status legend</p>
-                  </TooltipContent>
-                </Tooltip>
-
-                {/* AI Image Generation button */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => aiImageGenerationMutation.mutate()}
-                      disabled={aiImageGenerationMutation.isPending || resources.filter(r => !resourcePhotos[r.id]).length === 0}
-                      className="h-8 px-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-purple-500 hover:border-purple-600"
-                    >
-                      {aiImageGenerationMutation.isPending ? (
-                        <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
-                      ) : (
-                        <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
-                      )}
-                      <span className="text-xs hidden sm:inline ml-1">
-                        Generate Missing Resource Images ({resources.filter(r => !resourcePhotos[r.id]).length})
-                      </span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Generate cartoon-style AI images for resources missing photos</p>
-                  </TooltipContent>
-                </Tooltip>
-                
-                {/* Clear cache button */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        localStorage.removeItem('resourcePhotos');
-                        setResourcePhotos({});
-                        toast({
-                          title: "Cache Cleared",
-                          description: "All resource images have been cleared from storage.",
-                        });
-                      }}
-                      className="h-8 px-2 hover:bg-red-50 border-red-300 text-red-700 hover:border-red-400"
-                    >
-                      <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="text-xs hidden sm:inline ml-1">Clear Images</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Clear all cached resource images</p>
-                  </TooltipContent>
-                </Tooltip>
-
-                {/* Image Size Controls */}
-                <div className="flex items-center gap-1 ml-2 px-2 py-1 bg-gray-50 rounded-lg">
-                  <span className="text-xs font-medium text-gray-600">Size:</span>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setGlobalImageSize(prev => Math.max(50, prev - 10))}
-                        className="h-6 w-6 p-0 hover:bg-gray-200"
-                      >
-                        <Minus className="w-3 h-3" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Decrease all image sizes</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  <span className="text-xs font-mono min-w-[3rem] text-center">{globalImageSize}%</span>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setGlobalImageSize(prev => Math.min(200, prev + 10))}
-                        className="h-6 w-6 p-0 hover:bg-gray-200"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Increase all image sizes</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setGlobalImageSize(100);
-                          setIndividualImageSizes({});
-                        }}
-                        className="h-6 w-6 p-0 hover:bg-gray-200 ml-1"
-                      >
-                        <RefreshCw className="w-3 h-3" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Reset all image sizes to default</p>
                     </TooltipContent>
                   </Tooltip>
                 </div>
@@ -2292,6 +2155,34 @@ export default function ShopFloor() {
             />
           </DialogContent>
         </Dialog>
+
+        {/* Layout Manager Dialog */}
+        <Dialog open={showLayoutManager} onOpenChange={setShowLayoutManager}>
+          <DialogContent className="max-w-3xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-lg sm:text-xl">Layout Manager</DialogTitle>
+            </DialogHeader>
+            <LayoutManagerDialog 
+              showHelp={showHelp}
+              setShowHelp={setShowHelp}
+              showLegend={showLegend}
+              setShowLegend={setShowLegend}
+              globalImageSize={globalImageSize}
+              setGlobalImageSize={setGlobalImageSize}
+              individualImageSizes={individualImageSizes}
+              setIndividualImageSizes={setIndividualImageSizes}
+              aiImageGenerationMutation={aiImageGenerationMutation}
+              resources={resources}
+              resourcePhotos={resourcePhotos}
+              setResourcePhotos={setResourcePhotos}
+              toast={toast}
+              areas={areas}
+              onCreateArea={createArea}
+              onDeleteArea={deleteArea}
+              onClose={() => setShowLayoutManager(false)}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );
@@ -2410,6 +2301,266 @@ const AreaManagerDialog: React.FC<AreaManagerDialogProps> = ({
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+};
+
+// Layout Manager Dialog Component
+interface LayoutManagerDialogProps {
+  showHelp: boolean;
+  setShowHelp: (value: boolean) => void;
+  showLegend: boolean;
+  setShowLegend: (value: boolean) => void;
+  globalImageSize: number;
+  setGlobalImageSize: (value: number | ((prev: number) => number)) => void;
+  individualImageSizes: { [key: number]: number };
+  setIndividualImageSizes: (value: { [key: number]: number } | ((prev: { [key: number]: number }) => { [key: number]: number })) => void;
+  aiImageGenerationMutation: any;
+  resources: Resource[];
+  resourcePhotos: { [key: number]: string };
+  setResourcePhotos: (value: { [key: number]: string } | ((prev: { [key: number]: string }) => { [key: number]: string })) => void;
+  toast: any;
+  areas: {[key: string]: {name: string, resources: number[]}};
+  onCreateArea: (name: string, resourceIds: number[]) => void;
+  onDeleteArea: (areaKey: string) => void;
+  onClose: () => void;
+}
+
+const LayoutManagerDialog: React.FC<LayoutManagerDialogProps> = ({ 
+  showHelp,
+  setShowHelp,
+  showLegend,
+  setShowLegend,
+  globalImageSize,
+  setGlobalImageSize,
+  individualImageSizes,
+  setIndividualImageSizes,
+  aiImageGenerationMutation,
+  resources,
+  resourcePhotos,
+  setResourcePhotos,
+  toast,
+  areas,
+  onCreateArea,
+  onDeleteArea,
+  onClose
+}) => {
+  const [showAreaManager, setShowAreaManager] = useState(false);
+  
+  return (
+    <div className="space-y-6">
+      {/* Help Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <HelpCircle className="w-5 h-5" />
+            Help & Instructions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Show help instructions</span>
+              <Switch checked={showHelp} onCheckedChange={setShowHelp} />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Show status legend</span>
+              <Switch checked={showLegend} onCheckedChange={setShowLegend} />
+            </div>
+            {showHelp && (
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold text-gray-800 mb-2">Shop Floor Controls</h3>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• <strong>Drag & Drop:</strong> Move resources between areas</li>
+                  <li>• <strong>Zoom:</strong> Use zoom controls to scale the entire floor</li>
+                  <li>• <strong>Area View:</strong> Click area bubbles to switch between views</li>
+                  <li>• <strong>Click Icons:</strong> Click on resource icons to see details</li>
+                  <li>• <strong>Live Updates:</strong> Real-time status updates every 30 seconds</li>
+                </ul>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Image Management */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Image className="w-5 h-5" />
+            Image Management
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* AI Image Generation */}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">AI Image Generation</p>
+                <p className="text-xs text-gray-500">Generate cartoon-style images for resources missing photos</p>
+              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    onClick={() => aiImageGenerationMutation.mutate()}
+                    disabled={aiImageGenerationMutation.isPending || resources.filter(r => !resourcePhotos[r.id]).length === 0}
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-purple-500 hover:border-purple-600"
+                  >
+                    {aiImageGenerationMutation.isPending ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4" />
+                    )}
+                    <span className="ml-2">
+                      Generate Images ({resources.filter(r => !resourcePhotos[r.id]).length})
+                    </span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Generate cartoon-style AI images for resources missing photos</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+
+            {/* Clear Cache */}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Clear Cached Images</p>
+                <p className="text-xs text-gray-500">Remove all stored resource images</p>
+              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      localStorage.removeItem('resourcePhotos');
+                      setResourcePhotos({});
+                      toast({
+                        title: "Cache Cleared",
+                        description: "All resource images have been cleared from storage.",
+                      });
+                    }}
+                    className="hover:bg-red-50 border-red-300 text-red-700 hover:border-red-400"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span className="ml-2">Clear Images</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Clear all cached resource images</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+
+            {/* Image Size Controls */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Global Image Size</p>
+              <div className="flex items-center gap-3">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setGlobalImageSize(prev => Math.max(50, prev - 10))}
+                      className="px-2"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Decrease all image sizes</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <div className="flex-1 text-center">
+                  <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
+                    {globalImageSize}%
+                  </span>
+                </div>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setGlobalImageSize(prev => Math.min(200, prev + 10))}
+                      className="px-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Increase all image sizes</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setGlobalImageSize(100);
+                        setIndividualImageSizes({});
+                      }}
+                      className="px-2"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Reset all image sizes to default</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Area Management */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Layers className="w-5 h-5" />
+            Area Management
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Manage Named Areas</p>
+              <p className="text-xs text-gray-500">Create and organize resource areas</p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowAreaManager(true)}
+            >
+              <Layers className="w-4 h-4" />
+              <span className="ml-2">Manage Areas</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Area Manager Dialog */}
+      {showAreaManager && (
+        <Dialog open={showAreaManager} onOpenChange={setShowAreaManager}>
+          <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-lg sm:text-xl">Area Manager</DialogTitle>
+            </DialogHeader>
+            <AreaManagerDialog 
+              areas={areas}
+              resources={resources}
+              onCreateArea={onCreateArea}
+              onDeleteArea={onDeleteArea}
+              onClose={() => setShowAreaManager(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
