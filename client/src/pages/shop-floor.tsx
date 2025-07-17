@@ -70,21 +70,25 @@ const useMobileDrag = (
     if (!isDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const deltaX = e.clientX - startPos.x;
-      const deltaY = e.clientY - startPos.y;
-      const newX = Math.max(0, item.x + deltaX);
-      const newY = Math.max(0, item.y + deltaY);
-      setCurrentPosition({ x: newX, y: newY });
+      requestAnimationFrame(() => {
+        const deltaX = e.clientX - startPos.x;
+        const deltaY = e.clientY - startPos.y;
+        const newX = Math.max(0, item.x + deltaX);
+        const newY = Math.max(0, item.y + deltaY);
+        setCurrentPosition({ x: newX, y: newY });
+      });
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       e.preventDefault();
-      const touch = e.touches[0];
-      const deltaX = touch.clientX - startPos.x;
-      const deltaY = touch.clientY - startPos.y;
-      const newX = Math.max(0, item.x + deltaX);
-      const newY = Math.max(0, item.y + deltaY);
-      setCurrentPosition({ x: newX, y: newY });
+      requestAnimationFrame(() => {
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - startPos.x;
+        const deltaY = touch.clientY - startPos.y;
+        const newX = Math.max(0, item.x + deltaX);
+        const newY = Math.max(0, item.y + deltaY);
+        setCurrentPosition({ x: newX, y: newY });
+      });
     };
 
     const handleEnd = () => {
@@ -196,7 +200,7 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo 
     }
   );
 
-  // Fallback to react-dnd for desktop
+  // Disable react-dnd for area view to prevent conflicts with mobile drag
   const [{ isDragging }, drag] = useDrag({
     type: "resource",
     item: () => {
@@ -204,8 +208,9 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo 
       return { id: layout.id, x: layout.x, y: layout.y };
     },
     collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
+      isDragging: false, // Disable react-dnd dragging for area view
     }),
+    canDrag: false, // Disable react-dnd dragging
     end: () => {
       // Reset drag state after a longer delay to prevent click
       setTimeout(() => setHasDragged(false), 300);
@@ -278,13 +283,14 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo 
   };
 
   const combinedRef = (el: HTMLDivElement | null) => {
-    drag(el);
+    // Only use mobile drag system for area view
+    // drag(el); // Disabled react-dnd
   };
 
   return (
     <div
       ref={combinedRef}
-      className={`absolute cursor-move select-none transition-all duration-200 ${
+      className={`absolute cursor-move select-none ${
         isCurrentlyDragging ? 'opacity-50 scale-105' : 'opacity-100 scale-100'
       }`}
       style={{
@@ -293,6 +299,7 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo 
         width: layout.width,
         height: layout.height,
         transform: `rotate(${layout.rotation}deg)`,
+        transition: isCurrentlyDragging ? 'none' : 'all 0.2s ease',
       }}
       {...mobileDrag.listeners}
     >
