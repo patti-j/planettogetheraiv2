@@ -898,109 +898,31 @@ const DraggableAreaBubble = ({
                           }
                         };
 
+                        // Create a layout object for the DraggableResource
+                        const layoutForResource = shopFloorLayout.find(l => l.resourceId === resource.id);
+                        if (!layoutForResource) return null;
+                        
+                        const adjustedLayout = {
+                          ...layoutForResource,
+                          x: position.left,
+                          y: position.top,
+                          width: position.width,
+                          height: position.height
+                        };
+                        
                         return (
-                          <div
+                          <DraggableResource
                             key={resource.id}
-                            className="absolute cursor-pointer"
-                            style={{
-                              left: position.left,
-                              top: position.top,
-                              width: position.width,
-                              height: position.height,
-                              zIndex: 1
-                            }}
-                            onClick={() => onResourceDetails(resource, status)}
-                          >
-                            <TooltipProvider>
-                              <Tooltip open={false}>
-                                <TooltipTrigger asChild>
-                                  <div className={`relative w-full h-full ${getStatusColor(status.status)} rounded-lg border-2 shadow-lg hover:shadow-xl transition-shadow`}>
-                                    {/* Resource Icon/Photo */}
-                                    <div className="absolute inset-0 flex items-center justify-center group">
-                                      {photo ? (
-                                        <div className="relative">
-                                          <img 
-                                            src={photo} 
-                                            alt={resource.name}
-                                            className="w-full h-full object-cover rounded-lg"
-                                          />
-                                          {/* Individual resize controls */}
-                                          <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-75 rounded px-2 py-1 flex items-center space-x-2">
-                                            <button
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                const currentSize = individualImageSizes[resource.id] || globalImageSize;
-                                                if (currentSize > 20) {
-                                                  onImageSizeChange(resource.id, currentSize - 10);
-                                                }
-                                              }}
-                                              className="text-white hover:text-gray-300 text-xs"
-                                            >
-                                              -
-                                            </button>
-                                            <span className="text-white text-xs">
-                                              {individualImageSizes[resource.id] || globalImageSize}px
-                                            </span>
-                                            <button
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                const currentSize = individualImageSizes[resource.id] || globalImageSize;
-                                                if (currentSize < 200) {
-                                                  onImageSizeChange(resource.id, currentSize + 10);
-                                                }
-                                              }}
-                                              className="text-white hover:text-gray-300 text-xs"
-                                            >
-                                              +
-                                            </button>
-                                          </div>
-                                        </div>
-                                      ) : (
-                                        getResourceIcon(resource.type)
-                                      )}
-                                    </div>
-                                    
-                                    {/* Status Indicator */}
-                                    <div className="absolute top-0.5 right-0.5 bg-black bg-opacity-30 rounded-full p-0.5">
-                                      {getStatusIndicator(status.status)}
-                                    </div>
-                                    
-                                    {/* Utilization Bar */}
-                                    <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black bg-opacity-30 rounded-b-lg">
-                                      <div 
-                                        className="h-full bg-green-500 rounded-b-lg transition-all duration-300"
-                                        style={{ width: `${status.utilization}%` }}
-                                      />
-                                    </div>
-                                    
-                                    {/* Issue Count */}
-                                    {status.issues.length > 0 && (
-                                      <div className="absolute top-0.5 left-0.5 bg-red-500 text-white text-xs font-bold rounded-full w-3 h-3 flex items-center justify-center">
-                                        {status.issues.length}
-                                      </div>
-                                    )}
-                                    
-                                    {/* Resource Name */}
-                                    <div className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-xs font-medium text-gray-700 bg-white px-1 py-0.5 rounded shadow-sm whitespace-nowrap">
-                                      {resource.name}
-                                    </div>
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent 
-                                  className="z-[2147483647] bg-black text-white border-none shadow-xl tooltip-content"
-                                  style={{ zIndex: 2147483647, position: 'fixed' }}
-                                >
-                                  <div className="space-y-1">
-                                    <p className="text-sm">Status: {status.status}</p>
-                                    <p className="text-sm">Utilization: {status.utilization}%</p>
-                                    {status.issues.length > 0 && (
-                                      <p className="text-sm text-red-400">{status.issues.length} issues</p>
-                                    )}
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </div>
+                            resource={resource}
+                            layout={adjustedLayout}
+                            status={status}
+                            onMove={handleResourcePositionMove}
+                            onDetails={handleResourceDetails}
+                            photo={photo}
+                            globalImageSize={globalImageSize}
+                            individualImageSizes={individualImageSizes}
+                            onImageSizeChange={onImageSizeChange}
+                          />
                         );
                       })}
                     </div>
