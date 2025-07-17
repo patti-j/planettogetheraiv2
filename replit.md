@@ -114,13 +114,17 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 17, 2025)
 
-✓ **Automatic Area Rectangle Resizing (July 17, 2025)**:
+✓ **Comprehensive Area Rectangle Resizing & UX Improvements (July 17, 2025)**:
 - Implemented dynamic area rectangle sizing to ensure all resources fit with adequate margins
-- Enhanced all-areas view with improved container sizing logic using 30px margins and resource-based spacing
+- Enhanced all-areas view with improved container sizing logic using actual resource image sizes
 - Added automatic individual area view sizing with centered resources and generous 50px margins
 - Improved minimum container dimensions for better visual appearance (240px x 150px minimum)
 - Enhanced resource spacing for areas with many resources (40px spacing for 4+ resources)
 - Area rectangles now automatically adjust to contain all resources with proper visual spacing
+- Fixed tooltip interference during drag operations and resource resizing by disabling tooltips when dragging
+- Added reactive area sizing when resource sizes change via global or individual size controls
+- Area rectangles now properly account for actual resource dimensions based on image size settings
+- Enhanced user experience by preventing annoying tooltip popups during resource manipulation
 
 ✓ **AI Image Generation Quota Error Handling (July 17, 2025)**:
 - Added intelligent quota exceeded detection to prevent endless error loops

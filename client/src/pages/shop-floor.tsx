@@ -344,7 +344,7 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo,
       {...mobileDrag.listeners}
     >
       <TooltipProvider>
-        <Tooltip>
+        <Tooltip open={!isCurrentlyDragging && !showImageControls}>
           <TooltipTrigger asChild>
             <div
               className={`relative w-full h-full ${getStatusColor(status.status)} rounded-lg border-2 shadow-lg hover:shadow-xl transition-shadow cursor-pointer touch-manipulation`}
@@ -799,17 +799,22 @@ const DraggableAreaBubble = ({
                       layout => layout.resourceId === resource.id
                     );
                     
+                    // Calculate actual resource size based on global and individual image sizes
+                    const effectiveResourceSize = individualImageSizes[resource.id] || globalImageSize;
+                    const baseSize = 60;
+                    const actualSize = (baseSize * effectiveResourceSize) / 100;
+                    
                     const position = layoutPosition ? {
                       left: layoutPosition.x / 2, // Match individual area scaling exactly
                       top: layoutPosition.y / 2,
-                      width: Math.max(60, layoutPosition.width / 2), // Exact proportional scaling
-                      height: Math.max(60, layoutPosition.height / 2)
+                      width: Math.max(actualSize, layoutPosition.width / 2), // Use actual size
+                      height: Math.max(actualSize, layoutPosition.height / 2)
                     } : {
-                      // For No Area, arrange in orderly grid pattern
-                      left: 10 + (index % 4) * 70, // 4 columns for better organization
-                      top: 10 + Math.floor(index / 4) * 70, // Rows of 4
-                      width: 60,
-                      height: 60
+                      // For No Area, arrange in orderly grid pattern with proper spacing
+                      left: 10 + (index % 4) * (actualSize + 20), // Adjust spacing for actual size
+                      top: 10 + Math.floor(index / 4) * (actualSize + 20), // Rows of 4
+                      width: actualSize,
+                      height: actualSize
                     };
                     
                     return { resource, position, index };
@@ -1777,6 +1782,10 @@ export default function ShopFloor() {
         [resourceId]: size
       }));
     }
+    
+    // Force re-render to update area rectangles with new resource sizes
+    // This is done by triggering a state update
+    setShopFloorLayout(prev => [...prev]);
   };
 
   // Save layout mutation (silent save without toast)
@@ -2012,7 +2021,10 @@ export default function ShopFloor() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setGlobalImageSize(prev => Math.max(50, prev - 10))}
+                        onClick={() => {
+                          setGlobalImageSize(prev => Math.max(50, prev - 10));
+                          setShopFloorLayout(prev => [...prev]); // Force re-render for area calculations
+                        }}
                         className="h-6 w-6 p-0 hover:bg-gray-200"
                       >
                         <Minus className="w-3 h-3" />
@@ -2028,7 +2040,10 @@ export default function ShopFloor() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setGlobalImageSize(prev => Math.min(200, prev + 10))}
+                        onClick={() => {
+                          setGlobalImageSize(prev => Math.min(200, prev + 10));
+                          setShopFloorLayout(prev => [...prev]); // Force re-render for area calculations
+                        }}
                         className="h-6 w-6 p-0 hover:bg-gray-200"
                       >
                         <Plus className="w-3 h-3" />
@@ -2046,6 +2061,7 @@ export default function ShopFloor() {
                         onClick={() => {
                           setGlobalImageSize(100);
                           setIndividualImageSizes({});
+                          setShopFloorLayout(prev => [...prev]); // Force re-render for area calculations
                         }}
                         className="h-6 w-6 p-0 hover:bg-gray-200 ml-1"
                       >
