@@ -587,9 +587,10 @@ const DraggableAreaBubble = ({
   onResourceMove: (resourceId: number, newArea: string) => void;
   shopFloorLayout: ShopFloorLayout[];
 }) => {
-  // Calculate dimensions
-  const areaWidth = Math.max(300, resources.length * 80 + 100);
-  const areaHeight = Math.max(200, Math.ceil(resources.length / 4) * 80 + 100);
+  // Calculate dimensions based on actual resource sizes
+  const avgResourceSize = resources.reduce((sum, r) => sum + (individualImageSizes[r.id] || globalImageSize), 0) / Math.max(1, resources.length);
+  const areaWidth = Math.max(300, resources.length * (avgResourceSize + 20) + 100);
+  const areaHeight = Math.max(200, Math.ceil(resources.length / 4) * (avgResourceSize + 20) + 100);
   
   // Get position from localStorage
   const getPosition = () => {
@@ -801,18 +802,19 @@ const DraggableAreaBubble = ({
                       layout => layout.resourceId === resource.id
                     );
                     
-                    // Use full layout dimensions (same as individual area view)
+                    // Use globalImageSize for scaling, same as individual resources
+                    const effectiveSize = individualImageSizes[resource.id] || globalImageSize;
                     const position = layoutPosition ? {
                       left: layoutPosition.x,
                       top: layoutPosition.y,
-                      width: layoutPosition.width,
-                      height: layoutPosition.height
+                      width: effectiveSize,
+                      height: effectiveSize
                     } : {
-                      // For No Area, arrange in orderly grid pattern with default sizing
+                      // For No Area, arrange in orderly grid pattern with globalImageSize
                       left: 10 + (index % 4) * 120, // Use default spacing
                       top: 10 + Math.floor(index / 4) * 120, // Rows of 4
-                      width: 100,
-                      height: 100
+                      width: effectiveSize,
+                      height: effectiveSize
                     };
                     
                     return { resource, position, index };
@@ -825,7 +827,7 @@ const DraggableAreaBubble = ({
                   const maxRight = positions.length > 0 ? Math.max(...positions.map(p => p.left + p.width)) : 0;
                   const maxBottom = positions.length > 0 ? Math.max(...positions.map(p => p.top + p.height)) : 0;
                   
-                  // Calculate container size with generous margins (same as individual area view)
+                  // Calculate container size with generous margins, accounting for variable resource sizes
                   const margin = 50;
                   const containerWidth = Math.max(400, maxRight - minLeft + margin * 2);
                   const containerHeight = Math.max(300, maxBottom - minTop + margin * 2);
@@ -2347,7 +2349,7 @@ export default function ShopFloor() {
                             onMove={handleResourcePositionMove}
                             onDetails={handleResourceDetails}
                             photo={resourcePhotos[resource.id]}
-                            globalImageSize={globalImageSize * scale}
+                            globalImageSize={globalImageSize}
                             individualImageSizes={individualImageSizes}
                             onImageSizeChange={handleImageSizeChange}
                           />
