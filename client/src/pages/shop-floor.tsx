@@ -181,6 +181,8 @@ interface AreaLayout {
 }
 
 const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo }: DraggableResourceProps) => {
+  const [hasDragged, setHasDragged] = useState(false);
+  
   // Mobile-friendly drag implementation
   const mobileDrag = useMobileDrag(
     { x: layout.x, y: layout.y, id: layout.id },
@@ -196,11 +198,29 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo 
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
+    begin: () => {
+      setHasDragged(true);
+    },
+    end: () => {
+      // Reset drag state after a short delay to prevent click
+      setTimeout(() => setHasDragged(false), 100);
+    },
   });
 
   // Use mobile drag position if dragging, otherwise use layout position
   const currentPosition = mobileDrag.isDragging ? mobileDrag.position : { x: layout.x, y: layout.y };
   const isCurrentlyDragging = isDragging || mobileDrag.isDragging;
+  
+  // Handle click to prevent opening dialog after drag
+  const handleClick = (e: React.MouseEvent) => {
+    // Prevent click if we just finished dragging
+    if (hasDragged || mobileDrag.isDragging) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    onDetails(resource, status);
+  };
 
   // Get resource icon based on type
   const getResourceIcon = (type: string) => {
@@ -276,7 +296,7 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo 
           <TooltipTrigger asChild>
             <div
               className={`relative w-full h-full ${getStatusColor(status.status)} rounded-lg border-2 shadow-lg hover:shadow-xl transition-shadow cursor-pointer touch-manipulation`}
-              onClick={() => onDetails(resource, status)}
+              onClick={handleClick}
             >
               {/* Resource Icon/Photo */}
               <div className="absolute inset-0 flex items-center justify-center text-white">
@@ -346,13 +366,32 @@ const DraggableResourceCard = ({
   onResourceDetails: (resource: Resource, status: ResourceStatus) => void; 
   currentArea?: { name: string; id?: number }; 
 }) => {
+  const [hasDragged, setHasDragged] = useState(false);
+  
   const [{ isDragging }, drag] = useDrag({
     type: "resource-card",
     item: { resourceId: resource.id, currentArea: currentArea?.name || "No Area" },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
+    begin: () => {
+      setHasDragged(true);
+    },
+    end: () => {
+      // Reset drag state after a short delay to prevent click
+      setTimeout(() => setHasDragged(false), 100);
+    },
   });
+
+  const handleClick = (e: React.MouseEvent) => {
+    // Prevent click if we just finished dragging
+    if (hasDragged) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    onResourceDetails(resource, status);
+  };
 
   const getResourceIcon = (type: string) => {
     switch (type.toLowerCase()) {
@@ -390,7 +429,7 @@ const DraggableResourceCard = ({
       className={`relative ${getStatusColor(status.status)} rounded-lg border-2 p-3 cursor-pointer hover:shadow-md transition-all ${
         isDragging ? 'opacity-50 scale-95' : 'opacity-100 scale-100'
       }`}
-      onClick={() => onResourceDetails(resource, status)}
+      onClick={handleClick}
     >
       {/* Resource Icon/Photo */}
       <div className="flex items-center justify-center mb-2">
@@ -627,15 +666,15 @@ const DraggableAreaBubble = ({
                     );
                     
                     const position = layoutPosition ? {
-                      left: layoutPosition.x / 5, // Better scaling to match individual area proportions
-                      top: layoutPosition.y / 5,
-                      width: Math.max(70, layoutPosition.width / 3), // Readable but properly scaled
-                      height: Math.max(70, layoutPosition.height / 3)
+                      left: layoutPosition.x / 3, // Better scaling to match individual area proportions
+                      top: layoutPosition.y / 3,
+                      width: Math.max(60, layoutPosition.width / 4), // Readable but properly scaled
+                      height: Math.max(60, layoutPosition.height / 4)
                     } : {
-                      left: 10 + (index % 3) * 90,
-                      top: 10 + Math.floor(index / 3) * 90,
-                      width: 70,
-                      height: 70
+                      left: 10 + (index % 3) * 80,
+                      top: 10 + Math.floor(index / 3) * 80,
+                      width: 60,
+                      height: 60
                     };
                     
                     return { resource, position, index };
@@ -675,24 +714,122 @@ const DraggableAreaBubble = ({
                         const status = generateResourceStatus(resource);
                         const photo = resourcePhotos[resource.id];
                         
+                        // Get resource icon based on type
+                        const getResourceIcon = (type: string) => {
+                          switch (type.toLowerCase()) {
+                            case "machine":
+                              return <Wrench className="w-4 h-4 text-white" />;
+                            case "operator":
+                              return <Users className="w-4 h-4 text-white" />;
+                            case "facility":
+                              return <Building2 className="w-4 h-4 text-white" />;
+                            default:
+                              return <Settings className="w-4 h-4 text-white" />;
+                          }
+                        };
+
+                        // Get status color
+                        const getStatusColor = (status: string) => {
+                          switch (status) {
+                            case "operational":
+                              return "bg-green-500 border-green-600";
+                            case "warning":
+                              return "bg-yellow-500 border-yellow-600";
+                            case "error":
+                              return "bg-red-500 border-red-600";
+                            case "maintenance":
+                              return "bg-blue-500 border-blue-600";
+                            case "offline":
+                              return "bg-gray-500 border-gray-600";
+                            default:
+                              return "bg-gray-500 border-gray-600";
+                          }
+                        };
+
+                        const getStatusIndicator = (status: string) => {
+                          switch (status) {
+                            case "operational":
+                              return <CheckCircle className="w-3 h-3 text-white" />;
+                            case "warning":
+                              return <AlertTriangle className="w-3 h-3 text-white" />;
+                            case "error":
+                              return <AlertCircle className="w-3 h-3 text-white" />;
+                            case "maintenance":
+                              return <WrenchIcon className="w-3 h-3 text-white" />;
+                            case "offline":
+                              return <Pause className="w-3 h-3 text-white" />;
+                            default:
+                              return <Activity className="w-3 h-3 text-white" />;
+                          }
+                        };
+
                         return (
                           <div
                             key={resource.id}
-                            className="absolute"
+                            className="absolute cursor-pointer"
                             style={{
                               left: position.left,
                               top: position.top,
                               width: position.width,
                               height: position.height
                             }}
+                            onClick={() => onResourceDetails(resource, status)}
                           >
-                            <DraggableResourceCard
-                              resource={resource}
-                              status={status}
-                              photo={photo}
-                              onResourceDetails={onResourceDetails}
-                              currentArea={area}
-                            />
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className={`relative w-full h-full ${getStatusColor(status.status)} rounded-lg border-2 shadow-lg hover:shadow-xl transition-shadow`}>
+                                    {/* Resource Icon/Photo */}
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                      {photo ? (
+                                        <img 
+                                          src={photo} 
+                                          alt={resource.name}
+                                          className="w-full h-full object-cover rounded-lg"
+                                        />
+                                      ) : (
+                                        getResourceIcon(resource.type)
+                                      )}
+                                    </div>
+                                    
+                                    {/* Status Indicator */}
+                                    <div className="absolute top-0.5 right-0.5 bg-black bg-opacity-30 rounded-full p-0.5">
+                                      {getStatusIndicator(status.status)}
+                                    </div>
+                                    
+                                    {/* Utilization Bar */}
+                                    <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black bg-opacity-30 rounded-b-lg">
+                                      <div 
+                                        className="h-full bg-green-500 rounded-b-lg transition-all duration-300"
+                                        style={{ width: `${status.utilization}%` }}
+                                      />
+                                    </div>
+                                    
+                                    {/* Issue Count */}
+                                    {status.issues.length > 0 && (
+                                      <div className="absolute top-0.5 left-0.5 bg-red-500 text-white text-xs font-bold rounded-full w-3 h-3 flex items-center justify-center">
+                                        {status.issues.length}
+                                      </div>
+                                    )}
+                                    
+                                    {/* Resource Name */}
+                                    <div className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-xs font-medium text-gray-700 bg-white px-1 py-0.5 rounded shadow-sm whitespace-nowrap">
+                                      {resource.name}
+                                    </div>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <div className="space-y-1">
+                                    <p className="font-medium">{resource.name}</p>
+                                    <p className="text-sm">Status: {status.status}</p>
+                                    <p className="text-sm">Utilization: {status.utilization}%</p>
+                                    {status.issues.length > 0 && (
+                                      <p className="text-sm text-red-400">{status.issues.length} issues</p>
+                                    )}
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
                         );
                       })}
