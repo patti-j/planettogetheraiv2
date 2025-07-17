@@ -1471,10 +1471,13 @@ export default function ShopFloor() {
               resourceId: resource.id
             });
             
+            console.log('AI API response:', response);
+            
             // The image is already in base64 format from the server
             const base64Image = response.imageUrl;
             
             // Immediately add the base64 image to the UI
+            console.log('About to upload photo for resource', resource.id, 'with URL:', base64Image);
             handlePhotoUpload(resource.id, base64Image);
             successCount++;
             
