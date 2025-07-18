@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import React, { useState, useEffect, useCallback, memo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Calendar, 
@@ -102,8 +102,8 @@ const NewJobForm: React.FC<{
           <Label htmlFor="job-name">Job Name</Label>
           <Input
             id="job-name"
-            value={newJobData.name}
-            onChange={(e) => onUpdateField('name', e.target.value)}
+            defaultValue={newJobData.name}
+            onBlur={(e) => onUpdateField('name', e.target.value)}
             placeholder="Enter job name"
           />
         </div>
@@ -111,8 +111,8 @@ const NewJobForm: React.FC<{
           <Label htmlFor="customer">Customer</Label>
           <Input
             id="customer"
-            value={newJobData.customer}
-            onChange={(e) => onUpdateField('customer', e.target.value)}
+            defaultValue={newJobData.customer}
+            onBlur={(e) => onUpdateField('customer', e.target.value)}
             placeholder="Enter customer name"
           />
         </div>
@@ -122,8 +122,8 @@ const NewJobForm: React.FC<{
         <Label htmlFor="description">Description</Label>
         <Textarea
           id="description"
-          value={newJobData.description}
-          onChange={(e) => onUpdateField('description', e.target.value)}
+          defaultValue={newJobData.description}
+          onBlur={(e) => onUpdateField('description', e.target.value)}
           placeholder="Enter job description"
           rows={3}
         />
@@ -179,23 +179,25 @@ const NewJobForm: React.FC<{
         ) : (
           <div className="space-y-4">
             {newJobData.operations.map((operation, index) => (
-              <Card key={index}>
+              <Card key={`operation-${index}-${operation.name || 'unnamed'}`}>
                 <CardContent className="pt-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="space-y-2">
                       <Label>Operation Name</Label>
                       <Input
-                        value={operation.name}
-                        onChange={(e) => onUpdateOperation(index, 'name', e.target.value)}
+                        key={`name-${index}`}
+                        defaultValue={operation.name}
+                        onBlur={(e) => onUpdateOperation(index, 'name', e.target.value)}
                         placeholder="Enter operation name"
                       />
                     </div>
                     <div className="space-y-2">
                       <Label>Duration (hours)</Label>
                       <Input
+                        key={`duration-${index}`}
                         type="number"
-                        value={operation.duration}
-                        onChange={(e) => onUpdateOperation(index, 'duration', parseInt(e.target.value) || 1)}
+                        defaultValue={operation.duration}
+                        onBlur={(e) => onUpdateOperation(index, 'duration', parseInt(e.target.value) || 1)}
                         min={1}
                       />
                     </div>
@@ -231,8 +233,9 @@ const NewJobForm: React.FC<{
                   <div className="mt-4 space-y-2">
                     <Label>Description</Label>
                     <Textarea
-                      value={operation.description}
-                      onChange={(e) => onUpdateOperation(index, 'description', e.target.value)}
+                      key={`desc-${index}`}
+                      defaultValue={operation.description}
+                      onBlur={(e) => onUpdateOperation(index, 'description', e.target.value)}
                       placeholder="Enter operation description"
                       rows={2}
                     />
