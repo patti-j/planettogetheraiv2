@@ -18,7 +18,8 @@ import {
   RefreshCw,
   Eye,
   Maximize2,
-  Minimize2
+  Minimize2,
+  X
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
