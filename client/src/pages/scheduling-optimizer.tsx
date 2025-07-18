@@ -74,7 +74,7 @@ interface NewJobData {
   }[];
 }
 
-// Simple form component with normal React patterns
+// Form component with focus preservation
 const NewJobForm: React.FC<{
   newJobData: NewJobData;
   setNewJobData: (data: NewJobData) => void;
@@ -88,10 +88,32 @@ const NewJobForm: React.FC<{
   onGenerate,
   isAnalyzing 
 }) => {
+  const focusedElementRef = useRef<string | null>(null);
   
-  const handleJobFieldChange = (field: string, value: any) => {
+  const handleJobFieldChange = useCallback((field: string, value: any) => {
+    // Track which field is currently focused
+    focusedElementRef.current = field;
     setNewJobData({ ...newJobData, [field]: value });
-  };
+  }, [newJobData, setNewJobData]);
+
+  // Restore focus after re-render
+  useEffect(() => {
+    if (focusedElementRef.current) {
+      const elementId = focusedElementRef.current === 'name' ? 'job-name' : focusedElementRef.current;
+      const element = document.getElementById(elementId);
+      if (element) {
+        // Use setTimeout to ensure DOM has updated
+        setTimeout(() => {
+          element.focus();
+          // For text inputs, restore cursor position to end
+          if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+            element.setSelectionRange(element.value.length, element.value.length);
+          }
+        }, 0);
+      }
+      focusedElementRef.current = null;
+    }
+  });
 
   const handleOperationChange = (index: number, field: string, value: any) => {
     const updatedOperations = [...newJobData.operations];
