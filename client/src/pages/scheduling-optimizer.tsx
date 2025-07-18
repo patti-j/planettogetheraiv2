@@ -32,8 +32,13 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
+import { useForm, useFieldArray } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { format, addDays, differenceInDays } from 'date-fns';
+import { apiRequest } from '@/lib/queryClient';
 import type { Job, Operation, Resource, Capability } from '@shared/schema';
 
 interface SchedulingOption {
@@ -60,228 +65,267 @@ interface SchedulingOption {
   };
 }
 
-interface NewJobData {
-  name: string;
-  customer: string;
-  description: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  dueDate: string;
-  operations: {
-    name: string;
-    description: string;
-    duration: number;
-    capabilityId: number;
-  }[];
-}
+// Form schema for validation
+const newJobSchema = z.object({
+  name: z.string().min(1, 'Job name is required'),
+  customer: z.string().min(1, 'Customer is required'),
+  description: z.string().min(1, 'Description is required'),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']),
+  dueDate: z.string().min(1, 'Due date is required'),
+  operations: z.array(z.object({
+    name: z.string().min(1, 'Operation name is required'),
+    description: z.string().min(1, 'Operation description is required'),
+    duration: z.number().min(0.1, 'Duration must be at least 0.1 hours'),
+    capabilityId: z.number().min(1, 'Please select a capability')
+  })).min(1, 'At least one operation is required')
+});
 
-// Form component with focus preservation
+type NewJobFormData = z.infer<typeof newJobSchema>;
+
+// Form component using react-hook-form
 const NewJobForm: React.FC<{
-  newJobData: NewJobData;
-  setNewJobData: (data: NewJobData) => void;
   capabilities: Capability[];
-  onGenerate: () => void;
+  onGenerate: (data: NewJobFormData) => void;
   isAnalyzing: boolean;
 }> = ({ 
-  newJobData, 
-  setNewJobData,
   capabilities, 
   onGenerate,
   isAnalyzing 
 }) => {
-  const focusedElementRef = useRef<string | null>(null);
-  
-  const handleJobFieldChange = useCallback((field: string, value: any) => {
-    // Track which field is currently focused
-    focusedElementRef.current = field;
-    setNewJobData({ ...newJobData, [field]: value });
-  }, [newJobData, setNewJobData]);
-
-  // Restore focus after re-render
-  useEffect(() => {
-    if (focusedElementRef.current) {
-      const elementId = focusedElementRef.current === 'name' ? 'job-name' : focusedElementRef.current;
-      const element = document.getElementById(elementId);
-      if (element) {
-        // Use setTimeout to ensure DOM has updated
-        setTimeout(() => {
-          element.focus();
-          // For text inputs, restore cursor position to end
-          if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
-            element.setSelectionRange(element.value.length, element.value.length);
-          }
-        }, 0);
-      }
-      focusedElementRef.current = null;
+  const form = useForm<NewJobFormData>({
+    resolver: zodResolver(newJobSchema),
+    defaultValues: {
+      name: '',
+      customer: '',
+      description: '',
+      priority: 'medium',
+      dueDate: format(addDays(new Date(), 7), 'yyyy-MM-dd'),
+      operations: [{
+        name: '',
+        description: '',
+        duration: 1,
+        capabilityId: capabilities[0]?.id || 1
+      }]
     }
   });
 
-  const handleOperationChange = (index: number, field: string, value: any) => {
-    const updatedOperations = [...newJobData.operations];
-    updatedOperations[index] = { ...updatedOperations[index], [field]: value };
-    setNewJobData({ ...newJobData, operations: updatedOperations });
-  };
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "operations"
+  });
 
   const addOperation = () => {
-    const newOperation = {
+    append({
       name: '',
       description: '',
       duration: 1,
       capabilityId: capabilities[0]?.id || 1
-    };
-    setNewJobData({
-      ...newJobData,
-      operations: [...newJobData.operations, newOperation]
     });
   };
 
-  const removeOperation = (index: number) => {
-    const updatedOperations = newJobData.operations.filter((_, i) => i !== index);
-    setNewJobData({ ...newJobData, operations: updatedOperations });
+  const onSubmit = (data: NewJobFormData) => {
+    onGenerate(data);
   };
 
   return (
-    <div className="space-y-6">
-      {/* Job Details */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="job-name">Job Name</Label>
-          <Input
-            id="job-name"
-            value={newJobData.name}
-            onChange={(e) => handleJobFieldChange('name', e.target.value)}
-            placeholder="Enter job name"
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Job Details */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Job Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter job name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="customer"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Customer</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter customer name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="customer">Customer</Label>
-          <Input
-            id="customer"
-            value={newJobData.customer}
-            onChange={(e) => handleJobFieldChange('customer', e.target.value)}
-            placeholder="Enter customer name"
-          />
-        </div>
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          value={newJobData.description}
-          onChange={(e) => handleJobFieldChange('description', e.target.value)}
-          placeholder="Enter job description"
-          rows={3}
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="Enter job description" 
+                  rows={3} 
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="priority">Priority</Label>
-          <Select
-            value={newJobData.priority}
-            onValueChange={(value: any) => handleJobFieldChange('priority', value)}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="low">Low</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="high">High</SelectItem>
-              <SelectItem value="urgent">Urgent</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="due-date">Due Date</Label>
-          <Input
-            id="due-date"
-            type="date"
-            value={newJobData.dueDate}
-            onChange={(e) => handleJobFieldChange('dueDate', e.target.value)}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="priority"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Priority</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="dueDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Due Date</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
-      </div>
 
-      <Separator />
+        <Separator />
 
-      {/* Operations */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Operations</h3>
-          <Button onClick={addOperation} variant="outline" size="sm">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Operation
-          </Button>
-        </div>
-
-        {newJobData.operations.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <Factory className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-            <p>No operations added yet</p>
-            <p className="text-sm">Click "Add Operation" to create your first operation</p>
+        {/* Operations */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Operations</h3>
+            <Button onClick={addOperation} variant="outline" size="sm" type="button">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Operation
+            </Button>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {newJobData.operations.map((operation, index) => (
-              <Card key={index}>
-                <CardContent className="pt-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="space-y-2">
-                      <Label>Operation Name</Label>
-                      <Input
-                        value={operation.name}
-                        onChange={(e) => handleOperationChange(index, 'name', e.target.value)}
-                        placeholder="Enter operation name"
+
+          {fields.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Factory className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+              <p>No operations added yet</p>
+              <p className="text-sm">Click "Add Operation" to create your first operation</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {fields.map((field, index) => (
+                <Card key={field.id}>
+                  <CardContent className="pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <FormField
+                        control={form.control}
+                        name={`operations.${index}.name`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Operation Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter operation name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Duration (hours)</Label>
-                      <Input
-                        type="number"
-                        value={operation.duration}
-                        onChange={(e) => handleOperationChange(index, 'duration', parseInt(e.target.value) || 1)}
-                        min={1}
+                      <FormField
+                        control={form.control}
+                        name={`operations.${index}.duration`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Duration (hours)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min={0.1}
+                                step={0.1}
+                                {...field}
+                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 1)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
+                      <FormField
+                        control={form.control}
+                        name={`operations.${index}.capabilityId`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Required Capability</FormLabel>
+                            <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select capability" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {capabilities?.map((cap) => (
+                                  <SelectItem key={cap.id} value={cap.id.toString()}>
+                                    {cap.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="flex items-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => remove(index)}
+                          className="text-red-600 hover:text-red-700"
+                          type="button"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Required Capability</Label>
-                      <Select
-                        value={operation.capabilityId.toString()}
-                        onValueChange={(value) => handleOperationChange(index, 'capabilityId', parseInt(value))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {capabilities?.map((cap) => (
-                            <SelectItem key={cap.id} value={cap.id.toString()}>
-                              {cap.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex items-end">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeOperation(index)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="mt-4 space-y-2">
-                    <Label>Description</Label>
-                    <Textarea
-                      value={operation.description}
-                      onChange={(e) => handleOperationChange(index, 'description', e.target.value)}
-                      placeholder="Enter operation description"
-                      rows={2}
+                    <FormField
+                      control={form.control}
+                      name={`operations.${index}.description`}
+                      render={({ field }) => (
+                        <FormItem className="mt-4">
+                          <FormLabel>Description</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Enter operation description" 
+                              rows={2} 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -289,30 +333,31 @@ const NewJobForm: React.FC<{
         )}
       </div>
 
-      {/* Analysis Button */}
-      {newJobData.operations.length > 0 && (
-        <div className="flex justify-center">
-          <Button
-            onClick={onGenerate}
-            disabled={isAnalyzing || !newJobData.name || !newJobData.customer}
-            className="flex items-center gap-2"
-            size="lg"
-          >
-            {isAnalyzing ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                Analyzing Options...
-              </>
-            ) : (
-              <>
-                <Zap className="w-4 h-4" />
-                Generate Scheduling Options
-              </>
-            )}
-          </Button>
-        </div>
-      )}
-    </div>
+        {/* Analysis Button */}
+        {fields.length > 0 && (
+          <div className="flex justify-center">
+            <Button
+              type="submit"
+              disabled={isAnalyzing}
+              className="flex items-center gap-2"
+              size="lg"
+            >
+              {isAnalyzing ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Analyzing Options...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4" />
+                  Generate Scheduling Options
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+      </form>
+    </Form>
   );
 };
 
@@ -321,17 +366,11 @@ const SchedulingOptimizer: React.FC = () => {
   const queryClient = useQueryClient();
   const [isMaximized, setIsMaximized] = useState(false);
   const [selectedOption, setSelectedOption] = useState<SchedulingOption | null>(null);
-  const [newJobData, setNewJobData] = useState<NewJobData>({
-    name: '',
-    customer: '',
-    description: '',
-    priority: 'medium',
-    dueDate: format(addDays(new Date(), 7), 'yyyy-MM-dd'),
-    operations: []
-  });
+
   const [showCreateJob, setShowCreateJob] = useState(false);
   const [schedulingOptions, setSchedulingOptions] = useState<SchedulingOption[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [lastFormData, setLastFormData] = useState<NewJobFormData | null>(null);
 
   // Fetch data with disabled refetch to prevent form re-renders
   const { data: jobs } = useQuery<Job[]>({ 
@@ -377,9 +416,10 @@ const SchedulingOptimizer: React.FC = () => {
 
 
   // Generate scheduling options
-  const generateSchedulingOptions = () => {
-    if (!resources || !capabilities || newJobData.operations.length === 0) return;
+  const generateSchedulingOptions = (formData: NewJobFormData) => {
+    if (!resources || !capabilities || formData.operations.length === 0) return;
 
+    setLastFormData(formData);
     setIsAnalyzing(true);
 
     // Simulate analysis delay
@@ -393,7 +433,7 @@ const SchedulingOptimizer: React.FC = () => {
         startDate: new Date(),
         endDate: addDays(new Date(), 3),
         resources: resources.slice(0, 2),
-        operations: newJobData.operations.map((op, i) => ({
+        operations: formData.operations.map((op, i) => ({
           id: i + 1000,
           jobId: 1000,
           name: op.name,
@@ -402,7 +442,7 @@ const SchedulingOptimizer: React.FC = () => {
           capabilityId: op.capabilityId,
           assignedResourceId: resources[i % resources.length]?.id,
           status: 'pending' as const,
-          priority: newJobData.priority,
+          priority: formData.priority,
           startTime: addDays(new Date(), i * 0.5),
           endTime: addDays(new Date(), i * 0.5 + op.duration / 24)
         })),
@@ -430,7 +470,7 @@ const SchedulingOptimizer: React.FC = () => {
         startDate: addDays(new Date(), 1),
         endDate: addDays(new Date(), 5),
         resources: resources.slice(0, 3),
-        operations: newJobData.operations.map((op, i) => ({
+        operations: formData.operations.map((op, i) => ({
           id: i + 2000,
           jobId: 2000,
           name: op.name,
@@ -439,7 +479,7 @@ const SchedulingOptimizer: React.FC = () => {
           capabilityId: op.capabilityId,
           assignedResourceId: resources[i % resources.length]?.id,
           status: 'pending' as const,
-          priority: newJobData.priority,
+          priority: formData.priority,
           startTime: addDays(new Date(), 1 + i * 0.8),
           endTime: addDays(new Date(), 1 + i * 0.8 + op.duration / 24)
         })),
@@ -467,7 +507,7 @@ const SchedulingOptimizer: React.FC = () => {
         startDate: addDays(new Date(), 0.5),
         endDate: addDays(new Date(), 4),
         resources: resources.slice(0, 2),
-        operations: newJobData.operations.map((op, i) => ({
+        operations: formData.operations.map((op, i) => ({
           id: i + 3000,
           jobId: 3000,
           name: op.name,
@@ -476,7 +516,7 @@ const SchedulingOptimizer: React.FC = () => {
           capabilityId: op.capabilityId,
           assignedResourceId: resources[i % resources.length]?.id,
           status: 'pending' as const,
-          priority: newJobData.priority,
+          priority: formData.priority,
           startTime: addDays(new Date(), 0.5 + i * 0.7),
           endTime: addDays(new Date(), 0.5 + i * 0.7 + op.duration / 24)
         })),
@@ -504,12 +544,14 @@ const SchedulingOptimizer: React.FC = () => {
 
   // Schedule job with selected option
   const scheduleJob = async (option: SchedulingOption) => {
+    if (!lastFormData) return;
+    
     const jobData = {
-      name: newJobData.name,
-      customer: newJobData.customer,
-      description: newJobData.description,
-      priority: newJobData.priority,
-      dueDate: newJobData.dueDate,
+      name: lastFormData.name,
+      customer: lastFormData.customer,
+      description: lastFormData.description,
+      priority: lastFormData.priority,
+      dueDate: lastFormData.dueDate,
       status: 'pending',
       estimatedDuration: option.metrics.totalDuration,
       startDate: option.startDate,
@@ -518,14 +560,7 @@ const SchedulingOptimizer: React.FC = () => {
 
     createJobMutation.mutate(jobData);
     setShowCreateJob(false);
-    setNewJobData({
-      name: '',
-      customer: '',
-      description: '',
-      priority: 'medium',
-      dueDate: format(addDays(new Date(), 7), 'yyyy-MM-dd'),
-      operations: []
-    });
+    setLastFormData(null);
     setSchedulingOptions([]);
   };
 
@@ -714,8 +749,6 @@ const SchedulingOptimizer: React.FC = () => {
             <DialogTitle>Create New Multi-Operation Order</DialogTitle>
           </DialogHeader>
           <NewJobForm
-            newJobData={newJobData}
-            setNewJobData={setNewJobData}
             capabilities={capabilities || []}
             onGenerate={generateSchedulingOptions}
             isAnalyzing={isAnalyzing}
