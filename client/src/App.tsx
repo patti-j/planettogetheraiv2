@@ -20,6 +20,7 @@ import Maintenance from "@/pages/maintenance";
 import Feedback from "@/pages/feedback";
 import ForkliftDriver from "@/pages/forklift-driver";
 import EmailSettings from "@/pages/email-settings";
+import SchedulingOptimizer from "@/pages/scheduling-optimizer";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -38,6 +39,7 @@ function Router() {
       <Route path="/feedback" component={Feedback} />
       <Route path="/forklift" component={ForkliftDriver} />
       <Route path="/email-settings" component={EmailSettings} />
+      <Route path="/scheduling-optimizer" component={SchedulingOptimizer} />
       <Route component={NotFound} />
     </Switch>
   );
