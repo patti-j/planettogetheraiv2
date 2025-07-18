@@ -114,6 +114,15 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 18, 2025)
 
+✓ **Smart Scheduling Order Creation Bug Fix (July 18, 2025)**:
+- Fixed critical bug where orders created in Smart Scheduling screen were losing their operations after creation
+- Previously only the job was being created but operations were not saved to the database
+- Enhanced scheduleJob function to create both the job and all associated operations in proper sequence
+- Added comprehensive error handling with specific error messages for job and operation creation failures
+- Operations now maintain their assigned resources, start/end times, and scheduling optimization settings
+- Fixed order creation workflow to preserve all form data including multi-operation configurations
+- Smart Scheduling now properly saves complete orders with all operations linked to the job
+
 ✓ **ERP Data Import System Implementation (July 18, 2025)**:
 - Created comprehensive ERP Import page for schedulers to manage data imports from external ERP systems
 - Implemented tabbed interface with Import Jobs, New Import, Field Mapping, and Import History sections

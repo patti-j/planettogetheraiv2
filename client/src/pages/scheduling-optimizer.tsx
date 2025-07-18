@@ -395,24 +395,7 @@ const SchedulingOptimizer: React.FC = () => {
     refetchInterval: false
   });
 
-  // Create job mutation
-  const createJobMutation = useMutation({
-    mutationFn: async (jobData: any) => {
-      const response = await fetch('/api/jobs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(jobData)
-      });
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/jobs'] });
-      toast({
-        title: "Success",
-        description: "Job created successfully with optimized schedule"
-      });
-    }
-  });
+
 
 
 
@@ -547,22 +530,83 @@ const SchedulingOptimizer: React.FC = () => {
   const scheduleJob = async (option: SchedulingOption) => {
     if (!lastFormData) return;
     
-    const jobData = {
-      name: lastFormData.name,
-      customer: lastFormData.customer,
-      description: lastFormData.description,
-      priority: lastFormData.priority,
-      dueDate: lastFormData.dueDate,
-      status: 'pending',
-      estimatedDuration: option.metrics.totalDuration,
-      startDate: option.startDate,
-      endDate: option.endDate
-    };
+    try {
+      // First create the job
+      const jobData = {
+        name: lastFormData.name,
+        customer: lastFormData.customer,
+        description: lastFormData.description,
+        priority: lastFormData.priority,
+        dueDate: lastFormData.dueDate,
+        status: 'pending',
+        estimatedDuration: option.metrics.totalDuration,
+        startDate: option.startDate,
+        endDate: option.endDate
+      };
 
-    createJobMutation.mutate(jobData);
-    setShowCreateJob(false);
-    setLastFormData(null);
-    setSchedulingOptions([]);
+      const jobResponse = await fetch('/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(jobData)
+      });
+      
+      if (!jobResponse.ok) {
+        throw new Error('Failed to create job');
+      }
+
+      const createdJob = await jobResponse.json();
+
+      // Then create all operations for this job
+      const operationPromises = option.operations.map(async (operation) => {
+        const operationData = {
+          jobId: createdJob.id,
+          name: operation.name,
+          description: operation.description,
+          duration: operation.duration,
+          capabilityId: operation.capabilityId,
+          assignedResourceId: operation.assignedResourceId,
+          status: 'pending',
+          priority: operation.priority,
+          startTime: operation.startTime,
+          endTime: operation.endTime
+        };
+
+        const response = await fetch('/api/operations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(operationData)
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to create operation: ${operation.name}`);
+        }
+
+        return response.json();
+      });
+
+      await Promise.all(operationPromises);
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/operations'] });
+
+      toast({
+        title: "Success",
+        description: `Job "${lastFormData.name}" created successfully with ${option.operations.length} operations scheduled`
+      });
+
+      setShowCreateJob(false);
+      setLastFormData(null);
+      setSchedulingOptions([]);
+      
+    } catch (error) {
+      console.error('Error creating job and operations:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create job with operations. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const getRiskColor = (risk: string) => {
