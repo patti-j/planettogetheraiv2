@@ -103,7 +103,7 @@ const NewJobForm: React.FC<{
           <Input
             id="job-name"
             defaultValue={newJobData.name}
-            onBlur={(e) => onUpdateField('name', e.target.value)}
+            onInput={(e) => onUpdateField('name', e.target.value)}
             placeholder="Enter job name"
           />
         </div>
@@ -112,7 +112,7 @@ const NewJobForm: React.FC<{
           <Input
             id="customer"
             defaultValue={newJobData.customer}
-            onBlur={(e) => onUpdateField('customer', e.target.value)}
+            onInput={(e) => onUpdateField('customer', e.target.value)}
             placeholder="Enter customer name"
           />
         </div>
@@ -123,7 +123,7 @@ const NewJobForm: React.FC<{
         <Textarea
           id="description"
           defaultValue={newJobData.description}
-          onBlur={(e) => onUpdateField('description', e.target.value)}
+          onInput={(e) => onUpdateField('description', e.target.value)}
           placeholder="Enter job description"
           rows={3}
         />
@@ -187,7 +187,7 @@ const NewJobForm: React.FC<{
                       <Input
                         key={`name-${index}`}
                         defaultValue={operation.name}
-                        onBlur={(e) => onUpdateOperation(index, 'name', e.target.value)}
+                        onInput={(e) => onUpdateOperation(index, 'name', e.target.value)}
                         placeholder="Enter operation name"
                       />
                     </div>
@@ -197,7 +197,7 @@ const NewJobForm: React.FC<{
                         key={`duration-${index}`}
                         type="number"
                         defaultValue={operation.duration}
-                        onBlur={(e) => onUpdateOperation(index, 'duration', parseInt(e.target.value) || 1)}
+                        onInput={(e) => onUpdateOperation(index, 'duration', parseInt(e.target.value) || 1)}
                         min={1}
                       />
                     </div>
@@ -235,7 +235,7 @@ const NewJobForm: React.FC<{
                     <Textarea
                       key={`desc-${index}`}
                       defaultValue={operation.description}
-                      onBlur={(e) => onUpdateOperation(index, 'description', e.target.value)}
+                      onInput={(e) => onUpdateOperation(index, 'description', e.target.value)}
                       placeholder="Enter operation description"
                       rows={2}
                     />
