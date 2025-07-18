@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Calendar, 
@@ -74,6 +74,203 @@ interface NewJobData {
   }[];
 }
 
+// Isolated memoized form component to prevent re-renders
+const NewJobForm: React.FC<{
+  newJobData: NewJobData;
+  capabilities: Capability[];
+  onUpdateField: (field: string, value: any) => void;
+  onUpdateOperation: (index: number, field: string, value: any) => void;
+  onAddOperation: () => void;
+  onRemoveOperation: (index: number) => void;
+  onGenerate: () => void;
+  isAnalyzing: boolean;
+}> = memo(({ 
+  newJobData, 
+  capabilities, 
+  onUpdateField, 
+  onUpdateOperation, 
+  onAddOperation, 
+  onRemoveOperation,
+  onGenerate,
+  isAnalyzing 
+}) => {
+  return (
+    <div className="space-y-6">
+      {/* Job Details */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="job-name">Job Name</Label>
+          <Input
+            id="job-name"
+            value={newJobData.name}
+            onChange={(e) => onUpdateField('name', e.target.value)}
+            placeholder="Enter job name"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="customer">Customer</Label>
+          <Input
+            id="customer"
+            value={newJobData.customer}
+            onChange={(e) => onUpdateField('customer', e.target.value)}
+            placeholder="Enter customer name"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          value={newJobData.description}
+          onChange={(e) => onUpdateField('description', e.target.value)}
+          placeholder="Enter job description"
+          rows={3}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="priority">Priority</Label>
+          <Select
+            value={newJobData.priority}
+            onValueChange={(value: any) => onUpdateField('priority', value)}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="low">Low</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="high">High</SelectItem>
+              <SelectItem value="urgent">Urgent</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="due-date">Due Date</Label>
+          <Input
+            id="due-date"
+            type="date"
+            value={newJobData.dueDate}
+            onChange={(e) => onUpdateField('dueDate', e.target.value)}
+          />
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Operations */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Operations</h3>
+          <Button onClick={onAddOperation} variant="outline" size="sm">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Operation
+          </Button>
+        </div>
+
+        {newJobData.operations.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <Factory className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+            <p>No operations added yet</p>
+            <p className="text-sm">Click "Add Operation" to create your first operation</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {newJobData.operations.map((operation, index) => (
+              <Card key={index}>
+                <CardContent className="pt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <Label>Operation Name</Label>
+                      <Input
+                        value={operation.name}
+                        onChange={(e) => onUpdateOperation(index, 'name', e.target.value)}
+                        placeholder="Enter operation name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Duration (hours)</Label>
+                      <Input
+                        type="number"
+                        value={operation.duration}
+                        onChange={(e) => onUpdateOperation(index, 'duration', parseInt(e.target.value) || 1)}
+                        min={1}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Required Capability</Label>
+                      <Select
+                        value={operation.capabilityId.toString()}
+                        onValueChange={(value) => onUpdateOperation(index, 'capabilityId', parseInt(value))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {capabilities?.map((cap) => (
+                            <SelectItem key={cap.id} value={cap.id.toString()}>
+                              {cap.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onRemoveOperation(index)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    <Label>Description</Label>
+                    <Textarea
+                      value={operation.description}
+                      onChange={(e) => onUpdateOperation(index, 'description', e.target.value)}
+                      placeholder="Enter operation description"
+                      rows={2}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Analysis Button */}
+      {newJobData.operations.length > 0 && (
+        <div className="flex justify-center">
+          <Button
+            onClick={onGenerate}
+            disabled={isAnalyzing || !newJobData.name || !newJobData.customer}
+            className="flex items-center gap-2"
+            size="lg"
+          >
+            {isAnalyzing ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                Analyzing Options...
+              </>
+            ) : (
+              <>
+                <Zap className="w-4 h-4" />
+                Generate Scheduling Options
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+});
+
 const SchedulingOptimizer: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -91,11 +288,27 @@ const SchedulingOptimizer: React.FC = () => {
   const [schedulingOptions, setSchedulingOptions] = useState<SchedulingOption[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Fetch data
-  const { data: jobs } = useQuery<Job[]>({ queryKey: ['/api/jobs'] });
-  const { data: resources } = useQuery<Resource[]>({ queryKey: ['/api/resources'] });
-  const { data: capabilities } = useQuery<Capability[]>({ queryKey: ['/api/capabilities'] });
-  const { data: operations } = useQuery<Operation[]>({ queryKey: ['/api/operations'] });
+  // Fetch data with disabled refetch to prevent form re-renders
+  const { data: jobs } = useQuery<Job[]>({ 
+    queryKey: ['/api/jobs'],
+    refetchOnWindowFocus: false,
+    refetchInterval: false
+  });
+  const { data: resources } = useQuery<Resource[]>({ 
+    queryKey: ['/api/resources'],
+    refetchOnWindowFocus: false,
+    refetchInterval: false
+  });
+  const { data: capabilities } = useQuery<Capability[]>({ 
+    queryKey: ['/api/capabilities'],
+    refetchOnWindowFocus: false,
+    refetchInterval: false
+  });
+  const { data: operations } = useQuery<Operation[]>({ 
+    queryKey: ['/api/operations'],
+    refetchOnWindowFocus: false,
+    refetchInterval: false
+  });
 
   // Create job mutation
   const createJobMutation = useMutation({
@@ -487,179 +700,16 @@ const SchedulingOptimizer: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Create New Multi-Operation Order</DialogTitle>
           </DialogHeader>
-          <div className="space-y-6">
-            {/* Job Details */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="job-name">Job Name</Label>
-                <Input
-                  id="job-name"
-                  value={newJobData.name}
-                  onChange={(e) => updateJobField('name', e.target.value)}
-                  placeholder="Enter job name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="customer">Customer</Label>
-                <Input
-                  id="customer"
-                  value={newJobData.customer}
-                  onChange={(e) => updateJobField('customer', e.target.value)}
-                  placeholder="Enter customer name"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={newJobData.description}
-                onChange={(e) => updateJobField('description', e.target.value)}
-                placeholder="Enter job description"
-                rows={3}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="priority">Priority</Label>
-                <Select
-                  value={newJobData.priority}
-                  onValueChange={(value: any) => updateJobField('priority', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="urgent">Urgent</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="due-date">Due Date</Label>
-                <Input
-                  id="due-date"
-                  type="date"
-                  value={newJobData.dueDate}
-                  onChange={(e) => updateJobField('dueDate', e.target.value)}
-                />
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Operations */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Operations</h3>
-                <Button onClick={addOperation} variant="outline" size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Operation
-                </Button>
-              </div>
-
-              {newJobData.operations.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <Factory className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-                  <p>No operations added yet</p>
-                  <p className="text-sm">Click "Add Operation" to create your first operation</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {newJobData.operations.map((operation, index) => (
-                    <Card key={index}>
-                      <CardContent className="pt-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                          <div className="space-y-2">
-                            <Label>Operation Name</Label>
-                            <Input
-                              value={operation.name}
-                              onChange={(e) => updateOperationField(index, 'name', e.target.value)}
-                              placeholder="Enter operation name"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Duration (hours)</Label>
-                            <Input
-                              type="number"
-                              value={operation.duration}
-                              onChange={(e) => updateOperationField(index, 'duration', parseInt(e.target.value) || 1)}
-                              min={1}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Required Capability</Label>
-                            <Select
-                              value={operation.capabilityId.toString()}
-                              onValueChange={(value) => updateOperationField(index, 'capabilityId', parseInt(value))}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {capabilities?.map((cap) => (
-                                  <SelectItem key={cap.id} value={cap.id.toString()}>
-                                    {cap.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="flex items-end">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => removeOperation(index)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="mt-4 space-y-2">
-                          <Label>Description</Label>
-                          <Textarea
-                            value={operation.description}
-                            onChange={(e) => updateOperationField(index, 'description', e.target.value)}
-                            placeholder="Enter operation description"
-                            rows={2}
-                          />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Analysis Button */}
-            {newJobData.operations.length > 0 && (
-              <div className="flex justify-center">
-                <Button
-                  onClick={generateSchedulingOptions}
-                  disabled={isAnalyzing || !newJobData.name || !newJobData.customer}
-                  className="flex items-center gap-2"
-                  size="lg"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      Analyzing Options...
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="w-4 h-4" />
-                      Generate Scheduling Options
-                    </>
-                  )}
-                </Button>
-              </div>
-            )}
-          </div>
+          <NewJobForm
+            newJobData={newJobData}
+            capabilities={capabilities || []}
+            onUpdateField={updateJobField}
+            onUpdateOperation={updateOperationField}
+            onAddOperation={addOperation}
+            onRemoveOperation={removeOperation}
+            onGenerate={generateSchedulingOptions}
+            isAnalyzing={isAnalyzing}
+          />
         </DialogContent>
       </Dialog>
     </div>
