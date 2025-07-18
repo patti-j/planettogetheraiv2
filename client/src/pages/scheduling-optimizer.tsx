@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Calendar, 
@@ -116,8 +116,21 @@ const SchedulingOptimizer: React.FC = () => {
     }
   });
 
+  // Memoized handlers to prevent unnecessary re-renders
+  const updateJobField = useCallback((field: string, value: any) => {
+    setNewJobData(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const updateOperationField = useCallback((index: number, field: string, value: any) => {
+    setNewJobData(prev => {
+      const newOps = [...prev.operations];
+      newOps[index] = { ...newOps[index], [field]: value };
+      return { ...prev, operations: newOps };
+    });
+  }, []);
+
   // Add operation to new job
-  const addOperation = () => {
+  const addOperation = useCallback(() => {
     setNewJobData(prev => ({
       ...prev,
       operations: [...prev.operations, {
@@ -127,15 +140,15 @@ const SchedulingOptimizer: React.FC = () => {
         capabilityId: capabilities?.[0]?.id || 1
       }]
     }));
-  };
+  }, [capabilities]);
 
   // Remove operation from new job
-  const removeOperation = (index: number) => {
+  const removeOperation = useCallback((index: number) => {
     setNewJobData(prev => ({
       ...prev,
       operations: prev.operations.filter((_, i) => i !== index)
     }));
-  };
+  }, []);
 
   // Generate scheduling options
   const generateSchedulingOptions = () => {
@@ -482,7 +495,7 @@ const SchedulingOptimizer: React.FC = () => {
                 <Input
                   id="job-name"
                   value={newJobData.name}
-                  onChange={(e) => setNewJobData(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) => updateJobField('name', e.target.value)}
                   placeholder="Enter job name"
                 />
               </div>
@@ -491,7 +504,7 @@ const SchedulingOptimizer: React.FC = () => {
                 <Input
                   id="customer"
                   value={newJobData.customer}
-                  onChange={(e) => setNewJobData(prev => ({ ...prev, customer: e.target.value }))}
+                  onChange={(e) => updateJobField('customer', e.target.value)}
                   placeholder="Enter customer name"
                 />
               </div>
@@ -502,7 +515,7 @@ const SchedulingOptimizer: React.FC = () => {
               <Textarea
                 id="description"
                 value={newJobData.description}
-                onChange={(e) => setNewJobData(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) => updateJobField('description', e.target.value)}
                 placeholder="Enter job description"
                 rows={3}
               />
@@ -513,7 +526,7 @@ const SchedulingOptimizer: React.FC = () => {
                 <Label htmlFor="priority">Priority</Label>
                 <Select
                   value={newJobData.priority}
-                  onValueChange={(value: any) => setNewJobData(prev => ({ ...prev, priority: value }))}
+                  onValueChange={(value: any) => updateJobField('priority', value)}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -532,7 +545,7 @@ const SchedulingOptimizer: React.FC = () => {
                   id="due-date"
                   type="date"
                   value={newJobData.dueDate}
-                  onChange={(e) => setNewJobData(prev => ({ ...prev, dueDate: e.target.value }))}
+                  onChange={(e) => updateJobField('dueDate', e.target.value)}
                 />
               </div>
             </div>
@@ -565,11 +578,7 @@ const SchedulingOptimizer: React.FC = () => {
                             <Label>Operation Name</Label>
                             <Input
                               value={operation.name}
-                              onChange={(e) => {
-                                const newOps = [...newJobData.operations];
-                                newOps[index].name = e.target.value;
-                                setNewJobData(prev => ({ ...prev, operations: newOps }));
-                              }}
+                              onChange={(e) => updateOperationField(index, 'name', e.target.value)}
                               placeholder="Enter operation name"
                             />
                           </div>
@@ -578,11 +587,7 @@ const SchedulingOptimizer: React.FC = () => {
                             <Input
                               type="number"
                               value={operation.duration}
-                              onChange={(e) => {
-                                const newOps = [...newJobData.operations];
-                                newOps[index].duration = parseInt(e.target.value) || 1;
-                                setNewJobData(prev => ({ ...prev, operations: newOps }));
-                              }}
+                              onChange={(e) => updateOperationField(index, 'duration', parseInt(e.target.value) || 1)}
                               min={1}
                             />
                           </div>
@@ -590,11 +595,7 @@ const SchedulingOptimizer: React.FC = () => {
                             <Label>Required Capability</Label>
                             <Select
                               value={operation.capabilityId.toString()}
-                              onValueChange={(value) => {
-                                const newOps = [...newJobData.operations];
-                                newOps[index].capabilityId = parseInt(value);
-                                setNewJobData(prev => ({ ...prev, operations: newOps }));
-                              }}
+                              onValueChange={(value) => updateOperationField(index, 'capabilityId', parseInt(value))}
                             >
                               <SelectTrigger>
                                 <SelectValue />
@@ -623,11 +624,7 @@ const SchedulingOptimizer: React.FC = () => {
                           <Label>Description</Label>
                           <Textarea
                             value={operation.description}
-                            onChange={(e) => {
-                              const newOps = [...newJobData.operations];
-                              newOps[index].description = e.target.value;
-                              setNewJobData(prev => ({ ...prev, operations: newOps }));
-                            }}
+                            onChange={(e) => updateOperationField(index, 'description', e.target.value)}
                             placeholder="Enter operation description"
                             rows={2}
                           />
