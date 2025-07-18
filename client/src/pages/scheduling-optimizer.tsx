@@ -372,6 +372,8 @@ const SchedulingOptimizer: React.FC = () => {
   const [schedulingOptions, setSchedulingOptions] = useState<SchedulingOption[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [lastFormData, setLastFormData] = useState<NewJobFormData | null>(null);
+  const [selectedExistingJob, setSelectedExistingJob] = useState<Job | null>(null);
+  const [isOptimizingExisting, setIsOptimizingExisting] = useState(false);
 
   // Fetch data with disabled refetch to prevent form re-renders
   const { data: jobs } = useQuery<Job[]>({ 
@@ -398,6 +400,115 @@ const SchedulingOptimizer: React.FC = () => {
 
 
 
+
+  // Generate scheduling options for existing job
+  const generateSchedulingOptionsForExisting = (job: Job) => {
+    if (!resources || !capabilities || !operations) return;
+
+    const jobOperations = operations.filter(op => op.jobId === job.id);
+    if (jobOperations.length === 0) return;
+
+    setSelectedExistingJob(job);
+    setIsOptimizingExisting(true);
+
+    // Simulate analysis delay
+    setTimeout(() => {
+      const options: SchedulingOption[] = [];
+      
+      // Option 1: Fastest completion
+      options.push({
+        id: 'fastest',
+        name: 'Fastest Completion',
+        startDate: new Date(),
+        endDate: addDays(new Date(), 3),
+        resources: resources.slice(0, 2),
+        operations: jobOperations.map((op, i) => ({
+          ...op,
+          assignedResourceId: resources[i % resources.length]?.id,
+          startTime: addDays(new Date(), i * 0.5),
+          endTime: addDays(new Date(), i * 0.5 + op.duration / 24)
+        })),
+        efficiency: 95,
+        customerSatisfaction: 90,
+        utilization: 85,
+        cost: 1200,
+        risk: 'medium',
+        tradeoffs: {
+          pros: ['Fastest delivery', 'High customer satisfaction', 'Meets urgent deadlines'],
+          cons: ['Higher resource utilization', 'Potential bottlenecks', 'Higher cost']
+        },
+        metrics: {
+          totalDuration: 3,
+          resourceConflicts: 2,
+          deliveryDelay: 0,
+          capacityUtilization: 85
+        }
+      });
+
+      // Option 2: Most efficient
+      options.push({
+        id: 'efficient',
+        name: 'Most Efficient',
+        startDate: addDays(new Date(), 1),
+        endDate: addDays(new Date(), 5),
+        resources: resources.slice(0, 3),
+        operations: jobOperations.map((op, i) => ({
+          ...op,
+          assignedResourceId: resources[i % resources.length]?.id,
+          startTime: addDays(new Date(), 1 + i * 0.8),
+          endTime: addDays(new Date(), 1 + i * 0.8 + op.duration / 24)
+        })),
+        efficiency: 98,
+        customerSatisfaction: 85,
+        utilization: 70,
+        cost: 1000,
+        risk: 'low',
+        tradeoffs: {
+          pros: ['Optimal resource utilization', 'Lower cost', 'Reduced risk'],
+          cons: ['Longer delivery time', 'Less flexibility', 'Potential customer wait']
+        },
+        metrics: {
+          totalDuration: 5,
+          resourceConflicts: 0,
+          deliveryDelay: 2,
+          capacityUtilization: 70
+        }
+      });
+
+      // Option 3: Balanced approach
+      options.push({
+        id: 'balanced',
+        name: 'Balanced Approach',
+        startDate: addDays(new Date(), 0.5),
+        endDate: addDays(new Date(), 4),
+        resources: resources.slice(0, 2),
+        operations: jobOperations.map((op, i) => ({
+          ...op,
+          assignedResourceId: resources[i % resources.length]?.id,
+          startTime: addDays(new Date(), 0.5 + i * 0.7),
+          endTime: addDays(new Date(), 0.5 + i * 0.7 + op.duration / 24)
+        })),
+        efficiency: 88,
+        customerSatisfaction: 88,
+        utilization: 78,
+        cost: 1100,
+        risk: 'low',
+        tradeoffs: {
+          pros: ['Good balance of speed and efficiency', 'Moderate cost', 'Flexible scheduling'],
+          cons: ['Not the fastest option', 'Not the most efficient', 'Compromise solution']
+        },
+        metrics: {
+          totalDuration: 4,
+          resourceConflicts: 1,
+          deliveryDelay: 1,
+          capacityUtilization: 78
+        }
+      });
+
+      setSchedulingOptions(options);
+      setIsOptimizingExisting(false);
+    }, 2000);
+  };
 
   // Generate scheduling options
   const generateSchedulingOptions = (formData: NewJobFormData) => {
@@ -524,6 +635,70 @@ const SchedulingOptimizer: React.FC = () => {
       setSchedulingOptions(options);
       setIsAnalyzing(false);
     }, 2000);
+  };
+
+  // Apply optimized scheduling to existing job
+  const applyOptimizedScheduling = async (option: SchedulingOption) => {
+    if (!selectedExistingJob) return;
+
+    try {
+      // Update all operations with optimized scheduling
+      const updatePromises = option.operations.map(async (operation) => {
+        const response = await fetch(`/api/operations/${operation.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            assignedResourceId: operation.assignedResourceId,
+            startTime: operation.startTime,
+            endTime: operation.endTime,
+            status: 'pending'
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to update operation: ${operation.name}`);
+        }
+
+        return response.json();
+      });
+
+      // Update job with optimized dates
+      const jobResponse = await fetch(`/api/jobs/${selectedExistingJob.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          startDate: option.startDate,
+          endDate: option.endDate,
+          estimatedDuration: option.metrics.totalDuration
+        })
+      });
+
+      if (!jobResponse.ok) {
+        throw new Error('Failed to update job');
+      }
+
+      await Promise.all(updatePromises);
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/operations'] });
+
+      toast({
+        title: "Success",
+        description: `Job "${selectedExistingJob.name}" optimized successfully with ${option.operations.length} operations rescheduled`
+      });
+
+      setSelectedExistingJob(null);
+      setSchedulingOptions([]);
+      
+    } catch (error) {
+      console.error('Error optimizing job:', error);
+      toast({
+        title: "Error",
+        description: "Failed to optimize job scheduling. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Schedule job with selected option
@@ -686,6 +861,88 @@ const SchedulingOptimizer: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Existing Orders to Optimize */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Factory className="w-5 h-5" />
+            Existing Orders Available for Optimization
+          </CardTitle>
+          <CardDescription>
+            Select an existing order to analyze and optimize its scheduling
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {jobs && jobs.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {jobs.map((job) => {
+                const jobOperations = operations?.filter(op => op.jobId === job.id) || [];
+                const unscheduledOps = jobOperations.filter(op => !op.assignedResourceId);
+                
+                return (
+                  <Card key={job.id} className="cursor-pointer hover:shadow-md transition-all border-l-4 border-blue-500">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">{job.name}</CardTitle>
+                        <Badge variant={job.priority === 'urgent' ? 'destructive' : job.priority === 'high' ? 'default' : 'secondary'}>
+                          {job.priority}
+                        </Badge>
+                      </div>
+                      <CardDescription className="text-sm">{job.customer}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Operations:</span>
+                        <span className="font-medium">{jobOperations.length}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Unscheduled:</span>
+                        <span className={`font-medium ${unscheduledOps.length > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                          {unscheduledOps.length}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Due Date:</span>
+                        <span className="font-medium">{format(new Date(job.dueDate), 'MMM dd, yyyy')}</span>
+                      </div>
+                      {job.description && (
+                        <div className="text-sm text-gray-600 line-clamp-2">
+                          {job.description}
+                        </div>
+                      )}
+                      <Button 
+                        onClick={() => generateSchedulingOptionsForExisting(job)}
+                        disabled={isOptimizingExisting}
+                        className="w-full mt-3"
+                        size="sm"
+                      >
+                        {isOptimizingExisting ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                            Analyzing...
+                          </>
+                        ) : (
+                          <>
+                            <Target className="w-4 h-4 mr-2" />
+                            Optimize Schedule
+                          </>
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <Factory className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+              <p>No existing orders found</p>
+              <p className="text-sm">Create a new order or import orders from your ERP system</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Scheduling Options */}
       {schedulingOptions.length > 0 && (
         <Card>
@@ -693,10 +950,33 @@ const SchedulingOptimizer: React.FC = () => {
             <CardTitle className="flex items-center gap-2">
               <Target className="w-5 h-5" />
               Scheduling Recommendations
+              {selectedExistingJob && (
+                <Badge variant="outline" className="ml-2">
+                  {selectedExistingJob.name}
+                </Badge>
+              )}
             </CardTitle>
             <CardDescription>
-              Compare different scheduling options and their tradeoffs
+              {selectedExistingJob 
+                ? `Optimize scheduling for existing order: ${selectedExistingJob.name}`
+                : 'Compare different scheduling options and their tradeoffs'
+              }
             </CardDescription>
+            {selectedExistingJob && (
+              <div className="flex justify-end mt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedExistingJob(null);
+                    setSchedulingOptions([]);
+                  }}
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Cancel Optimization
+                </Button>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -771,13 +1051,16 @@ const SchedulingOptimizer: React.FC = () => {
                     <Button
                       onClick={(e) => {
                         e.stopPropagation();
-                        scheduleJob(option);
+                        if (selectedExistingJob) {
+                          applyOptimizedScheduling(option);
+                        } else {
+                          scheduleJob(option);
+                        }
                       }}
                       className="w-full mt-3"
-                      disabled={createJobMutation.isPending}
                     >
                       <Play className="w-4 h-4 mr-2" />
-                      Schedule with this option
+                      {selectedExistingJob ? 'Apply Optimization' : 'Schedule with this option'}
                     </Button>
                   </CardContent>
                 </Card>

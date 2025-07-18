@@ -114,6 +114,18 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 18, 2025)
 
+✓ **Smart Scheduling Enhancement for Existing Orders (July 18, 2025)**:
+- Enhanced Smart Scheduling page to handle existing orders from the system, including both imported and manually created orders
+- Added comprehensive existing orders section displaying all available orders with optimization capabilities
+- Implemented generateSchedulingOptionsForExisting function to analyze existing orders and provide optimization recommendations
+- Added applyOptimizedScheduling function to update existing jobs and operations with optimized scheduling assignments
+- Created visual order cards showing operation counts, unscheduled operations, due dates, and priority levels
+- Added filtering and status indicators for unscheduled operations to help schedulers prioritize optimization needs
+- Enhanced scheduling recommendations to distinguish between new order creation and existing order optimization
+- Added cancel functionality to exit optimization mode and return to main view
+- Schedulers can now optimize any order in the system, whether imported from ERP or created manually
+- System maintains all existing functionality for creating new orders while adding powerful optimization for existing orders
+
 ✓ **Smart Scheduling Order Creation Bug Fix (July 18, 2025)**:
 - Fixed critical bug where orders created in Smart Scheduling screen were losing their operations after creation
 - Previously only the job was being created but operations were not saved to the database
