@@ -54,7 +54,7 @@ function App() {
         <TooltipProvider>
           <div className="flex h-screen bg-gray-50">
             <Sidebar />
-            <main className="flex-1 overflow-hidden w-full">
+            <main className="flex-1 overflow-y-auto w-full">
               <Router />
             </main>
           </div>
