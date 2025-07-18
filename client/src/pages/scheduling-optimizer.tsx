@@ -74,26 +74,49 @@ interface NewJobData {
   }[];
 }
 
-// Isolated memoized form component to prevent re-renders
+// Simple form component with normal React patterns
 const NewJobForm: React.FC<{
   newJobData: NewJobData;
+  setNewJobData: (data: NewJobData) => void;
   capabilities: Capability[];
-  onUpdateField: (field: string, value: any) => void;
-  onUpdateOperation: (index: number, field: string, value: any) => void;
-  onAddOperation: () => void;
-  onRemoveOperation: (index: number) => void;
   onGenerate: () => void;
   isAnalyzing: boolean;
-}> = memo(({ 
+}> = ({ 
   newJobData, 
+  setNewJobData,
   capabilities, 
-  onUpdateField, 
-  onUpdateOperation, 
-  onAddOperation, 
-  onRemoveOperation,
   onGenerate,
   isAnalyzing 
 }) => {
+  
+  const handleJobFieldChange = (field: string, value: any) => {
+    setNewJobData({ ...newJobData, [field]: value });
+  };
+
+  const handleOperationChange = (index: number, field: string, value: any) => {
+    const updatedOperations = [...newJobData.operations];
+    updatedOperations[index] = { ...updatedOperations[index], [field]: value };
+    setNewJobData({ ...newJobData, operations: updatedOperations });
+  };
+
+  const addOperation = () => {
+    const newOperation = {
+      name: '',
+      description: '',
+      duration: 1,
+      capabilityId: capabilities[0]?.id || 1
+    };
+    setNewJobData({
+      ...newJobData,
+      operations: [...newJobData.operations, newOperation]
+    });
+  };
+
+  const removeOperation = (index: number) => {
+    const updatedOperations = newJobData.operations.filter((_, i) => i !== index);
+    setNewJobData({ ...newJobData, operations: updatedOperations });
+  };
+
   return (
     <div className="space-y-6">
       {/* Job Details */}
@@ -102,8 +125,8 @@ const NewJobForm: React.FC<{
           <Label htmlFor="job-name">Job Name</Label>
           <Input
             id="job-name"
-            defaultValue={newJobData.name}
-            onInput={(e) => onUpdateField('name', e.target.value)}
+            value={newJobData.name}
+            onChange={(e) => handleJobFieldChange('name', e.target.value)}
             placeholder="Enter job name"
           />
         </div>
@@ -111,8 +134,8 @@ const NewJobForm: React.FC<{
           <Label htmlFor="customer">Customer</Label>
           <Input
             id="customer"
-            defaultValue={newJobData.customer}
-            onInput={(e) => onUpdateField('customer', e.target.value)}
+            value={newJobData.customer}
+            onChange={(e) => handleJobFieldChange('customer', e.target.value)}
             placeholder="Enter customer name"
           />
         </div>
@@ -122,8 +145,8 @@ const NewJobForm: React.FC<{
         <Label htmlFor="description">Description</Label>
         <Textarea
           id="description"
-          defaultValue={newJobData.description}
-          onInput={(e) => onUpdateField('description', e.target.value)}
+          value={newJobData.description}
+          onChange={(e) => handleJobFieldChange('description', e.target.value)}
           placeholder="Enter job description"
           rows={3}
         />
@@ -134,7 +157,7 @@ const NewJobForm: React.FC<{
           <Label htmlFor="priority">Priority</Label>
           <Select
             value={newJobData.priority}
-            onValueChange={(value: any) => onUpdateField('priority', value)}
+            onValueChange={(value: any) => handleJobFieldChange('priority', value)}
           >
             <SelectTrigger>
               <SelectValue />
@@ -153,7 +176,7 @@ const NewJobForm: React.FC<{
             id="due-date"
             type="date"
             value={newJobData.dueDate}
-            onChange={(e) => onUpdateField('dueDate', e.target.value)}
+            onChange={(e) => handleJobFieldChange('dueDate', e.target.value)}
           />
         </div>
       </div>
@@ -164,7 +187,7 @@ const NewJobForm: React.FC<{
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Operations</h3>
-          <Button onClick={onAddOperation} variant="outline" size="sm">
+          <Button onClick={addOperation} variant="outline" size="sm">
             <Plus className="w-4 h-4 mr-2" />
             Add Operation
           </Button>
@@ -179,25 +202,23 @@ const NewJobForm: React.FC<{
         ) : (
           <div className="space-y-4">
             {newJobData.operations.map((operation, index) => (
-              <Card key={`operation-${index}-${operation.name || 'unnamed'}`}>
+              <Card key={index}>
                 <CardContent className="pt-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="space-y-2">
                       <Label>Operation Name</Label>
                       <Input
-                        key={`name-${index}`}
-                        defaultValue={operation.name}
-                        onInput={(e) => onUpdateOperation(index, 'name', e.target.value)}
+                        value={operation.name}
+                        onChange={(e) => handleOperationChange(index, 'name', e.target.value)}
                         placeholder="Enter operation name"
                       />
                     </div>
                     <div className="space-y-2">
                       <Label>Duration (hours)</Label>
                       <Input
-                        key={`duration-${index}`}
                         type="number"
-                        defaultValue={operation.duration}
-                        onInput={(e) => onUpdateOperation(index, 'duration', parseInt(e.target.value) || 1)}
+                        value={operation.duration}
+                        onChange={(e) => handleOperationChange(index, 'duration', parseInt(e.target.value) || 1)}
                         min={1}
                       />
                     </div>
@@ -205,7 +226,7 @@ const NewJobForm: React.FC<{
                       <Label>Required Capability</Label>
                       <Select
                         value={operation.capabilityId.toString()}
-                        onValueChange={(value) => onUpdateOperation(index, 'capabilityId', parseInt(value))}
+                        onValueChange={(value) => handleOperationChange(index, 'capabilityId', parseInt(value))}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -223,7 +244,7 @@ const NewJobForm: React.FC<{
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => onRemoveOperation(index)}
+                        onClick={() => removeOperation(index)}
                         className="text-red-600 hover:text-red-700"
                       >
                         Remove
@@ -233,9 +254,8 @@ const NewJobForm: React.FC<{
                   <div className="mt-4 space-y-2">
                     <Label>Description</Label>
                     <Textarea
-                      key={`desc-${index}`}
-                      defaultValue={operation.description}
-                      onInput={(e) => onUpdateOperation(index, 'description', e.target.value)}
+                      value={operation.description}
+                      onChange={(e) => handleOperationChange(index, 'description', e.target.value)}
                       placeholder="Enter operation description"
                       rows={2}
                     />
@@ -272,7 +292,7 @@ const NewJobForm: React.FC<{
       )}
     </div>
   );
-});
+};
 
 const SchedulingOptimizer: React.FC = () => {
   const { toast } = useToast();
@@ -332,39 +352,7 @@ const SchedulingOptimizer: React.FC = () => {
     }
   });
 
-  // Memoized handlers to prevent unnecessary re-renders
-  const updateJobField = useCallback((field: string, value: any) => {
-    setNewJobData(prev => ({ ...prev, [field]: value }));
-  }, []);
 
-  const updateOperationField = useCallback((index: number, field: string, value: any) => {
-    setNewJobData(prev => {
-      const newOps = [...prev.operations];
-      newOps[index] = { ...newOps[index], [field]: value };
-      return { ...prev, operations: newOps };
-    });
-  }, []);
-
-  // Add operation to new job
-  const addOperation = useCallback(() => {
-    setNewJobData(prev => ({
-      ...prev,
-      operations: [...prev.operations, {
-        name: '',
-        description: '',
-        duration: 1,
-        capabilityId: capabilities?.[0]?.id || 1
-      }]
-    }));
-  }, [capabilities]);
-
-  // Remove operation from new job
-  const removeOperation = useCallback((index: number) => {
-    setNewJobData(prev => ({
-      ...prev,
-      operations: prev.operations.filter((_, i) => i !== index)
-    }));
-  }, []);
 
   // Generate scheduling options
   const generateSchedulingOptions = () => {
@@ -705,11 +693,8 @@ const SchedulingOptimizer: React.FC = () => {
           </DialogHeader>
           <NewJobForm
             newJobData={newJobData}
+            setNewJobData={setNewJobData}
             capabilities={capabilities || []}
-            onUpdateField={updateJobField}
-            onUpdateOperation={updateOperationField}
-            onAddOperation={addOperation}
-            onRemoveOperation={removeOperation}
             onGenerate={generateSchedulingOptions}
             isAnalyzing={isAnalyzing}
           />
