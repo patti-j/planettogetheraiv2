@@ -761,10 +761,8 @@ const SchedulingOptimizer: React.FC = () => {
 
   return (
     <div className={`min-h-screen ${isMaximized ? 'fixed inset-0 z-50 bg-white' : ''}`}>
-      <div className={`${isMaximized ? 'h-full overflow-y-auto' : ''}`}>
-        <div className={`${isMaximized ? 'p-6' : 'px-4 py-3 sm:px-6'}`}>
-          <PageContent />
-        </div>
+      <div className={`${isMaximized ? 'h-full overflow-y-auto p-6' : 'px-4 py-3 sm:px-6'}`}>
+        <PageContent />
       </div>
     </div>
   );
