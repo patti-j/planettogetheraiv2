@@ -804,8 +804,8 @@ const SchedulingOptimizer: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-800">Scheduling Optimizer</h1>
-          <p className="text-gray-600">Optimize scheduling for multi-operation orders with intelligent recommendations</p>
+          <h1 className="text-2xl font-semibold text-gray-800">Optimize Orders</h1>
+          <p className="text-gray-600">Optimize orders with intelligent scheduling and multi-operation planning</p>
         </div>
         <div className="flex items-center gap-2">
           <Button

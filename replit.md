@@ -112,10 +112,18 @@ Preferred communication style: Simple, everyday language.
 
 The application uses a modern full-stack architecture with strong typing throughout, real-time updates, and an intuitive drag-and-drop interface for manufacturing production scheduling.
 
+## Recent Changes (July 19, 2025)
+
+✓ **Menu and Page Rename (July 19, 2025)**:
+- Renamed "Smart Scheduling" menu item and page to "Optimize Orders" for clearer terminology
+- Updated page title, heading, and description to reflect the name change
+- Updated sidebar tooltip to describe the functionality more clearly
+- Updated documentation to reflect the terminology change throughout
+
 ## Recent Changes (July 18, 2025)
 
-✓ **Smart Scheduling Enhancement for Existing Orders (July 18, 2025)**:
-- Enhanced Smart Scheduling page to handle existing orders from the system, including both imported and manually created orders
+✓ **Optimize Orders Enhancement for Existing Orders (July 18, 2025)**:
+- Enhanced Optimize Orders page to handle existing orders from the system, including both imported and manually created orders
 - Added comprehensive existing orders section displaying all available orders with optimization capabilities
 - Implemented generateSchedulingOptionsForExisting function to analyze existing orders and provide optimization recommendations
 - Added applyOptimizedScheduling function to update existing jobs and operations with optimized scheduling assignments
@@ -126,14 +134,14 @@ The application uses a modern full-stack architecture with strong typing through
 - Schedulers can now optimize any order in the system, whether imported from ERP or created manually
 - System maintains all existing functionality for creating new orders while adding powerful optimization for existing orders
 
-✓ **Smart Scheduling Order Creation Bug Fix (July 18, 2025)**:
-- Fixed critical bug where orders created in Smart Scheduling screen were losing their operations after creation
+✓ **Optimize Orders Order Creation Bug Fix (July 18, 2025)**:
+- Fixed critical bug where orders created in Optimize Orders screen were losing their operations after creation
 - Previously only the job was being created but operations were not saved to the database
 - Enhanced scheduleJob function to create both the job and all associated operations in proper sequence
 - Added comprehensive error handling with specific error messages for job and operation creation failures
 - Operations now maintain their assigned resources, start/end times, and scheduling optimization settings
 - Fixed order creation workflow to preserve all form data including multi-operation configurations
-- Smart Scheduling now properly saves complete orders with all operations linked to the job
+- Optimize Orders now properly saves complete orders with all operations linked to the job
 
 ✓ **ERP Data Import System Implementation (July 18, 2025)**:
 - Created comprehensive ERP Import page for schedulers to manage data imports from external ERP systems
@@ -193,7 +201,7 @@ The application uses a modern full-stack architecture with strong typing through
 - Integrated scheduling metrics including efficiency scores, utilization rates, and delivery timelines
 - Created multi-operation job builder with capability matching and resource assignment
 - Added visual comparison of scheduling options with progress bars and performance indicators
-- Enhanced navigation with "Smart Scheduling" menu item using Target icon for easy access
+- Enhanced navigation with "Optimize Orders" menu item using Target icon for easy access
 - Provides schedulers with data-driven insights for optimal resource allocation and delivery planning
 
 ✓ **Dashboard Name Layout and Alphabetical Sorting (July 17, 2025)**:
