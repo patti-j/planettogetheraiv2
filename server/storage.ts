@@ -1,8 +1,11 @@
 import { 
   capabilities, resources, jobs, operations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
+  scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   type Capability, type Resource, type Job, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
+  type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type InsertCapability, type InsertResource, type InsertJob, 
-  type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig
+  type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
+  type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -82,6 +85,32 @@ export interface IStorage {
   deleteDashboardConfig(id: number): Promise<boolean>;
   getDefaultDashboardConfig(): Promise<DashboardConfig | undefined>;
   setDefaultDashboardConfig(id: number): Promise<void>;
+
+  // Schedule Scenarios
+  getScheduleScenarios(): Promise<ScheduleScenario[]>;
+  getScheduleScenario(id: number): Promise<ScheduleScenario | undefined>;
+  createScheduleScenario(scenario: InsertScheduleScenario): Promise<ScheduleScenario>;
+  updateScheduleScenario(id: number, scenario: Partial<InsertScheduleScenario>): Promise<ScheduleScenario | undefined>;
+  deleteScheduleScenario(id: number): Promise<boolean>;
+
+  // Scenario Operations
+  getScenarioOperations(scenarioId: number): Promise<ScenarioOperation[]>;
+  createScenarioOperation(operation: InsertScenarioOperation): Promise<ScenarioOperation>;
+  updateScenarioOperation(id: number, operation: Partial<InsertScenarioOperation>): Promise<ScenarioOperation | undefined>;
+  deleteScenarioOperation(id: number): Promise<boolean>;
+  deleteScenarioOperationsByScenario(scenarioId: number): Promise<boolean>;
+
+  // Scenario Evaluations
+  getScenarioEvaluations(scenarioId: number): Promise<ScenarioEvaluation[]>;
+  createScenarioEvaluation(evaluation: InsertScenarioEvaluation): Promise<ScenarioEvaluation>;
+  updateScenarioEvaluation(id: number, evaluation: Partial<InsertScenarioEvaluation>): Promise<ScenarioEvaluation | undefined>;
+  deleteScenarioEvaluation(id: number): Promise<boolean>;
+
+  // Scenario Discussions
+  getScenarioDiscussions(scenarioId: number): Promise<ScenarioDiscussion[]>;
+  createScenarioDiscussion(discussion: InsertScenarioDiscussion): Promise<ScenarioDiscussion>;
+  updateScenarioDiscussion(id: number, discussion: Partial<InsertScenarioDiscussion>): Promise<ScenarioDiscussion | undefined>;
+  deleteScenarioDiscussion(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -821,6 +850,129 @@ export class DatabaseStorage implements IStorage {
     
     // Then set the specified config as default
     await db.update(dashboardConfigs).set({ isDefault: true }).where(eq(dashboardConfigs.id, id));
+  }
+
+  // Schedule Scenarios
+  async getScheduleScenarios(): Promise<ScheduleScenario[]> {
+    return await db.select().from(scheduleScenarios);
+  }
+
+  async getScheduleScenario(id: number): Promise<ScheduleScenario | undefined> {
+    const [scenario] = await db.select().from(scheduleScenarios).where(eq(scheduleScenarios.id, id));
+    return scenario || undefined;
+  }
+
+  async createScheduleScenario(scenario: InsertScheduleScenario): Promise<ScheduleScenario> {
+    const [newScenario] = await db
+      .insert(scheduleScenarios)
+      .values(scenario)
+      .returning();
+    return newScenario;
+  }
+
+  async updateScheduleScenario(id: number, scenario: Partial<InsertScheduleScenario>): Promise<ScheduleScenario | undefined> {
+    const [updatedScenario] = await db
+      .update(scheduleScenarios)
+      .set(scenario)
+      .where(eq(scheduleScenarios.id, id))
+      .returning();
+    return updatedScenario || undefined;
+  }
+
+  async deleteScheduleScenario(id: number): Promise<boolean> {
+    // First delete associated scenario operations, evaluations, and discussions
+    await db.delete(scenarioOperations).where(eq(scenarioOperations.scenarioId, id));
+    await db.delete(scenarioEvaluations).where(eq(scenarioEvaluations.scenarioId, id));
+    await db.delete(scenarioDiscussions).where(eq(scenarioDiscussions.scenarioId, id));
+    
+    const result = await db.delete(scheduleScenarios).where(eq(scheduleScenarios.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Scenario Operations
+  async getScenarioOperations(scenarioId: number): Promise<ScenarioOperation[]> {
+    return await db.select().from(scenarioOperations).where(eq(scenarioOperations.scenarioId, scenarioId));
+  }
+
+  async createScenarioOperation(operation: InsertScenarioOperation): Promise<ScenarioOperation> {
+    const [newOperation] = await db
+      .insert(scenarioOperations)
+      .values(operation)
+      .returning();
+    return newOperation;
+  }
+
+  async updateScenarioOperation(id: number, operation: Partial<InsertScenarioOperation>): Promise<ScenarioOperation | undefined> {
+    const [updatedOperation] = await db
+      .update(scenarioOperations)
+      .set(operation)
+      .where(eq(scenarioOperations.id, id))
+      .returning();
+    return updatedOperation || undefined;
+  }
+
+  async deleteScenarioOperation(id: number): Promise<boolean> {
+    const result = await db.delete(scenarioOperations).where(eq(scenarioOperations.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async deleteScenarioOperationsByScenario(scenarioId: number): Promise<boolean> {
+    const result = await db.delete(scenarioOperations).where(eq(scenarioOperations.scenarioId, scenarioId));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Scenario Evaluations
+  async getScenarioEvaluations(scenarioId: number): Promise<ScenarioEvaluation[]> {
+    return await db.select().from(scenarioEvaluations).where(eq(scenarioEvaluations.scenarioId, scenarioId));
+  }
+
+  async createScenarioEvaluation(evaluation: InsertScenarioEvaluation): Promise<ScenarioEvaluation> {
+    const [newEvaluation] = await db
+      .insert(scenarioEvaluations)
+      .values(evaluation)
+      .returning();
+    return newEvaluation;
+  }
+
+  async updateScenarioEvaluation(id: number, evaluation: Partial<InsertScenarioEvaluation>): Promise<ScenarioEvaluation | undefined> {
+    const [updatedEvaluation] = await db
+      .update(scenarioEvaluations)
+      .set(evaluation)
+      .where(eq(scenarioEvaluations.id, id))
+      .returning();
+    return updatedEvaluation || undefined;
+  }
+
+  async deleteScenarioEvaluation(id: number): Promise<boolean> {
+    const result = await db.delete(scenarioEvaluations).where(eq(scenarioEvaluations.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Scenario Discussions
+  async getScenarioDiscussions(scenarioId: number): Promise<ScenarioDiscussion[]> {
+    return await db.select().from(scenarioDiscussions).where(eq(scenarioDiscussions.scenarioId, scenarioId));
+  }
+
+  async createScenarioDiscussion(discussion: InsertScenarioDiscussion): Promise<ScenarioDiscussion> {
+    const [newDiscussion] = await db
+      .insert(scenarioDiscussions)
+      .values(discussion)
+      .returning();
+    return newDiscussion;
+  }
+
+  async updateScenarioDiscussion(id: number, discussion: Partial<InsertScenarioDiscussion>): Promise<ScenarioDiscussion | undefined> {
+    const [updatedDiscussion] = await db
+      .update(scenarioDiscussions)
+      .set(discussion)
+      .where(eq(scenarioDiscussions.id, id))
+      .returning();
+    return updatedDiscussion || undefined;
+  }
+
+  async deleteScenarioDiscussion(id: number): Promise<boolean> {
+    const result = await db.delete(scenarioDiscussions).where(eq(scenarioDiscussions.id, id));
+    return (result.rowCount || 0) > 0;
   }
 }
 

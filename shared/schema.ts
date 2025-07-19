@@ -175,6 +175,94 @@ export const dashboardConfigs = pgTable("dashboard_configs", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Schedule Scenarios for evaluation and comparison
+export const scheduleScenarios = pgTable("schedule_scenarios", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  status: text("status").notNull().default("draft"), // draft, active, approved, rejected, archived
+  createdBy: text("created_by").notNull(),
+  baselineScenarioId: integer("baseline_scenario_id").references(() => scheduleScenarios.id),
+  configuration: jsonb("configuration").$type<{
+    scheduling_strategy: "fastest" | "most_efficient" | "balanced" | "custom";
+    optimization_priorities: Array<"delivery_time" | "resource_utilization" | "cost_efficiency" | "customer_satisfaction">;
+    constraints: {
+      max_overtime_hours?: number;
+      resource_availability?: Record<string, any>;
+      deadline_priorities?: Record<string, number>;
+    };
+  }>().notNull(),
+  metrics: jsonb("metrics").$type<{
+    total_duration_hours: number;
+    resource_utilization_percent: number;
+    on_time_delivery_percent: number;
+    total_cost: number;
+    overtime_hours: number;
+    customer_satisfaction_score: number;
+    efficiency_score: number;
+    risk_level: "low" | "medium" | "high";
+    bottleneck_resources: string[];
+    critical_path_duration: number;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Operations within specific scenarios
+export const scenarioOperations = pgTable("scenario_operations", {
+  id: serial("id").primaryKey(),
+  scenarioId: integer("scenario_id").references(() => scheduleScenarios.id).notNull(),
+  operationId: integer("operation_id").references(() => operations.id).notNull(),
+  assignedResourceId: integer("assigned_resource_id").references(() => resources.id),
+  startTime: timestamp("start_time"),
+  endTime: timestamp("end_time"),
+  status: text("status").notNull().default("planned"),
+  notes: text("notes"),
+});
+
+// Feedback and evaluations from stakeholders
+export const scenarioEvaluations = pgTable("scenario_evaluations", {
+  id: serial("id").primaryKey(),
+  scenarioId: integer("scenario_id").references(() => scheduleScenarios.id).notNull(),
+  evaluatorName: text("evaluator_name").notNull(),
+  evaluatorRole: text("evaluator_role").notNull(), // production_manager, sales, finance, customer_service, etc.
+  department: text("department"),
+  overallRating: integer("overall_rating").notNull(), // 1-5 scale
+  criteria_scores: jsonb("criteria_scores").$type<{
+    delivery_feasibility: number;
+    resource_efficiency: number;
+    cost_effectiveness: number;
+    risk_level: number;
+    customer_impact: number;
+  }>().notNull(),
+  comments: text("comments"),
+  recommendations: text("recommendations"),
+  approval_status: text("approval_status").notNull().default("pending"), // pending, approved, rejected, conditional
+  priority_concerns: jsonb("priority_concerns").$type<string[]>().default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Discussion threads for collaborative decision making
+export const scenarioDiscussions = pgTable("scenario_discussions", {
+  id: serial("id").primaryKey(),
+  scenarioId: integer("scenario_id").references(() => scheduleScenarios.id).notNull(),
+  parentId: integer("parent_id").references(() => scenarioDiscussions.id), // for threaded discussions
+  authorName: text("author_name").notNull(),
+  authorRole: text("author_role").notNull(),
+  message: text("message").notNull(),
+  messageType: text("message_type").notNull().default("comment"), // comment, question, concern, suggestion, decision
+  tags: jsonb("tags").$type<string[]>().default([]),
+  attachments: jsonb("attachments").$type<Array<{
+    name: string;
+    url: string;
+    type: string;
+  }>>().default([]),
+  mentions: jsonb("mentions").$type<string[]>().default([]),
+  resolved: boolean("resolved").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertCapabilitySchema = createInsertSchema(capabilities).omit({
   id: true,
 });
@@ -226,6 +314,30 @@ export const insertDashboardConfigSchema = createInsertSchema(dashboardConfigs).
   updatedAt: true,
 });
 
+export const insertScheduleScenarioSchema = createInsertSchema(scheduleScenarios).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertScenarioOperationSchema = createInsertSchema(scenarioOperations).omit({
+  id: true,
+}).extend({
+  startTime: z.union([z.string().datetime(), z.date()]).optional(),
+  endTime: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertScenarioEvaluationSchema = createInsertSchema(scenarioEvaluations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertScenarioDiscussionSchema = createInsertSchema(scenarioDiscussions).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
 export type Capability = typeof capabilities.$inferSelect;
 
@@ -255,3 +367,15 @@ export type ReportConfig = typeof reportConfigs.$inferSelect;
 
 export type InsertDashboardConfig = z.infer<typeof insertDashboardConfigSchema>;
 export type DashboardConfig = typeof dashboardConfigs.$inferSelect;
+
+export type InsertScheduleScenario = z.infer<typeof insertScheduleScenarioSchema>;
+export type ScheduleScenario = typeof scheduleScenarios.$inferSelect;
+
+export type InsertScenarioOperation = z.infer<typeof insertScenarioOperationSchema>;
+export type ScenarioOperation = typeof scenarioOperations.$inferSelect;
+
+export type InsertScenarioEvaluation = z.infer<typeof insertScenarioEvaluationSchema>;
+export type ScenarioEvaluation = typeof scenarioEvaluations.$inferSelect;
+
+export type InsertScenarioDiscussion = z.infer<typeof insertScenarioDiscussionSchema>;
+export type ScenarioDiscussion = typeof scenarioDiscussions.$inferSelect;

@@ -19,7 +19,9 @@ import {
   Eye,
   Maximize2,
   Minimize2,
-  X
+  X,
+  GitCompare,
+  Sparkles
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,6 +43,7 @@ import { z } from 'zod';
 import { format, addDays, differenceInDays } from 'date-fns';
 import { apiRequest } from '@/lib/queryClient';
 import type { Job, Operation, Resource, Capability } from '@shared/schema';
+import { ScheduleEvaluationSystem } from '@/components/schedule-evaluation-system';
 
 interface SchedulingOption {
   id: string;
@@ -374,6 +377,7 @@ const SchedulingOptimizer: React.FC = () => {
   const [lastFormData, setLastFormData] = useState<NewJobFormData | null>(null);
   const [selectedExistingJob, setSelectedExistingJob] = useState<Job | null>(null);
   const [isOptimizingExisting, setIsOptimizingExisting] = useState(false);
+  const [showEvaluationSystem, setShowEvaluationSystem] = useState(false);
 
   // Fetch data with disabled refetch to prevent form re-renders
   const { data: jobs } = useQuery<Job[]>({ 
@@ -634,6 +638,66 @@ const SchedulingOptimizer: React.FC = () => {
 
       setSchedulingOptions(options);
       setIsAnalyzing(false);
+
+      // Create scenarios for each option in the evaluation system (async operation after timeout)
+      setTimeout(async () => {
+        try {
+          const scenarioPromises = options.map(async (option) => {
+            const scenarioData = {
+              name: `${formData.name} - ${option.name}`,
+              description: `${option.name} strategy for order: ${formData.name}. ${option.tradeoffs.pros.join(', ')}`,
+              baseJobIds: [],
+              status: 'draft' as const,
+              dueDate: formData.dueDate,
+              metadata: {
+                efficiency: option.efficiency,
+                customerSatisfaction: option.customerSatisfaction,
+                utilization: option.utilization,
+                cost: option.cost,
+                risk: option.risk,
+                operations: option.operations.length
+              }
+            };
+
+            const response = await apiRequest('POST', '/api/schedule-scenarios', scenarioData);
+            
+            // Create scenario operations for this scenario
+            if (response.id) {
+              const operationPromises = option.operations.map(async (operation) => {
+                const scenarioOpData = {
+                  scenarioId: response.id,
+                  operationId: null, // This is a planned operation, not existing
+                  name: operation.name,
+                  description: operation.description,
+                  duration: operation.duration,
+                  resourceId: operation.assignedResourceId,
+                  startTime: operation.startTime?.toISOString(),
+                  endTime: operation.endTime?.toISOString(),
+                  capabilityId: operation.capabilityId,
+                  priority: operation.priority,
+                  status: 'planned'
+                };
+                
+                return await apiRequest('POST', `/api/scenarios/${response.id}/operations`, scenarioOpData);
+              });
+              
+              await Promise.all(operationPromises);
+            }
+            
+            return response;
+          });
+
+          await Promise.all(scenarioPromises);
+          
+          toast({
+            title: "Scenarios Created",
+            description: `Created ${options.length} schedule scenarios for evaluation and comparison`
+          });
+        } catch (error) {
+          console.error('Error creating scenarios:', error);
+          // Continue even if scenario creation fails
+        }
+      }, 100);
     }, 2000);
   };
 
@@ -817,6 +881,16 @@ const SchedulingOptimizer: React.FC = () => {
             <Plus className="w-3 h-3 md:w-4 md:h-4" />
             <span className="hidden sm:inline">New Order</span>
             <span className="sm:hidden">New</span>
+          </Button>
+          <Button
+            variant={showEvaluationSystem ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowEvaluationSystem(!showEvaluationSystem)}
+            className="flex items-center gap-1 md:gap-2 text-xs md:text-sm bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
+          >
+            <GitCompare className="w-3 h-3 md:w-4 md:h-4" />
+            <span className="hidden sm:inline">Evaluate Schedules</span>
+            <span className="sm:hidden">Evaluate</span>
           </Button>
           <Button
             variant="outline"
@@ -1069,6 +1143,13 @@ const SchedulingOptimizer: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Schedule Evaluation System */}
+      {showEvaluationSystem && (
+        <div className="mt-8 p-6 bg-gray-50 rounded-lg border-2 border-purple-200">
+          <ScheduleEvaluationSystem />
+        </div>
       )}
 
       {/* Create New Job Dialog */}

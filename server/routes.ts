@@ -5,7 +5,8 @@ import {
   insertCapabilitySchema, insertResourceSchema, insertJobSchema, 
   insertOperationSchema, insertDependencySchema, insertResourceViewSchema,
   insertCustomTextLabelSchema, insertKanbanConfigSchema, insertReportConfigSchema,
-  insertDashboardConfigSchema
+  insertDashboardConfigSchema, insertScheduleScenarioSchema, insertScenarioOperationSchema,
+  insertScenarioEvaluationSchema, insertScenarioDiscussionSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -935,6 +936,331 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error sending operation alert:", error);
       res.status(500).json({ error: "Failed to send operation alert" });
+    }
+  });
+
+  // Schedule Scenarios
+  app.get("/api/schedule-scenarios", async (req, res) => {
+    try {
+      const scenarios = await storage.getScheduleScenarios();
+      res.json(scenarios);
+    } catch (error) {
+      console.error("Error fetching schedule scenarios:", error);
+      res.status(500).json({ error: "Failed to fetch schedule scenarios" });
+    }
+  });
+
+  app.get("/api/schedule-scenarios/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid schedule scenario ID" });
+      }
+
+      const scenario = await storage.getScheduleScenario(id);
+      if (!scenario) {
+        return res.status(404).json({ error: "Schedule scenario not found" });
+      }
+      res.json(scenario);
+    } catch (error) {
+      console.error("Error fetching schedule scenario:", error);
+      res.status(500).json({ error: "Failed to fetch schedule scenario" });
+    }
+  });
+
+  app.post("/api/schedule-scenarios", async (req, res) => {
+    try {
+      const validation = insertScheduleScenarioSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid schedule scenario data", details: validation.error.errors });
+      }
+
+      const scenario = await storage.createScheduleScenario(validation.data);
+      res.status(201).json(scenario);
+    } catch (error) {
+      console.error("Error creating schedule scenario:", error);
+      res.status(500).json({ error: "Failed to create schedule scenario" });
+    }
+  });
+
+  app.put("/api/schedule-scenarios/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid schedule scenario ID" });
+      }
+
+      const validation = insertScheduleScenarioSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid schedule scenario data", details: validation.error.errors });
+      }
+
+      const scenario = await storage.updateScheduleScenario(id, validation.data);
+      if (!scenario) {
+        return res.status(404).json({ error: "Schedule scenario not found" });
+      }
+      res.json(scenario);
+    } catch (error) {
+      console.error("Error updating schedule scenario:", error);
+      res.status(500).json({ error: "Failed to update schedule scenario" });
+    }
+  });
+
+  app.delete("/api/schedule-scenarios/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid schedule scenario ID" });
+      }
+
+      const success = await storage.deleteScheduleScenario(id);
+      if (!success) {
+        return res.status(404).json({ error: "Schedule scenario not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting schedule scenario:", error);
+      res.status(500).json({ error: "Failed to delete schedule scenario" });
+    }
+  });
+
+  // Scenario Operations
+  app.get("/api/scenarios/:scenarioId/operations", async (req, res) => {
+    try {
+      const scenarioId = parseInt(req.params.scenarioId);
+      if (isNaN(scenarioId)) {
+        return res.status(400).json({ error: "Invalid scenario ID" });
+      }
+
+      const operations = await storage.getScenarioOperations(scenarioId);
+      res.json(operations);
+    } catch (error) {
+      console.error("Error fetching scenario operations:", error);
+      res.status(500).json({ error: "Failed to fetch scenario operations" });
+    }
+  });
+
+  app.post("/api/scenarios/:scenarioId/operations", async (req, res) => {
+    try {
+      const scenarioId = parseInt(req.params.scenarioId);
+      if (isNaN(scenarioId)) {
+        return res.status(400).json({ error: "Invalid scenario ID" });
+      }
+
+      const validation = insertScenarioOperationSchema.safeParse({
+        ...req.body,
+        scenarioId
+      });
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid scenario operation data", details: validation.error.errors });
+      }
+
+      const operation = await storage.createScenarioOperation(validation.data);
+      res.status(201).json(operation);
+    } catch (error) {
+      console.error("Error creating scenario operation:", error);
+      res.status(500).json({ error: "Failed to create scenario operation" });
+    }
+  });
+
+  app.put("/api/scenario-operations/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid scenario operation ID" });
+      }
+
+      const validation = insertScenarioOperationSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid scenario operation data", details: validation.error.errors });
+      }
+
+      const operation = await storage.updateScenarioOperation(id, validation.data);
+      if (!operation) {
+        return res.status(404).json({ error: "Scenario operation not found" });
+      }
+      res.json(operation);
+    } catch (error) {
+      console.error("Error updating scenario operation:", error);
+      res.status(500).json({ error: "Failed to update scenario operation" });
+    }
+  });
+
+  app.delete("/api/scenario-operations/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid scenario operation ID" });
+      }
+
+      const success = await storage.deleteScenarioOperation(id);
+      if (!success) {
+        return res.status(404).json({ error: "Scenario operation not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting scenario operation:", error);
+      res.status(500).json({ error: "Failed to delete scenario operation" });
+    }
+  });
+
+  // Scenario Evaluations
+  app.get("/api/scenarios/:scenarioId/evaluations", async (req, res) => {
+    try {
+      const scenarioId = parseInt(req.params.scenarioId);
+      if (isNaN(scenarioId)) {
+        return res.status(400).json({ error: "Invalid scenario ID" });
+      }
+
+      const evaluations = await storage.getScenarioEvaluations(scenarioId);
+      res.json(evaluations);
+    } catch (error) {
+      console.error("Error fetching scenario evaluations:", error);
+      res.status(500).json({ error: "Failed to fetch scenario evaluations" });
+    }
+  });
+
+  app.post("/api/scenarios/:scenarioId/evaluations", async (req, res) => {
+    try {
+      const scenarioId = parseInt(req.params.scenarioId);
+      if (isNaN(scenarioId)) {
+        return res.status(400).json({ error: "Invalid scenario ID" });
+      }
+
+      const validation = insertScenarioEvaluationSchema.safeParse({
+        ...req.body,
+        scenarioId
+      });
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid scenario evaluation data", details: validation.error.errors });
+      }
+
+      const evaluation = await storage.createScenarioEvaluation(validation.data);
+      res.status(201).json(evaluation);
+    } catch (error) {
+      console.error("Error creating scenario evaluation:", error);
+      res.status(500).json({ error: "Failed to create scenario evaluation" });
+    }
+  });
+
+  app.put("/api/scenario-evaluations/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid scenario evaluation ID" });
+      }
+
+      const validation = insertScenarioEvaluationSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid scenario evaluation data", details: validation.error.errors });
+      }
+
+      const evaluation = await storage.updateScenarioEvaluation(id, validation.data);
+      if (!evaluation) {
+        return res.status(404).json({ error: "Scenario evaluation not found" });
+      }
+      res.json(evaluation);
+    } catch (error) {
+      console.error("Error updating scenario evaluation:", error);
+      res.status(500).json({ error: "Failed to update scenario evaluation" });
+    }
+  });
+
+  app.delete("/api/scenario-evaluations/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid scenario evaluation ID" });
+      }
+
+      const success = await storage.deleteScenarioEvaluation(id);
+      if (!success) {
+        return res.status(404).json({ error: "Scenario evaluation not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting scenario evaluation:", error);
+      res.status(500).json({ error: "Failed to delete scenario evaluation" });
+    }
+  });
+
+  // Scenario Discussions
+  app.get("/api/scenarios/:scenarioId/discussions", async (req, res) => {
+    try {
+      const scenarioId = parseInt(req.params.scenarioId);
+      if (isNaN(scenarioId)) {
+        return res.status(400).json({ error: "Invalid scenario ID" });
+      }
+
+      const discussions = await storage.getScenarioDiscussions(scenarioId);
+      res.json(discussions);
+    } catch (error) {
+      console.error("Error fetching scenario discussions:", error);
+      res.status(500).json({ error: "Failed to fetch scenario discussions" });
+    }
+  });
+
+  app.post("/api/scenarios/:scenarioId/discussions", async (req, res) => {
+    try {
+      const scenarioId = parseInt(req.params.scenarioId);
+      if (isNaN(scenarioId)) {
+        return res.status(400).json({ error: "Invalid scenario ID" });
+      }
+
+      const validation = insertScenarioDiscussionSchema.safeParse({
+        ...req.body,
+        scenarioId
+      });
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid scenario discussion data", details: validation.error.errors });
+      }
+
+      const discussion = await storage.createScenarioDiscussion(validation.data);
+      res.status(201).json(discussion);
+    } catch (error) {
+      console.error("Error creating scenario discussion:", error);
+      res.status(500).json({ error: "Failed to create scenario discussion" });
+    }
+  });
+
+  app.put("/api/scenario-discussions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid scenario discussion ID" });
+      }
+
+      const validation = insertScenarioDiscussionSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid scenario discussion data", details: validation.error.errors });
+      }
+
+      const discussion = await storage.updateScenarioDiscussion(id, validation.data);
+      if (!discussion) {
+        return res.status(404).json({ error: "Scenario discussion not found" });
+      }
+      res.json(discussion);
+    } catch (error) {
+      console.error("Error updating scenario discussion:", error);
+      res.status(500).json({ error: "Failed to update scenario discussion" });
+    }
+  });
+
+  app.delete("/api/scenario-discussions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid scenario discussion ID" });
+      }
+
+      const success = await storage.deleteScenarioDiscussion(id);
+      if (!success) {
+        return res.status(404).json({ error: "Scenario discussion not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting scenario discussion:", error);
+      res.status(500).json({ error: "Failed to delete scenario discussion" });
     }
   });
 
