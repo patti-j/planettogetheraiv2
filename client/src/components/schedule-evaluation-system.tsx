@@ -619,3 +619,5 @@ export const ScheduleEvaluationSystem: React.FC = () => {
     </div>
   );
 };
+
+export default ScheduleEvaluationSystem;

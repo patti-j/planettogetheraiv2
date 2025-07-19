@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, BarChart3, Wrench, Calendar, User, Smartphone, Monitor, ChevronDown, Play, Pause, PlayCircle, PauseCircle, Settings } from "lucide-react";
+import { Plus, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, BarChart3, Wrench, Calendar, User, Smartphone, Monitor, ChevronDown, Play, Pause, PlayCircle, PauseCircle, Settings, GitCompare } from "lucide-react";
 
 import GanttChart from "@/components/ui/gantt-chart";
 import MobileSchedule from "@/components/mobile-schedule";
@@ -19,6 +19,7 @@ import ResourceForm from "@/components/resource-form";
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
 import { EnhancedDashboardManager } from "@/components/dashboard-manager-enhanced";
 import AnalyticsWidget from "@/components/analytics-widget";
+import ScheduleEvaluationSystem from "@/components/schedule-evaluation-system";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { apiRequest } from "@/lib/queryClient";
@@ -66,6 +67,7 @@ export default function Dashboard() {
   const isMobile = useIsMobile();
   const [customWidgets, setCustomWidgets] = useState<AnalyticsWidget[]>([]);
   const showCustomWidgets = true;
+  const [showEvaluationSystem, setShowEvaluationSystem] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -345,6 +347,23 @@ export default function Dashboard() {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => setShowEvaluationSystem(true)}
+                          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
+                        >
+                          <GitCompare className="w-4 h-4 mr-1" />
+                          Evaluate Schedules
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Compare and evaluate production schedules</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => setAnalyticsManagerOpen(true)}
                         >
                           <Settings className="w-4 h-4 mr-1" />
@@ -580,6 +599,16 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* Schedule Evaluation System */}
+          <Dialog open={showEvaluationSystem} onOpenChange={setShowEvaluationSystem}>
+            <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Schedule Evaluation System</DialogTitle>
+              </DialogHeader>
+              <ScheduleEvaluationSystem />
+            </DialogContent>
+          </Dialog>
+
           {/* AI Analytics Manager */}
           {dashboards && (
             <EnhancedDashboardManager
@@ -692,6 +721,24 @@ export default function Dashboard() {
                   </PopoverContent>
                 </Popover>
                 
+                {/* Evaluate Schedules button */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowEvaluationSystem(true)}
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
+                    >
+                      <GitCompare className="w-4 h-4 mr-1" />
+                      Evaluate Schedules
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Compare and evaluate production schedules</p>
+                  </TooltipContent>
+                </Tooltip>
+
                 {/* Dashboard Manager button next to dropdown */}
                 <Tooltip>
                   <TooltipTrigger asChild>
