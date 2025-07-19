@@ -22,6 +22,7 @@ import ForkliftDriver from "@/pages/forklift-driver";
 import EmailSettings from "@/pages/email-settings";
 import SchedulingOptimizer from "@/pages/scheduling-optimizer";
 import ERPImport from "@/pages/erp-import";
+import PlantManager from "@/pages/plant-manager";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -42,6 +43,7 @@ function Router() {
       <Route path="/email-settings" component={EmailSettings} />
       <Route path="/scheduling-optimizer" component={SchedulingOptimizer} />
       <Route path="/erp-import" component={ERPImport} />
+      <Route path="/plant-manager" component={PlantManager} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -263,6 +263,124 @@ export const scenarioDiscussions = pgTable("scenario_discussions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Systems Management Tables for IT Administration
+
+// User management for the application
+export const systemUsers = pgTable("system_users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
+  fullName: text("full_name").notNull(),
+  role: text("role").notNull(), // admin, production_manager, operator, viewer, it_admin
+  department: text("department"),
+  permissions: jsonb("permissions").$type<string[]>().default([]),
+  status: text("status").notNull().default("active"), // active, inactive, suspended
+  lastLogin: timestamp("last_login"),
+  passwordHash: text("password_hash").notNull(),
+  twoFactorEnabled: boolean("two_factor_enabled").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// System health monitoring
+export const systemHealth = pgTable("system_health", {
+  id: serial("id").primaryKey(),
+  metricName: text("metric_name").notNull(),
+  metricValue: text("metric_value").notNull(),
+  metricType: text("metric_type").notNull(), // cpu, memory, disk, database, api_response_time, active_users
+  environment: text("environment").notNull(), // production, staging, development
+  status: text("status").notNull(), // healthy, warning, critical
+  threshold: jsonb("threshold").$type<{
+    warning: number;
+    critical: number;
+    unit: string;
+  }>().notNull(),
+  timestamp: timestamp("timestamp").defaultNow(),
+  notes: text("notes"),
+});
+
+// Environment management
+export const systemEnvironments = pgTable("system_environments", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(), // production, staging, development, testing
+  displayName: text("display_name").notNull(),
+  description: text("description"),
+  url: text("url").notNull(),
+  status: text("status").notNull().default("active"), // active, maintenance, offline
+  version: text("version").notNull(),
+  lastDeployment: timestamp("last_deployment"),
+  deployedBy: text("deployed_by"),
+  configuration: jsonb("configuration").$type<{
+    database_url?: string;
+    api_keys?: Record<string, string>;
+    feature_flags?: Record<string, boolean>;
+    resource_limits?: {
+      cpu: number;
+      memory: number;
+      storage: number;
+    };
+  }>().default({}),
+  healthStatus: text("health_status").notNull().default("unknown"), // healthy, degraded, unhealthy, unknown
+  uptime: integer("uptime").default(0), // in seconds
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// System upgrades and deployments
+export const systemUpgrades = pgTable("system_upgrades", {
+  id: serial("id").primaryKey(),
+  version: text("version").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  releaseNotes: text("release_notes"),
+  environment: text("environment").notNull(),
+  status: text("status").notNull().default("pending"), // pending, in_progress, completed, failed, rolled_back
+  scheduledDate: timestamp("scheduled_date"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  initiatedBy: text("initiated_by").notNull(),
+  approvedBy: text("approved_by"),
+  rollbackPlan: text("rollback_plan"),
+  testResults: jsonb("test_results").$type<{
+    automated_tests: { passed: number; failed: number; total: number };
+    manual_tests: { passed: number; failed: number; total: number };
+    performance_tests: { passed: number; failed: number; total: number };
+  }>().default({ automated_tests: { passed: 0, failed: 0, total: 0 }, manual_tests: { passed: 0, failed: 0, total: 0 }, performance_tests: { passed: 0, failed: 0, total: 0 } }),
+  deploymentLog: text("deployment_log"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User activity and audit logging
+export const systemAuditLog = pgTable("system_audit_log", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => systemUsers.id),
+  username: text("username").notNull(),
+  action: text("action").notNull(), // login, logout, create, update, delete, view, export
+  resource: text("resource").notNull(), // jobs, operations, resources, users, settings
+  resourceId: text("resource_id"),
+  details: jsonb("details").$type<Record<string, any>>().default({}),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  environment: text("environment").notNull().default("production"),
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+// System configuration and settings
+export const systemSettings = pgTable("system_settings", {
+  id: serial("id").primaryKey(),
+  category: text("category").notNull(), // security, performance, features, integrations
+  key: text("key").notNull(),
+  value: jsonb("value").$type<any>().notNull(),
+  description: text("description"),
+  dataType: text("data_type").notNull(), // string, number, boolean, json, array
+  environment: text("environment").notNull(),
+  isSecret: boolean("is_secret").default(false),
+  lastModifiedBy: text("last_modified_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const insertCapabilitySchema = createInsertSchema(capabilities).omit({
   id: true,
 });
@@ -338,6 +456,45 @@ export const insertScenarioDiscussionSchema = createInsertSchema(scenarioDiscuss
   createdAt: true,
 });
 
+// Systems Management Insert Schemas
+export const insertSystemUserSchema = createInsertSchema(systemUsers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSystemHealthSchema = createInsertSchema(systemHealth).omit({
+  id: true,
+  timestamp: true,
+});
+
+export const insertSystemEnvironmentSchema = createInsertSchema(systemEnvironments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSystemUpgradeSchema = createInsertSchema(systemUpgrades).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  scheduledDate: z.union([z.string().datetime(), z.date()]).optional(),
+  startedAt: z.union([z.string().datetime(), z.date()]).optional(),
+  completedAt: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertSystemAuditLogSchema = createInsertSchema(systemAuditLog).omit({
+  id: true,
+  timestamp: true,
+});
+
+export const insertSystemSettingsSchema = createInsertSchema(systemSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
 export type Capability = typeof capabilities.$inferSelect;
 
@@ -379,3 +536,22 @@ export type ScenarioEvaluation = typeof scenarioEvaluations.$inferSelect;
 
 export type InsertScenarioDiscussion = z.infer<typeof insertScenarioDiscussionSchema>;
 export type ScenarioDiscussion = typeof scenarioDiscussions.$inferSelect;
+
+// Systems Management Types
+export type InsertSystemUser = z.infer<typeof insertSystemUserSchema>;
+export type SystemUser = typeof systemUsers.$inferSelect;
+
+export type InsertSystemHealth = z.infer<typeof insertSystemHealthSchema>;
+export type SystemHealth = typeof systemHealth.$inferSelect;
+
+export type InsertSystemEnvironment = z.infer<typeof insertSystemEnvironmentSchema>;
+export type SystemEnvironment = typeof systemEnvironments.$inferSelect;
+
+export type InsertSystemUpgrade = z.infer<typeof insertSystemUpgradeSchema>;
+export type SystemUpgrade = typeof systemUpgrades.$inferSelect;
+
+export type InsertSystemAuditLog = z.infer<typeof insertSystemAuditLogSchema>;
+export type SystemAuditLog = typeof systemAuditLog.$inferSelect;
+
+export type InsertSystemSettings = z.infer<typeof insertSystemSettingsSchema>;
+export type SystemSettings = typeof systemSettings.$inferSelect;

@@ -1,11 +1,14 @@
 import { 
   capabilities, resources, jobs, operations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
+  systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
   type Capability, type Resource, type Job, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
+  type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
   type InsertCapability, type InsertResource, type InsertJob, 
   type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
-  type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion
+  type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
+  type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -111,6 +114,47 @@ export interface IStorage {
   createScenarioDiscussion(discussion: InsertScenarioDiscussion): Promise<ScenarioDiscussion>;
   updateScenarioDiscussion(id: number, discussion: Partial<InsertScenarioDiscussion>): Promise<ScenarioDiscussion | undefined>;
   deleteScenarioDiscussion(id: number): Promise<boolean>;
+
+  // System Users
+  getSystemUsers(): Promise<SystemUser[]>;
+  getSystemUser(id: number): Promise<SystemUser | undefined>;
+  getSystemUserByUsername(username: string): Promise<SystemUser | undefined>;
+  createSystemUser(user: InsertSystemUser): Promise<SystemUser>;
+  updateSystemUser(id: number, user: Partial<InsertSystemUser>): Promise<SystemUser | undefined>;
+  deleteSystemUser(id: number): Promise<boolean>;
+
+  // System Health
+  getSystemHealth(environment?: string): Promise<SystemHealth[]>;
+  getSystemHealthByMetric(metricName: string, environment?: string): Promise<SystemHealth[]>;
+  createSystemHealth(health: InsertSystemHealth): Promise<SystemHealth>;
+  deleteSystemHealth(id: number): Promise<boolean>;
+
+  // System Environments
+  getSystemEnvironments(): Promise<SystemEnvironment[]>;
+  getSystemEnvironment(id: number): Promise<SystemEnvironment | undefined>;
+  getSystemEnvironmentByName(name: string): Promise<SystemEnvironment | undefined>;
+  createSystemEnvironment(environment: InsertSystemEnvironment): Promise<SystemEnvironment>;
+  updateSystemEnvironment(id: number, environment: Partial<InsertSystemEnvironment>): Promise<SystemEnvironment | undefined>;
+  deleteSystemEnvironment(id: number): Promise<boolean>;
+
+  // System Upgrades
+  getSystemUpgrades(environment?: string): Promise<SystemUpgrade[]>;
+  getSystemUpgrade(id: number): Promise<SystemUpgrade | undefined>;
+  createSystemUpgrade(upgrade: InsertSystemUpgrade): Promise<SystemUpgrade>;
+  updateSystemUpgrade(id: number, upgrade: Partial<InsertSystemUpgrade>): Promise<SystemUpgrade | undefined>;
+  deleteSystemUpgrade(id: number): Promise<boolean>;
+
+  // System Audit Log
+  getSystemAuditLog(userId?: number, resource?: string): Promise<SystemAuditLog[]>;
+  createSystemAuditLog(auditLog: InsertSystemAuditLog): Promise<SystemAuditLog>;
+  deleteSystemAuditLog(id: number): Promise<boolean>;
+
+  // System Settings
+  getSystemSettings(environment?: string, category?: string): Promise<SystemSettings[]>;
+  getSystemSetting(key: string, environment: string): Promise<SystemSettings | undefined>;
+  createSystemSetting(setting: InsertSystemSettings): Promise<SystemSettings>;
+  updateSystemSetting(id: number, setting: Partial<InsertSystemSettings>): Promise<SystemSettings | undefined>;
+  deleteSystemSetting(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -972,6 +1016,212 @@ export class DatabaseStorage implements IStorage {
 
   async deleteScenarioDiscussion(id: number): Promise<boolean> {
     const result = await db.delete(scenarioDiscussions).where(eq(scenarioDiscussions.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // System Users
+  async getSystemUsers(): Promise<SystemUser[]> {
+    return await db.select().from(systemUsers);
+  }
+
+  async getSystemUser(id: number): Promise<SystemUser | undefined> {
+    const [user] = await db.select().from(systemUsers).where(eq(systemUsers.id, id));
+    return user || undefined;
+  }
+
+  async getSystemUserByUsername(username: string): Promise<SystemUser | undefined> {
+    const [user] = await db.select().from(systemUsers).where(eq(systemUsers.username, username));
+    return user || undefined;
+  }
+
+  async createSystemUser(user: InsertSystemUser): Promise<SystemUser> {
+    const [newUser] = await db
+      .insert(systemUsers)
+      .values(user)
+      .returning();
+    return newUser;
+  }
+
+  async updateSystemUser(id: number, user: Partial<InsertSystemUser>): Promise<SystemUser | undefined> {
+    const [updatedUser] = await db
+      .update(systemUsers)
+      .set(user)
+      .where(eq(systemUsers.id, id))
+      .returning();
+    return updatedUser || undefined;
+  }
+
+  async deleteSystemUser(id: number): Promise<boolean> {
+    const result = await db.delete(systemUsers).where(eq(systemUsers.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // System Health
+  async getSystemHealth(environment?: string): Promise<SystemHealth[]> {
+    if (environment) {
+      return await db.select().from(systemHealth).where(eq(systemHealth.environment, environment));
+    }
+    return await db.select().from(systemHealth);
+  }
+
+  async getSystemHealthByMetric(metricName: string, environment?: string): Promise<SystemHealth[]> {
+    let query = db.select().from(systemHealth).where(eq(systemHealth.metricName, metricName));
+    if (environment) {
+      query = query.where(eq(systemHealth.environment, environment));
+    }
+    return await query;
+  }
+
+  async createSystemHealth(health: InsertSystemHealth): Promise<SystemHealth> {
+    const [newHealth] = await db
+      .insert(systemHealth)
+      .values(health)
+      .returning();
+    return newHealth;
+  }
+
+  async deleteSystemHealth(id: number): Promise<boolean> {
+    const result = await db.delete(systemHealth).where(eq(systemHealth.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // System Environments
+  async getSystemEnvironments(): Promise<SystemEnvironment[]> {
+    return await db.select().from(systemEnvironments);
+  }
+
+  async getSystemEnvironment(id: number): Promise<SystemEnvironment | undefined> {
+    const [environment] = await db.select().from(systemEnvironments).where(eq(systemEnvironments.id, id));
+    return environment || undefined;
+  }
+
+  async getSystemEnvironmentByName(name: string): Promise<SystemEnvironment | undefined> {
+    const [environment] = await db.select().from(systemEnvironments).where(eq(systemEnvironments.name, name));
+    return environment || undefined;
+  }
+
+  async createSystemEnvironment(environment: InsertSystemEnvironment): Promise<SystemEnvironment> {
+    const [newEnvironment] = await db
+      .insert(systemEnvironments)
+      .values(environment)
+      .returning();
+    return newEnvironment;
+  }
+
+  async updateSystemEnvironment(id: number, environment: Partial<InsertSystemEnvironment>): Promise<SystemEnvironment | undefined> {
+    const [updatedEnvironment] = await db
+      .update(systemEnvironments)
+      .set(environment)
+      .where(eq(systemEnvironments.id, id))
+      .returning();
+    return updatedEnvironment || undefined;
+  }
+
+  async deleteSystemEnvironment(id: number): Promise<boolean> {
+    const result = await db.delete(systemEnvironments).where(eq(systemEnvironments.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // System Upgrades
+  async getSystemUpgrades(environment?: string): Promise<SystemUpgrade[]> {
+    if (environment) {
+      return await db.select().from(systemUpgrades).where(eq(systemUpgrades.environment, environment));
+    }
+    return await db.select().from(systemUpgrades);
+  }
+
+  async getSystemUpgrade(id: number): Promise<SystemUpgrade | undefined> {
+    const [upgrade] = await db.select().from(systemUpgrades).where(eq(systemUpgrades.id, id));
+    return upgrade || undefined;
+  }
+
+  async createSystemUpgrade(upgrade: InsertSystemUpgrade): Promise<SystemUpgrade> {
+    const [newUpgrade] = await db
+      .insert(systemUpgrades)
+      .values(upgrade)
+      .returning();
+    return newUpgrade;
+  }
+
+  async updateSystemUpgrade(id: number, upgrade: Partial<InsertSystemUpgrade>): Promise<SystemUpgrade | undefined> {
+    const [updatedUpgrade] = await db
+      .update(systemUpgrades)
+      .set(upgrade)
+      .where(eq(systemUpgrades.id, id))
+      .returning();
+    return updatedUpgrade || undefined;
+  }
+
+  async deleteSystemUpgrade(id: number): Promise<boolean> {
+    const result = await db.delete(systemUpgrades).where(eq(systemUpgrades.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // System Audit Log
+  async getSystemAuditLog(userId?: number, resource?: string): Promise<SystemAuditLog[]> {
+    let query = db.select().from(systemAuditLog);
+    if (userId) {
+      query = query.where(eq(systemAuditLog.userId, userId));
+    }
+    if (resource) {
+      query = query.where(eq(systemAuditLog.resource, resource));
+    }
+    return await query;
+  }
+
+  async createSystemAuditLog(auditLog: InsertSystemAuditLog): Promise<SystemAuditLog> {
+    const [newAuditLog] = await db
+      .insert(systemAuditLog)
+      .values(auditLog)
+      .returning();
+    return newAuditLog;
+  }
+
+  async deleteSystemAuditLog(id: number): Promise<boolean> {
+    const result = await db.delete(systemAuditLog).where(eq(systemAuditLog.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // System Settings
+  async getSystemSettings(environment?: string, category?: string): Promise<SystemSettings[]> {
+    let query = db.select().from(systemSettings);
+    if (environment) {
+      query = query.where(eq(systemSettings.environment, environment));
+    }
+    if (category) {
+      query = query.where(eq(systemSettings.category, category));
+    }
+    return await query;
+  }
+
+  async getSystemSetting(key: string, environment: string): Promise<SystemSettings | undefined> {
+    const [setting] = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, key))
+      .where(eq(systemSettings.environment, environment));
+    return setting || undefined;
+  }
+
+  async createSystemSetting(setting: InsertSystemSettings): Promise<SystemSettings> {
+    const [newSetting] = await db
+      .insert(systemSettings)
+      .values(setting)
+      .returning();
+    return newSetting;
+  }
+
+  async updateSystemSetting(id: number, setting: Partial<InsertSystemSettings>): Promise<SystemSettings | undefined> {
+    const [updatedSetting] = await db
+      .update(systemSettings)
+      .set(setting)
+      .where(eq(systemSettings.id, id))
+      .returning();
+    return updatedSetting || undefined;
+  }
+
+  async deleteSystemSetting(id: number): Promise<boolean> {
+    const result = await db.delete(systemSettings).where(eq(systemSettings.id, id));
     return (result.rowCount || 0) > 0;
   }
 }

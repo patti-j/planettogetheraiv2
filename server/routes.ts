@@ -6,7 +6,9 @@ import {
   insertOperationSchema, insertDependencySchema, insertResourceViewSchema,
   insertCustomTextLabelSchema, insertKanbanConfigSchema, insertReportConfigSchema,
   insertDashboardConfigSchema, insertScheduleScenarioSchema, insertScenarioOperationSchema,
-  insertScenarioEvaluationSchema, insertScenarioDiscussionSchema
+  insertScenarioEvaluationSchema, insertScenarioDiscussionSchema,
+  insertSystemUserSchema, insertSystemHealthSchema, insertSystemEnvironmentSchema,
+  insertSystemUpgradeSchema, insertSystemAuditLogSchema, insertSystemSettingsSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -1261,6 +1263,316 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting scenario discussion:", error);
       res.status(500).json({ error: "Failed to delete scenario discussion" });
+    }
+  });
+
+  // System Management API Routes
+
+  // System Users
+  app.get("/api/system/users", async (req, res) => {
+    try {
+      const users = await storage.getSystemUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching system users:", error);
+      res.status(500).json({ error: "Failed to fetch system users" });
+    }
+  });
+
+  app.get("/api/system/users/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const user = await storage.getSystemUser(id);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching system user:", error);
+      res.status(500).json({ error: "Failed to fetch system user" });
+    }
+  });
+
+  app.post("/api/system/users", async (req, res) => {
+    try {
+      const validation = insertSystemUserSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid user data", details: validation.error.errors });
+      }
+
+      const user = await storage.createSystemUser(validation.data);
+      res.status(201).json(user);
+    } catch (error) {
+      console.error("Error creating system user:", error);
+      res.status(500).json({ error: "Failed to create system user" });
+    }
+  });
+
+  app.put("/api/system/users/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const validation = insertSystemUserSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid user data", details: validation.error.errors });
+      }
+
+      const user = await storage.updateSystemUser(id, validation.data);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating system user:", error);
+      res.status(500).json({ error: "Failed to update system user" });
+    }
+  });
+
+  app.delete("/api/system/users/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const success = await storage.deleteSystemUser(id);
+      if (!success) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting system user:", error);
+      res.status(500).json({ error: "Failed to delete system user" });
+    }
+  });
+
+  // System Health
+  app.get("/api/system/health", async (req, res) => {
+    try {
+      const environment = req.query.environment as string | undefined;
+      const health = await storage.getSystemHealth(environment);
+      res.json(health);
+    } catch (error) {
+      console.error("Error fetching system health:", error);
+      res.status(500).json({ error: "Failed to fetch system health" });
+    }
+  });
+
+  app.post("/api/system/health", async (req, res) => {
+    try {
+      const validation = insertSystemHealthSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid health data", details: validation.error.errors });
+      }
+
+      const health = await storage.createSystemHealth(validation.data);
+      res.status(201).json(health);
+    } catch (error) {
+      console.error("Error creating system health record:", error);
+      res.status(500).json({ error: "Failed to create system health record" });
+    }
+  });
+
+  // System Environments
+  app.get("/api/system/environments", async (req, res) => {
+    try {
+      const environments = await storage.getSystemEnvironments();
+      res.json(environments);
+    } catch (error) {
+      console.error("Error fetching system environments:", error);
+      res.status(500).json({ error: "Failed to fetch system environments" });
+    }
+  });
+
+  app.get("/api/system/environments/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid environment ID" });
+      }
+
+      const environment = await storage.getSystemEnvironment(id);
+      if (!environment) {
+        return res.status(404).json({ error: "Environment not found" });
+      }
+      res.json(environment);
+    } catch (error) {
+      console.error("Error fetching system environment:", error);
+      res.status(500).json({ error: "Failed to fetch system environment" });
+    }
+  });
+
+  app.post("/api/system/environments", async (req, res) => {
+    try {
+      const validation = insertSystemEnvironmentSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid environment data", details: validation.error.errors });
+      }
+
+      const environment = await storage.createSystemEnvironment(validation.data);
+      res.status(201).json(environment);
+    } catch (error) {
+      console.error("Error creating system environment:", error);
+      res.status(500).json({ error: "Failed to create system environment" });
+    }
+  });
+
+  app.put("/api/system/environments/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid environment ID" });
+      }
+
+      const validation = insertSystemEnvironmentSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid environment data", details: validation.error.errors });
+      }
+
+      const environment = await storage.updateSystemEnvironment(id, validation.data);
+      if (!environment) {
+        return res.status(404).json({ error: "Environment not found" });
+      }
+      res.json(environment);
+    } catch (error) {
+      console.error("Error updating system environment:", error);
+      res.status(500).json({ error: "Failed to update system environment" });
+    }
+  });
+
+  // System Upgrades
+  app.get("/api/system/upgrades", async (req, res) => {
+    try {
+      const environment = req.query.environment as string | undefined;
+      const upgrades = await storage.getSystemUpgrades(environment);
+      res.json(upgrades);
+    } catch (error) {
+      console.error("Error fetching system upgrades:", error);
+      res.status(500).json({ error: "Failed to fetch system upgrades" });
+    }
+  });
+
+  app.post("/api/system/upgrades", async (req, res) => {
+    try {
+      const validation = insertSystemUpgradeSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid upgrade data", details: validation.error.errors });
+      }
+
+      const upgrade = await storage.createSystemUpgrade(validation.data);
+      res.status(201).json(upgrade);
+    } catch (error) {
+      console.error("Error creating system upgrade:", error);
+      res.status(500).json({ error: "Failed to create system upgrade" });
+    }
+  });
+
+  app.put("/api/system/upgrades/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid upgrade ID" });
+      }
+
+      const validation = insertSystemUpgradeSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid upgrade data", details: validation.error.errors });
+      }
+
+      const upgrade = await storage.updateSystemUpgrade(id, validation.data);
+      if (!upgrade) {
+        return res.status(404).json({ error: "Upgrade not found" });
+      }
+      res.json(upgrade);
+    } catch (error) {
+      console.error("Error updating system upgrade:", error);
+      res.status(500).json({ error: "Failed to update system upgrade" });
+    }
+  });
+
+  // System Audit Log
+  app.get("/api/system/audit-log", async (req, res) => {
+    try {
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
+      const resource = req.query.resource as string | undefined;
+      const auditLog = await storage.getSystemAuditLog(userId, resource);
+      res.json(auditLog);
+    } catch (error) {
+      console.error("Error fetching system audit log:", error);
+      res.status(500).json({ error: "Failed to fetch system audit log" });
+    }
+  });
+
+  app.post("/api/system/audit-log", async (req, res) => {
+    try {
+      const validation = insertSystemAuditLogSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid audit log data", details: validation.error.errors });
+      }
+
+      const auditLog = await storage.createSystemAuditLog(validation.data);
+      res.status(201).json(auditLog);
+    } catch (error) {
+      console.error("Error creating system audit log:", error);
+      res.status(500).json({ error: "Failed to create system audit log" });
+    }
+  });
+
+  // System Settings
+  app.get("/api/system/settings", async (req, res) => {
+    try {
+      const environment = req.query.environment as string | undefined;
+      const category = req.query.category as string | undefined;
+      const settings = await storage.getSystemSettings(environment, category);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching system settings:", error);
+      res.status(500).json({ error: "Failed to fetch system settings" });
+    }
+  });
+
+  app.post("/api/system/settings", async (req, res) => {
+    try {
+      const validation = insertSystemSettingsSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid settings data", details: validation.error.errors });
+      }
+
+      const setting = await storage.createSystemSetting(validation.data);
+      res.status(201).json(setting);
+    } catch (error) {
+      console.error("Error creating system setting:", error);
+      res.status(500).json({ error: "Failed to create system setting" });
+    }
+  });
+
+  app.put("/api/system/settings/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid setting ID" });
+      }
+
+      const validation = insertSystemSettingsSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid settings data", details: validation.error.errors });
+      }
+
+      const setting = await storage.updateSystemSetting(id, validation.data);
+      if (!setting) {
+        return res.status(404).json({ error: "Setting not found" });
+      }
+      res.json(setting);
+    } catch (error) {
+      console.error("Error updating system setting:", error);
+      res.status(500).json({ error: "Failed to update system setting" });
     }
   });
 
