@@ -8,7 +8,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/sidebar";
 import OnboardingWizard from "@/components/onboarding-wizard";
-import { LoginForm } from "@/components/auth/LoginForm";
+import Login from "@/pages/Login";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Dashboard from "@/pages/dashboard";
 import Analytics from "@/pages/analytics";
@@ -46,7 +46,7 @@ function Router() {
   }
 
   if (!isAuthenticated) {
-    return <LoginForm />;
+    return <Login />;
   }
 
   return (
