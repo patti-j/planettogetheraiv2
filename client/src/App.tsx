@@ -23,6 +23,7 @@ import EmailSettings from "@/pages/email-settings";
 import SchedulingOptimizer from "@/pages/scheduling-optimizer";
 import ERPImport from "@/pages/erp-import";
 import PlantManager from "@/pages/plant-manager";
+import SystemsManagement from "@/pages/systems-management";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -44,6 +45,7 @@ function Router() {
       <Route path="/scheduling-optimizer" component={SchedulingOptimizer} />
       <Route path="/erp-import" component={ERPImport} />
       <Route path="/plant-manager" component={PlantManager} />
+      <Route path="/systems-management" component={SystemsManagement} />
       <Route component={NotFound} />
     </Switch>
   );
