@@ -68,7 +68,7 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/ai-assistant">
-            <ProtectedRoute feature="ai_assistant" action="view">
+            <ProtectedRoute feature="ai-assistant" action="view">
               <AIAssistant />
             </ProtectedRoute>
           </Route>
@@ -78,7 +78,7 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/shop-floor">
-            <ProtectedRoute feature="shop_floor" action="view">
+            <ProtectedRoute feature="shop-floor" action="view">
               <ShopFloor />
             </ProtectedRoute>
           </Route>
@@ -88,12 +88,12 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/customer-service">
-            <ProtectedRoute feature="customer_service" action="view">
+            <ProtectedRoute feature="customer-service" action="view">
               <CustomerService />
             </ProtectedRoute>
           </Route>
           <Route path="/operator">
-            <ProtectedRoute feature="operator_dashboard" action="view">
+            <ProtectedRoute feature="operator-dashboard" action="view">
               <OperatorDashboard />
             </ProtectedRoute>
           </Route>
@@ -108,42 +108,42 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/forklift">
-            <ProtectedRoute feature="forklift" action="view">
+            <ProtectedRoute feature="forklift-driver" action="view">
               <ForkliftDriver />
             </ProtectedRoute>
           </Route>
           <Route path="/email-settings">
-            <ProtectedRoute feature="email_settings" action="view">
+            <ProtectedRoute feature="email-settings" action="view">
               <EmailSettings />
             </ProtectedRoute>
           </Route>
           <Route path="/scheduling-optimizer">
-            <ProtectedRoute feature="scheduling_optimizer" action="view">
+            <ProtectedRoute feature="scheduling-optimizer" action="view">
               <SchedulingOptimizer />
             </ProtectedRoute>
           </Route>
           <Route path="/erp-import">
-            <ProtectedRoute feature="erp_import" action="view">
+            <ProtectedRoute feature="erp-import" action="view">
               <ERPImport />
             </ProtectedRoute>
           </Route>
           <Route path="/plant-manager">
-            <ProtectedRoute feature="plant_manager" action="view">
+            <ProtectedRoute feature="plant-manager" action="view">
               <PlantManager />
             </ProtectedRoute>
           </Route>
           <Route path="/systems-management">
-            <ProtectedRoute feature="systems_management" action="view">
+            <ProtectedRoute feature="systems-management" action="view">
               <SystemsManagement />
             </ProtectedRoute>
           </Route>
           <Route path="/capacity-planning">
-            <ProtectedRoute feature="capacity_planning" action="view">
+            <ProtectedRoute feature="capacity-planning" action="view">
               <CapacityPlanning />
             </ProtectedRoute>
           </Route>
           <Route path="/business-goals">
-            <ProtectedRoute feature="business_goals" action="view">
+            <ProtectedRoute feature="business-goals" action="view">
               <BusinessGoals />
             </ProtectedRoute>
           </Route>
