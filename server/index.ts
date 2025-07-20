@@ -32,12 +32,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Session middleware configuration - must be after CORS and before routes
-const pgSession = connectPg(session);
+// Using memory store temporarily to isolate issue
 app.use(session({
-  store: new pgSession({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: true,
-  }),
   secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
