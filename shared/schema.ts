@@ -999,6 +999,7 @@ export const roles = pgTable("roles", {
   name: varchar("name", { length: 50 }).notNull().unique(),
   description: text("description"),
   isActive: boolean("is_active").default(true),
+  isSystemRole: boolean("is_system_role").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

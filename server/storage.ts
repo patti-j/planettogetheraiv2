@@ -20,7 +20,7 @@ import {
   type InsertUser, type InsertRole, type InsertPermission, type InsertUserRole, type InsertRolePermission
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, like, ne } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export interface IStorage {
@@ -2061,52 +2061,41 @@ export class DatabaseStorage implements IStorage {
 
   // Role Management Methods
   async getRolesWithPermissionsAndUserCount() {
-    const rolesData = await this.db
-      .select({
-        id: roles.id,
-        name: roles.name,
-        description: roles.description,
-        isSystemRole: roles.isSystemRole,
-        createdAt: roles.createdAt,
-        updatedAt: roles.updatedAt,
-      })
-      .from(roles)
-      .orderBy(roles.name);
+    try {
+      const rolesData = await db.select().from(roles).orderBy(roles.name);
 
-    const rolesWithPermissions = await Promise.all(rolesData.map(async (role) => {
-      // Get permissions for this role
-      const permissionsData = await this.db
-        .select({
-          id: permissions.id,
-          name: permissions.name,
-          feature: permissions.feature,
-          action: permissions.action,
-          description: permissions.description,
-        })
-        .from(permissions)
-        .innerJoin(rolePermissions, eq(permissions.id, rolePermissions.permissionId))
-        .where(eq(rolePermissions.roleId, role.id));
+      const rolesWithPermissions = await Promise.all(rolesData.map(async (role) => {
+        // Get permissions for this role
+        const permissionsData = await db
+          .select()
+          .from(permissions)
+          .innerJoin(rolePermissions, eq(permissions.id, rolePermissions.permissionId))
+          .where(eq(rolePermissions.roleId, role.id));
 
-      // Get user count for this role
-      const userCountResult = await this.db
-        .select({ count: sql<number>`count(*)` })
-        .from(userRoles)
-        .where(eq(userRoles.roleId, role.id));
-      
-      const userCount = userCountResult[0]?.count || 0;
+        // Get user count for this role
+        const userCountResult = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(userRoles)
+          .where(eq(userRoles.roleId, role.id));
+        
+        const userCount = userCountResult[0]?.count || 0;
 
-      return {
-        ...role,
-        permissions: permissionsData,
-        userCount,
-      };
-    }));
+        return {
+          ...role,
+          permissions: permissionsData.map(p => p.permissions),
+          userCount,
+        };
+      }));
 
-    return rolesWithPermissions;
+      return rolesWithPermissions;
+    } catch (error) {
+      console.error('Error in getRolesWithPermissionsAndUserCount:', error);
+      throw error;
+    }
   }
 
   async createRoleWithPermissions(roleData: { name: string; description: string }, permissionIds: number[]) {
-    const result = await this.db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       // Create the role
       const [newRole] = await tx
         .insert(roles)
@@ -2151,7 +2140,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateRoleWithPermissions(roleId: number, roleData: { name: string; description: string }, permissionIds: number[]) {
-    const result = await this.db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       // Update the role
       const [updatedRole] = await tx
         .update(roles)
@@ -2212,7 +2201,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRoleWithUserCount(roleId: number) {
-    const roleData = await this.db
+    const roleData = await db
       .select({
         id: roles.id,
         name: roles.name,
@@ -2230,7 +2219,7 @@ export class DatabaseStorage implements IStorage {
     const role = roleData[0];
 
     // Get user count
-    const userCountResult = await this.db
+    const userCountResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(userRoles)
       .where(eq(userRoles.roleId, roleId));
@@ -2243,8 +2232,24 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
+  async deleteRole(roleId: number): Promise<boolean> {
+    const result = await db.transaction(async (tx) => {
+      // Remove role permissions first
+      await tx.delete(rolePermissions).where(eq(rolePermissions.roleId, roleId));
+      
+      // Remove user role assignments
+      await tx.delete(userRoles).where(eq(userRoles.roleId, roleId));
+      
+      // Delete the role
+      const deleteResult = await tx.delete(roles).where(eq(roles.id, roleId));
+      return (deleteResult.rowCount || 0) > 0;
+    });
+    
+    return result;
+  }
+
   async getPermissionsGroupedByFeature() {
-    const allPermissions = await this.db
+    const allPermissions = await db
       .select()
       .from(permissions)
       .orderBy(permissions.feature, permissions.action);

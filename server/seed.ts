@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { capabilities, resources, jobs, operations, users, roles, permissions, userRoles, rolePermissions } from "@shared/schema";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export async function seedDatabase() {
@@ -9,8 +9,9 @@ export async function seedDatabase() {
   // Check if data already exists
   const existingCapabilities = await db.select().from(capabilities).limit(1);
   const existingUsers = await db.select().from(users).limit(1);
+  const existingDefaultRoles = await db.select().from(roles).where(eq(roles.name, "Administrator")).limit(1);
   
-  if (existingCapabilities.length > 0 && existingUsers.length > 0) {
+  if (existingCapabilities.length > 0 && existingUsers.length > 0 && existingDefaultRoles.length > 0) {
     console.log("Database already seeded, skipping...");
     return;
   }
@@ -325,7 +326,136 @@ export async function seedDatabase() {
     console.log("- scheduler / password123 (Production Scheduling access)");
     console.log("- admin / password123 (User Management + Systems access)");
     console.log("- sysmanager / password123 (Systems Management access)");
+    
+    // Now create default roles for all features
+    await seedDefaultRoles();
   }
 
   console.log("Database seeding completed!");
+}
+
+async function seedDefaultRoles() {
+  console.log("Seeding default roles...");
+  
+  // Get all permissions to create comprehensive role definitions
+  const allPermissions = await db.select().from(permissions);
+  
+  // Define default roles with their associated permissions
+  const defaultRoles = [
+    {
+      name: "Administrator",
+      description: "Full system access with all permissions across all features",
+      permissions: allPermissions.map(p => p.id) // All permissions
+    },
+    {
+      name: "Director",
+      description: "Strategic oversight with access to business goals, reporting, and scheduling",
+      permissions: allPermissions
+        .filter(p => ['business-goals', 'reports', 'schedule', 'analytics'].includes(p.feature))
+        .map(p => p.id)
+    },
+    {
+      name: "Plant Manager", 
+      description: "Plant operations management with capacity planning and systems oversight",
+      permissions: allPermissions
+        .filter(p => ['plant-manager', 'capacity-planning', 'schedule', 'boards', 'reports', 'analytics'].includes(p.feature))
+        .map(p => p.id)
+    },
+    {
+      name: "Production Scheduler",
+      description: "Production scheduling and optimization with order management",
+      permissions: allPermissions
+        .filter(p => ['schedule', 'scheduling-optimizer', 'boards', 'erp-import', 'analytics'].includes(p.feature))
+        .map(p => p.id)
+    },
+    {
+      name: "Shop Floor Supervisor",
+      description: "Shop floor operations with operator oversight and maintenance coordination", 
+      permissions: allPermissions
+        .filter(p => ['shop-floor', 'operator-dashboard', 'maintenance', 'schedule'].includes(p.feature))
+        .map(p => p.id)
+    },
+    {
+      name: "Operator",
+      description: "Equipment operation with task management and status reporting",
+      permissions: allPermissions
+        .filter(p => ['operator-dashboard'].includes(p.feature) && p.action === 'view')
+        .map(p => p.id)
+    },
+    {
+      name: "Maintenance Technician", 
+      description: "Equipment maintenance with work order and scheduling access",
+      permissions: allPermissions
+        .filter(p => ['maintenance', 'schedule'].includes(p.feature))
+        .map(p => p.id)
+    },
+    {
+      name: "Forklift Driver",
+      description: "Material movement tracking and logistics coordination",
+      permissions: allPermissions
+        .filter(p => ['forklift-driver'].includes(p.feature))
+        .map(p => p.id)
+    },
+    {
+      name: "Sales Representative",
+      description: "Customer relationship management and order processing",
+      permissions: allPermissions
+        .filter(p => ['sales', 'customer-service'].includes(p.feature))
+        .map(p => p.id)
+    },
+    {
+      name: "Customer Service Agent",
+      description: "Customer support with order tracking and issue management", 
+      permissions: allPermissions
+        .filter(p => ['customer-service', 'sales'].includes(p.feature) && ['view', 'edit'].includes(p.action))
+        .map(p => p.id)
+    },
+    {
+      name: "IT Systems Administrator",
+      description: "IT infrastructure management with user and system administration",
+      permissions: allPermissions
+        .filter(p => ['systems-management', 'user-management'].includes(p.feature))
+        .map(p => p.id)
+    },
+    {
+      name: "Data Analyst",
+      description: "Business intelligence with reporting and analytics access",
+      permissions: allPermissions
+        .filter(p => ['analytics', 'reports', 'business-goals'].includes(p.feature) && ['view', 'create'].includes(p.action))
+        .map(p => p.id)
+    }
+  ];
+
+  // Create each default role
+  for (const roleData of defaultRoles) {
+    try {
+      // Check if role already exists
+      const existingRole = await db.select().from(roles).where(sql`${roles.name} = ${roleData.name}`).limit(1);
+      
+      if (existingRole.length === 0 && roleData.permissions.length > 0) {
+        // Create the role
+        const [newRole] = await db.insert(roles).values({
+          name: roleData.name,
+          description: roleData.description,
+          isSystemRole: true
+        }).returning();
+
+        // Assign permissions to the role
+        if (roleData.permissions.length > 0) {
+          const rolePermissionData = roleData.permissions.map(permissionId => ({
+            roleId: newRole.id,
+            permissionId
+          }));
+          
+          await db.insert(rolePermissions).values(rolePermissionData);
+        }
+        
+        console.log(`✓ Created default role: ${roleData.name} with ${roleData.permissions.length} permissions`);
+      }
+    } catch (error) {
+      console.error(`Error creating role ${roleData.name}:`, error);
+    }
+  }
+  
+  console.log("✓ Default roles seeded successfully");
 }
