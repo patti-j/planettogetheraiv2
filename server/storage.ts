@@ -4,20 +4,24 @@ import {
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
   capacityPlanningScenarios, staffingPlans, shiftPlans, equipmentPlans, capacityProjections,
   businessGoals, goalProgress, goalRisks, goalIssues, goalKpis, goalActions,
+  users, roles, permissions, userRoles, rolePermissions,
   type Capability, type Resource, type Job, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
   type CapacityPlanningScenario, type StaffingPlan, type ShiftPlan, type EquipmentPlan, type CapacityProjection,
   type BusinessGoal, type GoalProgress, type GoalRisk, type GoalIssue, type GoalKpi, type GoalAction,
+  type User, type Role, type Permission, type UserRole, type RolePermission, type UserWithRoles,
   type InsertCapability, type InsertResource, type InsertJob, 
   type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
   type InsertCapacityPlanningScenario, type InsertStaffingPlan, type InsertShiftPlan, type InsertEquipmentPlan, type InsertCapacityProjection,
-  type InsertBusinessGoal, type InsertGoalProgress, type InsertGoalRisk, type InsertGoalIssue, type InsertGoalKpi, type InsertGoalAction
+  type InsertBusinessGoal, type InsertGoalProgress, type InsertGoalRisk, type InsertGoalIssue, type InsertGoalKpi, type InsertGoalAction,
+  type InsertUser, type InsertRole, type InsertPermission, type InsertUserRole, type InsertRolePermission
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 export interface IStorage {
   // Capabilities
@@ -238,6 +242,50 @@ export interface IStorage {
   createGoalAction(action: InsertGoalAction): Promise<GoalAction>;
   updateGoalAction(id: number, action: Partial<InsertGoalAction>): Promise<GoalAction | undefined>;
   deleteGoalAction(id: number): Promise<boolean>;
+
+  // User Management
+  getUsers(): Promise<User[]>;
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserWithRoles(id: number): Promise<UserWithRoles | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
+  deleteUser(id: number): Promise<boolean>;
+  authenticateUser(username: string, password: string): Promise<UserWithRoles | null>;
+
+  // Role Management
+  getRoles(): Promise<Role[]>;
+  getRole(id: number): Promise<Role | undefined>;
+  createRole(role: InsertRole): Promise<Role>;
+  updateRole(id: number, role: Partial<InsertRole>): Promise<Role | undefined>;
+  deleteRole(id: number): Promise<boolean>;
+
+  // Permission Management
+  getPermissions(): Promise<Permission[]>;
+  getPermission(id: number): Promise<Permission | undefined>;
+  getPermissionsByFeature(feature: string): Promise<Permission[]>;
+  createPermission(permission: InsertPermission): Promise<Permission>;
+  updatePermission(id: number, permission: Partial<InsertPermission>): Promise<Permission | undefined>;
+  deletePermission(id: number): Promise<boolean>;
+
+  // User Role Assignment
+  getUserRoles(userId: number): Promise<UserRole[]>;
+  assignUserRole(userRole: InsertUserRole): Promise<UserRole>;
+  removeUserRole(userId: number, roleId: number): Promise<boolean>;
+
+  // Role Permission Assignment
+  getRolePermissions(roleId: number): Promise<RolePermission[]>;
+  assignRolePermission(rolePermission: InsertRolePermission): Promise<RolePermission>;
+  removeRolePermission(roleId: number, permissionId: number): Promise<boolean>;
+
+  // Permission Checking
+  hasPermission(userId: number, feature: string, action: string): Promise<boolean>;
+  getUserPermissions(userId: number): Promise<Permission[]>;
+  
+  // Authentication Methods
+  getUserWithRolesAndPermissions(usernameOrId: string | number): Promise<UserWithRoles | undefined>;
+  updateUserLastLogin(userId: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -1727,6 +1775,288 @@ export class DatabaseStorage implements IStorage {
   async deleteGoalAction(id: number): Promise<boolean> {
     const result = await db.delete(goalActions).where(eq(goalActions.id, id));
     return (result.rowCount || 0) > 0;
+  }
+
+  // User Management
+  async getUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async getUserWithRoles(id: number): Promise<UserWithRoles | undefined> {
+    const user = await this.getUser(id);
+    if (!user) return undefined;
+
+    const userRolesList = await db
+      .select({
+        role: roles,
+        permission: permissions,
+      })
+      .from(userRoles)
+      .leftJoin(roles, eq(userRoles.roleId, roles.id))
+      .leftJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
+      .leftJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+      .where(eq(userRoles.userId, id));
+
+    const rolesMap = new Map<number, Role & { permissions: Permission[] }>();
+    
+    userRolesList.forEach(({ role, permission }) => {
+      if (!role) return;
+      
+      if (!rolesMap.has(role.id)) {
+        rolesMap.set(role.id, { ...role, permissions: [] });
+      }
+      
+      if (permission) {
+        rolesMap.get(role.id)!.permissions.push(permission);
+      }
+    });
+
+    return {
+      ...user,
+      roles: Array.from(rolesMap.values()),
+    };
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    // Hash password before storing
+    const hashedPassword = await bcrypt.hash(user.passwordHash, 12);
+    const userWithHashedPassword = { ...user, passwordHash: hashedPassword };
+    
+    const [newUser] = await db
+      .insert(users)
+      .values(userWithHashedPassword)
+      .returning();
+    return newUser;
+  }
+
+  async updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined> {
+    const updateData = { ...user };
+    
+    // Hash password if it's being updated
+    if (updateData.passwordHash) {
+      updateData.passwordHash = await bcrypt.hash(updateData.passwordHash, 12);
+    }
+    
+    const [updatedUser] = await db
+      .update(users)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser || undefined;
+  }
+
+  async deleteUser(id: number): Promise<boolean> {
+    const result = await db.delete(users).where(eq(users.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async authenticateUser(username: string, password: string): Promise<UserWithRoles | null> {
+    const user = await this.getUserByUsername(username);
+    if (!user) return null;
+
+    const isValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isValid) return null;
+
+    // Update last login
+    await this.updateUser(user.id, { lastLogin: new Date() });
+
+    return await this.getUserWithRoles(user.id) || null;
+  }
+
+  // Role Management
+  async getRoles(): Promise<Role[]> {
+    return await db.select().from(roles);
+  }
+
+  async getRole(id: number): Promise<Role | undefined> {
+    const [role] = await db
+      .select()
+      .from(roles)
+      .where(eq(roles.id, id));
+    return role || undefined;
+  }
+
+  async createRole(role: InsertRole): Promise<Role> {
+    const [newRole] = await db
+      .insert(roles)
+      .values(role)
+      .returning();
+    return newRole;
+  }
+
+  async updateRole(id: number, role: Partial<InsertRole>): Promise<Role | undefined> {
+    const [updatedRole] = await db
+      .update(roles)
+      .set(role)
+      .where(eq(roles.id, id))
+      .returning();
+    return updatedRole || undefined;
+  }
+
+  async deleteRole(id: number): Promise<boolean> {
+    const result = await db.delete(roles).where(eq(roles.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Permission Management
+  async getPermissions(): Promise<Permission[]> {
+    return await db.select().from(permissions);
+  }
+
+  async getPermission(id: number): Promise<Permission | undefined> {
+    const [permission] = await db
+      .select()
+      .from(permissions)
+      .where(eq(permissions.id, id));
+    return permission || undefined;
+  }
+
+  async getPermissionsByFeature(feature: string): Promise<Permission[]> {
+    return await db
+      .select()
+      .from(permissions)
+      .where(eq(permissions.feature, feature));
+  }
+
+  async createPermission(permission: InsertPermission): Promise<Permission> {
+    const [newPermission] = await db
+      .insert(permissions)
+      .values(permission)
+      .returning();
+    return newPermission;
+  }
+
+  async updatePermission(id: number, permission: Partial<InsertPermission>): Promise<Permission | undefined> {
+    const [updatedPermission] = await db
+      .update(permissions)
+      .set(permission)
+      .where(eq(permissions.id, id))
+      .returning();
+    return updatedPermission || undefined;
+  }
+
+  async deletePermission(id: number): Promise<boolean> {
+    const result = await db.delete(permissions).where(eq(permissions.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // User Role Assignment
+  async getUserRoles(userId: number): Promise<UserRole[]> {
+    return await db
+      .select()
+      .from(userRoles)
+      .where(eq(userRoles.userId, userId));
+  }
+
+  async assignUserRole(userRole: InsertUserRole): Promise<UserRole> {
+    const [newUserRole] = await db
+      .insert(userRoles)
+      .values(userRole)
+      .returning();
+    return newUserRole;
+  }
+
+  async removeUserRole(userId: number, roleId: number): Promise<boolean> {
+    const result = await db
+      .delete(userRoles)
+      .where(and(eq(userRoles.userId, userId), eq(userRoles.roleId, roleId)));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Role Permission Assignment
+  async getRolePermissions(roleId: number): Promise<RolePermission[]> {
+    return await db
+      .select()
+      .from(rolePermissions)
+      .where(eq(rolePermissions.roleId, roleId));
+  }
+
+  async assignRolePermission(rolePermission: InsertRolePermission): Promise<RolePermission> {
+    const [newRolePermission] = await db
+      .insert(rolePermissions)
+      .values(rolePermission)
+      .returning();
+    return newRolePermission;
+  }
+
+  async removeRolePermission(roleId: number, permissionId: number): Promise<boolean> {
+    const result = await db
+      .delete(rolePermissions)
+      .where(and(eq(rolePermissions.roleId, roleId), eq(rolePermissions.permissionId, permissionId)));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Permission Checking
+  async hasPermission(userId: number, feature: string, action: string): Promise<boolean> {
+    const userWithRoles = await this.getUserWithRoles(userId);
+    if (!userWithRoles) return false;
+
+    return userWithRoles.roles.some(role =>
+      role.permissions.some(permission =>
+        permission.feature === feature && permission.action === action
+      )
+    );
+  }
+
+  async getUserPermissions(userId: number): Promise<Permission[]> {
+    const userWithRoles = await this.getUserWithRoles(userId);
+    if (!userWithRoles) return [];
+
+    const allPermissions = userWithRoles.roles.flatMap(role => role.permissions);
+    
+    // Remove duplicates
+    const uniquePermissions = allPermissions.filter((permission, index, self) =>
+      index === self.findIndex(p => p.id === permission.id)
+    );
+
+    return uniquePermissions;
+  }
+
+  // Authentication Methods
+  async getUserWithRolesAndPermissions(usernameOrId: string | number): Promise<UserWithRoles | undefined> {
+    if (typeof usernameOrId === 'string') {
+      return await this.getUserWithRolesByUsername(usernameOrId);
+    } else {
+      return await this.getUserWithRoles(usernameOrId);
+    }
+  }
+
+  async updateUserLastLogin(userId: number): Promise<void> {
+    await db
+      .update(users)
+      .set({ lastLogin: new Date() })
+      .where(eq(users.id, userId));
+  }
+
+  private async getUserWithRolesByUsername(username: string): Promise<UserWithRoles | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    if (!user) return undefined;
+
+    return await this.getUserWithRoles(user.id);
   }
 }
 

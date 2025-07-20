@@ -5,9 +5,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, Book, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp } from "lucide-react";
+import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, Book, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, LogOut, User } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import JobForm from "./job-form";
 import ResourceForm from "./resource-form";
@@ -24,6 +25,10 @@ export default function Sidebar() {
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  
+  // Authentication hooks
+  const { user, logout } = useAuth();
+  const { hasPermission } = usePermissions();
 
   const { data: capabilities = [] } = useQuery<Capability[]>({
     queryKey: ["/api/capabilities"],
@@ -139,25 +144,30 @@ export default function Sidebar() {
   };
 
   const navigationItems = [
-    { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals" },
-    { icon: BarChart3, label: "Schedule", href: "/", active: location === "/" },
-    { icon: Target, label: "Optimize Orders", href: "/scheduling-optimizer", active: location === "/scheduling-optimizer" },
-    { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", active: location === "/capacity-planning" },
-    { icon: Smartphone, label: "Shop Floor", href: "/shop-floor", active: location === "/shop-floor" },
-    { icon: Settings, label: "Operator", href: "/operator", active: location === "/operator" },
-    { icon: Truck, label: "Forklift Driver", href: "/forklift", active: location === "/forklift" },
-    { icon: Wrench, label: "Maintenance", href: "/maintenance", active: location === "/maintenance" },
-    { icon: Building, label: "Plant Manager", href: "/plant-manager", active: location === "/plant-manager" },
-    { icon: Server, label: "Systems Management", href: "/systems-management", active: location === "/systems-management" },
-    { icon: Columns3, label: "Boards", href: "/boards", active: location === "/boards" },
-    { icon: Database, label: "ERP Import", href: "/erp-import", active: location === "/erp-import" },
-    { icon: DollarSign, label: "Sales", href: "/sales", active: location === "/sales" },
-    { icon: Headphones, label: "Customer Service", href: "/customer-service", active: location === "/customer-service" },
-    { icon: BarChart3, label: "Analytics", href: "/analytics", active: location === "/analytics" },
-    { icon: FileText, label: "Reports", href: "/reports", active: location === "/reports" },
-    { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback" },
-    { icon: Bot, label: "Max", href: "/ai-assistant", active: location === "/ai-assistant" },
-  ];
+    { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals", feature: "business_goals", action: "view" },
+    { icon: BarChart3, label: "Schedule", href: "/", active: location === "/", feature: "schedule", action: "view" },
+    { icon: Target, label: "Optimize Orders", href: "/scheduling-optimizer", active: location === "/scheduling-optimizer", feature: "scheduling_optimizer", action: "view" },
+    { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", active: location === "/capacity-planning", feature: "capacity_planning", action: "view" },
+    { icon: Smartphone, label: "Shop Floor", href: "/shop-floor", active: location === "/shop-floor", feature: "shop_floor", action: "view" },
+    { icon: Settings, label: "Operator", href: "/operator", active: location === "/operator", feature: "operator_dashboard", action: "view" },
+    { icon: Truck, label: "Forklift Driver", href: "/forklift", active: location === "/forklift", feature: "forklift", action: "view" },
+    { icon: Wrench, label: "Maintenance", href: "/maintenance", active: location === "/maintenance", feature: "maintenance", action: "view" },
+    { icon: Building, label: "Plant Manager", href: "/plant-manager", active: location === "/plant-manager", feature: "plant_manager", action: "view" },
+    { icon: Server, label: "Systems Management", href: "/systems-management", active: location === "/systems-management", feature: "systems_management", action: "view" },
+    { icon: Columns3, label: "Boards", href: "/boards", active: location === "/boards", feature: "boards", action: "view" },
+    { icon: Database, label: "ERP Import", href: "/erp-import", active: location === "/erp-import", feature: "erp_import", action: "view" },
+    { icon: DollarSign, label: "Sales", href: "/sales", active: location === "/sales", feature: "sales", action: "view" },
+    { icon: Headphones, label: "Customer Service", href: "/customer-service", active: location === "/customer-service", feature: "customer_service", action: "view" },
+    { icon: BarChart3, label: "Analytics", href: "/analytics", active: location === "/analytics", feature: "analytics", action: "view" },
+    { icon: FileText, label: "Reports", href: "/reports", active: location === "/reports", feature: "reports", action: "view" },
+    { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback", feature: "feedback", action: "view" },
+    { icon: Bot, label: "Max", href: "/ai-assistant", active: location === "/ai-assistant", feature: "ai_assistant", action: "view" },
+  ].filter(item => 
+    // Always show Schedule dashboard for authenticated users
+    item.href === "/" || 
+    // Show item if user has permission
+    hasPermission(item.feature || "", item.action || "")
+  );
 
   const getNavigationTooltip = (href: string) => {
     const tooltips = {
@@ -233,6 +243,38 @@ export default function Sidebar() {
       </div>
 
       <div className="p-3 md:p-4 border-t border-gray-200 flex-shrink-0">
+        {/* User Info Section */}
+        {user && (
+          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center">
+                <User className="w-4 h-4 text-gray-600 mr-2" />
+                <span className="text-sm font-medium text-gray-800">
+                  {user.firstName} {user.lastName}
+                </span>
+              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => logout()}
+                    className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
+                  >
+                    <LogOut className="w-3 h-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Sign out</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <div className="text-xs text-gray-600">
+              Roles: {user.roles?.map(role => role.name).join(", ") || "No roles"}
+            </div>
+          </div>
+        )}
+        
         <h3 className="text-xs md:text-sm font-medium text-gray-500 mb-3">Quick Actions</h3>
         <div className="space-y-2">
           <Tooltip>

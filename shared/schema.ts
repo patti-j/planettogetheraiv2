@@ -1,7 +1,8 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar, primaryKey } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 export const capabilities = pgTable("capabilities", {
   id: serial("id").primaryKey(),
@@ -978,3 +979,136 @@ export type GoalKpi = typeof goalKpis.$inferSelect;
 
 export type InsertGoalAction = z.infer<typeof insertGoalActionSchema>;
 export type GoalAction = typeof goalActions.$inferSelect;
+
+// User Management Tables
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: varchar("username", { length: 50 }).notNull().unique(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  firstName: varchar("first_name", { length: 50 }).notNull(),
+  lastName: varchar("last_name", { length: 50 }).notNull(),
+  passwordHash: text("password_hash").notNull(),
+  isActive: boolean("is_active").default(true),
+  lastLogin: timestamp("last_login"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const roles = pgTable("roles", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 50 }).notNull().unique(),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const permissions = pgTable("permissions", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  feature: varchar("feature", { length: 50 }).notNull(), // feature category like 'scheduling', 'business_goals', etc.
+  action: varchar("action", { length: 50 }).notNull(), // action like 'view', 'create', 'edit', 'delete'
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const userRoles = pgTable("user_roles", {
+  userId: integer("user_id").references(() => users.id).notNull(),
+  roleId: integer("role_id").references(() => roles.id).notNull(),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+  assignedBy: integer("assigned_by").references(() => users.id),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.userId, table.roleId] }),
+}));
+
+export const rolePermissions = pgTable("role_permissions", {
+  roleId: integer("role_id").references(() => roles.id).notNull(),
+  permissionId: integer("permission_id").references(() => permissions.id).notNull(),
+  grantedAt: timestamp("granted_at").defaultNow(),
+  grantedBy: integer("granted_by").references(() => users.id),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.roleId, table.permissionId] }),
+}));
+
+// User Management Relations
+export const usersRelations = relations(users, ({ many }) => ({
+  userRoles: many(userRoles),
+}));
+
+export const rolesRelations = relations(roles, ({ many }) => ({
+  userRoles: many(userRoles),
+  rolePermissions: many(rolePermissions),
+}));
+
+export const permissionsRelations = relations(permissions, ({ many }) => ({
+  rolePermissions: many(rolePermissions),
+}));
+
+export const userRolesRelations = relations(userRoles, ({ one }) => ({
+  user: one(users, {
+    fields: [userRoles.userId],
+    references: [users.id],
+  }),
+  role: one(roles, {
+    fields: [userRoles.roleId],
+    references: [roles.id],
+  }),
+}));
+
+export const rolePermissionsRelations = relations(rolePermissions, ({ one }) => ({
+  role: one(roles, {
+    fields: [rolePermissions.roleId],
+    references: [roles.id],
+  }),
+  permission: one(permissions, {
+    fields: [rolePermissions.permissionId],
+    references: [permissions.id],
+  }),
+}));
+
+// User Management Insert Schemas
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertRoleSchema = createInsertSchema(roles).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPermissionSchema = createInsertSchema(permissions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserRoleSchema = createInsertSchema(userRoles).omit({
+  assignedAt: true,
+});
+
+export const insertRolePermissionSchema = createInsertSchema(rolePermissions).omit({
+  grantedAt: true,
+});
+
+// User Management Types
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export type Role = typeof roles.$inferSelect;
+export type InsertRole = z.infer<typeof insertRoleSchema>;
+
+export type Permission = typeof permissions.$inferSelect;
+export type InsertPermission = z.infer<typeof insertPermissionSchema>;
+
+export type UserRole = typeof userRoles.$inferSelect;
+export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
+
+export type RolePermission = typeof rolePermissions.$inferSelect;
+export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
+
+// User with roles and permissions type for authentication
+export type UserWithRoles = User & {
+  roles: (Role & {
+    permissions: Permission[];
+  })[];
+};

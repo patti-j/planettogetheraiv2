@@ -12,13 +12,109 @@ import {
   insertCapacityPlanningScenarioSchema, insertStaffingPlanSchema, insertShiftPlanSchema,
   insertEquipmentPlanSchema, insertCapacityProjectionSchema,
   insertBusinessGoalSchema, insertGoalProgressSchema, insertGoalRiskSchema,
-  insertGoalIssueSchema, insertGoalKpiSchema, insertGoalActionSchema
+  insertGoalIssueSchema, insertGoalKpiSchema, insertGoalActionSchema,
+  insertUserSchema, insertRoleSchema, insertPermissionSchema,
+  insertUserRoleSchema, insertRolePermissionSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
 import multer from "multer";
+import session from "express-session";
+import bcrypt from "bcryptjs";
+
+// Session middleware configuration
+function setupSession(app: Express) {
+  app.use(session({
+    secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false, // Set to true in production with HTTPS
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+    }
+  }));
+}
+
+// Authentication middleware
+function requireAuth(req: any, res: any, next: any) {
+  if (!req.session?.userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  next();
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup session middleware
+  setupSession(app);
+
+  // Authentication routes
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+
+      const user = await storage.getUserWithRolesAndPermissions(username);
+      if (!user) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      if (!user.isActive) {
+        return res.status(401).json({ message: "Account is disabled" });
+      }
+
+      // Update last login
+      await storage.updateUserLastLogin(user.id);
+      
+      // Store user ID in session
+      req.session.userId = user.id;
+      
+      // Return user data without password hash
+      const { passwordHash, ...userData } = user;
+      res.json(userData);
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy((err: any) => {
+      if (err) {
+        return res.status(500).json({ message: "Could not log out" });
+      }
+      res.json({ message: "Logged out successfully" });
+    });
+  });
+
+  app.get("/api/auth/me", async (req, res) => {
+    try {
+      if (!req.session?.userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const user = await storage.getUserWithRolesAndPermissions(req.session.userId);
+      if (!user || !user.isActive) {
+        req.session.destroy(() => {});
+        return res.status(401).json({ message: "User not found or inactive" });
+      }
+
+      const { passwordHash, ...userData } = user;
+      res.json(userData);
+    } catch (error) {
+      console.error("Get current user error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Capabilities
   app.get("/api/capabilities", async (req, res) => {
     try {
@@ -2274,6 +2370,443 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating goal action:", error);
       res.status(500).json({ error: "Failed to create goal action" });
+    }
+  });
+
+  // User Management API Routes
+
+  // Authentication
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ error: "Username and password are required" });
+      }
+
+      const user = await storage.authenticateUser(username, password);
+      if (!user) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      res.json(user);
+    } catch (error) {
+      console.error("Error during authentication:", error);
+      res.status(500).json({ error: "Failed to authenticate user" });
+    }
+  });
+
+  // Users
+  app.get("/api/users", async (req, res) => {
+    try {
+      const users = await storage.getUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  app.get("/api/users/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ error: "Failed to fetch user" });
+    }
+  });
+
+  app.get("/api/users/:id/with-roles", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const user = await storage.getUserWithRoles(id);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user with roles:", error);
+      res.status(500).json({ error: "Failed to fetch user with roles" });
+    }
+  });
+
+  app.post("/api/users", async (req, res) => {
+    try {
+      const validation = insertUserSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid user data", details: validation.error.errors });
+      }
+
+      const user = await storage.createUser(validation.data);
+      res.status(201).json(user);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ error: "Failed to create user" });
+    }
+  });
+
+  app.put("/api/users/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const validation = insertUserSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid user data", details: validation.error.errors });
+      }
+
+      const user = await storage.updateUser(id, validation.data);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+
+  app.delete("/api/users/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const success = await storage.deleteUser(id);
+      if (!success) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ error: "Failed to delete user" });
+    }
+  });
+
+  // Roles
+  app.get("/api/roles", async (req, res) => {
+    try {
+      const roles = await storage.getRoles();
+      res.json(roles);
+    } catch (error) {
+      console.error("Error fetching roles:", error);
+      res.status(500).json({ error: "Failed to fetch roles" });
+    }
+  });
+
+  app.get("/api/roles/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid role ID" });
+      }
+
+      const role = await storage.getRole(id);
+      if (!role) {
+        return res.status(404).json({ error: "Role not found" });
+      }
+      res.json(role);
+    } catch (error) {
+      console.error("Error fetching role:", error);
+      res.status(500).json({ error: "Failed to fetch role" });
+    }
+  });
+
+  app.post("/api/roles", async (req, res) => {
+    try {
+      const validation = insertRoleSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid role data", details: validation.error.errors });
+      }
+
+      const role = await storage.createRole(validation.data);
+      res.status(201).json(role);
+    } catch (error) {
+      console.error("Error creating role:", error);
+      res.status(500).json({ error: "Failed to create role" });
+    }
+  });
+
+  app.put("/api/roles/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid role ID" });
+      }
+
+      const validation = insertRoleSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid role data", details: validation.error.errors });
+      }
+
+      const role = await storage.updateRole(id, validation.data);
+      if (!role) {
+        return res.status(404).json({ error: "Role not found" });
+      }
+      res.json(role);
+    } catch (error) {
+      console.error("Error updating role:", error);
+      res.status(500).json({ error: "Failed to update role" });
+    }
+  });
+
+  app.delete("/api/roles/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid role ID" });
+      }
+
+      const success = await storage.deleteRole(id);
+      if (!success) {
+        return res.status(404).json({ error: "Role not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting role:", error);
+      res.status(500).json({ error: "Failed to delete role" });
+    }
+  });
+
+  // Permissions
+  app.get("/api/permissions", async (req, res) => {
+    try {
+      const permissions = await storage.getPermissions();
+      res.json(permissions);
+    } catch (error) {
+      console.error("Error fetching permissions:", error);
+      res.status(500).json({ error: "Failed to fetch permissions" });
+    }
+  });
+
+  app.get("/api/permissions/feature/:feature", async (req, res) => {
+    try {
+      const feature = req.params.feature;
+      const permissions = await storage.getPermissionsByFeature(feature);
+      res.json(permissions);
+    } catch (error) {
+      console.error("Error fetching permissions by feature:", error);
+      res.status(500).json({ error: "Failed to fetch permissions by feature" });
+    }
+  });
+
+  app.post("/api/permissions", async (req, res) => {
+    try {
+      const validation = insertPermissionSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid permission data", details: validation.error.errors });
+      }
+
+      const permission = await storage.createPermission(validation.data);
+      res.status(201).json(permission);
+    } catch (error) {
+      console.error("Error creating permission:", error);
+      res.status(500).json({ error: "Failed to create permission" });
+    }
+  });
+
+  app.put("/api/permissions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid permission ID" });
+      }
+
+      const validation = insertPermissionSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid permission data", details: validation.error.errors });
+      }
+
+      const permission = await storage.updatePermission(id, validation.data);
+      if (!permission) {
+        return res.status(404).json({ error: "Permission not found" });
+      }
+      res.json(permission);
+    } catch (error) {
+      console.error("Error updating permission:", error);
+      res.status(500).json({ error: "Failed to update permission" });
+    }
+  });
+
+  app.delete("/api/permissions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid permission ID" });
+      }
+
+      const success = await storage.deletePermission(id);
+      if (!success) {
+        return res.status(404).json({ error: "Permission not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting permission:", error);
+      res.status(500).json({ error: "Failed to delete permission" });
+    }
+  });
+
+  // User Role Assignment
+  app.get("/api/users/:userId/roles", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const userRoles = await storage.getUserRoles(userId);
+      res.json(userRoles);
+    } catch (error) {
+      console.error("Error fetching user roles:", error);
+      res.status(500).json({ error: "Failed to fetch user roles" });
+    }
+  });
+
+  app.post("/api/users/:userId/roles", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const validation = insertUserRoleSchema.safeParse({
+        ...req.body,
+        userId
+      });
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid user role data", details: validation.error.errors });
+      }
+
+      const userRole = await storage.assignUserRole(validation.data);
+      res.status(201).json(userRole);
+    } catch (error) {
+      console.error("Error assigning user role:", error);
+      res.status(500).json({ error: "Failed to assign user role" });
+    }
+  });
+
+  app.delete("/api/users/:userId/roles/:roleId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const roleId = parseInt(req.params.roleId);
+      if (isNaN(userId) || isNaN(roleId)) {
+        return res.status(400).json({ error: "Invalid user ID or role ID" });
+      }
+
+      const success = await storage.removeUserRole(userId, roleId);
+      if (!success) {
+        return res.status(404).json({ error: "User role assignment not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing user role:", error);
+      res.status(500).json({ error: "Failed to remove user role" });
+    }
+  });
+
+  // Role Permission Assignment
+  app.get("/api/roles/:roleId/permissions", async (req, res) => {
+    try {
+      const roleId = parseInt(req.params.roleId);
+      if (isNaN(roleId)) {
+        return res.status(400).json({ error: "Invalid role ID" });
+      }
+
+      const rolePermissions = await storage.getRolePermissions(roleId);
+      res.json(rolePermissions);
+    } catch (error) {
+      console.error("Error fetching role permissions:", error);
+      res.status(500).json({ error: "Failed to fetch role permissions" });
+    }
+  });
+
+  app.post("/api/roles/:roleId/permissions", async (req, res) => {
+    try {
+      const roleId = parseInt(req.params.roleId);
+      if (isNaN(roleId)) {
+        return res.status(400).json({ error: "Invalid role ID" });
+      }
+
+      const validation = insertRolePermissionSchema.safeParse({
+        ...req.body,
+        roleId
+      });
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid role permission data", details: validation.error.errors });
+      }
+
+      const rolePermission = await storage.assignRolePermission(validation.data);
+      res.status(201).json(rolePermission);
+    } catch (error) {
+      console.error("Error assigning role permission:", error);
+      res.status(500).json({ error: "Failed to assign role permission" });
+    }
+  });
+
+  app.delete("/api/roles/:roleId/permissions/:permissionId", async (req, res) => {
+    try {
+      const roleId = parseInt(req.params.roleId);
+      const permissionId = parseInt(req.params.permissionId);
+      if (isNaN(roleId) || isNaN(permissionId)) {
+        return res.status(400).json({ error: "Invalid role ID or permission ID" });
+      }
+
+      const success = await storage.removeRolePermission(roleId, permissionId);
+      if (!success) {
+        return res.status(404).json({ error: "Role permission assignment not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing role permission:", error);
+      res.status(500).json({ error: "Failed to remove role permission" });
+    }
+  });
+
+  // Permission Checking
+  app.get("/api/users/:userId/permissions", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const permissions = await storage.getUserPermissions(userId);
+      res.json(permissions);
+    } catch (error) {
+      console.error("Error fetching user permissions:", error);
+      res.status(500).json({ error: "Failed to fetch user permissions" });
+    }
+  });
+
+  app.get("/api/users/:userId/permissions/check", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const { feature, action } = req.query;
+      
+      if (isNaN(userId) || !feature || !action) {
+        return res.status(400).json({ error: "User ID, feature, and action are required" });
+      }
+
+      const hasPermission = await storage.hasPermission(userId, feature as string, action as string);
+      res.json({ hasPermission });
+    } catch (error) {
+      console.error("Error checking user permission:", error);
+      res.status(500).json({ error: "Failed to check user permission" });
     }
   });
 
