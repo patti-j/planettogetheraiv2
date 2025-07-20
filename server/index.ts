@@ -14,12 +14,12 @@ declare module "express-session" {
 
 const app = express();
 
-// CORS middleware for session cookies
+// CORS middleware for session cookies - simplified
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Origin', req.headers.origin || 'http://localhost:5000');
+  res.header('Access-Control-Allow-Origin', 'http://localhost:5000');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
   
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
@@ -32,16 +32,23 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Session middleware configuration - must be after CORS and before routes
-// Using memory store temporarily to isolate issue
+const pgSession = connectPg(session);
 app.use(session({
+  store: new pgSession({
+    conString: process.env.DATABASE_URL,
+    createTableIfMissing: true,
+    tableName: 'session'
+  }),
   secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
+  name: 'sessionId', // Change cookie name to avoid conflicts
   cookie: {
-    secure: false, // Set to true in production with HTTPS
-    httpOnly: false, // Allow client-side access for debugging
+    secure: false,
+    httpOnly: false, 
     maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-    sameSite: 'lax', // Allow cross-site cookies
+    sameSite: 'lax',
+    domain: 'localhost' // Explicitly set domain
   }
 }));
 
