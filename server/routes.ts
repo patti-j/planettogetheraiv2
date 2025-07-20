@@ -21,6 +21,7 @@ import { emailService } from "./email";
 import multer from "multer";
 import session from "express-session";
 import bcrypt from "bcryptjs";
+import connectPg from "connect-pg-simple";
 
 // Extend session interface
 declare module "express-session" {
@@ -31,7 +32,13 @@ declare module "express-session" {
 
 // Session middleware configuration
 function setupSession(app: Express) {
+  const pgSession = connectPg(session);
+  
   app.use(session({
+    store: new pgSession({
+      conString: process.env.DATABASE_URL,
+      createTableIfMissing: true,
+    }),
     secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production',
     resave: false,
     saveUninitialized: false,
@@ -83,19 +90,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Store user ID in session
       req.session.userId = user.id;
-      console.log("Login successful, session userId set:", req.session.userId);
       
-      // Save session explicitly
-      req.session.save((err) => {
-        if (err) {
-          console.error("Session save error:", err);
-          return res.status(500).json({ message: "Session error" });
-        }
-        
-        // Return user data without password hash
-        const { passwordHash, ...userData } = user;
-        res.json(userData);
-      });
+      // Return user data without password hash
+      const { passwordHash, ...userData } = user;
+      res.json(userData);
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ message: "Internal server error" });
@@ -113,9 +111,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/auth/me", async (req, res) => {
     try {
-      console.log("Auth check - session:", req.session);
-      console.log("Auth check - session.userId:", req.session?.userId);
-      
       if (!req.session?.userId) {
         return res.status(401).json({ message: "Not authenticated" });
       }
