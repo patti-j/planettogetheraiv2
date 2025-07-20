@@ -52,100 +52,105 @@ function Router() {
   }
 
   return (
-    <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/analytics">
-        <ProtectedRoute feature="analytics" action="view">
-          <Analytics />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/reports">
-        <ProtectedRoute feature="reports" action="view">
-          <Reports />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/ai-assistant">
-        <ProtectedRoute feature="ai_assistant" action="view">
-          <AIAssistant />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/boards">
-        <ProtectedRoute feature="boards" action="view">
-          <Boards />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/shop-floor">
-        <ProtectedRoute feature="shop_floor" action="view">
-          <ShopFloor />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/sales">
-        <ProtectedRoute feature="sales" action="view">
-          <Sales />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/customer-service">
-        <ProtectedRoute feature="customer_service" action="view">
-          <CustomerService />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/operator">
-        <ProtectedRoute feature="operator_dashboard" action="view">
-          <OperatorDashboard />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/maintenance">
-        <ProtectedRoute feature="maintenance" action="view">
-          <Maintenance />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/feedback">
-        <ProtectedRoute feature="feedback" action="view">
-          <Feedback />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/forklift">
-        <ProtectedRoute feature="forklift" action="view">
-          <ForkliftDriver />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/email-settings">
-        <ProtectedRoute feature="email_settings" action="view">
-          <EmailSettings />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/scheduling-optimizer">
-        <ProtectedRoute feature="scheduling_optimizer" action="view">
-          <SchedulingOptimizer />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/erp-import">
-        <ProtectedRoute feature="erp_import" action="view">
-          <ERPImport />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/plant-manager">
-        <ProtectedRoute feature="plant_manager" action="view">
-          <PlantManager />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/systems-management">
-        <ProtectedRoute feature="systems_management" action="view">
-          <SystemsManagement />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/capacity-planning">
-        <ProtectedRoute feature="capacity_planning" action="view">
-          <CapacityPlanning />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/business-goals">
-        <ProtectedRoute feature="business_goals" action="view">
-          <BusinessGoals />
-        </ProtectedRoute>
-      </Route>
-      <Route component={NotFound} />
-    </Switch>
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar />
+      <main className="flex-1 overflow-y-auto w-full">
+        <Switch>
+          <Route path="/" component={Dashboard} />
+          <Route path="/analytics">
+            <ProtectedRoute feature="analytics" action="view">
+              <Analytics />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/reports">
+            <ProtectedRoute feature="reports" action="view">
+              <Reports />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/ai-assistant">
+            <ProtectedRoute feature="ai_assistant" action="view">
+              <AIAssistant />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/boards">
+            <ProtectedRoute feature="boards" action="view">
+              <Boards />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/shop-floor">
+            <ProtectedRoute feature="shop_floor" action="view">
+              <ShopFloor />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/sales">
+            <ProtectedRoute feature="sales" action="view">
+              <Sales />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/customer-service">
+            <ProtectedRoute feature="customer_service" action="view">
+              <CustomerService />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/operator">
+            <ProtectedRoute feature="operator_dashboard" action="view">
+              <OperatorDashboard />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/maintenance">
+            <ProtectedRoute feature="maintenance" action="view">
+              <Maintenance />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/feedback">
+            <ProtectedRoute feature="feedback" action="view">
+              <Feedback />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/forklift">
+            <ProtectedRoute feature="forklift" action="view">
+              <ForkliftDriver />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/email-settings">
+            <ProtectedRoute feature="email_settings" action="view">
+              <EmailSettings />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/scheduling-optimizer">
+            <ProtectedRoute feature="scheduling_optimizer" action="view">
+              <SchedulingOptimizer />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/erp-import">
+            <ProtectedRoute feature="erp_import" action="view">
+              <ERPImport />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/plant-manager">
+            <ProtectedRoute feature="plant_manager" action="view">
+              <PlantManager />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/systems-management">
+            <ProtectedRoute feature="systems_management" action="view">
+              <SystemsManagement />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/capacity-planning">
+            <ProtectedRoute feature="capacity_planning" action="view">
+              <CapacityPlanning />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/business-goals">
+            <ProtectedRoute feature="business_goals" action="view">
+              <BusinessGoals />
+            </ProtectedRoute>
+          </Route>
+          <Route component={NotFound} />
+        </Switch>
+      </main>
+    </div>
   );
 }
 
@@ -154,12 +159,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <DndProvider backend={HTML5Backend}>
         <TooltipProvider>
-          <div className="flex h-screen bg-gray-50">
-            <Sidebar />
-            <main className="flex-1 overflow-y-auto w-full">
-              <Router />
-            </main>
-          </div>
+          <Router />
           <OnboardingWizard />
           <Toaster />
         </TooltipProvider>
