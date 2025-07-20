@@ -69,12 +69,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Setting session userId:", user.id);
       console.log("Session before:", req.session);
       req.session.userId = user.id;
-      console.log("Session after:", req.session);
-      console.log("Session ID:", req.sessionID);
       
-      // Return user data without password hash
-      const { passwordHash, ...userData } = user;
-      res.json(userData);
+      // Force session save and wait for completion
+      req.session.save((err: any) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ message: "Failed to save session" });
+        }
+        
+        console.log("Session saved successfully");
+        console.log("Session after:", req.session);
+        console.log("Session ID:", req.sessionID);
+        
+        // Return user data without password hash
+        const { passwordHash, ...userData } = user;
+        res.json(userData);
+      });
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ message: "Internal server error" });
