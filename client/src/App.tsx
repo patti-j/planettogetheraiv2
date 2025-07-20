@@ -32,7 +32,9 @@ import BusinessGoals from "@/pages/business-goals";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user, loginError } = useAuth();
+
+  console.log("Router state:", { isAuthenticated, isLoading, user, loginError });
 
   if (isLoading) {
     return (
