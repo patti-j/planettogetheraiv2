@@ -496,7 +496,7 @@ export const ScheduleEvaluationSystem: React.FC = () => {
           <Button 
             variant={selectedScenarios.length >= 2 ? "default" : "outline"}
             disabled={selectedScenarios.length < 2}
-            onClick={() => setEvaluationMode('compare')}
+            onClick={() => setActiveTab('compare')}
           >
             <GitCompare className="w-4 h-4 mr-2" />
             Compare Selected ({selectedScenarios.length})
