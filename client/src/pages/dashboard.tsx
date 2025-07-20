@@ -347,7 +347,11 @@ export default function Dashboard() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setShowEvaluationSystem(true)}
+                          onClick={() => {
+                            console.log('Evaluate Schedules clicked, current state:', showEvaluationSystem);
+                            setShowEvaluationSystem(true);
+                            console.log('Setting showEvaluationSystem to true');
+                          }}
                           className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
                         >
                           <GitCompare className="w-4 h-4 mr-1" />
@@ -600,14 +604,27 @@ export default function Dashboard() {
           </div>
 
           {/* Schedule Evaluation System */}
-          <Dialog open={showEvaluationSystem} onOpenChange={setShowEvaluationSystem}>
-            <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Schedule Evaluation System</DialogTitle>
-              </DialogHeader>
-              <ScheduleEvaluationSystem />
-            </DialogContent>
-          </Dialog>
+          {showEvaluationSystem && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-lg shadow-xl max-w-[95vw] max-h-[90vh] overflow-hidden w-full">
+                <div className="p-6 border-b">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold">Schedule Evaluation System</h2>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setShowEvaluationSystem(false)}
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                </div>
+                <div className="overflow-y-auto max-h-[75vh] p-6">
+                  <ScheduleEvaluationSystem />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* AI Analytics Manager */}
           {dashboards && (
