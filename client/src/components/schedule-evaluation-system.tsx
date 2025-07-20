@@ -193,6 +193,59 @@ const ScenarioCard: React.FC<{
   );
 };
 
+// Separate component for discussion rendering to handle hooks properly
+const ScenarioDiscussionCard: React.FC<{ 
+  scenarioId: number, 
+  scenario: ScheduleScenario | undefined 
+}> = ({ scenarioId, scenario }) => {
+  const { data: discussions = [] } = useQuery<ScenarioDiscussion[]>({
+    queryKey: [`/api/scenarios/${scenarioId}/discussions`],
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Discussion: {scenario?.name}</CardTitle>
+        <CardDescription>Collaborative feedback and decision-making</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {discussions.map((discussion: ScenarioDiscussion) => (
+          <div key={discussion.id} className="border-l-4 border-blue-200 pl-4 py-2">
+            <div className="flex items-center justify-between mb-1">
+              <span className="font-medium">{discussion.authorName}</span>
+              <span className="text-sm text-gray-500">
+                {discussion.createdAt && format(new Date(discussion.createdAt), 'MMM d, yyyy HH:mm')}
+              </span>
+            </div>
+            <p className="text-sm text-gray-700">{discussion.message}</p>
+            {discussion.messageType === 'decision' && (
+              <Badge variant="default" className="mt-1">Decision</Badge>
+            )}
+          </div>
+        ))}
+        
+        <div className="mt-4 space-y-2">
+          <Textarea placeholder="Add your comment or feedback..." />
+          <div className="flex justify-between">
+            <Select>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="comment">Comment</SelectItem>
+                <SelectItem value="concern">Concern</SelectItem>
+                <SelectItem value="suggestion">Suggestion</SelectItem>
+                <SelectItem value="decision">Decision</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button>Post Comment</Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 export const ScheduleEvaluationSystem: React.FC = () => {
   const [selectedScenarios, setSelectedScenarios] = useState<number[]>([]);
   const [evaluationMode, setEvaluationMode] = useState<'create' | 'compare' | 'analyze'>('create');
@@ -527,51 +580,12 @@ export const ScheduleEvaluationSystem: React.FC = () => {
             <div className="space-y-6">
               {selectedScenarios.map(scenarioId => {
                 const scenario = scenarios.find((s: ScheduleScenario) => s.id === scenarioId);
-                const { data: discussions = [] } = useQuery<ScenarioDiscussion[]>({
-                  queryKey: [`/api/scenarios/${scenarioId}/discussions`],
-                });
-
                 return (
-                  <Card key={scenarioId}>
-                    <CardHeader>
-                      <CardTitle>Discussion: {scenario?.name}</CardTitle>
-                      <CardDescription>Collaborative feedback and decision-making</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {discussions.map((discussion: ScenarioDiscussion) => (
-                        <div key={discussion.id} className="border-l-4 border-blue-200 pl-4 py-2">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-medium">{discussion.authorName}</span>
-                            <span className="text-sm text-gray-500">
-                              {format(new Date(discussion.createdAt), 'MMM d, yyyy HH:mm')}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-700">{discussion.content}</p>
-                          {discussion.discussionType === 'decision' && (
-                            <Badge variant="default" className="mt-1">Decision</Badge>
-                          )}
-                        </div>
-                      ))}
-                      
-                      <div className="mt-4 space-y-2">
-                        <Textarea placeholder="Add your comment or feedback..." />
-                        <div className="flex justify-between">
-                          <Select>
-                            <SelectTrigger className="w-32">
-                              <SelectValue placeholder="Type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="comment">Comment</SelectItem>
-                              <SelectItem value="concern">Concern</SelectItem>
-                              <SelectItem value="suggestion">Suggestion</SelectItem>
-                              <SelectItem value="decision">Decision</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Button>Post Comment</Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <ScenarioDiscussionCard 
+                    key={scenarioId} 
+                    scenarioId={scenarioId} 
+                    scenario={scenario} 
+                  />
                 );
               })}
             </div>
