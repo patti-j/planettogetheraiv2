@@ -378,6 +378,19 @@ const SchedulingOptimizer: React.FC = () => {
   const [selectedExistingJob, setSelectedExistingJob] = useState<Job | null>(null);
   const [isOptimizingExisting, setIsOptimizingExisting] = useState(false);
   const [showEvaluationSystem, setShowEvaluationSystem] = useState(false);
+  const evaluationSystemRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to evaluation system when it becomes visible
+  useEffect(() => {
+    if (showEvaluationSystem && evaluationSystemRef.current) {
+      setTimeout(() => {
+        evaluationSystemRef.current?.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'start' 
+        });
+      }, 100); // Small delay to ensure component is rendered
+    }
+  }, [showEvaluationSystem]);
 
   // Fetch data with disabled refetch to prevent form re-renders
   const { data: jobs } = useQuery<Job[]>({ 
@@ -1151,7 +1164,7 @@ const SchedulingOptimizer: React.FC = () => {
 
       {/* Schedule Evaluation System */}
       {showEvaluationSystem && (
-        <div className="mt-8 p-6 bg-white rounded-lg border-2 border-purple-500 shadow-lg">
+        <div ref={evaluationSystemRef} className="mt-8 p-6 bg-white rounded-lg border-2 border-purple-500 shadow-lg">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-semibold text-purple-700">Schedule Evaluation System</h2>
             <Button 
