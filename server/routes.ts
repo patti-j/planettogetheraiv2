@@ -64,26 +64,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update last login
       await storage.updateUserLastLogin(user.id);
       
-      // Store user ID in session
+      // Generate a simple token and store user ID in session AND return token
       console.log("=== LOGIN SUCCESS ===");
-      console.log("Setting session userId:", user.id);
-      console.log("Session before:", req.session);
+      const token = `user_${user.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       req.session.userId = user.id;
+      req.session.token = token;
       
-      // Force session save and wait for completion
+      // Force session save and return token
       req.session.save((err: any) => {
         if (err) {
           console.error("Session save error:", err);
           return res.status(500).json({ message: "Failed to save session" });
         }
         
-        console.log("Session saved successfully");
-        console.log("Session after:", req.session);
+        console.log("Session saved successfully with token:", token);
         console.log("Session ID:", req.sessionID);
         
-        // Return user data without password hash
+        // Return user data with token
         const { passwordHash, ...userData } = user;
-        res.json(userData);
+        res.json({ ...userData, token });
       });
     } catch (error) {
       console.error("Login error:", error);
@@ -103,19 +102,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/auth/me", async (req, res) => {
     try {
       console.log("=== AUTH CHECK ===");
-      console.log("Session:", req.session);
       console.log("Session ID:", req.sessionID);
+      console.log("Authorization header:", req.headers.authorization);
       console.log("Session userId:", req.session?.userId);
       
-      if (!req.session?.userId) {
-        console.log("No userId in session, returning 401");
+      let userId = req.session?.userId;
+      
+      // Check for token in Authorization header if session fails
+      if (!userId && req.headers.authorization) {
+        const token = req.headers.authorization.replace('Bearer ', '');
+        console.log("Checking token:", token);
+        
+        // Extract user ID from token (simple format: user_ID_timestamp_random)
+        const tokenParts = token.split('_');
+        if (tokenParts.length >= 2 && tokenParts[0] === 'user') {
+          userId = parseInt(tokenParts[1]);
+          console.log("Token userId:", userId);
+        }
+      }
+      
+      if (!userId) {
+        console.log("No userId found, returning 401");
         return res.status(401).json({ message: "Not authenticated" });
       }
 
-      const user = await storage.getUserWithRolesAndPermissions(req.session.userId);
+      const user = await storage.getUserWithRolesAndPermissions(userId);
       if (!user || !user.isActive) {
-        console.log("User not found or inactive for userId:", req.session.userId);
-        req.session.destroy(() => {});
+        console.log("User not found or inactive for userId:", userId);
         return res.status(401).json({ message: "User not found or inactive" });
       }
 

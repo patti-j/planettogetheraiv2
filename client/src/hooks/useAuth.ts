@@ -35,8 +35,16 @@ export function useAuth() {
     mutationFn: async (credentials: { username: string; password: string }) => {
       console.log("Login attempt:", credentials.username);
       const response = await apiRequest("POST", "/api/auth/login", credentials);
+      const userData = await response.json();
       console.log("Login response received");
-      return response;
+      
+      // Store token in localStorage if provided
+      if (userData.token) {
+        localStorage.setItem('auth_token', userData.token);
+        console.log("Token stored in localStorage");
+      }
+      
+      return userData;
     },
     onSuccess: () => {
       console.log("Login successful, invalidating auth queries");
