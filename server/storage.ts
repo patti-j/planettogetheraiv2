@@ -2,13 +2,16 @@ import {
   capabilities, resources, jobs, operations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
+  capacityPlanningScenarios, staffingPlans, shiftPlans, equipmentPlans, capacityProjections,
   type Capability, type Resource, type Job, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
+  type CapacityPlanningScenario, type StaffingPlan, type ShiftPlan, type EquipmentPlan, type CapacityProjection,
   type InsertCapability, type InsertResource, type InsertJob, 
   type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
-  type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings
+  type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
+  type InsertCapacityPlanningScenario, type InsertStaffingPlan, type InsertShiftPlan, type InsertEquipmentPlan, type InsertCapacityProjection
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -155,6 +158,41 @@ export interface IStorage {
   createSystemSetting(setting: InsertSystemSettings): Promise<SystemSettings>;
   updateSystemSetting(id: number, setting: Partial<InsertSystemSettings>): Promise<SystemSettings | undefined>;
   deleteSystemSetting(id: number): Promise<boolean>;
+
+  // Capacity Planning Scenarios
+  getCapacityPlanningScenarios(): Promise<CapacityPlanningScenario[]>;
+  getCapacityPlanningScenario(id: number): Promise<CapacityPlanningScenario | undefined>;
+  createCapacityPlanningScenario(scenario: InsertCapacityPlanningScenario): Promise<CapacityPlanningScenario>;
+  updateCapacityPlanningScenario(id: number, scenario: Partial<InsertCapacityPlanningScenario>): Promise<CapacityPlanningScenario | undefined>;
+  deleteCapacityPlanningScenario(id: number): Promise<boolean>;
+
+  // Staffing Plans
+  getStaffingPlans(scenarioId?: number): Promise<StaffingPlan[]>;
+  getStaffingPlan(id: number): Promise<StaffingPlan | undefined>;
+  createStaffingPlan(plan: InsertStaffingPlan): Promise<StaffingPlan>;
+  updateStaffingPlan(id: number, plan: Partial<InsertStaffingPlan>): Promise<StaffingPlan | undefined>;
+  deleteStaffingPlan(id: number): Promise<boolean>;
+
+  // Shift Plans
+  getShiftPlans(scenarioId?: number): Promise<ShiftPlan[]>;
+  getShiftPlan(id: number): Promise<ShiftPlan | undefined>;
+  createShiftPlan(plan: InsertShiftPlan): Promise<ShiftPlan>;
+  updateShiftPlan(id: number, plan: Partial<InsertShiftPlan>): Promise<ShiftPlan | undefined>;
+  deleteShiftPlan(id: number): Promise<boolean>;
+
+  // Equipment Plans
+  getEquipmentPlans(scenarioId?: number): Promise<EquipmentPlan[]>;
+  getEquipmentPlan(id: number): Promise<EquipmentPlan | undefined>;
+  createEquipmentPlan(plan: InsertEquipmentPlan): Promise<EquipmentPlan>;
+  updateEquipmentPlan(id: number, plan: Partial<InsertEquipmentPlan>): Promise<EquipmentPlan | undefined>;
+  deleteEquipmentPlan(id: number): Promise<boolean>;
+
+  // Capacity Projections
+  getCapacityProjections(scenarioId?: number): Promise<CapacityProjection[]>;
+  getCapacityProjection(id: number): Promise<CapacityProjection | undefined>;
+  createCapacityProjection(projection: InsertCapacityProjection): Promise<CapacityProjection>;
+  updateCapacityProjection(id: number, projection: Partial<InsertCapacityProjection>): Promise<CapacityProjection | undefined>;
+  deleteCapacityProjection(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -1222,6 +1260,197 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSystemSetting(id: number): Promise<boolean> {
     const result = await db.delete(systemSettings).where(eq(systemSettings.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Capacity Planning Scenarios
+  async getCapacityPlanningScenarios(): Promise<CapacityPlanningScenario[]> {
+    return await db.select().from(capacityPlanningScenarios);
+  }
+
+  async getCapacityPlanningScenario(id: number): Promise<CapacityPlanningScenario | undefined> {
+    const [scenario] = await db
+      .select()
+      .from(capacityPlanningScenarios)
+      .where(eq(capacityPlanningScenarios.id, id));
+    return scenario || undefined;
+  }
+
+  async createCapacityPlanningScenario(scenario: InsertCapacityPlanningScenario): Promise<CapacityPlanningScenario> {
+    const [newScenario] = await db
+      .insert(capacityPlanningScenarios)
+      .values(scenario)
+      .returning();
+    return newScenario;
+  }
+
+  async updateCapacityPlanningScenario(id: number, scenario: Partial<InsertCapacityPlanningScenario>): Promise<CapacityPlanningScenario | undefined> {
+    const [updatedScenario] = await db
+      .update(capacityPlanningScenarios)
+      .set(scenario)
+      .where(eq(capacityPlanningScenarios.id, id))
+      .returning();
+    return updatedScenario || undefined;
+  }
+
+  async deleteCapacityPlanningScenario(id: number): Promise<boolean> {
+    const result = await db.delete(capacityPlanningScenarios).where(eq(capacityPlanningScenarios.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Staffing Plans
+  async getStaffingPlans(scenarioId?: number): Promise<StaffingPlan[]> {
+    let query = db.select().from(staffingPlans);
+    if (scenarioId) {
+      query = query.where(eq(staffingPlans.scenarioId, scenarioId));
+    }
+    return await query;
+  }
+
+  async getStaffingPlan(id: number): Promise<StaffingPlan | undefined> {
+    const [plan] = await db
+      .select()
+      .from(staffingPlans)
+      .where(eq(staffingPlans.id, id));
+    return plan || undefined;
+  }
+
+  async createStaffingPlan(plan: InsertStaffingPlan): Promise<StaffingPlan> {
+    const [newPlan] = await db
+      .insert(staffingPlans)
+      .values(plan)
+      .returning();
+    return newPlan;
+  }
+
+  async updateStaffingPlan(id: number, plan: Partial<InsertStaffingPlan>): Promise<StaffingPlan | undefined> {
+    const [updatedPlan] = await db
+      .update(staffingPlans)
+      .set(plan)
+      .where(eq(staffingPlans.id, id))
+      .returning();
+    return updatedPlan || undefined;
+  }
+
+  async deleteStaffingPlan(id: number): Promise<boolean> {
+    const result = await db.delete(staffingPlans).where(eq(staffingPlans.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Shift Plans
+  async getShiftPlans(scenarioId?: number): Promise<ShiftPlan[]> {
+    let query = db.select().from(shiftPlans);
+    if (scenarioId) {
+      query = query.where(eq(shiftPlans.scenarioId, scenarioId));
+    }
+    return await query;
+  }
+
+  async getShiftPlan(id: number): Promise<ShiftPlan | undefined> {
+    const [plan] = await db
+      .select()
+      .from(shiftPlans)
+      .where(eq(shiftPlans.id, id));
+    return plan || undefined;
+  }
+
+  async createShiftPlan(plan: InsertShiftPlan): Promise<ShiftPlan> {
+    const [newPlan] = await db
+      .insert(shiftPlans)
+      .values(plan)
+      .returning();
+    return newPlan;
+  }
+
+  async updateShiftPlan(id: number, plan: Partial<InsertShiftPlan>): Promise<ShiftPlan | undefined> {
+    const [updatedPlan] = await db
+      .update(shiftPlans)
+      .set(plan)
+      .where(eq(shiftPlans.id, id))
+      .returning();
+    return updatedPlan || undefined;
+  }
+
+  async deleteShiftPlan(id: number): Promise<boolean> {
+    const result = await db.delete(shiftPlans).where(eq(shiftPlans.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Equipment Plans
+  async getEquipmentPlans(scenarioId?: number): Promise<EquipmentPlan[]> {
+    let query = db.select().from(equipmentPlans);
+    if (scenarioId) {
+      query = query.where(eq(equipmentPlans.scenarioId, scenarioId));
+    }
+    return await query;
+  }
+
+  async getEquipmentPlan(id: number): Promise<EquipmentPlan | undefined> {
+    const [plan] = await db
+      .select()
+      .from(equipmentPlans)
+      .where(eq(equipmentPlans.id, id));
+    return plan || undefined;
+  }
+
+  async createEquipmentPlan(plan: InsertEquipmentPlan): Promise<EquipmentPlan> {
+    const [newPlan] = await db
+      .insert(equipmentPlans)
+      .values(plan)
+      .returning();
+    return newPlan;
+  }
+
+  async updateEquipmentPlan(id: number, plan: Partial<InsertEquipmentPlan>): Promise<EquipmentPlan | undefined> {
+    const [updatedPlan] = await db
+      .update(equipmentPlans)
+      .set(plan)
+      .where(eq(equipmentPlans.id, id))
+      .returning();
+    return updatedPlan || undefined;
+  }
+
+  async deleteEquipmentPlan(id: number): Promise<boolean> {
+    const result = await db.delete(equipmentPlans).where(eq(equipmentPlans.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Capacity Projections
+  async getCapacityProjections(scenarioId?: number): Promise<CapacityProjection[]> {
+    let query = db.select().from(capacityProjections);
+    if (scenarioId) {
+      query = query.where(eq(capacityProjections.scenarioId, scenarioId));
+    }
+    return await query;
+  }
+
+  async getCapacityProjection(id: number): Promise<CapacityProjection | undefined> {
+    const [projection] = await db
+      .select()
+      .from(capacityProjections)
+      .where(eq(capacityProjections.id, id));
+    return projection || undefined;
+  }
+
+  async createCapacityProjection(projection: InsertCapacityProjection): Promise<CapacityProjection> {
+    const [newProjection] = await db
+      .insert(capacityProjections)
+      .values(projection)
+      .returning();
+    return newProjection;
+  }
+
+  async updateCapacityProjection(id: number, projection: Partial<InsertCapacityProjection>): Promise<CapacityProjection | undefined> {
+    const [updatedProjection] = await db
+      .update(capacityProjections)
+      .set(projection)
+      .where(eq(capacityProjections.id, id))
+      .returning();
+    return updatedProjection || undefined;
+  }
+
+  async deleteCapacityProjection(id: number): Promise<boolean> {
+    const result = await db.delete(capacityProjections).where(eq(capacityProjections.id, id));
     return (result.rowCount || 0) > 0;
   }
 }

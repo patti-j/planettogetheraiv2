@@ -141,6 +141,7 @@ export default function Sidebar() {
   const navigationItems = [
     { icon: BarChart3, label: "Schedule", href: "/", active: location === "/" },
     { icon: Target, label: "Optimize Orders", href: "/scheduling-optimizer", active: location === "/scheduling-optimizer" },
+    { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", active: location === "/capacity-planning" },
     { icon: Smartphone, label: "Shop Floor", href: "/shop-floor", active: location === "/shop-floor" },
     { icon: Settings, label: "Operator", href: "/operator", active: location === "/operator" },
     { icon: Truck, label: "Forklift Driver", href: "/forklift", active: location === "/forklift" },
@@ -161,6 +162,7 @@ export default function Sidebar() {
     const tooltips = {
       "/": "View production schedule with interactive Gantt charts",
       "/scheduling-optimizer": "Optimize orders with intelligent scheduling and multi-operation planning",
+      "/capacity-planning": "Plan and optimize production capacity including staffing, shifts, and equipment",
       "/shop-floor": "Mobile-optimized interface for production schedulers on the floor",
       "/operator": "Review upcoming operations and report status or problems",
       "/forklift": "Material movement tracking for forklift drivers",

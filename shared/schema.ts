@@ -495,6 +495,158 @@ export const insertSystemSettingsSchema = createInsertSchema(systemSettings).omi
   updatedAt: true,
 });
 
+// Capacity Planning Tables for Production Planners
+
+// Capacity planning scenarios for different planning periods
+export const capacityPlanningScenarios = pgTable("capacity_planning_scenarios", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  planningPeriod: text("planning_period").notNull(), // weekly, monthly, quarterly, yearly
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  status: text("status").notNull().default("draft"), // draft, active, approved, archived
+  createdBy: text("created_by").notNull(),
+  aiRecommendations: jsonb("ai_recommendations").$type<{
+    staffing_recommendations: Array<{
+      department: string;
+      current_staff: number;
+      recommended_staff: number;
+      justification: string;
+      priority: "low" | "medium" | "high";
+    }>;
+    shift_recommendations: Array<{
+      shift_name: string;
+      current_hours: number;
+      recommended_hours: number;
+      days_per_week: number;
+      justification: string;
+    }>;
+    equipment_recommendations: Array<{
+      equipment_type: string;
+      action: "purchase" | "upgrade" | "maintain" | "retire";
+      quantity: number;
+      estimated_cost: number;
+      roi_months: number;
+      justification: string;
+    }>;
+    capacity_projections: {
+      current_capacity: number;
+      projected_capacity: number;
+      bottlenecks: string[];
+      expansion_opportunities: string[];
+    };
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Staffing level planning and decisions
+export const staffingPlans = pgTable("staffing_plans", {
+  id: serial("id").primaryKey(),
+  scenarioId: integer("scenario_id").references(() => capacityPlanningScenarios.id).notNull(),
+  department: text("department").notNull(),
+  jobRole: text("job_role").notNull(),
+  skillLevel: text("skill_level").notNull(), // entry, intermediate, senior, expert
+  currentStaffCount: integer("current_staff_count").notNull(),
+  plannedStaffCount: integer("planned_staff_count").notNull(),
+  hourlyRate: integer("hourly_rate").notNull(), // in cents
+  overtimeMultiplier: integer("overtime_multiplier").notNull().default(150), // 1.5x = 150
+  benefits_cost_percent: integer("benefits_cost_percent").notNull().default(30),
+  recruitment_timeline_weeks: integer("recruitment_timeline_weeks").default(8),
+  training_cost_per_person: integer("training_cost_per_person").default(0),
+  justification: text("justification"),
+  priority: text("priority").notNull().default("medium"), // low, medium, high, critical
+  status: text("status").notNull().default("planned"), // planned, approved, in_progress, completed, cancelled
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Shift planning and scheduling patterns
+export const shiftPlans = pgTable("shift_plans", {
+  id: serial("id").primaryKey(),
+  scenarioId: integer("scenario_id").references(() => capacityPlanningScenarios.id).notNull(),
+  shiftName: text("shift_name").notNull(),
+  startTime: text("start_time").notNull(), // HH:MM format
+  endTime: text("end_time").notNull(), // HH:MM format
+  daysOfWeek: jsonb("days_of_week").$type<number[]>().notNull(), // 0=Sunday, 1=Monday, etc.
+  staffRequired: integer("staff_required").notNull(),
+  premiumRate: integer("premium_rate").default(0), // percentage increase for night/weekend shifts
+  effectiveDate: timestamp("effective_date").notNull(),
+  endDate: timestamp("end_date"),
+  machinesOperating: integer("machines_operating").notNull(),
+  expectedOutput: integer("expected_output").notNull(), // units per hour
+  notes: text("notes"),
+  status: text("status").notNull().default("planned"), // planned, active, inactive
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Equipment planning and investment decisions
+export const equipmentPlans = pgTable("equipment_plans", {
+  id: serial("id").primaryKey(),
+  scenarioId: integer("scenario_id").references(() => capacityPlanningScenarios.id).notNull(),
+  equipmentType: text("equipment_type").notNull(),
+  manufacturer: text("manufacturer"),
+  model: text("model"),
+  action: text("action").notNull(), // purchase, lease, upgrade, maintain, retire
+  quantity: integer("quantity").notNull(),
+  unitCost: integer("unit_cost").notNull(), // in cents
+  installationCost: integer("installation_cost").default(0),
+  maintenanceCostPerYear: integer("maintenance_cost_per_year").default(0),
+  expectedLifespan: integer("expected_lifespan").notNull(), // in years
+  capacityIncrease: integer("capacity_increase").default(0), // percentage increase in production capacity
+  energyConsumption: integer("energy_consumption").default(0), // kWh per hour
+  floorSpaceRequired: integer("floor_space_required").default(0), // square feet
+  requiredSkills: jsonb("required_skills").$type<string[]>().default([]),
+  roi_analysis: jsonb("roi_analysis").$type<{
+    payback_period_months: number;
+    net_present_value: number;
+    internal_rate_of_return: number;
+    break_even_units: number;
+  }>(),
+  justification: text("justification"),
+  priority: text("priority").notNull().default("medium"), // low, medium, high, critical
+  status: text("status").notNull().default("planned"), // planned, approved, ordered, installed, cancelled
+  implementation_timeline: jsonb("implementation_timeline").$type<{
+    planning_weeks: number;
+    procurement_weeks: number;
+    installation_weeks: number;
+    training_weeks: number;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Capacity projections and analysis
+export const capacityProjections = pgTable("capacity_projections", {
+  id: serial("id").primaryKey(),
+  scenarioId: integer("scenario_id").references(() => capacityPlanningScenarios.id).notNull(),
+  resourceType: text("resource_type").notNull(), // machines, labor, facility
+  currentCapacity: integer("current_capacity").notNull(), // units per day
+  projectedCapacity: integer("projected_capacity").notNull(), // units per day after changes
+  demandForecast: integer("demand_forecast").notNull(), // projected demand units per day
+  utilizationRate: integer("utilization_rate").notNull(), // percentage
+  bottleneckFactor: integer("bottleneck_factor").notNull().default(100), // percentage of total capacity limited by this resource
+  seasonalVariation: jsonb("seasonal_variation").$type<{
+    q1_multiplier: number;
+    q2_multiplier: number;
+    q3_multiplier: number;
+    q4_multiplier: number;
+  }>().default({ q1_multiplier: 1.0, q2_multiplier: 1.0, q3_multiplier: 1.0, q4_multiplier: 1.0 }),
+  risksAndMitigation: jsonb("risks_and_mitigation").$type<Array<{
+    risk: string;
+    probability: "low" | "medium" | "high";
+    impact: "low" | "medium" | "high";
+    mitigation: string;
+  }>>().default([]),
+  notes: text("notes"),
+  validFromDate: timestamp("valid_from_date").notNull(),
+  validToDate: timestamp("valid_to_date").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
 export type Capability = typeof capabilities.$inferSelect;
 
@@ -555,3 +707,59 @@ export type SystemAuditLog = typeof systemAuditLog.$inferSelect;
 
 export type InsertSystemSettings = z.infer<typeof insertSystemSettingsSchema>;
 export type SystemSettings = typeof systemSettings.$inferSelect;
+
+// Capacity Planning Insert Schemas
+export const insertCapacityPlanningScenarioSchema = createInsertSchema(capacityPlanningScenarios).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  startDate: z.union([z.string().datetime(), z.date()]),
+  endDate: z.union([z.string().datetime(), z.date()]),
+});
+
+export const insertStaffingPlanSchema = createInsertSchema(staffingPlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertShiftPlanSchema = createInsertSchema(shiftPlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  effectiveDate: z.union([z.string().datetime(), z.date()]),
+  endDate: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertEquipmentPlanSchema = createInsertSchema(equipmentPlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCapacityProjectionSchema = createInsertSchema(capacityProjections).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  validFromDate: z.union([z.string().datetime(), z.date()]),
+  validToDate: z.union([z.string().datetime(), z.date()]),
+});
+
+// Capacity Planning Types
+export type InsertCapacityPlanningScenario = z.infer<typeof insertCapacityPlanningScenarioSchema>;
+export type CapacityPlanningScenario = typeof capacityPlanningScenarios.$inferSelect;
+
+export type InsertStaffingPlan = z.infer<typeof insertStaffingPlanSchema>;
+export type StaffingPlan = typeof staffingPlans.$inferSelect;
+
+export type InsertShiftPlan = z.infer<typeof insertShiftPlanSchema>;
+export type ShiftPlan = typeof shiftPlans.$inferSelect;
+
+export type InsertEquipmentPlan = z.infer<typeof insertEquipmentPlanSchema>;
+export type EquipmentPlan = typeof equipmentPlans.$inferSelect;
+
+export type InsertCapacityProjection = z.infer<typeof insertCapacityProjectionSchema>;
+export type CapacityProjection = typeof capacityProjections.$inferSelect;

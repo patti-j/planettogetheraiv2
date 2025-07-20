@@ -8,7 +8,9 @@ import {
   insertDashboardConfigSchema, insertScheduleScenarioSchema, insertScenarioOperationSchema,
   insertScenarioEvaluationSchema, insertScenarioDiscussionSchema,
   insertSystemUserSchema, insertSystemHealthSchema, insertSystemEnvironmentSchema,
-  insertSystemUpgradeSchema, insertSystemAuditLogSchema, insertSystemSettingsSchema
+  insertSystemUpgradeSchema, insertSystemAuditLogSchema, insertSystemSettingsSchema,
+  insertCapacityPlanningScenarioSchema, insertStaffingPlanSchema, insertShiftPlanSchema,
+  insertEquipmentPlanSchema, insertCapacityProjectionSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -1573,6 +1575,435 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating system setting:", error);
       res.status(500).json({ error: "Failed to update system setting" });
+    }
+  });
+
+  // Capacity Planning Scenarios
+  app.get("/api/capacity-planning-scenarios", async (req, res) => {
+    try {
+      const scenarios = await storage.getCapacityPlanningScenarios();
+      res.json(scenarios);
+    } catch (error) {
+      console.error("Error fetching capacity planning scenarios:", error);
+      res.status(500).json({ error: "Failed to fetch capacity planning scenarios" });
+    }
+  });
+
+  app.get("/api/capacity-planning-scenarios/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid scenario ID" });
+      }
+
+      const scenario = await storage.getCapacityPlanningScenario(id);
+      if (!scenario) {
+        return res.status(404).json({ error: "Capacity planning scenario not found" });
+      }
+      res.json(scenario);
+    } catch (error) {
+      console.error("Error fetching capacity planning scenario:", error);
+      res.status(500).json({ error: "Failed to fetch capacity planning scenario" });
+    }
+  });
+
+  app.post("/api/capacity-planning-scenarios", async (req, res) => {
+    try {
+      const validation = insertCapacityPlanningScenarioSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid capacity planning scenario data", details: validation.error.errors });
+      }
+
+      const scenario = await storage.createCapacityPlanningScenario(validation.data);
+      res.status(201).json(scenario);
+    } catch (error) {
+      console.error("Error creating capacity planning scenario:", error);
+      res.status(500).json({ error: "Failed to create capacity planning scenario" });
+    }
+  });
+
+  app.put("/api/capacity-planning-scenarios/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid scenario ID" });
+      }
+
+      const validation = insertCapacityPlanningScenarioSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid capacity planning scenario data", details: validation.error.errors });
+      }
+
+      const scenario = await storage.updateCapacityPlanningScenario(id, validation.data);
+      if (!scenario) {
+        return res.status(404).json({ error: "Capacity planning scenario not found" });
+      }
+      res.json(scenario);
+    } catch (error) {
+      console.error("Error updating capacity planning scenario:", error);
+      res.status(500).json({ error: "Failed to update capacity planning scenario" });
+    }
+  });
+
+  app.delete("/api/capacity-planning-scenarios/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid scenario ID" });
+      }
+
+      const success = await storage.deleteCapacityPlanningScenario(id);
+      if (!success) {
+        return res.status(404).json({ error: "Capacity planning scenario not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting capacity planning scenario:", error);
+      res.status(500).json({ error: "Failed to delete capacity planning scenario" });
+    }
+  });
+
+  // Staffing Plans
+  app.get("/api/staffing-plans", async (req, res) => {
+    try {
+      const scenarioId = req.query.scenarioId ? parseInt(req.query.scenarioId as string) : undefined;
+      const plans = await storage.getStaffingPlans(scenarioId);
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching staffing plans:", error);
+      res.status(500).json({ error: "Failed to fetch staffing plans" });
+    }
+  });
+
+  app.get("/api/staffing-plans/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid plan ID" });
+      }
+
+      const plan = await storage.getStaffingPlan(id);
+      if (!plan) {
+        return res.status(404).json({ error: "Staffing plan not found" });
+      }
+      res.json(plan);
+    } catch (error) {
+      console.error("Error fetching staffing plan:", error);
+      res.status(500).json({ error: "Failed to fetch staffing plan" });
+    }
+  });
+
+  app.post("/api/staffing-plans", async (req, res) => {
+    try {
+      const validation = insertStaffingPlanSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid staffing plan data", details: validation.error.errors });
+      }
+
+      const plan = await storage.createStaffingPlan(validation.data);
+      res.status(201).json(plan);
+    } catch (error) {
+      console.error("Error creating staffing plan:", error);
+      res.status(500).json({ error: "Failed to create staffing plan" });
+    }
+  });
+
+  app.put("/api/staffing-plans/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid plan ID" });
+      }
+
+      const validation = insertStaffingPlanSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid staffing plan data", details: validation.error.errors });
+      }
+
+      const plan = await storage.updateStaffingPlan(id, validation.data);
+      if (!plan) {
+        return res.status(404).json({ error: "Staffing plan not found" });
+      }
+      res.json(plan);
+    } catch (error) {
+      console.error("Error updating staffing plan:", error);
+      res.status(500).json({ error: "Failed to update staffing plan" });
+    }
+  });
+
+  app.delete("/api/staffing-plans/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid plan ID" });
+      }
+
+      const success = await storage.deleteStaffingPlan(id);
+      if (!success) {
+        return res.status(404).json({ error: "Staffing plan not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting staffing plan:", error);
+      res.status(500).json({ error: "Failed to delete staffing plan" });
+    }
+  });
+
+  // Shift Plans
+  app.get("/api/shift-plans", async (req, res) => {
+    try {
+      const scenarioId = req.query.scenarioId ? parseInt(req.query.scenarioId as string) : undefined;
+      const plans = await storage.getShiftPlans(scenarioId);
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching shift plans:", error);
+      res.status(500).json({ error: "Failed to fetch shift plans" });
+    }
+  });
+
+  app.get("/api/shift-plans/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid plan ID" });
+      }
+
+      const plan = await storage.getShiftPlan(id);
+      if (!plan) {
+        return res.status(404).json({ error: "Shift plan not found" });
+      }
+      res.json(plan);
+    } catch (error) {
+      console.error("Error fetching shift plan:", error);
+      res.status(500).json({ error: "Failed to fetch shift plan" });
+    }
+  });
+
+  app.post("/api/shift-plans", async (req, res) => {
+    try {
+      const validation = insertShiftPlanSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid shift plan data", details: validation.error.errors });
+      }
+
+      const plan = await storage.createShiftPlan(validation.data);
+      res.status(201).json(plan);
+    } catch (error) {
+      console.error("Error creating shift plan:", error);
+      res.status(500).json({ error: "Failed to create shift plan" });
+    }
+  });
+
+  app.put("/api/shift-plans/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid plan ID" });
+      }
+
+      const validation = insertShiftPlanSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid shift plan data", details: validation.error.errors });
+      }
+
+      const plan = await storage.updateShiftPlan(id, validation.data);
+      if (!plan) {
+        return res.status(404).json({ error: "Shift plan not found" });
+      }
+      res.json(plan);
+    } catch (error) {
+      console.error("Error updating shift plan:", error);
+      res.status(500).json({ error: "Failed to update shift plan" });
+    }
+  });
+
+  app.delete("/api/shift-plans/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid plan ID" });
+      }
+
+      const success = await storage.deleteShiftPlan(id);
+      if (!success) {
+        return res.status(404).json({ error: "Shift plan not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting shift plan:", error);
+      res.status(500).json({ error: "Failed to delete shift plan" });
+    }
+  });
+
+  // Equipment Plans
+  app.get("/api/equipment-plans", async (req, res) => {
+    try {
+      const scenarioId = req.query.scenarioId ? parseInt(req.query.scenarioId as string) : undefined;
+      const plans = await storage.getEquipmentPlans(scenarioId);
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching equipment plans:", error);
+      res.status(500).json({ error: "Failed to fetch equipment plans" });
+    }
+  });
+
+  app.get("/api/equipment-plans/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid plan ID" });
+      }
+
+      const plan = await storage.getEquipmentPlan(id);
+      if (!plan) {
+        return res.status(404).json({ error: "Equipment plan not found" });
+      }
+      res.json(plan);
+    } catch (error) {
+      console.error("Error fetching equipment plan:", error);
+      res.status(500).json({ error: "Failed to fetch equipment plan" });
+    }
+  });
+
+  app.post("/api/equipment-plans", async (req, res) => {
+    try {
+      const validation = insertEquipmentPlanSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid equipment plan data", details: validation.error.errors });
+      }
+
+      const plan = await storage.createEquipmentPlan(validation.data);
+      res.status(201).json(plan);
+    } catch (error) {
+      console.error("Error creating equipment plan:", error);
+      res.status(500).json({ error: "Failed to create equipment plan" });
+    }
+  });
+
+  app.put("/api/equipment-plans/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid plan ID" });
+      }
+
+      const validation = insertEquipmentPlanSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid equipment plan data", details: validation.error.errors });
+      }
+
+      const plan = await storage.updateEquipmentPlan(id, validation.data);
+      if (!plan) {
+        return res.status(404).json({ error: "Equipment plan not found" });
+      }
+      res.json(plan);
+    } catch (error) {
+      console.error("Error updating equipment plan:", error);
+      res.status(500).json({ error: "Failed to update equipment plan" });
+    }
+  });
+
+  app.delete("/api/equipment-plans/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid plan ID" });
+      }
+
+      const success = await storage.deleteEquipmentPlan(id);
+      if (!success) {
+        return res.status(404).json({ error: "Equipment plan not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting equipment plan:", error);
+      res.status(500).json({ error: "Failed to delete equipment plan" });
+    }
+  });
+
+  // Capacity Projections
+  app.get("/api/capacity-projections", async (req, res) => {
+    try {
+      const scenarioId = req.query.scenarioId ? parseInt(req.query.scenarioId as string) : undefined;
+      const projections = await storage.getCapacityProjections(scenarioId);
+      res.json(projections);
+    } catch (error) {
+      console.error("Error fetching capacity projections:", error);
+      res.status(500).json({ error: "Failed to fetch capacity projections" });
+    }
+  });
+
+  app.get("/api/capacity-projections/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid projection ID" });
+      }
+
+      const projection = await storage.getCapacityProjection(id);
+      if (!projection) {
+        return res.status(404).json({ error: "Capacity projection not found" });
+      }
+      res.json(projection);
+    } catch (error) {
+      console.error("Error fetching capacity projection:", error);
+      res.status(500).json({ error: "Failed to fetch capacity projection" });
+    }
+  });
+
+  app.post("/api/capacity-projections", async (req, res) => {
+    try {
+      const validation = insertCapacityProjectionSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid capacity projection data", details: validation.error.errors });
+      }
+
+      const projection = await storage.createCapacityProjection(validation.data);
+      res.status(201).json(projection);
+    } catch (error) {
+      console.error("Error creating capacity projection:", error);
+      res.status(500).json({ error: "Failed to create capacity projection" });
+    }
+  });
+
+  app.put("/api/capacity-projections/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid projection ID" });
+      }
+
+      const validation = insertCapacityProjectionSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid capacity projection data", details: validation.error.errors });
+      }
+
+      const projection = await storage.updateCapacityProjection(id, validation.data);
+      if (!projection) {
+        return res.status(404).json({ error: "Capacity projection not found" });
+      }
+      res.json(projection);
+    } catch (error) {
+      console.error("Error updating capacity projection:", error);
+      res.status(500).json({ error: "Failed to update capacity projection" });
+    }
+  });
+
+  app.delete("/api/capacity-projections/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid projection ID" });
+      }
+
+      const success = await storage.deleteCapacityProjection(id);
+      if (!success) {
+        return res.status(404).json({ error: "Capacity projection not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting capacity projection:", error);
+      res.status(500).json({ error: "Failed to delete capacity projection" });
     }
   });
 
