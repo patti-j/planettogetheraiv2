@@ -748,6 +748,8 @@ export const insertCapacityProjectionSchema = createInsertSchema(capacityProject
   validToDate: z.union([z.string().datetime(), z.date()]),
 });
 
+
+
 // Capacity Planning Types
 export type InsertCapacityPlanningScenario = z.infer<typeof insertCapacityPlanningScenarioSchema>;
 export type CapacityPlanningScenario = typeof capacityPlanningScenarios.$inferSelect;
@@ -763,3 +765,216 @@ export type EquipmentPlan = typeof equipmentPlans.$inferSelect;
 
 export type InsertCapacityProjection = z.infer<typeof insertCapacityProjectionSchema>;
 export type CapacityProjection = typeof capacityProjections.$inferSelect;
+
+// Business Goals and Directorial Oversight Tables
+
+// Strategic business goals set by directors
+export const businessGoals = pgTable("business_goals", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(), // financial, operational, strategic, quality, customer, growth
+  goalType: text("goal_type").notNull(), // revenue, cost_reduction, efficiency, quality_improvement, customer_satisfaction, market_share
+  targetValue: integer("target_value").notNull(), // target number (revenue in cents, percentage * 100, etc)
+  currentValue: integer("current_value").default(0),
+  unit: text("unit").notNull(), // dollars, percentage, units, days, etc
+  timeframe: text("timeframe").notNull(), // quarterly, annual, monthly
+  priority: text("priority").notNull().default("medium"), // low, medium, high, critical
+  status: text("status").notNull().default("active"), // active, paused, completed, cancelled
+  owner: text("owner").notNull(), // director/executive responsible
+  department: text("department"), // which department is primarily responsible
+  startDate: timestamp("start_date").notNull(),
+  targetDate: timestamp("target_date").notNull(),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+  createdBy: text("created_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Progress tracking for business goals
+export const goalProgress = pgTable("goal_progress", {
+  id: serial("id").primaryKey(),
+  goalId: integer("goal_id").references(() => businessGoals.id).notNull(),
+  reportedValue: integer("reported_value").notNull(),
+  progressPercentage: integer("progress_percentage").notNull(), // calculated percentage * 100
+  milestone: text("milestone"), // description of what was achieved
+  reportedBy: text("reported_by").notNull(),
+  reportingPeriod: text("reporting_period").notNull(), // Q1-2025, Jan-2025, Week-1-2025
+  metrics: jsonb("metrics").$type<{
+    leading_indicators?: Record<string, number>;
+    lagging_indicators?: Record<string, number>;
+    kpis?: Record<string, number>;
+  }>().default({}),
+  notes: text("notes"),
+  attachments: jsonb("attachments").$type<Array<{
+    name: string;
+    url: string;
+    type: string;
+  }>>().default([]),
+  confidence: integer("confidence").notNull().default(100), // confidence level in reported progress (percentage)
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Risks and issues that may impact business goals
+export const goalRisks = pgTable("goal_risks", {
+  id: serial("id").primaryKey(),
+  goalId: integer("goal_id").references(() => businessGoals.id).notNull(),
+  riskTitle: text("risk_title").notNull(),
+  riskDescription: text("risk_description").notNull(),
+  riskType: text("risk_type").notNull(), // operational, financial, strategic, regulatory, competitive, technological
+  probability: text("probability").notNull(), // low, medium, high
+  impact: text("impact").notNull(), // low, medium, high, critical
+  severity: integer("severity").notNull(), // calculated risk score (1-100)
+  status: text("status").notNull().default("active"), // active, mitigated, resolved, accepted
+  mitigation_plan: text("mitigation_plan"),
+  mitigation_owner: text("mitigation_owner"),
+  mitigation_deadline: timestamp("mitigation_deadline"),
+  identifiedBy: text("identified_by").notNull(),
+  lastReviewed: timestamp("last_reviewed").defaultNow(),
+  escalated: boolean("escalated").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Issues and blockers affecting business goals
+export const goalIssues = pgTable("goal_issues", {
+  id: serial("id").primaryKey(),
+  goalId: integer("goal_id").references(() => businessGoals.id).notNull(),
+  issueTitle: text("issue_title").notNull(),
+  issueDescription: text("issue_description").notNull(),
+  issueType: text("issue_type").notNull(), // blocker, delay, resource_constraint, quality, dependency, external
+  severity: text("severity").notNull(), // low, medium, high, critical
+  impact: text("impact").notNull(), // schedule, budget, quality, scope
+  status: text("status").notNull().default("open"), // open, in_progress, resolved, closed
+  assignedTo: text("assigned_to"),
+  reportedBy: text("reported_by").notNull(),
+  resolutionPlan: text("resolution_plan"),
+  estimatedResolutionDate: timestamp("estimated_resolution_date"),
+  actualResolutionDate: timestamp("actual_resolution_date"),
+  resolutionNotes: text("resolution_notes"),
+  escalated: boolean("escalated").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Key performance indicators linked to business goals
+export const goalKpis = pgTable("goal_kpis", {
+  id: serial("id").primaryKey(),
+  goalId: integer("goal_id").references(() => businessGoals.id).notNull(),
+  kpiName: text("kpi_name").notNull(),
+  kpiDescription: text("kpi_description"),
+  kpiType: text("kpi_type").notNull(), // leading, lagging, operational, financial
+  targetValue: integer("target_value").notNull(),
+  currentValue: integer("current_value").default(0),
+  unit: text("unit").notNull(),
+  frequency: text("frequency").notNull(), // daily, weekly, monthly, quarterly
+  dataSource: text("data_source"), // where the KPI data comes from
+  calculationMethod: text("calculation_method"),
+  owner: text("owner").notNull(),
+  status: text("status").notNull().default("active"), // active, paused, retired
+  threshold_warning: integer("threshold_warning"), // warning threshold value
+  threshold_critical: integer("threshold_critical"), // critical threshold value
+  trend: text("trend"), // improving, declining, stable, volatile
+  lastMeasured: timestamp("last_measured"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Action plans and initiatives to achieve business goals
+export const goalActions = pgTable("goal_actions", {
+  id: serial("id").primaryKey(),
+  goalId: integer("goal_id").references(() => businessGoals.id).notNull(),
+  actionTitle: text("action_title").notNull(),
+  actionDescription: text("action_description").notNull(),
+  actionType: text("action_type").notNull(), // strategic_initiative, operational_improvement, investment, policy_change, training
+  priority: text("priority").notNull().default("medium"), // low, medium, high, critical
+  status: text("status").notNull().default("planned"), // planned, in_progress, completed, cancelled, on_hold
+  assignedTo: text("assigned_to").notNull(),
+  budget: integer("budget").default(0), // in cents
+  expectedImpact: text("expected_impact"),
+  success_criteria: text("success_criteria"),
+  dependencies: jsonb("dependencies").$type<string[]>().default([]),
+  resources_required: jsonb("resources_required").$type<{
+    people?: number;
+    equipment?: string[];
+    skills?: string[];
+    external_support?: string[];
+  }>().default({}),
+  startDate: timestamp("start_date"),
+  targetDate: timestamp("target_date"),
+  completedDate: timestamp("completed_date"),
+  progress: integer("progress").default(0), // percentage * 100
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Business Goals Insert Schemas
+export const insertBusinessGoalSchema = createInsertSchema(businessGoals).omit({
+  id: true,
+  lastUpdated: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  startDate: z.union([z.string().datetime(), z.date()]),
+  targetDate: z.union([z.string().datetime(), z.date()]),
+});
+
+export const insertGoalProgressSchema = createInsertSchema(goalProgress).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertGoalRiskSchema = createInsertSchema(goalRisks).omit({
+  id: true,
+  lastReviewed: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  mitigation_deadline: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertGoalIssueSchema = createInsertSchema(goalIssues).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  estimatedResolutionDate: z.union([z.string().datetime(), z.date()]).optional(),
+  actualResolutionDate: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertGoalKpiSchema = createInsertSchema(goalKpis).omit({
+  id: true,
+  lastMeasured: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertGoalActionSchema = createInsertSchema(goalActions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  startDate: z.union([z.string().datetime(), z.date()]).optional(),
+  targetDate: z.union([z.string().datetime(), z.date()]).optional(),
+  completedDate: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+// Business Goals Types
+export type InsertBusinessGoal = z.infer<typeof insertBusinessGoalSchema>;
+export type BusinessGoal = typeof businessGoals.$inferSelect;
+
+export type InsertGoalProgress = z.infer<typeof insertGoalProgressSchema>;
+export type GoalProgress = typeof goalProgress.$inferSelect;
+
+export type InsertGoalRisk = z.infer<typeof insertGoalRiskSchema>;
+export type GoalRisk = typeof goalRisks.$inferSelect;
+
+export type InsertGoalIssue = z.infer<typeof insertGoalIssueSchema>;
+export type GoalIssue = typeof goalIssues.$inferSelect;
+
+export type InsertGoalKpi = z.infer<typeof insertGoalKpiSchema>;
+export type GoalKpi = typeof goalKpis.$inferSelect;
+
+export type InsertGoalAction = z.infer<typeof insertGoalActionSchema>;
+export type GoalAction = typeof goalActions.$inferSelect;

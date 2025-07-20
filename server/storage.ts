@@ -3,15 +3,18 @@ import {
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
   capacityPlanningScenarios, staffingPlans, shiftPlans, equipmentPlans, capacityProjections,
+  businessGoals, goalProgress, goalRisks, goalIssues, goalKpis, goalActions,
   type Capability, type Resource, type Job, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
   type CapacityPlanningScenario, type StaffingPlan, type ShiftPlan, type EquipmentPlan, type CapacityProjection,
+  type BusinessGoal, type GoalProgress, type GoalRisk, type GoalIssue, type GoalKpi, type GoalAction,
   type InsertCapability, type InsertResource, type InsertJob, 
   type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
-  type InsertCapacityPlanningScenario, type InsertStaffingPlan, type InsertShiftPlan, type InsertEquipmentPlan, type InsertCapacityProjection
+  type InsertCapacityPlanningScenario, type InsertStaffingPlan, type InsertShiftPlan, type InsertEquipmentPlan, type InsertCapacityProjection,
+  type InsertBusinessGoal, type InsertGoalProgress, type InsertGoalRisk, type InsertGoalIssue, type InsertGoalKpi, type InsertGoalAction
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -193,6 +196,48 @@ export interface IStorage {
   createCapacityProjection(projection: InsertCapacityProjection): Promise<CapacityProjection>;
   updateCapacityProjection(id: number, projection: Partial<InsertCapacityProjection>): Promise<CapacityProjection | undefined>;
   deleteCapacityProjection(id: number): Promise<boolean>;
+
+  // Business Goals
+  getBusinessGoals(): Promise<BusinessGoal[]>;
+  getBusinessGoal(id: number): Promise<BusinessGoal | undefined>;
+  createBusinessGoal(goal: InsertBusinessGoal): Promise<BusinessGoal>;
+  updateBusinessGoal(id: number, goal: Partial<InsertBusinessGoal>): Promise<BusinessGoal | undefined>;
+  deleteBusinessGoal(id: number): Promise<boolean>;
+
+  // Goal Progress
+  getGoalProgress(goalId?: number): Promise<GoalProgress[]>;
+  getGoalProgressById(id: number): Promise<GoalProgress | undefined>;
+  createGoalProgress(progress: InsertGoalProgress): Promise<GoalProgress>;
+  updateGoalProgress(id: number, progress: Partial<InsertGoalProgress>): Promise<GoalProgress | undefined>;
+  deleteGoalProgress(id: number): Promise<boolean>;
+
+  // Goal Risks
+  getGoalRisks(goalId?: number): Promise<GoalRisk[]>;
+  getGoalRisk(id: number): Promise<GoalRisk | undefined>;
+  createGoalRisk(risk: InsertGoalRisk): Promise<GoalRisk>;
+  updateGoalRisk(id: number, risk: Partial<InsertGoalRisk>): Promise<GoalRisk | undefined>;
+  deleteGoalRisk(id: number): Promise<boolean>;
+
+  // Goal Issues
+  getGoalIssues(goalId?: number): Promise<GoalIssue[]>;
+  getGoalIssue(id: number): Promise<GoalIssue | undefined>;
+  createGoalIssue(issue: InsertGoalIssue): Promise<GoalIssue>;
+  updateGoalIssue(id: number, issue: Partial<InsertGoalIssue>): Promise<GoalIssue | undefined>;
+  deleteGoalIssue(id: number): Promise<boolean>;
+
+  // Goal KPIs
+  getGoalKpis(goalId?: number): Promise<GoalKpi[]>;
+  getGoalKpi(id: number): Promise<GoalKpi | undefined>;
+  createGoalKpi(kpi: InsertGoalKpi): Promise<GoalKpi>;
+  updateGoalKpi(id: number, kpi: Partial<InsertGoalKpi>): Promise<GoalKpi | undefined>;
+  deleteGoalKpi(id: number): Promise<boolean>;
+
+  // Goal Actions
+  getGoalActions(goalId?: number): Promise<GoalAction[]>;
+  getGoalAction(id: number): Promise<GoalAction | undefined>;
+  createGoalAction(action: InsertGoalAction): Promise<GoalAction>;
+  updateGoalAction(id: number, action: Partial<InsertGoalAction>): Promise<GoalAction | undefined>;
+  deleteGoalAction(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -1451,6 +1496,236 @@ export class DatabaseStorage implements IStorage {
 
   async deleteCapacityProjection(id: number): Promise<boolean> {
     const result = await db.delete(capacityProjections).where(eq(capacityProjections.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Business Goals
+  async getBusinessGoals(): Promise<BusinessGoal[]> {
+    return await db.select().from(businessGoals);
+  }
+
+  async getBusinessGoal(id: number): Promise<BusinessGoal | undefined> {
+    const [goal] = await db
+      .select()
+      .from(businessGoals)
+      .where(eq(businessGoals.id, id));
+    return goal || undefined;
+  }
+
+  async createBusinessGoal(goal: InsertBusinessGoal): Promise<BusinessGoal> {
+    const [newGoal] = await db
+      .insert(businessGoals)
+      .values(goal)
+      .returning();
+    return newGoal;
+  }
+
+  async updateBusinessGoal(id: number, goal: Partial<InsertBusinessGoal>): Promise<BusinessGoal | undefined> {
+    const [updatedGoal] = await db
+      .update(businessGoals)
+      .set(goal)
+      .where(eq(businessGoals.id, id))
+      .returning();
+    return updatedGoal || undefined;
+  }
+
+  async deleteBusinessGoal(id: number): Promise<boolean> {
+    const result = await db.delete(businessGoals).where(eq(businessGoals.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Goal Progress
+  async getGoalProgress(goalId?: number): Promise<GoalProgress[]> {
+    let query = db.select().from(goalProgress);
+    if (goalId) {
+      query = query.where(eq(goalProgress.goalId, goalId));
+    }
+    return await query;
+  }
+
+  async getGoalProgressById(id: number): Promise<GoalProgress | undefined> {
+    const [progress] = await db
+      .select()
+      .from(goalProgress)
+      .where(eq(goalProgress.id, id));
+    return progress || undefined;
+  }
+
+  async createGoalProgress(progress: InsertGoalProgress): Promise<GoalProgress> {
+    const [newProgress] = await db
+      .insert(goalProgress)
+      .values(progress)
+      .returning();
+    return newProgress;
+  }
+
+  async updateGoalProgress(id: number, progress: Partial<InsertGoalProgress>): Promise<GoalProgress | undefined> {
+    const [updatedProgress] = await db
+      .update(goalProgress)
+      .set(progress)
+      .where(eq(goalProgress.id, id))
+      .returning();
+    return updatedProgress || undefined;
+  }
+
+  async deleteGoalProgress(id: number): Promise<boolean> {
+    const result = await db.delete(goalProgress).where(eq(goalProgress.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Goal Risks
+  async getGoalRisks(goalId?: number): Promise<GoalRisk[]> {
+    let query = db.select().from(goalRisks);
+    if (goalId) {
+      query = query.where(eq(goalRisks.goalId, goalId));
+    }
+    return await query;
+  }
+
+  async getGoalRisk(id: number): Promise<GoalRisk | undefined> {
+    const [risk] = await db
+      .select()
+      .from(goalRisks)
+      .where(eq(goalRisks.id, id));
+    return risk || undefined;
+  }
+
+  async createGoalRisk(risk: InsertGoalRisk): Promise<GoalRisk> {
+    const [newRisk] = await db
+      .insert(goalRisks)
+      .values(risk)
+      .returning();
+    return newRisk;
+  }
+
+  async updateGoalRisk(id: number, risk: Partial<InsertGoalRisk>): Promise<GoalRisk | undefined> {
+    const [updatedRisk] = await db
+      .update(goalRisks)
+      .set(risk)
+      .where(eq(goalRisks.id, id))
+      .returning();
+    return updatedRisk || undefined;
+  }
+
+  async deleteGoalRisk(id: number): Promise<boolean> {
+    const result = await db.delete(goalRisks).where(eq(goalRisks.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Goal Issues
+  async getGoalIssues(goalId?: number): Promise<GoalIssue[]> {
+    let query = db.select().from(goalIssues);
+    if (goalId) {
+      query = query.where(eq(goalIssues.goalId, goalId));
+    }
+    return await query;
+  }
+
+  async getGoalIssue(id: number): Promise<GoalIssue | undefined> {
+    const [issue] = await db
+      .select()
+      .from(goalIssues)
+      .where(eq(goalIssues.id, id));
+    return issue || undefined;
+  }
+
+  async createGoalIssue(issue: InsertGoalIssue): Promise<GoalIssue> {
+    const [newIssue] = await db
+      .insert(goalIssues)
+      .values(issue)
+      .returning();
+    return newIssue;
+  }
+
+  async updateGoalIssue(id: number, issue: Partial<InsertGoalIssue>): Promise<GoalIssue | undefined> {
+    const [updatedIssue] = await db
+      .update(goalIssues)
+      .set(issue)
+      .where(eq(goalIssues.id, id))
+      .returning();
+    return updatedIssue || undefined;
+  }
+
+  async deleteGoalIssue(id: number): Promise<boolean> {
+    const result = await db.delete(goalIssues).where(eq(goalIssues.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Goal KPIs
+  async getGoalKpis(goalId?: number): Promise<GoalKpi[]> {
+    let query = db.select().from(goalKpis);
+    if (goalId) {
+      query = query.where(eq(goalKpis.goalId, goalId));
+    }
+    return await query;
+  }
+
+  async getGoalKpi(id: number): Promise<GoalKpi | undefined> {
+    const [kpi] = await db
+      .select()
+      .from(goalKpis)
+      .where(eq(goalKpis.id, id));
+    return kpi || undefined;
+  }
+
+  async createGoalKpi(kpi: InsertGoalKpi): Promise<GoalKpi> {
+    const [newKpi] = await db
+      .insert(goalKpis)
+      .values(kpi)
+      .returning();
+    return newKpi;
+  }
+
+  async updateGoalKpi(id: number, kpi: Partial<InsertGoalKpi>): Promise<GoalKpi | undefined> {
+    const [updatedKpi] = await db
+      .update(goalKpis)
+      .set(kpi)
+      .where(eq(goalKpis.id, id))
+      .returning();
+    return updatedKpi || undefined;
+  }
+
+  async deleteGoalKpi(id: number): Promise<boolean> {
+    const result = await db.delete(goalKpis).where(eq(goalKpis.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Goal Actions
+  async getGoalActions(goalId?: number): Promise<GoalAction[]> {
+    let query = db.select().from(goalActions);
+    if (goalId) {
+      query = query.where(eq(goalActions.goalId, goalId));
+    }
+    return await query;
+  }
+
+  async getGoalAction(id: number): Promise<GoalAction | undefined> {
+    const [action] = await db
+      .select()
+      .from(goalActions)
+      .where(eq(goalActions.id, id));
+    return action || undefined;
+  }
+
+  async createGoalAction(action: InsertGoalAction): Promise<GoalAction> {
+    const [newAction] = await db
+      .insert(goalActions)
+      .values(action)
+      .returning();
+    return newAction;
+  }
+
+  async updateGoalAction(id: number, action: Partial<InsertGoalAction>): Promise<GoalAction | undefined> {
+    const [updatedAction] = await db
+      .update(goalActions)
+      .set(action)
+      .where(eq(goalActions.id, id))
+      .returning();
+    return updatedAction || undefined;
+  }
+
+  async deleteGoalAction(id: number): Promise<boolean> {
+    const result = await db.delete(goalActions).where(eq(goalActions.id, id));
     return (result.rowCount || 0) > 0;
   }
 }

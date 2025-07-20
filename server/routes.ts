@@ -10,7 +10,9 @@ import {
   insertSystemUserSchema, insertSystemHealthSchema, insertSystemEnvironmentSchema,
   insertSystemUpgradeSchema, insertSystemAuditLogSchema, insertSystemSettingsSchema,
   insertCapacityPlanningScenarioSchema, insertStaffingPlanSchema, insertShiftPlanSchema,
-  insertEquipmentPlanSchema, insertCapacityProjectionSchema
+  insertEquipmentPlanSchema, insertCapacityProjectionSchema,
+  insertBusinessGoalSchema, insertGoalProgressSchema, insertGoalRiskSchema,
+  insertGoalIssueSchema, insertGoalKpiSchema, insertGoalActionSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -2025,6 +2027,253 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting capacity projection:", error);
       res.status(500).json({ error: "Failed to delete capacity projection" });
+    }
+  });
+
+  // Business Goals
+  app.get("/api/business-goals", async (req, res) => {
+    try {
+      const goals = await storage.getBusinessGoals();
+      res.json(goals);
+    } catch (error) {
+      console.error("Error fetching business goals:", error);
+      res.status(500).json({ error: "Failed to fetch business goals" });
+    }
+  });
+
+  app.get("/api/business-goals/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid goal ID" });
+      }
+
+      const goal = await storage.getBusinessGoal(id);
+      if (!goal) {
+        return res.status(404).json({ error: "Business goal not found" });
+      }
+      res.json(goal);
+    } catch (error) {
+      console.error("Error fetching business goal:", error);
+      res.status(500).json({ error: "Failed to fetch business goal" });
+    }
+  });
+
+  app.post("/api/business-goals", async (req, res) => {
+    try {
+      const validation = insertBusinessGoalSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid business goal data", details: validation.error.errors });
+      }
+
+      // Convert date strings to Date objects
+      const data = {
+        ...validation.data,
+        startDate: new Date(validation.data.startDate),
+        targetDate: new Date(validation.data.targetDate)
+      };
+
+      const goal = await storage.createBusinessGoal(data);
+      res.status(201).json(goal);
+    } catch (error) {
+      console.error("Error creating business goal:", error);
+      res.status(500).json({ error: "Failed to create business goal" });
+    }
+  });
+
+  app.put("/api/business-goals/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid goal ID" });
+      }
+
+      const validation = insertBusinessGoalSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid business goal data", details: validation.error.errors });
+      }
+
+      // Convert date strings to Date objects if present
+      const data: any = { ...validation.data };
+      if (data.startDate) data.startDate = new Date(data.startDate);
+      if (data.targetDate) data.targetDate = new Date(data.targetDate);
+
+      const goal = await storage.updateBusinessGoal(id, data);
+      if (!goal) {
+        return res.status(404).json({ error: "Business goal not found" });
+      }
+      res.json(goal);
+    } catch (error) {
+      console.error("Error updating business goal:", error);
+      res.status(500).json({ error: "Failed to update business goal" });
+    }
+  });
+
+  app.delete("/api/business-goals/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid goal ID" });
+      }
+
+      const success = await storage.deleteBusinessGoal(id);
+      if (!success) {
+        return res.status(404).json({ error: "Business goal not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting business goal:", error);
+      res.status(500).json({ error: "Failed to delete business goal" });
+    }
+  });
+
+  // Goal Progress
+  app.get("/api/goal-progress", async (req, res) => {
+    try {
+      const goalId = req.query.goalId ? parseInt(req.query.goalId as string) : undefined;
+      const progress = await storage.getGoalProgress(goalId);
+      res.json(progress);
+    } catch (error) {
+      console.error("Error fetching goal progress:", error);
+      res.status(500).json({ error: "Failed to fetch goal progress" });
+    }
+  });
+
+  app.post("/api/goal-progress", async (req, res) => {
+    try {
+      const validation = insertGoalProgressSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid goal progress data", details: validation.error.errors });
+      }
+
+      const progress = await storage.createGoalProgress(validation.data);
+      res.status(201).json(progress);
+    } catch (error) {
+      console.error("Error creating goal progress:", error);
+      res.status(500).json({ error: "Failed to create goal progress" });
+    }
+  });
+
+  // Goal Risks
+  app.get("/api/goal-risks", async (req, res) => {
+    try {
+      const goalId = req.query.goalId ? parseInt(req.query.goalId as string) : undefined;
+      const risks = await storage.getGoalRisks(goalId);
+      res.json(risks);
+    } catch (error) {
+      console.error("Error fetching goal risks:", error);
+      res.status(500).json({ error: "Failed to fetch goal risks" });
+    }
+  });
+
+  app.post("/api/goal-risks", async (req, res) => {
+    try {
+      const validation = insertGoalRiskSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid goal risk data", details: validation.error.errors });
+      }
+
+      // Convert date strings to Date objects if present
+      const data: any = { ...validation.data };
+      if (data.mitigation_deadline) data.mitigation_deadline = new Date(data.mitigation_deadline);
+
+      const risk = await storage.createGoalRisk(data);
+      res.status(201).json(risk);
+    } catch (error) {
+      console.error("Error creating goal risk:", error);
+      res.status(500).json({ error: "Failed to create goal risk" });
+    }
+  });
+
+  // Goal Issues
+  app.get("/api/goal-issues", async (req, res) => {
+    try {
+      const goalId = req.query.goalId ? parseInt(req.query.goalId as string) : undefined;
+      const issues = await storage.getGoalIssues(goalId);
+      res.json(issues);
+    } catch (error) {
+      console.error("Error fetching goal issues:", error);
+      res.status(500).json({ error: "Failed to fetch goal issues" });
+    }
+  });
+
+  app.post("/api/goal-issues", async (req, res) => {
+    try {
+      const validation = insertGoalIssueSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid goal issue data", details: validation.error.errors });
+      }
+
+      // Convert date strings to Date objects if present
+      const data: any = { ...validation.data };
+      if (data.estimatedResolutionDate) data.estimatedResolutionDate = new Date(data.estimatedResolutionDate);
+      if (data.actualResolutionDate) data.actualResolutionDate = new Date(data.actualResolutionDate);
+
+      const issue = await storage.createGoalIssue(data);
+      res.status(201).json(issue);
+    } catch (error) {
+      console.error("Error creating goal issue:", error);
+      res.status(500).json({ error: "Failed to create goal issue" });
+    }
+  });
+
+  // Goal KPIs
+  app.get("/api/goal-kpis", async (req, res) => {
+    try {
+      const goalId = req.query.goalId ? parseInt(req.query.goalId as string) : undefined;
+      const kpis = await storage.getGoalKpis(goalId);
+      res.json(kpis);
+    } catch (error) {
+      console.error("Error fetching goal KPIs:", error);
+      res.status(500).json({ error: "Failed to fetch goal KPIs" });
+    }
+  });
+
+  app.post("/api/goal-kpis", async (req, res) => {
+    try {
+      const validation = insertGoalKpiSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid goal KPI data", details: validation.error.errors });
+      }
+
+      const kpi = await storage.createGoalKpi(validation.data);
+      res.status(201).json(kpi);
+    } catch (error) {
+      console.error("Error creating goal KPI:", error);
+      res.status(500).json({ error: "Failed to create goal KPI" });
+    }
+  });
+
+  // Goal Actions
+  app.get("/api/goal-actions", async (req, res) => {
+    try {
+      const goalId = req.query.goalId ? parseInt(req.query.goalId as string) : undefined;
+      const actions = await storage.getGoalActions(goalId);
+      res.json(actions);
+    } catch (error) {
+      console.error("Error fetching goal actions:", error);
+      res.status(500).json({ error: "Failed to fetch goal actions" });
+    }
+  });
+
+  app.post("/api/goal-actions", async (req, res) => {
+    try {
+      const validation = insertGoalActionSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid goal action data", details: validation.error.errors });
+      }
+
+      // Convert date strings to Date objects if present
+      const data: any = { ...validation.data };
+      if (data.startDate) data.startDate = new Date(data.startDate);
+      if (data.targetDate) data.targetDate = new Date(data.targetDate);
+      if (data.completedDate) data.completedDate = new Date(data.completedDate);
+
+      const action = await storage.createGoalAction(data);
+      res.status(201).json(action);
+    } catch (error) {
+      console.error("Error creating goal action:", error);
+      res.status(500).json({ error: "Failed to create goal action" });
     }
   });
 

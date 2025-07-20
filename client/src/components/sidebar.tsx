@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, Book, Truck, ChevronDown, Target, Database, Building, Server } from "lucide-react";
+import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, Book, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -148,6 +148,7 @@ export default function Sidebar() {
     { icon: Wrench, label: "Maintenance", href: "/maintenance", active: location === "/maintenance" },
     { icon: Building, label: "Plant Manager", href: "/plant-manager", active: location === "/plant-manager" },
     { icon: Server, label: "Systems Management", href: "/systems-management", active: location === "/systems-management" },
+    { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals" },
     { icon: Columns3, label: "Boards", href: "/boards", active: location === "/boards" },
     { icon: Database, label: "ERP Import", href: "/erp-import", active: location === "/erp-import" },
     { icon: DollarSign, label: "Sales", href: "/sales", active: location === "/sales" },
@@ -169,6 +170,7 @@ export default function Sidebar() {
       "/maintenance": "Plan and manage resource maintenance schedules and work orders",
       "/plant-manager": "Comprehensive plant operations oversight and strategic decision-making",
       "/systems-management": "Monitor system health, manage users, and oversee IT infrastructure",
+      "/business-goals": "Define strategic objectives, track progress, and monitor risks that impact business success",
       "/boards": "Organize jobs, operations, and resources with drag-and-drop boards",
       "/erp-import": "Import and manage data from external ERP systems with issue tracking",
       "/sales": "Manage sales leads, orders, and customer relationships",

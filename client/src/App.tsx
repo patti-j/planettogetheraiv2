@@ -25,6 +25,7 @@ import ERPImport from "@/pages/erp-import";
 import PlantManager from "@/pages/plant-manager";
 import SystemsManagement from "@/pages/systems-management";
 import CapacityPlanning from "@/pages/capacity-planning";
+import BusinessGoals from "@/pages/business-goals";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -48,6 +49,7 @@ function Router() {
       <Route path="/plant-manager" component={PlantManager} />
       <Route path="/systems-management" component={SystemsManagement} />
       <Route path="/capacity-planning" component={CapacityPlanning} />
+      <Route path="/business-goals" component={BusinessGoals} />
       <Route component={NotFound} />
     </Switch>
   );
