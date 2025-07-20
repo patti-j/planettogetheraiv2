@@ -33,11 +33,18 @@ export function useAuth() {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { username: string; password: string }) => {
-      return apiRequest("POST", "/api/auth/login", credentials);
+      console.log("Login attempt:", credentials.username);
+      const response = await apiRequest("POST", "/api/auth/login", credentials);
+      console.log("Login response received");
+      return response;
     },
     onSuccess: () => {
+      console.log("Login successful, invalidating auth queries");
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
+    onError: (error) => {
+      console.error("Login error:", error);
+    }
   });
 
   const logoutMutation = useMutation({
