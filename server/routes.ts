@@ -2450,6 +2450,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/users-with-roles", async (req, res) => {
+    try {
+      const users = await storage.getUsersWithRoles();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users with roles:", error);
+      res.status(500).json({ error: "Failed to fetch users with roles" });
+    }
+  });
+
   app.get("/api/users/:id/with-roles", async (req, res) => {
     try {
       const id = parseInt(req.params.id);

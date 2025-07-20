@@ -30,6 +30,7 @@ import SystemsManagement from "@/pages/systems-management";
 import CapacityPlanning from "@/pages/capacity-planning";
 import BusinessGoals from "@/pages/business-goals";
 import RoleManagement from "@/pages/role-management";
+import UserRoleAssignments from "@/pages/user-role-assignments";
 import Training from "@/pages/training";
 import NotFound from "@/pages/not-found";
 
@@ -152,6 +153,11 @@ function Router() {
           <Route path="/role-management">
             <ProtectedRoute feature="user-management" action="view">
               <RoleManagement />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/user-role-assignments">
+            <ProtectedRoute feature="user-management" action="view">
+              <UserRoleAssignments />
             </ProtectedRoute>
           </Route>
           <Route path="/training">

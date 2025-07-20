@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { UserRoleManager } from "@/components/user-role-manager";
 
 interface Role {
   id: number;

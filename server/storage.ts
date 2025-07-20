@@ -245,6 +245,7 @@ export interface IStorage {
 
   // User Management
   getUsers(): Promise<User[]>;
+  getUsersWithRoles(): Promise<UserWithRoles[]>;
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
@@ -1804,6 +1805,48 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .where(eq(users.email, email));
     return user || undefined;
+  }
+
+  async getUsersWithRoles(): Promise<UserWithRoles[]> {
+    const allUsers = await this.getUsers();
+    
+    // Get all user roles with associated role and permission data
+    const userRolesList = await db
+      .select({
+        userId: userRoles.userId,
+        role: roles,
+        permission: permissions,
+      })
+      .from(userRoles)
+      .leftJoin(roles, eq(userRoles.roleId, roles.id))
+      .leftJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
+      .leftJoin(permissions, eq(rolePermissions.permissionId, permissions.id));
+
+    // Group roles by user ID
+    const userRolesMap = new Map<number, Map<number, Role & { permissions: Permission[] }>>();
+    
+    userRolesList.forEach(({ userId, role, permission }) => {
+      if (!role) return;
+      
+      if (!userRolesMap.has(userId)) {
+        userRolesMap.set(userId, new Map());
+      }
+      
+      const userRoles = userRolesMap.get(userId)!;
+      if (!userRoles.has(role.id)) {
+        userRoles.set(role.id, { ...role, permissions: [] });
+      }
+      
+      if (permission) {
+        userRoles.get(role.id)!.permissions.push(permission);
+      }
+    });
+
+    // Combine users with their roles
+    return allUsers.map(user => ({
+      ...user,
+      roles: Array.from(userRolesMap.get(user.id)?.values() || []),
+    }));
   }
 
   async getUserWithRoles(id: number): Promise<UserWithRoles | undefined> {
