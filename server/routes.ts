@@ -23,32 +23,9 @@ import session from "express-session";
 import bcrypt from "bcryptjs";
 import connectPg from "connect-pg-simple";
 
-// Extend session interface
-declare module "express-session" {
-  interface SessionData {
-    userId: number;
-  }
-}
+// Session interface is declared in index.ts
 
-// Session middleware configuration
-function setupSession(app: Express) {
-  const pgSession = connectPg(session);
-  
-  app.use(session({
-    store: new pgSession({
-      conString: process.env.DATABASE_URL,
-      createTableIfMissing: true,
-    }),
-    secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: false, // Set to true in production with HTTPS
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-    }
-  }));
-}
+// Session is now configured in index.ts
 
 // Authentication middleware
 function requireAuth(req: any, res: any, next: any) {
@@ -59,8 +36,7 @@ function requireAuth(req: any, res: any, next: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup session middleware
-  setupSession(app);
+  // Session middleware is configured in index.ts
 
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {

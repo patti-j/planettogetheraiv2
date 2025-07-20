@@ -2,6 +2,15 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { seedDatabase } from "./seed";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
+
+// Extend session interface
+declare module "express-session" {
+  interface SessionData {
+    userId: number;
+  }
+}
 
 const app = express();
 
@@ -21,6 +30,23 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Session middleware configuration - must be after CORS and before routes
+const pgSession = connectPg(session);
+app.use(session({
+  store: new pgSession({
+    conString: process.env.DATABASE_URL,
+    createTableIfMissing: true,
+  }),
+  secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false, // Set to true in production with HTTPS
+    httpOnly: true,
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+  }
+}));
 
 app.use((req, res, next) => {
   const start = Date.now();
