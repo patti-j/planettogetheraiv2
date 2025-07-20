@@ -847,6 +847,7 @@ export function EnhancedDashboardManager({
                                         const startHeight = widget.size.height;
                                         
                                         const handleMouseMove = (e: MouseEvent) => {
+                                          const snapSize = 20; // Grid size for snapping
                                           const rawWidth = Math.max(100, Math.min(canvasWidth - widget.position.x, startWidth + (e.clientX - startX)));
                                           const rawHeight = Math.max(80, Math.min(canvasHeight - widget.position.y, startHeight + (e.clientY - startY)));
                                           
@@ -884,6 +885,7 @@ export function EnhancedDashboardManager({
                                         const startWidth = widget.size.width;
                                         
                                         const handleMouseMove = (e: MouseEvent) => {
+                                          const snapSize = 20; // Grid size for snapping
                                           const rawWidth = Math.max(100, Math.min(canvasWidth - widget.position.x, startWidth + (e.clientX - startX)));
                                           
                                           // Snap to grid
@@ -919,6 +921,7 @@ export function EnhancedDashboardManager({
                                         const startHeight = widget.size.height;
                                         
                                         const handleMouseMove = (e: MouseEvent) => {
+                                          const snapSize = 20; // Grid size for snapping
                                           const rawHeight = Math.max(80, Math.min(canvasHeight - widget.position.y, startHeight + (e.clientY - startY)));
                                           
                                           // Snap to grid
