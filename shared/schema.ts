@@ -989,6 +989,7 @@ export const users = pgTable("users", {
   lastName: varchar("last_name", { length: 50 }).notNull(),
   passwordHash: text("password_hash").notNull(),
   isActive: boolean("is_active").default(true),
+  activeRoleId: integer("active_role_id").references(() => roles.id),
   lastLogin: timestamp("last_login"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

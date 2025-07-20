@@ -5,13 +5,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, Book, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, LogOut, User, Shield } from "lucide-react";
+import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, Book, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, LogOut, User, Shield, GraduationCap } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import JobForm from "./job-form";
 import ResourceForm from "./resource-form";
+import { RoleSwitcher } from "./role-switcher";
 import type { Capability } from "@shared/schema";
 
 export default function Sidebar() {
@@ -155,6 +156,7 @@ export default function Sidebar() {
     { icon: Building, label: "Plant Manager", href: "/plant-manager", active: location === "/plant-manager", feature: "plant-manager", action: "view" },
     { icon: Server, label: "Systems Management", href: "/systems-management", active: location === "/systems-management", feature: "systems-management", action: "view" },
     { icon: Shield, label: "Role Management", href: "/role-management", active: location === "/role-management", feature: "user-management", action: "view" },
+    { icon: GraduationCap, label: "Training", href: "/training", active: location === "/training", feature: "training", action: "view" },
     { icon: Columns3, label: "Boards", href: "/boards", active: location === "/boards", feature: "boards", action: "view" },
     { icon: Database, label: "ERP Import", href: "/erp-import", active: location === "/erp-import", feature: "erp-import", action: "view" },
     { icon: DollarSign, label: "Sales", href: "/sales", active: location === "/sales", feature: "sales", action: "view" },
@@ -183,6 +185,7 @@ export default function Sidebar() {
       "/plant-manager": "Comprehensive plant operations oversight and strategic decision-making",
       "/systems-management": "Monitor system health, manage users, and oversee IT infrastructure",
       "/role-management": "Define user roles and specify feature permissions for different user types",
+      "/training": "Interactive training modules and role demonstrations for comprehensive system training",
       "/boards": "Organize jobs, operations, and resources with drag-and-drop boards",
       "/erp-import": "Import and manage data from external ERP systems with issue tracking",
       "/sales": "Manage sales leads, orders, and customer relationships",
@@ -271,9 +274,10 @@ export default function Sidebar() {
                 </TooltipContent>
               </Tooltip>
             </div>
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-gray-600 mb-2">
               Roles: {user.roles?.map(role => role.name).join(", ") || "No roles"}
             </div>
+            <RoleSwitcher userId={user.id} />
           </div>
         )}
         

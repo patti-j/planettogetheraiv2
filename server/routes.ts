@@ -2921,6 +2921,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Role Switching API for Trainers and Systems Managers
+  app.get("/api/users/:userId/available-roles", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      // Check if user has training permissions (trainer or systems manager)
+      const hasTrainingPermission = await storage.hasPermission(userId, 'training', 'view');
+      if (!hasTrainingPermission) {
+        return res.status(403).json({ error: "User does not have role switching permissions" });
+      }
+
+      const userRoles = await storage.getUserRoles(userId);
+      res.json(userRoles);
+    } catch (error) {
+      console.error("Error fetching available roles:", error);
+      res.status(500).json({ error: "Failed to fetch available roles" });
+    }
+  });
+
+  app.post("/api/users/:userId/switch-role", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const { roleId } = req.body;
+      
+      if (isNaN(userId) || isNaN(roleId)) {
+        return res.status(400).json({ error: "Invalid user ID or role ID" });
+      }
+
+      // Check if user has training permissions
+      const hasTrainingPermission = await storage.hasPermission(userId, 'training', 'view');
+      if (!hasTrainingPermission) {
+        return res.status(403).json({ error: "User does not have role switching permissions" });
+      }
+
+      // Verify user has this role assigned
+      const userRoles = await storage.getUserRoles(userId);
+      const hasRole = userRoles.some(role => role.id === roleId);
+      if (!hasRole) {
+        return res.status(403).json({ error: "User is not assigned to this role" });
+      }
+
+      const updatedUser = await storage.switchUserRole(userId, roleId);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error switching user role:", error);
+      res.status(500).json({ error: "Failed to switch role" });
+    }
+  });
+
+  app.get("/api/users/:userId/current-role", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const currentRole = await storage.getUserCurrentRole(userId);
+      res.json(currentRole);
+    } catch (error) {
+      console.error("Error fetching current role:", error);
+      res.status(500).json({ error: "Failed to fetch current role" });
+    }
+  });
+
   // Permissions grouped by feature for role management
   app.get("/api/permissions/grouped", async (req, res) => {
     try {

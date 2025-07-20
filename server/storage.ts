@@ -2269,6 +2269,48 @@ export class DatabaseStorage implements IStorage {
 
     return groupedPermissions;
   }
+
+  // Role Switching Methods
+  async switchUserRole(userId: number, roleId: number) {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ activeRoleId: roleId })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    return await this.getUserWithRoles(userId);
+  }
+
+  async getUserCurrentRole(userId: number) {
+    const [user] = await db
+      .select({
+        activeRoleId: users.activeRoleId
+      })
+      .from(users)
+      .where(eq(users.id, userId));
+
+    if (!user?.activeRoleId) {
+      return null;
+    }
+
+    const [role] = await db
+      .select()
+      .from(roles)
+      .where(eq(roles.id, user.activeRoleId));
+
+    return role || null;
+  }
+
+  async getUserRoles(userId: number) {
+    const userRolesData = await db
+      .select()
+      .from(roles)
+      .innerJoin(userRoles, eq(roles.id, userRoles.roleId))
+      .where(eq(userRoles.userId, userId))
+      .orderBy(roles.name);
+
+    return userRolesData.map(ur => ur.roles);
+  }
 }
 
 export const storage = new DatabaseStorage();

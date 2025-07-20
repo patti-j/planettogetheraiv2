@@ -30,6 +30,7 @@ import SystemsManagement from "@/pages/systems-management";
 import CapacityPlanning from "@/pages/capacity-planning";
 import BusinessGoals from "@/pages/business-goals";
 import RoleManagement from "@/pages/role-management";
+import Training from "@/pages/training";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -151,6 +152,11 @@ function Router() {
           <Route path="/role-management">
             <ProtectedRoute feature="user-management" action="view">
               <RoleManagement />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/training">
+            <ProtectedRoute feature="training" action="view">
+              <Training />
             </ProtectedRoute>
           </Route>
           <Route component={NotFound} />
