@@ -2058,6 +2058,212 @@ export class DatabaseStorage implements IStorage {
 
     return await this.getUserWithRoles(user.id);
   }
+
+  // Role Management Methods
+  async getRolesWithPermissionsAndUserCount() {
+    const rolesData = await this.db
+      .select({
+        id: roles.id,
+        name: roles.name,
+        description: roles.description,
+        isSystemRole: roles.isSystemRole,
+        createdAt: roles.createdAt,
+        updatedAt: roles.updatedAt,
+      })
+      .from(roles)
+      .orderBy(roles.name);
+
+    const rolesWithPermissions = await Promise.all(rolesData.map(async (role) => {
+      // Get permissions for this role
+      const permissionsData = await this.db
+        .select({
+          id: permissions.id,
+          name: permissions.name,
+          feature: permissions.feature,
+          action: permissions.action,
+          description: permissions.description,
+        })
+        .from(permissions)
+        .innerJoin(rolePermissions, eq(permissions.id, rolePermissions.permissionId))
+        .where(eq(rolePermissions.roleId, role.id));
+
+      // Get user count for this role
+      const userCountResult = await this.db
+        .select({ count: sql<number>`count(*)` })
+        .from(userRoles)
+        .where(eq(userRoles.roleId, role.id));
+      
+      const userCount = userCountResult[0]?.count || 0;
+
+      return {
+        ...role,
+        permissions: permissionsData,
+        userCount,
+      };
+    }));
+
+    return rolesWithPermissions;
+  }
+
+  async createRoleWithPermissions(roleData: { name: string; description: string }, permissionIds: number[]) {
+    const result = await this.db.transaction(async (tx) => {
+      // Create the role
+      const [newRole] = await tx
+        .insert(roles)
+        .values({
+          name: roleData.name,
+          description: roleData.description,
+          isSystemRole: false,
+        })
+        .returning();
+
+      // Assign permissions to the role
+      if (permissionIds.length > 0) {
+        const rolePermissionData = permissionIds.map(permissionId => ({
+          roleId: newRole.id,
+          permissionId,
+        }));
+
+        await tx.insert(rolePermissions).values(rolePermissionData);
+      }
+
+      // Get the complete role with permissions
+      const permissionsData = await tx
+        .select({
+          id: permissions.id,
+          name: permissions.name,
+          feature: permissions.feature,
+          action: permissions.action,
+          description: permissions.description,
+        })
+        .from(permissions)
+        .innerJoin(rolePermissions, eq(permissions.id, rolePermissions.permissionId))
+        .where(eq(rolePermissions.roleId, newRole.id));
+
+      return {
+        ...newRole,
+        permissions: permissionsData,
+        userCount: 0,
+      };
+    });
+
+    return result;
+  }
+
+  async updateRoleWithPermissions(roleId: number, roleData: { name: string; description: string }, permissionIds: number[]) {
+    const result = await this.db.transaction(async (tx) => {
+      // Update the role
+      const [updatedRole] = await tx
+        .update(roles)
+        .set({
+          name: roleData.name,
+          description: roleData.description,
+          updatedAt: new Date(),
+        })
+        .where(eq(roles.id, roleId))
+        .returning();
+
+      if (!updatedRole) {
+        return null;
+      }
+
+      // Remove existing permissions
+      await tx.delete(rolePermissions).where(eq(rolePermissions.roleId, roleId));
+
+      // Assign new permissions
+      if (permissionIds.length > 0) {
+        const rolePermissionData = permissionIds.map(permissionId => ({
+          roleId,
+          permissionId,
+        }));
+
+        await tx.insert(rolePermissions).values(rolePermissionData);
+      }
+
+      // Get the complete role with permissions
+      const permissionsData = await tx
+        .select({
+          id: permissions.id,
+          name: permissions.name,
+          feature: permissions.feature,
+          action: permissions.action,
+          description: permissions.description,
+        })
+        .from(permissions)
+        .innerJoin(rolePermissions, eq(permissions.id, rolePermissions.permissionId))
+        .where(eq(rolePermissions.roleId, roleId));
+
+      // Get user count
+      const userCountResult = await tx
+        .select({ count: sql<number>`count(*)` })
+        .from(userRoles)
+        .where(eq(userRoles.roleId, roleId));
+      
+      const userCount = userCountResult[0]?.count || 0;
+
+      return {
+        ...updatedRole,
+        permissions: permissionsData,
+        userCount,
+      };
+    });
+
+    return result;
+  }
+
+  async getRoleWithUserCount(roleId: number) {
+    const roleData = await this.db
+      .select({
+        id: roles.id,
+        name: roles.name,
+        description: roles.description,
+        isSystemRole: roles.isSystemRole,
+      })
+      .from(roles)
+      .where(eq(roles.id, roleId))
+      .limit(1);
+
+    if (roleData.length === 0) {
+      return null;
+    }
+
+    const role = roleData[0];
+
+    // Get user count
+    const userCountResult = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(userRoles)
+      .where(eq(userRoles.roleId, roleId));
+    
+    const userCount = userCountResult[0]?.count || 0;
+
+    return {
+      ...role,
+      userCount,
+    };
+  }
+
+  async getPermissionsGroupedByFeature() {
+    const allPermissions = await this.db
+      .select()
+      .from(permissions)
+      .orderBy(permissions.feature, permissions.action);
+
+    const groupedPermissions = allPermissions.reduce((groups, permission) => {
+      const existingGroup = groups.find(g => g.feature === permission.feature);
+      if (existingGroup) {
+        existingGroup.permissions.push(permission);
+      } else {
+        groups.push({
+          feature: permission.feature,
+          permissions: [permission],
+        });
+      }
+      return groups;
+    }, [] as Array<{ feature: string; permissions: any[] }>);
+
+    return groupedPermissions;
+  }
 }
 
 export const storage = new DatabaseStorage();

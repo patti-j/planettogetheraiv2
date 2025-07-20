@@ -2836,6 +2836,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Role Management API routes
+  app.get("/api/roles-management", async (req, res) => {
+    try {
+      const roles = await storage.getRolesWithPermissionsAndUserCount();
+      res.json(roles);
+    } catch (error) {
+      console.error("Error fetching roles for management:", error);
+      res.status(500).json({ error: "Failed to fetch roles" });
+    }
+  });
+
+  app.post("/api/roles-management", async (req, res) => {
+    try {
+      const { name, description, permissions } = req.body;
+      
+      if (!name || !permissions || !Array.isArray(permissions)) {
+        return res.status(400).json({ error: "Role name and permissions array are required" });
+      }
+
+      const role = await storage.createRoleWithPermissions({ name, description: description || "" }, permissions);
+      res.status(201).json(role);
+    } catch (error) {
+      console.error("Error creating role:", error);
+      res.status(500).json({ error: "Failed to create role" });
+    }
+  });
+
+  app.patch("/api/roles-management/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid role ID" });
+      }
+
+      const { name, description, permissions } = req.body;
+      
+      if (!name || !permissions || !Array.isArray(permissions)) {
+        return res.status(400).json({ error: "Role name and permissions array are required" });
+      }
+
+      const role = await storage.updateRoleWithPermissions(id, { name, description: description || "" }, permissions);
+      if (!role) {
+        return res.status(404).json({ error: "Role not found" });
+      }
+      res.json(role);
+    } catch (error) {
+      console.error("Error updating role:", error);
+      res.status(500).json({ error: "Failed to update role" });
+    }
+  });
+
+  app.delete("/api/roles-management/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid role ID" });
+      }
+
+      // Check if role has users assigned
+      const roleWithUsers = await storage.getRoleWithUserCount(id);
+      if (!roleWithUsers) {
+        return res.status(404).json({ error: "Role not found" });
+      }
+
+      if (roleWithUsers.userCount > 0) {
+        return res.status(400).json({ 
+          error: `Cannot delete role. It is assigned to ${roleWithUsers.userCount} users.` 
+        });
+      }
+
+      if (roleWithUsers.isSystemRole) {
+        return res.status(400).json({ error: "Cannot delete system roles" });
+      }
+
+      const success = await storage.deleteRole(id);
+      if (!success) {
+        return res.status(404).json({ error: "Role not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting role:", error);
+      res.status(500).json({ error: "Failed to delete role" });
+    }
+  });
+
+  // Permissions grouped by feature for role management
+  app.get("/api/permissions/grouped", async (req, res) => {
+    try {
+      const permissions = await storage.getPermissionsGroupedByFeature();
+      res.json(permissions);
+    } catch (error) {
+      console.error("Error fetching grouped permissions:", error);
+      res.status(500).json({ error: "Failed to fetch permissions" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
