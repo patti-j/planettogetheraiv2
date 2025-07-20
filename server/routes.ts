@@ -1614,7 +1614,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid capacity planning scenario data", details: validation.error.errors });
       }
 
-      const scenario = await storage.createCapacityPlanningScenario(validation.data);
+      // Convert date strings to Date objects
+      const data = {
+        ...validation.data,
+        startDate: new Date(validation.data.startDate),
+        endDate: new Date(validation.data.endDate)
+      };
+
+      const scenario = await storage.createCapacityPlanningScenario(data);
       res.status(201).json(scenario);
     } catch (error) {
       console.error("Error creating capacity planning scenario:", error);
@@ -1786,7 +1793,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid shift plan data", details: validation.error.errors });
       }
 
-      const plan = await storage.createShiftPlan(validation.data);
+      // Convert date strings to Date objects
+      const data = {
+        ...validation.data,
+        effectiveDate: new Date(validation.data.effectiveDate),
+        endDate: validation.data.endDate ? new Date(validation.data.endDate) : undefined
+      };
+
+      const plan = await storage.createShiftPlan(data);
       res.status(201).json(plan);
     } catch (error) {
       console.error("Error creating shift plan:", error);
@@ -1958,7 +1972,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid capacity projection data", details: validation.error.errors });
       }
 
-      const projection = await storage.createCapacityProjection(validation.data);
+      // Convert date strings to Date objects
+      const data = {
+        ...validation.data,
+        validFromDate: new Date(validation.data.validFromDate),
+        validToDate: new Date(validation.data.validToDate)
+      };
+
+      const projection = await storage.createCapacityProjection(data);
       res.status(201).json(projection);
     } catch (error) {
       console.error("Error creating capacity projection:", error);
