@@ -17,7 +17,7 @@ const app = express();
 // CORS middleware for session cookies
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Origin', req.headers.origin);
+  res.header('Access-Control-Allow-Origin', req.headers.origin || 'http://localhost:5000');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   
@@ -39,8 +39,9 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     secure: false, // Set to true in production with HTTPS
-    httpOnly: true,
+    httpOnly: false, // Allow client-side access for debugging
     maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+    sameSite: 'lax', // Allow cross-site cookies
   }
 }));
 
