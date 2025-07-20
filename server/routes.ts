@@ -65,7 +65,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateUserLastLogin(user.id);
       
       // Store user ID in session
+      console.log("=== LOGIN SUCCESS ===");
+      console.log("Setting session userId:", user.id);
+      console.log("Session before:", req.session);
       req.session.userId = user.id;
+      console.log("Session after:", req.session);
+      console.log("Session ID:", req.sessionID);
       
       // Return user data without password hash
       const { passwordHash, ...userData } = user;
@@ -87,16 +92,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/auth/me", async (req, res) => {
     try {
+      console.log("=== AUTH CHECK ===");
+      console.log("Session:", req.session);
+      console.log("Session ID:", req.sessionID);
+      console.log("Session userId:", req.session?.userId);
+      
       if (!req.session?.userId) {
+        console.log("No userId in session, returning 401");
         return res.status(401).json({ message: "Not authenticated" });
       }
 
       const user = await storage.getUserWithRolesAndPermissions(req.session.userId);
       if (!user || !user.isActive) {
+        console.log("User not found or inactive for userId:", req.session.userId);
         req.session.destroy(() => {});
         return res.status(401).json({ message: "User not found or inactive" });
       }
 
+      console.log("User found, returning user data");
       const { passwordHash, ...userData } = user;
       res.json(userData);
     } catch (error) {
