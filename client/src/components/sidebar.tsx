@@ -139,6 +139,7 @@ export default function Sidebar() {
   };
 
   const navigationItems = [
+    { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals" },
     { icon: BarChart3, label: "Schedule", href: "/", active: location === "/" },
     { icon: Target, label: "Optimize Orders", href: "/scheduling-optimizer", active: location === "/scheduling-optimizer" },
     { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", active: location === "/capacity-planning" },
@@ -148,7 +149,6 @@ export default function Sidebar() {
     { icon: Wrench, label: "Maintenance", href: "/maintenance", active: location === "/maintenance" },
     { icon: Building, label: "Plant Manager", href: "/plant-manager", active: location === "/plant-manager" },
     { icon: Server, label: "Systems Management", href: "/systems-management", active: location === "/systems-management" },
-    { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals" },
     { icon: Columns3, label: "Boards", href: "/boards", active: location === "/boards" },
     { icon: Database, label: "ERP Import", href: "/erp-import", active: location === "/erp-import" },
     { icon: DollarSign, label: "Sales", href: "/sales", active: location === "/sales" },
@@ -161,6 +161,7 @@ export default function Sidebar() {
 
   const getNavigationTooltip = (href: string) => {
     const tooltips = {
+      "/business-goals": "Define strategic objectives, track progress, and monitor risks that impact business success",
       "/": "View production schedule with interactive Gantt charts",
       "/scheduling-optimizer": "Optimize orders with intelligent scheduling and multi-operation planning",
       "/capacity-planning": "Plan and optimize production capacity including staffing, shifts, and equipment",
@@ -170,7 +171,6 @@ export default function Sidebar() {
       "/maintenance": "Plan and manage resource maintenance schedules and work orders",
       "/plant-manager": "Comprehensive plant operations oversight and strategic decision-making",
       "/systems-management": "Monitor system health, manage users, and oversee IT infrastructure",
-      "/business-goals": "Define strategic objectives, track progress, and monitor risks that impact business success",
       "/boards": "Organize jobs, operations, and resources with drag-and-drop boards",
       "/erp-import": "Import and manage data from external ERP systems with issue tracking",
       "/sales": "Manage sales leads, orders, and customer relationships",

@@ -6,6 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { 
   Target, TrendingUp, AlertTriangle, CheckCircle, Clock, 
   Plus, Edit, Trash2, BarChart3, Users, Calendar, DollarSign,
@@ -21,6 +26,18 @@ export default function BusinessGoalsPage() {
   const [isMaximized, setIsMaximized] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<BusinessGoal | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [formData, setFormData] = useState({
+    goalTitle: "",
+    goalDescription: "",
+    goalType: "",
+    priority: "medium",
+    owner: "",
+    startDate: "",
+    targetDate: "",
+    targetValue: "",
+    targetUnit: "",
+    category: "",
+  });
   const queryClient = useQueryClient();
 
   // Fetch business goals
@@ -60,8 +77,38 @@ export default function BusinessGoalsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/business-goals"] });
       setShowCreateForm(false);
+      setFormData({
+        goalTitle: "",
+        goalDescription: "",
+        goalType: "",
+        priority: "medium",
+        owner: "",
+        startDate: "",
+        targetDate: "",
+        targetValue: "",
+        targetUnit: "",
+        category: "",
+      });
     }
   });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const goalData: InsertBusinessGoal = {
+      goalTitle: formData.goalTitle,
+      goalDescription: formData.goalDescription,
+      goalType: formData.goalType,
+      priority: formData.priority as "low" | "medium" | "high" | "critical",
+      owner: formData.owner,
+      startDate: new Date(formData.startDate),
+      targetDate: new Date(formData.targetDate),
+      targetValue: parseFloat(formData.targetValue) || 0,
+      targetUnit: formData.targetUnit,
+      category: formData.category,
+      status: "active"
+    };
+    createGoalMutation.mutate(goalData);
+  };
 
   // Calculate goal metrics
   const goalMetrics = goals.reduce((acc: any, goal: BusinessGoal) => {
@@ -357,8 +404,143 @@ export default function BusinessGoalsPage() {
         )}
       </div>
 
-      {/* Goal Detail Modal would go here */}
-      {/* Create Goal Form would go here */}
+      {/* Create Goal Form Dialog */}
+      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create New Business Goal</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="goalTitle">Goal Title *</Label>
+                <Input
+                  id="goalTitle"
+                  value={formData.goalTitle}
+                  onChange={(e) => setFormData({...formData, goalTitle: e.target.value})}
+                  placeholder="Enter goal title"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="owner">Goal Owner *</Label>
+                <Input
+                  id="owner"
+                  value={formData.owner}
+                  onChange={(e) => setFormData({...formData, owner: e.target.value})}
+                  placeholder="Enter goal owner"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="goalDescription">Description</Label>
+              <Textarea
+                id="goalDescription"
+                value={formData.goalDescription}
+                onChange={(e) => setFormData({...formData, goalDescription: e.target.value})}
+                placeholder="Describe the goal and its purpose"
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="goalType">Goal Type</Label>
+                <Select value={formData.goalType} onValueChange={(value) => setFormData({...formData, goalType: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="strategic">Strategic</SelectItem>
+                    <SelectItem value="operational">Operational</SelectItem>
+                    <SelectItem value="financial">Financial</SelectItem>
+                    <SelectItem value="growth">Growth</SelectItem>
+                    <SelectItem value="efficiency">Efficiency</SelectItem>
+                    <SelectItem value="customer">Customer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="priority">Priority</Label>
+                <Select value={formData.priority} onValueChange={(value) => setFormData({...formData, priority: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="critical">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <Input
+                  id="category"
+                  value={formData.category}
+                  onChange={(e) => setFormData({...formData, category: e.target.value})}
+                  placeholder="e.g., Production, Sales"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="startDate">Start Date</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({...formData, startDate: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="targetDate">Target Date</Label>
+                <Input
+                  id="targetDate"
+                  type="date"
+                  value={formData.targetDate}
+                  onChange={(e) => setFormData({...formData, targetDate: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="targetValue">Target Value</Label>
+                <Input
+                  id="targetValue"
+                  type="number"
+                  value={formData.targetValue}
+                  onChange={(e) => setFormData({...formData, targetValue: e.target.value})}
+                  placeholder="100"
+                />
+              </div>
+              <div>
+                <Label htmlFor="targetUnit">Target Unit</Label>
+                <Input
+                  id="targetUnit"
+                  value={formData.targetUnit}
+                  onChange={(e) => setFormData({...formData, targetUnit: e.target.value})}
+                  placeholder="e.g., %, units, $"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => setShowCreateForm(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createGoalMutation.isPending}>
+                {createGoalMutation.isPending ? "Creating..." : "Create Goal"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
