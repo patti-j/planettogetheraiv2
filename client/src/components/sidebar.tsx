@@ -144,24 +144,24 @@ export default function Sidebar() {
   };
 
   const navigationItems = [
-    { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals", feature: "business_goals", action: "view" },
+    { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals", feature: "business-goals", action: "view" },
     { icon: BarChart3, label: "Schedule", href: "/", active: location === "/", feature: "schedule", action: "view" },
-    { icon: Target, label: "Optimize Orders", href: "/scheduling-optimizer", active: location === "/scheduling-optimizer", feature: "scheduling_optimizer", action: "view" },
-    { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", active: location === "/capacity-planning", feature: "capacity_planning", action: "view" },
-    { icon: Smartphone, label: "Shop Floor", href: "/shop-floor", active: location === "/shop-floor", feature: "shop_floor", action: "view" },
-    { icon: Settings, label: "Operator", href: "/operator", active: location === "/operator", feature: "operator_dashboard", action: "view" },
-    { icon: Truck, label: "Forklift Driver", href: "/forklift", active: location === "/forklift", feature: "forklift", action: "view" },
+    { icon: Target, label: "Optimize Orders", href: "/scheduling-optimizer", active: location === "/scheduling-optimizer", feature: "scheduling-optimizer", action: "view" },
+    { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", active: location === "/capacity-planning", feature: "capacity-planning", action: "view" },
+    { icon: Smartphone, label: "Shop Floor", href: "/shop-floor", active: location === "/shop-floor", feature: "shop-floor", action: "view" },
+    { icon: Settings, label: "Operator", href: "/operator", active: location === "/operator", feature: "operator-dashboard", action: "view" },
+    { icon: Truck, label: "Forklift Driver", href: "/forklift", active: location === "/forklift", feature: "forklift-driver", action: "view" },
     { icon: Wrench, label: "Maintenance", href: "/maintenance", active: location === "/maintenance", feature: "maintenance", action: "view" },
-    { icon: Building, label: "Plant Manager", href: "/plant-manager", active: location === "/plant-manager", feature: "plant_manager", action: "view" },
-    { icon: Server, label: "Systems Management", href: "/systems-management", active: location === "/systems-management", feature: "systems_management", action: "view" },
+    { icon: Building, label: "Plant Manager", href: "/plant-manager", active: location === "/plant-manager", feature: "plant-manager", action: "view" },
+    { icon: Server, label: "Systems Management", href: "/systems-management", active: location === "/systems-management", feature: "systems-management", action: "view" },
     { icon: Columns3, label: "Boards", href: "/boards", active: location === "/boards", feature: "boards", action: "view" },
-    { icon: Database, label: "ERP Import", href: "/erp-import", active: location === "/erp-import", feature: "erp_import", action: "view" },
+    { icon: Database, label: "ERP Import", href: "/erp-import", active: location === "/erp-import", feature: "erp-import", action: "view" },
     { icon: DollarSign, label: "Sales", href: "/sales", active: location === "/sales", feature: "sales", action: "view" },
-    { icon: Headphones, label: "Customer Service", href: "/customer-service", active: location === "/customer-service", feature: "customer_service", action: "view" },
+    { icon: Headphones, label: "Customer Service", href: "/customer-service", active: location === "/customer-service", feature: "customer-service", action: "view" },
     { icon: BarChart3, label: "Analytics", href: "/analytics", active: location === "/analytics", feature: "analytics", action: "view" },
     { icon: FileText, label: "Reports", href: "/reports", active: location === "/reports", feature: "reports", action: "view" },
     { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback", feature: "feedback", action: "view" },
-    { icon: Bot, label: "Max", href: "/ai-assistant", active: location === "/ai-assistant", feature: "ai_assistant", action: "view" },
+    { icon: Bot, label: "Max", href: "/ai-assistant", active: location === "/ai-assistant", feature: "ai-assistant", action: "view" },
   ].filter(item => 
     // Always show Schedule dashboard for authenticated users
     item.href === "/" || 
