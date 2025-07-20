@@ -62,6 +62,137 @@ interface EvaluationCriteria {
   score: number;
 }
 
+// Calculate scenario metrics function moved to top level
+const calculateScenarioMetrics = (scenario: ScheduleScenario, scenarioOps: ScenarioOperation[], resources: Resource[]): ScenarioMetrics => {
+  const totalDuration = scenarioOps.reduce((sum, op) => {
+    if (op.startTime && op.endTime) {
+      return sum + (new Date(op.endTime).getTime() - new Date(op.startTime).getTime()) / (1000 * 60 * 60);
+    }
+    return sum + op.duration;
+  }, 0);
+
+  const resourceConflicts = scenarioOps.filter((op1, index) => 
+    scenarioOps.slice(index + 1).some(op2 => 
+      op1.resourceId === op2.resourceId &&
+      op1.startTime && op1.endTime && op2.startTime && op2.endTime &&
+      new Date(op1.startTime) < new Date(op2.endTime) &&
+      new Date(op2.startTime) < new Date(op1.endTime)
+    )
+  ).length;
+
+  const plannedEndDate = new Date(scenario.createdAt);
+  plannedEndDate.setDate(plannedEndDate.getDate() + Math.ceil(totalDuration / 8)); // Assuming 8-hour days
+  
+  const deliveryDelay = scenario.dueDate ? 
+    Math.max(0, differenceInDays(plannedEndDate, new Date(scenario.dueDate))) : 0;
+
+  return {
+    efficiency: Math.max(0, 100 - (resourceConflicts * 10) - (deliveryDelay * 5)),
+    utilization: Math.min(100, (scenarioOps.length / resources.length) * 100),
+    deliveryPerformance: Math.max(0, 100 - (deliveryDelay * 10)),
+    cost: totalDuration * 100, // Simple cost calculation
+    totalDuration,
+    resourceConflicts,
+    deliveryDelay
+  };
+};
+
+// ScenarioCard component moved outside to prevent hooks issues
+const ScenarioCard: React.FC<{ 
+  scenario: ScheduleScenario, 
+  selectedScenarios: number[], 
+  setSelectedScenarios: (scenarios: number[]) => void,
+  resources: Resource[]
+}> = ({ scenario, selectedScenarios, setSelectedScenarios, resources }) => {
+  const { data: scenarioOps = [] } = useQuery<ScenarioOperation[]>({
+    queryKey: [`/api/scenarios/${scenario.id}/operations`],
+  });
+
+  const { data: evaluations = [] } = useQuery<ScenarioEvaluation[]>({
+    queryKey: [`/api/scenarios/${scenario.id}/evaluations`],
+  });
+
+  const { data: discussions = [] } = useQuery<ScenarioDiscussion[]>({
+    queryKey: [`/api/scenarios/${scenario.id}/discussions`],
+  });
+
+  const metrics = calculateScenarioMetrics(scenario, scenarioOps, resources);
+  const isSelected = selectedScenarios.includes(scenario.id);
+
+  return (
+    <Card className={`cursor-pointer transition-all ${isSelected ? 'ring-2 ring-blue-500' : 'hover:shadow-md'}`}>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  setSelectedScenarios([...selectedScenarios, scenario.id]);
+                } else {
+                  setSelectedScenarios(selectedScenarios.filter(id => id !== scenario.id));
+                }
+              }}
+              className="rounded border-gray-300"
+            />
+            <CardTitle className="text-lg">{scenario.name}</CardTitle>
+          </div>
+          <Badge variant={scenario.status === 'approved' ? 'default' : scenario.status === 'rejected' ? 'destructive' : 'secondary'}>
+            {scenario.status}
+          </Badge>
+        </div>
+        <CardDescription>{scenario.description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          <div>
+            <div className="flex justify-between mb-1">
+              <span className="text-sm">Efficiency</span>
+              <span className="text-sm font-medium">{metrics.efficiency.toFixed(1)}%</span>
+            </div>
+            <Progress value={metrics.efficiency} className="h-2" />
+          </div>
+          
+          <div>
+            <div className="flex justify-between mb-1">
+              <span className="text-sm">Resource Utilization</span>
+              <span className="text-sm font-medium">{metrics.utilization.toFixed(1)}%</span>
+            </div>
+            <Progress value={metrics.utilization} className="h-2" />
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 mt-4 text-center text-xs">
+            <div>
+              <div className="font-medium">{scenarioOps.length}</div>
+              <div className="text-gray-500">Operations</div>
+            </div>
+            <div>
+              <div className="font-medium">{evaluations.length}</div>
+              <div className="text-gray-500">Evaluations</div>
+            </div>
+            <div>
+              <div className="font-medium">{discussions.length}</div>
+              <div className="text-gray-500">Comments</div>
+            </div>
+          </div>
+
+          <div className="mt-4 flex space-x-2">
+            <Button variant="outline" size="sm" className="flex-1">
+              <Eye className="w-4 h-4 mr-1" />
+              View Details
+            </Button>
+            <Button variant="outline" size="sm" className="flex-1">
+              <Edit className="w-4 h-4 mr-1" />
+              Edit
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 export const ScheduleEvaluationSystem: React.FC = () => {
   const [selectedScenarios, setSelectedScenarios] = useState<number[]>([]);
   const [evaluationMode, setEvaluationMode] = useState<'create' | 'compare' | 'analyze'>('create');
@@ -87,40 +218,7 @@ export const ScheduleEvaluationSystem: React.FC = () => {
     queryKey: ['/api/jobs'],
   });
 
-  // Calculate scenario metrics
-  const calculateScenarioMetrics = (scenario: ScheduleScenario, scenarioOps: ScenarioOperation[]): ScenarioMetrics => {
-    const totalDuration = scenarioOps.reduce((sum, op) => {
-      if (op.startTime && op.endTime) {
-        return sum + (new Date(op.endTime).getTime() - new Date(op.startTime).getTime()) / (1000 * 60 * 60);
-      }
-      return sum + op.duration;
-    }, 0);
 
-    const resourceConflicts = scenarioOps.filter((op1, index) => 
-      scenarioOps.slice(index + 1).some(op2 => 
-        op1.resourceId === op2.resourceId &&
-        op1.startTime && op1.endTime && op2.startTime && op2.endTime &&
-        new Date(op1.startTime) < new Date(op2.endTime) &&
-        new Date(op2.startTime) < new Date(op1.endTime)
-      )
-    ).length;
-
-    const plannedEndDate = new Date(scenario.createdAt);
-    plannedEndDate.setDate(plannedEndDate.getDate() + Math.ceil(totalDuration / 8)); // Assuming 8-hour days
-    
-    const deliveryDelay = scenario.dueDate ? 
-      Math.max(0, differenceInDays(plannedEndDate, new Date(scenario.dueDate))) : 0;
-
-    return {
-      efficiency: Math.max(0, 100 - (resourceConflicts * 10) - (deliveryDelay * 5)),
-      utilization: Math.min(100, (scenarioOps.length / resources.length) * 100),
-      deliveryPerformance: Math.max(0, 100 - (deliveryDelay * 10)),
-      cost: totalDuration * 100, // Simple cost calculation
-      totalDuration,
-      resourceConflicts,
-      deliveryDelay
-    };
-  };
 
   // Create scenario mutation
   const createScenarioMutation = useMutation({
@@ -176,94 +274,7 @@ export const ScheduleEvaluationSystem: React.FC = () => {
     createScenarioMutation.mutate(scenarioData);
   };
 
-  const ScenarioCard: React.FC<{ scenario: ScheduleScenario }> = ({ scenario }) => {
-    const { data: scenarioOps = [] } = useQuery<ScenarioOperation[]>({
-      queryKey: [`/api/scenarios/${scenario.id}/operations`],
-    });
 
-    const { data: evaluations = [] } = useQuery<ScenarioEvaluation[]>({
-      queryKey: [`/api/scenarios/${scenario.id}/evaluations`],
-    });
-
-    const { data: discussions = [] } = useQuery<ScenarioDiscussion[]>({
-      queryKey: [`/api/scenarios/${scenario.id}/discussions`],
-    });
-
-    const metrics = calculateScenarioMetrics(scenario, scenarioOps);
-    const isSelected = selectedScenarios.includes(scenario.id);
-
-    return (
-      <Card className={`cursor-pointer transition-all ${isSelected ? 'ring-2 ring-blue-500' : 'hover:shadow-md'}`}>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={isSelected}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    setSelectedScenarios([...selectedScenarios, scenario.id]);
-                  } else {
-                    setSelectedScenarios(selectedScenarios.filter(id => id !== scenario.id));
-                  }
-                }}
-                className="rounded border-gray-300"
-              />
-              <CardTitle className="text-lg">{scenario.name}</CardTitle>
-            </div>
-            <Badge variant={scenario.status === 'approved' ? 'default' : scenario.status === 'rejected' ? 'destructive' : 'secondary'}>
-              {scenario.status}
-            </Badge>
-          </div>
-          <CardDescription>{scenario.description}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Efficiency</span>
-                <span className="font-medium">{metrics.efficiency.toFixed(1)}%</span>
-              </div>
-              <Progress value={metrics.efficiency} className="h-2" />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Utilization</span>
-                <span className="font-medium">{metrics.utilization.toFixed(1)}%</span>
-              </div>
-              <Progress value={metrics.utilization} className="h-2" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 text-xs">
-            <div className="text-center">
-              <div className="font-medium">{scenarioOps.length}</div>
-              <div className="text-gray-500">Operations</div>
-            </div>
-            <div className="text-center">
-              <div className="font-medium">{evaluations.length}</div>
-              <div className="text-gray-500">Evaluations</div>
-            </div>
-            <div className="text-center">
-              <div className="font-medium">{discussions.length}</div>
-              <div className="text-gray-500">Comments</div>
-            </div>
-          </div>
-
-          <div className="mt-4 flex space-x-2">
-            <Button variant="outline" size="sm" className="flex-1">
-              <Eye className="w-4 h-4 mr-1" />
-              View Details
-            </Button>
-            <Button variant="outline" size="sm" className="flex-1">
-              <Edit className="w-4 h-4 mr-1" />
-              Edit
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
 
   const ComparisonView: React.FC = () => {
     if (selectedScenarios.length < 2) {
@@ -283,122 +294,20 @@ export const ScheduleEvaluationSystem: React.FC = () => {
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {selectedScenarioData.map((scenario: ScheduleScenario) => (
-            <ScenarioComparisonCard key={scenario.id} scenario={scenario} />
+            <ScenarioCard 
+              key={scenario.id} 
+              scenario={scenario} 
+              selectedScenarios={selectedScenarios}
+              setSelectedScenarios={setSelectedScenarios}
+              resources={resources}
+            />
           ))}
         </div>
       </div>
     );
   };
 
-  // Separate component for scenario comparison cards to handle hooks properly
-  const ScenarioComparisonCard: React.FC<{ scenario: ScheduleScenario }> = ({ scenario }) => {
-    const { data: scenarioOps = [] } = useQuery<ScenarioOperation[]>({
-      queryKey: [`/api/scenarios/${scenario.id}/operations`],
-    });
-    
-    const { data: operations = [] } = useQuery<Operation[]>({
-      queryKey: ['/api/operations'],
-    });
 
-    const { data: resources = [] } = useQuery<Resource[]>({
-      queryKey: ['/api/resources'],
-    });
-
-    const calculateScenarioMetrics = (scenario: ScheduleScenario, scenarioOps: ScenarioOperation[]): ScenarioMetrics => {
-      const totalDuration = scenarioOps.reduce((sum, op) => {
-        if (op.startTime && op.endTime) {
-          return sum + (new Date(op.endTime).getTime() - new Date(op.startTime).getTime()) / (1000 * 60 * 60);
-        }
-        return sum + op.duration;
-      }, 0);
-
-      const resourceConflicts = scenarioOps.filter((op1, index) => 
-        scenarioOps.slice(index + 1).some(op2 => 
-          op1.resourceId === op2.resourceId &&
-          op1.startTime && op1.endTime && op2.startTime && op2.endTime &&
-          new Date(op1.startTime) < new Date(op2.endTime) &&
-          new Date(op2.startTime) < new Date(op1.endTime)
-        )
-      ).length;
-
-      const plannedEndDate = new Date(scenario.createdAt);
-      plannedEndDate.setDate(plannedEndDate.getDate() + Math.ceil(totalDuration / 8)); // Assuming 8-hour days
-      
-      const deliveryDelay = scenario.dueDate ? 
-        Math.max(0, differenceInDays(plannedEndDate, new Date(scenario.dueDate))) : 0;
-
-      return {
-        efficiency: Math.max(0, 100 - (resourceConflicts * 10) - (deliveryDelay * 5)),
-        utilization: Math.min(100, (scenarioOps.length / resources.length) * 100),
-        deliveryPerformance: Math.max(0, 100 - (deliveryDelay * 10)),
-        cost: totalDuration * 100, // Simple cost calculation
-        totalDuration,
-        resourceConflicts,
-        deliveryDelay
-      };
-    };
-
-    const metrics = calculateScenarioMetrics(scenario, scenarioOps);
-    
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{scenario.name}</CardTitle>
-          <Badge variant={scenario.status === 'approved' ? 'default' : 'secondary'}>
-            {scenario.status}
-          </Badge>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between mb-1">
-                <span className="text-sm">Efficiency</span>
-                <span className="text-sm font-medium">{metrics.efficiency.toFixed(1)}%</span>
-              </div>
-              <Progress value={metrics.efficiency} className="h-2" />
-            </div>
-            
-            <div>
-              <div className="flex justify-between mb-1">
-                <span className="text-sm">Utilization</span>
-                <span className="text-sm font-medium">{metrics.utilization.toFixed(1)}%</span>
-              </div>
-              <Progress value={metrics.utilization} className="h-2" />
-            </div>
-            
-            <div>
-              <div className="flex justify-between mb-1">
-                <span className="text-sm">Delivery Performance</span>
-                <span className="text-sm font-medium">{metrics.deliveryPerformance.toFixed(1)}%</span>
-              </div>
-              <Progress value={metrics.deliveryPerformance} className="h-2" />
-            </div>
-
-            <Separator />
-
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div>
-                <div className="font-medium">{metrics.totalDuration.toFixed(1)}h</div>
-                <div className="text-gray-500">Duration</div>
-              </div>
-              <div>
-                <div className="font-medium">{metrics.resourceConflicts}</div>
-                <div className="text-gray-500">Conflicts</div>
-              </div>
-              <div>
-                <div className="font-medium">${metrics.cost.toFixed(0)}</div>
-                <div className="text-gray-500">Est. Cost</div>
-              </div>
-              <div>
-                <div className="font-medium">{metrics.deliveryDelay}</div>
-                <div className="text-gray-500">Delay (days)</div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
 
   const EvaluationForm: React.FC<{ scenarioId: number }> = ({ scenarioId }) => {
     const [evaluatorName, setEvaluatorName] = useState('');
@@ -563,7 +472,13 @@ export const ScheduleEvaluationSystem: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {scenarios.map((scenario: ScheduleScenario) => (
-                <ScenarioCard key={scenario.id} scenario={scenario} />
+                <ScenarioCard 
+                  key={scenario.id} 
+                  scenario={scenario} 
+                  selectedScenarios={selectedScenarios}
+                  setSelectedScenarios={setSelectedScenarios}
+                  resources={resources}
+                />
               ))}
             </div>
           )}
