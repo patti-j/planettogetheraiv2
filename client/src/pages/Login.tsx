@@ -104,14 +104,14 @@ export default function Login() {
                     <Info className="h-4 w-4 text-gray-500" />
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
                   <DialogHeader>
                     <DialogTitle>Demo Accounts</DialogTitle>
                     <DialogDescription>
                       Use these accounts to test different role permissions and explore the system features.
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4">
+                  <div className="flex-1 overflow-y-auto space-y-4 pr-2">
                     <div className="space-y-3">
                       {demoAccounts.map((account) => (
                         <div key={account.username} className="p-4 bg-gray-50 rounded-lg border">
