@@ -126,6 +126,15 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 21, 2025)
 
+✓ **Training Mode Exit System Fix (July 21, 2025)**:
+- Fixed critical training mode exit button functionality that was failing with "user does not have role switching permissions" errors
+- Enhanced role switching API endpoint with proper token-based authentication instead of relying on session-only authentication
+- Updated permission checking logic to examine user's originally assigned roles (Trainer/Systems Manager) rather than current active role
+- Training mode exit now successfully returns users from demonstration roles (Director, Production Scheduler, etc.) back to their assigned roles
+- Role switching authentication now works consistently with the app's token-based authentication system
+- Added comprehensive debug logging for role switching operations to ensure reliable functionality
+- Training demonstrations now fully functional with seamless entry and exit from any role in the system
+
 ✓ **Shop Floor Operations Role Addition & AI Image Description Update (July 21, 2025)**:
 - Added missing "Shop Floor Operations" role to complete the 10-role system (previously had 9 roles)
 - Integrated Shop Floor Operations role with 3 key permissions: shop-floor-view, operator-dashboard-view, reports-view

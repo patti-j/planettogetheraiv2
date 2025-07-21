@@ -2606,11 +2606,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log("Checking training permissions for userId:", userId);
-      // Check if user has training permissions
-      const hasTrainingPermission = await storage.hasPermission(userId, 'training', 'view');
-      console.log("Has training permission:", hasTrainingPermission);
       
-      if (!hasTrainingPermission) {
+      // Check if user's originally assigned roles have training permissions
+      // This allows trainers/systems managers to access training features even while demonstrating other roles
+      const userAssignedRoles = await storage.getUserRoles(userId);
+      console.log("User assigned roles:", userAssignedRoles.map((r: any) => `${r.id}:${r.name}`));
+      
+      const hasTrainerRole = userAssignedRoles.some((role: any) => 
+        role.name === 'Trainer' || role.name === 'Systems Manager'
+      );
+      console.log("Has trainer/systems manager role:", hasTrainerRole);
+      
+      if (!hasTrainerRole) {
         return res.status(403).json({ error: "User does not have role demonstration permissions" });
       }
 
@@ -3018,9 +3025,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid user ID" });
       }
 
-      // Check if user has training permissions (trainer or systems manager)
-      const hasTrainingPermission = await storage.hasPermission(userId, 'training', 'view');
-      if (!hasTrainingPermission) {
+      // Check if user's originally assigned roles include trainer or systems manager
+      const userAssignedRoles = await storage.getUserRoles(userId);
+      const hasTrainerRole = userAssignedRoles.some((role: any) => 
+        role.name === 'Trainer' || role.name === 'Systems Manager'
+      );
+      if (!hasTrainerRole) {
         return res.status(403).json({ error: "User does not have role switching permissions" });
       }
 
