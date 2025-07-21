@@ -444,6 +444,25 @@ export default function DemoTour() {
                 )}
               />
 
+              {/* Temporary Test Button - FOR DEVELOPMENT ONLY */}
+              <Button 
+                type="button"
+                variant="outline" 
+                size="sm" 
+                className="w-full mb-4 border-red-300 text-red-600 hover:bg-red-50"
+                onClick={() => {
+                  form.setValue("firstName", "John");
+                  form.setValue("lastName", "Smith");
+                  form.setValue("email", "john.smith@acme-manufacturing.com");
+                  form.setValue("company", "Acme Manufacturing");
+                  form.setValue("jobTitle", "Production Manager");
+                  form.setValue("primaryRole", "director");
+                  form.setValue("referralSource", "search-engine");
+                }}
+              >
+                🧪 TEMP: Fill Test Data (Remove Later)
+              </Button>
+
               {/* Submit Button */}
               <Button 
                 type="submit" 
