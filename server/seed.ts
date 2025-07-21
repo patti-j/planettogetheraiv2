@@ -323,7 +323,7 @@ export async function seedDatabase() {
     { userId: insertedUsers[2].id, roleId: insertedRoles[2].id }, // Production Scheduler
     { userId: insertedUsers[3].id, roleId: insertedRoles[3].id }, // IT Administrator
     { userId: insertedUsers[4].id, roleId: insertedRoles[4].id }, // Systems Manager
-    { userId: insertedUsers[5].id, roleId: insertedRoles[4].id }, // Trainer (using Systems Manager role temporarily)
+    { userId: insertedUsers[5].id, roleId: insertedRoles[4].id }, // Trainer (using Systems Manager role for now)
   ];
 
   await db.insert(userRoles).values(userRoleData).onConflictDoNothing();
