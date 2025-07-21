@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Factory } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Factory, Info } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function Login() {
@@ -31,11 +32,11 @@ export default function Login() {
   };
 
   const demoAccounts = [
-    { username: "director", role: "Director", access: "Business Goals, Strategic Planning" },
-    { username: "plant_manager", role: "Plant Manager", access: "Capacity Planning, Operations" },
-    { username: "scheduler", role: "Scheduler", access: "Production Scheduling, Optimization" },
-    { username: "admin", role: "Administrator", access: "User Management, System Admin" },
-    { username: "sysmanager", role: "System Manager", access: "IT Systems, Infrastructure" },
+    { username: "director", password: "password123", role: "Director", access: "Business Goals, Strategic Planning" },
+    { username: "plant_manager", password: "password123", role: "Plant Manager", access: "Capacity Planning, Operations" },
+    { username: "scheduler", password: "password123", role: "Scheduler", access: "Production Scheduling, Optimization" },
+    { username: "admin", password: "password123", role: "Administrator", access: "User Management, System Admin" },
+    { username: "sysmanager", password: "password123", role: "System Manager", access: "IT Systems, Infrastructure" },
   ];
 
   return (
@@ -53,10 +54,46 @@ export default function Login() {
         {/* Login Form */}
         <Card>
           <CardHeader>
-            <CardTitle>Sign In</CardTitle>
-            <CardDescription>
-              Enter your credentials to access the production scheduling system
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Sign In</CardTitle>
+                <CardDescription>
+                  Enter your credentials to access the production scheduling system
+                </CardDescription>
+              </div>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Info className="h-4 w-4 text-gray-500" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>Demo Accounts</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                      Use these accounts to test different role permissions:
+                    </p>
+                    <div className="space-y-3">
+                      {demoAccounts.map((account) => (
+                        <div key={account.username} className="p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium text-gray-800">{account.username}</span>
+                            <span className="text-sm text-blue-600">{account.role}</span>
+                          </div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm text-gray-600">Password:</span>
+                            <span className="text-sm font-mono text-gray-800">{account.password}</span>
+                          </div>
+                          <p className="text-sm text-gray-600">{account.access}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -104,29 +141,6 @@ export default function Login() {
                 {loading ? "Signing In..." : "Sign In"}
               </Button>
             </form>
-          </CardContent>
-        </Card>
-
-        {/* Demo Accounts */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Demo Accounts</CardTitle>
-            <CardDescription>
-              Use these accounts to test different role permissions (password: password123)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {demoAccounts.map((account) => (
-                <div key={account.username} className="p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-medium text-gray-800">{account.username}</span>
-                    <span className="text-sm text-blue-600">{account.role}</span>
-                  </div>
-                  <p className="text-sm text-gray-600">{account.access}</p>
-                </div>
-              ))}
-            </div>
           </CardContent>
         </Card>
       </div>
