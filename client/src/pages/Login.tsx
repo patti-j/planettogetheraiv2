@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Factory, Info, Eye, EyeOff } from "lucide-react";
+import { Factory, Info, Eye, EyeOff, PlayCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function Login() {
@@ -203,6 +203,26 @@ export default function Login() {
                 {loading ? "Signing In..." : "Sign In"}
               </Button>
             </form>
+          </CardContent>
+        </Card>
+
+        {/* Demo Tour Button */}
+        <Card className="mt-4">
+          <CardContent className="p-4">
+            <div className="text-center">
+              <h3 className="font-semibold text-gray-800 mb-2">New to PlanetTogether?</h3>
+              <p className="text-sm text-gray-600 mb-3">
+                Take a guided tour and see how our AI-powered platform can transform your manufacturing operations
+              </p>
+              <Button 
+                variant="outline" 
+                className="w-full flex items-center gap-2"
+                onClick={() => setLocation("/demo-tour")}
+              >
+                <PlayCircle className="h-4 w-4" />
+                Start Demo Tour
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

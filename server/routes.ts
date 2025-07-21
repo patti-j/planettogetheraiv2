@@ -38,6 +38,57 @@ function requireAuth(req: any, res: any, next: any) {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Session middleware is configured in index.ts
 
+  // Demo login route for prospective users
+  app.post("/api/auth/demo-login", async (req, res) => {
+    try {
+      const { role } = req.body;
+      
+      console.log("=== DEMO LOGIN ===");
+      console.log("Demo role:", role);
+      
+      if (!role) {
+        return res.status(400).json({ message: "Demo role is required" });
+      }
+
+      // Demo user mapping for different roles
+      const demoUsers = {
+        'executive': { id: 'demo_exec', username: 'demo_executive', role: 'Director' },
+        'production': { id: 'demo_prod', username: 'demo_production', role: 'Production Scheduler' },
+        'plant-manager': { id: 'demo_plant', username: 'demo_plant_manager', role: 'Plant Manager' },
+        'it-admin': { id: 'demo_it', username: 'demo_it_admin', role: 'IT Administrator' }
+      };
+
+      const demoUser = demoUsers[role as keyof typeof demoUsers];
+      if (!demoUser) {
+        return res.status(400).json({ message: "Invalid demo role" });
+      }
+
+      // Create demo session without database lookup
+      req.session.userId = demoUser.id;
+      req.session.isDemo = true;
+      req.session.demoRole = demoUser.role;
+      
+      // Generate demo auth token
+      const demoToken = `demo_${demoUser.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      res.json({
+        message: "Demo login successful",
+        user: {
+          id: demoUser.id,
+          username: demoUser.username,
+          email: `${demoUser.username}@demo.planettogether.com`,
+          isActive: true,
+          isDemo: true,
+          role: demoUser.role
+        },
+        token: demoToken
+      });
+    } catch (error) {
+      console.error("Demo login error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -120,23 +171,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Session userId:", req.session?.userId);
       
       let userId = req.session?.userId;
+      let isDemo = req.session?.isDemo;
       
       // Check for token in Authorization header if session fails
       if (!userId && req.headers.authorization) {
         const token = req.headers.authorization.replace('Bearer ', '');
         console.log("Checking token:", token);
         
+        // Handle demo tokens
+        if (token.startsWith('demo_')) {
+          isDemo = true;
+          const tokenParts = token.split('_');
+          if (tokenParts.length >= 3) {
+            userId = tokenParts[1] + '_' + tokenParts[2]; // demo_exec, demo_prod, etc.
+            console.log("Demo token userId:", userId);
+          }
+        }
         // Extract user ID from token (simple format: user_ID_timestamp_random)
-        const tokenParts = token.split('_');
-        if (tokenParts.length >= 2 && tokenParts[0] === 'user') {
-          userId = parseInt(tokenParts[1]);
-          console.log("Token userId:", userId);
+        else if (token.startsWith('user_')) {
+          const tokenParts = token.split('_');
+          if (tokenParts.length >= 2) {
+            userId = parseInt(tokenParts[1]);
+            console.log("Token userId:", userId);
+          }
         }
       }
       
       if (!userId) {
         console.log("No userId found, returning 401");
         return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      // Handle demo users
+      if (isDemo || (typeof userId === 'string' && userId.startsWith('demo_'))) {
+        const demoUsers = {
+          'demo_exec': { 
+            id: 'demo_exec', 
+            username: 'demo_executive', 
+            email: 'demo@planettogether.com', 
+            firstName: 'Demo',
+            lastName: 'Executive',
+            isActive: true,
+            activeRole: { id: 'demo_exec_role', name: 'Director' },
+            permissions: ['business-goals-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+            roles: [{ id: 'demo_exec_role', name: 'Director' }]
+          },
+          'demo_prod': { 
+            id: 'demo_prod', 
+            username: 'demo_production', 
+            email: 'demo@planettogether.com', 
+            firstName: 'Demo',
+            lastName: 'Scheduler',
+            isActive: true,
+            activeRole: { id: 'demo_prod_role', name: 'Production Scheduler' },
+            permissions: ['schedule-view', 'boards-view', 'shop-floor-view', 'analytics-view', 'scheduling-optimizer-view', 'ai-assistant-view', 'feedback-view'],
+            roles: [{ id: 'demo_prod_role', name: 'Production Scheduler' }]
+          },
+          'demo_plant': { 
+            id: 'demo_plant', 
+            username: 'demo_plant_manager', 
+            email: 'demo@planettogether.com', 
+            firstName: 'Demo',
+            lastName: 'Plant Manager',
+            isActive: true,
+            activeRole: { id: 'demo_plant_role', name: 'Plant Manager' },
+            permissions: ['plant-manager-view', 'capacity-planning-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+            roles: [{ id: 'demo_plant_role', name: 'Plant Manager' }]
+          },
+          'demo_it': { 
+            id: 'demo_it', 
+            username: 'demo_it_admin', 
+            email: 'demo@planettogether.com', 
+            firstName: 'Demo',
+            lastName: 'IT Admin',
+            isActive: true,
+            activeRole: { id: 'demo_it_role', name: 'IT Administrator' },
+            permissions: ['systems-management-view', 'role-management-view', 'user-management-view', 'ai-assistant-view', 'feedback-view'],
+            roles: [{ id: 'demo_it_role', name: 'IT Administrator' }]
+          }
+        };
+        
+        const demoUser = demoUsers[userId as keyof typeof demoUsers];
+        if (demoUser) {
+          console.log("Demo user found, returning demo data");
+          return res.json(demoUser);
+        }
       }
 
       const user = await storage.getUserWithRoles(userId);

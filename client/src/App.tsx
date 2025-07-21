@@ -33,6 +33,7 @@ import BusinessGoals from "@/pages/business-goals";
 import RoleManagement from "@/pages/role-management";
 import UserRoleAssignments from "@/pages/user-role-assignments";
 import Training from "@/pages/training";
+import DemoTour from "@/pages/demo-tour";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -52,7 +53,13 @@ function Router() {
   }
 
   if (!isAuthenticated) {
-    return <Login />;
+    return (
+      <Switch>
+        <Route path="/demo-tour" component={DemoTour} />
+        <Route path="/" component={Login} />
+        <Route component={Login} />
+      </Switch>
+    );
   }
 
   return (
