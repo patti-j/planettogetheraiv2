@@ -2578,6 +2578,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all system roles for role demonstration (trainers only) - MUST be before /api/roles/:id
+  app.get("/api/roles/all", async (req, res) => {
+    try {
+      console.log("=== ROLES/ALL ENDPOINT ===");
+      console.log("Authorization header:", req.headers.authorization);
+      console.log("Session userId:", req.session?.userId);
+      
+      let userId = req.session?.userId;
+      
+      // Check for token in Authorization header if session fails
+      if (!userId && req.headers.authorization) {
+        const token = req.headers.authorization.replace('Bearer ', '');
+        console.log("Checking token:", token);
+        
+        // Extract user ID from token (simple format: user_ID_timestamp_random)
+        const tokenParts = token.split('_');
+        if (tokenParts.length >= 2 && tokenParts[0] === 'user') {
+          userId = parseInt(tokenParts[1]);
+          console.log("Token userId:", userId);
+        }
+      }
+      
+      if (!userId) {
+        console.log("No userId found, returning 401");
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      console.log("Checking training permissions for userId:", userId);
+      // Check if user has training permissions
+      const hasTrainingPermission = await storage.hasPermission(userId, 'training', 'view');
+      console.log("Has training permission:", hasTrainingPermission);
+      
+      if (!hasTrainingPermission) {
+        return res.status(403).json({ error: "User does not have role demonstration permissions" });
+      }
+
+      console.log("Fetching all roles with permission count...");
+      const allRoles = await storage.getAllRolesWithPermissionCount();
+      console.log("All roles fetched:", allRoles.length, "roles");
+      res.json(allRoles);
+    } catch (error) {
+      console.error("Error fetching all roles:", error);
+      res.status(500).json({ error: "Failed to fetch all roles" });
+    }
+  });
+
   app.get("/api/roles/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -2986,39 +3032,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all system roles for role demonstration (trainers only)
-  app.get("/api/roles/all", async (req, res) => {
-    try {
-      let userId = req.session?.userId;
-      
-      // Check for token in Authorization header if session fails
-      if (!userId && req.headers.authorization) {
-        const token = req.headers.authorization.replace('Bearer ', '');
-        
-        // Extract user ID from token (simple format: user_ID_timestamp_random)
-        const tokenParts = token.split('_');
-        if (tokenParts.length >= 2 && tokenParts[0] === 'user') {
-          userId = parseInt(tokenParts[1]);
-        }
-      }
-      
-      if (!userId) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
 
-      // Check if user has training permissions
-      const hasTrainingPermission = await storage.hasPermission(userId, 'training', 'view');
-      if (!hasTrainingPermission) {
-        return res.status(403).json({ error: "User does not have role demonstration permissions" });
-      }
-
-      const allRoles = await storage.getAllRolesWithPermissionCount();
-      res.json(allRoles);
-    } catch (error) {
-      console.error("Error fetching all roles:", error);
-      res.status(500).json({ error: "Failed to fetch all roles" });
-    }
-  });
 
   app.post("/api/users/:userId/switch-role", async (req, res) => {
     try {

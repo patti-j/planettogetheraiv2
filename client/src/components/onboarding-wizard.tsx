@@ -360,9 +360,10 @@ export default function OnboardingWizard() {
 
   // Auto-open for new users who haven't seen onboarding
   useEffect(() => {
-    if (isNewUser && !hasSeenOnboarding) {
-      setIsOpen(true);
-    }
+    // Temporarily disable auto-opening for training/demo purposes
+    // if (isNewUser && !hasSeenOnboarding) {
+    //   setIsOpen(true);
+    // }
   }, [isNewUser, hasSeenOnboarding]);
 
   // Listen for custom event to open onboarding
