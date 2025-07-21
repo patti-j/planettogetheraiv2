@@ -126,11 +126,19 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 21, 2025)
 
-✓ **Training Mode Exit System Fix (July 21, 2025)**:
+✓ **Universal AI Assistant & Feedback Access Implementation (July 21, 2025)**:
+- Added `ai-assistant-view` and `feedback-view` permissions to all 10 system roles for universal access
+- All users can now access Max AI assistant and feedback system regardless of their role
+- Enhanced user experience by ensuring core communication and feedback tools are available to everyone
+- Database updated with proper permission assignments for all roles: Director, Plant Manager, Production Scheduler, IT Administrator, Systems Manager, Administrator, IT Systems Administrator, Data Analyst, Trainer, Shop Floor Operations
+
+✓ **Training Mode Exit System & Role Switching Redirection Fix (July 21, 2025)**:
 - Fixed critical training mode exit button functionality that was failing with "user does not have role switching permissions" errors
 - Enhanced role switching API endpoint with proper token-based authentication instead of relying on session-only authentication
 - Updated permission checking logic to examine user's originally assigned roles (Trainer/Systems Manager) rather than current active role
 - Training mode exit now successfully returns users from demonstration roles (Director, Production Scheduler, etc.) back to their assigned roles
+- Fixed role switching redirection to send users to appropriate pages based on their new role instead of staying on training page
+- Production Schedulers redirect to main dashboard, Directors to business goals, Admins to role management, etc.
 - Role switching authentication now works consistently with the app's token-based authentication system
 - Added comprehensive debug logging for role switching operations to ensure reliable functionality
 - Training demonstrations now fully functional with seamless entry and exit from any role in the system
