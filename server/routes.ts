@@ -262,6 +262,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             firstName: 'Demo',
             lastName: 'IT Admin',
             isActive: true,
+            isDemo: true,
+            role: 'IT Administrator',
             activeRole: { id: 'demo_it_admin_role', name: 'IT Administrator' },
             permissions: ['systems-management-view', 'role-management-view', 'user-management-view', 'ai-assistant-view', 'feedback-view'],
             roles: [{ id: 'demo_it_admin_role', name: 'IT Administrator' }]
