@@ -223,6 +223,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             firstName: 'Demo',
             lastName: 'Director',
             isActive: true,
+            isDemo: true,
+            role: 'Director',
             activeRole: { id: 'demo_director_role', name: 'Director' },
             permissions: ['business-goals-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
             roles: [{ id: 'demo_director_role', name: 'Director' }]
@@ -234,6 +236,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             firstName: 'Demo',
             lastName: 'Plant Manager',
             isActive: true,
+            isDemo: true,
+            role: 'Plant Manager',
             activeRole: { id: 'demo_plant_role', name: 'Plant Manager' },
             permissions: ['plant-manager-view', 'capacity-planning-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
             roles: [{ id: 'demo_plant_role', name: 'Plant Manager' }]
@@ -245,6 +249,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             firstName: 'Demo',
             lastName: 'Scheduler',
             isActive: true,
+            isDemo: true,
+            role: 'Production Scheduler',
             activeRole: { id: 'demo_scheduler_role', name: 'Production Scheduler' },
             permissions: ['schedule-view', 'boards-view', 'shop-floor-view', 'analytics-view', 'scheduling-optimizer-view', 'business-goals-view', 'ai-assistant-view', 'feedback-view'],
             roles: [{ id: 'demo_scheduler_role', name: 'Production Scheduler' }]
