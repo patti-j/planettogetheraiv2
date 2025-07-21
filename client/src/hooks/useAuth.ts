@@ -42,7 +42,7 @@ export function useAuth() {
       
       // Store token in localStorage if provided
       if (userData.token) {
-        localStorage.setItem('auth_token', userData.token);
+        localStorage.setItem('authToken', userData.token);
         console.log("Token stored in localStorage");
       }
       
@@ -62,7 +62,10 @@ export function useAuth() {
       return apiRequest("POST", "/api/auth/logout", {});
     },
     onSuccess: () => {
+      // Clear localStorage token on logout
+      localStorage.removeItem('authToken');
       queryClient.setQueryData(["/api/auth/me"], null);
+      queryClient.clear(); // Clear all cached data
     },
   });
 
