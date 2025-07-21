@@ -2096,7 +2096,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   private async getUserWithRolesByUsername(username: string): Promise<UserWithRoles | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+    // Make username lookup case-insensitive
+    const [user] = await db.select().from(users).where(sql`LOWER(${users.username}) = LOWER(${username})`);
     if (!user) return undefined;
 
     return await this.getUserWithRoles(user.id);
