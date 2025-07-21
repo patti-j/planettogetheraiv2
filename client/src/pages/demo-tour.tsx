@@ -370,7 +370,7 @@ export default function DemoTour() {
         </div>
 
         <Dialog open={showRoleSelection} onOpenChange={setShowRoleSelection}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-2xl">Welcome to PlanetTogether!</DialogTitle>
               <DialogDescription className="text-lg">
@@ -378,7 +378,7 @@ export default function DemoTour() {
               </DialogDescription>
             </DialogHeader>
             
-            <div className="space-y-6 overflow-y-auto pr-2">
+            <div className="space-y-6 pr-2">
               {/* Primary Role Selection */}
               <div>
                 <h3 className="text-lg font-semibold mb-4">What's your primary role?</h3>
