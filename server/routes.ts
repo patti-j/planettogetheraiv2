@@ -139,7 +139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Not authenticated" });
       }
 
-      const user = await storage.getUserWithRolesAndPermissions(userId);
+      const user = await storage.getUserWithRoles(userId);
       if (!user || !user.isActive) {
         console.log("User not found or inactive for userId:", userId);
         return res.status(401).json({ message: "User not found or inactive" });

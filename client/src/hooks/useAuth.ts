@@ -83,11 +83,16 @@ export function usePermissions() {
   const hasPermission = (feature: string, action: string): boolean => {
     if (!user || !user.roles) return false;
 
-    return user.roles.some(role =>
+    // Debug permission checking
+    const result = user.roles.some(role =>
       role.permissions.some(permission =>
         permission.feature === feature && permission.action === action
       )
     );
+    
+
+    
+    return result;
   };
 
   const hasAnyPermission = (permissions: Array<{ feature: string; action: string }>): boolean => {
