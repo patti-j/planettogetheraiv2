@@ -126,6 +126,14 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 21, 2025)
 
+✓ **Comprehensive Mobile Layout Fix - Hamburger Menu Clearance (July 21, 2025)**:
+- Completed systematic mobile header fixes across all remaining pages to prevent hamburger menu overlap
+- Applied consistent "md:ml-0 ml-12" spacing pattern to page titles across 15+ pages
+- Fixed mobile layout issues on: training.tsx, feedback.tsx, email-settings.tsx, plant-manager.tsx, systems-management.tsx, capacity-planning.tsx, role-management.tsx, user-role-assignments.tsx, erp-import.tsx, visual-factory.tsx, scheduling-optimizer.tsx, business-goals.tsx
+- All page headers now properly clear the hamburger menu button positioned at top-2 left-2
+- Consistent mobile experience across entire application with no overlapping navigation elements
+- Mobile users can now access all page titles and navigation without interference from hamburger menu
+
 ✓ **Universal AI Assistant & Feedback Access Implementation (July 21, 2025)**:
 - Added `ai-assistant-view` and `feedback-view` permissions to all 10 system roles for universal access
 - All users can now access Max AI assistant and feedback system regardless of their role

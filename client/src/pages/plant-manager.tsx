@@ -239,7 +239,7 @@ export default function PlantManagerPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <div>
+        <div className="md:ml-0 ml-12">
           <h1 className="text-2xl font-semibold text-gray-800">Plant Manager Dashboard</h1>
           <p className="text-gray-600">Comprehensive plant operations oversight and strategic decision-making</p>
         </div>

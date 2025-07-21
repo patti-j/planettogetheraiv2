@@ -262,7 +262,7 @@ export default function RoleManagementPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
+        <div className="md:ml-0 ml-12">
           <h1 className="text-2xl font-semibold text-gray-800">Role Management</h1>
           <p className="text-gray-600">Define roles and specify feature permissions for different user types</p>
         </div>

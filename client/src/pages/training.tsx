@@ -141,7 +141,7 @@ export default function Training() {
     <div className="p-6">
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
-          <div>
+          <div className="md:ml-0 ml-12">
             <h1 className="text-2xl font-semibold text-gray-800">Training & Role Demonstration</h1>
             <p className="text-gray-600">
               Interactive training modules and role switching for comprehensive system demonstrations

@@ -337,7 +337,7 @@ export default function SystemsManagementPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <div>
+        <div className="md:ml-0 ml-12">
           <h1 className="text-2xl font-semibold text-gray-800">Systems Management</h1>
           <p className="text-gray-600">Monitor system health, manage users, and oversee IT infrastructure</p>
         </div>

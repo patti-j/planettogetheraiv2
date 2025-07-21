@@ -880,7 +880,7 @@ const SchedulingOptimizer: React.FC = () => {
     <div className="space-y-6 pb-8 pt-12 md:pt-0">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="md:flex-1">
+        <div className="md:flex-1 md:ml-0 ml-12">
           <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Optimize Orders</h1>
           <p className="text-sm md:text-base text-gray-600">Optimize orders with intelligent scheduling and multi-operation planning</p>
         </div>

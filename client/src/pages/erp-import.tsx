@@ -221,7 +221,7 @@ const ERPImportPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
+        <div className="md:ml-0 ml-12">
           <h1 className="text-2xl font-semibold text-gray-800">ERP Data Import</h1>
           <p className="text-gray-600">Import and manage data from external ERP systems</p>
         </div>

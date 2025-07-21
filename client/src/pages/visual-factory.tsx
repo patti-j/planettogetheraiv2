@@ -377,7 +377,7 @@ export default function VisualFactory() {
           <div className="border-b border-gray-200 bg-white">
             <div className="px-6 py-4">
               <div className="flex items-center justify-between">
-                <div>
+                <div className="md:ml-0 ml-12">
                   <h1 className="text-2xl font-semibold text-gray-800 flex items-center">
                     <Monitor className="w-6 h-6 mr-2" />
                     Visual Factory
