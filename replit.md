@@ -124,6 +124,18 @@ The application uses a modern full-stack architecture with strong typing through
 - All API requests include proper token authentication in headers for secure communication
 - Role-based access control fully operational across sidebar navigation and route protection
 
+## Recent Changes (July 21, 2025)
+
+✓ **Visual Factory Feature Implementation (July 21, 2025)**:
+- Created comprehensive Visual Factory page for automated large screen displays in manufacturing facilities
+- Implemented Visual Factory database schema with display management and configuration storage
+- Added complete API routes for Visual Factory displays (GET, POST, PUT, DELETE operations)
+- Integrated Visual Factory navigation item with proper role-based access control
+- Added visual-factory-view permission to Trainer role for comprehensive demonstration access
+- Database migration completed successfully with visual_factory_displays table creation
+- Visual Factory supports automated cycling, AI-driven content selection, and audience-adaptive displays
+- System designed for hands-free operation with configurable display intervals and widget management
+
 ## Recent Changes (July 20, 2025)
 
 ✓ **Role Switching & Training System Implementation (July 20, 2025)**:
