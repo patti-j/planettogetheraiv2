@@ -294,6 +294,14 @@ export async function seedDatabase() {
       lastName: "Thompson",
       passwordHash: hashedPassword,
       isActive: true
+    },
+    {
+      username: "trainer",
+      email: "trainer@planettogether.com",
+      firstName: "Morgan",
+      lastName: "Williams",
+      passwordHash: hashedPassword,
+      isActive: true
     }
   ];
 
@@ -315,6 +323,7 @@ export async function seedDatabase() {
     { userId: insertedUsers[2].id, roleId: insertedRoles[2].id }, // Production Scheduler
     { userId: insertedUsers[3].id, roleId: insertedRoles[3].id }, // IT Administrator
     { userId: insertedUsers[4].id, roleId: insertedRoles[4].id }, // Systems Manager
+    { userId: insertedUsers[5].id, roleId: insertedRoles[4].id }, // Trainer (using Systems Manager role temporarily)
   ];
 
   await db.insert(userRoles).values(userRoleData).onConflictDoNothing();
@@ -326,6 +335,7 @@ export async function seedDatabase() {
     console.log("- scheduler / password123 (Production Scheduling access)");
     console.log("- admin / password123 (User Management + Systems access)");
     console.log("- sysmanager / password123 (Systems Management access)");
+    console.log("- trainer / password123 (Training and Demonstrations)");
     
     // Now create default roles for all features
     await seedDefaultRoles();
@@ -422,6 +432,13 @@ async function seedDefaultRoles() {
       description: "Business intelligence with reporting and analytics access",
       permissions: allPermissions
         .filter(p => ['analytics', 'reports', 'business-goals'].includes(p.feature) && ['view', 'create'].includes(p.action))
+        .map(p => p.id)
+    },
+    {
+      name: "Trainer",
+      description: "Comprehensive training oversight with view access to all system modules for demonstration purposes",
+      permissions: allPermissions
+        .filter(p => p.action === 'view')
         .map(p => p.id)
     }
   ];

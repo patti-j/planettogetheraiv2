@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Factory, Info } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -32,11 +32,48 @@ export default function Login() {
   };
 
   const demoAccounts = [
-    { username: "director", password: "password123", role: "Director", access: "Business Goals, Strategic Planning" },
-    { username: "plant_manager", password: "password123", role: "Plant Manager", access: "Capacity Planning, Operations" },
-    { username: "scheduler", password: "password123", role: "Scheduler", access: "Production Scheduling, Optimization" },
-    { username: "admin", password: "password123", role: "Administrator", access: "User Management, System Admin" },
-    { username: "sysmanager", password: "password123", role: "System Manager", access: "IT Systems, Infrastructure" },
+    { 
+      username: "director", 
+      password: "password123", 
+      role: "Director", 
+      name: "Sarah Johnson",
+      access: "Business Goals, Strategic Planning, Reports" 
+    },
+    { 
+      username: "plant_manager", 
+      password: "password123", 
+      role: "Plant Manager", 
+      name: "Mike Chen",
+      access: "Capacity Planning, Plant Operations, Manufacturing" 
+    },
+    { 
+      username: "scheduler", 
+      password: "password123", 
+      role: "Production Scheduler", 
+      name: "Emily Rodriguez",
+      access: "Production Scheduling, Order Optimization, Resource Management" 
+    },
+    { 
+      username: "admin", 
+      password: "password123", 
+      role: "Administrator", 
+      name: "David Kim",
+      access: "User Management, System Administration, Full Access" 
+    },
+    { 
+      username: "sysmanager", 
+      password: "password123", 
+      role: "System Manager", 
+      name: "Alex Thompson",
+      access: "IT Systems, Infrastructure, Technical Management" 
+    },
+    { 
+      username: "trainer", 
+      password: "password123", 
+      role: "Trainer", 
+      name: "Morgan Williams",
+      access: "Training System, Role Demonstrations, All Module Views" 
+    },
   ];
 
   return (
@@ -67,28 +104,42 @@ export default function Login() {
                     <Info className="h-4 w-4 text-gray-500" />
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-lg">
+                <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>Demo Accounts</DialogTitle>
+                    <DialogDescription>
+                      Use these accounts to test different role permissions and explore the system features.
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
-                    <p className="text-sm text-gray-600">
-                      Use these accounts to test different role permissions:
-                    </p>
                     <div className="space-y-3">
                       {demoAccounts.map((account) => (
-                        <div key={account.username} className="p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium text-gray-800">{account.username}</span>
-                            <span className="text-sm text-blue-600">{account.role}</span>
+                        <div key={account.username} className="p-4 bg-gray-50 rounded-lg border">
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium text-gray-800">{account.username}</span>
+                                <span className="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded">{account.role}</span>
+                              </div>
+                              <p className="text-sm text-gray-600 font-medium">{account.name}</p>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xs text-gray-500 mb-1">Password:</div>
+                              <span className="text-sm font-mono text-gray-800 bg-white px-2 py-1 rounded border">{account.password}</span>
+                            </div>
                           </div>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm text-gray-600">Password:</span>
-                            <span className="text-sm font-mono text-gray-800">{account.password}</span>
+                          <div className="mt-3">
+                            <div className="text-xs text-gray-500 mb-1">Access & Permissions:</div>
+                            <p className="text-sm text-gray-700">{account.access}</p>
                           </div>
-                          <p className="text-sm text-gray-600">{account.access}</p>
                         </div>
                       ))}
+                    </div>
+                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-blue-800">
+                        <strong>Note:</strong> Each account provides access to different features of the manufacturing production scheduling system. 
+                        The Trainer account has comprehensive view access to all modules for demonstration purposes.
+                      </p>
                     </div>
                   </div>
                 </DialogContent>
