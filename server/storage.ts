@@ -4,7 +4,7 @@ import {
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
   capacityPlanningScenarios, staffingPlans, shiftPlans, equipmentPlans, capacityProjections,
   businessGoals, goalProgress, goalRisks, goalIssues, goalKpis, goalActions,
-  users, roles, permissions, userRoles, rolePermissions,
+  users, roles, permissions, userRoles, rolePermissions, visualFactoryDisplays,
   type Capability, type Resource, type Job, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
@@ -17,7 +17,8 @@ import {
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
   type InsertCapacityPlanningScenario, type InsertStaffingPlan, type InsertShiftPlan, type InsertEquipmentPlan, type InsertCapacityProjection,
   type InsertBusinessGoal, type InsertGoalProgress, type InsertGoalRisk, type InsertGoalIssue, type InsertGoalKpi, type InsertGoalAction,
-  type InsertUser, type InsertRole, type InsertPermission, type InsertUserRole, type InsertRolePermission
+  type InsertUser, type InsertRole, type InsertPermission, type InsertUserRole, type InsertRolePermission,
+  type VisualFactoryDisplay, type InsertVisualFactoryDisplay
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, like, ne } from "drizzle-orm";
@@ -287,6 +288,13 @@ export interface IStorage {
   // Authentication Methods
   getUserWithRolesAndPermissions(usernameOrId: string | number): Promise<UserWithRoles | undefined>;
   updateUserLastLogin(userId: number): Promise<void>;
+
+  // Visual Factory Displays
+  getVisualFactoryDisplays(): Promise<VisualFactoryDisplay[]>;
+  getVisualFactoryDisplay(id: number): Promise<VisualFactoryDisplay | undefined>;
+  createVisualFactoryDisplay(display: InsertVisualFactoryDisplay): Promise<VisualFactoryDisplay>;
+  updateVisualFactoryDisplay(id: number, display: Partial<InsertVisualFactoryDisplay>): Promise<VisualFactoryDisplay | undefined>;
+  deleteVisualFactoryDisplay(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -2371,6 +2379,35 @@ export class DatabaseStorage implements IStorage {
       .orderBy(roles.name);
 
     return rolesData;
+  }
+
+  // Visual Factory Displays
+  async getVisualFactoryDisplays(): Promise<VisualFactoryDisplay[]> {
+    return await db.select().from(visualFactoryDisplays).orderBy(desc(visualFactoryDisplays.createdAt));
+  }
+
+  async getVisualFactoryDisplay(id: number): Promise<VisualFactoryDisplay | undefined> {
+    const [display] = await db.select().from(visualFactoryDisplays).where(eq(visualFactoryDisplays.id, id));
+    return display;
+  }
+
+  async createVisualFactoryDisplay(display: InsertVisualFactoryDisplay): Promise<VisualFactoryDisplay> {
+    const [newDisplay] = await db.insert(visualFactoryDisplays).values(display).returning();
+    return newDisplay;
+  }
+
+  async updateVisualFactoryDisplay(id: number, display: Partial<InsertVisualFactoryDisplay>): Promise<VisualFactoryDisplay | undefined> {
+    const [updatedDisplay] = await db
+      .update(visualFactoryDisplays)
+      .set({ ...display, updatedAt: new Date() })
+      .where(eq(visualFactoryDisplays.id, id))
+      .returning();
+    return updatedDisplay;
+  }
+
+  async deleteVisualFactoryDisplay(id: number): Promise<boolean> {
+    const result = await db.delete(visualFactoryDisplays).where(eq(visualFactoryDisplays.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
   }
 }
 

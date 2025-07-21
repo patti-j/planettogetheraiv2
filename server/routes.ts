@@ -3041,6 +3041,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Visual Factory routes
+  app.get('/api/visual-factory/displays', async (req, res) => {
+    try {
+      const displays = await storage.getVisualFactoryDisplays();
+      res.json(displays);
+    } catch (error) {
+      console.error('Error fetching visual factory displays:', error);
+      res.status(500).json({ error: 'Failed to fetch displays' });
+    }
+  });
+
+  app.get('/api/visual-factory/displays/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const display = await storage.getVisualFactoryDisplay(id);
+      if (!display) {
+        return res.status(404).json({ error: 'Display not found' });
+      }
+      res.json(display);
+    } catch (error) {
+      console.error('Error fetching visual factory display:', error);
+      res.status(500).json({ error: 'Failed to fetch display' });
+    }
+  });
+
+  app.post('/api/visual-factory/displays', async (req, res) => {
+    try {
+      const display = await storage.createVisualFactoryDisplay(req.body);
+      res.json(display);
+    } catch (error) {
+      console.error('Error creating visual factory display:', error);
+      res.status(500).json({ error: 'Failed to create display' });
+    }
+  });
+
+  app.put('/api/visual-factory/displays/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const display = await storage.updateVisualFactoryDisplay(id, req.body);
+      if (!display) {
+        return res.status(404).json({ error: 'Display not found' });
+      }
+      res.json(display);
+    } catch (error) {
+      console.error('Error updating visual factory display:', error);
+      res.status(500).json({ error: 'Failed to update display' });
+    }
+  });
+
+  app.delete('/api/visual-factory/displays/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteVisualFactoryDisplay(id);
+      if (!success) {
+        return res.status(404).json({ error: 'Display not found' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting visual factory display:', error);
+      res.status(500).json({ error: 'Failed to delete display' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

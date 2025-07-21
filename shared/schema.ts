@@ -1114,3 +1114,27 @@ export type UserWithRoles = User & {
     permissions: Permission[];
   })[];
 };
+
+// Visual Factory Display Schema
+export const visualFactoryDisplays = pgTable("visual_factory_displays", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  location: varchar("location", { length: 255 }).notNull(),
+  audience: varchar("audience", { length: 50 }).notNull(), // shop-floor, customer-service, sales, management, general
+  autoRotationInterval: integer("auto_rotation_interval").default(30),
+  isActive: boolean("is_active").default(true),
+  useAiMode: boolean("use_ai_mode").default(false),
+  widgets: jsonb("widgets").default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertVisualFactoryDisplaySchema = createInsertSchema(visualFactoryDisplays).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertVisualFactoryDisplay = z.infer<typeof insertVisualFactoryDisplaySchema>;
+export type VisualFactoryDisplay = typeof visualFactoryDisplays.$inferSelect;

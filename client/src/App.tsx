@@ -28,6 +28,7 @@ import ERPImport from "@/pages/erp-import";
 import PlantManager from "@/pages/plant-manager";
 import SystemsManagement from "@/pages/systems-management";
 import CapacityPlanning from "@/pages/capacity-planning";
+import VisualFactory from "@/pages/visual-factory";
 import BusinessGoals from "@/pages/business-goals";
 import RoleManagement from "@/pages/role-management";
 import UserRoleAssignments from "@/pages/user-role-assignments";
@@ -143,6 +144,11 @@ function Router() {
           <Route path="/capacity-planning">
             <ProtectedRoute feature="capacity-planning" action="view">
               <CapacityPlanning />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/visual-factory">
+            <ProtectedRoute feature="visual-factory" action="view">
+              <VisualFactory />
             </ProtectedRoute>
           </Route>
           <Route path="/business-goals">

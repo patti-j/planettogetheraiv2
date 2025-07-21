@@ -1,0 +1,644 @@
+import { useState, useEffect, useRef } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
+import { 
+  Monitor, 
+  Settings, 
+  Play, 
+  Pause, 
+  RotateCcw, 
+  Sparkles, 
+  Users, 
+  Building2, 
+  DollarSign,
+  Headphones,
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Package,
+  Wrench,
+  BarChart3,
+  Target,
+  Calendar,
+  Maximize2,
+  Minimize2
+} from 'lucide-react';
+import type { Job, Operation, Resource } from '@shared/schema';
+
+interface VisualFactoryDisplay {
+  id: number;
+  name: string;
+  description: string;
+  location: string;
+  audience: 'shop-floor' | 'customer-service' | 'sales' | 'management' | 'general';
+  autoRotationInterval: number; // seconds
+  isActive: boolean;
+  useAiMode: boolean;
+  widgets: VisualFactoryWidget[];
+  createdAt: Date;
+}
+
+interface VisualFactoryWidget {
+  id: string;
+  type: 'metrics' | 'schedule' | 'orders' | 'alerts' | 'progress' | 'announcements' | 'weather' | 'chart';
+  title: string;
+  position: { x: number; y: number; width: number; height: number };
+  config: Record<string, any>;
+  priority: number;
+  audienceRelevance: Record<string, number>; // audience -> relevance score
+}
+
+const defaultWidgets: Omit<VisualFactoryWidget, 'id'>[] = [
+  {
+    type: 'metrics',
+    title: 'Production Overview',
+    position: { x: 0, y: 0, width: 4, height: 2 },
+    config: { showJobs: true, showUtilization: true, showOnTime: true },
+    priority: 10,
+    audienceRelevance: { 'shop-floor': 10, 'management': 9, 'general': 7 }
+  },
+  {
+    type: 'schedule',
+    title: 'Today\'s Schedule',
+    position: { x: 4, y: 0, width: 8, height: 6 },
+    config: { timeRange: 'today', showDetails: true },
+    priority: 9,
+    audienceRelevance: { 'shop-floor': 10, 'management': 8, 'general': 6 }
+  },
+  {
+    type: 'orders',
+    title: 'Active Orders',
+    position: { x: 0, y: 2, width: 4, height: 4 },
+    config: { showPriority: true, showDueDate: true, limit: 10 },
+    priority: 8,
+    audienceRelevance: { 'customer-service': 10, 'sales': 9, 'management': 7 }
+  },
+  {
+    type: 'alerts',
+    title: 'System Alerts',
+    position: { x: 0, y: 6, width: 6, height: 2 },
+    config: { showCritical: true, showWarnings: true },
+    priority: 7,
+    audienceRelevance: { 'shop-floor': 9, 'management': 10, 'general': 6 }
+  }
+];
+
+export default function VisualFactory() {
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [currentDisplay, setCurrentDisplay] = useState<VisualFactoryDisplay | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentWidgetIndex, setCurrentWidgetIndex] = useState(0);
+  const [configDialogOpen, setConfigDialogOpen] = useState(false);
+  const [aiConfigDialogOpen, setAiConfigDialogOpen] = useState(false);
+  const [newDisplayDialogOpen, setNewDisplayDialogOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [timeRemaining, setTimeRemaining] = useState(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch data
+  const { data: displays = [] } = useQuery<VisualFactoryDisplay[]>({
+    queryKey: ['/api/visual-factory/displays'],
+  });
+
+  const { data: jobs = [] } = useQuery<Job[]>({
+    queryKey: ['/api/jobs'],
+  });
+
+  const { data: operations = [] } = useQuery<Operation[]>({
+    queryKey: ['/api/operations'],
+  });
+
+  const { data: resources = [] } = useQuery<Resource[]>({
+    queryKey: ['/api/resources'],
+  });
+
+  const { data: metrics } = useQuery({
+    queryKey: ['/api/metrics'],
+  });
+
+  // Auto-rotation effect
+  useEffect(() => {
+    if (isPlaying && currentDisplay && currentDisplay.widgets.length > 1) {
+      const interval = currentDisplay.autoRotationInterval * 1000;
+      setTimeRemaining(interval / 1000);
+      
+      intervalRef.current = setInterval(() => {
+        setCurrentWidgetIndex(prev => (prev + 1) % currentDisplay.widgets.length);
+        setTimeRemaining(interval / 1000);
+      }, interval);
+
+      // Countdown timer
+      const countdownInterval = setInterval(() => {
+        setTimeRemaining(prev => Math.max(0, prev - 1));
+      }, 1000);
+
+      return () => {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        clearInterval(countdownInterval);
+      };
+    }
+  }, [isPlaying, currentDisplay, currentWidgetIndex]);
+
+  // Mutations
+  const createDisplayMutation = useMutation({
+    mutationFn: async (display: Omit<VisualFactoryDisplay, 'id' | 'createdAt'>) => {
+      const response = await apiRequest('POST', '/api/visual-factory/displays', display);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/visual-factory/displays'] });
+      setNewDisplayDialogOpen(false);
+      toast({ title: 'Display created successfully' });
+    }
+  });
+
+  const aiConfigMutation = useMutation({
+    mutationFn: async (prompt: string) => {
+      const response = await apiRequest('POST', '/api/ai-agent/command', {
+        command: `Create visual factory display configuration: ${prompt}`,
+        action: 'CREATE_VISUAL_FACTORY_DISPLAY'
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/visual-factory/displays'] });
+      setAiConfigDialogOpen(false);
+      setAiPrompt('');
+      toast({ 
+        title: 'AI Display Created',
+        description: data.message || 'Visual factory display configured successfully'
+      });
+    }
+  });
+
+  const handleFullscreen = () => {
+    if (!isFullscreen) {
+      if (containerRef.current?.requestFullscreen) {
+        containerRef.current.requestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+    setIsFullscreen(!isFullscreen);
+  };
+
+  const handlePlay = () => {
+    if (currentDisplay) {
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const resetRotation = () => {
+    setCurrentWidgetIndex(0);
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+  };
+
+  const renderWidget = (widget: VisualFactoryWidget) => {
+    const widgetContent = () => {
+      switch (widget.type) {
+        case 'metrics':
+          return (
+            <div className="grid grid-cols-3 gap-4 h-full">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{jobs.length}</div>
+                <div className="text-sm text-gray-600">Active Jobs</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{metrics?.utilization || 0}%</div>
+                <div className="text-sm text-gray-600">Utilization</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">
+                  {Math.round((metrics?.onTimeDelivery || 0) * 100)}%
+                </div>
+                <div className="text-sm text-gray-600">On Time</div>
+              </div>
+            </div>
+          );
+
+        case 'schedule':
+          const todayOperations = operations.filter(op => {
+            if (!op.startTime) return false;
+            const opDate = new Date(op.startTime);
+            const today = new Date();
+            return opDate.toDateString() === today.toDateString();
+          });
+
+          return (
+            <div className="space-y-2">
+              {todayOperations.slice(0, 6).map(operation => (
+                <div key={operation.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                  <div>
+                    <div className="font-medium">{operation.name}</div>
+                    <div className="text-sm text-gray-600">
+                      {jobs.find(j => j.id === operation.jobId)?.name}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <Badge variant={operation.status === 'Completed' ? 'default' : 'secondary'}>
+                      {operation.status}
+                    </Badge>
+                    <div className="text-sm text-gray-600">
+                      {operation.startTime ? new Date(operation.startTime).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) : 'Not scheduled'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+
+        case 'orders':
+          return (
+            <div className="space-y-2">
+              {jobs.slice(0, 8).map(job => (
+                <div key={job.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                  <div>
+                    <div className="font-medium">{job.name}</div>
+                    <div className="text-sm text-gray-600">{job.customer}</div>
+                  </div>
+                  <div className="text-right">
+                    <Badge variant={job.priority === 'High' ? 'destructive' : 
+                                  job.priority === 'Medium' ? 'default' : 'secondary'}>
+                      {job.priority}
+                    </Badge>
+                    <div className="text-sm text-gray-600">
+                      {job.dueDate ? new Date(job.dueDate).toLocaleDateString() : 'No due date'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+
+        case 'alerts':
+          const alerts = [
+            { type: 'warning', message: 'Machine CNC-001 maintenance due in 2 days', time: '10 min ago' },
+            { type: 'info', message: 'New order received from Tech Corp', time: '25 min ago' },
+            { type: 'success', message: 'Batch A assembly completed ahead of schedule', time: '1 hour ago' }
+          ];
+
+          return (
+            <div className="space-y-2">
+              {alerts.map((alert, index) => (
+                <div key={index} className="flex items-center space-x-3 p-2 bg-gray-50 rounded">
+                  {alert.type === 'warning' && <AlertTriangle className="w-5 h-5 text-orange-500" />}
+                  {alert.type === 'info' && <Clock className="w-5 h-5 text-blue-500" />}
+                  {alert.type === 'success' && <CheckCircle className="w-5 h-5 text-green-500" />}
+                  <div className="flex-1">
+                    <div className="text-sm">{alert.message}</div>
+                    <div className="text-xs text-gray-500">{alert.time}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+
+        case 'progress':
+          const completedOps = operations.filter(op => op.status === 'Completed').length;
+          const totalOps = operations.length;
+          const progressPercent = totalOps > 0 ? (completedOps / totalOps) * 100 : 0;
+
+          return (
+            <div className="text-center">
+              <div className="mb-4">
+                <div className="text-3xl font-bold">{Math.round(progressPercent)}%</div>
+                <div className="text-sm text-gray-600">Daily Progress</div>
+              </div>
+              <Progress value={progressPercent} className="w-full h-4" />
+              <div className="mt-2 text-sm text-gray-600">
+                {completedOps} of {totalOps} operations completed
+              </div>
+            </div>
+          );
+
+        default:
+          return <div className="text-center text-gray-500">Widget content</div>;
+      }
+    };
+
+    return (
+      <Card className="h-full">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center justify-between">
+            {widget.title}
+            {isPlaying && currentDisplay && currentDisplay.widgets.length > 1 && (
+              <div className="text-sm font-normal text-gray-500">
+                {Math.ceil(timeRemaining)}s
+              </div>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {widgetContent()}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const getAudienceIcon = (audience: string) => {
+    switch (audience) {
+      case 'shop-floor': return <Building2 className="w-4 h-4" />;
+      case 'customer-service': return <Headphones className="w-4 h-4" />;
+      case 'sales': return <DollarSign className="w-4 h-4" />;
+      case 'management': return <TrendingUp className="w-4 h-4" />;
+      default: return <Users className="w-4 h-4" />;
+    }
+  };
+
+  const currentWidget = currentDisplay?.widgets[currentWidgetIndex];
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div ref={containerRef} className={`${isFullscreen ? 'h-screen' : 'h-auto'} bg-white`}>
+        {/* Header - Hidden in fullscreen */}
+        {!isFullscreen && (
+          <div className="border-b border-gray-200 bg-white">
+            <div className="px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-semibold text-gray-800 flex items-center">
+                    <Monitor className="w-6 h-6 mr-2" />
+                    Visual Factory
+                  </h1>
+                  <p className="text-gray-600">Automated large screen displays for manufacturing facilities</p>
+                </div>
+                <div className="flex space-x-2">
+                  <Dialog open={aiConfigDialogOpen} onOpenChange={setAiConfigDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600">
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        AI Configure
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>AI Display Configuration</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="ai-prompt">Describe your display requirements</Label>
+                          <Textarea
+                            id="ai-prompt"
+                            placeholder="Create a display for the shop floor showing production metrics, current operations, and alerts. Make it engaging and easy to read from a distance."
+                            value={aiPrompt}
+                            onChange={(e) => setAiPrompt(e.target.value)}
+                            rows={4}
+                          />
+                        </div>
+                        <Button
+                          onClick={() => aiConfigMutation.mutate(aiPrompt)}
+                          disabled={!aiPrompt.trim() || aiConfigMutation.isPending}
+                          className="w-full"
+                        >
+                          {aiConfigMutation.isPending ? 'Creating...' : 'Create with AI'}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
+                  <Dialog open={newDisplayDialogOpen} onOpenChange={setNewDisplayDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Monitor className="w-4 h-4 mr-2" />
+                        New Display
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Create New Display</DialogTitle>
+                      </DialogHeader>
+                      <CreateDisplayForm 
+                        onSubmit={(display) => createDisplayMutation.mutate(display)}
+                        isLoading={createDisplayMutation.isPending}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Display Selection - Hidden in fullscreen during playback */}
+        {!isFullscreen && (
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {displays.map(display => (
+                <Card 
+                  key={display.id} 
+                  className={`cursor-pointer transition-all ${currentDisplay?.id === display.id ? 'ring-2 ring-blue-500' : ''}`}
+                  onClick={() => setCurrentDisplay(display)}
+                >
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">{display.name}</CardTitle>
+                      <div className="flex items-center space-x-2">
+                        {getAudienceIcon(display.audience)}
+                        <Badge variant={display.isActive ? 'default' : 'secondary'}>
+                          {display.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-600 mb-2">{display.description}</p>
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>{display.location}</span>
+                      <span>{display.widgets.length} widgets</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Display Controls */}
+        {currentDisplay && (
+          <div className={`${isFullscreen ? 'absolute top-4 right-4 z-50' : 'px-6 py-4 border-b border-gray-200'} flex items-center space-x-2`}>
+            <Button
+              onClick={handlePlay}
+              variant={isPlaying ? "destructive" : "default"}
+              size="sm"
+            >
+              {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+              {isPlaying ? 'Pause' : 'Play'}
+            </Button>
+            <Button onClick={resetRotation} variant="outline" size="sm">
+              <RotateCcw className="w-4 h-4" />
+              Reset
+            </Button>
+            <Button onClick={handleFullscreen} variant="outline" size="sm">
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              {isFullscreen ? 'Exit' : 'Fullscreen'}
+            </Button>
+            {!isFullscreen && (
+              <div className="text-sm text-gray-600 ml-4">
+                {currentDisplay.name} • Widget {currentWidgetIndex + 1} of {currentDisplay.widgets.length}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Main Display Area */}
+        <div className={`${isFullscreen ? 'h-screen p-8' : 'p-6'} bg-gray-50`}>
+          {currentDisplay && currentWidget ? (
+            <div className={`${isFullscreen ? 'h-full' : 'h-96'}`}>
+              {renderWidget(currentWidget)}
+            </div>
+          ) : (
+            <div className="h-96 flex items-center justify-center bg-white rounded-lg border-2 border-dashed border-gray-300">
+              <div className="text-center">
+                <Monitor className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Display Selected</h3>
+                <p className="text-gray-600">Choose a display configuration to start the visual factory experience</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Create Display Form Component
+function CreateDisplayForm({ 
+  onSubmit, 
+  isLoading 
+}: { 
+  onSubmit: (display: Omit<VisualFactoryDisplay, 'id' | 'createdAt'>) => void;
+  isLoading: boolean;
+}) {
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    location: '',
+    audience: 'general' as const,
+    autoRotationInterval: 30,
+    isActive: true,
+    useAiMode: false
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit({
+      ...formData,
+      widgets: defaultWidgets.map((widget, index) => ({
+        ...widget,
+        id: `widget-${index}`
+      }))
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="name">Display Name</Label>
+          <Input
+            id="name"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="Shop Floor Display 1"
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="location">Location</Label>
+          <Input
+            id="location"
+            value={formData.location}
+            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+            placeholder="Production Area A"
+            required
+          />
+        </div>
+      </div>
+
+      <div>
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          placeholder="Main production display showing real-time metrics and schedules"
+          rows={2}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="audience">Target Audience</Label>
+          <Select value={formData.audience} onValueChange={(value: any) => setFormData({ ...formData, audience: value })}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="shop-floor">Shop Floor Workers</SelectItem>
+              <SelectItem value="customer-service">Customer Service</SelectItem>
+              <SelectItem value="sales">Sales Office</SelectItem>
+              <SelectItem value="management">Management</SelectItem>
+              <SelectItem value="general">General</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor="interval">Auto-rotation (seconds)</Label>
+          <Input
+            id="interval"
+            type="number"
+            min="10"
+            max="300"
+            value={formData.autoRotationInterval}
+            onChange={(e) => setFormData({ ...formData, autoRotationInterval: parseInt(e.target.value) })}
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="active"
+            checked={formData.isActive}
+            onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+          />
+          <Label htmlFor="active">Active</Label>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="ai-mode"
+            checked={formData.useAiMode}
+            onCheckedChange={(checked) => setFormData({ ...formData, useAiMode: checked })}
+          />
+          <Label htmlFor="ai-mode">AI Dynamic Mode</Label>
+        </div>
+      </div>
+
+      <Button type="submit" disabled={isLoading} className="w-full">
+        {isLoading ? 'Creating...' : 'Create Display'}
+      </Button>
+    </form>
+  );
+}
