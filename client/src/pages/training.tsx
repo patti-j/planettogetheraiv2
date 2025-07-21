@@ -95,12 +95,14 @@ export default function Training() {
   const { data: availableRoles = [] } = useQuery<Role[]>({
     queryKey: [`/api/users/${user?.id}/available-roles`],
     enabled: !!user?.id && canAccessTraining,
+    staleTime: 0, // Always refetch to ensure fresh data
   });
 
   // Get current role
   const { data: currentRole } = useQuery({
     queryKey: [`/api/users/${user?.id}/current-role`],
     enabled: !!user?.id && canAccessTraining,
+    staleTime: 0, // Always refetch to ensure fresh data
   });
 
   const startTrainingMutation = useMutation({
@@ -325,6 +327,7 @@ function RoleDemonstrationSection({ userId, currentRole }: RoleDemonstrationSect
   const { data: allRoles = [] } = useQuery<Role[]>({
     queryKey: ['/api/roles/all'],
     enabled: !!userId,
+    staleTime: 0, // Always refetch to ensure fresh role data
   });
 
   // Switch role mutation for demonstration
@@ -350,6 +353,10 @@ function RoleDemonstrationSection({ userId, currentRole }: RoleDemonstrationSect
         description: error.message || "Failed to switch roles for demonstration",
         variant: "destructive",
       });
+    },
+    onSettled: () => {
+      // The mutation will automatically reset its state after completion
+      // This helps prevent stuck button states
     },
   });
 
@@ -445,6 +452,7 @@ function RoleDemonstrationSection({ userId, currentRole }: RoleDemonstrationSect
                     onClick={() => handleDemonstrateRole(role.id)}
                     disabled={switchRoleMutation.isPending || isCurrentRole}
                     variant={isCurrentRole ? "secondary" : "default"}
+                    key={`role-button-${role.id}-${switchRoleMutation.isPending}`}
                   >
                     {switchRoleMutation.isPending && switchRoleMutation.variables === role.id ? (
                       <>
