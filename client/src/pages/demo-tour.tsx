@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
 import { 
@@ -61,6 +61,7 @@ export default function DemoTour() {
   const [showParticipantForm, setShowParticipantForm] = useState(true);
   const [participantId, setParticipantId] = useState<number | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const form = useForm<ParticipantFormData>({
     resolver: zodResolver(participantFormSchema),
@@ -194,6 +195,9 @@ export default function DemoTour() {
       
       // Store demo token in localStorage
       localStorage.setItem("authToken", data.token);
+      
+      // Invalidate auth cache to refresh authentication state
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       
       // Navigate to first relevant page based on role
       const roleRoutes = {
