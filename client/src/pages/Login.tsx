@@ -86,7 +86,7 @@ export default function Login() {
             <Factory className="text-primary mr-3" size={32} />
             <h1 className="text-3xl font-bold text-gray-800">PlanetTogether</h1>
           </div>
-          <p className="text-gray-600">Manufacturing Production Scheduler</p>
+          <p className="text-gray-600">AI-powered production scheduling platform</p>
         </div>
 
         {/* Login Form */}
