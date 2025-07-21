@@ -52,10 +52,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Demo user mapping for different roles
       const demoUsers = {
-        'executive': { id: 'demo_exec', username: 'demo_executive', role: 'Director' },
-        'production': { id: 'demo_prod', username: 'demo_production', role: 'Production Scheduler' },
+        'director': { id: 'demo_director', username: 'demo_director', role: 'Director' },
         'plant-manager': { id: 'demo_plant', username: 'demo_plant_manager', role: 'Plant Manager' },
-        'it-admin': { id: 'demo_it', username: 'demo_it_admin', role: 'IT Administrator' }
+        'production-scheduler': { id: 'demo_scheduler', username: 'demo_scheduler', role: 'Production Scheduler' },
+        'it-administrator': { id: 'demo_it_admin', username: 'demo_it_admin', role: 'IT Administrator' },
+        'systems-manager': { id: 'demo_systems', username: 'demo_systems_manager', role: 'Systems Manager' },
+        'administrator': { id: 'demo_admin', username: 'demo_administrator', role: 'Administrator' },
+        'shop-floor-operations': { id: 'demo_shop_floor', username: 'demo_shop_floor', role: 'Shop Floor Operations' },
+        'data-analyst': { id: 'demo_analyst', username: 'demo_data_analyst', role: 'Data Analyst' },
+        'trainer': { id: 'demo_trainer', username: 'demo_trainer', role: 'Trainer' },
+        'maintenance-technician': { id: 'demo_maintenance', username: 'demo_maintenance', role: 'Maintenance Technician' },
+        // Legacy mappings for backward compatibility
+        'executive': { id: 'demo_director', username: 'demo_director', role: 'Director' },
+        'production': { id: 'demo_scheduler', username: 'demo_scheduler', role: 'Production Scheduler' },
+        'it-admin': { id: 'demo_it_admin', username: 'demo_it_admin', role: 'IT Administrator' }
       };
 
       const demoUser = demoUsers[role as keyof typeof demoUsers];
