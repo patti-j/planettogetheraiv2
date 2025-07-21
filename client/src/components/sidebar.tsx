@@ -176,7 +176,7 @@ export default function Sidebar() {
   );
 
   const getNavigationTooltip = (href: string) => {
-    const tooltips = {
+    const tooltips: Record<string, string> = {
       "/business-goals": "Define strategic objectives, track progress, and monitor risks that impact business success",
       "/": "View production schedule with interactive Gantt charts",
       "/scheduling-optimizer": "Optimize orders with intelligent scheduling and multi-operation planning",
