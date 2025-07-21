@@ -1861,6 +1861,12 @@ export class DatabaseStorage implements IStorage {
     const user = await this.getUser(id);
     if (!user) return undefined;
 
+    // If user has an active role, only return that role for authentication purposes
+    // Otherwise return all roles for backward compatibility
+    const roleFilter = user.activeRoleId 
+      ? and(eq(userRoles.userId, id), eq(roles.id, user.activeRoleId))
+      : eq(userRoles.userId, id);
+
     const userRolesList = await db
       .select({
         role: roles,
@@ -1870,7 +1876,7 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(roles, eq(userRoles.roleId, roles.id))
       .leftJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
       .leftJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
-      .where(eq(userRoles.userId, id));
+      .where(roleFilter);
 
     const rolesMap = new Map<number, Role & { permissions: Permission[] }>();
     
