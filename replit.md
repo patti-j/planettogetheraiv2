@@ -153,6 +153,18 @@ The application uses a modern full-stack architecture with strong typing through
 - Visual Factory supports automated cycling, AI-driven content selection, and audience-adaptive displays
 - System designed for hands-free operation with configurable display intervals and widget management
 
+✓ **Business Goals Risks & Issues Management Implementation (July 21, 2025)**:
+- Added comprehensive risks and issues management functionality to business goals page
+- Implemented detailed goal view dialog with tabbed interface for Overview, Risks, Issues, and Actions
+- Created full CRUD operations for risks with forms, validation, and API integration
+- Created full CRUD operations for issues with forms, validation, and API integration
+- Added risk management with risk type, probability, impact assessment, and mitigation planning
+- Added issue tracking with issue type, severity, impact analysis, and resolution planning
+- Enhanced goal cards to open detailed management view when clicked
+- Added risk and issue counters in goal detail tabs showing active/open items
+- Fixed Production Scheduler role permissions to include business-goals-view access
+- Comprehensive forms with proper validation, field options, and user assignment capabilities
+
 ## Recent Changes (July 20, 2025)
 
 ✓ **Role Switching & Training System Implementation (July 20, 2025)**:
