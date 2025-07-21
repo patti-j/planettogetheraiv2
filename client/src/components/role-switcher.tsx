@@ -75,16 +75,16 @@ export function RoleSwitcher({ userId, currentRole }: RoleSwitcherProps) {
       toast({
         title: "Role Switched Successfully!",
         description: "You have switched to the new role. The interface will update in a moment to reflect your new permissions.",
-        duration: 3000,
+        duration: 5000,
       });
       setIsOpen(false);
       setSelectedRoleId('');
       // Invalidate all queries to refresh the UI with new permissions
       queryClient.invalidateQueries();
-      // Wait 3 seconds to allow user to read the success message, then reload
+      // Wait 5 seconds to allow user to read the success message, then redirect to home page
       setTimeout(() => {
-        window.location.reload();
-      }, 3000);
+        window.location.href = '/';
+      }, 5000);
     },
     onError: (error: any) => {
       toast({

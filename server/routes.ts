@@ -3040,7 +3040,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid user ID" });
       }
 
-      // This endpoint doesn't require special permissions since it's just checking user's own assigned roles
+      // Allow users to check their own assigned roles regardless of current active role
+      // This is needed for training mode detection
       const roles = await storage.getUserRoles(userId);
       res.json(roles);
     } catch (error) {
@@ -3058,7 +3059,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid user ID or role ID" });
       }
 
-      // Check if user has training permissions
+      // Check if user is returning to their originally assigned trainer/systems manager role
+      const userRoles = await storage.getUserRoles(userId);
+      const isReturningToAssignedRole = userRoles.some((role: any) => role.id === roleId);
+      
+      if (isReturningToAssignedRole) {
+        // Always allow returning to originally assigned roles (training mode exit)
+        const updatedUser = await storage.switchUserRole(userId, roleId);
+        res.json(updatedUser);
+        return;
+      }
+
+      // For switching to demonstration roles, check training permissions
       const hasTrainingPermission = await storage.hasPermission(userId, 'training', 'view');
       if (!hasTrainingPermission) {
         return res.status(403).json({ error: "User does not have role switching permissions" });

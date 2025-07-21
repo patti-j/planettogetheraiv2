@@ -48,15 +48,15 @@ export function TrainingModeExit() {
     },
     onSuccess: () => {
       toast({
-        title: "Training Mode Exited",
+        title: "Training Mode Exited Successfully!",
         description: "You have returned to your full role with all permissions. The interface will update in a moment.",
-        duration: 3000,
+        duration: 5000,
       });
       queryClient.invalidateQueries();
-      // Wait 3 seconds to allow user to read the message, then reload
+      // Wait 5 seconds to allow user to read the message, then redirect to home page
       setTimeout(() => {
-        window.location.reload();
-      }, 3000);
+        window.location.href = '/';
+      }, 5000);
     },
     onError: (error: any) => {
       toast({
