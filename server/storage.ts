@@ -2355,6 +2355,23 @@ export class DatabaseStorage implements IStorage {
 
     return userRolesData.map(ur => ur.roles);
   }
+
+  async getAllRolesWithPermissionCount() {
+    const rolesData = await db
+      .select({
+        id: roles.id,
+        name: roles.name,
+        description: roles.description,
+        permissionCount: sql<number>`count(${permissions.id})`.as('permission_count')
+      })
+      .from(roles)
+      .leftJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
+      .leftJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+      .groupBy(roles.id, roles.name, roles.description)
+      .orderBy(roles.name);
+
+    return rolesData;
+  }
 }
 
 export const storage = new DatabaseStorage();

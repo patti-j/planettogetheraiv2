@@ -2966,6 +2966,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all system roles for role demonstration (trainers only)
+  app.get("/api/roles/all", async (req, res) => {
+    try {
+      // Check if user is authenticated via session
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const userId = req.session.userId;
+
+      // Check if user has training permissions
+      const hasTrainingPermission = await storage.hasPermission(userId, 'training', 'view');
+      if (!hasTrainingPermission) {
+        return res.status(403).json({ error: "User does not have role demonstration permissions" });
+      }
+
+      const allRoles = await storage.getAllRolesWithPermissionCount();
+      res.json(allRoles);
+    } catch (error) {
+      console.error("Error fetching all roles:", error);
+      res.status(500).json({ error: "Failed to fetch all roles" });
+    }
+  });
+
   app.post("/api/users/:userId/switch-role", async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
@@ -2981,13 +3005,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "User does not have role switching permissions" });
       }
 
-      // Verify user has this role assigned
-      const userRoles = await storage.getUserRoles(userId);
-      const hasRole = userRoles.some(role => role.id === roleId);
-      if (!hasRole) {
-        return res.status(403).json({ error: "User is not assigned to this role" });
-      }
-
+      // For training purposes, allow switching to any role without assignment check
+      // This enables comprehensive role demonstration for trainers
       const updatedUser = await storage.switchUserRole(userId, roleId);
       res.json(updatedUser);
     } catch (error) {

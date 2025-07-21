@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play } from 'lucide-react';
+import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play, UserCheck, Settings, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, usePermissions } from '@/hooks/useAuth';
 import { RoleSwitcher } from '@/components/role-switcher';
@@ -14,6 +14,7 @@ interface Role {
   id: number;
   name: string;
   description: string;
+  permissionCount?: number;
 }
 
 interface TrainingModule {
@@ -129,7 +130,7 @@ export default function Training() {
     );
   }
 
-  const categories = ['all', ...new Set(trainingModules.map(module => module.category))];
+  const categories = ['all', ...Array.from(new Set(trainingModules.map(module => module.category)))];
   const filteredModules = selectedCategory === 'all' 
     ? trainingModules 
     : trainingModules.filter(module => module.category === selectedCategory);
@@ -144,7 +145,7 @@ export default function Training() {
               Interactive training modules and role switching for comprehensive system demonstrations
             </p>
           </div>
-          {user && <RoleSwitcher userId={user.id} currentRole={currentRole} />}
+          {user && <RoleSwitcher userId={user.id} currentRole={currentRole as Role} />}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -189,7 +190,7 @@ export default function Training() {
               <div className="flex items-center">
                 <Monitor className="h-8 w-8 text-orange-600 mr-3" />
                 <div>
-                  <div className="text-2xl font-bold">{currentRole?.name || 'None'}</div>
+                  <div className="text-2xl font-bold">{(currentRole as Role)?.name || 'None'}</div>
                   <div className="text-xs text-gray-500">Current Role</div>
                 </div>
               </div>
@@ -229,7 +230,7 @@ export default function Training() {
                       <CardDescription className="mt-2">{module.description}</CardDescription>
                     </div>
                     {module.completed && (
-                      <Badge variant="success" className="shrink-0">Completed</Badge>
+                      <Badge variant="secondary" className="shrink-0 bg-green-100 text-green-800">Completed</Badge>
                     )}
                   </div>
                 </CardHeader>
@@ -269,35 +270,7 @@ export default function Training() {
         </TabsContent>
 
         <TabsContent value="roles" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {availableRoles.map((role) => (
-              <Card key={role.id}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    {role.name}
-                    {currentRole?.id === role.id && (
-                      <Badge variant="default" className="text-xs">Current</Badge>
-                    )}
-                  </CardTitle>
-                  <CardDescription>{role.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="text-sm text-gray-600">
-                      Switch to this role to experience the interface and permissions available to {role.name.toLowerCase()} users.
-                    </div>
-                    {currentRole?.id !== role.id && (
-                      <Button size="sm" variant="outline" className="w-full">
-                        <RotateCcw className="h-4 w-4 mr-2" />
-                        Switch to {role.name}
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <RoleDemonstrationSection userId={user?.id} currentRole={currentRole as Role} />
         </TabsContent>
 
         <TabsContent value="resources" className="space-y-6">
@@ -334,6 +307,185 @@ export default function Training() {
           </div>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+// Role Demonstration Component
+interface RoleDemonstrationSectionProps {
+  userId?: number;
+  currentRole?: Role | null;
+}
+
+function RoleDemonstrationSection({ userId, currentRole }: RoleDemonstrationSectionProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Get all system roles for demonstration
+  const { data: allRoles = [] } = useQuery<Role[]>({
+    queryKey: ['/api/roles/all'],
+    enabled: !!userId,
+  });
+
+  // Switch role mutation for demonstration
+  const switchRoleMutation = useMutation({
+    mutationFn: (roleId: number) => 
+      apiRequest('POST', `/api/users/${userId}/switch-role`, { roleId }),
+    onSuccess: (data, roleId) => {
+      const roleName = allRoles.find(r => r.id === roleId)?.name || 'Unknown';
+      toast({
+        title: "Role Switched Successfully",
+        description: `Switched to ${roleName} role. The interface will update to show this role's permissions and features.`,
+      });
+      // Invalidate all queries to refresh the UI with new permissions
+      queryClient.invalidateQueries();
+      // Reload the page to ensure all components reflect the new role
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Role Switch Failed",
+        description: error.message || "Failed to switch roles for demonstration",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDemonstrateRole = (roleId: number) => {
+    switchRoleMutation.mutate(roleId);
+  };
+
+  const getRoleIcon = (roleName: string) => {
+    if (roleName.toLowerCase().includes('admin')) return Shield;
+    if (roleName.toLowerCase().includes('manager')) return Settings;
+    if (roleName.toLowerCase().includes('director')) return Target;
+    if (roleName.toLowerCase().includes('scheduler')) return Monitor;
+    return UserCheck;
+  };
+
+  const getRoleColor = (roleName: string) => {
+    if (roleName.toLowerCase().includes('admin')) return 'text-red-600';
+    if (roleName.toLowerCase().includes('manager')) return 'text-blue-600';
+    if (roleName.toLowerCase().includes('director')) return 'text-purple-600';
+    if (roleName.toLowerCase().includes('scheduler')) return 'text-green-600';
+    if (roleName.toLowerCase().includes('trainer')) return 'text-orange-600';
+    return 'text-gray-600';
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold mb-2">Role Demonstration Center</h3>
+        <p className="text-gray-600">
+          Switch between different system roles to demonstrate features and permissions. 
+          Each role provides access to specific system areas and functionality.
+        </p>
+      </div>
+
+      {currentRole && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <UserCheck className="h-5 w-5 text-blue-600 mr-2" />
+                <CardTitle className="text-lg text-blue-800">Currently Demonstrating</CardTitle>
+              </div>
+              <Badge variant="default" className="bg-blue-600">
+                {currentRole.name}
+              </Badge>
+            </div>
+            <CardDescription className="text-blue-700">
+              {currentRole.description}
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {allRoles.map((role) => {
+          const IconComponent = getRoleIcon(role.name);
+          const isCurrentRole = currentRole?.id === role.id;
+          
+          return (
+            <Card 
+              key={role.id} 
+              className={`transition-all duration-200 hover:shadow-md ${
+                isCurrentRole ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-gray-50'
+              }`}
+            >
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <IconComponent className={`h-5 w-5 mr-2 ${getRoleColor(role.name)}`} />
+                    <CardTitle className="text-lg">{role.name}</CardTitle>
+                  </div>
+                  {isCurrentRole && (
+                    <Badge variant="secondary" className="text-xs">
+                      Active
+                    </Badge>
+                  )}
+                </div>
+                <CardDescription className="mt-2">
+                  {role.description}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">Permissions:</span>
+                    <Badge variant="outline">
+                      {role.permissionCount || 0} permissions
+                    </Badge>
+                  </div>
+                  
+                  <Button
+                    className={`w-full ${isCurrentRole ? 'opacity-50' : ''}`}
+                    onClick={() => handleDemonstrateRole(role.id)}
+                    disabled={switchRoleMutation.isPending || isCurrentRole}
+                    variant={isCurrentRole ? "secondary" : "default"}
+                  >
+                    {switchRoleMutation.isPending && switchRoleMutation.variables === role.id ? (
+                      <>
+                        <RotateCcw className="h-4 w-4 mr-2 animate-spin" />
+                        Switching...
+                      </>
+                    ) : isCurrentRole ? (
+                      <>
+                        <UserCheck className="h-4 w-4 mr-2" />
+                        Current Role
+                      </>
+                    ) : (
+                      <>
+                        <Play className="h-4 w-4 mr-2" />
+                        Demonstrate Role
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      <Card className="bg-yellow-50 border-yellow-200">
+        <CardHeader>
+          <CardTitle className="text-yellow-800 flex items-center">
+            <Target className="h-5 w-5 mr-2" />
+            Demonstration Tips
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 text-sm text-yellow-700">
+            <p>• <strong>Switch roles freely</strong> - Demonstrate any role without user assignment restrictions</p>
+            <p>• <strong>Interface updates</strong> - Navigation menu and features update based on role permissions</p>
+            <p>• <strong>Page refresh</strong> - The system reloads to ensure all components reflect the new role</p>
+            <p>• <strong>Training focus</strong> - Use role switching to show feature differences across user types</p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
