@@ -1,6 +1,58 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
+// Demo user permissions mapping
+const getDemoPermissions = (roleName: string, feature: string, action: string): boolean => {
+  const demoPermissions: Record<string, string[]> = {
+    'Director': [
+      'business-goals-view', 'business-goals-create', 'business-goals-edit', 'business-goals-delete',
+      'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'
+    ],
+    'Plant Manager': [
+      'plant-manager-view', 'capacity-planning-view', 'reports-view', 'analytics-view',
+      'schedule-view', 'ai-assistant-view', 'feedback-view'
+    ],
+    'Production Scheduler': [
+      'schedule-view', 'schedule-create', 'schedule-edit', 'schedule-delete',
+      'scheduling-optimizer-view', 'shop-floor-view', 'boards-view', 'erp-import-view',
+      'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'
+    ],
+    'IT Administrator': [
+      'systems-management-view', 'role-management-view', 'user-role-assignments-view',
+      'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'
+    ],
+    'Systems Manager': [
+      'systems-management-view', 'role-management-view', 'user-role-assignments-view',
+      'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'
+    ],
+    'Administrator': [
+      'role-management-view', 'systems-management-view', 'user-role-assignments-view',
+      'schedule-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'
+    ],
+    'Shop Floor Operations': [
+      'shop-floor-view', 'operator-dashboard-view', 'reports-view',
+      'ai-assistant-view', 'feedback-view'
+    ],
+    'Data Analyst': [
+      'analytics-view', 'reports-view', 'schedule-view',
+      'ai-assistant-view', 'feedback-view'
+    ],
+    'Trainer': [
+      'training-view', 'role-switching-permissions', 'analytics-view', 'reports-view',
+      'schedule-view', 'business-goals-view', 'visual-factory-view',
+      'ai-assistant-view', 'feedback-view'
+    ],
+    'Maintenance Technician': [
+      'maintenance-planning-view', 'reports-view',
+      'ai-assistant-view', 'feedback-view'
+    ]
+  };
+
+  const rolePermissions = demoPermissions[roleName] || [];
+  const permissionKey = `${feature}-${action}`;
+  return rolePermissions.includes(permissionKey);
+};
+
 export interface User {
   id: number;
   username: string;
@@ -84,16 +136,21 @@ export function usePermissions() {
   const { user } = useAuth();
 
   const hasPermission = (feature: string, action: string): boolean => {
-    if (!user || !user.roles) return false;
+    if (!user) return false;
 
-    // Debug permission checking
+    // Handle demo users who have a simple role string instead of roles array
+    if ((user as any).isDemo && (user as any).role) {
+      return getDemoPermissions((user as any).role, feature, action);
+    }
+
+    // Handle regular users with roles array
+    if (!user.roles) return false;
+
     const result = user.roles.some(role =>
-      role.permissions.some(permission =>
+      role.permissions?.some(permission =>
         permission.feature === feature && permission.action === action
       )
     );
-    
-
     
     return result;
   };
@@ -103,7 +160,15 @@ export function usePermissions() {
   };
 
   const hasRole = (roleName: string): boolean => {
-    if (!user || !user.roles) return false;
+    if (!user) return false;
+
+    // Handle demo users who have a simple role string
+    if ((user as any).isDemo && (user as any).role) {
+      return (user as any).role === roleName;
+    }
+
+    // Handle regular users with roles array
+    if (!user.roles) return false;
     return user.roles.some(role => role.name === roleName);
   };
 
