@@ -3059,20 +3059,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid user ID or role ID" });
       }
 
-      // Check if user is returning to their originally assigned trainer/systems manager role
-      const userRoles = await storage.getUserRoles(userId);
-      const isReturningToAssignedRole = userRoles.some((role: any) => role.id === roleId);
+      // Get user's originally assigned roles (not their current active role)
+      const userAssignedRoles = await storage.getUserRoles(userId);
+      const isReturningToAssignedRole = userAssignedRoles.some((role: any) => role.id === roleId);
       
       if (isReturningToAssignedRole) {
         // Always allow returning to originally assigned roles (training mode exit)
+        // This bypasses current role permissions check
         const updatedUser = await storage.switchUserRole(userId, roleId);
         res.json(updatedUser);
         return;
       }
 
-      // For switching to demonstration roles, check training permissions
-      const hasTrainingPermission = await storage.hasPermission(userId, 'training', 'view');
-      if (!hasTrainingPermission) {
+      // For switching to demonstration roles, check if user has trainer/systems manager assigned
+      // Check based on their original assigned roles, not current role
+      const hasTrainerRole = userAssignedRoles.some((role: any) => 
+        role.name === 'Trainer' || role.name === 'Systems Manager'
+      );
+      
+      if (!hasTrainerRole) {
         return res.status(403).json({ error: "User does not have role switching permissions" });
       }
 
