@@ -234,6 +234,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update resource photo endpoint
+  app.put("/api/resources/:id/photo", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { photo } = req.body;
+      
+      if (!photo) {
+        return res.status(400).json({ message: "Photo data is required" });
+      }
+      
+      const updatedResource = await storage.updateResource(id, { photo });
+      if (!updatedResource) {
+        return res.status(404).json({ message: "Resource not found" });
+      }
+      res.json(updatedResource);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update resource photo" });
+    }
+  });
+
   // Jobs
   app.get("/api/jobs", async (req, res) => {
     try {

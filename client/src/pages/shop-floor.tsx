@@ -1609,9 +1609,30 @@ export default function ShopFloor() {
     setDetailsOpen(true);
   };
 
+  // Photo update mutation
+  const updateResourcePhotoMutation = useMutation({
+    mutationFn: async ({ resourceId, photoUrl }: { resourceId: number; photoUrl: string }) => {
+      const response = await apiRequest("PUT", `/api/resources/${resourceId}/photo`, { photo: photoUrl });
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate resources cache to refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/resources"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to save resource photo to database",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Handle photo upload
   const handlePhotoUpload = (resourceId: number, photoUrl: string) => {
     console.log('Setting photo for resource', resourceId, 'URL:', photoUrl);
+    
+    // Update local state immediately for UI feedback
     setResourcePhotos(prev => {
       const newPhotos = {
         ...prev,
@@ -1621,7 +1642,10 @@ export default function ShopFloor() {
       return newPhotos;
     });
     
-    // Save to localStorage for persistence
+    // Save to database for persistence
+    updateResourcePhotoMutation.mutate({ resourceId, photoUrl });
+    
+    // Keep localStorage as backup/fallback
     const savedPhotos = JSON.parse(localStorage.getItem('resourcePhotos') || '{}');
     savedPhotos[resourceId] = photoUrl;
     localStorage.setItem('resourcePhotos', JSON.stringify(savedPhotos));
@@ -1660,7 +1684,7 @@ export default function ShopFloor() {
     // Remove toast notification for auto-save
   });
 
-  // Load layout and photos from localStorage
+  // Load layout from localStorage and photos from database
   useEffect(() => {
     const savedLayout = localStorage.getItem('shopFloorLayout');
     if (savedLayout) {
@@ -1670,18 +1694,48 @@ export default function ShopFloor() {
         console.error('Failed to load shop floor layout:', error);
       }
     }
-    
-    const savedPhotos = localStorage.getItem('resourcePhotos');
-    if (savedPhotos) {
-      try {
-        const photos = JSON.parse(savedPhotos);
-        console.log('Loading resource photos from localStorage:', photos);
-        setResourcePhotos(photos);
-      } catch (error) {
-        console.error('Failed to load resource photos:', error);
+  }, []);
+
+  // Load photos from database (via resources query) and fallback to localStorage
+  useEffect(() => {
+    if (resources.length > 0) {
+      const photosFromDb: { [key: number]: string } = {};
+      
+      // First, load photos from database
+      resources.forEach(resource => {
+        if (resource.photo) {
+          photosFromDb[resource.id] = resource.photo;
+        }
+      });
+      
+      // Then, load from localStorage as fallback for resources without DB photos
+      const savedPhotos = localStorage.getItem('resourcePhotos');
+      if (savedPhotos) {
+        try {
+          const localPhotos = JSON.parse(savedPhotos);
+          // Only use localStorage photos for resources that don't have DB photos
+          resources.forEach(resource => {
+            if (!photosFromDb[resource.id] && localPhotos[resource.id]) {
+              photosFromDb[resource.id] = localPhotos[resource.id];
+              // Migrate localStorage photo to database
+              updateResourcePhotoMutation.mutate({ 
+                resourceId: resource.id, 
+                photoUrl: localPhotos[resource.id] 
+              });
+            }
+          });
+          console.log('Loading resource photos from database and localStorage:', photosFromDb);
+        } catch (error) {
+          console.error('Failed to load resource photos from localStorage:', error);
+        }
       }
+      
+      setResourcePhotos(photosFromDb);
     }
-    
+  }, [resources]); // Update when resources change
+
+  // Load areas from localStorage
+  useEffect(() => {
     const savedAreas = localStorage.getItem('shopFloorAreas');
     if (savedAreas) {
       try {

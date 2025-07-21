@@ -16,6 +16,7 @@ export const resources = pgTable("resources", {
   type: text("type").notNull(),
   status: text("status").notNull().default("active"),
   capabilities: jsonb("capabilities").$type<number[]>().default([]),
+  photo: text("photo"), // Base64 encoded photo data
 });
 
 export const jobs = pgTable("jobs", {
