@@ -23,7 +23,9 @@ import {
   GraduationCap,
   CheckCircle,
   ArrowRight,
-  Info
+  Info,
+  Server,
+  Wrench
 } from "lucide-react";
 
 interface TourStep {
@@ -59,8 +61,8 @@ export default function DemoTour() {
 
   const roles: Role[] = [
     {
-      id: "executive",
-      name: "Executive/Director",
+      id: "director",
+      name: "Director/Executive",
       description: "CEO, COO, Plant Director - Strategic oversight and business performance",
       icon: TrendingUp,
       primaryColor: "blue",
@@ -88,9 +90,38 @@ export default function DemoTour() {
       ]
     },
     {
-      id: "production",
-      name: "Production Manager/Scheduler",
-      description: "Production Manager, Scheduler - Daily production planning and optimization",
+      id: "plant-manager",
+      name: "Plant Manager",
+      description: "Operations Manager, Plant Director - Facility oversight and capacity management",
+      icon: Building,
+      primaryColor: "purple",
+      steps: [
+        {
+          id: "plant-manager",
+          title: "Comprehensive Plant Operations",
+          description: "Oversee entire plant operations from a single dashboard",
+          route: "/plant-manager",
+          icon: Building,
+          duration: "4 min",
+          valueProposition: "Gain complete visibility into plant performance and resource utilization",
+          highlights: ["Plant-wide metrics", "Resource utilization", "Performance tracking", "Operational insights"]
+        },
+        {
+          id: "capacity-planning",
+          title: "Strategic Capacity Planning",
+          description: "Plan future capacity needs and optimize resource allocation",
+          route: "/capacity-planning",
+          icon: TrendingUp,
+          duration: "4 min",
+          valueProposition: "Optimize capacity utilization and plan for future growth",
+          highlights: ["Capacity analysis", "Future planning", "Resource optimization", "Growth projections"]
+        }
+      ]
+    },
+    {
+      id: "production-scheduler",
+      name: "Production Scheduler",
+      description: "Production Planner, Scheduler - Daily scheduling and resource optimization",
       icon: Calendar,
       primaryColor: "green",
       steps: [
@@ -127,38 +158,9 @@ export default function DemoTour() {
       ]
     },
     {
-      id: "plant-manager",
-      name: "Plant Manager",
-      description: "Plant Manager - Overall facility operations and capacity planning",
-      icon: Building,
-      primaryColor: "purple",
-      steps: [
-        {
-          id: "plant-manager",
-          title: "Comprehensive Plant Operations",
-          description: "Oversee entire plant operations from a single dashboard",
-          route: "/plant-manager",
-          icon: Building,
-          duration: "4 min",
-          valueProposition: "Gain complete visibility into plant performance and resource utilization",
-          highlights: ["Plant-wide metrics", "Resource utilization", "Performance tracking", "Operational insights"]
-        },
-        {
-          id: "capacity-planning",
-          title: "Strategic Capacity Planning",
-          description: "Plan future capacity needs and optimize resource allocation",
-          route: "/capacity-planning",
-          icon: TrendingUp,
-          duration: "4 min",
-          valueProposition: "Optimize capacity utilization and plan for future growth",
-          highlights: ["Capacity analysis", "Future planning", "Resource optimization", "Growth projections"]
-        }
-      ]
-    },
-    {
-      id: "it-admin",
+      id: "it-administrator",
       name: "IT Administrator",
-      description: "IT Admin, Systems Manager - System configuration and user management",
+      description: "IT Manager, System Administrator - System configuration and user management",
       icon: Settings,
       primaryColor: "orange",
       steps: [
@@ -181,6 +183,160 @@ export default function DemoTour() {
           duration: "3 min",
           valueProposition: "Flexible role-based access control tailored to your organization",
           highlights: ["Custom roles", "Granular permissions", "User management", "Security compliance"]
+        }
+      ]
+    },
+    {
+      id: "systems-manager",
+      name: "Systems Manager",
+      description: "IT systems oversight, security management, and infrastructure monitoring",
+      icon: Server,
+      primaryColor: "indigo",
+      steps: [
+        {
+          id: "systems-management",
+          title: "System Configuration & Monitoring",
+          description: "Configure system settings and monitor infrastructure health",
+          route: "/systems-management",
+          icon: Settings,
+          duration: "4 min",
+          valueProposition: "Maintain system reliability and performance with comprehensive monitoring",
+          highlights: ["System health monitoring", "Configuration management", "Performance analytics", "Security controls"]
+        }
+      ]
+    },
+    {
+      id: "administrator",
+      name: "Administrator",
+      description: "Full system access with all permissions across all features",
+      icon: Users,
+      primaryColor: "red",
+      steps: [
+        {
+          id: "role-management",
+          title: "Role & Permission Management",
+          description: "Set up users, roles, and permissions for your organization",
+          route: "/role-management",
+          icon: Users,
+          duration: "3 min",
+          valueProposition: "Flexible role-based access control tailored to your organization",
+          highlights: ["Custom roles", "Granular permissions", "User management", "Security compliance"]
+        },
+        {
+          id: "systems-management",
+          title: "System Administration",
+          description: "Complete system configuration and monitoring capabilities",
+          route: "/systems-management",
+          icon: Settings,
+          duration: "4 min",
+          valueProposition: "Full administrative control over all system functions",
+          highlights: ["Full system access", "Advanced configuration", "User administration", "System monitoring"]
+        }
+      ]
+    },
+    {
+      id: "shop-floor-operations",
+      name: "Shop Floor Operations",
+      description: "Shop floor supervision with operator oversight and maintenance coordination",
+      icon: Factory,
+      primaryColor: "yellow",
+      steps: [
+        {
+          id: "shop-floor",
+          title: "Shop Floor Operations Management",
+          description: "Real-time shop floor monitoring and operator coordination",
+          route: "/shop-floor",
+          icon: Smartphone,
+          duration: "3 min",
+          valueProposition: "Coordinate shop floor activities with real-time visibility",
+          highlights: ["Real-time monitoring", "Operator coordination", "Production tracking", "Issue management"]
+        },
+        {
+          id: "operator-dashboard",
+          title: "Operator Dashboard Management",
+          description: "Oversee operator activities and task assignments",
+          route: "/operator-dashboard",
+          icon: Users,
+          duration: "3 min",
+          valueProposition: "Manage operator workflows and task assignments effectively",
+          highlights: ["Task management", "Resource assignments", "Performance tracking", "Communication tools"]
+        }
+      ]
+    },
+    {
+      id: "data-analyst",
+      name: "Data Analyst",
+      description: "Production data analysis and reporting specialist",
+      icon: BarChart3,
+      primaryColor: "teal",
+      steps: [
+        {
+          id: "analytics",
+          title: "Production Analytics & Insights",
+          description: "Analyze production data and generate insights",
+          route: "/analytics",
+          icon: BarChart3,
+          duration: "4 min",
+          valueProposition: "Transform production data into actionable business insights",
+          highlights: ["Data visualization", "Trend analysis", "Performance metrics", "Predictive analytics"]
+        },
+        {
+          id: "reports-analysis",
+          title: "Advanced Reporting & Analysis",
+          description: "Create comprehensive reports and data analysis",
+          route: "/reports",
+          icon: BarChart3,
+          duration: "4 min",
+          valueProposition: "Generate detailed reports for data-driven decision making",
+          highlights: ["Custom reports", "Statistical analysis", "Data visualization", "Export capabilities"]
+        }
+      ]
+    },
+    {
+      id: "trainer",
+      name: "Trainer",
+      description: "Training coordination and demonstration management",
+      icon: GraduationCap,
+      primaryColor: "pink",
+      steps: [
+        {
+          id: "training",
+          title: "Training & Demonstration Management",
+          description: "Coordinate training programs and system demonstrations",
+          route: "/training",
+          icon: GraduationCap,
+          duration: "3 min",
+          valueProposition: "Manage comprehensive training programs and role demonstrations",
+          highlights: ["Training modules", "Role demonstrations", "User onboarding", "System tutorials"]
+        },
+        {
+          id: "role-switching",
+          title: "Role Switching & Demonstrations",
+          description: "Switch between different roles for training purposes",
+          route: "/training",
+          icon: Users,
+          duration: "4 min",
+          valueProposition: "Demonstrate system capabilities across all user roles",
+          highlights: ["Role switching", "Live demonstrations", "Feature showcasing", "Training scenarios"]
+        }
+      ]
+    },
+    {
+      id: "maintenance-technician",
+      name: "Maintenance Technician",
+      description: "Equipment maintenance with work order and scheduling access",
+      icon: Wrench,
+      primaryColor: "gray",
+      steps: [
+        {
+          id: "maintenance-planning",
+          title: "Maintenance Planning & Scheduling",
+          description: "Plan and schedule equipment maintenance activities",
+          route: "/maintenance-planning",
+          icon: Wrench,
+          duration: "4 min",
+          valueProposition: "Ensure equipment reliability through proactive maintenance planning",
+          highlights: ["Maintenance scheduling", "Work order management", "Resource planning", "Performance tracking"]
         }
       ]
     }
