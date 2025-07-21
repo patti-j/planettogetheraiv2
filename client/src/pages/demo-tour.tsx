@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { GuidedTour } from "@/components/guided-tour";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -60,6 +61,8 @@ export default function DemoTour() {
   const [, setLocation] = useLocation();
   const [showParticipantForm, setShowParticipantForm] = useState(true);
   const [participantId, setParticipantId] = useState<number | null>(null);
+  const [showGuidedTour, setShowGuidedTour] = useState(false);
+  const [demoRole, setDemoRole] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -199,22 +202,9 @@ export default function DemoTour() {
       // Invalidate auth cache to refresh authentication state
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       
-      // Navigate to first relevant page based on role
-      const roleRoutes = {
-        'director': '/business-goals',
-        'plant-manager': '/plant-manager',
-        'production-scheduler': '/',
-        'it-administrator': '/systems-management',
-        'systems-manager': '/systems-management',
-        'administrator': '/role-management',
-        'shop-floor-operations': '/shop-floor',
-        'data-analyst': '/analytics',
-        'trainer': '/training',
-        'maintenance-technician': '/maintenance-planning'
-      };
-      
-      const route = roleRoutes[primaryRole as keyof typeof roleRoutes] || '/';
-      setLocation(route);
+      // Start guided tour instead of direct navigation
+      setDemoRole(primaryRole);
+      setShowGuidedTour(true);
       
     } catch (error) {
       console.error("Demo login error:", error);
@@ -230,7 +220,35 @@ export default function DemoTour() {
     createParticipantMutation.mutate(data);
   };
 
-  if (!showParticipantForm) {
+  const handleTourComplete = () => {
+    setShowGuidedTour(false);
+    toast({
+      title: "Demo Complete!",
+      description: "Continue exploring PlanetTogether features. Contact us to learn more!",
+    });
+  };
+
+  const handleTourSkip = () => {
+    setShowGuidedTour(false);
+    // Navigate to default page based on role
+    const roleRoutes = {
+      'director': '/business-goals',
+      'plant-manager': '/plant-manager',
+      'production-scheduler': '/',
+      'it-administrator': '/systems-management',
+      'systems-manager': '/systems-management',
+      'administrator': '/role-management',
+      'shop-floor-operations': '/shop-floor',
+      'data-analyst': '/analytics',
+      'trainer': '/training',
+      'maintenance-technician': '/maintenance-planning'
+    };
+    
+    const route = roleRoutes[demoRole as keyof typeof roleRoutes] || '/';
+    setLocation(route);
+  };
+
+  if (!showParticipantForm && !showGuidedTour) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
@@ -245,6 +263,17 @@ export default function DemoTour() {
           </CardContent>
         </Card>
       </div>
+    );
+  }
+  
+  // Show guided tour if active
+  if (showGuidedTour) {
+    return (
+      <GuidedTour 
+        role={demoRole}
+        onComplete={handleTourComplete}
+        onSkip={handleTourSkip}
+      />
     );
   }
 
