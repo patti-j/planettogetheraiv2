@@ -23,6 +23,7 @@ export default function Sidebar() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiActionsPrompt, setAiActionsPrompt] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [quickActionsExpanded, setQuickActionsExpanded] = useState(false);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -283,76 +284,134 @@ export default function Sidebar() {
           </div>
         )}
         
-        <h3 className="text-xs md:text-sm font-medium text-gray-500 mb-3">Quick Actions</h3>
-        <div className="space-y-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
+        {/* Mobile: Compact Quick Actions */}
+        <div className="md:hidden">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setQuickActionsExpanded(!quickActionsExpanded)}
+            className="w-full justify-between text-xs font-medium text-gray-500 mb-2 hover:bg-gray-50"
+          >
+            <span>Quick Actions</span>
+            <ChevronDown className={`w-3 h-3 transition-transform ${quickActionsExpanded ? 'rotate-180' : ''}`} />
+          </Button>
+          {quickActionsExpanded && (
+            <div className="space-y-1 mb-3">
+              <div className="grid grid-cols-2 gap-1">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => { setJobDialogOpen(true); setMobileMenuOpen(false); }}
+                  className="text-xs h-8"
+                >
+                  <Plus className="w-3 h-3 mr-1" />
+                  Job
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => { setResourceDialogOpen(true); setMobileMenuOpen(false); }}
+                  className="text-xs h-8"
+                >
+                  <Plus className="w-3 h-3 mr-1" />
+                  Resource
+                </Button>
+              </div>
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => setJobDialogOpen(true)}
-                className="w-full justify-start text-xs md:text-sm"
+                onClick={() => { setAiActionsDialogOpen(true); setMobileMenuOpen(false); }}
+                className="w-full text-xs h-8 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-purple-500 hover:from-purple-600 hover:to-pink-600"
               >
-                <Plus className="w-3 h-3 md:w-4 md:h-4 mr-2" />
-                New Job
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>Create a new production job</p>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setResourceDialogOpen(true)}
-                className="w-full justify-start text-xs md:text-sm"
-              >
-                <Plus className="w-3 h-3 md:w-4 md:h-4 mr-2" />
-                New Resource
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>Add a new manufacturing resource</p>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setAiActionsDialogOpen(true)}
-                className="w-full justify-start text-xs md:text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white border-purple-500 hover:from-purple-600 hover:to-pink-600"
-              >
-                <Sparkles className="w-3 h-3 md:w-4 md:h-4 mr-2" />
+                <Sparkles className="w-3 h-3 mr-1" />
                 AI Actions
               </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>Configure AI-powered quick actions</p>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
               <Link href="/email-settings">
                 <a
-                  className="flex items-center px-3 py-2 rounded-lg transition-colors text-sm md:text-base w-full text-gray-600 hover:bg-gray-100"
+                  className="flex items-center px-2 py-1.5 rounded text-xs w-full text-gray-600 hover:bg-gray-100 transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <Send className="w-3 h-3 md:w-4 md:h-4 mr-2" />
+                  <Send className="w-3 h-3 mr-1" />
                   Email Settings
                 </a>
               </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>Configure AWS SES for email notifications</p>
-            </TooltipContent>
-          </Tooltip>
-
+            </div>
+          )}
         </div>
 
-        <div className="mt-4 space-y-2">
+        {/* Desktop: Full Quick Actions */}
+        <div className="hidden md:block">
+          <h3 className="text-sm font-medium text-gray-500 mb-3">Quick Actions</h3>
+          <div className="space-y-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setJobDialogOpen(true)}
+                  className="w-full justify-start text-sm"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Job
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Create a new production job</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setResourceDialogOpen(true)}
+                  className="w-full justify-start text-sm"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Resource
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Add a new manufacturing resource</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setAiActionsDialogOpen(true)}
+                  className="w-full justify-start text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white border-purple-500 hover:from-purple-600 hover:to-pink-600"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  AI Actions
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Configure AI-powered quick actions</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/email-settings">
+                  <a
+                    className="flex items-center px-3 py-2 rounded-lg transition-colors text-base w-full text-gray-600 hover:bg-gray-100"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    Email Settings
+                  </a>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Configure AWS SES for email notifications</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+
+        {/* AI Assistant Section */}
+        <div className="mt-4">
           <div className="flex items-center space-x-2">
             <Input
               placeholder="Ask Max..."
