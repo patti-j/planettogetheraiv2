@@ -70,6 +70,11 @@ export default function BusinessGoalsPage() {
     queryKey: ["/api/goal-actions"],
   });
 
+  // Fetch users for goal owner dropdown
+  const { data: users = [] } = useQuery({
+    queryKey: ["/api/users"],
+  });
+
   // Create goal mutation
   const createGoalMutation = useMutation({
     mutationFn: (goal: InsertBusinessGoal) =>
@@ -424,13 +429,20 @@ export default function BusinessGoalsPage() {
               </div>
               <div>
                 <Label htmlFor="owner">Goal Owner *</Label>
-                <Input
-                  id="owner"
-                  value={formData.owner}
-                  onChange={(e) => setFormData({...formData, owner: e.target.value})}
-                  placeholder="Enter goal owner"
-                  required
-                />
+                <Select value={formData.owner} onValueChange={(value) => setFormData({...formData, owner: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select goal owner" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users.map((user: any) => (
+                      <SelectItem key={user.id} value={user.username || `${user.firstName} ${user.lastName}`.trim()}>
+                        {user.firstName && user.lastName 
+                          ? `${user.firstName} ${user.lastName} (${user.username})`
+                          : user.username}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
