@@ -71,20 +71,22 @@ export function RoleSwitcher({ userId, currentRole }: RoleSwitcherProps) {
   const switchRoleMutation = useMutation({
     mutationFn: (roleId: number) => 
       apiRequest('POST', `/api/users/${userId}/switch-role`, { roleId }),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({
         title: "Role Switched Successfully!",
-        description: "You have switched to the new role. The interface will update in a moment to reflect your new permissions.",
-        duration: 5000,
+        description: "You have switched to the new role. The interface will update to reflect your new permissions.",
+        duration: 2000,
       });
       setIsOpen(false);
       setSelectedRoleId('');
-      // Invalidate all queries to refresh the UI with new permissions
-      queryClient.invalidateQueries();
-      // Wait 5 seconds to allow user to read the success message, then redirect to home page
+      
+      // Clear all cached queries and refetch auth data immediately
+      queryClient.clear();
+      
+      // Immediately redirect to force a full page refresh with new permissions
       setTimeout(() => {
         window.location.href = '/';
-      }, 5000);
+      }, 500);
     },
     onError: (error: any) => {
       toast({

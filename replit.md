@@ -151,6 +151,15 @@ The application uses a modern full-stack architecture with strong typing through
 - Added comprehensive debug logging for role switching operations to ensure reliable functionality
 - Training demonstrations now fully functional with seamless entry and exit from any role in the system
 
+✓ **Role Switching Permission Refresh & Access Denied Message Fix (July 21, 2025)**:
+- Fixed access denied message flashing when switching to scheduler demo mode by implementing immediate cache clearing
+- Enhanced role switcher to use queryClient.clear() for complete cache refresh preventing permission timing issues
+- Updated useAuth hook with staleTime: 0 and refetchOnWindowFocus: true for fresh role data after switches
+- Fixed Production Scheduler role not showing Max AI and feedback menu items despite having proper permissions
+- Role switching now forces immediate page refresh to ensure all navigation elements update with new permissions
+- Reduced role switch notification duration and improved page refresh timing for smoother user experience
+- Eliminated permission caching issues that were preventing proper menu filtering after role changes
+
 ✓ **Shop Floor Operations Role Addition & AI Image Description Update (July 21, 2025)**:
 - Added missing "Shop Floor Operations" role to complete the 10-role system (previously had 9 roles)
 - Integrated Shop Floor Operations role with 3 key permissions: shop-floor-view, operator-dashboard-view, reports-view

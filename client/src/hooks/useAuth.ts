@@ -29,6 +29,8 @@ export function useAuth() {
     queryKey: ["/api/auth/me"],
     retry: false,
     retryOnMount: false,
+    staleTime: 0, // Always refetch to get fresh role data
+    refetchOnWindowFocus: true,
   });
 
   const loginMutation = useMutation({
