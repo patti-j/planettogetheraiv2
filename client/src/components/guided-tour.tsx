@@ -37,153 +37,167 @@ interface GuidedTourProps {
   onSkip: () => void;
 }
 
+// Define role-specific tour steps
+const getTourSteps = (role: string): TourStep[] => {
+  const commonSteps: TourStep[] = [
+    {
+      id: "welcome",
+      title: "Welcome to Your Demo",
+      description: "Let's explore the key features that will transform your manufacturing operations.",
+      page: "current",
+      icon: Play,
+      benefits: [
+        "See real-time production insights",
+        "Experience intelligent scheduling",
+        "Understand role-based workflows"
+      ],
+      actionText: "Start Tour",
+      duration: "5 min tour"
+    }
+  ];
+
+  const roleSteps: Record<string, TourStep[]> = {
+    'director': [
+      {
+        id: "business-goals",
+        title: "Strategic Business Goals",
+        description: "Define and track strategic objectives with KPI monitoring and risk management.",
+        page: "/business-goals",
+        icon: TrendingUp,
+        benefits: [
+          "Align production with business objectives",
+          "Monitor KPIs in real-time",
+          "Identify and mitigate risks early"
+        ],
+        actionText: "Explore Goals",
+        duration: "2 min"
+      },
+      {
+        id: "analytics",
+        title: "Executive Analytics",
+        description: "Access comprehensive dashboards with production metrics and performance insights.",
+        page: "/analytics",
+        icon: BarChart3,
+        benefits: [
+          "Make data-driven decisions",
+          "Identify optimization opportunities",
+          "Track performance trends"
+        ],
+        actionText: "View Analytics",
+        duration: "2 min"
+      },
+      {
+        id: "reports",
+        title: "Executive Reports",
+        description: "Generate detailed reports for stakeholders and board presentations.",
+        page: "/reports",
+        icon: Settings,
+        benefits: [
+          "Professional reporting for stakeholders",
+          "Automated report generation",
+          "Custom metrics and visualizations"
+        ],
+        actionText: "See Reports",
+        duration: "1 min"
+      }
+    ],
+    'production-scheduler': [
+      {
+        id: "schedule",
+        title: "Production Schedule",
+        description: "Interactive Gantt charts for visual production planning and resource allocation.",
+        page: "/",
+        icon: BarChart3,
+        benefits: [
+          "Drag-and-drop operation scheduling",
+          "Real-time capacity visualization",
+          "Optimize resource utilization"
+        ],
+        actionText: "See Schedule",
+        duration: "3 min"
+      },
+      {
+        id: "shop-floor",
+        title: "Shop Floor Management",
+        description: "Mobile-optimized interface for managing operations on the production floor.",
+        page: "/shop-floor",
+        icon: Users,
+        benefits: [
+          "Real-time operation status",
+          "Mobile-friendly interface",
+          "Quick status updates"
+        ],
+        actionText: "Visit Shop Floor",
+        duration: "2 min"
+      }
+    ],
+    'plant-manager': [
+      {
+        id: "plant-overview",
+        title: "Plant Management",
+        description: "Comprehensive oversight of plant operations and strategic decision-making.",
+        page: "/plant-manager",
+        icon: Settings,
+        benefits: [
+          "Complete plant visibility",
+          "Strategic planning tools",
+          "Performance optimization"
+        ],
+        actionText: "Manage Plant",
+        duration: "3 min"
+      },
+      {
+        id: "capacity-planning",
+        title: "Capacity Planning",
+        description: "Plan and optimize production capacity including staffing and equipment.",
+        page: "/capacity-planning",
+        icon: Target,
+        benefits: [
+          "Optimize resource allocation",
+          "Plan future capacity needs",
+          "Balance workloads effectively"
+        ],
+        actionText: "Plan Capacity",
+        duration: "2 min"
+      }
+    ]
+  };
+
+  return [...commonSteps, ...(roleSteps[role] || roleSteps['production-scheduler'])];
+};
+
 export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
   const [, setLocation] = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const { toast } = useToast();
 
-  // Define role-specific tour steps
-  const getTourSteps = (role: string): TourStep[] => {
-    const commonSteps: TourStep[] = [
-      {
-        id: "welcome",
-        title: "Welcome to Your Demo",
-        description: "Let's explore the key features that will transform your manufacturing operations.",
-        page: "current",
-        icon: Play,
-        benefits: [
-          "See real-time production insights",
-          "Experience intelligent scheduling",
-          "Understand role-based workflows"
-        ],
-        actionText: "Start Tour",
-        duration: "5 min tour"
-      }
-    ];
-
-    const roleSteps: Record<string, TourStep[]> = {
-      'director': [
-        {
-          id: "business-goals",
-          title: "Strategic Business Goals",
-          description: "Define and track strategic objectives with KPI monitoring and risk management.",
-          page: "/business-goals",
-          icon: TrendingUp,
-          benefits: [
-            "Align production with business objectives",
-            "Monitor KPIs in real-time",
-            "Identify and mitigate risks early"
-          ],
-          actionText: "Explore Goals",
-          duration: "2 min"
-        },
-        {
-          id: "analytics",
-          title: "Executive Analytics",
-          description: "Access comprehensive dashboards with production metrics and performance insights.",
-          page: "/analytics",
-          icon: BarChart3,
-          benefits: [
-            "Make data-driven decisions",
-            "Identify optimization opportunities",
-            "Track performance trends"
-          ],
-          actionText: "View Analytics",
-          duration: "2 min"
-        },
-        {
-          id: "reports",
-          title: "Executive Reports",
-          description: "Generate detailed reports for stakeholders and board presentations.",
-          page: "/reports",
-          icon: Settings,
-          benefits: [
-            "Professional reporting for stakeholders",
-            "Automated report generation",
-            "Custom metrics and visualizations"
-          ],
-          actionText: "See Reports",
-          duration: "1 min"
-        }
-      ],
-      'production-scheduler': [
-        {
-          id: "schedule",
-          title: "Production Schedule",
-          description: "Interactive Gantt charts for visual production planning and resource allocation.",
-          page: "/",
-          icon: BarChart3,
-          benefits: [
-            "Drag-and-drop operation scheduling",
-            "Real-time capacity visualization",
-            "Optimize resource utilization"
-          ],
-          actionText: "See Schedule",
-          duration: "3 min"
-        },
-        {
-          id: "shop-floor",
-          title: "Shop Floor Management",
-          description: "Mobile-optimized interface for managing operations on the production floor.",
-          page: "/shop-floor",
-          icon: Users,
-          benefits: [
-            "Real-time operation status",
-            "Mobile-friendly interface",
-            "Quick status updates"
-          ],
-          actionText: "Visit Shop Floor",
-          duration: "2 min"
-        }
-      ],
-      'plant-manager': [
-        {
-          id: "plant-overview",
-          title: "Plant Management",
-          description: "Comprehensive oversight of plant operations and strategic decision-making.",
-          page: "/plant-manager",
-          icon: Settings,
-          benefits: [
-            "Complete plant visibility",
-            "Strategic planning tools",
-            "Performance optimization"
-          ],
-          actionText: "Manage Plant",
-          duration: "3 min"
-        },
-        {
-          id: "capacity-planning",
-          title: "Capacity Planning",
-          description: "Plan and optimize production capacity including staffing and equipment.",
-          page: "/capacity-planning",
-          icon: Target,
-          benefits: [
-            "Optimize resource allocation",
-            "Plan future capacity needs",
-            "Balance workloads effectively"
-          ],
-          actionText: "Plan Capacity",
-          duration: "2 min"
-        }
-      ]
-    };
-
-    return [...commonSteps, ...(roleSteps[role] || roleSteps['production-scheduler'])];
-  };
-
   const tourSteps = getTourSteps(role);
   const progress = ((currentStep + 1) / tourSteps.length) * 100;
 
-  const handleNext = () => {
-    const currentStepData = tourSteps[currentStep];
-    
-    if (currentStepData.page !== "current") {
-      setLocation(currentStepData.page);
+  // Navigate to the first relevant step page when tour starts
+  useEffect(() => {
+    if (currentStep === 0) {
+      // For the welcome step, navigate to the first actual feature page
+      const firstFeatureStep = tourSteps.find(step => step.page !== "current");
+      if (firstFeatureStep) {
+        setLocation(firstFeatureStep.page);
+      }
     }
-    
+  }, []);
+
+  const handleNext = () => {
     if (currentStep < tourSteps.length - 1) {
-      setCurrentStep(currentStep + 1);
+      const nextStep = currentStep + 1;
+      setCurrentStep(nextStep);
+      
+      // Navigate to the next step's page
+      const nextStepData = tourSteps[nextStep];
+      if (nextStepData && nextStepData.page !== "current") {
+        setTimeout(() => {
+          setLocation(nextStepData.page);
+        }, 100);
+      }
     } else {
       handleComplete();
     }
