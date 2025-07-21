@@ -13,6 +13,7 @@ import { apiRequest } from "@/lib/queryClient";
 import JobForm from "./job-form";
 import ResourceForm from "./resource-form";
 import { RoleSwitcher } from "./role-switcher";
+import { TrainingModeExit } from "./training-mode-exit";
 import type { Capability } from "@shared/schema";
 
 export default function Sidebar() {
@@ -253,6 +254,13 @@ export default function Sidebar() {
       </div>
 
       <div className="p-3 md:p-4 border-t border-gray-200 flex-shrink-0">
+        {/* Training Mode Exit - shows when in training mode */}
+        {user && (
+          <div className="mb-3">
+            <TrainingModeExit />
+          </div>
+        )}
+        
         {/* User Info Section */}
         {user && (
           <div className="mb-4 p-3 bg-gray-50 rounded-lg">

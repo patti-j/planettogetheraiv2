@@ -3032,7 +3032,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get assigned roles (all roles assigned to user - used for training mode detection)
+  app.get("/api/users/:userId/assigned-roles", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
 
+      // This endpoint doesn't require special permissions since it's just checking user's own assigned roles
+      const roles = await storage.getUserRoles(userId);
+      res.json(roles);
+    } catch (error) {
+      console.error("Error fetching assigned roles:", error);
+      res.status(500).json({ error: "Failed to fetch assigned roles" });
+    }
+  });
 
   app.post("/api/users/:userId/switch-role", async (req, res) => {
     try {

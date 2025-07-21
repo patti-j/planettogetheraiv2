@@ -41,19 +41,30 @@ export function RoleSwitcher({ userId, currentRole }: RoleSwitcherProps) {
   // Check if user has training permissions
   const { data: hasPermission } = useQuery({
     queryKey: [`/api/users/${userId}/permissions/check`, 'training', 'view'],
-    queryFn: () => apiRequest('GET', `/api/users/${userId}/permissions/check?feature=training&action=view`),
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/users/${userId}/permissions/check?feature=training&action=view`);
+      return await response.json();
+    },
   });
 
   // Get available roles for switching
   const { data: availableRoles = [] } = useQuery({
     queryKey: [`/api/users/${userId}/available-roles`],
     enabled: hasPermission?.hasPermission,
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/users/${userId}/available-roles`);
+      return await response.json();
+    },
   });
 
   // Get current role
   const { data: currentRoleData } = useQuery({
     queryKey: [`/api/users/${userId}/current-role`],
     enabled: hasPermission?.hasPermission,
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/users/${userId}/current-role`);
+      return await response.json();
+    },
   });
 
   // Switch role mutation
@@ -85,7 +96,7 @@ export function RoleSwitcher({ userId, currentRole }: RoleSwitcherProps) {
   });
 
   // Don't show the switcher if user doesn't have permission
-  if (!hasPermission?.hasPermission || availableRoles.length === 0) {
+  if (!hasPermission?.hasPermission || !Array.isArray(availableRoles) || availableRoles.length === 0) {
     return null;
   }
 
@@ -139,7 +150,7 @@ export function RoleSwitcher({ userId, currentRole }: RoleSwitcherProps) {
                 <SelectValue placeholder="Select a role to switch to..." />
               </SelectTrigger>
               <SelectContent>
-                {availableRoles.map((role: Role) => (
+                {Array.isArray(availableRoles) && availableRoles.map((role: Role) => (
                   <SelectItem key={role.id} value={role.id.toString()}>
                     <div className="flex flex-col">
                       <div className="font-medium">{role.name}</div>
