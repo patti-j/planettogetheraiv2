@@ -3054,12 +3054,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log(`=== ROLE SWITCH ENDPOINT HIT ===`);
     console.log(`Request body:`, req.body);
     console.log(`User ID param:`, req.params.userId);
+    console.log(`Session userId:`, req.session?.userId);
+    console.log(`Authorization header:`, req.headers.authorization);
     
     try {
+      // First, authenticate the user (same logic as /api/auth/me)
+      let authenticatedUserId = req.session?.userId;
+      
+      // Check for token in Authorization header if session fails
+      if (!authenticatedUserId && req.headers.authorization) {
+        const token = req.headers.authorization.replace('Bearer ', '');
+        console.log("Checking token:", token);
+        
+        // Extract user ID from token (simple format: user_ID_timestamp_random)
+        const tokenParts = token.split('_');
+        if (tokenParts.length >= 2 && tokenParts[0] === 'user') {
+          authenticatedUserId = parseInt(tokenParts[1]);
+          console.log("Token userId:", authenticatedUserId);
+        }
+      }
+      
+      if (!authenticatedUserId) {
+        console.log("No authenticated userId found, returning 401");
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
       const userId = parseInt(req.params.userId);
       const { roleId } = req.body;
       
       console.log(`Parsed User ID: ${userId}, Role ID: ${roleId}`);
+      console.log(`Authenticated User ID: ${authenticatedUserId}`);
+      
+      // Ensure user can only switch their own role
+      if (authenticatedUserId !== userId) {
+        console.log(`User ${authenticatedUserId} trying to switch role for user ${userId} - denied`);
+        return res.status(403).json({ error: "Can only switch your own role" });
+      }
       
       if (isNaN(userId) || isNaN(roleId)) {
         console.log(`Invalid parameters: userId=${userId}, roleId=${roleId}`);
