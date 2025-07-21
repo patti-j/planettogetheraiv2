@@ -1139,3 +1139,41 @@ export const insertVisualFactoryDisplaySchema = createInsertSchema(visualFactory
 
 export type InsertVisualFactoryDisplay = z.infer<typeof insertVisualFactoryDisplaySchema>;
 export type VisualFactoryDisplay = typeof visualFactoryDisplays.$inferSelect;
+
+// Demo Tour Participants Schema
+export const demoTourParticipants = pgTable("demo_tour_participants", {
+  id: serial("id").primaryKey(),
+  firstName: varchar("first_name", { length: 100 }).notNull(),
+  lastName: varchar("last_name", { length: 100 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  company: varchar("company", { length: 255 }),
+  jobTitle: varchar("job_title", { length: 255 }),
+  primaryRole: varchar("primary_role", { length: 100 }).notNull(),
+  additionalRoles: jsonb("additional_roles").$type<string[]>().default([]),
+  tourStartedAt: timestamp("tour_started_at").defaultNow(),
+  tourCompletedAt: timestamp("tour_completed_at"),
+  tourSteps: jsonb("tour_steps").$type<Array<{
+    stepId: string;
+    stepTitle: string;
+    roleId: string;
+    completedAt: string;
+    duration: number; // seconds spent on this step
+  }>>().default([]),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  referralSource: varchar("referral_source", { length: 255 }),
+  feedback: text("feedback"),
+  isCompleted: boolean("is_completed").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertDemoTourParticipantSchema = createInsertSchema(demoTourParticipants).omit({
+  id: true,
+  tourStartedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertDemoTourParticipant = z.infer<typeof insertDemoTourParticipantSchema>;
+export type DemoTourParticipant = typeof demoTourParticipants.$inferSelect;

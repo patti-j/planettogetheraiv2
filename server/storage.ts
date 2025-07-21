@@ -18,7 +18,8 @@ import {
   type InsertCapacityPlanningScenario, type InsertStaffingPlan, type InsertShiftPlan, type InsertEquipmentPlan, type InsertCapacityProjection,
   type InsertBusinessGoal, type InsertGoalProgress, type InsertGoalRisk, type InsertGoalIssue, type InsertGoalKpi, type InsertGoalAction,
   type InsertUser, type InsertRole, type InsertPermission, type InsertUserRole, type InsertRolePermission,
-  type VisualFactoryDisplay, type InsertVisualFactoryDisplay
+  type VisualFactoryDisplay, type InsertVisualFactoryDisplay,
+  demoTourParticipants, type DemoTourParticipant, type InsertDemoTourParticipant
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, like, ne } from "drizzle-orm";
@@ -295,6 +296,15 @@ export interface IStorage {
   createVisualFactoryDisplay(display: InsertVisualFactoryDisplay): Promise<VisualFactoryDisplay>;
   updateVisualFactoryDisplay(id: number, display: Partial<InsertVisualFactoryDisplay>): Promise<VisualFactoryDisplay | undefined>;
   deleteVisualFactoryDisplay(id: number): Promise<boolean>;
+
+  // Demo Tour Participants
+  getDemoTourParticipants(): Promise<DemoTourParticipant[]>;
+  getDemoTourParticipant(id: number): Promise<DemoTourParticipant | undefined>;
+  getDemoTourParticipantByEmail(email: string): Promise<DemoTourParticipant | undefined>;
+  createDemoTourParticipant(participant: InsertDemoTourParticipant): Promise<DemoTourParticipant>;
+  updateDemoTourParticipant(id: number, participant: Partial<InsertDemoTourParticipant>): Promise<DemoTourParticipant | undefined>;
+  completeDemoTour(id: number, feedback?: string): Promise<DemoTourParticipant | undefined>;
+  addTourStep(participantId: number, step: { stepId: string; stepTitle: string; roleId: string; completedAt: string; duration: number }): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -2423,6 +2433,70 @@ export class DatabaseStorage implements IStorage {
 
   async deleteVisualFactoryDisplay(id: number): Promise<boolean> {
     const result = await db.delete(visualFactoryDisplays).where(eq(visualFactoryDisplays.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Demo Tour Participants
+  async getDemoTourParticipants(): Promise<DemoTourParticipant[]> {
+    return await db.select().from(demoTourParticipants).orderBy(desc(demoTourParticipants.createdAt));
+  }
+
+  async getDemoTourParticipant(id: number): Promise<DemoTourParticipant | undefined> {
+    const [participant] = await db.select().from(demoTourParticipants).where(eq(demoTourParticipants.id, id));
+    return participant;
+  }
+
+  async getDemoTourParticipantByEmail(email: string): Promise<DemoTourParticipant | undefined> {
+    const [participant] = await db.select().from(demoTourParticipants).where(eq(demoTourParticipants.email, email));
+    return participant;
+  }
+
+  async createDemoTourParticipant(participant: InsertDemoTourParticipant): Promise<DemoTourParticipant> {
+    const [newParticipant] = await db.insert(demoTourParticipants).values(participant).returning();
+    return newParticipant;
+  }
+
+  async updateDemoTourParticipant(id: number, participant: Partial<InsertDemoTourParticipant>): Promise<DemoTourParticipant | undefined> {
+    const [updatedParticipant] = await db
+      .update(demoTourParticipants)
+      .set({ ...participant, updatedAt: new Date() })
+      .where(eq(demoTourParticipants.id, id))
+      .returning();
+    return updatedParticipant;
+  }
+
+  async completeDemoTour(id: number, feedback?: string): Promise<DemoTourParticipant | undefined> {
+    const [updatedParticipant] = await db
+      .update(demoTourParticipants)
+      .set({ 
+        isCompleted: true, 
+        tourCompletedAt: new Date(),
+        feedback: feedback || undefined,
+        updatedAt: new Date() 
+      })
+      .where(eq(demoTourParticipants.id, id))
+      .returning();
+    return updatedParticipant;
+  }
+
+  async addTourStep(participantId: number, step: { stepId: string; stepTitle: string; roleId: string; completedAt: string; duration: number }): Promise<boolean> {
+    // Get current participant
+    const participant = await this.getDemoTourParticipant(participantId);
+    if (!participant) return false;
+
+    // Add new step to existing steps
+    const currentSteps = participant.tourSteps || [];
+    const updatedSteps = [...currentSteps, step];
+
+    // Update participant with new steps
+    const result = await db
+      .update(demoTourParticipants)
+      .set({ 
+        tourSteps: updatedSteps,
+        updatedAt: new Date() 
+      })
+      .where(eq(demoTourParticipants.id, participantId));
+
     return result.rowCount ? result.rowCount > 0 : false;
   }
 }

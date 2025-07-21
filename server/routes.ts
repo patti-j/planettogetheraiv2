@@ -14,7 +14,8 @@ import {
   insertBusinessGoalSchema, insertGoalProgressSchema, insertGoalRiskSchema,
   insertGoalIssueSchema, insertGoalKpiSchema, insertGoalActionSchema,
   insertUserSchema, insertRoleSchema, insertPermissionSchema,
-  insertUserRoleSchema, insertRolePermissionSchema
+  insertUserRoleSchema, insertRolePermissionSchema,
+  insertDemoTourParticipantSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -3457,6 +3458,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error deleting visual factory display:', error);
       res.status(500).json({ error: 'Failed to delete display' });
+    }
+  });
+
+  // Demo Tour Participants Routes
+  app.get('/api/demo-tour-participants', async (req, res) => {
+    try {
+      const participants = await storage.getDemoTourParticipants();
+      res.json(participants);
+    } catch (error) {
+      console.error('Error fetching demo tour participants:', error);
+      res.status(500).json({ error: 'Failed to fetch demo tour participants' });
+    }
+  });
+
+  app.get('/api/demo-tour-participants/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const participant = await storage.getDemoTourParticipant(id);
+      if (!participant) {
+        return res.status(404).json({ error: 'Demo tour participant not found' });
+      }
+      res.json(participant);
+    } catch (error) {
+      console.error('Error fetching demo tour participant:', error);
+      res.status(500).json({ error: 'Failed to fetch demo tour participant' });
+    }
+  });
+
+  app.get('/api/demo-tour-participants/email/:email', async (req, res) => {
+    try {
+      const email = req.params.email;
+      const participant = await storage.getDemoTourParticipantByEmail(email);
+      if (!participant) {
+        return res.status(404).json({ error: 'Demo tour participant not found' });
+      }
+      res.json(participant);
+    } catch (error) {
+      console.error('Error fetching demo tour participant by email:', error);
+      res.status(500).json({ error: 'Failed to fetch demo tour participant' });
+    }
+  });
+
+  app.post('/api/demo-tour-participants', async (req, res) => {
+    try {
+      const parsedData = insertDemoTourParticipantSchema.parse(req.body);
+      const participant = await storage.createDemoTourParticipant(parsedData);
+      res.status(201).json(participant);
+    } catch (error) {
+      console.error('Error creating demo tour participant:', error);
+      res.status(500).json({ error: 'Failed to create demo tour participant' });
+    }
+  });
+
+  app.put('/api/demo-tour-participants/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const parsedData = insertDemoTourParticipantSchema.partial().parse(req.body);
+      const participant = await storage.updateDemoTourParticipant(id, parsedData);
+      if (!participant) {
+        return res.status(404).json({ error: 'Demo tour participant not found' });
+      }
+      res.json(participant);
+    } catch (error) {
+      console.error('Error updating demo tour participant:', error);
+      res.status(500).json({ error: 'Failed to update demo tour participant' });
+    }
+  });
+
+  app.post('/api/demo-tour-participants/:id/complete', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { feedback } = req.body;
+      const participant = await storage.completeDemoTour(id, feedback);
+      if (!participant) {
+        return res.status(404).json({ error: 'Demo tour participant not found' });
+      }
+      res.json(participant);
+    } catch (error) {
+      console.error('Error completing demo tour:', error);
+      res.status(500).json({ error: 'Failed to complete demo tour' });
+    }
+  });
+
+  app.post('/api/demo-tour-participants/:id/steps', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const step = req.body;
+      const success = await storage.addTourStep(id, step);
+      if (!success) {
+        return res.status(404).json({ error: 'Demo tour participant not found' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error adding tour step:', error);
+      res.status(500).json({ error: 'Failed to add tour step' });
     }
   });
 
