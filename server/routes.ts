@@ -2989,12 +2989,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all system roles for role demonstration (trainers only)
   app.get("/api/roles/all", async (req, res) => {
     try {
-      // Check if user is authenticated via session
-      if (!req.session?.userId) {
+      let userId = req.session?.userId;
+      
+      // Check for token in Authorization header if session fails
+      if (!userId && req.headers.authorization) {
+        const token = req.headers.authorization.replace('Bearer ', '');
+        
+        // Extract user ID from token (simple format: user_ID_timestamp_random)
+        const tokenParts = token.split('_');
+        if (tokenParts.length >= 2 && tokenParts[0] === 'user') {
+          userId = parseInt(tokenParts[1]);
+        }
+      }
+      
+      if (!userId) {
         return res.status(401).json({ error: "Authentication required" });
       }
-
-      const userId = req.session.userId;
 
       // Check if user has training permissions
       const hasTrainingPermission = await storage.hasPermission(userId, 'training', 'view');
