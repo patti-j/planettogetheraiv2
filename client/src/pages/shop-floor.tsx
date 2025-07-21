@@ -2566,7 +2566,7 @@ const LayoutManagerDialog: React.FC<LayoutManagerDialogProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium">AI Image Generation</p>
-                <p className="text-xs text-gray-500">Generate cartoon-style images for resources missing photos</p>
+                <p className="text-xs text-gray-500">Generate realistic professional images for resources missing photos</p>
               </div>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -2587,7 +2587,7 @@ const LayoutManagerDialog: React.FC<LayoutManagerDialogProps> = ({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Generate cartoon-style AI images for resources missing photos</p>
+                  <p>Generate realistic professional AI images for resources missing photos</p>
                 </TooltipContent>
               </Tooltip>
             </div>

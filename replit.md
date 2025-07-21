@@ -126,6 +126,14 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 21, 2025)
 
+✓ **Shop Floor Operations Role Addition & AI Image Description Update (July 21, 2025)**:
+- Added missing "Shop Floor Operations" role to complete the 10-role system (previously had 9 roles)
+- Integrated Shop Floor Operations role with 3 key permissions: shop-floor-view, operator-dashboard-view, reports-view
+- Fixed AI image generation payload size limit by increasing server body parser limit to 10MB for large image uploads
+- Updated AI image generation descriptions from "cartoon-style" to "realistic professional" to reflect current image quality
+- All 10 roles now properly display in Role Demonstrations, training modules, and roles & permissions sections
+- Role switching functionality verified working across all 10 system roles including new Shop Floor Operations role
+
 ✓ **Visual Factory Feature Implementation (July 21, 2025)**:
 - Created comprehensive Visual Factory page for automated large screen displays in manufacturing facilities
 - Implemented Visual Factory database schema with display management and configuration storage
