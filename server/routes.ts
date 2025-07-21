@@ -3059,30 +3059,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid user ID or role ID" });
       }
 
+      console.log(`=== ROLE SWITCH DEBUG ===`);
+      console.log(`User ID: ${userId}, Target Role ID: ${roleId}`);
+
       // Get user's originally assigned roles (not their current active role)
       const userAssignedRoles = await storage.getUserRoles(userId);
+      console.log(`User assigned roles:`, userAssignedRoles.map((r: any) => `${r.id}:${r.name}`));
+      
       const isReturningToAssignedRole = userAssignedRoles.some((role: any) => role.id === roleId);
+      console.log(`Is returning to assigned role: ${isReturningToAssignedRole}`);
       
       if (isReturningToAssignedRole) {
         // Always allow returning to originally assigned roles (training mode exit)
-        // This bypasses current role permissions check
+        console.log(`Allowing return to assigned role: ${roleId}`);
         const updatedUser = await storage.switchUserRole(userId, roleId);
         res.json(updatedUser);
         return;
       }
 
       // For switching to demonstration roles, check if user has trainer/systems manager assigned
-      // Check based on their original assigned roles, not current role
       const hasTrainerRole = userAssignedRoles.some((role: any) => 
         role.name === 'Trainer' || role.name === 'Systems Manager'
       );
+      console.log(`User has trainer/systems manager role: ${hasTrainerRole}`);
       
       if (!hasTrainerRole) {
+        console.log(`Denying role switch - no trainer permissions`);
         return res.status(403).json({ error: "User does not have role switching permissions" });
       }
 
+      console.log(`Allowing demonstration role switch to: ${roleId}`);
       // For training purposes, allow switching to any role without assignment check
-      // This enables comprehensive role demonstration for trainers
       const updatedUser = await storage.switchUserRole(userId, roleId);
       res.json(updatedUser);
     } catch (error) {

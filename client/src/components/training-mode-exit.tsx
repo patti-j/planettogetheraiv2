@@ -40,6 +40,12 @@ export function TrainingModeExit() {
       const systemsManagerRole = Array.isArray(assignedRoles) ? assignedRoles.find((role: any) => role.name === 'Systems Manager') : null;
       
       const originalRoleId = trainerRole?.id || systemsManagerRole?.id;
+      console.log('=== TRAINING EXIT DEBUG ===');
+      console.log('Assigned roles:', assignedRoles);
+      console.log('Trainer role:', trainerRole);
+      console.log('Systems Manager role:', systemsManagerRole);
+      console.log('Switching to role ID:', originalRoleId);
+      
       if (!originalRoleId) {
         throw new Error('Cannot find original role to return to');
       }
