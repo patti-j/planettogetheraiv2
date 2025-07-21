@@ -147,7 +147,7 @@ export default function Sidebar() {
 
   const navigationItems = [
     { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals", feature: "business-goals", action: "view" },
-    { icon: BarChart3, label: "Schedule", href: "/", active: location === "/", feature: "schedule", action: "view" },
+    { icon: BarChart3, label: "Schedule", href: "/", active: location === "/", feature: "production-scheduling", action: "view" },
     { icon: Target, label: "Optimize Orders", href: "/scheduling-optimizer", active: location === "/scheduling-optimizer", feature: "scheduling-optimizer", action: "view" },
     { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", active: location === "/capacity-planning", feature: "capacity-planning", action: "view" },
     { icon: Factory, label: "Visual Factory", href: "/visual-factory", active: location === "/visual-factory", feature: "visual-factory", action: "view" },
