@@ -151,9 +151,11 @@ export default function DemoTour() {
 
   const createParticipantMutation = useMutation({
     mutationFn: async (data: ParticipantFormData) => {
-      return await apiRequest("POST", "/api/demo-tour-participants", data);
+      const response = await apiRequest("POST", "/api/demo-tour-participants", data);
+      return await response.json();
     },
     onSuccess: (participant) => {
+      console.log("Participant created:", participant);
       setParticipantId(participant.id);
       toast({
         title: "Welcome to PlanetTogether!",
@@ -174,6 +176,7 @@ export default function DemoTour() {
 
   const startDemoTour = async (primaryRole: string) => {
     try {
+      console.log("Starting demo tour with role:", primaryRole);
       // Authenticate as demo user for the selected role
       const response = await fetch("/api/auth/demo-login", {
         method: "POST",
