@@ -338,13 +338,49 @@ function RoleDemonstrationSection({ userId, currentRole }: RoleDemonstrationSect
       const roleName = allRoles.find(r => r.id === roleId)?.name || 'Unknown';
       toast({
         title: "Role Switched Successfully",
-        description: `Switched to ${roleName} role. The interface will update to show this role's permissions and features.`,
+        description: `Switched to ${roleName} role. Redirecting to appropriate page...`,
       });
+      
       // Invalidate all queries to refresh the UI with new permissions
       queryClient.invalidateQueries();
-      // Reload the page to ensure all components reflect the new role
+      
+      // Determine appropriate redirect based on role
+      const getRedirectPath = (roleName: string): string => {
+        const roleNameLower = roleName.toLowerCase();
+        
+        if (roleNameLower.includes('trainer') || roleNameLower.includes('systems manager')) {
+          return '/training'; // These roles can access training
+        }
+        if (roleNameLower.includes('scheduler') || roleNameLower.includes('production')) {
+          return '/'; // Production schedulers go to main dashboard
+        }
+        if (roleNameLower.includes('director')) {
+          return '/business-goals'; // Directors go to business goals
+        }
+        if (roleNameLower.includes('admin')) {
+          return '/role-management'; // Admins go to user management
+        }
+        if (roleNameLower.includes('operator')) {
+          return '/operator'; // Operators go to operator dashboard
+        }
+        if (roleNameLower.includes('sales')) {
+          return '/sales'; // Sales go to sales dashboard
+        }
+        if (roleNameLower.includes('maintenance')) {
+          return '/maintenance'; // Maintenance to maintenance page
+        }
+        if (roleNameLower.includes('manager')) {
+          return '/analytics'; // Managers go to analytics
+        }
+        
+        return '/'; // Default to main dashboard
+      };
+      
+      const redirectPath = getRedirectPath(roleName);
+      
+      // Navigate to appropriate page for the role
       setTimeout(() => {
-        window.location.reload();
+        window.location.href = redirectPath;
       }, 1000);
     },
     onError: (error: any) => {
