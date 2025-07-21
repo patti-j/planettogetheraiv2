@@ -215,27 +215,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Handle demo users
       if (isDemo || (typeof userId === 'string' && userId.startsWith('demo_'))) {
         const demoUsers = {
-          'demo_exec': { 
-            id: 'demo_exec', 
-            username: 'demo_executive', 
+          'demo_director': { 
+            id: 'demo_director', 
+            username: 'demo_director', 
             email: 'demo@planettogether.com', 
             firstName: 'Demo',
-            lastName: 'Executive',
+            lastName: 'Director',
             isActive: true,
-            activeRole: { id: 'demo_exec_role', name: 'Director' },
+            activeRole: { id: 'demo_director_role', name: 'Director' },
             permissions: ['business-goals-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
-            roles: [{ id: 'demo_exec_role', name: 'Director' }]
-          },
-          'demo_prod': { 
-            id: 'demo_prod', 
-            username: 'demo_production', 
-            email: 'demo@planettogether.com', 
-            firstName: 'Demo',
-            lastName: 'Scheduler',
-            isActive: true,
-            activeRole: { id: 'demo_prod_role', name: 'Production Scheduler' },
-            permissions: ['schedule-view', 'boards-view', 'shop-floor-view', 'analytics-view', 'scheduling-optimizer-view', 'ai-assistant-view', 'feedback-view'],
-            roles: [{ id: 'demo_prod_role', name: 'Production Scheduler' }]
+            roles: [{ id: 'demo_director_role', name: 'Director' }]
           },
           'demo_plant': { 
             id: 'demo_plant', 
@@ -248,16 +237,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
             permissions: ['plant-manager-view', 'capacity-planning-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
             roles: [{ id: 'demo_plant_role', name: 'Plant Manager' }]
           },
-          'demo_it': { 
-            id: 'demo_it', 
+          'demo_scheduler': { 
+            id: 'demo_scheduler', 
+            username: 'demo_scheduler', 
+            email: 'demo@planettogether.com', 
+            firstName: 'Demo',
+            lastName: 'Scheduler',
+            isActive: true,
+            activeRole: { id: 'demo_scheduler_role', name: 'Production Scheduler' },
+            permissions: ['schedule-view', 'boards-view', 'shop-floor-view', 'analytics-view', 'scheduling-optimizer-view', 'business-goals-view', 'ai-assistant-view', 'feedback-view'],
+            roles: [{ id: 'demo_scheduler_role', name: 'Production Scheduler' }]
+          },
+          'demo_it_admin': { 
+            id: 'demo_it_admin', 
             username: 'demo_it_admin', 
             email: 'demo@planettogether.com', 
             firstName: 'Demo',
             lastName: 'IT Admin',
             isActive: true,
-            activeRole: { id: 'demo_it_role', name: 'IT Administrator' },
+            activeRole: { id: 'demo_it_admin_role', name: 'IT Administrator' },
             permissions: ['systems-management-view', 'role-management-view', 'user-management-view', 'ai-assistant-view', 'feedback-view'],
-            roles: [{ id: 'demo_it_role', name: 'IT Administrator' }]
+            roles: [{ id: 'demo_it_admin_role', name: 'IT Administrator' }]
+          },
+          'demo_systems': { 
+            id: 'demo_systems', 
+            username: 'demo_systems_manager', 
+            email: 'demo@planettogether.com', 
+            firstName: 'Demo',
+            lastName: 'Systems Manager',
+            isActive: true,
+            activeRole: { id: 'demo_systems_role', name: 'Systems Manager' },
+            permissions: ['systems-management-view', 'role-management-view', 'user-management-view', 'training-view', 'ai-assistant-view', 'feedback-view'],
+            roles: [{ id: 'demo_systems_role', name: 'Systems Manager' }]
+          },
+          'demo_admin': { 
+            id: 'demo_admin', 
+            username: 'demo_administrator', 
+            email: 'demo@planettogether.com', 
+            firstName: 'Demo',
+            lastName: 'Administrator',
+            isActive: true,
+            activeRole: { id: 'demo_admin_role', name: 'Administrator' },
+            permissions: ['role-management-view', 'user-management-view', 'systems-management-view', 'ai-assistant-view', 'feedback-view'],
+            roles: [{ id: 'demo_admin_role', name: 'Administrator' }]
+          },
+          'demo_shop_floor': { 
+            id: 'demo_shop_floor', 
+            username: 'demo_shop_floor', 
+            email: 'demo@planettogether.com', 
+            firstName: 'Demo',
+            lastName: 'Shop Floor',
+            isActive: true,
+            activeRole: { id: 'demo_shop_floor_role', name: 'Shop Floor Operations' },
+            permissions: ['shop-floor-view', 'operator-dashboard-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+            roles: [{ id: 'demo_shop_floor_role', name: 'Shop Floor Operations' }]
+          },
+          'demo_analyst': { 
+            id: 'demo_analyst', 
+            username: 'demo_data_analyst', 
+            email: 'demo@planettogether.com', 
+            firstName: 'Demo',
+            lastName: 'Data Analyst',
+            isActive: true,
+            activeRole: { id: 'demo_analyst_role', name: 'Data Analyst' },
+            permissions: ['analytics-view', 'reports-view', 'business-goals-view', 'ai-assistant-view', 'feedback-view'],
+            roles: [{ id: 'demo_analyst_role', name: 'Data Analyst' }]
+          },
+          'demo_trainer': { 
+            id: 'demo_trainer', 
+            username: 'demo_trainer', 
+            email: 'demo@planettogether.com', 
+            firstName: 'Demo',
+            lastName: 'Trainer',
+            isActive: true,
+            activeRole: { id: 'demo_trainer_role', name: 'Trainer' },
+            permissions: ['training-view', 'role-management-view', 'analytics-view', 'ai-assistant-view', 'feedback-view'],
+            roles: [{ id: 'demo_trainer_role', name: 'Trainer' }]
+          },
+          'demo_maintenance': { 
+            id: 'demo_maintenance', 
+            username: 'demo_maintenance', 
+            email: 'demo@planettogether.com', 
+            firstName: 'Demo',
+            lastName: 'Maintenance Tech',
+            isActive: true,
+            activeRole: { id: 'demo_maintenance_role', name: 'Maintenance Technician' },
+            permissions: ['maintenance-planning-view', 'shop-floor-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+            roles: [{ id: 'demo_maintenance_role', name: 'Maintenance Technician' }]
+          },
+          // Legacy mappings for backward compatibility
+          'demo_exec': { 
+            id: 'demo_director', 
+            username: 'demo_director', 
+            email: 'demo@planettogether.com', 
+            firstName: 'Demo',
+            lastName: 'Director',
+            isActive: true,
+            activeRole: { id: 'demo_director_role', name: 'Director' },
+            permissions: ['business-goals-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+            roles: [{ id: 'demo_director_role', name: 'Director' }]
+          },
+          'demo_prod': { 
+            id: 'demo_scheduler', 
+            username: 'demo_scheduler', 
+            email: 'demo@planettogether.com', 
+            firstName: 'Demo',
+            lastName: 'Scheduler',
+            isActive: true,
+            activeRole: { id: 'demo_scheduler_role', name: 'Production Scheduler' },
+            permissions: ['schedule-view', 'boards-view', 'shop-floor-view', 'analytics-view', 'scheduling-optimizer-view', 'business-goals-view', 'ai-assistant-view', 'feedback-view'],
+            roles: [{ id: 'demo_scheduler_role', name: 'Production Scheduler' }]
+          },
+          'demo_it': { 
+            id: 'demo_it_admin', 
+            username: 'demo_it_admin', 
+            email: 'demo@planettogether.com', 
+            firstName: 'Demo',
+            lastName: 'IT Admin',
+            isActive: true,
+            activeRole: { id: 'demo_it_admin_role', name: 'IT Administrator' },
+            permissions: ['systems-management-view', 'role-management-view', 'user-management-view', 'ai-assistant-view', 'feedback-view'],
+            roles: [{ id: 'demo_it_admin_role', name: 'IT Administrator' }]
           }
         };
         
