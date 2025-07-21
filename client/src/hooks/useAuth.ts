@@ -143,16 +143,20 @@ export function usePermissions() {
       return getDemoPermissions((user as any).role, feature, action);
     }
 
+    // Handle demo users from server who have permissions array directly on user object
+    if ((user as any).permissions && Array.isArray((user as any).permissions)) {
+      const permissionKey = `${feature}-${action}`;
+      return (user as any).permissions.includes(permissionKey);
+    }
+
     // Handle regular users with roles array
     if (!user.roles) return false;
 
-    const result = user.roles.some(role =>
+    return user.roles.some(role =>
       role.permissions?.some(permission =>
         permission.feature === feature && permission.action === action
       )
     );
-    
-    return result;
   };
 
   const hasAnyPermission = (permissions: Array<{ feature: string; action: string }>): boolean => {
