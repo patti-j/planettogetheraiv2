@@ -65,10 +65,17 @@ export function TrainingModeExit() {
       }, 5000);
     },
     onError: (error: any) => {
+      console.error('Training exit error:', error);
       toast({
         title: "Exit Failed", 
-        description: error.message || "Failed to exit training mode",
+        description: error.message || "Failed to exit training mode. Please try again.",
         variant: "destructive",
+        action: <button 
+          onClick={() => navigator.clipboard?.writeText(error.message || "Failed to exit training mode")} 
+          className="text-xs underline"
+        >
+          Copy Error
+        </button>
       });
     },
   });

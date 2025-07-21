@@ -3051,16 +3051,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/users/:userId/switch-role", async (req, res) => {
+    console.log(`=== ROLE SWITCH ENDPOINT HIT ===`);
+    console.log(`Request body:`, req.body);
+    console.log(`User ID param:`, req.params.userId);
+    
     try {
       const userId = parseInt(req.params.userId);
       const { roleId } = req.body;
       
+      console.log(`Parsed User ID: ${userId}, Role ID: ${roleId}`);
+      
       if (isNaN(userId) || isNaN(roleId)) {
+        console.log(`Invalid parameters: userId=${userId}, roleId=${roleId}`);
         return res.status(400).json({ error: "Invalid user ID or role ID" });
       }
-
-      console.log(`=== ROLE SWITCH DEBUG ===`);
-      console.log(`User ID: ${userId}, Target Role ID: ${roleId}`);
 
       // Get user's originally assigned roles (not their current active role)
       const userAssignedRoles = await storage.getUserRoles(userId);
@@ -3071,7 +3075,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (isReturningToAssignedRole) {
         // Always allow returning to originally assigned roles (training mode exit)
-        console.log(`Allowing return to assigned role: ${roleId}`);
+        console.log(`✓ Allowing return to assigned role: ${roleId}`);
         const updatedUser = await storage.switchUserRole(userId, roleId);
         res.json(updatedUser);
         return;
@@ -3084,11 +3088,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`User has trainer/systems manager role: ${hasTrainerRole}`);
       
       if (!hasTrainerRole) {
-        console.log(`Denying role switch - no trainer permissions`);
+        console.log(`✗ Denying role switch - no trainer permissions`);
         return res.status(403).json({ error: "User does not have role switching permissions" });
       }
 
-      console.log(`Allowing demonstration role switch to: ${roleId}`);
+      console.log(`✓ Allowing demonstration role switch to: ${roleId}`);
       // For training purposes, allow switching to any role without assignment check
       const updatedUser = await storage.switchUserRole(userId, roleId);
       res.json(updatedUser);
