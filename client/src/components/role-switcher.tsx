@@ -47,12 +47,12 @@ export function RoleSwitcher({ userId, currentRole }: RoleSwitcherProps) {
     },
   });
 
-  // Get available roles for switching
+  // Get all system roles for training demonstrations
   const { data: availableRoles = [] } = useQuery({
-    queryKey: [`/api/users/${userId}/available-roles`],
+    queryKey: ['/api/roles'],
     enabled: hasPermission?.hasPermission,
     queryFn: async () => {
-      const response = await apiRequest('GET', `/api/users/${userId}/available-roles`);
+      const response = await apiRequest('GET', '/api/roles');
       return await response.json();
     },
   });
@@ -126,8 +126,8 @@ export function RoleSwitcher({ userId, currentRole }: RoleSwitcherProps) {
             Switch Training Role
           </DialogTitle>
           <DialogDescription>
-            As a trainer or systems manager, you can switch between different roles to demonstrate 
-            their features and capabilities without logging out.
+            As a trainer or systems manager, you can switch to any system role to demonstrate 
+            their features and capabilities for training purposes.
           </DialogDescription>
         </DialogHeader>
         
