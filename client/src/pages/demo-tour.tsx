@@ -217,10 +217,6 @@ export default function DemoTour() {
     onSuccess: (participant) => {
       console.log("Participant created:", participant);
       setParticipantId(participant.id);
-      toast({
-        title: "Registration Complete!",
-        description: "Let's start your personalized demo tour.",
-      });
       setShowParticipantForm(false);
       startDemoTour(participant.primaryRole, participant.voiceNarrationEnabled);
     },

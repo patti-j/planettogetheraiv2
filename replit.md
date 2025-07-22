@@ -130,13 +130,13 @@ The application uses a modern full-stack architecture with strong typing through
 - Successfully eliminated unwanted "Welcome to PlanetTogether" popup from appearing at start of demo tours
 - Fixed onboarding wizard logic to never consider demo users as "new users" preventing automatic welcome dialogs
 - Updated demo tour registration form title from "Welcome to PlanetTogether" to "Demo Tour Registration"
-- Changed success toast notification from "Welcome to PlanetTogether!" to "Registration Complete!"
+- Removed blocking "Registration Complete!" toast notification that interfered with guided tour window
 - Replay button now positioned properly next to other audio controls (volume, play/pause)
 - Voice caching system provides 96% performance improvement through database storage with instant cached playback
 - Audio system simplified to use server-side cached recordings directly without client-side audio generation delays
 - Prevented simultaneous audio playback with improved state management preventing audio conflicts
-- Demo users now experience seamless tour initiation without intrusive welcome popups or overlapping audio
-- All three user-requested audio improvements completed: replay button placement, cached audio speed, and no simultaneous playback
+- Demo users now experience seamless tour initiation with only the guided tour window visible - no blocking notifications
+- All user-requested audio improvements completed: replay button placement, cached audio speed, no simultaneous playback, and clean tour startup
 
 ✓ **Enhanced AI Voice Narration System with Engaging Content & Performance Optimizations (July 22, 2025)**:
 - Successfully implemented comprehensive voice narration system with AI text-to-speech functionality for guided tours
