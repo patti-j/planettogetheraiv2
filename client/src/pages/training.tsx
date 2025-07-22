@@ -267,10 +267,7 @@ export default function Training() {
     );
   }
 
-  const categories = ['all', ...Array.from(new Set(trainingModules.map(module => module.category)))];
-  const filteredModules = selectedCategory === 'all' 
-    ? trainingModules 
-    : trainingModules.filter(module => module.category === selectedCategory);
+  const filteredModules = trainingModules;
 
   return (
     <div className="p-6">
@@ -357,20 +354,6 @@ export default function Training() {
         </TabsList>
 
         <TabsContent value="modules" className="space-y-4 sm:space-y-6 pt-6 sm:pt-8 mt-2 sm:mt-4">
-          <div className="flex flex-wrap gap-2 mb-4">
-            {categories.map((category) => (
-              <Button
-                key={category}
-                variant={selectedCategory === category ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedCategory(category)}
-                className="text-xs sm:text-sm"
-              >
-                <span className="hidden sm:inline">{category === 'all' ? 'All Categories' : category}</span>
-                <span className="sm:hidden">{category === 'all' ? 'All' : category}</span>
-              </Button>
-            ))}
-          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
             {filteredModules.map((module) => (
@@ -1516,7 +1499,7 @@ function TourManagementSection() {
       )}
       
       {/* Detailed Tour Configuration - Moved to Top */}
-      {!toursLoading && toursFromAPI?.length > 0 && (
+      {!toursLoading && Array.isArray(toursFromAPI) && toursFromAPI.length > 0 && (
         <div className="space-y-3 sm:space-y-4">
           {/* Select All Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-2 mb-3 sm:mb-4 pt-2 sm:pt-0">
@@ -1528,7 +1511,7 @@ function TourManagementSection() {
                 size="sm"
                 className="text-xs"
               >
-                All ({toursFromAPI?.length || 0})
+                All ({Array.isArray(toursFromAPI) ? toursFromAPI.length : 0})
               </Button>
               <Button
                 onClick={unselectAllTourContentRoles}
@@ -1540,7 +1523,7 @@ function TourManagementSection() {
               </Button>
             </div>
             <div className="text-sm text-gray-500">
-              {selectedRoles.length} of {toursFromAPI?.length || 0} tours selected
+              {selectedRoles.length} of {Array.isArray(toursFromAPI) ? toursFromAPI.length : 0} tours selected
             </div>
           </div>
           
@@ -1983,7 +1966,7 @@ function TourManagementSection() {
                   onClick={() => {
                     if (previewTourData) {
                       // Find the role by display name to get the role ID
-                      const role = systemRoles.find((r: any) => r.name === previewTourData.roleDisplayName);
+                      const role = (allRoles as any[]).find((r: any) => r.name === previewTourData.roleDisplayName);
                       if (role) {
                         // Start the live tour by redirecting with tour parameters
                         window.location.href = `/demo-tour?role=${encodeURIComponent(role.name)}&startTour=true`;
