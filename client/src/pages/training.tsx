@@ -876,6 +876,68 @@ function TourManagementSection() {
     },
   });
 
+  // Test voice functionality for tour steps
+  const handleTestVoice = async (step: any, role: string) => {
+    try {
+      // Create engaging narration text (same as used in tour)
+      const createEngagingNarration = (stepData: any, role: string) => {
+        if (stepData.voiceScript) {
+          return stepData.voiceScript;
+        }
+        
+        const benefit = Array.isArray(stepData.benefits) && stepData.benefits.length > 0 
+          ? stepData.benefits[0] 
+          : stepData.description;
+        
+        return `Let me show you ${stepData.title}. ${stepData.description} ${benefit}`;
+      };
+
+      const enhancedText = createEngagingNarration(step, role);
+      
+      // Make request to text-to-speech API
+      const response = await fetch('/api/ai/text-to-speech', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify({
+          text: enhancedText,
+          voice: 'nova',
+          speed: 1.15
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate voice');
+      }
+      
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      
+      await audio.play();
+      
+      toast({
+        title: "Voice Test",
+        description: "Playing voice narration for tour step",
+      });
+      
+      // Clean up URL after playing
+      audio.addEventListener('ended', () => {
+        URL.revokeObjectURL(audioUrl);
+      });
+      
+    } catch (error) {
+      console.error('Voice test error:', error);
+      toast({
+        title: "Voice Test Failed",
+        description: "Could not play voice narration",
+        variant: "destructive",
+      });
+    }
+  };
+
   const deleteTourMutation = useMutation({
     mutationFn: async (tourId: number) => {
       return apiRequest("DELETE", `/api/tours/${tourId}`);
@@ -1241,7 +1303,11 @@ function TourManagementSection() {
                             <Eye className="h-3 w-3 mr-1" />
                             Preview
                           </Button>
-                          <Button size="sm" variant="ghost">
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => handleTestVoice(step, tour.role)}
+                          >
                             <Volume2 className="h-3 w-3 mr-1" />
                             Test Voice
                           </Button>
