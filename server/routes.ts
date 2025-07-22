@@ -4014,7 +4014,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Tour Generation endpoint
   app.post("/api/ai/generate-tour", async (req, res) => {
     try {
-      const { roles, guidance } = req.body;
+      const { roles, guidance, contentOnly } = req.body;
       if (!roles || !Array.isArray(roles)) {
         return res.status(400).json({ message: "Roles array is required" });
       }
@@ -4131,6 +4131,49 @@ Return JSON format with each role as a top-level key containing tourSteps array.
         tourData = { content: generatedContent, roles: roles };
       }
 
+      // If contentOnly is true, just return the generated content without saving
+      if (contentOnly) {
+        // Process and structure the tour data for preview
+        const processedTours = [];
+        for (const role of roles) {
+          const roleKey = role.toLowerCase().replace(/\s+/g, '-');
+          const roleKeyPascal = role.replace(/\s+/g, '');
+          
+          let roleTourData = null;
+          if (tourData.roles && tourData.roles[role]) {
+            roleTourData = tourData.roles[role];
+          } else if (tourData[roleKeyPascal]) {
+            roleTourData = tourData[roleKeyPascal];
+          } else if (tourData[roleKeyPascal + 'Tour']) {
+            roleTourData = tourData[roleKeyPascal + 'Tour'];
+          } else if (tourData[role]) {
+            roleTourData = tourData[role];
+          } else if (tourData[roleKey]) {
+            roleTourData = tourData[roleKey];
+          } else if (tourData.steps || tourData.tourSteps) {
+            roleTourData = tourData;
+          }
+          
+          const steps = roleTourData?.steps || roleTourData?.tourSteps || [];
+          if (steps && steps.length > 0) {
+            processedTours.push({
+              role: role,
+              steps: steps,
+              totalSteps: steps.length,
+              estimatedDuration: roleTourData?.estimatedDuration || "5 min",
+              voiceScriptCount: steps.filter((s: any) => s.voiceScript).length
+            });
+          }
+        }
+        
+        return res.json({
+          success: true,
+          tours: processedTours,
+          contentOnly: true,
+          message: `Tour content generated for ${roles.length} role(s) (preview only)`
+        });
+      }
+
       // Save generated tours to database
       const savedTours = [];
       for (const role of roles) {
@@ -4239,6 +4282,62 @@ Return JSON format with each role as a top-level key containing tourSteps array.
           error: errorMessage
         });
       }
+    }
+  });
+
+  // Save tour content with voice generation endpoint
+  app.post("/api/tours", async (req, res) => {
+    try {
+      const { tourData, roleId, generateVoice } = req.body;
+      
+      if (!tourData || !roleId) {
+        return res.status(400).json({ message: "Tour data and role ID are required" });
+      }
+
+      // Get role information
+      const role = await storage.getRoleById(roleId);
+      if (!role) {
+        return res.status(404).json({ message: "Role not found" });
+      }
+
+      // Save or update the tour
+      const tourRecord = await storage.upsertTour({
+        roleId: roleId,
+        roleDisplayName: role.name,
+        tourData: {
+          steps: tourData.steps,
+          totalSteps: tourData.steps?.length || 0,
+          estimatedDuration: tourData.estimatedDuration || "5 min",
+          voiceScriptCount: tourData.steps?.filter((s: any) => s.voiceScript).length || 0
+        },
+        isGenerated: true,
+        createdBy: req.user?.id || 'system'
+      });
+
+      // Generate voice recordings if requested
+      if (generateVoice && tourData.steps?.length > 0) {
+        console.log(`Generating voice recordings for ${role.name} tour...`);
+        try {
+          await preGenerateVoiceRecordings(role.name, tourData.steps);
+        } catch (voiceError) {
+          console.error(`Voice generation failed for ${role.name}:`, voiceError);
+          // Don't fail the request if voice generation fails
+        }
+      }
+
+      res.json({
+        success: true,
+        tour: tourRecord,
+        voiceGenerated: generateVoice,
+        message: `Tour saved for ${role.name}${generateVoice ? ' with voice generation started' : ''}`
+      });
+
+    } catch (error) {
+      console.error("Error saving tour:", error);
+      res.status(500).json({ 
+        message: "Failed to save tour",
+        error: error.message
+      });
     }
   });
 

@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play, UserCheck, Settings, Shield, Edit3, Eye, Volume2, MessageSquare, Sparkles, RefreshCw, ChevronDown, ChevronRight, FileText, Clock, Plus, AlertCircle, Trash2, CheckCircle, AlertTriangle, Mic, VolumeX, Info, ArrowLeft, Loader2 } from 'lucide-react';
+import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play, UserCheck, Settings, Shield, Edit3, Eye, Volume2, MessageSquare, Sparkles, RefreshCw, ChevronDown, ChevronRight, FileText, Clock, Plus, AlertCircle, Trash2, CheckCircle, AlertTriangle, Mic, VolumeX, Info, ArrowLeft, Loader2, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, usePermissions } from '@/hooks/useAuth';
 import { RoleSwitcher } from '@/components/role-switcher';
@@ -798,6 +798,9 @@ function TourManagementSection() {
   const [showSingleTourGuidanceDialog, setShowSingleTourGuidanceDialog] = useState(false);
   const [singleTourGuidance, setSingleTourGuidance] = useState("");
   const [selectedTourForRegeneration, setSelectedTourForRegeneration] = useState<any>(null);
+  const [showSingleTourPreviewDialog, setShowSingleTourPreviewDialog] = useState(false);
+  const [singleTourPreviewData, setSingleTourPreviewData] = useState<any>(null);
+  const [isGeneratingSingleTour, setIsGeneratingSingleTour] = useState(false);
 
   // Preview handlers
   const handlePreviewStep = (step: any, role: string) => {
@@ -1348,20 +1351,86 @@ function TourManagementSection() {
     setShowSingleTourGuidanceDialog(true);
   };
 
-  const handleConfirmSingleTourRegeneration = () => {
+  const handleConfirmSingleTourRegeneration = async () => {
     if (selectedTourForRegeneration) {
-      const mutationData = {
-        roles: [selectedTourForRegeneration.roleDisplayName],
-        guidance: singleTourGuidance
-      };
+      setIsGeneratingSingleTour(true);
       
-      regenerateTourWithAI.mutate(mutationData);
-      
-      // Clear the dialog state
-      setShowSingleTourGuidanceDialog(false);
-      setSingleTourGuidance("");
-      setSelectedTourForRegeneration(null);
+      try {
+        // Generate the tour content first (without voice)
+        const response = await apiRequest("POST", "/api/ai/generate-tour", { 
+          roles: [selectedTourForRegeneration.roleDisplayName], 
+          guidance: singleTourGuidance,
+          contentOnly: true // Flag to skip voice generation
+        });
+        
+        // Store the generated tour data for preview
+        setSingleTourPreviewData({
+          role: selectedTourForRegeneration.roleDisplayName,
+          originalGuidance: singleTourGuidance,
+          generatedTour: response.tours?.[0] || response,
+          tourId: selectedTourForRegeneration.id
+        });
+        
+        // Close guidance dialog and show preview
+        setShowSingleTourGuidanceDialog(false);
+        setShowSingleTourPreviewDialog(true);
+        
+      } catch (error: any) {
+        toast({
+          title: "Content Generation Failed",
+          description: error.message || "Failed to generate tour content",
+          variant: "destructive",
+        });
+      } finally {
+        setIsGeneratingSingleTour(false);
+      }
     }
+  };
+
+  // Preview dialog handlers
+  const handleApproveTourContent = async () => {
+    if (singleTourPreviewData) {
+      try {
+        // Save the tour content to database and generate voice
+        const response = await apiRequest("POST", "/api/tours", {
+          tourData: singleTourPreviewData.generatedTour,
+          roleId: selectedTourForRegeneration.roleId,
+          generateVoice: true
+        });
+        
+        toast({
+          title: "Tour Updated",
+          description: `Tour content has been saved and voice generation started for ${singleTourPreviewData.role}`,
+        });
+        
+        // Refresh tours data
+        queryClient.invalidateQueries({ queryKey: ["/api/tours"] });
+        
+        // Close dialogs and clear state
+        setShowSingleTourPreviewDialog(false);
+        clearSingleTourState();
+        
+      } catch (error: any) {
+        toast({
+          title: "Save Failed",
+          description: error.message || "Failed to save tour content",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleReviseWithAI = () => {
+    // Go back to guidance dialog with existing content as context
+    setShowSingleTourPreviewDialog(false);
+    setShowSingleTourGuidanceDialog(true);
+    setSingleTourGuidance(singleTourPreviewData?.originalGuidance || "");
+  };
+
+  const clearSingleTourState = () => {
+    setSingleTourGuidance("");
+    setSelectedTourForRegeneration(null);
+    setSingleTourPreviewData(null);
   };
 
   return (
@@ -2485,11 +2554,143 @@ function TourManagementSection() {
             </Button>
             <Button 
               onClick={handleConfirmSingleTourRegeneration}
-              disabled={regenerateTourWithAI.isPending}
+              disabled={isGeneratingSingleTour}
               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
             >
-              <Sparkles className="h-4 w-4 mr-2" />
-              {regenerateTourWithAI.isPending ? 'Regenerating...' : 'Regenerate Tour'}
+              {isGeneratingSingleTour ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4 mr-2" />
+              )}
+              {isGeneratingSingleTour ? 'Generating Content...' : 'Generate Preview'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Single Tour Content Preview Dialog */}
+      <Dialog open={showSingleTourPreviewDialog} onOpenChange={setShowSingleTourPreviewDialog}>
+        <DialogContent className="max-w-6xl max-h-[90vh] w-[95vw] md:w-full overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Eye className="h-5 w-5 mr-2 text-blue-600" />
+              Tour Content Preview: {singleTourPreviewData?.role}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {singleTourPreviewData && (
+            <div className="flex-1 overflow-y-auto space-y-4">
+              {/* Tour Overview */}
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h3 className="font-semibold text-blue-800 mb-2">Generated Tour Overview</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                  <div>
+                    <span className="font-medium text-blue-700">Role:</span>
+                    <div className="text-blue-600">{singleTourPreviewData.role}</div>
+                  </div>
+                  <div>
+                    <span className="font-medium text-blue-700">Steps:</span>
+                    <div className="text-blue-600">{singleTourPreviewData.generatedTour?.steps?.length || 0} steps</div>
+                  </div>
+                  <div>
+                    <span className="font-medium text-blue-700">Estimated Duration:</span>
+                    <div className="text-blue-600">
+                      ~{Math.ceil((singleTourPreviewData.generatedTour?.steps?.length || 0) * 1.5)} minutes
+                    </div>
+                  </div>
+                </div>
+                {singleTourPreviewData.originalGuidance && (
+                  <div className="mt-3 p-3 bg-white rounded border">
+                    <span className="font-medium text-blue-700">AI Instructions Used:</span>
+                    <div className="text-sm text-gray-600 italic mt-1">"{singleTourPreviewData.originalGuidance}"</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Tour Steps */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-gray-800">Tour Steps</h3>
+                {singleTourPreviewData.generatedTour?.steps?.map((step: any, index: number) => (
+                  <div key={step.id} className="bg-white border rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold text-sm">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                          <h4 className="font-medium text-gray-900">{step.stepName || step.title}</h4>
+                          <div className="flex gap-2 text-xs">
+                            <span className="bg-gray-100 px-2 py-1 rounded">
+                              Page: {step.navigationPath || step.page || '/'}
+                            </span>
+                            {step.duration && (
+                              <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded">
+                                {step.duration}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <p className="text-sm text-gray-600 mb-3">
+                          {step.description}
+                        </p>
+                        
+                        {step.benefits && step.benefits.length > 0 && (
+                          <div className="mb-3">
+                            <h5 className="text-xs font-medium text-gray-700 mb-1">Key Benefits:</h5>
+                            <ul className="text-xs text-gray-600 space-y-1">
+                              {step.benefits.slice(0, 3).map((benefit: string, idx: number) => (
+                                <li key={idx} className="flex items-start gap-1">
+                                  <span className="text-green-500 mt-0.5">•</span>
+                                  <span>{benefit}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        {step.voiceScript && (
+                          <div className="bg-gray-50 p-3 rounded border">
+                            <h5 className="text-xs font-medium text-gray-700 mb-1">Voice Script:</h5>
+                            <p className="text-xs text-gray-600 italic">"{step.voiceScript}"</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-between pt-4 border-t">
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowSingleTourPreviewDialog(false);
+                  clearSingleTourState();
+                }}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleReviseWithAI}
+                className="border-amber-300 text-amber-700 hover:bg-amber-50"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Revise with AI
+              </Button>
+            </div>
+            <Button
+              onClick={handleApproveTourContent}
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Approve & Generate Voice
             </Button>
           </div>
         </DialogContent>

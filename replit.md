@@ -305,6 +305,20 @@ The application uses a modern full-stack architecture with strong typing through
 - Root cause analysis confirmed: tour validation system correctly detected no issues - system working as designed
 - All capacity-planning access issues resolved through proper permission validation architecture
 
+✓ **Enhanced Tour Regeneration Workflow with Content Preview (July 22, 2025)**:
+- Added individual "Regenerate" buttons directly to each tour card for streamlined single tour regeneration
+- Implemented comprehensive content preview system that shows generated tour content before voice generation
+- Created two-step workflow: Generate Preview → Review Content → Approve & Generate Voice
+- Added custom instruction dialog for single tour regeneration with AI guidance input field
+- Enhanced server-side API with contentOnly flag to return generated content without saving to database
+- Built comprehensive preview dialog showing tour overview, step details, benefits, voice scripts, and navigation paths
+- Added "Revise with AI" functionality allowing users to iterate on content before voice generation
+- Implemented tour approval system with POST /api/tours endpoint for saving finalized content with voice generation
+- Preview dialog displays estimated duration, step count, and voice script information for review
+- Users can now perfect tour content through multiple AI iterations before the time-consuming voice generation step
+- Streamlined UX: Click regenerate → add instructions → preview content → revise if needed → approve & generate voice
+- System prevents wasted time on voice generation for unsatisfactory content by allowing content refinement first
+
 ✓ **Systems Manager Permission Fix & Validation System Analysis (July 22, 2025)**:
 - Fixed missing `analytics-view` permission for Systems Manager role that was causing access denied errors during demo tours
 - Root cause analysis revealed timing issue: tours were created when permission was missing, but validation ran after permission was added
