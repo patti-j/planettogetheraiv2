@@ -2248,9 +2248,6 @@ function TourManagementSection() {
                 <div className="space-y-3">
                   <div>
                     <Label htmlFor="voiceSelect" className="text-sm font-medium">Voice Selection</Label>
-                    <p className="text-xs text-gray-600 bg-blue-50 p-2 rounded border mb-2">
-                      <strong>Note:</strong> All voices use American pronunciation due to OpenAI TTS limitations. "British-style" voices have refined characteristics but maintain American accent.
-                    </p>
                     <Select
                       value={voiceGenerationOptions.voice}
                       onValueChange={(value) => 
