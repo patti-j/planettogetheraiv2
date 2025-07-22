@@ -280,7 +280,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             isDemo: true,
             role: 'Production Scheduler',
             activeRole: { id: 'demo_scheduler_role', name: 'Production Scheduler' },
-            permissions: ['schedule-view', 'boards-view', 'shop-floor-view', 'analytics-view', 'scheduling-optimizer-view', 'business-goals-view', 'ai-assistant-view', 'feedback-view'],
+            permissions: ['schedule-view', 'boards-view', 'shop-floor-view', 'analytics-view', 'scheduling-optimizer-view', 'capacity-planning-view', 'business-goals-view', 'ai-assistant-view', 'feedback-view'],
             roles: [{ id: 'demo_scheduler_role', name: 'Production Scheduler' }]
           },
           'demo_it_admin': { 
@@ -388,7 +388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             lastName: 'Scheduler',
             isActive: true,
             activeRole: { id: 'demo_scheduler_role', name: 'Production Scheduler' },
-            permissions: ['schedule-view', 'boards-view', 'shop-floor-view', 'analytics-view', 'scheduling-optimizer-view', 'business-goals-view', 'ai-assistant-view', 'feedback-view'],
+            permissions: ['schedule-view', 'boards-view', 'shop-floor-view', 'analytics-view', 'scheduling-optimizer-view', 'capacity-planning-view', 'business-goals-view', 'ai-assistant-view', 'feedback-view'],
             roles: [{ id: 'demo_scheduler_role', name: 'Production Scheduler' }]
           },
           'demo_it': { 
