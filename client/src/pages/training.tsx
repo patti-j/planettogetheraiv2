@@ -1342,7 +1342,7 @@ function TourManagementSection() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
+      <div className="flex flex-col gap-4">
         <div>
           <h3 className="text-lg font-semibold mb-2">Tour Content Management</h3>
           <p className="text-gray-600 text-sm">
@@ -1350,7 +1350,7 @@ function TourManagementSection() {
             Use AI to regenerate and optimize tour experiences.
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-2 lg:flex-wrap lg:justify-end">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-2 lg:justify-end">
           <Button
             onClick={handleGenerateSelectedTours}
             disabled={regenerateTourWithAI.isPending || selectedRoles.length === 0}
@@ -1376,7 +1376,6 @@ function TourManagementSection() {
             <span className="hidden sm:inline">Voice Generation ({selectedRoles.length})</span>
             <span className="sm:hidden">Voice ({selectedRoles.length})</span>
           </Button>
-
           <Button
             onClick={() => validateToursMutation.mutate()}
             disabled={validateToursMutation.isPending}
@@ -1457,27 +1456,29 @@ function TourManagementSection() {
       {/* Generate Tours for Additional Roles */}
       {missingTourRoles.length > 0 && (
         <div className="space-y-4">
-          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
+          <div className="flex flex-col gap-4">
             <div>
               <h4 className="font-semibold mb-2">Generate Tours for Additional Roles</h4>
               <p className="text-gray-600 text-sm">
                 These roles exist in your system but don't have guided tours yet. Generate AI-powered tours for them.
               </p>
             </div>
-            <Button
-              onClick={handleGenerateMissingTours}
-              disabled={generateNewToursWithAI.isPending || selectedMissingRoles.length === 0}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white w-full sm:w-auto text-xs sm:text-sm"
-              size="sm"
-            >
-              {generateNewToursWithAI.isPending ? (
-                <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 animate-spin" />
-              ) : (
-                <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              )}
-              <span className="hidden sm:inline">Generate Tours ({selectedMissingRoles.length})</span>
-              <span className="sm:hidden">Generate ({selectedMissingRoles.length})</span>
-            </Button>
+            <div className="flex justify-start">
+              <Button
+                onClick={handleGenerateMissingTours}
+                disabled={generateNewToursWithAI.isPending || selectedMissingRoles.length === 0}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white w-full sm:w-auto text-xs sm:text-sm"
+                size="sm"
+              >
+                {generateNewToursWithAI.isPending ? (
+                  <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                )}
+                <span className="hidden sm:inline">Generate Tours ({selectedMissingRoles.length})</span>
+                <span className="sm:hidden">Generate ({selectedMissingRoles.length})</span>
+              </Button>
+            </div>
           </div>
           
           {/* Select All Controls for Missing Tours */}
