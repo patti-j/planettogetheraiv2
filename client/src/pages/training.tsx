@@ -1342,7 +1342,7 @@ function TourManagementSection() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-start">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
         <div>
           <h3 className="text-lg font-semibold mb-2">Tour Content Management</h3>
           <p className="text-gray-600 text-sm">
@@ -1350,50 +1350,53 @@ function TourManagementSection() {
             Use AI to regenerate and optimize tour experiences.
           </p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-2 lg:flex-wrap lg:justify-end">
           <Button
             onClick={handleGenerateSelectedTours}
             disabled={regenerateTourWithAI.isPending || selectedRoles.length === 0}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white w-full sm:w-auto text-xs sm:text-sm"
             size="sm"
           >
-            <Sparkles className="h-4 w-4 mr-2" />
-            Regenerate Tours ({selectedRoles.length})
+            <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Regenerate Tours ({selectedRoles.length})</span>
+            <span className="sm:hidden">Regen ({selectedRoles.length})</span>
           </Button>
           <Button
             onClick={handleGenerateVoiceForSelected}
             disabled={voiceGenerationMutation.isPending}
             variant="outline"
-            className="border-green-300 text-green-600 hover:bg-green-50"
+            className="border-green-300 text-green-600 hover:bg-green-50 w-full sm:w-auto text-xs sm:text-sm"
             size="sm"
           >
             {voiceGenerationMutation.isPending ? (
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 animate-spin" />
             ) : (
-              <Mic className="h-4 w-4 mr-2" />
+              <Mic className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
             )}
-            Voice Generation ({selectedRoles.length})
+            <span className="hidden sm:inline">Voice Generation ({selectedRoles.length})</span>
+            <span className="sm:hidden">Voice ({selectedRoles.length})</span>
           </Button>
 
           <Button
             onClick={() => validateToursMutation.mutate()}
             disabled={validateToursMutation.isPending}
             variant="outline"
-            className="border-blue-300 text-blue-600 hover:bg-blue-50"
+            className="border-blue-300 text-blue-600 hover:bg-blue-50 w-full sm:w-auto text-xs sm:text-sm"
             size="sm"
           >
             {validateToursMutation.isPending ? (
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 animate-spin" />
             ) : (
-              <CheckCircle className="h-4 w-4 mr-2" />
+              <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
             )}
-            Validate All Tours
+            <span className="hidden sm:inline">Validate All Tours</span>
+            <span className="sm:hidden">Validate</span>
           </Button>
         </div>
       </div>
 
       {/* Select All Controls for Tour Content */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
         <div className="flex items-center space-x-2">
           <span className="text-sm font-medium text-gray-700">Select:</span>
           <Button
@@ -1454,7 +1457,7 @@ function TourManagementSection() {
       {/* Generate Tours for Additional Roles */}
       {missingTourRoles.length > 0 && (
         <div className="space-y-4">
-          <div className="flex justify-between items-start">
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
             <div>
               <h4 className="font-semibold mb-2">Generate Tours for Additional Roles</h4>
               <p className="text-gray-600 text-sm">
@@ -1464,19 +1467,21 @@ function TourManagementSection() {
             <Button
               onClick={handleGenerateMissingTours}
               disabled={generateNewToursWithAI.isPending || selectedMissingRoles.length === 0}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white w-full sm:w-auto text-xs sm:text-sm"
+              size="sm"
             >
               {generateNewToursWithAI.isPending ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 animate-spin" />
               ) : (
-                <Sparkles className="h-4 w-4 mr-2" />
+                <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               )}
-              Generate Tours ({selectedMissingRoles.length})
+              <span className="hidden sm:inline">Generate Tours ({selectedMissingRoles.length})</span>
+              <span className="sm:hidden">Generate ({selectedMissingRoles.length})</span>
             </Button>
           </div>
           
           {/* Select All Controls for Missing Tours */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
             <div className="flex items-center space-x-2">
               <span className="text-sm font-medium text-gray-700">Select:</span>
               <Button
