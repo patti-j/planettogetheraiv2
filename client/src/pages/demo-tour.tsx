@@ -284,13 +284,16 @@ export default function DemoTour() {
       // Invalidate auth cache to refresh authentication state
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       
-      // Start guided tour using global context immediately
+      // Wait for authentication to be established
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Start guided tour using global context
       setDemoRole(primaryRole);
       startTour(primaryRole, voiceEnabledParam);
       console.log("Demo tour started globally for role:", primaryRole, "with voice:", voiceEnabledParam);
       
-      // Redirect to main app immediately to avoid showing loading screen
-      window.location.href = "/";
+      // Use proper navigation instead of window.location to avoid 404
+      setLocation("/");
       
     } catch (error) {
       console.error("Demo login error:", error);
