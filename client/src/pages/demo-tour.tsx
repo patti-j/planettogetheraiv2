@@ -217,6 +217,7 @@ export default function DemoTour() {
   };
 
   const onSubmit = (data: ParticipantFormData) => {
+    console.log("Form submission data:", data);
     createParticipantMutation.mutate(data);
   };
 

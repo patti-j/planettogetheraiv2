@@ -3510,12 +3510,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/demo-tour-participants', async (req, res) => {
     try {
+      console.log('Creating demo tour participant with data:', req.body);
       const parsedData = insertDemoTourParticipantSchema.parse(req.body);
+      console.log('Parsed data:', parsedData);
       const participant = await storage.createDemoTourParticipant(parsedData);
+      console.log('Participant created successfully:', participant);
       res.status(201).json(participant);
     } catch (error) {
       console.error('Error creating demo tour participant:', error);
-      res.status(500).json({ error: 'Failed to create demo tour participant' });
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      }
+      res.status(500).json({ error: 'Failed to create demo tour participant', details: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
