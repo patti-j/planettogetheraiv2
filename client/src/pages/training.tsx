@@ -579,6 +579,21 @@ function TourManagementSection() {
   const [pendingAction, setPendingAction] = useState<{ type: 'selected' | 'all' | 'missing', roles?: string[] } | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [tourToDelete, setTourToDelete] = useState<any>(null);
+  const [showStepPreviewDialog, setShowStepPreviewDialog] = useState(false);
+  const [previewStepData, setPreviewStepData] = useState<any>(null);
+  const [showTourPreviewDialog, setShowTourPreviewDialog] = useState(false);
+  const [previewTourData, setPreviewTourData] = useState<any>(null);
+
+  // Preview handlers
+  const handlePreviewStep = (step: any, role: string) => {
+    setPreviewStepData({ step, role });
+    setShowStepPreviewDialog(true);
+  };
+
+  const handlePreviewTour = (tour: any) => {
+    setPreviewTourData(tour);
+    setShowTourPreviewDialog(true);
+  };
 
   // Fetch all system roles
   const { data: systemRoles = [] } = useQuery({
@@ -1119,6 +1134,17 @@ function TourManagementSection() {
                       {tour.tourData?.estimatedDuration || '5-10 min'}
                   </span>
                   <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePreviewTour(tour);
+                      }}
+                    >
+                      <Play className="h-3 w-3 mr-1" />
+                      Preview Tour
+                    </Button>
                     <Button size="sm" variant="outline">
                       <Edit3 className="h-3 w-3 mr-1" />
                       Edit Tour
@@ -1207,7 +1233,11 @@ function TourManagementSection() {
                           Action: "{step.actionText}"
                         </div>
                         <div className="flex items-center gap-2">
-                          <Button size="sm" variant="ghost">
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => handlePreviewStep(step, tour.role)}
+                          >
                             <Eye className="h-3 w-3 mr-1" />
                             Preview
                           </Button>
@@ -1341,6 +1371,154 @@ function TourManagementSection() {
               disabled={deleteTourMutation.isPending}
             >
               {deleteTourMutation.isPending ? 'Deleting...' : 'Delete Tour'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Step Preview Dialog */}
+      <Dialog open={showStepPreviewDialog} onOpenChange={setShowStepPreviewDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Eye className="h-5 w-5 mr-2" />
+              Step Preview
+            </DialogTitle>
+          </DialogHeader>
+          
+          {previewStepData && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Badge variant="outline">{previewStepData.role} Tour</Badge>
+                <Badge variant="secondary">{previewStepData.step.duration}</Badge>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold text-lg mb-2">{previewStepData.step.stepTitle || previewStepData.step.feature}</h4>
+                <p className="text-gray-600 mb-4">{previewStepData.step.description}</p>
+                
+                {previewStepData.step.benefits && (
+                  <div className="mb-4">
+                    <h5 className="font-medium mb-2">Benefits:</h5>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      {previewStepData.step.benefits.map((benefit: string, index: number) => (
+                        <li key={index} className="flex items-start">
+                          <span className="text-green-600 mr-2">•</span>
+                          {benefit}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {previewStepData.step.navigationPath && (
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <p className="text-sm font-medium text-blue-800 mb-1">Navigation:</p>
+                    <code className="text-xs text-blue-600">{previewStepData.step.navigationPath}</code>
+                  </div>
+                )}
+                
+                {previewStepData.step.voiceScript && (
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <p className="text-sm font-medium mb-2">Voice Script:</p>
+                    <p className="text-xs text-gray-600">{previewStepData.step.voiceScript}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setShowStepPreviewDialog(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Tour Preview Dialog */}
+      <Dialog open={showTourPreviewDialog} onOpenChange={setShowTourPreviewDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Play className="h-5 w-5 mr-2" />
+              Tour Preview: {previewTourData?.roleDisplayName}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {previewTourData && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
+                <div>
+                  <h4 className="font-semibold">{previewTourData.roleDisplayName} Tour</h4>
+                  <p className="text-sm text-gray-600">
+                    {previewTourData.tourData?.steps?.length || 0} steps • 
+                    {previewTourData.tourData?.estimatedDuration || '5-10 min'}
+                  </p>
+                </div>
+                <Badge variant="secondary">{previewTourData.role}</Badge>
+              </div>
+              
+              {previewTourData.tourData?.steps?.map((step: any, index: number) => (
+                <div key={step.id || index} className="border rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center">
+                      <Badge variant="outline" className="mr-3">Step {index + 1}</Badge>
+                      <h5 className="font-semibold">{step.stepTitle || step.feature}</h5>
+                    </div>
+                    <Badge variant="secondary">{step.duration}</Badge>
+                  </div>
+                  
+                  <p className="text-gray-600 mb-3">{step.description}</p>
+                  
+                  {step.benefits && (
+                    <div className="mb-3">
+                      <h6 className="text-sm font-medium mb-1">Benefits:</h6>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        {step.benefits.map((benefit: string, benefitIndex: number) => (
+                          <li key={benefitIndex} className="flex items-start">
+                            <span className="text-green-600 mr-2">•</span>
+                            {benefit}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t">
+                    {step.navigationPath && (
+                      <div>
+                        <span className="font-medium">Navigation: </span>
+                        <code className="bg-gray-100 px-1 rounded">{step.navigationPath}</code>
+                      </div>
+                    )}
+                    {step.actionText && (
+                      <div>
+                        <span className="font-medium">Action: </span>
+                        "{step.actionText}"
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setShowTourPreviewDialog(false)}>
+              Close Preview
+            </Button>
+            <Button 
+              onClick={() => {
+                setShowTourPreviewDialog(false);
+                // Could add functionality to start the actual tour here
+                toast({
+                  title: "Tour Preview Complete",
+                  description: "Use the role switcher to experience this tour live.",
+                });
+              }}
+            >
+              Start Live Tour
             </Button>
           </div>
         </DialogContent>
