@@ -4213,62 +4213,197 @@ Return JSON format with each role as a top-level key containing tourSteps array.
     }
   });
 
-  // Function to validate tour routes against role permissions
+  // Enhanced function to validate tours comprehensively
   async function validateToursRoutes(tours: any[]): Promise<any> {
     const validationResults = {
       valid: [],
       invalid: [],
+      criticalErrors: [],
       summary: {
         totalTours: tours.length,
         validTours: 0,
         invalidTours: 0,
-        totalIssues: 0
+        criticalErrors: 0,
+        totalIssues: 0,
+        validationCategories: {
+          roleIdValidation: 0,
+          tourDataStructure: 0,
+          stepValidation: 0,
+          routeAccessibility: 0,
+          dataIntegrity: 0
+        }
       }
     };
 
+    // Get all valid roles for validation
+    const allRoles = await storage.getRoles();
+    const validRoleIds = allRoles.map(role => role.id);
+
     for (const tour of tours) {
-      const roleAccessibleRoutes = await getAccessibleRoutesForRole(tour.roleId);
-      const accessiblePaths = Object.keys(roleAccessibleRoutes);
-      
       const tourValidation = {
         tourId: tour.id,
         role: tour.roleDisplayName,
-        roleKey: tour.role,
+        roleId: tour.roleId,
         issues: [],
         validSteps: [],
-        invalidSteps: []
+        invalidSteps: [],
+        criticalErrors: []
       };
 
-      // Check each tour step
-      if (tour.tourData && tour.tourData.steps) {
-        for (let i = 0; i < tour.tourData.steps.length; i++) {
-          const step = tour.tourData.steps[i];
-          const navigationPath = step.navigationPath;
+      // 1. CRITICAL: Role ID Validation
+      if (!tour.roleId || !validRoleIds.includes(tour.roleId)) {
+        const criticalError = {
+          type: 'CRITICAL_ROLE_ID_INVALID',
+          issue: `Tour references invalid role ID: ${tour.roleId}`,
+          severity: 'CRITICAL',
+          impact: 'Tour cannot function - will cause JavaScript errors',
+          suggestion: `Update roleId to one of: ${validRoleIds.join(', ')}`
+        };
+        tourValidation.criticalErrors.push(criticalError);
+        validationResults.summary.validationCategories.roleIdValidation++;
+      }
+
+      // 2. CRITICAL: Tour Data Structure Validation
+      if (!tour.tourData) {
+        const criticalError = {
+          type: 'CRITICAL_NO_TOUR_DATA',
+          issue: 'Tour has no tourData field',
+          severity: 'CRITICAL',
+          impact: 'Tour will not display any steps',
+          suggestion: 'Regenerate tour with proper tour data structure'
+        };
+        tourValidation.criticalErrors.push(criticalError);
+        validationResults.summary.validationCategories.tourDataStructure++;
+      } else if (!tour.tourData.steps || !Array.isArray(tour.tourData.steps)) {
+        const criticalError = {
+          type: 'CRITICAL_NO_STEPS',
+          issue: 'Tour data has no steps array',
+          severity: 'CRITICAL',
+          impact: 'Tour will not display any steps',
+          suggestion: 'Regenerate tour with proper steps array'
+        };
+        tourValidation.criticalErrors.push(criticalError);
+        validationResults.summary.validationCategories.tourDataStructure++;
+      } else if (tour.tourData.steps.length === 0) {
+        const criticalError = {
+          type: 'CRITICAL_EMPTY_STEPS',
+          issue: 'Tour has empty steps array',
+          severity: 'CRITICAL',
+          impact: 'Tour will show no content',
+          suggestion: 'Regenerate tour with actual steps'
+        };
+        tourValidation.criticalErrors.push(criticalError);
+        validationResults.summary.validationCategories.tourDataStructure++;
+      }
+
+      // 3. Role-based Route Accessibility (only if role ID is valid)
+      if (validRoleIds.includes(tour.roleId)) {
+        try {
+          const roleAccessibleRoutes = await getAccessibleRoutesForRole(tour.roleId);
+          const accessiblePaths = Object.keys(roleAccessibleRoutes);
           
-          if (accessiblePaths.includes(navigationPath)) {
-            tourValidation.validSteps.push({
-              stepIndex: i + 1,
-              stepName: step.stepName || step.title || `Step ${i + 1}`,
-              navigationPath,
-              status: 'valid'
-            });
-          } else {
-            const issue = {
-              stepIndex: i + 1,
-              stepName: step.stepName || step.title || `Step ${i + 1}`,
-              navigationPath,
-              issue: `Route '${navigationPath}' is not accessible to role '${tour.roleDisplayName}'`,
-              suggestion: `Replace with one of: ${accessiblePaths.join(', ')}`
-            };
-            
-            tourValidation.issues.push(issue);
-            tourValidation.invalidSteps.push(issue);
+          // Check each tour step for route accessibility
+          if (tour.tourData && tour.tourData.steps && Array.isArray(tour.tourData.steps)) {
+            for (let i = 0; i < tour.tourData.steps.length; i++) {
+              const step = tour.tourData.steps[i];
+              
+              // 4. Step Structure Validation
+              if (!step.stepName && !step.stepTitle && !step.title) {
+                tourValidation.issues.push({
+                  type: 'STEP_NO_TITLE',
+                  stepIndex: i + 1,
+                  issue: 'Step has no title/name',
+                  severity: 'WARNING',
+                  impact: 'Step will show generic title',
+                  suggestion: 'Add stepName, stepTitle, or title field'
+                });
+                validationResults.summary.validationCategories.stepValidation++;
+              }
+
+              if (!step.description && !step.voiceScript) {
+                tourValidation.issues.push({
+                  type: 'STEP_NO_DESCRIPTION',
+                  stepIndex: i + 1,
+                  stepName: step.stepName || step.stepTitle || `Step ${i + 1}`,
+                  issue: 'Step has no description or voice script',
+                  severity: 'WARNING',
+                  impact: 'Step will show generic description',
+                  suggestion: 'Add description or voiceScript field'
+                });
+                validationResults.summary.validationCategories.stepValidation++;
+              }
+
+              // 5. Route Accessibility Validation
+              const navigationPath = step.navigationPath;
+              if (navigationPath && navigationPath !== "current") {
+                if (accessiblePaths.includes(navigationPath)) {
+                  tourValidation.validSteps.push({
+                    stepIndex: i + 1,
+                    stepName: step.stepName || step.stepTitle || `Step ${i + 1}`,
+                    navigationPath,
+                    status: 'valid'
+                  });
+                } else {
+                  const issue = {
+                    type: 'ROUTE_NOT_ACCESSIBLE',
+                    stepIndex: i + 1,
+                    stepName: step.stepName || step.stepTitle || `Step ${i + 1}`,
+                    navigationPath,
+                    issue: `Route '${navigationPath}' is not accessible to role '${tour.roleDisplayName}'`,
+                    severity: 'ERROR',
+                    impact: 'User will see access denied when clicking this step',
+                    suggestion: `Replace with accessible route: ${accessiblePaths.slice(0, 3).join(', ')}`
+                  };
+                  
+                  tourValidation.issues.push(issue);
+                  tourValidation.invalidSteps.push(issue);
+                  validationResults.summary.validationCategories.routeAccessibility++;
+                }
+              }
+            }
           }
+        } catch (error) {
+          tourValidation.issues.push({
+            type: 'ROLE_PERMISSION_CHECK_FAILED',
+            issue: `Failed to check permissions for role ID ${tour.roleId}: ${error.message}`,
+            severity: 'ERROR',
+            impact: 'Cannot validate route accessibility',
+            suggestion: 'Check role permissions in database'
+          });
+          validationResults.summary.validationCategories.roleIdValidation++;
         }
       }
 
-      // Classify tour as valid or invalid
-      if (tourValidation.issues.length === 0) {
+      // 6. Data Integrity Validation
+      if (!tour.roleDisplayName) {
+        tourValidation.issues.push({
+          type: 'MISSING_ROLE_DISPLAY_NAME',
+          issue: 'Tour has no roleDisplayName',
+          severity: 'WARNING',
+          impact: 'Tour will show generic role name',
+          suggestion: 'Add roleDisplayName field'
+        });
+        validationResults.summary.validationCategories.dataIntegrity++;
+      }
+
+      if (!tour.id) {
+        const criticalError = {
+          type: 'CRITICAL_NO_TOUR_ID',
+          issue: 'Tour has no ID',
+          severity: 'CRITICAL',
+          impact: 'Tour cannot be referenced or updated',
+          suggestion: 'Ensure tour has unique ID from database'
+        };
+        tourValidation.criticalErrors.push(criticalError);
+        validationResults.summary.validationCategories.dataIntegrity++;
+      }
+
+      // Classify tour based on severity of issues
+      if (tourValidation.criticalErrors.length > 0) {
+        validationResults.criticalErrors.push(tourValidation);
+        validationResults.summary.criticalErrors++;
+        validationResults.summary.totalIssues += tourValidation.criticalErrors.length + tourValidation.issues.length;
+      } else if (tourValidation.issues.length === 0) {
         validationResults.valid.push(tourValidation);
         validationResults.summary.validTours++;
       } else {
@@ -4278,7 +4413,7 @@ Return JSON format with each role as a top-level key containing tourSteps array.
       }
     }
 
-    console.log(`Tour validation completed: ${validationResults.summary.validTours} valid, ${validationResults.summary.invalidTours} invalid tours`);
+    console.log(`Enhanced tour validation completed: ${validationResults.summary.validTours} valid, ${validationResults.summary.invalidTours} invalid, ${validationResults.summary.criticalErrors} critical errors`);
     return validationResults;
   }
 
