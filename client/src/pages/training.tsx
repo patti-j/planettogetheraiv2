@@ -276,21 +276,21 @@ export default function Training() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div className="md:ml-0 ml-12">
-            <h1 className="text-2xl font-semibold text-gray-800">Training & Role Demonstration</h1>
-            <p className="text-gray-600">
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">Training & Role Demonstration</h1>
+            <p className="text-sm sm:text-base text-gray-600">
               Interactive training modules and role switching for comprehensive system demonstrations
             </p>
           </div>
           {user && <RoleSwitcher userId={user.id} currentRole={currentRole as Role} />}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center">
-                <BookOpen className="h-8 w-8 text-blue-600 mr-3" />
+                <BookOpen className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 mr-2 sm:mr-3" />
                 <div>
-                  <div className="text-2xl font-bold">{trainingModules.length}</div>
+                  <div className="text-xl sm:text-2xl font-bold">{trainingModules.length}</div>
                   <div className="text-xs text-gray-500">Training Modules</div>
                 </div>
               </div>
@@ -298,11 +298,11 @@ export default function Training() {
           </Card>
 
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center">
-                <Users className="h-8 w-8 text-green-600 mr-3" />
+                <Users className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 mr-2 sm:mr-3" />
                 <div>
-                  <div className="text-2xl font-bold">{allRoles.length}</div>
+                  <div className="text-xl sm:text-2xl font-bold">{allRoles.length}</div>
                   <div className="text-xs text-gray-500">Available Roles</div>
                 </div>
               </div>
@@ -310,11 +310,11 @@ export default function Training() {
           </Card>
 
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center">
-                <Target className="h-8 w-8 text-purple-600 mr-3" />
+                <Target className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600 mr-2 sm:mr-3" />
                 <div>
-                  <div className="text-2xl font-bold">{trainingModules.filter(m => m.completed).length}</div>
+                  <div className="text-xl sm:text-2xl font-bold">{trainingModules.filter(m => m.completed).length}</div>
                   <div className="text-xs text-gray-500">Completed</div>
                 </div>
               </div>
@@ -322,11 +322,11 @@ export default function Training() {
           </Card>
 
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center">
-                <Monitor className="h-8 w-8 text-orange-600 mr-3" />
+                <Monitor className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 mr-2 sm:mr-3" />
                 <div>
-                  <div className="text-2xl font-bold">{(currentRole as Role)?.name || 'None'}</div>
+                  <div className="text-xl sm:text-2xl font-bold truncate max-w-[120px] sm:max-w-none">{(currentRole as Role)?.name || 'None'}</div>
                   <div className="text-xs text-gray-500">Current Role</div>
                 </div>
               </div>
@@ -335,54 +335,68 @@ export default function Training() {
         </div>
       </div>
 
-      <Tabs defaultValue="modules" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="modules">Training Modules</TabsTrigger>
-          <TabsTrigger value="roles">Role Demonstrations</TabsTrigger>
-          <TabsTrigger value="tours">Tour Management</TabsTrigger>
-          <TabsTrigger value="resources">Training Resources</TabsTrigger>
+      <Tabs defaultValue="modules" className="space-y-4 sm:space-y-6">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+          <TabsTrigger value="modules" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">Training Modules</span>
+            <span className="sm:hidden">Modules</span>
+          </TabsTrigger>
+          <TabsTrigger value="roles" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">Role Demonstrations</span>
+            <span className="sm:hidden">Roles</span>
+          </TabsTrigger>
+          <TabsTrigger value="tours" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">Tour Management</span>
+            <span className="sm:hidden">Tours</span>
+          </TabsTrigger>
+          <TabsTrigger value="resources" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">Training Resources</span>
+            <span className="sm:hidden">Resources</span>
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="modules" className="space-y-6">
-          <div className="flex gap-2 mb-4">
+        <TabsContent value="modules" className="space-y-4 sm:space-y-6">
+          <div className="flex flex-wrap gap-2 mb-4">
             {categories.map((category) => (
               <Button
                 key={category}
                 variant={selectedCategory === category ? "default" : "outline"}
                 size="sm"
                 onClick={() => setSelectedCategory(category)}
+                className="text-xs sm:text-sm"
               >
-                {category === 'all' ? 'All Categories' : category}
+                <span className="hidden sm:inline">{category === 'all' ? 'All Categories' : category}</span>
+                <span className="sm:hidden">{category === 'all' ? 'All' : category}</span>
               </Button>
             ))}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
             {filteredModules.map((module) => (
               <Card key={module.id} className="h-fit">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{module.title}</CardTitle>
-                      <CardDescription className="mt-2">{module.description}</CardDescription>
+                <CardHeader className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-base sm:text-lg line-clamp-2">{module.title}</CardTitle>
+                      <CardDescription className="mt-2 text-xs sm:text-sm line-clamp-3">{module.description}</CardDescription>
                     </div>
                     {module.completed && (
-                      <Badge variant="secondary" className="shrink-0 bg-green-100 text-green-800">Completed</Badge>
+                      <Badge variant="secondary" className="shrink-0 bg-green-100 text-green-800 self-start text-xs">Completed</Badge>
                     )}
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 sm:p-6 pt-0">
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs sm:text-sm">
                       <span className="text-gray-500">Role:</span>
-                      <Badge variant="outline">{module.role}</Badge>
+                      <Badge variant="outline" className="text-xs w-fit">{module.role}</Badge>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs sm:text-sm">
                       <span className="text-gray-500">Duration:</span>
                       <span className="font-medium">{module.duration}</span>
                     </div>
                     <div>
-                      <div className="text-sm text-gray-500 mb-2">Features Covered:</div>
+                      <div className="text-xs sm:text-sm text-gray-500 mb-2">Features Covered:</div>
                       <div className="flex flex-wrap gap-1">
                         {module.features.map((feature, index) => (
                           <Badge key={index} variant="secondary" className="text-xs">
@@ -392,12 +406,13 @@ export default function Training() {
                       </div>
                     </div>
                     <Button
-                      className="w-full mt-4"
+                      className="w-full mt-4 text-xs sm:text-sm"
                       onClick={() => startTrainingMutation.mutate(module.id)}
                       disabled={startTrainingMutation.isPending}
                     >
-                      <Play className="h-4 w-4 mr-2" />
-                      {module.completed ? 'Review Module' : 'Start Training'}
+                      <Play className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">{module.completed ? 'Review Module' : 'Start Training'}</span>
+                      <span className="sm:hidden">{module.completed ? 'Review' : 'Start'}</span>
                     </Button>
                   </div>
                 </CardContent>
@@ -414,15 +429,15 @@ export default function Training() {
           <TourManagementSection />
         </TabsContent>
 
-        <TabsContent value="resources" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <TabsContent value="resources" className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Documentation</CardTitle>
-                <CardDescription>Comprehensive guides and reference materials</CardDescription>
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="text-base sm:text-lg">Documentation</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">Comprehensive guides and reference materials</CardDescription>
               </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
+              <CardContent className="p-4 sm:p-6 pt-0">
+                <ul className="space-y-2 text-xs sm:text-sm">
                   <li>• User Guide: Complete system walkthrough</li>
                   <li>• Administrator Manual: Setup and configuration</li>
                   <li>• API Reference: Integration documentation</li>
@@ -432,12 +447,12 @@ export default function Training() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Video Tutorials</CardTitle>
-                <CardDescription>Visual learning resources and demonstrations</CardDescription>
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="text-base sm:text-lg">Video Tutorials</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">Visual learning resources and demonstrations</CardDescription>
               </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
+              <CardContent className="p-4 sm:p-6 pt-0">
+                <ul className="space-y-2 text-xs sm:text-sm">
                   <li>• Getting Started: 15-minute overview</li>
                   <li>• Role-based Workflows: Feature demonstrations</li>
                   <li>• Advanced Features: Expert techniques</li>
@@ -620,7 +635,7 @@ function RoleDemonstrationSection({ userId, currentRole }: RoleDemonstrationSect
         </Card>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
         {allRoles.map((role) => {
           const IconComponent = getRoleIcon(role.name);
           const isCurrentRole = currentRole?.id === role.id;
@@ -632,27 +647,27 @@ function RoleDemonstrationSection({ userId, currentRole }: RoleDemonstrationSect
                 isCurrentRole ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-gray-50'
               }`}
             >
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <IconComponent className={`h-5 w-5 mr-2 ${getRoleColor(role.name)}`} />
-                    <CardTitle className="text-lg">{role.name}</CardTitle>
+              <CardHeader className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center min-w-0 flex-1">
+                    <IconComponent className={`h-4 w-4 sm:h-5 sm:w-5 mr-2 ${getRoleColor(role.name)}`} />
+                    <CardTitle className="text-base sm:text-lg truncate">{role.name}</CardTitle>
                   </div>
                   {isCurrentRole && (
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="text-xs self-start sm:self-auto">
                       Active
                     </Badge>
                   )}
                 </div>
-                <CardDescription className="mt-2">
+                <CardDescription className="mt-2 text-xs sm:text-sm line-clamp-2">
                   {role.description}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between text-sm">
+              <CardContent className="p-4 sm:p-6 pt-0">
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs sm:text-sm">
                     <span className="text-gray-500">Permissions:</span>
-                    <Badge variant="outline">
+                    <Badge variant="outline" className="text-xs w-fit">
                       {role.permissionCount || 0} permissions
                     </Badge>
                   </div>
@@ -675,7 +690,7 @@ function RoleDemonstrationSection({ userId, currentRole }: RoleDemonstrationSect
                   </div>
                   
                   <Button
-                    className={`w-full ${isCurrentRole ? 'opacity-50' : ''}`}
+                    className={`w-full text-xs sm:text-sm ${isCurrentRole ? 'opacity-50' : ''}`}
                     onClick={() => handleDemonstrateRole(role.id)}
                     disabled={switchRoleMutation.isPending || isCurrentRole}
                     variant={isCurrentRole ? "secondary" : "default"}
@@ -683,18 +698,21 @@ function RoleDemonstrationSection({ userId, currentRole }: RoleDemonstrationSect
                   >
                     {switchRoleMutation.isPending && switchRoleMutation.variables === role.id ? (
                       <>
-                        <RotateCcw className="h-4 w-4 mr-2 animate-spin" />
-                        Switching...
+                        <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 animate-spin" />
+                        <span className="hidden sm:inline">Switching...</span>
+                        <span className="sm:hidden">Switching</span>
                       </>
                     ) : isCurrentRole ? (
                       <>
-                        <UserCheck className="h-4 w-4 mr-2" />
-                        Current Role
+                        <UserCheck className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">Current Role</span>
+                        <span className="sm:hidden">Current</span>
                       </>
                     ) : (
                       <>
-                        <Play className="h-4 w-4 mr-2" />
-                        Demonstrate Role
+                        <Play className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">Demonstrate Role</span>
+                        <span className="sm:hidden">Demo</span>
                       </>
                     )}
                   </Button>
@@ -1401,31 +1419,31 @@ function TourManagementSection() {
       </div>
 
       {/* Tour Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
         {toursFromAPI?.map((tour: any) => (
           <Card key={tour.id} className={`cursor-pointer transition-all ${selectedRoles.includes(tour.roleDisplayName) ? 'ring-2 ring-purple-500 bg-purple-50' : 'hover:shadow-md'}`}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-semibold text-sm">{tour.roleDisplayName}</h4>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <h4 className="font-semibold text-xs sm:text-sm truncate mr-2">{tour.roleDisplayName}</h4>
                 <input
                   type="checkbox"
                   checked={selectedRoles.includes(tour.roleDisplayName)}
                   onChange={() => toggleRole(tour.roleDisplayName)}
-                  className="rounded text-purple-600"
+                  className="rounded text-purple-600 shrink-0"
                 />
               </div>
-              <div className="space-y-2 text-xs text-gray-600">
+              <div className="space-y-1 sm:space-y-2 text-xs text-gray-600">
                 <div className="flex items-center">
-                  <FileText className="h-3 w-3 mr-1" />
-                  {tour.tourData?.totalSteps || 0} steps
+                  <FileText className="h-3 w-3 mr-1 shrink-0" />
+                  <span className="truncate">{tour.tourData?.totalSteps || 0} steps</span>
                 </div>
                 <div className="flex items-center">
-                  <Clock className="h-3 w-3 mr-1" />
-                  {tour.tourData?.estimatedDuration || '5 min'}
+                  <Clock className="h-3 w-3 mr-1 shrink-0" />
+                  <span className="truncate">{tour.tourData?.estimatedDuration || '5 min'}</span>
                 </div>
                 <div className="flex items-center">
-                  <Volume2 className="h-3 w-3 mr-1" />
-                  {tour.tourData?.voiceScriptCount || 0} voice scripts
+                  <Volume2 className="h-3 w-3 mr-1 shrink-0" />
+                  <span className="truncate">{tour.tourData?.voiceScriptCount || 0} voice scripts</span>
                 </div>
               </div>
             </CardContent>
@@ -1483,7 +1501,7 @@ function TourManagementSection() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {missingTourRoles.map((role: any) => (
               <Card 
                 key={role.id} 
@@ -1493,24 +1511,24 @@ function TourManagementSection() {
                     : 'hover:shadow-md border-gray-300'
                 }`}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-semibold text-sm">{role.name}</h4>
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center justify-between mb-2 sm:mb-3">
+                    <h4 className="font-semibold text-xs sm:text-sm truncate mr-2">{role.name}</h4>
                     <input
                       type="checkbox"
                       checked={selectedMissingRoles.includes(role.id.toString())}
                       onChange={() => toggleMissingRole(role.id.toString())}
-                      className="rounded text-green-600"
+                      className="rounded text-green-600 shrink-0"
                     />
                   </div>
-                  <div className="space-y-2 text-xs text-gray-600">
-                    <p className="text-xs">{role.description}</p>
+                  <div className="space-y-1 sm:space-y-2 text-xs text-gray-600">
+                    <p className="text-xs line-clamp-2">{role.description}</p>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <AlertCircle className="h-3 w-3 mr-1 text-amber-500" />
-                        No tour yet
+                        <AlertCircle className="h-3 w-3 mr-1 text-amber-500 shrink-0" />
+                        <span className="truncate">No tour yet</span>
                       </div>
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-xs shrink-0">
                         New Role
                       </Badge>
                     </div>
