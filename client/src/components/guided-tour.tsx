@@ -385,55 +385,52 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
   
   console.log("GuidedTour initialized - tourSteps:", tourSteps, "currentStep:", currentStep, "loading:", toursLoading);
 
-  // Pre-load all audio when voice is enabled and tour starts
+  // Pre-load audio only for first step when tour starts (not all steps)
   useEffect(() => {
-    if (voiceEnabled && currentStep === 0 && tourSteps.length > 0) {
-      console.log("Pre-loading all audio for tour steps...");
-      preloadAllAudio();
+    if (voiceEnabled && currentStep === 0 && tourSteps.length > 0 && !preloadedAudioRef.current[tourSteps[0].id]) {
+      console.log("Pre-loading first step audio...");
+      preloadSingleStepAudio(tourSteps[0]);
     }
   }, [voiceEnabled, tourSteps]);
   
-  // Pre-load audio for all tour steps
-  const preloadAllAudio = async () => {
-    for (let i = 0; i < tourSteps.length; i++) {
-      const stepData = tourSteps[i];
-      const enhancedText = createEngagingNarration(stepData, role);
-      
-      setPreloadingStatus(prev => ({ ...prev, [stepData.id]: 'loading' }));
-      
-      try {
-        const response = await fetch("/api/ai/text-to-speech", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("authToken")}`
-          },
-          body: JSON.stringify({
-            text: enhancedText,
-            gender: "female",
-            voice: "nova",
-            speed: 1.15
-          })
-        });
+  // Pre-load audio for a single step
+  const preloadSingleStepAudio = async (stepData: any) => {
+    const enhancedText = createEngagingNarration(stepData, role);
+    
+    setPreloadingStatus(prev => ({ ...prev, [stepData.id]: 'loading' }));
+    
+    try {
+      const response = await fetch("/api/ai/text-to-speech", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("authToken")}`
+        },
+        body: JSON.stringify({
+          text: enhancedText,
+          gender: "female",
+          voice: "nova",
+          speed: 1.15
+        })
+      });
 
-        if (!response.ok) {
-          throw new Error(`Audio generation failed for step ${stepData.id}`);
-        }
-
-        const audioBlob = await response.blob();
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const audio = new Audio(audioUrl);
-        audio.preload = "auto";
-        
-        preloadedAudioRef.current[stepData.id] = audio;
-        setPreloadingStatus(prev => ({ ...prev, [stepData.id]: 'ready' }));
-        
-        console.log(`Pre-loaded audio for step: ${stepData.id}`);
-        
-      } catch (error) {
-        console.error(`Failed to pre-load audio for step ${stepData.id}:`, error);
-        setPreloadingStatus(prev => ({ ...prev, [stepData.id]: 'error' }));
+      if (!response.ok) {
+        throw new Error(`Audio generation failed for step ${stepData.id}`);
       }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      audio.preload = "auto";
+      
+      preloadedAudioRef.current[stepData.id] = audio;
+      setPreloadingStatus(prev => ({ ...prev, [stepData.id]: 'ready' }));
+      
+      console.log(`Pre-loaded audio for step: ${stepData.id}`);
+      
+    } catch (error) {
+      console.error(`Failed to pre-load audio for step ${stepData.id}:`, error);
+      setPreloadingStatus(prev => ({ ...prev, [stepData.id]: 'error' }));
     }
   };
   
