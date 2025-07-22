@@ -1543,11 +1543,13 @@ function TourManagementSection() {
                   if (roleId) {
                     console.log('Attempting to switch to role ID:', roleId);
                     console.log('User data:', user);
+                    console.log('User ID:', user?.id);
                     
                     if (!user?.id) {
+                      console.log('User ID not available - user object:', user);
                       toast({
                         title: "Error",
-                        description: "User ID not available. Please try again.",
+                        description: "User data not loaded. Please refresh and try again.",
                         variant: "destructive",
                       });
                       return;
