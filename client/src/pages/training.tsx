@@ -1614,7 +1614,7 @@ function TourManagementSection() {
               onClick={async () => {
                 setShowTourPreviewDialog(false);
                 
-                if (!previewTourData?.role) {
+                if (!previewTourData?.roleId && !previewTourData?.roleDisplayName) {
                   toast({
                     title: "Error",
                     description: "Unable to determine role for tour. Please try again.",
@@ -1652,19 +1652,22 @@ function TourManagementSection() {
 
                   console.log('Tour data:', previewTourData);
                   console.log('System roles:', systemRoles);
-                  console.log('Looking for role:', previewTourData.role, 'Display name:', previewTourData.roleDisplayName);
+                  console.log('Looking for role ID:', previewTourData.roleId, 'Display name:', previewTourData.roleDisplayName);
                   
                   // First, switch to the appropriate role
-                  const roleId = systemRoles?.find((r: any) => {
-                    const nameMatch = r.name.toLowerCase().replace(/\s+/g, '-') === previewTourData.role;
-                    const nameNoSpaceMatch = r.name.toLowerCase().replace(/\s+/g, '') === previewTourData.role.replace(/-/g, '');
-                    const displayNameMatch = r.name.toLowerCase() === previewTourData.roleDisplayName?.toLowerCase();
-                    
-                    console.log('Checking role:', r.name, 'ID:', r.id);
-                    console.log('Name match:', nameMatch, 'No space match:', nameNoSpaceMatch, 'Display name match:', displayNameMatch);
-                    
-                    return nameMatch || nameNoSpaceMatch || displayNameMatch;
-                  })?.id;
+                  let roleId = previewTourData.roleId; // Use direct roleId if available
+                  
+                  // Fallback to name matching if roleId not available
+                  if (!roleId && previewTourData.roleDisplayName) {
+                    roleId = systemRoles?.find((r: any) => {
+                      const displayNameMatch = r.name.toLowerCase() === previewTourData.roleDisplayName?.toLowerCase();
+                      
+                      console.log('Checking role:', r.name, 'ID:', r.id);
+                      console.log('Display name match:', displayNameMatch);
+                      
+                      return displayNameMatch;
+                    })?.id;
+                  }
 
                   console.log('Found role ID:', roleId);
 
