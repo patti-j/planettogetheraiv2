@@ -175,25 +175,32 @@ export default function CapacityPlanning() {
   );
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="md:ml-0 ml-12">
-          <h1 className="text-2xl font-semibold text-gray-800">Capacity Planning</h1>
-          <p className="text-gray-600">Plan staffing, shifts, and equipment investments for optimal production capacity</p>
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Capacity Planning</h1>
+          <p className="text-sm md:text-base text-gray-600">Plan staffing, shifts, and equipment investments for optimal production capacity</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 lg:flex-shrink-0">
           <Button 
             variant="outline" 
             onClick={() => setShowAIRecommendations(!showAIRecommendations)}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 text-sm"
+            size="sm"
           >
-            <Zap className="w-4 h-4 mr-2" />
-            AI Insights
+            <Zap className="w-4 h-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">AI Insights</span>
+            <span className="sm:hidden">AI</span>
           </Button>
-          <Button onClick={() => setShowCreateScenario(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            New Scenario
+          <Button 
+            onClick={() => setShowCreateScenario(true)}
+            className="text-sm"
+            size="sm"
+          >
+            <Plus className="w-4 h-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">New Scenario</span>
+            <span className="sm:hidden">New</span>
           </Button>
         </div>
       </div>
@@ -250,15 +257,15 @@ export default function CapacityPlanning() {
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Scenarios List */}
-        <Card className="lg:col-span-1">
+        <Card className="xl:col-span-1">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <BookOpen className="w-5 h-5" />
               Planning Scenarios
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm">
               Select a scenario to view detailed capacity plans
             </CardDescription>
           </CardHeader>
@@ -315,12 +322,12 @@ export default function CapacityPlanning() {
         </Card>
 
         {/* Scenario Details */}
-        <Card className="lg:col-span-2">
+        <Card className="xl:col-span-2">
           <CardHeader>
-            <CardTitle>
+            <CardTitle className="text-lg">
               {selectedScenario ? selectedScenario.name : "Select a Scenario"}
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm">
               {selectedScenario 
                 ? "Detailed capacity planning for the selected scenario"
                 : "Choose a scenario from the list to view detailed capacity plans"
@@ -330,19 +337,21 @@ export default function CapacityPlanning() {
           <CardContent>
             {selectedScenario ? (
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList>
-                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="staffing">Staffing</TabsTrigger>
-                  <TabsTrigger value="shifts">Shifts</TabsTrigger>
-                  <TabsTrigger value="equipment">Equipment</TabsTrigger>
-                  <TabsTrigger value="projections">Projections</TabsTrigger>
-                </TabsList>
+                <div className="overflow-x-auto">
+                  <TabsList className="grid w-full grid-cols-5 min-w-max">
+                    <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
+                    <TabsTrigger value="staffing" className="text-xs sm:text-sm">Staffing</TabsTrigger>
+                    <TabsTrigger value="shifts" className="text-xs sm:text-sm">Shifts</TabsTrigger>
+                    <TabsTrigger value="equipment" className="text-xs sm:text-sm">Equipment</TabsTrigger>
+                    <TabsTrigger value="projections" className="text-xs sm:text-sm">Projections</TabsTrigger>
+                  </TabsList>
+                </div>
 
                 <TabsContent value="overview" className="space-y-4 mt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-gray-50 rounded-lg">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
                       <h4 className="font-semibold text-sm mb-2">Scenario Details</h4>
-                      <div className="space-y-2 text-sm">
+                      <div className="space-y-2 text-xs sm:text-sm">
                         <div className="flex justify-between">
                           <span className="text-gray-600">Planning Period:</span>
                           <span className="capitalize">{selectedScenario.planningPeriod}</span>
@@ -397,11 +406,12 @@ export default function CapacityPlanning() {
                 </TabsContent>
 
                 <TabsContent value="staffing" className="space-y-4 mt-4">
-                  <div className="flex justify-between items-center">
-                    <h4 className="font-semibold">Staffing Plans</h4>
-                    <Button size="sm">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Plan
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                    <h4 className="font-semibold text-base">Staffing Plans</h4>
+                    <Button size="sm" className="text-xs">
+                      <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">Add Plan</span>
+                      <span className="sm:hidden">Add</span>
                     </Button>
                   </div>
                   {staffingPlans.length === 0 ? (
@@ -412,16 +422,16 @@ export default function CapacityPlanning() {
                   ) : (
                     <div className="space-y-3">
                       {staffingPlans.map((plan: StaffingPlan) => (
-                        <div key={plan.id} className="p-4 border rounded-lg">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h5 className="font-medium">{plan.department}</h5>
-                              <p className="text-sm text-gray-600">{plan.jobRole}</p>
+                        <div key={plan.id} className="p-3 sm:p-4 border rounded-lg">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                            <div className="flex-1">
+                              <h5 className="font-medium text-sm sm:text-base">{plan.department}</h5>
+                              <p className="text-xs sm:text-sm text-gray-600">{plan.jobRole}</p>
                               <p className="text-xs text-gray-500 mt-1">
-                                Current: {plan.current_headcount} → Target: {plan.target_headcount}
+                                Current: {plan.currentStaffCount} → Target: {plan.targetStaffCount}
                               </p>
                             </div>
-                            <Badge variant="outline">{plan.priority}</Badge>
+                            <Badge variant="outline" className="text-xs self-start">{plan.priority}</Badge>
                           </div>
                         </div>
                       ))}
@@ -430,11 +440,12 @@ export default function CapacityPlanning() {
                 </TabsContent>
 
                 <TabsContent value="shifts" className="space-y-4 mt-4">
-                  <div className="flex justify-between items-center">
-                    <h4 className="font-semibold">Shift Plans</h4>
-                    <Button size="sm">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Plan
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                    <h4 className="font-semibold text-base">Shift Plans</h4>
+                    <Button size="sm" className="text-xs">
+                      <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">Add Plan</span>
+                      <span className="sm:hidden">Add</span>
                     </Button>
                   </div>
                   {shiftPlans.length === 0 ? (
@@ -445,16 +456,16 @@ export default function CapacityPlanning() {
                   ) : (
                     <div className="space-y-3">
                       {shiftPlans.map((plan: ShiftPlan) => (
-                        <div key={plan.id} className="p-4 border rounded-lg">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h5 className="font-medium">{plan.shiftName}</h5>
-                              <p className="text-sm text-gray-600">Days: {plan.daysOfWeek?.join(", ")}</p>
+                        <div key={plan.id} className="p-3 sm:p-4 border rounded-lg">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                            <div className="flex-1">
+                              <h5 className="font-medium text-sm sm:text-base">{plan.shiftName}</h5>
+                              <p className="text-xs sm:text-sm text-gray-600">Days: {plan.daysOfWeek?.join(", ")}</p>
                               <p className="text-xs text-gray-500 mt-1">
                                 {plan.startTime} - {plan.endTime}
                               </p>
                             </div>
-                            <Badge variant="outline">{plan.targetStaffCount} staff</Badge>
+                            <Badge variant="outline" className="text-xs self-start">{plan.staffCount} staff</Badge>
                           </div>
                         </div>
                       ))}
@@ -463,11 +474,12 @@ export default function CapacityPlanning() {
                 </TabsContent>
 
                 <TabsContent value="equipment" className="space-y-4 mt-4">
-                  <div className="flex justify-between items-center">
-                    <h4 className="font-semibold">Equipment Plans</h4>
-                    <Button size="sm">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Plan
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                    <h4 className="font-semibold text-base">Equipment Plans</h4>
+                    <Button size="sm" className="text-xs">
+                      <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">Add Plan</span>
+                      <span className="sm:hidden">Add</span>
                     </Button>
                   </div>
                   {equipmentPlans.length === 0 ? (
@@ -478,16 +490,16 @@ export default function CapacityPlanning() {
                   ) : (
                     <div className="space-y-3">
                       {equipmentPlans.map((plan: EquipmentPlan) => (
-                        <div key={plan.id} className="p-4 border rounded-lg">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h5 className="font-medium">{plan.equipmentType}</h5>
-                              <p className="text-sm text-gray-600">{plan.action}</p>
+                        <div key={plan.id} className="p-3 sm:p-4 border rounded-lg">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                            <div className="flex-1">
+                              <h5 className="font-medium text-sm sm:text-base">{plan.equipmentType}</h5>
+                              <p className="text-xs sm:text-sm text-gray-600">{plan.action}</p>
                               <p className="text-xs text-gray-500 mt-1">
-                                Cost: ${plan.estimated_cost?.toLocaleString()}, Qty: {plan.quantity}
+                                Cost: ${plan.estimatedCost?.toLocaleString()}, Qty: {plan.quantity}
                               </p>
                             </div>
-                            <Badge variant="outline">{plan.priority}</Badge>
+                            <Badge variant="outline" className="text-xs self-start">{plan.priority}</Badge>
                           </div>
                         </div>
                       ))}
@@ -496,11 +508,12 @@ export default function CapacityPlanning() {
                 </TabsContent>
 
                 <TabsContent value="projections" className="space-y-4 mt-4">
-                  <div className="flex justify-between items-center">
-                    <h4 className="font-semibold">Capacity Projections</h4>
-                    <Button size="sm">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Projection
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                    <h4 className="font-semibold text-base">Capacity Projections</h4>
+                    <Button size="sm" className="text-xs">
+                      <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">Add Projection</span>
+                      <span className="sm:hidden">Add</span>
                     </Button>
                   </div>
                   {capacityProjections.length === 0 ? (
@@ -511,21 +524,20 @@ export default function CapacityPlanning() {
                   ) : (
                     <div className="space-y-3">
                       {capacityProjections.map((projection: CapacityProjection) => (
-                        <div key={projection.id} className="p-4 border rounded-lg">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h5 className="font-medium">{projection.resourceType}</h5>
-                              <p className="text-sm text-gray-600">
+                        <div key={projection.id} className="p-3 sm:p-4 border rounded-lg">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                            <div className="flex-1">
+                              <h5 className="font-medium text-sm sm:text-base">{projection.resourceType}</h5>
+                              <p className="text-xs sm:text-sm text-gray-600">
                                 Current: {projection.currentCapacity} → Projected: {projection.projectedCapacity}
                               </p>
                               <p className="text-xs text-gray-500 mt-1">
-                                Valid from: {new Date(projection.validFromDate).toLocaleDateString()} to 
-                                {new Date(projection.validToDate).toLocaleDateString()}
+                                Valid from: {new Date(projection.validFromDate).toLocaleDateString()} to {new Date(projection.validToDate).toLocaleDateString()}
                               </p>
                             </div>
-                            <div className="text-right">
-                              <p className="text-sm font-medium">
-                                Growth: {projection.growthRate}%
+                            <div className="text-right self-start">
+                              <p className="text-xs sm:text-sm font-medium">
+                                Growth: {projection.projectedGrowthRate}%
                               </p>
                             </div>
                           </div>
