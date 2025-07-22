@@ -1007,13 +1007,13 @@ function TourManagementSection() {
     }
   };
 
-  const allRoles = toursFromAPI?.map((tour: any) => tour.role) || [];
+  const allRoles = Array.isArray(toursFromAPI) ? toursFromAPI.map((tour: any) => tour.role) : [];
   
   // Identify roles that don't have tours yet - use roleId for accurate matching
-  const existingTourRoleIds = new Set(toursFromAPI?.map((tour: any) => tour.roleId) || []);
-  const missingTourRoles = systemRoles.filter((role: any) => {
+  const existingTourRoleIds = new Set(Array.isArray(toursFromAPI) ? toursFromAPI.map((tour: any) => tour.roleId) : []);
+  const missingTourRoles = Array.isArray(systemRoles) ? systemRoles.filter((role: any) => {
     return !existingTourRoleIds.has(role.id);
-  });
+  }) : [];
 
   const regenerateTourWithAI = useMutation({
     mutationFn: async ({ roles, guidance }: { roles: string[], guidance?: string }) => {
@@ -1226,7 +1226,7 @@ function TourManagementSection() {
 
   // Helper functions for selecting all roles in each section
   const selectAllTourContentRoles = () => {
-    const allRoles = toursFromAPI?.map((tour: any) => tour.roleDisplayName) || [];
+    const allRoles = Array.isArray(toursFromAPI) ? toursFromAPI.map((tour: any) => tour.roleDisplayName) : [];
     setSelectedRoles(allRoles);
   };
 
@@ -1961,7 +1961,7 @@ function TourManagementSection() {
                     // Fallback to hook user data if fresh fetch fails
                     if (!user?.id) {
                       toast({
-                        title: "Authentication Error",
+                        title: "Authentication Error", 
                         description: "Please log in again and try.",
                         variant: "destructive",
                       });
@@ -1983,14 +1983,14 @@ function TourManagementSection() {
                   
                   // Fallback to name matching if roleId not available
                   if (!roleId && previewTourData.roleDisplayName) {
-                    roleId = systemRoles?.find((r: any) => {
+                    roleId = Array.isArray(systemRoles) ? systemRoles.find((r: any) => {
                       const displayNameMatch = r.name.toLowerCase() === previewTourData.roleDisplayName?.toLowerCase();
                       
                       console.log('Checking role:', r.name, 'ID:', r.id);
                       console.log('Display name match:', displayNameMatch);
                       
                       return displayNameMatch;
-                    })?.id;
+                    })?.id : undefined;
                   }
 
                   console.log('Found role ID:', roleId);

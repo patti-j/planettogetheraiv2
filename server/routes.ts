@@ -3971,7 +3971,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const accessibleRoutes: {[key: string]: string} = {};
       
       for (const [route, description] of Object.entries(allSystemRoutes)) {
-        const requiredPermission = routePermissions[route];
+        const requiredPermission = (routePermissions as any)[route];
         
         if (requiredPermission) {
           // Extract feature from permission (e.g., 'production-scheduling-view' -> 'production-scheduling')
