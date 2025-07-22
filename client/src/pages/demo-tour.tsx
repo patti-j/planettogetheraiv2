@@ -66,15 +66,8 @@ export default function DemoTour() {
   const queryClient = useQueryClient();
   const { startTour } = useTour();
 
-  // Handle guided tour - stay on demo-tour page and render overlay
-  useEffect(() => {
-    if (showGuidedTour && demoRole) {
-      console.log("Starting guided tour for role:", demoRole);
-      console.log("Current location:", window.location.pathname);
-      console.log("Current URL:", window.location.href);
-      // Don't navigate away, just render the guided tour overlay
-    }
-  }, [showGuidedTour, demoRole]);
+  // Tour is now managed globally by TourContext
+  // No need for local tour state management
 
   // Add comprehensive error and navigation debugging
   useEffect(() => {
@@ -308,29 +301,9 @@ export default function DemoTour() {
     createParticipantMutation.mutate(data);
   };
 
-  const handleTourComplete = () => {
-    setShowGuidedTour(false);
-    console.log("Tour completed, staying on demo-tour page");
-    toast({
-      title: "Demo Complete!",
-      description: "Continue exploring PlanetTogether features. Use the sidebar to navigate or contact us to learn more!",
-    });
-    // Don't navigate away - keep the user on the demo tour page
-    // They now have full access to the application via the sidebar
-  };
+  // Tour completion and skip handling is now managed by global TourContext
 
-  const handleTourSkip = () => {
-    setShowGuidedTour(false);
-    console.log("Tour skipped, staying on demo-tour page");
-    toast({
-      title: "Tour Skipped",
-      description: "You can continue exploring PlanetTogether features. Contact us to learn more!",
-    });
-    // Don't navigate away - keep the user on the demo tour page
-    // They can use the sidebar to explore different sections
-  };
-
-  if (!showParticipantForm && !showGuidedTour) {
+  if (!showParticipantForm) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
@@ -350,16 +323,7 @@ export default function DemoTour() {
   
 
 
-  // Show guided tour if active
-  if (showGuidedTour) {
-    return (
-      <GuidedTour 
-        role={demoRole}
-        onComplete={handleTourComplete}
-        onSkip={handleTourSkip}
-      />
-    );
-  }
+  // Guided tour is now handled globally by TourContext
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
