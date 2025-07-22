@@ -110,7 +110,7 @@ export default function Feedback() {
   });
 
   // Fetch feedback stats from API  
-  const { data: feedbackStats, isLoading: statsLoading } = useQuery({
+  const { data: feedbackStats = mockStats, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/feedback/stats"],
   });
 
@@ -254,10 +254,7 @@ export default function Feedback() {
   // Submit feedback mutation
   const submitFeedbackMutation = useMutation({
     mutationFn: async (feedback: Partial<FeedbackItem>) => {
-      return apiRequest("/api/feedback", {
-        method: "POST",
-        body: JSON.stringify(feedback),
-      });
+      return apiRequest("POST", "/api/feedback", feedback);
     },
     onSuccess: () => {
       toast({
@@ -280,10 +277,7 @@ export default function Feedback() {
   // Vote on feedback mutation
   const voteFeedbackMutation = useMutation({
     mutationFn: async ({ id, vote }: { id: number; vote: "up" | "down" }) => {
-      return apiRequest(`/api/feedback/${id}/vote`, {
-        method: "POST",
-        body: JSON.stringify({ voteType: vote }),
-      });
+      return apiRequest("POST", `/api/feedback/${id}/vote`, { voteType: vote });
     },
     onSuccess: () => {
       toast({
@@ -502,25 +496,25 @@ export default function Feedback() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">
-                    {statsLoading ? "..." : feedbackStats?.totalSubmissions || 0}
+                    {statsLoading ? "..." : (feedbackStats as any)?.totalSubmissions || 0}
                   </div>
                   <div className="text-sm text-gray-500">Total Submissions</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-orange-600">
-                    {statsLoading ? "..." : feedbackStats?.openItems || 0}
+                    {statsLoading ? "..." : (feedbackStats as any)?.openItems || 0}
                   </div>
                   <div className="text-sm text-gray-500">Open Items</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600">
-                    {statsLoading ? "..." : feedbackStats?.completedItems || 0}
+                    {statsLoading ? "..." : (feedbackStats as any)?.completedItems || 0}
                   </div>
                   <div className="text-sm text-gray-500">Completed</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-purple-600">
-                    {statsLoading ? "..." : feedbackStats?.averageResponseTime || 0}d
+                    {statsLoading ? "..." : (feedbackStats as any)?.averageResponseTime || 0}d
                   </div>
                   <div className="text-sm text-gray-500">Avg Response Time</div>
                 </div>
@@ -641,7 +635,7 @@ export default function Feedback() {
                   {/* Tags */}
                   {item.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-3">
-                      {item.tags.map((tag, index) => (
+                      {item.tags.map((tag: any, index: number) => (
                         <Badge key={index} variant="secondary" className="text-xs">
                           {tag}
                         </Badge>
@@ -669,7 +663,7 @@ export default function Feedback() {
                         Latest Response ({item.comments.length} total)
                       </p>
                       <div className="space-y-2">
-                        {item.comments.slice(-1).map((comment) => (
+                        {item.comments.slice(-1).map((comment: any) => (
                           <div key={comment.id} className="flex items-start gap-2">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
@@ -723,7 +717,7 @@ export default function Feedback() {
               <CardContent className="p-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">
-                    {statsLoading ? "..." : feedbackStats?.totalSubmissions || 0}
+                    {statsLoading ? "..." : (feedbackStats as any)?.totalSubmissions || 0}
                   </div>
                   <div className="text-sm text-gray-500">Total Submissions</div>
                 </div>
@@ -733,7 +727,7 @@ export default function Feedback() {
               <CardContent className="p-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-orange-600">
-                    {statsLoading ? "..." : feedbackStats?.openItems || 0}
+                    {statsLoading ? "..." : (feedbackStats as any)?.openItems || 0}
                   </div>
                   <div className="text-sm text-gray-500">Open Items</div>
                 </div>
@@ -743,7 +737,7 @@ export default function Feedback() {
               <CardContent className="p-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600">
-                    {statsLoading ? "..." : feedbackStats?.completedItems || 0}
+                    {statsLoading ? "..." : (feedbackStats as any)?.completedItems || 0}
                   </div>
                   <div className="text-sm text-gray-500">Completed</div>
                 </div>
@@ -753,7 +747,7 @@ export default function Feedback() {
               <CardContent className="p-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-purple-600">
-                    {statsLoading ? "..." : feedbackStats?.averageResponseTime || 0}d
+                    {statsLoading ? "..." : (feedbackStats as any)?.averageResponseTime || 0}d
                   </div>
                   <div className="text-sm text-gray-500">Avg Response Time</div>
                 </div>
@@ -769,15 +763,15 @@ export default function Feedback() {
               <div className="space-y-3">
                 {statsLoading ? (
                   <div className="text-center text-gray-500">Loading...</div>
-                ) : feedbackStats?.topCategories?.length > 0 ? (
-                  feedbackStats.topCategories.map((category: any, index: number) => (
+                ) : (feedbackStats as any)?.topCategories?.length > 0 ? (
+                  (feedbackStats as any).topCategories.map((category: any, index: number) => (
                     <div key={index} className="flex items-center justify-between">
                       <span className="capitalize">{category.category.replace("_", " ")}</span>
                       <div className="flex items-center gap-2">
                         <div className="w-32 bg-gray-200 rounded-full h-2">
                           <div 
                             className="bg-blue-600 h-2 rounded-full" 
-                            style={{ width: `${(category.count / (feedbackStats?.totalSubmissions || 1)) * 100}%` }}
+                            style={{ width: `${(category.count / ((feedbackStats as any)?.totalSubmissions || 1)) * 100}%` }}
                           ></div>
                         </div>
                         <span className="text-sm text-gray-600">{category.count}</span>

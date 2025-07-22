@@ -27,7 +27,8 @@ import {
   RotateCcw,
   Kanban,
   Timer,
-  TimerOff
+  TimerOff,
+  Star
 } from "lucide-react";
 
 interface TourStep {
@@ -369,6 +370,10 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   
   const [currentStep, setCurrentStep] = useState(initialStep);
   
+  // Create session key for tour tracking
+  const tourSessionKey = `tour-${roleId}-welcome-auto-played`;
+  const [hasAutoStarted, setHasAutoStarted] = useState(false);
+  
   // Reset to first step when role changes and clear auto-start tracking
   useEffect(() => {
     setCurrentStep(0);
@@ -536,8 +541,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   console.log("GuidedTour initialized - tourSteps:", tourSteps, "currentStep:", currentStep, "loading:", toursLoading);
 
   // Use a unique tour session key to track auto-start behavior
-  const tourSessionKey = `tour-${roleId}-welcome-auto-played`;
-  const [hasAutoStarted, setHasAutoStarted] = useState(false);
+  // (Already defined above, so we'll use the one from line 376)
   
   // Auto-start voice narration for welcome step if voice is enabled (only once per tour session)
   useEffect(() => {
@@ -1087,7 +1091,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           if (document.body.contains(spotlight)) document.body.removeChild(spotlight);
         }, 5000);
         
-        console.log(`Applied spotlight to: ${spotlight.selector}`);
+        console.log(`Applied spotlight to element`);
       }
     }
   };

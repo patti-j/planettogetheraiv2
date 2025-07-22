@@ -57,9 +57,9 @@ export default function Pricing() {
     {
       id: "starter",
       name: "Starter",
-      price: billingCycle === "monthly" ? 49 : 490,
+      price: billingCycle === "monthly" ? 29 : 290,
       billingPeriod: billingCycle,
-      description: "Perfect for small manufacturing teams getting started with production scheduling",
+      description: "Perfect for small manufacturing teams - $29 per user per month",
       features: [
         "Basic production scheduling",
         "Gantt chart visualization",
@@ -82,9 +82,9 @@ export default function Pricing() {
     {
       id: "professional",
       name: "Professional",
-      price: billingCycle === "monthly" ? 99 : 990,
+      price: billingCycle === "monthly" ? 59 : 590,
       billingPeriod: billingCycle,
-      description: "Advanced features for growing manufacturers with complex scheduling needs",
+      description: "Advanced features for growing manufacturers - $59 per user per month",
       features: [
         "Everything in Starter",
         "Advanced scheduling algorithms",
@@ -110,9 +110,9 @@ export default function Pricing() {
     {
       id: "enterprise",
       name: "Enterprise",
-      price: billingCycle === "monthly" ? 199 : 1990,
+      price: billingCycle === "monthly" ? 89 : 890,
       billingPeriod: billingCycle,
-      description: "Complete manufacturing management solution for large operations",
+      description: "Complete manufacturing management solution - $89 per user per month",
       features: [
         "Everything in Professional",
         "Multi-site management",
@@ -221,9 +221,26 @@ export default function Pricing() {
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
               Choose the Perfect Plan for Your Manufacturing Operation
             </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-6">
               From small teams to enterprise operations, we have the right solution to optimize your production scheduling and boost efficiency
             </p>
+            
+            {/* Login and Demo Tour Buttons */}
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-6">
+              <Button 
+                onClick={() => window.location.href = '/login'} 
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3"
+              >
+                Sign In to Your Account
+              </Button>
+              <Button 
+                onClick={() => window.location.href = '/?demo=true'} 
+                variant="outline"
+                className="border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-3"
+              >
+                Start Interactive Demo Tour
+              </Button>
+            </div>
           </div>
 
           {/* Billing Toggle */}
