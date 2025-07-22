@@ -178,12 +178,17 @@ export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
   // Navigate to the first relevant step page when tour starts
   useEffect(() => {
     if (currentStep === 0) {
-      // For the welcome step, navigate to the first actual feature page
-      const firstFeatureStep = tourSteps.find(step => step.page !== "current");
-      if (firstFeatureStep) {
-        console.log("Guided tour navigating to:", firstFeatureStep.page);
-        setLocation(firstFeatureStep.page);
-      }
+      // Add a delay to ensure authentication is fully loaded
+      const timer = setTimeout(() => {
+        // For the welcome step, navigate to the first actual feature page
+        const firstFeatureStep = tourSteps.find(step => step.page !== "current");
+        if (firstFeatureStep) {
+          console.log("Guided tour navigating to:", firstFeatureStep.page);
+          setLocation(firstFeatureStep.page);
+        }
+      }, 1000); // 1 second delay to ensure auth is ready
+      
+      return () => clearTimeout(timer);
     }
   }, []);
 
