@@ -881,7 +881,8 @@ function TourManagementSection() {
   // Tour validation mutation
   const validateToursMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("GET", "/api/tours/validate");
+      const response = await apiRequest("GET", "/api/tours/validate");
+      return await response.json();
     },
     onSuccess: (data) => {
       console.log("Validation response:", data);
