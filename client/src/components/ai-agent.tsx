@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Mic, MicOff, Send, Bot, User } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Mic, MicOff, Send, Bot, User, Volume2, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -41,8 +43,105 @@ export default function AIAgent() {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [isListening, setIsListening] = useState(false);
   const audioChunks = useRef<Blob[]>([]);
+  
+  // Voice settings state
+  const [showVoiceSettings, setShowVoiceSettings] = useState(false);
+  const [voiceSettings, setVoiceSettings] = useState({
+    voice: "alloy",
+    gender: "female",
+    speed: 1.1
+  });
+  const [isTestingVoice, setIsTestingVoice] = useState(false);
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Load voice settings from localStorage on component mount
+  useEffect(() => {
+    const savedVoiceSettings = localStorage.getItem("voiceSettings");
+    if (savedVoiceSettings) {
+      try {
+        const settings = JSON.parse(savedVoiceSettings);
+        setVoiceSettings(settings);
+      } catch (error) {
+        console.error("Failed to load voice settings:", error);
+      }
+    }
+  }, []);
+
+  // Save voice settings to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem("voiceSettings", JSON.stringify(voiceSettings));
+  }, [voiceSettings]);
+
+  // Test voice function
+  const testVoice = async () => {
+    if (isTestingVoice) return;
+    
+    setIsTestingVoice(true);
+    try {
+      const testText = "Hello! This is how your voice settings will sound. I'm Max, your manufacturing AI assistant, ready to help you with production scheduling and operations.";
+      
+      const response = await fetch("/api/ai/text-to-speech", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("authToken")}`
+        },
+        body: JSON.stringify({
+          text: testText,
+          voice: voiceSettings.voice,
+          gender: voiceSettings.gender,
+          speed: voiceSettings.speed,
+          role: "voice-test",
+          stepId: "voice-test"
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Voice test failed: ${response.status}`);
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+
+      audio.onended = () => {
+        setIsTestingVoice(false);
+        URL.revokeObjectURL(audioUrl);
+        toast({
+          title: "Voice Test Complete",
+          description: "Voice settings preview finished"
+        });
+      };
+
+      audio.onerror = (e) => {
+        console.error("Voice test playback error:", e);
+        setIsTestingVoice(false);
+        URL.revokeObjectURL(audioUrl);
+        toast({
+          title: "Voice Test Failed",
+          description: "Could not play voice preview",
+          variant: "destructive"
+        });
+      };
+
+      await audio.play();
+      toast({
+        title: "Testing Voice Settings",
+        description: "Playing voice preview..."
+      });
+
+    } catch (error) {
+      console.error("Voice test error:", error);
+      setIsTestingVoice(false);
+      toast({
+        title: "Voice Test Error",
+        description: "Could not generate voice preview",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Helper functions for Gantt controls
   const handleGanttZoom = (zoomLevel: string) => {
@@ -317,6 +416,84 @@ export default function AIAgent() {
         
         <Separator />
         
+        {/* Voice Settings */}
+        {showVoiceSettings && (
+          <div className="border rounded-lg p-4 space-y-4 bg-gray-50">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium">Voice Settings</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={testVoice}
+                disabled={isTestingVoice}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
+              >
+                <Volume2 className="w-4 h-4 mr-2" />
+                {isTestingVoice ? "Testing..." : "Test Voice"}
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Voice Selection */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-gray-700">Voice</label>
+                <Select
+                  value={voiceSettings.voice}
+                  onValueChange={(value) => setVoiceSettings(prev => ({ ...prev, voice: value }))}
+                >
+                  <SelectTrigger className="h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="alloy">Alloy (Clear)</SelectItem>
+                    <SelectItem value="nova">Nova (Warm)</SelectItem>
+                    <SelectItem value="shimmer">Shimmer (Bright)</SelectItem>
+                    <SelectItem value="echo">Echo (Steady)</SelectItem>
+                    <SelectItem value="fable">Fable (Deep)</SelectItem>
+                    <SelectItem value="onyx">Onyx (Rich)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Gender Selection */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-gray-700">Gender</label>
+                <Select
+                  value={voiceSettings.gender}
+                  onValueChange={(value) => setVoiceSettings(prev => ({ ...prev, gender: value }))}
+                >
+                  <SelectTrigger className="h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="male">Male</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Speed Control */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-gray-700">
+                  Speed ({voiceSettings.speed}x)
+                </label>
+                <Slider
+                  value={[voiceSettings.speed]}
+                  onValueChange={(value) => setVoiceSettings(prev => ({ ...prev, speed: value[0] }))}
+                  min={0.5}
+                  max={2.0}
+                  step={0.1}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>0.5x</span>
+                  <span>2.0x</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* Input */}
         <div className="space-y-2">
           {isListening && (
@@ -349,6 +526,22 @@ export default function AIAgent() {
               </TooltipTrigger>
               <TooltipContent>
                 <p>{isRecording ? "Stop voice recording" : "Start voice recording"}</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setShowVoiceSettings(!showVoiceSettings)}
+                >
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Voice settings</p>
               </TooltipContent>
             </Tooltip>
             
