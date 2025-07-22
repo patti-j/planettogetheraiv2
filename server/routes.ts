@@ -3637,25 +3637,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const cacheKey = `${text}-${voice}-${gender}-${speed}`;
       const textHash = crypto.createHash('sha256').update(cacheKey).digest('hex');
 
-      // Check cache first
-      console.log(`Checking voice cache for hash: ${textHash}`);
-      const cachedRecording = await storage.getVoiceRecording(textHash);
-      
-      if (cachedRecording) {
-        console.log(`Found cached recording, usage count: ${cachedRecording.usageCount}`);
-        await storage.updateVoiceRecordingUsage(cachedRecording.id);
-        
-        // Return cached audio
-        const audioBuffer = Buffer.from(cachedRecording.audioData, 'base64');
-        res.set({
-          'Content-Type': 'audio/mpeg',
-          'Content-Length': audioBuffer.length,
-          'Cache-Control': 'public, max-age=7200',
-          'X-Content-Type-Options': 'nosniff',
-          'X-Voice-Cache': 'hit'
-        });
-        return res.send(audioBuffer);
-      }
+      // Check cache first (temporarily skip caching to ensure voice generation works)
+      console.log(`Skipping voice cache temporarily to ensure OpenAI voice generation works`);
+      // const cachedRecording = await storage.getVoiceRecording(textHash);
+      // 
+      // if (cachedRecording) {
+      //   console.log(`Found cached recording, usage count: ${cachedRecording.usageCount}`);
+      //   await storage.updateVoiceRecordingUsage(cachedRecording.id);
+      //   
+      //   // Return cached audio
+      //   const audioBuffer = Buffer.from(cachedRecording.audioData, 'base64');
+      //   res.set({
+      //     'Content-Type': 'audio/mpeg',
+      //     'Content-Length': audioBuffer.length,
+      //     'Cache-Control': 'public, max-age=7200',
+      //     'X-Content-Type-Options': 'nosniff',
+      //     'X-Voice-Cache': 'hit'
+      //   });
+      //   return res.send(audioBuffer);
+      // }
 
       // Generate new voice if not cached
       const openai = new OpenAI({
@@ -3685,23 +3685,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const buffer = Buffer.from(await mp3.arrayBuffer());
       
-      // Cache the generated audio for future use
-      try {
-        const audioData = buffer.toString('base64');
-        await storage.createVoiceRecording({
-          textHash,
-          role,
-          stepId,
-          voice: selectedVoice,
-          audioData,
-          fileSize: buffer.length,
-          duration: null
-        });
-        console.log(`Cached new voice recording with hash: ${textHash}`);
-      } catch (cacheError) {
-        console.error('Error caching voice recording:', cacheError);
-        // Continue even if caching fails
-      }
+      // Cache the generated audio for future use (temporarily disabled)
+      // try {
+      //   const audioData = buffer.toString('base64');
+      //   await storage.createVoiceRecording({
+      //     textHash,
+      //     role,
+      //     stepId,
+      //     voice: selectedVoice,
+      //     audioData,
+      //     fileSize: buffer.length,
+      //     duration: null
+      //   });
+      //   console.log(`Cached new voice recording with hash: ${textHash}`);
+      // } catch (cacheError) {
+      //   console.error('Error caching voice recording:', cacheError);
+      //   // Continue even if caching fails
+      // }
       
       res.set({
         'Content-Type': 'audio/mpeg',
