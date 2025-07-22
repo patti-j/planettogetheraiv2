@@ -1181,7 +1181,7 @@ function TourManagementSection() {
       });
       return;
     }
-    const selectedTours = toursFromAPI.filter((tour: any) => selectedRoles.includes(tour.role));
+    const selectedTours = toursFromAPI.filter((tour: any) => selectedRoles.includes(tour.roleDisplayName));
     setVoiceGenerationTours(selectedTours);
     setShowVoiceGenerationDialog(true);
   };
@@ -1220,8 +1220,8 @@ function TourManagementSection() {
             Regenerate Selected ({selectedRoles.length})
           </Button>
           <Button
-            onClick={handleGenerateVoiceForAll}
-            disabled={voiceGenerationMutation.isPending || !toursFromAPI?.length}
+            onClick={handleGenerateVoiceForSelected}
+            disabled={voiceGenerationMutation.isPending || selectedRoles.length === 0}
             variant="outline"
             className="border-green-300 text-green-600 hover:bg-green-50"
             size="sm"
@@ -1231,7 +1231,7 @@ function TourManagementSection() {
             ) : (
               <Mic className="h-4 w-4 mr-2" />
             )}
-            Voice Generation
+            Voice Generation ({selectedRoles.length})
           </Button>
 
           <Button
