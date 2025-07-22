@@ -284,6 +284,15 @@ The application uses a modern full-stack architecture with strong typing through
 - Enhanced tour conclusion guidelines to prevent users from thinking they've seen all available features
 - Tours now explicitly encourage users to "Explore other roles to see additional capabilities" ensuring comprehensive platform discovery
 
+✓ **Tour Voice Narration Overlap Bug Fix (July 22, 2025)**:
+- Fixed critical audio management issue where using back button during tours caused multiple voice recordings to play simultaneously
+- Enhanced stopSpeech function with comprehensive audio cleanup including event listener removal and proper resource management
+- Added audio state checks in playPreloadedAudio functions to prevent multiple audio streams from starting concurrently
+- Improved useEffect for step changes to call stopSpeech before starting new audio with extended delay for proper cleanup
+- Enhanced handlePrevious function to reset audio completed state and ensure clean audio transitions
+- Added isLoadingVoice and isPlaying state guards to prevent race conditions during navigation
+- Audio management now properly handles rapid navigation changes without overlapping voice narrations
+
 ✓ **Tour Window Responsive Design & Scheduling Optimizer Permission Fix (July 22, 2025)**:
 - Fixed critical "Can't find variable: role" JavaScript error in GuidedTour component by replacing undefined role references in handleSkipTour function
 - Updated all role variable references to use proper roleData?.name queries and roleId for filtering throughout the component

@@ -514,18 +514,10 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   
   // Play cached audio directly from server for a specific step  
   const playPreloadedAudio = async (stepId: string) => {
-    if (!voiceEnabled) return;
+    if (!voiceEnabled || isLoadingVoice || isPlaying) return;
     
-    // Stop any currently playing audio
-    if (speechRef.current) {
-      if (speechRef.current instanceof Audio) {
-        speechRef.current.pause();
-        speechRef.current.currentTime = 0;
-      } else if (speechRef.current instanceof SpeechSynthesisUtterance) {
-        speechSynthesis.cancel();
-      }
-      speechRef.current = null;
-    }
+    // Stop any currently playing audio first
+    stopSpeech();
     
     // Always use server-side cached audio for instant playback
     const currentStepData = tourSteps.find(step => step.id === stepId);
@@ -604,18 +596,10 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
 
   // Separate function for voice toggle that bypasses voice enabled check
   const playPreloadedAudioForToggle = async (stepId: string) => {
-    if (isPlaying) return;
+    if (isPlaying || isLoadingVoice) return;
     
-    // Stop any currently playing audio
-    if (speechRef.current) {
-      if (speechRef.current instanceof Audio) {
-        speechRef.current.pause();
-        speechRef.current.currentTime = 0;
-      } else if (speechRef.current instanceof SpeechSynthesisUtterance) {
-        speechSynthesis.cancel();
-      }
-      speechRef.current = null;
-    }
+    // Stop any currently playing audio first
+    stopSpeech();
     
     // Always use server-side cached audio for instant playback
     const currentStepData = tourSteps.find(step => step.id === stepId);
@@ -741,8 +725,10 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   useEffect(() => {
     if (voiceEnabled && tourSteps[currentStep] && currentStep > 0) {
       const currentStepData = tourSteps[currentStep];
-      // Use server-side cached audio for instant playback
-      setTimeout(() => playPreloadedAudio(currentStepData.id), 50); 
+      // Stop any existing audio before starting new audio
+      stopSpeech();
+      // Use server-side cached audio for instant playback with longer delay to ensure cleanup
+      setTimeout(() => playPreloadedAudio(currentStepData.id), 100); 
     }
   }, [currentStep, voiceEnabled]);
 
@@ -815,6 +801,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
 
   const handlePrevious = () => {
     stopSpeech(); // Stop current speech before proceeding
+    setAudioCompleted(false); // Reset audio completed state for previous step
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
@@ -940,10 +927,13 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   };
 
   const stopSpeech = () => {
+    // Stop any Audio elements
     if (speechRef.current) {
       if (speechRef.current instanceof Audio) {
         speechRef.current.pause();
         speechRef.current.currentTime = 0;
+        speechRef.current.removeEventListener('ended', () => {});
+        speechRef.current.removeEventListener('error', () => {});
       }
       speechRef.current = null;
     }
@@ -954,6 +944,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     }
     
     setIsPlaying(false);
+    setIsLoadingVoice(false);
   };
 
   const toggleVoice = () => {
