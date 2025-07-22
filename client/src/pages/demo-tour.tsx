@@ -215,7 +215,7 @@ export default function DemoTour() {
       return await response.json();
     },
     onSuccess: (participant) => {
-      console.log("Participant created:", participant);
+      console.log("Participant created:", participant, "Voice narration enabled:", participant.voiceNarrationEnabled);
       setParticipantId(participant.id);
       setShowParticipantForm(false);
       startDemoTour(participant.primaryRole, participant.voiceNarrationEnabled);

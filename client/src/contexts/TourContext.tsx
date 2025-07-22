@@ -27,13 +27,22 @@ export function TourProvider({ children }: { children: ReactNode }) {
       setIsActive(true);
       setCurrentRole(tourData.role);
       setVoiceEnabled(tourData.voiceEnabled || false);
-      console.log("Restored active tour from localStorage:", tourData);
+      console.log("Restored active tour from localStorage:", tourData, "voice enabled:", tourData.voiceEnabled);
     }
   }, []);
 
-  // Monitor authentication state - close tour if user signs out
+  // Monitor authentication state - close tour if user signs out (but not during demo transitions)
   useEffect(() => {
     if (!isLoading && !isAuthenticated && isActive) {
+      // Check if this is a demo authentication transition by looking for demo token or tour state
+      const demoToken = localStorage.getItem("authToken");
+      const savedTourState = localStorage.getItem("activeDemoTour");
+      
+      if (demoToken?.includes("demo_") || savedTourState) {
+        console.log("Demo authentication transition detected - preserving tour state");
+        return; // Don't close tour during demo authentication process
+      }
+      
       console.log("User signed out during tour - closing tour window");
       setIsActive(false);
       setCurrentRole("");
@@ -43,17 +52,19 @@ export function TourProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated, isLoading, isActive]);
 
   const startTour = (role: string, voiceEnabledParam = false) => {
-    console.log("Starting global tour for role:", role, "with voice:", voiceEnabledParam);
+    console.log("TourContext startTour called with role:", role, "voiceEnabledParam:", voiceEnabledParam);
     setIsActive(true);
     setCurrentRole(role);
     setVoiceEnabled(voiceEnabledParam);
     
     // Save tour state to localStorage
-    localStorage.setItem("activeDemoTour", JSON.stringify({ 
+    const tourData = { 
       role, 
       active: true, 
       voiceEnabled: voiceEnabledParam 
-    }));
+    };
+    localStorage.setItem("activeDemoTour", JSON.stringify(tourData));
+    console.log("Saved tour state to localStorage:", tourData);
   };
 
   const completeTour = () => {
