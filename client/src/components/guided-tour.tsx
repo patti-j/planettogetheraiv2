@@ -200,7 +200,7 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const cardRef = useRef<HTMLDivElement>(null);
-  const speechRef = useRef<Audio | SpeechSynthesisUtterance | null>(null);
+  const speechRef = useRef<HTMLAudioElement | SpeechSynthesisUtterance | null>(null);
 
   const tourSteps = getTourSteps(role);
   const progress = ((currentStep + 1) / tourSteps.length) * 100;

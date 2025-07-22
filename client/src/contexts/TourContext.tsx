@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { GuidedTour } from "@/components/guided-tour";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TourContextType {
   isActive: boolean;
@@ -16,6 +17,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const [isActive, setIsActive] = useState(false);
   const [currentRole, setCurrentRole] = useState("");
   const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const { isAuthenticated, isLoading } = useAuth();
 
   // Check localStorage for active tour on mount
   useEffect(() => {
@@ -28,6 +30,17 @@ export function TourProvider({ children }: { children: ReactNode }) {
       console.log("Restored active tour from localStorage:", tourData);
     }
   }, []);
+
+  // Monitor authentication state - close tour if user signs out
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated && isActive) {
+      console.log("User signed out during tour - closing tour window");
+      setIsActive(false);
+      setCurrentRole("");
+      setVoiceEnabled(false);
+      localStorage.removeItem("activeDemoTour");
+    }
+  }, [isAuthenticated, isLoading, isActive]);
 
   const startTour = (role: string, voiceEnabledParam = false) => {
     console.log("Starting global tour for role:", role, "with voice:", voiceEnabledParam);
