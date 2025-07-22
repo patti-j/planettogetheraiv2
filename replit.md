@@ -138,6 +138,9 @@ The application uses a modern full-stack architecture with strong typing through
 - **NEW: Audio Playback Fix**: Resolved voice narration playback issues with proper browser audio handling and fallback mechanisms
 - **NEW: Audio Pre-Loading System**: Implemented smart audio pre-loading that generates all voice content at tour start for instant playbook without waiting
 - **NEW: Resume Tour Feature**: Added resume tour button that appears after users exit the guided tour, allowing them to continue from where they left off
+- **NEW: Replay Voice Option**: Added replay button with RotateCcw icon allowing users to re-hear current step narration on demand
+- **NEW: Voice Caching System**: Re-enabled permanent database storage for generated voices ensuring subsequent tours load instantly without regenerating audio
+- **NEW: Duplicate Prevention**: Implemented comprehensive server-side request deduplication using Promise tracking to prevent overlapping audio generation
 - Implemented automatic speech synthesis on tour step changes with gender-based voice selection (male/female)
 - Added adjustable speech rate controls and proper speech cancellation on navigation
 - Voice functionality includes manual play/pause controls alongside automatic narration for enhanced accessibility
@@ -147,6 +150,7 @@ The application uses a modern full-stack architecture with strong typing through
 - Enhanced narrations now explain business value and feature benefits rather than just describing what's visible on screen
 - Optimized server-side text-to-speech with faster model selection and improved caching for reduced latency
 - Demo users no longer see intrusive onboarding popups - they go directly into their guided tour experience
+- Voice recordings now permanently stored in database with usage tracking for analytics and performance optimization
 
 ✓ **Demo Tour Window Enhancement - Draggable & Repositioned (July 22, 2025)**:
 - Made guided tour window smaller and draggable for improved user experience

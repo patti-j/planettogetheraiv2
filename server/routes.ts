@@ -3640,7 +3640,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const cacheKey = `${text}-${voice}-${gender}-${speed}`;
       const textHash = crypto.createHash('sha256').update(cacheKey).digest('hex');
 
-      // Check cache first (temporarily skip caching to ensure voice generation works)
+      // Check cache first - enable caching for permanent voice storage
       console.log(`Checking for existing voice generation or cache for hash: ${textHash}`);
       
       // If this exact request is already being processed, wait for it
@@ -3661,38 +3661,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // If waiting failed, continue to generate new audio
         }
       }
-      // const cachedRecording = await storage.getVoiceRecording(textHash);
-      // 
-      // if (cachedRecording) {
-      //   console.log(`Found cached recording, usage count: ${cachedRecording.usageCount}`);
-      //   await storage.updateVoiceRecordingUsage(cachedRecording.id);
-      //   
-      //   // Return cached audio
-      //   const audioBuffer = Buffer.from(cachedRecording.audioData, 'base64');
-      //   res.set({
-      //     'Content-Type': 'audio/mpeg',
-      //     'Content-Length': audioBuffer.length,
-      //     'Cache-Control': 'public, max-age=7200',
-      //     'X-Content-Type-Options': 'nosniff',
-      //     'X-Voice-Cache': 'hit'
-      //   });
-      //   return res.send(audioBuffer);
-      // }
+      // Check database cache for existing recording
+      const cachedRecording = await storage.getVoiceRecording(textHash);
+      
+      if (cachedRecording) {
+        console.log(`Found cached recording, usage count: ${cachedRecording.usageCount || 0}`);
+        await storage.updateVoiceRecordingUsage(cachedRecording.id);
+        
+        // Return cached audio
+        const audioBuffer = Buffer.from(cachedRecording.audioData, 'base64');
+        res.set({
+          'Content-Type': 'audio/mpeg',
+          'Content-Length': audioBuffer.length,
+          'Cache-Control': 'public, max-age=7200',
+          'X-Content-Type-Options': 'nosniff',
+          'X-Voice-Cache': 'hit'
+        });
+        return res.send(audioBuffer);
+      }
+
+      // Choose voice based on gender preference outside the promise
+      const voiceMap = {
+        female: ["nova", "alloy", "shimmer"], 
+        male: ["echo", "fable", "onyx"]
+      };
+      
+      const availableVoices = voiceMap[gender as keyof typeof voiceMap] || voiceMap.female;
+      const selectedVoice = availableVoices.includes(voice) ? voice : availableVoices[0];
 
       // Generate new voice if not cached - create a promise to track this generation
       const voiceGenerationPromise = (async () => {
         const openai = new OpenAI({
           apiKey: process.env.OPENAI_API_KEY,
         });
-
-        // Choose voice based on gender preference
-        const voiceMap = {
-          female: ["nova", "alloy", "shimmer"], 
-          male: ["echo", "fable", "onyx"]
-        };
-        
-        const availableVoices = voiceMap[gender as keyof typeof voiceMap] || voiceMap.female;
-        const selectedVoice = availableVoices.includes(voice) ? voice : availableVoices[0];
 
         console.log(`Generating AI speech for text: "${text.substring(0, 50)}..." using voice: ${selectedVoice}`);
 
@@ -3717,23 +3718,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Clean up the tracking once complete
       activeVoiceRequests.delete(textHash);
       
-      // Cache the generated audio for future use (temporarily disabled)
-      // try {
-      //   const audioData = buffer.toString('base64');
-      //   await storage.createVoiceRecording({
-      //     textHash,
-      //     role,
-      //     stepId,
-      //     voice: selectedVoice,
-      //     audioData,
-      //     fileSize: buffer.length,
-      //     duration: null
-      //   });
-      //   console.log(`Cached new voice recording with hash: ${textHash}`);
-      // } catch (cacheError) {
-      //   console.error('Error caching voice recording:', cacheError);
-      //   // Continue even if caching fails
-      // }
+      // Cache the generated audio for future use
+      try {
+        const audioData = buffer.toString('base64');
+        await storage.createVoiceRecording({
+          textHash,
+          role,
+          stepId,
+          voice: selectedVoice,
+          audioData,
+          fileSize: buffer.length,
+          duration: null
+        });
+        console.log(`Cached new voice recording with hash: ${textHash}`);
+      } catch (cacheError) {
+        console.error('Error caching voice recording:', cacheError);
+        // Continue even if caching fails
+      }
       
       res.set({
         'Content-Type': 'audio/mpeg',
