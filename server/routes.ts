@@ -3921,11 +3921,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
 
     try {
+      // Convert kebab-case to proper role name (e.g., "production-scheduler" -> "Production Scheduler")
+      const properRoleName = roleName
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+      
       // Get role by name using storage interface
-      const role = await storage.getRoleByName(roleName);
+      let role = await storage.getRoleByName(properRoleName);
+      
+      // If not found with proper name, try original name
+      if (!role) {
+        role = await storage.getRoleByName(roleName);
+      }
       
       if (!role) {
-        console.log(`Role not found: ${roleName}, using default routes`);
+        console.log(`Role not found: ${roleName} (tried ${properRoleName}), using default routes`);
         return { '/': allSystemRoutes['/'] }; // Fallback to dashboard only
       }
 
