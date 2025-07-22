@@ -265,6 +265,13 @@ The application uses a modern full-stack architecture with strong typing through
 - Additional roles section now correctly shows only roles without existing tours, eliminating duplicates like Director appearing in both areas
 - Streamlined interface provides efficient bulk operations while maintaining clear separation between existing and missing tour content
 
+✓ **Role Demonstration Center Enhancement - Clear Instructions (July 22, 2025)**:
+- Added comprehensive step-by-step instructions explaining how role switching works in a highlighted info box
+- Enhanced role cards with "Will redirect to:" information showing where each role will be taken after switching
+- Added "Return to Trainer" button that appears when demonstrating other roles for easy navigation back
+- Improved visual design with helpful tips and clearer explanations of the role switching process
+- Users now understand: click role card → permissions change → redirect to role-specific page → explore features → return to training
+
 ✓ **AI Button Text Cleanup & Enhanced Role Switching UX (July 22, 2025)**:
 - Removed "AI" prefix from all buttons that used AI functionality while maintaining AI visual branding (purple gradients, Sparkles icons)
 - Updated button text: "AI Regenerate Selected" → "Regenerate Selected", "AI Create" → "Create", "AI Generate Tours" → "Generate Tours", etc.

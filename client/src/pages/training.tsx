@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play, UserCheck, Settings, Shield, Edit3, Eye, Volume2, MessageSquare, Sparkles, RefreshCw, ChevronDown, ChevronRight, FileText, Clock, Plus, AlertCircle, Trash2, CheckCircle, AlertTriangle, Mic, VolumeX } from 'lucide-react';
+import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play, UserCheck, Settings, Shield, Edit3, Eye, Volume2, MessageSquare, Sparkles, RefreshCw, ChevronDown, ChevronRight, FileText, Clock, Plus, AlertCircle, Trash2, CheckCircle, AlertTriangle, Mic, VolumeX, Info, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, usePermissions } from '@/hooks/useAuth';
 import { RoleSwitcher } from '@/components/role-switcher';
@@ -432,9 +432,26 @@ function RoleDemonstrationSection({ userId, currentRole }: RoleDemonstrationSect
     <div className="space-y-6">
       <div className="mb-6">
         <h3 className="text-lg font-semibold mb-2">Role Demonstration Center</h3>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <div className="flex items-start">
+            <Info className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
+            <div className="text-sm text-blue-800">
+              <p className="font-medium mb-2">How Role Switching Works:</p>
+              <ol className="list-decimal ml-4 space-y-1">
+                <li>Click "Demonstrate Role" on any role card below</li>
+                <li>Your permissions temporarily change to that role's permissions</li>
+                <li>You'll be redirected to the appropriate page for that role</li>
+                <li>Use the sidebar navigation to explore features available to that role</li>
+                <li>Return to Training → Role Demonstrations to switch to another role</li>
+              </ol>
+              <p className="mt-2 text-xs text-blue-600">
+                💡 <strong>Tip:</strong> Each role sees different menu items and features based on their permissions
+              </p>
+            </div>
+          </div>
+        </div>
         <p className="text-gray-600">
-          Switch between different system roles to demonstrate features and permissions. 
-          Each role provides access to specific system areas and functionality.
+          Experience the system from different user perspectives. Perfect for training sessions and sales demonstrations.
         </p>
       </div>
 
@@ -446,12 +463,30 @@ function RoleDemonstrationSection({ userId, currentRole }: RoleDemonstrationSect
                 <UserCheck className="h-5 w-5 text-blue-600 mr-2" />
                 <CardTitle className="text-lg text-blue-800">Currently Demonstrating</CardTitle>
               </div>
-              <Badge variant="default" className="bg-blue-600">
-                {currentRole.name}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="default" className="bg-blue-600">
+                  {currentRole.name}
+                </Badge>
+                {currentRole.name !== 'Trainer' && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDemonstrateRole(9)} // Trainer role ID is 9
+                    className="text-xs border-blue-300 text-blue-700 hover:bg-blue-100"
+                  >
+                    <ArrowLeft className="h-3 w-3 mr-1" />
+                    Return to Trainer
+                  </Button>
+                )}
+              </div>
             </div>
             <CardDescription className="text-blue-700">
               {currentRole.description}
+              {currentRole.name !== 'Trainer' && (
+                <span className="block mt-1 text-xs text-blue-600">
+                  Use the sidebar menu to explore features available to this role, or click "Return to Trainer" above
+                </span>
+              )}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -492,6 +527,23 @@ function RoleDemonstrationSection({ userId, currentRole }: RoleDemonstrationSect
                     <Badge variant="outline">
                       {role.permissionCount || 0} permissions
                     </Badge>
+                  </div>
+                  
+                  {/* What this role will see */}
+                  <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                    <span className="font-medium">Will redirect to: </span>
+                    {(() => {
+                      const roleNameLower = role.name.toLowerCase();
+                      if (roleNameLower.includes('director')) return 'Business Goals';
+                      if (roleNameLower.includes('scheduler')) return 'Production Schedule';
+                      if (roleNameLower.includes('systems')) return 'Systems Management';
+                      if (roleNameLower.includes('admin')) return 'User Management';
+                      if (roleNameLower.includes('operator')) return 'Operator Dashboard';
+                      if (roleNameLower.includes('sales')) return 'Sales Dashboard';
+                      if (roleNameLower.includes('maintenance')) return 'Maintenance';
+                      if (roleNameLower.includes('manager')) return 'Analytics';
+                      return 'Production Schedule';
+                    })()}
                   </div>
                   
                   <Button
