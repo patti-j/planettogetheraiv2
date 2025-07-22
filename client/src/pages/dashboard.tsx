@@ -838,22 +838,23 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Empty State */}
+          {/* Compact Empty State */}
           {visibleDashboards.size === 0 && (
-            <div className="mb-6">
-              <div className="text-center py-12 text-gray-500 border border-gray-200 rounded-lg">
-                <BarChart3 className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-lg font-medium mb-2">No Dashboards Selected</h3>
-                <p className="text-sm">
-                  Select one or more dashboards from the dropdown above to view their widgets.
-                </p>
+            <div className="mb-2">
+              <div className="text-center py-2 px-4 text-gray-500 bg-gray-50 border border-gray-200 rounded">
+                <div className="flex items-center justify-center text-xs text-gray-400">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  No dashboards selected - select from dropdown to view metrics
+                </div>
               </div>
             </div>
           )}
         </header>
 
-        {/* Gantt Container */}
-        <div className="flex-1 bg-white m-6 rounded-lg shadow-sm border border-gray-200 overflow-hidden min-h-0">
+        {/* Gantt Container - Reduce top margin when no dashboards */}
+        <div className={`flex-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden min-h-0 ${
+          visibleDashboards.size === 0 ? 'mt-2 mx-6 mb-6' : 'm-6'
+        }`}>
           {isMobile ? (
             <div className="h-full flex flex-col">
               <MobileSchedule
