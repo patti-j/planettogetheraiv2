@@ -120,16 +120,38 @@ export default function Reports() {
 
   const createAIReportMutation = useMutation({
     mutationFn: async (prompt: string) => {
-      return await apiRequest('POST', '/api/ai-agent', { command: `CREATE_REPORT: ${prompt}` });
+      // First get a title from AI
+      const titleResponse = await apiRequest('POST', '/api/ai-agent', { 
+        command: `Generate a concise professional title (maximum 5 words) for this report request: "${prompt}". Return only the title, nothing else.` 
+      });
+      
+      return { 
+        titleResponse, 
+        reportResponse: await apiRequest('POST', '/api/ai-agent', { command: `CREATE_REPORT: ${prompt}` })
+      };
     },
     onSuccess: (data) => {
-      // Create a basic report from the AI response regardless of AI response format
+      // Extract title from AI response
+      let aiTitle = '';
+      try {
+        if (data.titleResponse && typeof data.titleResponse === 'string') {
+          aiTitle = data.titleResponse.replace(/^["']|["']$/g, '').trim();
+        } else if (data.titleResponse?.message) {
+          aiTitle = data.titleResponse.message.replace(/^["']|["']$/g, '').trim();
+        }
+      } catch (error) {
+        console.log('Error extracting AI title:', error);
+      }
+      
+      // Fallback to keyword extraction if AI title is empty or too long
       const reportType = aiPrompt.toLowerCase().includes('resource') ? 'resource' : 
                         aiPrompt.toLowerCase().includes('efficiency') ? 'efficiency' : 'production';
       
+      const finalTitle = (aiTitle && aiTitle.length <= 50) ? aiTitle : generateConciseTitle(aiPrompt, reportType);
+      
       const newReport: Report = {
         id: Date.now().toString(),
-        title: generateConciseTitle(aiPrompt, reportType),
+        title: finalTitle,
         type: reportType,
         description: aiPrompt,
         data: generateReportData(reportType),
