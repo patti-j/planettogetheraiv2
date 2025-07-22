@@ -102,6 +102,22 @@ export default function Reports() {
     },
   });
 
+  const generateConciseTitle = (prompt: string, type: string): string => {
+    // Extract key words and create a meaningful title
+    const words = prompt.toLowerCase().split(' ').filter(word => 
+      !['report', 'create', 'generate', 'show', 'give', 'me', 'a', 'an', 'the', 'of', 'for', 'with'].includes(word)
+    );
+    
+    // Get first 3-4 meaningful words and capitalize properly
+    const keyWords = words.slice(0, 4).map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    );
+    
+    // Create title based on type and key words
+    const typePrefix = type.charAt(0).toUpperCase() + type.slice(1);
+    return keyWords.length > 0 ? `${typePrefix}: ${keyWords.join(' ')}` : `${typePrefix} Report`;
+  };
+
   const createAIReportMutation = useMutation({
     mutationFn: async (prompt: string) => {
       return await apiRequest('POST', '/api/ai-agent', { command: `CREATE_REPORT: ${prompt}` });
@@ -113,9 +129,9 @@ export default function Reports() {
       
       const newReport: Report = {
         id: Date.now().toString(),
-        title: `AI Generated Report: ${aiPrompt.substring(0, 50)}${aiPrompt.length > 50 ? '...' : ''}`,
+        title: generateConciseTitle(aiPrompt, reportType),
         type: reportType,
-        description: `Report generated from AI prompt: "${aiPrompt}"`,
+        description: aiPrompt,
         data: generateReportData(reportType),
         createdAt: new Date(),
       };
