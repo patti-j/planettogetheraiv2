@@ -76,6 +76,44 @@ const getAvailableRoles = () => [
   }
 ];
 
+// Helper function to get role icon based on role name
+const getRoleIcon = (roleName: string): React.ElementType => {
+  const roleIconMapping: Record<string, React.ElementType> = {
+    "Director": TrendingUp,
+    "Production Scheduler": BarChart3,
+    "Plant Manager": Users,
+    "Systems Manager": Settings,
+    "Administrator": Settings,
+    "IT Administrator": Settings,
+    "IT Systems Administrator": Settings,
+    "Maintenance Technician": Settings,
+    "Data Analyst": BarChart3,
+    "Trainer": Users,
+    "Shop Floor Operations": Settings
+  };
+  
+  return roleIconMapping[roleName] || Settings;
+};
+
+// Helper function to convert role display name to role key for mapping
+const getRoleKey = (roleName: string): string => {
+  const roleKeyMapping: Record<string, string> = {
+    "Director": "director",
+    "Production Scheduler": "production-scheduler", 
+    "Plant Manager": "plant-manager",
+    "Systems Manager": "systems-manager",
+    "Administrator": "administrator",
+    "IT Administrator": "it-administrator",
+    "IT Systems Administrator": "it-administrator",
+    "Maintenance Technician": "maintenance-technician",
+    "Data Analyst": "data-analyst",
+    "Trainer": "trainer",
+    "Shop Floor Operations": "shop-floor-operations"
+  };
+  
+  return roleKeyMapping[roleName] || roleName.toLowerCase().replace(/\s+/g, '-');
+};
+
 // Define role-specific tour steps - now fetched from database via roleId
 const getTourSteps = (roleId: number): TourStep[] => {
   const commonSteps: TourStep[] = [
@@ -1216,29 +1254,62 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                 </p>
               </div>
 
-              {/* Role Selection Grid */}
+              {/* Available Tours Grid - Show All Tours from Database */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {getAvailableRoles().filter(availableRole => availableRole.id !== roleId).map((availableRole) => (
-                  <Button
-                    key={availableRole.id}
-                    onClick={() => handleContinueWithNewRole(availableRole.id)}
-                    variant="outline"
-                    className="h-auto p-4 text-left hover:bg-blue-50 hover:border-blue-300 min-h-[80px] flex items-start"
-                  >
-                    <div className="flex items-start gap-3 w-full">
-                      <availableRole.icon className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-gray-900 mb-1">{availableRole.name}</div>
-                        <div className="text-xs text-gray-500 leading-relaxed overflow-hidden">
-                          {availableRole.description.length > 60 
-                            ? `${availableRole.description.substring(0, 60)}...` 
-                            : availableRole.description
-                          }
+                {toursFromAPI
+                  .filter((tour: any) => tour.roleId !== roleId) // Exclude current role
+                  .map((tour: any) => {
+                    const tourRole = tour.roleDisplayName || tour.roleName || `Role ${tour.roleId}`;
+                    const tourDescription = tour.tourData?.description || tour.description || "Explore features and capabilities for this role";
+                    const roleIcon = getRoleIcon(tourRole);
+                    
+                    return (
+                      <Button
+                        key={tour.id}
+                        onClick={() => handleContinueWithNewRole(getRoleKey(tourRole))}
+                        variant="outline"
+                        className="h-auto p-4 text-left hover:bg-blue-50 hover:border-blue-300 min-h-[80px] flex items-start"
+                      >
+                        <div className="flex items-start gap-3 w-full">
+                          <roleIcon className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-gray-900 mb-1">{tourRole}</div>
+                            <div className="text-xs text-gray-500 leading-relaxed overflow-hidden">
+                              {tourDescription.length > 60 
+                                ? `${tourDescription.substring(0, 60)}...` 
+                                : tourDescription
+                              }
+                            </div>
+                          </div>
+                        </div>
+                      </Button>
+                    );
+                  })}
+                
+                {/* Fallback to hardcoded roles if no tours from database */}
+                {toursFromAPI.length === 0 && getAvailableRoles()
+                  .filter(availableRole => parseInt(availableRole.id) !== roleId)
+                  .map((availableRole) => (
+                    <Button
+                      key={availableRole.id}
+                      onClick={() => handleContinueWithNewRole(availableRole.id)}
+                      variant="outline"
+                      className="h-auto p-4 text-left hover:bg-blue-50 hover:border-blue-300 min-h-[80px] flex items-start"
+                    >
+                      <div className="flex items-start gap-3 w-full">
+                        <availableRole.icon className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-gray-900 mb-1">{availableRole.name}</div>
+                          <div className="text-xs text-gray-500 leading-relaxed overflow-hidden">
+                            {availableRole.description.length > 60 
+                              ? `${availableRole.description.substring(0, 60)}...` 
+                              : availableRole.description
+                            }
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Button>
-                ))}
+                    </Button>
+                  ))}
               </div>
 
               {/* Action Buttons */}
