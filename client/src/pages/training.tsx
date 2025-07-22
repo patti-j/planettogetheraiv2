@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play, UserCheck, Settings, Shield } from 'lucide-react';
+import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play, UserCheck, Settings, Shield, Edit3, Eye, Volume2, MessageSquare, Sparkles, RefreshCw, ChevronDown, ChevronRight, FileText, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, usePermissions } from '@/hooks/useAuth';
 import { RoleSwitcher } from '@/components/role-switcher';
@@ -205,6 +205,7 @@ export default function Training() {
         <TabsList>
           <TabsTrigger value="modules">Training Modules</TabsTrigger>
           <TabsTrigger value="roles">Role Demonstrations</TabsTrigger>
+          <TabsTrigger value="tours">Tour Management</TabsTrigger>
           <TabsTrigger value="resources">Training Resources</TabsTrigger>
         </TabsList>
 
@@ -273,6 +274,10 @@ export default function Training() {
 
         <TabsContent value="roles" className="space-y-6">
           <RoleDemonstrationSection userId={user?.id} currentRole={currentRole as Role} />
+        </TabsContent>
+
+        <TabsContent value="tours" className="space-y-6">
+          <TourManagementSection />
         </TabsContent>
 
         <TabsContent value="resources" className="space-y-6">
@@ -530,6 +535,476 @@ function RoleDemonstrationSection({ userId, currentRole }: RoleDemonstrationSect
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// Tour Management Component
+interface TourStep {
+  id: string;
+  title: string;
+  description: string;
+  page: string;
+  benefits: string[];
+  actionText: string;
+  duration: string;
+}
+
+interface TourData {
+  role: string;
+  totalSteps: number;
+  totalDuration: string;
+  steps: TourStep[];
+  voiceScripts: Record<string, string>;
+}
+
+function TourManagementSection() {
+  const { toast } = useToast();
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [expandedTours, setExpandedTours] = useState<string[]>([]);
+  const [editingStep, setEditingStep] = useState<{role: string, stepId: string} | null>(null);
+
+  // Mock tour data - in real implementation this would come from the tour configuration
+  const tourData: Record<string, TourData> = {
+    'director': {
+      role: 'Director',
+      totalSteps: 4,
+      totalDuration: '7 min',
+      steps: [
+        {
+          id: 'welcome',
+          title: 'Welcome to Your Demo',
+          description: 'Let\'s explore the key features that will transform your manufacturing operations.',
+          page: 'current',
+          benefits: ['See real-time production insights', 'Experience intelligent scheduling', 'Understand role-based workflows'],
+          actionText: 'Start Tour',
+          duration: '2 min'
+        },
+        {
+          id: 'business-goals',
+          title: 'Strategic Business Goals',
+          description: 'Define and track strategic objectives with KPI monitoring and risk management.',
+          page: '/business-goals',
+          benefits: ['Align production with business objectives', 'Monitor KPIs in real-time', 'Identify and mitigate risks early'],
+          actionText: 'Explore Goals',
+          duration: '2 min'
+        },
+        {
+          id: 'analytics',
+          title: 'Executive Analytics',
+          description: 'Access comprehensive dashboards with production metrics and performance insights.',
+          page: '/analytics',
+          benefits: ['Make data-driven decisions', 'Identify optimization opportunities', 'Track performance trends'],
+          actionText: 'View Analytics',
+          duration: '2 min'
+        },
+        {
+          id: 'demo-complete',
+          title: 'Demo Experience Complete',
+          description: 'You now have access to explore all PlanetTogether features using the sidebar navigation.',
+          page: 'current',
+          benefits: ['Use the sidebar to navigate between features', 'All demo data is available for exploration', 'Contact us to learn about implementation'],
+          actionText: 'Finish Tour',
+          duration: '1 min'
+        }
+      ],
+      voiceScripts: {
+        'business-goals': 'Welcome to Strategic Business Goals. Here you can define and track strategic objectives with comprehensive KPI monitoring and risk management capabilities.',
+        'analytics': 'Let me show you Executive Analytics. Access comprehensive dashboards with production metrics and performance insights to make data-driven decisions.',
+        'demo-complete': 'Congratulations! You have completed the Director demo experience. You now have access to explore all PlanetTogether features.'
+      }
+    },
+    'production-scheduler': {
+      role: 'Production Scheduler',
+      totalSteps: 5,
+      totalDuration: '9 min',
+      steps: [
+        {
+          id: 'welcome',
+          title: 'Welcome to Your Demo',
+          description: 'Let\'s explore the key features that will transform your manufacturing operations.',
+          page: 'current',
+          benefits: ['See real-time production insights', 'Experience intelligent scheduling', 'Understand role-based workflows'],
+          actionText: 'Start Tour',
+          duration: '2 min'
+        },
+        {
+          id: 'schedule',
+          title: 'Production Schedule',
+          description: 'Interactive Gantt charts for visual production planning and resource allocation.',
+          page: '/',
+          benefits: ['Drag-and-drop operation scheduling', 'Real-time capacity visualization', 'Optimize resource utilization'],
+          actionText: 'See Schedule',
+          duration: '3 min'
+        },
+        {
+          id: 'boards',
+          title: 'Production Boards',
+          description: 'Organize jobs, operations, and resources using customizable board views.',
+          page: '/boards',
+          benefits: ['Kanban-style job management', 'Visual workflow organization', 'Customizable board layouts'],
+          actionText: 'View Boards',
+          duration: '2 min'
+        },
+        {
+          id: 'scheduling-optimizer',
+          title: 'Scheduling Optimizer',
+          description: 'AI-powered optimization for multi-operation order planning and resource allocation.',
+          page: '/optimize-orders',
+          benefits: ['Intelligent scheduling recommendations', 'Optimize delivery timelines', 'Balance efficiency and customer satisfaction'],
+          actionText: 'Optimize Orders',
+          duration: '2 min'
+        },
+        {
+          id: 'demo-complete',
+          title: 'Demo Experience Complete',
+          description: 'You now have access to explore all PlanetTogether features using the sidebar navigation.',
+          page: 'current',
+          benefits: ['Use the sidebar to navigate between features', 'All demo data is available for exploration', 'Contact us to learn about implementation'],
+          actionText: 'Finish Tour',
+          duration: '1 min'
+        }
+      ],
+      voiceScripts: {
+        'schedule': 'Welcome to Production Schedule. Use interactive Gantt charts for visual production planning with drag-and-drop operation scheduling and real-time capacity visualization.',
+        'boards': 'Let me show you Production Boards. Organize jobs, operations, and resources using customizable Kanban-style board views for better workflow organization.',
+        'scheduling-optimizer': 'Here is the Scheduling Optimizer. Use AI-powered optimization for multi-operation order planning to balance efficiency and customer satisfaction.'
+      }
+    },
+    'plant-manager': {
+      role: 'Plant Manager',
+      totalSteps: 5,
+      totalDuration: '9 min',
+      steps: [
+        {
+          id: 'welcome',
+          title: 'Welcome to Your Demo',
+          description: 'Let\'s explore the key features that will transform your manufacturing operations.',
+          page: 'current',
+          benefits: ['See real-time production insights', 'Experience intelligent scheduling', 'Understand role-based workflows'],
+          actionText: 'Start Tour',
+          duration: '2 min'
+        },
+        {
+          id: 'plant-overview',
+          title: 'Plant Management',
+          description: 'Comprehensive oversight of plant operations and strategic decision-making.',
+          page: '/plant-manager',
+          benefits: ['Complete plant visibility', 'Strategic planning tools', 'Performance optimization'],
+          actionText: 'Manage Plant',
+          duration: '3 min'
+        },
+        {
+          id: 'capacity-planning',
+          title: 'Capacity Planning',
+          description: 'Plan and optimize production capacity including staffing and equipment.',
+          page: '/capacity-planning',
+          benefits: ['Optimize resource allocation', 'Plan future capacity needs', 'Balance workloads effectively'],
+          actionText: 'Plan Capacity',
+          duration: '2 min'
+        },
+        {
+          id: 'schedule',
+          title: 'Production Schedule',
+          description: 'Monitor and oversee production scheduling from a management perspective.',
+          page: '/',
+          benefits: ['Track production progress', 'Monitor resource utilization', 'Identify operational bottlenecks'],
+          actionText: 'View Schedule',
+          duration: '2 min'
+        },
+        {
+          id: 'demo-complete',
+          title: 'Demo Experience Complete',
+          description: 'You now have access to explore all PlanetTogether features using the sidebar navigation.',
+          page: 'current',
+          benefits: ['Use the sidebar to navigate between features', 'All demo data is available for exploration', 'Contact us to learn about implementation'],
+          actionText: 'Finish Tour',
+          duration: '1 min'
+        }
+      ],
+      voiceScripts: {
+        'plant-overview': 'Welcome to Plant Management. Get comprehensive oversight of plant operations with strategic planning tools and performance optimization capabilities.',
+        'capacity-planning': 'Let me show you Capacity Planning. Plan and optimize production capacity including staffing and equipment for balanced workload management.',
+        'schedule': 'Here is the Production Schedule from a management perspective. Monitor and oversee production scheduling to identify operational bottlenecks.'
+      }
+    },
+    'systems-manager': {
+      role: 'Systems Manager',
+      totalSteps: 4,
+      totalDuration: '7 min',
+      steps: [
+        {
+          id: 'welcome',
+          title: 'Welcome to Your Demo',
+          description: 'Let\'s explore the key features that will transform your manufacturing operations.',
+          page: 'current',
+          benefits: ['See real-time production insights', 'Experience intelligent scheduling', 'Understand role-based workflows'],
+          actionText: 'Start Tour',
+          duration: '2 min'
+        },
+        {
+          id: 'systems-management',
+          title: 'Systems Management',
+          description: 'Configure system settings, manage integrations, and oversee technical operations.',
+          page: '/systems-management',
+          benefits: ['System configuration and monitoring', 'Integration management', 'Technical oversight'],
+          actionText: 'Manage Systems',
+          duration: '3 min'
+        },
+        {
+          id: 'user-management',
+          title: 'User & Role Management',
+          description: 'Manage user accounts, role assignments, and access permissions.',
+          page: '/user-role-assignments',
+          benefits: ['Control user access', 'Manage role permissions', 'Ensure security compliance'],
+          actionText: 'Manage Users',
+          duration: '2 min'
+        },
+        {
+          id: 'demo-complete',
+          title: 'Demo Experience Complete',
+          description: 'You now have access to explore all PlanetTogether features using the sidebar navigation.',
+          page: 'current',
+          benefits: ['Use the sidebar to navigate between features', 'All demo data is available for exploration', 'Contact us to learn about implementation'],
+          actionText: 'Finish Tour',
+          duration: '1 min'
+        }
+      ],
+      voiceScripts: {
+        'systems-management': 'Welcome to Systems Management. Configure system settings, manage integrations, and oversee technical operations with comprehensive monitoring capabilities.',
+        'user-management': 'Let me show you User and Role Management. Control user access, manage role permissions, and ensure security compliance across the system.'
+      }
+    }
+  };
+
+  const allRoles = Object.keys(tourData);
+
+  const generateTourWithAI = useMutation({
+    mutationFn: async (roles: string[]) => {
+      return apiRequest("POST", "/api/ai/generate-tour", { roles });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Tour Generated",
+        description: `AI has successfully regenerated tours for ${selectedRoles.length} role(s)`,
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Failed to generate tour content",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const toggleRole = (role: string) => {
+    setSelectedRoles(prev => 
+      prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
+    );
+  };
+
+  const toggleTourExpansion = (role: string) => {
+    setExpandedTours(prev => 
+      prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
+    );
+  };
+
+  const handleGenerateSelectedTours = () => {
+    if (selectedRoles.length === 0) {
+      toast({
+        title: "No Roles Selected",
+        description: "Please select at least one role to regenerate tours",
+        variant: "destructive",
+      });
+      return;
+    }
+    generateTourWithAI.mutate(selectedRoles);
+  };
+
+  const handleGenerateAllTours = () => {
+    generateTourWithAI.mutate(allRoles);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-start">
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Tour Content Management</h3>
+          <p className="text-gray-600 text-sm">
+            Manage guided tour content, steps, voice scripts, and benefits for each role.
+            Use AI to regenerate and optimize tour experiences.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleGenerateSelectedTours}
+            disabled={generateTourWithAI.isPending || selectedRoles.length === 0}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            AI Regenerate Selected ({selectedRoles.length})
+          </Button>
+          <Button
+            onClick={handleGenerateAllTours}
+            disabled={generateTourWithAI.isPending}
+            variant="outline"
+            className="border-purple-300 text-purple-700 hover:bg-purple-50"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${generateTourWithAI.isPending ? 'animate-spin' : ''}`} />
+            AI Regenerate All Tours
+          </Button>
+        </div>
+      </div>
+
+      {/* Tour Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Object.entries(tourData).map(([role, data]) => (
+          <Card key={role} className={`cursor-pointer transition-all ${selectedRoles.includes(role) ? 'ring-2 ring-purple-500 bg-purple-50' : 'hover:shadow-md'}`}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-semibold text-sm">{data.role}</h4>
+                <input
+                  type="checkbox"
+                  checked={selectedRoles.includes(role)}
+                  onChange={() => toggleRole(role)}
+                  className="rounded text-purple-600"
+                />
+              </div>
+              <div className="space-y-2 text-xs text-gray-600">
+                <div className="flex items-center">
+                  <FileText className="h-3 w-3 mr-1" />
+                  {data.totalSteps} steps
+                </div>
+                <div className="flex items-center">
+                  <Clock className="h-3 w-3 mr-1" />
+                  {data.totalDuration}
+                </div>
+                <div className="flex items-center">
+                  <Volume2 className="h-3 w-3 mr-1" />
+                  {Object.keys(data.voiceScripts).length} voice scripts
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Detailed Tour Management */}
+      <div className="space-y-4">
+        <h4 className="font-semibold">Detailed Tour Configuration</h4>
+        
+        {Object.entries(tourData).map(([role, data]) => (
+          <Card key={role}>
+            <CardHeader 
+              className="cursor-pointer hover:bg-gray-50" 
+              onClick={() => toggleTourExpansion(role)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  {expandedTours.includes(role) ? 
+                    <ChevronDown className="h-4 w-4 mr-2" /> : 
+                    <ChevronRight className="h-4 w-4 mr-2" />
+                  }
+                  <CardTitle className="text-lg">{data.role} Tour</CardTitle>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <span className="flex items-center">
+                    <FileText className="h-4 w-4 mr-1" />
+                    {data.totalSteps} steps
+                  </span>
+                  <span className="flex items-center">
+                    <Clock className="h-4 w-4 mr-1" />
+                    {data.totalDuration}
+                  </span>
+                  <Button size="sm" variant="outline">
+                    <Edit3 className="h-3 w-3 mr-1" />
+                    Edit Tour
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            
+            {expandedTours.includes(role) && (
+              <CardContent className="pt-0">
+                <div className="space-y-6">
+                  {data.steps.map((step, index) => (
+                    <div key={step.id} className="border rounded-lg p-4 bg-gray-50">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center">
+                          <Badge variant="outline" className="mr-3">Step {index + 1}</Badge>
+                          <h5 className="font-semibold">{step.title}</h5>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">{step.duration}</Badge>
+                          <Button size="sm" variant="ghost">
+                            <Edit3 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="grid md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="font-medium mb-2">Description</p>
+                          <p className="text-gray-600 mb-3">{step.description}</p>
+                          
+                          <p className="font-medium mb-2">Page Navigation</p>
+                          <code className="bg-white px-2 py-1 rounded text-xs border">
+                            {step.page}
+                          </code>
+                        </div>
+                        
+                        <div>
+                          <p className="font-medium mb-2">Key Benefits</p>
+                          <ul className="space-y-1 mb-3">
+                            {step.benefits.map((benefit, idx) => (
+                              <li key={idx} className="text-gray-600 text-xs flex items-start">
+                                <span className="text-green-600 mr-1">•</span>
+                                {benefit}
+                              </li>
+                            ))}
+                          </ul>
+                          
+                          {data.voiceScripts[step.id] && (
+                            <div>
+                              <p className="font-medium mb-2 flex items-center">
+                                <Volume2 className="h-3 w-3 mr-1" />
+                                Voice Script
+                              </p>
+                              <div className="bg-white p-2 rounded border text-xs text-gray-700">
+                                {data.voiceScripts[step.id]}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between mt-4 pt-3 border-t">
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <MessageSquare className="h-3 w-3" />
+                          Action: "{step.actionText}"
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="ghost">
+                            <Eye className="h-3 w-3 mr-1" />
+                            Preview
+                          </Button>
+                          <Button size="sm" variant="ghost">
+                            <Volume2 className="h-3 w-3 mr-1" />
+                            Test Voice
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

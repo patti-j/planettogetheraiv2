@@ -3760,6 +3760,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Tour Generation endpoint
+  app.post("/api/ai/generate-tour", async (req, res) => {
+    try {
+      const { roles } = req.body;
+      if (!roles || !Array.isArray(roles)) {
+        return res.status(400).json({ message: "Roles array is required" });
+      }
+
+      // Import OpenAI dynamically
+      const OpenAI = (await import("openai")).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      const prompt = `Generate comprehensive guided tour content for PlanetTogether manufacturing system for these roles: ${roles.join(', ')}.
+      
+For each role, create:
+1. 3-5 tour steps covering key features
+2. Engaging voice scripts for each step
+3. Clear benefits for each feature
+4. Appropriate page navigation paths
+
+Focus on role-specific features:
+- Director: Business goals, analytics, reports
+- Production Scheduler: Scheduling, boards, optimization
+- Plant Manager: Plant oversight, capacity planning
+- Systems Manager: System configuration, user management
+
+Return a JSON object with tour data for each role including steps, voice scripts, and benefits.`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o", // Using latest model
+        messages: [
+          {
+            role: "system",
+            content: "You are a manufacturing software expert creating guided tours for different user roles. Generate comprehensive, engaging tour content with clear benefits and professional voice narration scripts."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        max_tokens: 4000,
+        temperature: 0.7
+      });
+
+      const generatedContent = completion.choices[0].message.content;
+      
+      // Try to parse as JSON, fallback to text response if needed
+      let tourData;
+      try {
+        tourData = JSON.parse(generatedContent || '{}');
+      } catch (parseError) {
+        tourData = { content: generatedContent, roles: roles };
+      }
+
+      res.json({ 
+        success: true,
+        tourData,
+        generatedFor: roles,
+        message: `Tour content generated for ${roles.length} role(s)`
+      });
+
+    } catch (error) {
+      console.error("AI Tour generation error:", error);
+      
+      const errorMessage = error.message || "Unknown error";
+      const isQuotaError = errorMessage.includes('quota') || 
+                          errorMessage.includes('limit') || 
+                          errorMessage.includes('exceeded');
+      
+      if (isQuotaError) {
+        res.status(429).json({ 
+          message: "AI quota exceeded",
+          error: errorMessage,
+          quotaExceeded: true
+        });
+      } else {
+        res.status(500).json({ 
+          message: "Failed to generate tour content",
+          error: errorMessage
+        });
+      }
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
