@@ -1150,6 +1150,7 @@ export const demoTourParticipants = pgTable("demo_tour_participants", {
   jobTitle: varchar("job_title", { length: 255 }),
   primaryRole: varchar("primary_role", { length: 100 }).notNull(),
   additionalRoles: jsonb("additional_roles").$type<string[]>().default([]),
+  voiceNarrationEnabled: boolean("voice_narration_enabled").default(false),
   tourStartedAt: timestamp("tour_started_at").defaultNow(),
   tourCompletedAt: timestamp("tour_completed_at"),
   tourSteps: jsonb("tour_steps").$type<Array<{
