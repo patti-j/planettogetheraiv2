@@ -27,7 +27,7 @@ export default function Sidebar() {
   const [aiActionsPrompt, setAiActionsPrompt] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [quickActionsExpanded, setQuickActionsExpanded] = useState(false);
-  const [desktopQuickActionsExpanded, setDesktopQuickActionsExpanded] = useState(true);
+  const [desktopQuickActionsExpanded, setDesktopQuickActionsExpanded] = useState(false);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const [userProfileOpen, setUserProfileOpen] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
