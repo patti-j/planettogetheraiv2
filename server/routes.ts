@@ -4063,6 +4063,42 @@ ${roles.map(role => {
   return `${role}:\n${Object.entries(accessibleRoutes).map(([path, desc]) => `  - ${path} (${desc})`).join('\n')}`;
 }).join('\n\n')}
 
+MANDATORY FOR TRAINER ROLE: If generating a tour for the "Trainer" role, ALL tour steps MUST navigate to "/training" and MUST include tab targeting. DO NOT use other navigation paths for Trainer tours.
+
+Required Trainer Tour Structure (EXACT FORMAT):
+Step 1: {
+  "stepName": "Training Modules Overview",
+  "navigationPath": "/training", 
+  "target": {"type": "tab", "tabId": "training-modules", "action": "click"},
+  "description": "Explore comprehensive training modules...",
+  "benefits": [...],
+  "voiceScript": "..."
+}
+Step 2: {
+  "stepName": "Role Demonstrations Hub",
+  "navigationPath": "/training",
+  "target": {"type": "tab", "tabId": "role-demonstrations", "action": "click"}, 
+  "description": "Experience interactive role demonstrations...",
+  "benefits": [...],
+  "voiceScript": "..."
+}
+Step 3: {
+  "stepName": "Tour Management Center", 
+  "navigationPath": "/training",
+  "target": {"type": "tab", "tabId": "tour-management", "action": "click"},
+  "description": "Manage and customize guided tours...",
+  "benefits": [...],
+  "voiceScript": "..."
+}
+Step 4: {
+  "stepName": "Training Resources Library",
+  "navigationPath": "/training", 
+  "target": {"type": "tab", "tabId": "training-resources", "action": "click"},
+  "description": "Access extensive training materials...", 
+  "benefits": [...],
+  "voiceScript": "..."
+}
+
 ROLE-FOCUSED BENEFITS & MESSAGING GUIDELINES:
 Create tours that deeply resonate with each role by emphasizing benefits that matter most to their daily responsibilities and business impact:
 
@@ -4101,7 +4137,8 @@ REQUIREMENTS:
 3. Tours must respect role-based access control permissions
 4. Use ONLY the role-specific navigation paths listed for each role
 5. Create 3-5 engaging tour steps per role covering their most important accessible features
-6. IMPORTANT: End each tour by explaining this was a role-specific overview and encourage exploring other role perspectives
+6. MANDATORY: For Trainer role tours navigating to /training, ALWAYS include target property with tab targeting
+7. IMPORTANT: End each tour by explaining this was a role-specific overview and encourage exploring other role perspectives
 
 For each role, create:
 1. 3-5 tour steps covering accessible features only
@@ -4116,6 +4153,7 @@ Each tour step must have:
 - description: Role-focused explanation connecting features to their daily work and challenges
 - benefits: Array of 2-3 role-specific advantages using language and metrics that matter to them
 - voiceScript: Compelling narration that speaks directly to their responsibilities and goals (2-3 sentences)
+- target: (OPTIONAL) Enhanced navigation object for tab/section targeting with structure: {"type": "tab|section|element", "tabId": "identifier", "action": "click|highlight"}
 
 CONTENT CREATION REQUIREMENTS:
 1. **Role-Specific Language**: Use terminology and concepts familiar to each role

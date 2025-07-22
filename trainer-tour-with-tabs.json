@@ -1,0 +1,78 @@
+{
+  "roleId": 9,
+  "roleDisplayName": "Trainer",
+  "tourData": {
+    "steps": [
+      {
+        "stepName": "Training Modules Overview",
+        "description": "Explore comprehensive training modules designed to enhance manufacturing skills and knowledge. This section provides structured learning paths tailored for different roles in manufacturing operations.",
+        "benefits": [
+          "Equip employees with role-specific skills and knowledge",
+          "Standardize training across the organization for consistency", 
+          "Reduce onboarding time by 40% with structured learning paths"
+        ],
+        "voiceScript": "Welcome to the Training Modules section. Here you will find specialized content designed to enhance your team manufacturing expertise. These modules provide structured learning paths that reduce onboarding time and ensure consistent knowledge across your organization.",
+        "navigationPath": "/training",
+        "target": {
+          "type": "tab",
+          "tabId": "training-modules",
+          "action": "click"
+        }
+      },
+      {
+        "stepName": "Role Demonstrations Hub",
+        "description": "Experience interactive role demonstrations that showcase how different user roles interact with the PlanetTogether system. Perfect for understanding role-specific workflows and training others.",
+        "benefits": [
+          "Understand how different roles use the system effectively",
+          "Experience role-specific workflows and features firsthand",
+          "Enhance training sessions with interactive demonstrations"
+        ],
+        "voiceScript": "In the Role Demonstrations section, you can experience the system from different user perspectives. This is perfect for understanding how each role interacts with PlanetTogether and helps you provide more effective role-specific training.",
+        "navigationPath": "/training",
+        "target": {
+          "type": "tab",
+          "tabId": "role-demonstrations", 
+          "action": "click"
+        }
+      },
+      {
+        "stepName": "Tour Management Center",
+        "description": "Manage and customize guided tours for different roles and scenarios. Create, edit, and deploy training content that aligns with your organizational needs and goals.",
+        "benefits": [
+          "Customize training content to match company objectives",
+          "Ensure consistent training delivery across all sessions",
+          "Adapt content quickly to meet changing business needs"
+        ],
+        "voiceScript": "The Tour Management section gives you complete control over training content. You can customize guided tours, ensure consistent delivery, and adapt your training materials to meet evolving business requirements.",
+        "navigationPath": "/training",
+        "target": {
+          "type": "tab",
+          "tabId": "tour-management",
+          "action": "click"
+        }
+      },
+      {
+        "stepName": "Training Resources Library", 
+        "description": "Access extensive training materials including guides, videos, and reference documents. This comprehensive library supports continuous learning and various learning styles.",
+        "benefits": [
+          "Provide 24/7 access to comprehensive learning materials",
+          "Support diverse learning styles with varied content formats",
+          "Enable continuous professional development for all team members"
+        ],
+        "voiceScript": "Welcome to the Training Resources Library, your comprehensive hub for learning materials. With 24/7 access to guides, videos, and reference documents, you can support diverse learning styles and enable continuous professional development.",
+        "navigationPath": "/training", 
+        "target": {
+          "type": "tab",
+          "tabId": "training-resources",
+          "action": "click"
+        }
+      }
+    ],
+    "totalSteps": 4,
+    "voiceScriptCount": 4,
+    "estimatedDuration": "4 min"
+  },
+  "isGenerated": true,
+  "generatedAt": "2025-07-22T21:25:00.000Z",
+  "createdBy": "system"
+}
