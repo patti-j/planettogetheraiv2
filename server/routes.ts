@@ -6781,6 +6781,77 @@ Create a natural, conversational voice script that explains this feature to some
     }
   });
 
+  // Subscription and Payment Routes (for prospects)
+  
+  // Start free trial - creates trial account
+  app.post("/api/start-trial", async (req, res) => {
+    try {
+      const { email, companyName } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+      
+      // Check if trial user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.json({ 
+          success: true, 
+          message: "Trial already active",
+          trialUserId: existingUser.id 
+        });
+      }
+      
+      // Create trial user account
+      const trialUser = await storage.createUser({
+        username: email.split('@')[0] + '_trial',
+        email: email,
+        passwordHash: '', // No password for trial users
+        isTrialUser: true,
+        trialStartDate: new Date(),
+        companyName: companyName || null
+      });
+      
+      res.json({
+        success: true,
+        message: "Trial started successfully",
+        trialUserId: trialUser.id,
+        trialDays: 14
+      });
+      
+    } catch (error) {
+      console.error("Error starting trial:", error);
+      res.status(500).json({ error: "Failed to start trial" });
+    }
+  });
+  
+  // Create Stripe checkout session for subscription
+  app.post("/api/create-subscription", async (req, res) => {
+    try {
+      const { priceId, email } = req.body;
+      
+      if (!priceId || !email) {
+        return res.status(400).json({ error: "Price ID and email are required" });
+      }
+      
+      // Mock response for now - implement with Stripe when secret keys are available
+      res.json({
+        success: true,
+        message: "Subscription checkout would be created here",
+        checkoutUrl: "/pricing?success=true",
+        mockData: {
+          priceId,
+          email,
+          note: "Stripe integration requires STRIPE_SECRET_KEY to be configured"
+        }
+      });
+      
+    } catch (error) {
+      console.error("Error creating subscription:", error);
+      res.status(500).json({ error: "Failed to create subscription" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

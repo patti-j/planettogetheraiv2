@@ -1702,20 +1702,36 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3 pt-4 border-t">
+              <div className="space-y-3 pt-4 border-t">
+                {/* Primary CTA for prospects */}
                 <Button 
-                  onClick={handleExitApplication}
-                  variant="outline" 
-                  className="flex-1"
+                  onClick={() => {
+                    setShowRoleSelection(false);
+                    window.location.href = '/pricing';
+                  }}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
                 >
-                  No Thanks, I'm Done
+                  <Star className="h-4 w-4 mr-2" />
+                  View Pricing & Plans
                 </Button>
-                <Button 
-                  onClick={handleFinishAllTours}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
-                >
-                  Explore On My Own
-                </Button>
+                
+                {/* Secondary actions */}
+                <div className="flex gap-3">
+                  <Button 
+                    onClick={handleExitApplication}
+                    variant="outline" 
+                    className="flex-1"
+                  >
+                    Exit Demo
+                  </Button>
+                  <Button 
+                    onClick={handleFinishAllTours}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Explore More
+                  </Button>
+                </div>
               </div>
             </div>
           </DialogContent>

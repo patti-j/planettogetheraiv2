@@ -42,6 +42,7 @@ import HelpAndGuide from "@/pages/help";
 import DemoTour from "@/pages/demo-tour";
 import DisruptionManagement from "@/pages/disruption-management";
 import Chat from "@/pages/chat";
+import Pricing from "@/pages/pricing";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 
@@ -124,6 +125,7 @@ function Router() {
   if (!isAuthenticated && !isTourActive) {
     return (
       <Switch>
+        <Route path="/pricing" component={Pricing} />
         <Route path="/demo-tour" component={DemoTour} />
         <Route path="/" component={Login} />
         <Route component={Login} />
@@ -274,6 +276,7 @@ function Router() {
               <HelpAndGuide />
             </ProtectedRoute>
           </Route>
+          <Route path="/pricing" component={Pricing} />
           <Route path="/demo-tour" component={DemoTour} />
           <Route path="/" component={DashboardWithAutoTour} />
           <Route component={NotFound} />
