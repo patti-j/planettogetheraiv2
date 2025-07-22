@@ -1090,17 +1090,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                     )}
                   </Button>
                   
-                  {/* Replay Button next to audio controls */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={replayCurrentStep}
-                    disabled={isPlaying}
-                    className="text-gray-500 hover:text-gray-700"
-                    title="Replay current step narration"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                  </Button>
+
                 </>
               )}
               
