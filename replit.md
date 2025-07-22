@@ -163,11 +163,12 @@ The application uses a modern full-stack architecture with strong typing through
 - Implemented separate preview endpoint `/api/ai/generate-permissions-preview` that shows planned changes before application
 - Added confirmation endpoint `/api/ai/apply-permissions` for user-approved permission updates
 - Created comprehensive preview dialog showing detailed permission changes, role impacts, and permission counts
-- Enhanced permission preservation system that merges new permissions with existing ones instead of replacement
+- **FIXED: Critical Permission Preservation Issue**: Updated `updateRolePermissions` method to properly add new permissions while preserving existing ones instead of replacing all permissions
+- Enhanced storage layer with additive permission logic that filters out duplicates and only adds truly new permissions
 - Improved AI matching logic with colon-to-dash format conversion and partial feature matching for better accuracy
 - Added visual indicators for current vs new permission counts and clear change summaries
 - Users can now review, modify, and approve all AI-suggested permission changes before they're applied to roles
-- System prevents accidental permission modifications with clear cancel/apply workflow
+- System prevents accidental permission modifications with clear cancel/apply workflow and proper additive permission handling
 
 ✓ **Multi-Role Tour Continuation & Registration Form Enhancement (July 22, 2025)**:
 - Successfully implemented multi-role tour continuation system allowing users to explore different role demonstrations

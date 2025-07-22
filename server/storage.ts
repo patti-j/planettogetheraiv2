@@ -2042,17 +2042,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateRolePermissions(roleId: number, data: { permissions: number[] }): Promise<Role | undefined> {
-    // Remove existing role permissions
-    await db.delete(rolePermissions).where(eq(rolePermissions.roleId, roleId));
+    // Get current permissions for this role
+    const currentPermissions = await db.select({ permissionId: rolePermissions.permissionId })
+      .from(rolePermissions)
+      .where(eq(rolePermissions.roleId, roleId));
     
-    // Add new permissions
-    if (data.permissions.length > 0) {
+    const currentPermissionIds = currentPermissions.map(p => p.permissionId);
+    
+    // Find new permissions to add (not already present)
+    const newPermissions = data.permissions.filter(permId => !currentPermissionIds.includes(permId));
+    
+    // Add only new permissions
+    if (newPermissions.length > 0) {
       await db.insert(rolePermissions).values(
-        data.permissions.map(permissionId => ({
+        newPermissions.map(permissionId => ({
           roleId,
           permissionId
         }))
       );
+      console.log(`Added ${newPermissions.length} new permissions to role ${roleId}:`, newPermissions);
+    } else {
+      console.log(`No new permissions to add to role ${roleId} - all permissions already exist`);
     }
     
     // Return the updated role

@@ -4166,15 +4166,10 @@ Return a JSON object with this structure:
 
       for (const change of changes) {
         if (change.newPermissions && change.newPermissions.length > 0) {
-          // Get current permissions for this role
-          const currentRole = await storage.getRole(change.roleId);
-          const currentPermissionIds = currentRole?.permissions?.map(p => p.id) || [];
-          
-          // Add new permissions
+          // Pass new permissions to storage - it handles additive merging internally
           const newPermissionIds = change.newPermissions.map(p => p.id);
-          const mergedPermissionIds = Array.from(new Set([...currentPermissionIds, ...newPermissionIds]));
           
-          await storage.updateRolePermissions(change.roleId, { permissions: mergedPermissionIds });
+          await storage.updateRolePermissions(change.roleId, { permissions: newPermissionIds });
           appliedChanges.push({
             roleName: change.roleName,
             addedPermissions: change.newPermissions.map(p => p.resolvedName),
