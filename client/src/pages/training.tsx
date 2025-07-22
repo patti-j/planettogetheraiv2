@@ -2226,7 +2226,7 @@ function TourManagementSection() {
                         setVoiceGenerationOptions(prev => ({ 
                           ...prev, 
                           voice: value,
-                          gender: ['nova', 'alloy', 'shimmer'].includes(value) ? 'female' : 'male'
+                          gender: ['nova', 'alloy', 'shimmer', 'nova-slow', 'alloy-business', 'shimmer-energetic'].includes(value) ? 'female' : 'male'
                         }))
                       }
                     >
@@ -2240,6 +2240,11 @@ function TourManagementSection() {
                         <SelectItem value="echo">Echo (Male - Deep)</SelectItem>
                         <SelectItem value="fable">Fable (Male - Expressive)</SelectItem>
                         <SelectItem value="onyx">Onyx (Male - Professional)</SelectItem>
+                        <SelectItem value="nova-slow">Luna (Female - Gentle & Slow)</SelectItem>
+                        <SelectItem value="echo-fast">Thunder (Male - Dynamic & Fast)</SelectItem>
+                        <SelectItem value="alloy-business">Aria (Female - Business Professional)</SelectItem>
+                        <SelectItem value="onyx-calm">Sage (Male - Calm & Steady)</SelectItem>
+                        <SelectItem value="shimmer-energetic">Spark (Female - Energetic & Bright)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
