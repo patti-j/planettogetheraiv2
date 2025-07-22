@@ -143,17 +143,19 @@ export function usePermissions() {
 
     console.log("hasPermission check:", { feature, action, user: { isDemo: (user as any).isDemo, role: (user as any).role, permissions: (user as any).permissions } });
 
-    // Handle demo users who have a simple role string instead of roles array
-    if ((user as any).isDemo && (user as any).role) {
-      const result = getDemoPermissions((user as any).role, feature, action);
-      console.log("Demo permissions result:", result);
+    // Handle demo users from server who have permissions array directly on user object
+    if ((user as any).isDemo && (user as any).permissions && Array.isArray((user as any).permissions)) {
+      const permissionKey = `${feature}-${action}`;
+      const result = (user as any).permissions.includes(permissionKey);
+      console.log("Demo permissions (array) result:", result, "for key:", permissionKey);
       return result;
     }
 
-    // Handle demo users from server who have permissions array directly on user object
-    if ((user as any).permissions && Array.isArray((user as any).permissions)) {
-      const permissionKey = `${feature}-${action}`;
-      return (user as any).permissions.includes(permissionKey);
+    // Handle demo users who have a simple role string instead of roles array
+    if ((user as any).isDemo && (user as any).role) {
+      const result = getDemoPermissions((user as any).role, feature, action);
+      console.log("Demo permissions (role) result:", result);
+      return result;
     }
 
     // Handle regular users with roles array
