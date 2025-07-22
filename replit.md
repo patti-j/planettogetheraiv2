@@ -124,6 +124,20 @@ The application uses a modern full-stack architecture with strong typing through
 - All API requests include proper token authentication in headers for secure communication
 - Role-based access control fully operational across sidebar navigation and route protection
 
+## Recent Changes (July 22, 2025)
+
+✓ **Demo Tour Window Enhancement - Draggable & Repositioned (July 22, 2025)**:
+- Made guided tour window smaller and draggable for improved user experience
+- Repositioned tour window to default in lower right corner where there's less important content to obstruct
+- Added drag functionality with mouse event handlers and position state management for full mobility
+- Tour window now uses compact 384px width instead of full screen overlay
+- Added Move icon and cursor indicators for intuitive dragging interaction
+- Made background less intrusive (20% opacity) allowing users to see application content while touring
+- Compact action buttons with smaller text and icons for better space utilization
+- Limited benefits display to top 3 items for cleaner, more focused layout
+- Added proper pointer-events handling to prevent drag conflicts with content interaction
+- Users can now move tour window around screen to access application features while following guided demonstrations
+
 ## Recent Changes (July 21, 2025)
 
 ✓ **Comprehensive Mobile Layout Fix - Hamburger Menu Clearance (July 21, 2025)**:

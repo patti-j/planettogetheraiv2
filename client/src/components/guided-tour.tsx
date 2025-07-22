@@ -188,7 +188,7 @@ export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
   
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
-  const [position, setPosition] = useState({ x: 20, y: 20 });
+  const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [, setLocation] = useLocation();
@@ -199,6 +199,18 @@ export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
   const progress = ((currentStep + 1) / tourSteps.length) * 100;
   
   console.log("GuidedTour initialized - tourSteps:", tourSteps, "currentStep:", currentStep);
+
+  // Set initial position to lower right corner
+  useEffect(() => {
+    const cardWidth = 384; // w-96 in pixels
+    const cardHeight = 500; // approximate height
+    const padding = 20; // padding from edges
+    
+    setPosition({
+      x: Math.max(0, window.innerWidth - cardWidth - padding),
+      y: Math.max(0, window.innerHeight - cardHeight - padding)
+    });
+  }, []);
 
   // Drag functionality
   useEffect(() => {
