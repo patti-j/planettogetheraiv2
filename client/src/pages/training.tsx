@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play, UserCheck, Settings, Shield, Edit3, Eye, Volume2, MessageSquare, Sparkles, RefreshCw, ChevronDown, ChevronRight, FileText, Clock, Plus, AlertCircle, Trash2 } from 'lucide-react';
+import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play, UserCheck, Settings, Shield, Edit3, Eye, Volume2, MessageSquare, Sparkles, RefreshCw, ChevronDown, ChevronRight, FileText, Clock, Plus, AlertCircle, Trash2, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, usePermissions } from '@/hooks/useAuth';
 import { RoleSwitcher } from '@/components/role-switcher';
@@ -583,6 +583,8 @@ function TourManagementSection() {
   const [previewStepData, setPreviewStepData] = useState<any>(null);
   const [showTourPreviewDialog, setShowTourPreviewDialog] = useState(false);
   const [previewTourData, setPreviewTourData] = useState<any>(null);
+  const [showValidationDialog, setShowValidationDialog] = useState(false);
+  const [validationResults, setValidationResults] = useState<any>(null);
 
   // Preview handlers
   const handlePreviewStep = (step: any, role: string) => {
@@ -876,6 +878,29 @@ function TourManagementSection() {
     },
   });
 
+  // Tour validation mutation
+  const validateToursMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("GET", "/api/tours/validate");
+    },
+    onSuccess: (data) => {
+      setValidationResults(data.validation);
+      setShowValidationDialog(true);
+      toast({
+        title: "Validation Complete",
+        description: data.message,
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Validation Failed",
+        description: error.message || "Failed to validate tours",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Test voice functionality for tour steps - plays pre-cached recordings
   const handleTestVoice = async (step: any, role: string) => {
     try {
@@ -1059,6 +1084,19 @@ function TourManagementSection() {
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${regenerateTourWithAI.isPending ? 'animate-spin' : ''}`} />
             AI Regenerate All Tours
+          </Button>
+          <Button
+            onClick={() => validateToursMutation.mutate()}
+            disabled={validateToursMutation.isPending}
+            variant="outline"
+            className="border-blue-300 text-blue-600 hover:bg-blue-50"
+          >
+            {validateToursMutation.isPending ? (
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <CheckCircle className="h-4 w-4 mr-2" />
+            )}
+            Validate All Tours
           </Button>
         </div>
       </div>
@@ -1667,6 +1705,143 @@ function TourManagementSection() {
               Start Live Tour
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Tour Validation Results Dialog */}
+      <Dialog open={showValidationDialog} onOpenChange={setShowValidationDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <CheckCircle className="h-5 w-5 mr-2 text-blue-600" />
+              Tour Validation Results
+            </DialogTitle>
+          </DialogHeader>
+          
+          {validationResults && (
+            <div className="space-y-6">
+              {/* Summary */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold mb-3">Validation Summary</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-800">{validationResults.summary.totalTours}</div>
+                    <div className="text-gray-600">Total Tours</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">{validationResults.summary.validTours}</div>
+                    <div className="text-gray-600">Valid Tours</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-red-600">{validationResults.summary.invalidTours}</div>
+                    <div className="text-gray-600">Invalid Tours</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-amber-600">{validationResults.summary.totalIssues}</div>
+                    <div className="text-gray-600">Total Issues</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Valid Tours */}
+              {validationResults.valid.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-green-700 mb-3 flex items-center">
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Valid Tours ({validationResults.valid.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {validationResults.valid.map((tour: any) => (
+                      <div key={tour.tourId} className="bg-green-50 border border-green-200 p-3 rounded">
+                        <div className="font-medium text-green-800">{tour.role}</div>
+                        <div className="text-sm text-green-600 mt-1">
+                          {tour.validSteps.length} valid steps - All routes are accessible to this role
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Invalid Tours */}
+              {validationResults.invalid.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-red-700 mb-3 flex items-center">
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    Invalid Tours ({validationResults.invalid.length})
+                  </h3>
+                  <div className="space-y-4">
+                    {validationResults.invalid.map((tour: any) => (
+                      <div key={tour.tourId} className="bg-red-50 border border-red-200 p-4 rounded">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="font-medium text-red-800">{tour.role}</div>
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              regenerateTourWithAI.mutate({ roles: [tour.role], guidance: "Fix route permissions - only include accessible routes" });
+                              setShowValidationDialog(false);
+                            }}
+                            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                          >
+                            <Sparkles className="h-3 w-3 mr-1" />
+                            Regenerate Tour
+                          </Button>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          {tour.issues.map((issue: any, index: number) => (
+                            <div key={index} className="bg-white p-3 rounded border border-red-200">
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <div className="font-medium text-sm text-red-800">
+                                    Step {issue.stepIndex}: {issue.stepName}
+                                  </div>
+                                  <div className="text-xs text-red-600 mt-1">
+                                    Route: <code className="bg-red-100 px-1 rounded">{issue.navigationPath}</code>
+                                  </div>
+                                  <div className="text-xs text-red-700 mt-1">{issue.issue}</div>
+                                  <div className="text-xs text-gray-600 mt-2">
+                                    <strong>Suggestion:</strong> {issue.suggestion}
+                                  </div>
+                                </div>
+                                <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0 mt-1" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex justify-between pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowValidationDialog(false)}
+                >
+                  Close
+                </Button>
+                {validationResults.invalid.length > 0 && (
+                  <Button
+                    onClick={() => {
+                      const invalidRoles = validationResults.invalid.map((tour: any) => tour.role);
+                      regenerateTourWithAI.mutate({ 
+                        roles: invalidRoles, 
+                        guidance: "Fix all route permission issues - only include routes that are accessible to each specific role based on their permissions" 
+                      });
+                      setShowValidationDialog(false);
+                    }}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Regenerate All Invalid Tours
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

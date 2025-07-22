@@ -3921,23 +3921,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
 
     try {
-      // Get role by name
-      const roleKey = roleName.toLowerCase().replace(/\s+/g, '-');
-      const [role] = await db.select().from(roles).where(eq(roles.name, roleName));
+      // Get role by name using storage interface
+      const role = await storage.getRoleByName(roleName);
       
       if (!role) {
         console.log(`Role not found: ${roleName}, using default routes`);
         return { '/': allSystemRoutes['/'] }; // Fallback to dashboard only
       }
 
-      // Get role permissions
-      const rolePermissionsList = await db
-        .select({ permission: permissions })
-        .from(rolePermissions)
-        .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
-        .where(eq(rolePermissions.roleId, role.id));
-
-      const permissionFeatures = rolePermissionsList.map(rp => rp.permission.feature);
+      // Get role permissions using storage interface
+      const rolePermissionsList = await storage.getRolePermissions(role.id);
+      const permissionFeatures = rolePermissionsList.map(p => p.feature);
       console.log(`Role ${roleName} has permissions for features:`, permissionFeatures);
 
       // Filter routes based on permissions
@@ -4130,10 +4124,14 @@ Return JSON format with each role as a top-level key containing tourSteps array.
         }
       }
 
+      // Validate generated tours
+      const validationResults = await validateToursRoutes(savedTours);
+      
       res.json({ 
         success: true,
         tourData,
         savedTours,
+        validationResults,
         generatedFor: roles,
         message: `Tour content generated and saved for ${roles.length} role(s)`
       });
@@ -4160,6 +4158,75 @@ Return JSON format with each role as a top-level key containing tourSteps array.
       }
     }
   });
+
+  // Function to validate tour routes against role permissions
+  async function validateToursRoutes(tours: any[]): Promise<any> {
+    const validationResults = {
+      valid: [],
+      invalid: [],
+      summary: {
+        totalTours: tours.length,
+        validTours: 0,
+        invalidTours: 0,
+        totalIssues: 0
+      }
+    };
+
+    for (const tour of tours) {
+      const roleAccessibleRoutes = await getAccessibleRoutesForRole(tour.roleDisplayName);
+      const accessiblePaths = Object.keys(roleAccessibleRoutes);
+      
+      const tourValidation = {
+        tourId: tour.id,
+        role: tour.roleDisplayName,
+        roleKey: tour.role,
+        issues: [],
+        validSteps: [],
+        invalidSteps: []
+      };
+
+      // Check each tour step
+      if (tour.tourData && tour.tourData.steps) {
+        for (let i = 0; i < tour.tourData.steps.length; i++) {
+          const step = tour.tourData.steps[i];
+          const navigationPath = step.navigationPath;
+          
+          if (accessiblePaths.includes(navigationPath)) {
+            tourValidation.validSteps.push({
+              stepIndex: i + 1,
+              stepName: step.stepName || step.title || `Step ${i + 1}`,
+              navigationPath,
+              status: 'valid'
+            });
+          } else {
+            const issue = {
+              stepIndex: i + 1,
+              stepName: step.stepName || step.title || `Step ${i + 1}`,
+              navigationPath,
+              issue: `Route '${navigationPath}' is not accessible to role '${tour.roleDisplayName}'`,
+              suggestion: `Replace with one of: ${accessiblePaths.join(', ')}`
+            };
+            
+            tourValidation.issues.push(issue);
+            tourValidation.invalidSteps.push(issue);
+          }
+        }
+      }
+
+      // Classify tour as valid or invalid
+      if (tourValidation.issues.length === 0) {
+        validationResults.valid.push(tourValidation);
+        validationResults.summary.validTours++;
+      } else {
+        validationResults.invalid.push(tourValidation);
+        validationResults.summary.invalidTours++;
+        validationResults.summary.totalIssues += tourValidation.issues.length;
+      }
+    }
+
+    console.log(`Tour validation completed: ${validationResults.summary.validTours} valid, ${validationResults.summary.invalidTours} invalid tours`);
+    return validationResults;
+  }
 
   // AI Permission Generation - Preview
   app.post("/api/ai/generate-permissions-preview", requireAuth, async (req, res) => {
@@ -4414,6 +4481,30 @@ Return a JSON object with this structure:
     } catch (error) {
       console.error("Error fetching tours:", error);
       res.status(500).json({ error: "Failed to fetch tours" });
+    }
+  });
+
+  // Tour validation endpoint - MUST come before /api/tours/:id route
+  app.get("/api/tours/validate", requireAuth, async (req, res) => {
+    try {
+      // Get all tours
+      const allTours = await storage.getTours();
+      
+      // Validate all tours
+      const validationResults = await validateToursRoutes(allTours);
+      
+      res.json({
+        success: true,
+        validation: validationResults,
+        message: `Validated ${allTours.length} tours: ${validationResults.summary.validTours} valid, ${validationResults.summary.invalidTours} invalid`
+      });
+      
+    } catch (error) {
+      console.error("Error validating tours:", error);
+      res.status(500).json({ 
+        error: "Failed to validate tours",
+        details: error.message 
+      });
     }
   });
 
