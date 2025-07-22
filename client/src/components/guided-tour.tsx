@@ -265,13 +265,15 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
   
   // Play pre-loaded audio for a specific step
   const playPreloadedAudio = async (stepId: string) => {
-    if (!voiceEnabled) return;
+    if (!voiceEnabled || isGenerating || isPlaying) return;
     
     // Stop any currently playing audio
     if (speechRef.current) {
       if (speechRef.current instanceof Audio) {
         speechRef.current.pause();
         speechRef.current.currentTime = 0;
+      } else if (speechRef.current instanceof SpeechSynthesisUtterance) {
+        speechSynthesis.cancel();
       }
       speechRef.current = null;
     }
@@ -479,12 +481,15 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
 
   // AI Voice functionality using OpenAI text-to-speech
   const speakText = async (text: string) => {
-    if (!voiceEnabled) return;
+    if (!voiceEnabled || isGenerating || isPlaying) return;
     
     // Stop any currently playing audio
     if (speechRef.current) {
       if (speechRef.current instanceof Audio) {
         speechRef.current.pause();
+        speechRef.current.currentTime = 0;
+      } else if (speechRef.current instanceof SpeechSynthesisUtterance) {
+        speechSynthesis.cancel();
       }
       speechRef.current = null;
     }
@@ -615,6 +620,9 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
   };
 
   const toggleVoice = () => {
+    // Prevent toggling while audio is generating or playing
+    if (isGenerating || isPlaying) return;
+    
     const newVoiceEnabled = !voiceEnabled;
     setVoiceEnabled(newVoiceEnabled);
     
@@ -629,9 +637,12 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
   };
 
   const togglePlayPause = () => {
+    // Prevent multiple clicks during generation or if voice is disabled
+    if (isGenerating || !voiceEnabled) return;
+    
     if (isPlaying) {
       stopSpeech();
-    } else if (voiceEnabled && tourSteps[currentStep]) {
+    } else if (tourSteps[currentStep]) {
       const currentStepData = tourSteps[currentStep];
       const enhancedText = createEngagingNarration(currentStepData, role);
       speakText(enhancedText);

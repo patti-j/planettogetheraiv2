@@ -3624,6 +3624,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Track active voice generation requests to prevent duplicates
+  const activeVoiceRequests = new Map<string, Promise<Buffer>>();
+
   // AI Text-to-Speech endpoint with caching for high-quality voice generation
   app.post("/api/ai/text-to-speech", async (req, res) => {
     try {
@@ -3638,7 +3641,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const textHash = crypto.createHash('sha256').update(cacheKey).digest('hex');
 
       // Check cache first (temporarily skip caching to ensure voice generation works)
-      console.log(`Skipping voice cache temporarily to ensure OpenAI voice generation works`);
+      console.log(`Checking for existing voice generation or cache for hash: ${textHash}`);
+      
+      // If this exact request is already being processed, wait for it
+      if (activeVoiceRequests.has(textHash)) {
+        console.log(`Waiting for existing voice generation request: ${textHash}`);
+        try {
+          const buffer = await activeVoiceRequests.get(textHash)!;
+          res.set({
+            'Content-Type': 'audio/mpeg',
+            'Content-Length': buffer.length,
+            'Cache-Control': 'public, max-age=7200',
+            'X-Content-Type-Options': 'nosniff',
+            'X-Voice-Cache': 'deduplicated'
+          });
+          return res.send(buffer);
+        } catch (error) {
+          console.error(`Error waiting for existing request: ${error}`);
+          // If waiting failed, continue to generate new audio
+        }
+      }
       // const cachedRecording = await storage.getVoiceRecording(textHash);
       // 
       // if (cachedRecording) {
@@ -3657,33 +3679,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       //   return res.send(audioBuffer);
       // }
 
-      // Generate new voice if not cached
-      const openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-      });
+      // Generate new voice if not cached - create a promise to track this generation
+      const voiceGenerationPromise = (async () => {
+        const openai = new OpenAI({
+          apiKey: process.env.OPENAI_API_KEY,
+        });
 
-      // Choose voice based on gender preference
-      const voiceMap = {
-        female: ["nova", "alloy", "shimmer"], 
-        male: ["echo", "fable", "onyx"]
-      };
+        // Choose voice based on gender preference
+        const voiceMap = {
+          female: ["nova", "alloy", "shimmer"], 
+          male: ["echo", "fable", "onyx"]
+        };
+        
+        const availableVoices = voiceMap[gender as keyof typeof voiceMap] || voiceMap.female;
+        const selectedVoice = availableVoices.includes(voice) ? voice : availableVoices[0];
+
+        console.log(`Generating AI speech for text: "${text.substring(0, 50)}..." using voice: ${selectedVoice}`);
+
+        // Use faster tts-1 model for demo tours to reduce latency
+        const model = text.length > 200 ? "tts-1-hd" : "tts-1";
+        
+        const mp3 = await openai.audio.speech.create({
+          model: model,
+          voice: selectedVoice as any,
+          input: text,
+          speed: Math.min(Math.max(speed, 0.25), 4.0)
+        });
+
+        return Buffer.from(await mp3.arrayBuffer());
+      })();
+
+      // Store the promise to prevent duplicate requests
+      activeVoiceRequests.set(textHash, voiceGenerationPromise);
       
-      const availableVoices = voiceMap[gender as keyof typeof voiceMap] || voiceMap.female;
-      const selectedVoice = availableVoices.includes(voice) ? voice : availableVoices[0];
-
-      console.log(`Generating AI speech for text: "${text.substring(0, 50)}..." using voice: ${selectedVoice}`);
-
-      // Use faster tts-1 model for demo tours to reduce latency
-      const model = text.length > 200 ? "tts-1-hd" : "tts-1";
+      const buffer = await voiceGenerationPromise;
       
-      const mp3 = await openai.audio.speech.create({
-        model: model,
-        voice: selectedVoice as any,
-        input: text,
-        speed: Math.min(Math.max(speed, 0.25), 4.0)
-      });
-
-      const buffer = Buffer.from(await mp3.arrayBuffer());
+      // Clean up the tracking once complete
+      activeVoiceRequests.delete(textHash);
       
       // Cache the generated audio for future use (temporarily disabled)
       // try {
@@ -3713,6 +3745,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.send(buffer);
     } catch (error) {
+      // Clean up tracking on error
+      try {
+        const cacheKey = `${req.body.text}-${req.body.voice || "alloy"}-${req.body.gender || "female"}-${req.body.speed || 1.1}`;
+        const errorTextHash = crypto.createHash('sha256').update(cacheKey).digest('hex');
+        activeVoiceRequests.delete(errorTextHash);
+      } catch (cleanupError) {
+        console.error('Error during cleanup:', cleanupError);
+      }
+      
       console.error("AI text-to-speech error:", error);
       res.status(500).json({ error: "Failed to generate AI speech" });
     }
