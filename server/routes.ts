@@ -4752,12 +4752,11 @@ Return a JSON object with this exact structure:
         }
       }
 
-      // Create the role
-      const newRole = await storage.createRole({
+      // Create the role with permissions
+      const newRole = await storage.createRoleWithPermissions({
         name: roleData.name,
-        description: roleData.description,
-        permissions: permissionIds
-      });
+        description: roleData.description
+      }, permissionIds);
 
       console.log(`AI created role: ${roleData.name} with ${permissionIds.length} permissions`);
 
