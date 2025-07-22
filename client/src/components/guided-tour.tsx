@@ -304,6 +304,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [voiceEnabled, setVoiceEnabled] = useState(initialVoiceEnabled);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoadingVoice, setIsLoadingVoice] = useState(false);
   const [audioCompleted, setAudioCompleted] = useState(false);
   const [showRoleSelection, setShowRoleSelection] = useState(false);
   const [, setLocation] = useLocation();
@@ -480,8 +481,9 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       console.log(`Playing cached audio for step: ${stepId}`);
       
       try {
-        // Directly play cached recording without showing "generating" status
-        setIsPlaying(true);
+        // Show loading indicator while generating/loading voice
+        setIsLoadingVoice(true);
+        setIsPlaying(false);
         
         const response = await fetch("/api/ai/text-to-speech", {
           method: "POST",
@@ -511,6 +513,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         
         audio.onended = () => {
           setIsPlaying(false);
+          setIsLoadingVoice(false);
           setAudioCompleted(true);
           URL.revokeObjectURL(audioUrl);
           speechRef.current = null;
@@ -520,6 +523,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         audio.onerror = (e) => {
           console.error("Cached audio playback error:", e);
           setIsPlaying(false);
+          setIsLoadingVoice(false);
           URL.revokeObjectURL(audioUrl);
           speechRef.current = null;
         };
@@ -528,15 +532,19 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         
         try {
           await audio.play();
+          setIsLoadingVoice(false);
+          setIsPlaying(true);
           console.log("Cached audio started playing");
         } catch (playError) {
           console.error("Auto-play failed:", playError);
           setIsPlaying(false);
+          setIsLoadingVoice(false);
         }
         
       } catch (error) {
         console.error(`Failed to load cached audio for step ${stepId}:`, error);
         setIsPlaying(false);
+        setIsLoadingVoice(false);
       }
     }
   };
@@ -563,8 +571,9 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       console.log(`Playing cached audio for voice toggle on step: ${stepId}`);
       
       try {
-        // Directly play cached recording without showing "generating" status
-        setIsPlaying(true);
+        // Show loading indicator while generating/loading voice
+        setIsLoadingVoice(true);
+        setIsPlaying(false);
         
         const response = await fetch("/api/ai/text-to-speech", {
           method: "POST",
@@ -594,6 +603,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         
         audio.onended = () => {
           setIsPlaying(false);
+          setIsLoadingVoice(false);
           URL.revokeObjectURL(audioUrl);
           speechRef.current = null;
           console.log("Voice toggle audio playback completed");
@@ -602,6 +612,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         audio.onerror = (e) => {
           console.error("Voice toggle audio playback error:", e);
           setIsPlaying(false);
+          setIsLoadingVoice(false);
           URL.revokeObjectURL(audioUrl);
           speechRef.current = null;
         };
@@ -610,15 +621,19 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         
         try {
           await audio.play();
+          setIsLoadingVoice(false);
+          setIsPlaying(true);
           console.log("Voice toggle audio started playing");
         } catch (playError) {
           console.error("Voice toggle auto-play failed:", playError);
           setIsPlaying(false);
+          setIsLoadingVoice(false);
         }
         
       } catch (error) {
         console.error(`Failed to load cached audio for voice toggle on step ${stepId}:`, error);
         setIsPlaying(false);
+        setIsLoadingVoice(false);
       }
     }
   };
@@ -802,7 +817,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     
     // Save tour progress to localStorage so user can resume later
     const tourState = {
-      role,
+      roleId,
       currentStep,
       voiceEnabled,
       timestamp: Date.now()
@@ -1056,12 +1071,21 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
               <Progress value={progress} className="h-2" />
             </div>
             
-            {/* Voice Status Indicator - only show when playing */}
-            {voiceEnabled && isPlaying && (
+            {/* Voice Status Indicator - show when loading or playing */}
+            {voiceEnabled && (isLoadingVoice || isPlaying) && (
               <div className="text-sm text-blue-600 bg-blue-50 px-3 py-2 rounded-md">
                 <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 bg-blue-500 rounded-full animate-pulse" />
-                  <span>Playing voice narration</span>
+                  {isLoadingVoice ? (
+                    <>
+                      <div className="h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      <span>Loading voice narration...</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="h-3 w-3 bg-blue-500 rounded-full animate-pulse" />
+                      <span>Playing voice narration</span>
+                    </>
+                  )}
                 </div>
               </div>
             )}

@@ -251,15 +251,19 @@ The application uses a modern full-stack architecture with strong typing through
 - Validation identifies permission mismatches and suggests accessible alternative routes for invalid tour steps
 - System validation confirms proper role-based access control working across all tour content
 
-✓ **Tour Window Responsive Design & JavaScript Error Fix (July 22, 2025)**:
-- Fixed critical "Can't find variable: role" JavaScript error in GuidedTour component by replacing undefined role references
-- Updated all role variable references to use proper roleData?.name queries and roleId for filtering
+✓ **Tour Window Responsive Design & Voice Loading Indicator Fix (July 22, 2025)**:
+- Fixed critical "Can't find variable: role" JavaScript error in GuidedTour component by replacing undefined role references in handleSkipTour function
+- Updated all role variable references to use proper roleData?.name queries and roleId for filtering throughout the component
 - Implemented responsive tour window design that adapts to different screen sizes and prevents content being pushed out of viewport
 - Added dynamic height calculation based on window size (max 600px or 90% viewport height, whichever is smaller)
 - Enhanced boundary checking to keep tour window within viewable screen area during drag operations
 - Added window resize listener to automatically reposition tour window when screen size changes
 - Tour window now maintains proper positioning and sizing across all devices and screen orientations
 - Fixed tour window getting cut off at bottom by implementing proper viewport constraints and scrollable content areas
+- **NEW: Voice Loading Indicator** - Added visual loading indicator that shows when voice is being generated/loaded during tour playback
+- Enhanced voice status display with spinning loader during voice generation and pulse indicator during playback
+- Improved user experience by showing "Loading voice narration..." message while AI generates speech for new tour steps
+- Voice loading state prevents user confusion during the few seconds it takes to generate voice for uncached steps
 
 ✓ **Complete Tour System Migration to Role ID-Based Architecture (July 22, 2025)**:
 - Successfully completed comprehensive migration from role name strings to role ID-based lookups throughout entire tour system
