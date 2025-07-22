@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play, UserCheck, Settings, Shield, Edit3, Eye, Volume2, MessageSquare, Sparkles, RefreshCw, ChevronDown, ChevronRight, FileText, Clock, Plus, AlertCircle } from 'lucide-react';
+import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play, UserCheck, Settings, Shield, Edit3, Eye, Volume2, MessageSquare, Sparkles, RefreshCw, ChevronDown, ChevronRight, FileText, Clock, Plus, AlertCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, usePermissions } from '@/hooks/useAuth';
 import { RoleSwitcher } from '@/components/role-switcher';
@@ -577,6 +577,8 @@ function TourManagementSection() {
   const [showAIGuidanceDialog, setShowAIGuidanceDialog] = useState(false);
   const [aiGuidance, setAiGuidance] = useState("");
   const [pendingAction, setPendingAction] = useState<{ type: 'selected' | 'all' | 'missing', roles?: string[] } | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [tourToDelete, setTourToDelete] = useState<any>(null);
 
   // Fetch all system roles
   const { data: systemRoles = [] } = useQuery({
@@ -859,6 +861,30 @@ function TourManagementSection() {
     },
   });
 
+  const deleteTourMutation = useMutation({
+    mutationFn: async (tourId: number) => {
+      return apiRequest("DELETE", `/api/tours/${tourId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Tour Deleted",
+        description: "The tour has been successfully deleted",
+        variant: "default",
+      });
+      setShowDeleteDialog(false);
+      setTourToDelete(null);
+      // Invalidate tours cache to refresh the list
+      queryClient.invalidateQueries({ queryKey: ["/api/tours"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete the tour",
+        variant: "destructive",
+      });
+    },
+  });
+
   const toggleRole = (role: string) => {
     setSelectedRoles(prev => 
       prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
@@ -1092,10 +1118,25 @@ function TourManagementSection() {
                     <Clock className="h-4 w-4 mr-1" />
                       {tour.tourData?.estimatedDuration || '5-10 min'}
                   </span>
-                  <Button size="sm" variant="outline">
-                    <Edit3 className="h-3 w-3 mr-1" />
-                    Edit Tour
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline">
+                      <Edit3 className="h-3 w-3 mr-1" />
+                      Edit Tour
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTourToDelete(tour);
+                        setShowDeleteDialog(true);
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -1253,6 +1294,53 @@ function TourManagementSection() {
             >
               <Sparkles className="h-4 w-4 mr-2" />
               {regenerateTourWithAI.isPending || generateNewToursWithAI.isPending ? 'Generating...' : 'Generate Tours'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-red-600">
+              <Trash2 className="h-5 w-5 mr-2" />
+              Delete Tour
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <p className="text-gray-600">
+              Are you sure you want to delete the tour for <strong>{tourToDelete?.roleDisplayName}</strong>? 
+              This action cannot be undone.
+            </p>
+            
+            {tourToDelete?.tourData?.steps && (
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="text-sm font-medium mb-1">This tour contains:</p>
+                <p className="text-xs text-gray-600">
+                  {tourToDelete.tourData.steps.length} steps • {tourToDelete.tourData.estimatedDuration || '5-10 min'}
+                </p>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex gap-2 justify-end">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setTourToDelete(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => tourToDelete?.id && deleteTourMutation.mutate(tourToDelete.id)}
+              disabled={deleteTourMutation.isPending}
+            >
+              {deleteTourMutation.isPending ? 'Deleting...' : 'Delete Tour'}
             </Button>
           </div>
         </DialogContent>
