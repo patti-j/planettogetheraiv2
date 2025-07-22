@@ -3985,29 +3985,30 @@ Return a JSON object with tour data for each role including steps, voice scripts
         description: p.description
       }));
 
-      const prompt = `Analyze these roles and assign appropriate permissions based on their names, descriptions, and the provided context.
+      const prompt = `You are a permission management assistant. Follow the user's specific instructions exactly.
 
-Roles to analyze:
-${roleContext.map(r => `- ${r.name}: ${r.description || 'No description'}`).join('\n')}
+Roles to modify:
+${roleContext.map(r => `- ${r.name}: ${r.description || 'No description'}\n  Current permissions: ${r.currentPermissions.join(', ') || 'None'}`).join('\n')}
 
 Available Permissions:
-${availablePermissions.map(p => `- ${p.name}: ${p.description} (${p.feature}:${p.action})`).join('\n')}
+${availablePermissions.map(p => `- ${p.name}: ${p.description} (${p.feature}-${p.action})`).join('\n')}
 
-Additional Context: ${description || 'Use role names and descriptions to determine appropriate permissions.'}
+User Instructions: ${description || 'No specific instructions provided.'}
 
-For each role, determine which permissions are most appropriate based on:
-1. Role name and typical responsibilities 
-2. Role description
-3. Principle of least privilege (only necessary permissions)
-4. Manufacturing workflow requirements
+IMPORTANT RULES:
+1. ONLY add the specific permissions mentioned in the user instructions
+2. If the user says "add visual factory permission", only add visual-factory-view permission
+3. If the user says "add visual factory and shop floor permissions", only add those two specific permissions
+4. Do NOT add additional permissions beyond what the user specifically requested
+5. If no specific permissions are mentioned, do not add any permissions
+6. Preserve existing permissions unless specifically told to remove them
 
 Return a JSON object with this structure:
 {
   "rolePermissions": {
-    "RoleName": ["permission-name-1", "permission-name-2"],
-    "AnotherRole": ["permission-name-3", "permission-name-4"]
+    "RoleName": ["specific-permission-mentioned-by-user"]
   },
-  "reasoning": "Brief explanation of permission assignments"
+  "reasoning": "Added only the permissions specifically requested by the user"
 }`;
 
       const completion = await openai.chat.completions.create({
@@ -4090,13 +4091,21 @@ Return a JSON object with this structure:
         console.log(`Found ${permissionIds.length} valid permission IDs:`, permissionIds);
 
         if (permissionIds.length > 0) {
-          await storage.updateRolePermissions(role.id, { permissions: permissionIds });
+          // Get current permissions for this role
+          const currentRole = await storage.getRole(role.id);
+          const currentPermissionIds = currentRole?.permissions?.map(p => p.id) || [];
+          
+          // Merge new permissions with existing ones (avoid duplicates)
+          const mergedPermissionIds = Array.from(new Set([...currentPermissionIds, ...permissionIds]));
+          
+          await storage.updateRolePermissions(role.id, { permissions: mergedPermissionIds });
           updatedRoles.push({
             roleName: role.name,
             addedPermissions: suggestedPermissions,
-            permissionCount: permissionIds.length
+            permissionCount: permissionIds.length,
+            totalPermissions: mergedPermissionIds.length
           });
-          console.log(`Updated role ${role.name} with ${permissionIds.length} permissions`);
+          console.log(`Added ${permissionIds.length} new permissions to role ${role.name}, total: ${mergedPermissionIds.length}`);
         } else {
           console.log(`No valid permissions found for role ${role.name}`);
         }
