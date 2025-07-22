@@ -1173,7 +1173,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         }}
       >
         <CardHeader 
-          className="relative cursor-move flex-shrink-0 p-2 sm:p-6"
+          className="relative cursor-move flex-shrink-0 p-2 sm:p-6 pb-1 sm:pb-6"
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
         >
@@ -1251,9 +1251,9 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
               <Progress value={progress} className="h-1 sm:h-2" />
             </div>
             
-            {/* Voice Status Indicator - show when loading or playing */}
+            {/* Voice Status Indicator - positioned as floating overlay on mobile */}
             {voiceEnabled && (isLoadingVoice || isPlaying) && (
-              <div className="text-xs sm:text-sm text-blue-600 bg-blue-50 px-2 py-1 sm:px-3 sm:py-2 rounded-md">
+              <div className="absolute top-14 right-2 sm:static sm:top-auto sm:right-auto text-xs sm:text-sm text-blue-600 bg-blue-50 px-2 py-1 sm:px-3 sm:py-2 rounded-md shadow-sm sm:shadow-none">
                 <div className="flex items-center gap-2">
                   {isLoadingVoice ? (
                     <>
@@ -1273,7 +1273,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
             )}
           </CardHeader>
 
-          <CardContent className="pointer-events-auto flex-1 flex flex-col min-h-0 p-2 sm:p-6 pt-0" onMouseDown={(e) => e.stopPropagation()}>
+          <CardContent className="pointer-events-auto flex-1 flex flex-col min-h-0 p-2 sm:p-6 pt-0 pb-1 sm:pb-6" onMouseDown={(e) => e.stopPropagation()}>
             {/* Scrollable content area */}
             <div className="flex-1 overflow-y-auto min-h-0 space-y-2 sm:space-y-4">
               {/* Benefits - hidden on mobile to save space */}
