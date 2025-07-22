@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -169,7 +168,6 @@ const getTourSteps = (role: string): TourStep[] => {
 export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
   console.log("GuidedTour component mounted with role:", role);
   
-  const [, setLocation] = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const { toast } = useToast();
@@ -186,15 +184,7 @@ export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
     if (currentStep < tourSteps.length - 1) {
       const nextStep = currentStep + 1;
       setCurrentStep(nextStep);
-      
-      // Navigate to the next step's page
-      const nextStepData = tourSteps[nextStep];
-      if (nextStepData && nextStepData.page !== "current") {
-        console.log("Guided tour navigating to next step:", nextStepData.page);
-        setTimeout(() => {
-          setLocation(nextStepData.page);
-        }, 100);
-      }
+      console.log("Moving to tour step:", nextStep);
     } else {
       handleComplete();
     }

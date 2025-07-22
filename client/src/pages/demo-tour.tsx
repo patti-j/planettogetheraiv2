@@ -66,28 +66,13 @@ export default function DemoTour() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Handle guided tour navigation - moved to top to follow React hooks rules
+  // Handle guided tour - stay on demo-tour page and render overlay
   useEffect(() => {
     if (showGuidedTour && demoRole) {
-      // Navigate to the appropriate role page immediately
-      const roleRoutes = {
-        'director': '/business-goals',
-        'plant-manager': '/plant-manager',
-        'production-scheduler': '/',
-        'it-administrator': '/systems-management',
-        'systems-manager': '/systems-management',
-        'administrator': '/role-management',
-        'shop-floor-operations': '/shop-floor',
-        'data-analyst': '/analytics',
-        'trainer': '/training',
-        'maintenance-technician': '/maintenance-planning'
-      };
-      
-      const route = roleRoutes[demoRole as keyof typeof roleRoutes] || '/';
-      console.log("Demo tour navigating to role page:", route);
-      setLocation(route);
+      console.log("Starting guided tour for role:", demoRole);
+      // Don't navigate away, just render the guided tour overlay
     }
-  }, [showGuidedTour, demoRole, setLocation]);
+  }, [showGuidedTour, demoRole]);
 
   const form = useForm<ParticipantFormData>({
     resolver: zodResolver(participantFormSchema),
