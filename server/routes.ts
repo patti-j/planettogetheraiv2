@@ -347,8 +347,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             firstName: 'Demo',
             lastName: 'Trainer',
             isActive: true,
+            isDemo: true,
+            role: 'Trainer',
             activeRole: { id: 'demo_trainer_role', name: 'Trainer' },
-            permissions: ['training-view', 'role-management-view', 'analytics-view', 'ai-assistant-view', 'feedback-view'],
+            permissions: [
+              'training-view', 'role-switching-permissions', 'analytics-view', 'reports-view',
+              'schedule-view', 'business-goals-view', 'visual-factory-view', 
+              'ai-assistant-view', 'feedback-view'
+            ],
             roles: [{ id: 'demo_trainer_role', name: 'Trainer' }]
           },
           'demo_maintenance': { 
