@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,8 @@ import {
   ArrowRight,
   Lightbulb,
   Target,
-  Play
+  Play,
+  Move
 } from "lucide-react";
 
 interface TourStep {
@@ -187,13 +188,54 @@ export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
   
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
+  const [position, setPosition] = useState({ x: 20, y: 20 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const tourSteps = getTourSteps(role);
   const progress = ((currentStep + 1) / tourSteps.length) * 100;
   
   console.log("GuidedTour initialized - tourSteps:", tourSteps, "currentStep:", currentStep);
+
+  // Drag functionality
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        setPosition({
+          x: e.clientX - dragOffset.x,
+          y: e.clientY - dragOffset.y
+        });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (cardRef.current) {
+      const rect = cardRef.current.getBoundingClientRect();
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+      setIsDragging(true);
+    }
+  };
 
   const handleNext = () => {
     if (currentStep < tourSteps.length - 1) {
@@ -241,23 +283,38 @@ export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
 
   return (
     <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-2xl bg-white shadow-2xl">
-          <CardHeader className="relative">
-            <div className="flex items-center justify-between mb-4">
+      {/* Light backdrop that allows interaction with background */}
+      <div className="fixed inset-0 bg-black bg-opacity-20 z-40 pointer-events-none"></div>
+      
+      {/* Draggable tour window */}
+      <Card 
+        ref={cardRef}
+        className="fixed w-96 bg-white shadow-2xl z-50 cursor-move"
+        style={{
+          left: position.x,
+          top: position.y,
+        }}
+      >
+        <CardHeader 
+          className="relative cursor-move"
+          onMouseDown={handleMouseDown}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Move className="h-4 w-4 text-gray-400" />
               <Badge variant="secondary" className="text-sm">
                 {role.charAt(0).toUpperCase() + role.slice(1).replace('-', ' ')} Demo
               </Badge>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSkipTour}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="h-4 w-4" />
-              </Button>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSkipTour}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
             
             <div className="flex items-center gap-4 mb-4">
               <div className="p-3 rounded-full bg-blue-100">
@@ -282,17 +339,17 @@ export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
             </div>
           </CardHeader>
 
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4 pointer-events-auto" onMouseDown={(e) => e.stopPropagation()}>
             {/* Benefits */}
             <div>
-              <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
                 <Lightbulb className="h-4 w-4 text-yellow-500" />
                 Key Benefits
               </h4>
-              <ul className="space-y-2">
-                {currentStepData.benefits.map((benefit, index) => (
-                  <li key={index} className="flex items-start gap-2 text-gray-600">
-                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+              <ul className="space-y-1">
+                {currentStepData.benefits.slice(0, 3).map((benefit, index) => (
+                  <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
+                    <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
                     {benefit}
                   </li>
                 ))}
@@ -317,40 +374,40 @@ export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
             )}
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-between pt-4 border-t">
-              <div className="flex gap-2">
+            <div className="flex items-center justify-between pt-3 border-t">
+              <div className="flex gap-1">
                 <Button
                   variant="ghost"
+                  size="sm"
                   onClick={handleSkipTour}
-                  className="text-gray-500"
+                  className="text-gray-500 px-2"
                 >
-                  Skip Tour
+                  Skip
                 </Button>
                 {currentStep > 0 && (
-                  <Button variant="outline" onClick={handlePrevious}>
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Previous
+                  <Button variant="outline" size="sm" onClick={handlePrevious} className="px-2">
+                    <ChevronLeft className="h-3 w-3 mr-1" />
+                    Back
                   </Button>
                 )}
               </div>
               
-              <Button onClick={handleNext} className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={handleNext} size="sm" className="bg-blue-600 hover:bg-blue-700 px-3">
                 {currentStep === tourSteps.length - 1 ? (
                   <>
-                    Complete Tour
-                    <CheckCircle className="h-4 w-4 ml-1" />
+                    Complete
+                    <CheckCircle className="h-3 w-3 ml-1" />
                   </>
                 ) : (
                   <>
-                    Next Step
-                    <ArrowRight className="h-4 w-4 ml-1" />
+                    Next
+                    <ArrowRight className="h-3 w-3 ml-1" />
                   </>
                 )}
               </Button>
             </div>
           </CardContent>
         </Card>
-      </div>
     </>
   );
 }
