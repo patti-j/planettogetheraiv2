@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -33,7 +34,8 @@ import {
   User,
   Mail,
   Building2,
-  Briefcase
+  Briefcase,
+  Volume2
 } from "lucide-react";
 
 const participantFormSchema = z.object({
@@ -45,6 +47,7 @@ const participantFormSchema = z.object({
   primaryRole: z.string().min(1, "Primary role is required"),
   additionalRoles: z.array(z.string()).default([]),
   referralSource: z.string().optional(),
+  voiceNarrationEnabled: z.boolean().default(false),
 });
 
 type ParticipantFormData = z.infer<typeof participantFormSchema>;
@@ -219,7 +222,7 @@ export default function DemoTour() {
         description: "Let's start your personalized demo tour.",
       });
       setShowParticipantForm(false);
-      startDemoTour(participant.primaryRole);
+      startDemoTour(participant.primaryRole, participant.voiceNarrationEnabled);
     },
     onError: (error) => {
       console.error("Error creating participant:", error);
@@ -231,7 +234,7 @@ export default function DemoTour() {
     },
   });
 
-  const startDemoTour = async (primaryRole: string) => {
+  const startDemoTour = async (primaryRole: string, voiceEnabledParam = false) => {
     try {
       console.log("Starting demo tour with role:", primaryRole);
       
@@ -283,8 +286,8 @@ export default function DemoTour() {
       
       // Start guided tour using global context
       setDemoRole(primaryRole);
-      startTour(primaryRole);
-      console.log("Demo tour started globally for role:", primaryRole);
+      startTour(primaryRole, voiceEnabledParam);
+      console.log("Demo tour started globally for role:", primaryRole, "with voice:", voiceEnabledParam);
       
     } catch (error) {
       console.error("Demo login error:", error);
@@ -461,6 +464,31 @@ export default function DemoTour() {
                       </Select>
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Voice Narration Preference */}
+              <FormField
+                control={form.control}
+                name="voiceNarrationEnabled"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                        <Volume2 className="h-4 w-4 text-blue-600" />
+                        Enable voice narration during tour
+                      </FormLabel>
+                      <p className="text-xs text-muted-foreground">
+                        Get spoken guidance along with visual instructions for a more engaging experience
+                      </p>
+                    </div>
                   </FormItem>
                 )}
               />

@@ -18,7 +18,10 @@ import {
   Lightbulb,
   Target,
   Play,
-  Move
+  Move,
+  Volume2,
+  VolumeX,
+  Pause
 } from "lucide-react";
 
 interface TourStep {
@@ -34,6 +37,7 @@ interface TourStep {
 
 interface GuidedTourProps {
   role: string;
+  initialVoiceEnabled?: boolean;
   onComplete: () => void;
   onSkip: () => void;
 }
@@ -183,17 +187,20 @@ const getTourSteps = (role: string): TourStep[] => {
   return [commonSteps[0], ...roleSpecificSteps, commonSteps[1]];
 };
 
-export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
-  console.log("GuidedTour component mounted with role:", role);
+export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSkip }: GuidedTourProps) {
+  console.log("GuidedTour component mounted with role:", role, "voice enabled:", initialVoiceEnabled);
   
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [voiceEnabled, setVoiceEnabled] = useState(initialVoiceEnabled);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const cardRef = useRef<HTMLDivElement>(null);
+  const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const tourSteps = getTourSteps(role);
   const progress = ((currentStep + 1) / tourSteps.length) * 100;
@@ -210,6 +217,22 @@ export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
       x: Math.max(0, window.innerWidth - cardWidth - padding),
       y: Math.max(0, window.innerHeight - cardHeight - padding)
     });
+  }, []);
+
+  // Speak text when step changes and voice is enabled
+  useEffect(() => {
+    if (voiceEnabled && tourSteps[currentStep]) {
+      const currentStepData = tourSteps[currentStep];
+      const textToSpeak = `${currentStepData.title}. ${currentStepData.description}`;
+      setTimeout(() => speakText(textToSpeak), 500); // Small delay to ensure UI is ready
+    }
+  }, [currentStep, voiceEnabled]);
+
+  // Clean up speech on component unmount
+  useEffect(() => {
+    return () => {
+      speechSynthesis.cancel();
+    };
   }, []);
 
   // Drag functionality
@@ -250,6 +273,7 @@ export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
   };
 
   const handleNext = () => {
+    stopSpeech(); // Stop current speech before proceeding
     if (currentStep < tourSteps.length - 1) {
       const nextStep = currentStep + 1;
       const nextStepData = tourSteps[nextStep];
@@ -269,12 +293,14 @@ export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
   };
 
   const handlePrevious = () => {
+    stopSpeech(); // Stop current speech before proceeding
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
   };
 
   const handleComplete = () => {
+    stopSpeech();
     setIsVisible(false);
     toast({
       title: "Tour Complete!",
@@ -284,8 +310,88 @@ export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
   };
 
   const handleSkipTour = () => {
+    stopSpeech();
     setIsVisible(false);
     onSkip();
+  };
+
+  // Voice functionality
+  const getPreferredVoice = () => {
+    const voices = speechSynthesis.getVoices();
+    // Prefer female voices as they tend to be more engaging for tutorials
+    const preferredVoices = [
+      'Google UK English Female',
+      'Microsoft Zira Desktop',
+      'Samantha',
+      'Alex',
+      'Victoria'
+    ];
+    
+    for (const preferredName of preferredVoices) {
+      const voice = voices.find(v => v.name.includes(preferredName));
+      if (voice) return voice;
+    }
+    
+    // Fallback to first available female voice
+    const femaleVoice = voices.find(v => v.name.toLowerCase().includes('female'));
+    if (femaleVoice) return femaleVoice;
+    
+    // Final fallback to first available voice
+    return voices[0] || null;
+  };
+
+  const speakText = (text: string) => {
+    if (!voiceEnabled || !('speechSynthesis' in window)) return;
+    
+    // Stop any current speech
+    speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    const preferredVoice = getPreferredVoice();
+    
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+    
+    utterance.rate = 0.9; // Slightly slower for better comprehension
+    utterance.pitch = 1.0;
+    utterance.volume = 0.8;
+    
+    utterance.onstart = () => setIsPlaying(true);
+    utterance.onend = () => setIsPlaying(false);
+    utterance.onerror = () => setIsPlaying(false);
+    
+    speechRef.current = utterance;
+    speechSynthesis.speak(utterance);
+  };
+
+  const stopSpeech = () => {
+    speechSynthesis.cancel();
+    setIsPlaying(false);
+  };
+
+  const toggleVoice = () => {
+    const newVoiceEnabled = !voiceEnabled;
+    setVoiceEnabled(newVoiceEnabled);
+    
+    if (!newVoiceEnabled) {
+      stopSpeech();
+    } else if (newVoiceEnabled && tourSteps[currentStep]) {
+      // Speak current step when voice is enabled
+      const currentStepData = tourSteps[currentStep];
+      const textToSpeak = `${currentStepData.title}. ${currentStepData.description}`;
+      speakText(textToSpeak);
+    }
+  };
+
+  const togglePlayPause = () => {
+    if (isPlaying) {
+      stopSpeech();
+    } else if (voiceEnabled && tourSteps[currentStep]) {
+      const currentStepData = tourSteps[currentStep];
+      const textToSpeak = `${currentStepData.title}. ${currentStepData.description}`;
+      speakText(textToSpeak);
+    }
   };
 
   const currentStepData = tourSteps[currentStep];
@@ -318,14 +424,40 @@ export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
                 {role.charAt(0).toUpperCase() + role.slice(1).replace('-', ' ')} Demo
               </Badge>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSkipTour}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              {/* Voice Toggle Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleVoice}
+                className={`text-gray-500 hover:text-gray-700 ${voiceEnabled ? 'bg-blue-50 text-blue-600' : ''}`}
+                title={voiceEnabled ? "Turn off voice narration" : "Turn on voice narration"}
+              >
+                {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+              </Button>
+              
+              {/* Play/Pause Button (only shown when voice is enabled) */}
+              {voiceEnabled && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={togglePlayPause}
+                  className="text-gray-500 hover:text-gray-700"
+                  title={isPlaying ? "Pause narration" : "Play narration"}
+                >
+                  {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                </Button>
+              )}
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSkipTour}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
             
             <div className="flex items-center gap-4 mb-4">

@@ -4,7 +4,8 @@ import { GuidedTour } from "@/components/guided-tour";
 interface TourContextType {
   isActive: boolean;
   currentRole: string;
-  startTour: (role: string) => void;
+  voiceEnabled: boolean;
+  startTour: (role: string, voiceEnabled?: boolean) => void;
   completeTour: () => void;
   skipTour: () => void;
 }
@@ -14,6 +15,7 @@ const TourContext = createContext<TourContextType | null>(null);
 export function TourProvider({ children }: { children: ReactNode }) {
   const [isActive, setIsActive] = useState(false);
   const [currentRole, setCurrentRole] = useState("");
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
 
   // Check localStorage for active tour on mount
   useEffect(() => {
@@ -22,17 +24,23 @@ export function TourProvider({ children }: { children: ReactNode }) {
       const tourData = JSON.parse(savedTourState);
       setIsActive(true);
       setCurrentRole(tourData.role);
+      setVoiceEnabled(tourData.voiceEnabled || false);
       console.log("Restored active tour from localStorage:", tourData);
     }
   }, []);
 
-  const startTour = (role: string) => {
-    console.log("Starting global tour for role:", role);
+  const startTour = (role: string, voiceEnabledParam = false) => {
+    console.log("Starting global tour for role:", role, "with voice:", voiceEnabledParam);
     setIsActive(true);
     setCurrentRole(role);
+    setVoiceEnabled(voiceEnabledParam);
     
     // Save tour state to localStorage
-    localStorage.setItem("activeDemoTour", JSON.stringify({ role, active: true }));
+    localStorage.setItem("activeDemoTour", JSON.stringify({ 
+      role, 
+      active: true, 
+      voiceEnabled: voiceEnabledParam 
+    }));
   };
 
   const completeTour = () => {
@@ -53,6 +61,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
     <TourContext.Provider value={{
       isActive,
       currentRole,
+      voiceEnabled,
       startTour,
       completeTour,
       skipTour
@@ -63,6 +72,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
       {isActive && currentRole && (
         <GuidedTour
           role={currentRole}
+          initialVoiceEnabled={voiceEnabled}
           onComplete={completeTour}
           onSkip={skipTour}
         />
