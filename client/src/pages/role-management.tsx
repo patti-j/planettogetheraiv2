@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   UserCheck, Shield, Plus, Edit, Trash2, Users, Settings,
-  CheckCircle, XCircle, AlertCircle, Maximize2, Minimize2
+  CheckCircle, XCircle, AlertCircle, Maximize2, Minimize2, Sparkles
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -53,7 +53,12 @@ export default function RoleManagementPage() {
   const [isMaximized, setIsMaximized] = useState(false);
   const [newRoleDialog, setNewRoleDialog] = useState(false);
   const [editRoleDialog, setEditRoleDialog] = useState(false);
+  const [aiPermissionDialog, setAiPermissionDialog] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [selectedRoles, setSelectedRoles] = useState<number[]>([]);
+  const [aiPermissionForm, setAiPermissionForm] = useState({
+    description: ""
+  });
   const [roleForm, setRoleForm] = useState({
     name: "",
     description: "",
@@ -141,6 +146,31 @@ export default function RoleManagementPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to delete role",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // AI permission generation mutation
+  const generateAiPermissionsMutation = useMutation({
+    mutationFn: async (data: { roleIds: number[], description: string }) => {
+      const response = await apiRequest("POST", "/api/ai/generate-permissions", data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Permissions Generated",
+        description: `AI has generated permissions for ${selectedRoles.length} role(s). ${data.message || 'Check each role to review the new permissions.'}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/roles-management"] });
+      setAiPermissionDialog(false);
+      setSelectedRoles([]);
+      setAiPermissionForm({ description: "" });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Failed to generate permissions with AI",
         variant: "destructive",
       });
     },
@@ -247,6 +277,29 @@ export default function RoleManagementPage() {
     return `${selectedCount}/${featurePermissions.length}`;
   };
 
+  const handleAiPermissionGeneration = () => {
+    if (selectedRoles.length === 0) {
+      toast({
+        title: "No Roles Selected",
+        description: "Please select at least one role to generate permissions for",
+        variant: "destructive",
+      });
+      return;
+    }
+    generateAiPermissionsMutation.mutate({
+      roleIds: selectedRoles,
+      description: aiPermissionForm.description
+    });
+  };
+
+  const handleRoleSelection = (roleId: number, checked: boolean) => {
+    setSelectedRoles(prev => 
+      checked 
+        ? [...prev, roleId]
+        : prev.filter(id => id !== roleId)
+    );
+  };
+
   if (rolesLoading || permissionsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -267,6 +320,17 @@ export default function RoleManagementPage() {
           <p className="text-gray-600">Define roles and specify feature permissions for different user types</p>
         </div>
         <div className="flex items-center gap-2">
+          <Dialog open={aiPermissionDialog} onOpenChange={setAiPermissionDialog}>
+            <DialogTrigger asChild>
+              <Button 
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                disabled={generateAiPermissionsMutation.isPending}
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                {generateAiPermissionsMutation.isPending ? "Generating..." : "AI Permissions"}
+              </Button>
+            </DialogTrigger>
+          </Dialog>
           <Dialog open={newRoleDialog} onOpenChange={setNewRoleDialog}>
             <DialogTrigger asChild>
               <Button className="bg-primary hover:bg-blue-700 text-white">
@@ -428,6 +492,14 @@ export default function RoleManagementPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox 
+                    checked={selectedRoles.length === roles.length}
+                    onCheckedChange={(checked) => {
+                      setSelectedRoles(checked ? roles.map(r => r.id) : []);
+                    }}
+                  />
+                </TableHead>
                 <TableHead>Role Name</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead>Users</TableHead>
@@ -439,6 +511,12 @@ export default function RoleManagementPage() {
             <TableBody>
               {roles.map((role) => (
                 <TableRow key={role.id}>
+                  <TableCell>
+                    <Checkbox 
+                      checked={selectedRoles.includes(role.id)}
+                      onCheckedChange={(checked) => handleRoleSelection(role.id, checked as boolean)}
+                    />
+                  </TableCell>
                   <TableCell className="font-medium">{role.name}</TableCell>
                   <TableCell>{role.description}</TableCell>
                   <TableCell>
@@ -576,6 +654,70 @@ export default function RoleManagementPage() {
               </Button>
               <Button onClick={handleUpdateRole} disabled={updateRoleMutation.isPending}>
                 {updateRoleMutation.isPending ? "Updating..." : "Update Role"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Permission Generation Dialog */}
+      <Dialog open={aiPermissionDialog} onOpenChange={setAiPermissionDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-600" />
+              AI Permission Generation
+            </DialogTitle>
+            <DialogDescription>
+              Generate permissions for selected roles using AI based on role names and optional description.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium">Selected Roles ({selectedRoles.length})</Label>
+              <div className="mt-1 p-3 bg-gray-50 rounded-md">
+                {selectedRoles.length === 0 ? (
+                  <p className="text-sm text-gray-500">No roles selected. Please select roles from the table first.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedRoles.map(roleId => {
+                      const role = roles.find(r => r.id === roleId);
+                      return role ? (
+                        <Badge key={roleId} variant="secondary">
+                          {role.name}
+                        </Badge>
+                      ) : null;
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="ai-description">Additional Context (Optional)</Label>
+              <Textarea
+                id="ai-description"
+                placeholder="Describe how permissions should be assigned to these roles. For example: 'Give the Quality Manager role permissions to view reports and manage quality control processes, but not delete data' or 'Marketing roles should have access to analytics and customer data but no system administration'"
+                value={aiPermissionForm.description}
+                onChange={(e) => setAiPermissionForm({...aiPermissionForm, description: e.target.value})}
+                className="mt-1 min-h-[100px]"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                AI will analyze role names and this description to generate appropriate permissions.
+              </p>
+            </div>
+
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setAiPermissionDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleAiPermissionGeneration}
+                disabled={generateAiPermissionsMutation.isPending || selectedRoles.length === 0}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                {generateAiPermissionsMutation.isPending ? "Generating..." : "Generate Permissions"}
               </Button>
             </div>
           </div>

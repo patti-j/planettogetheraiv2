@@ -3950,6 +3950,134 @@ Return a JSON object with tour data for each role including steps, voice scripts
     }
   });
 
+  // AI Permission Generation
+  app.post("/api/ai/generate-permissions", requireAuth, async (req, res) => {
+    try {
+      const { roleIds, description = "" } = req.body;
+      
+      if (!roleIds || !Array.isArray(roleIds) || roleIds.length === 0) {
+        return res.status(400).json({ message: "Role IDs array is required" });
+      }
+
+      // Get the selected roles and existing permissions
+      const roles = await storage.getRolesByIds(roleIds);
+      if (!roles || roles.length === 0) {
+        return res.status(404).json({ message: "No roles found for the provided IDs" });
+      }
+
+      const allPermissions = await storage.getAllPermissions();
+      
+      // Import OpenAI dynamically
+      const OpenAI = (await import("openai")).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      // Create role context for AI
+      const roleContext = roles.map(role => ({
+        name: role.name,
+        description: role.description,
+        currentPermissions: role.permissions?.map(p => p.name) || []
+      }));
+
+      const availablePermissions = allPermissions.map(p => ({
+        name: p.name,
+        feature: p.feature,
+        action: p.action,
+        description: p.description
+      }));
+
+      const prompt = `Analyze these roles and assign appropriate permissions based on their names, descriptions, and the provided context.
+
+Roles to analyze:
+${roleContext.map(r => `- ${r.name}: ${r.description || 'No description'}`).join('\n')}
+
+Available Permissions:
+${availablePermissions.map(p => `- ${p.name}: ${p.description} (${p.feature}:${p.action})`).join('\n')}
+
+Additional Context: ${description || 'Use role names and descriptions to determine appropriate permissions.'}
+
+For each role, determine which permissions are most appropriate based on:
+1. Role name and typical responsibilities 
+2. Role description
+3. Principle of least privilege (only necessary permissions)
+4. Manufacturing workflow requirements
+
+Return a JSON object with this structure:
+{
+  "rolePermissions": {
+    "RoleName": ["permission-name-1", "permission-name-2"],
+    "AnotherRole": ["permission-name-3", "permission-name-4"]
+  },
+  "reasoning": "Brief explanation of permission assignments"
+}`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are a security and role management expert for manufacturing systems. Assign permissions thoughtfully based on job roles while maintaining security best practices."
+          },
+          {
+            role: "user", 
+            content: prompt
+          }
+        ],
+        max_tokens: 2000,
+        temperature: 0.3
+      });
+
+      let generatedContent = completion.choices[0].message.content || '';
+      
+      // Extract JSON content from markdown code blocks if present
+      const jsonMatch = generatedContent.match(/```json\s*([\s\S]*?)\s*```/);
+      if (jsonMatch) {
+        generatedContent = jsonMatch[1];
+      }
+
+      let aiResponse;
+      try {
+        aiResponse = JSON.parse(generatedContent);
+      } catch (parseError) {
+        console.error("Failed to parse AI permission response:", parseError);
+        return res.status(500).json({ message: "AI generated invalid response format" });
+      }
+
+      // Apply the AI-suggested permissions to each role
+      const updatedRoles = [];
+      const permissionMap = new Map(allPermissions.map(p => [p.name, p.id]));
+
+      for (const role of roles) {
+        const suggestedPermissions = aiResponse.rolePermissions?.[role.name] || [];
+        const permissionIds = suggestedPermissions
+          .map(permName => permissionMap.get(permName))
+          .filter(id => id !== undefined);
+
+        if (permissionIds.length > 0) {
+          await storage.updateRolePermissions(role.id, { permissions: permissionIds });
+          updatedRoles.push({
+            roleName: role.name,
+            addedPermissions: suggestedPermissions,
+            permissionCount: permissionIds.length
+          });
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        message: aiResponse.reasoning || "Permissions generated and assigned successfully",
+        updatedRoles,
+        totalRoles: updatedRoles.length
+      });
+
+    } catch (error) {
+      console.error("AI permission generation error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to generate permissions with AI" 
+      });
+    }
+  });
+
   // Tours API endpoints
   app.get("/api/tours", requireAuth, async (req, res) => {
     try {

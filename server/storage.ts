@@ -262,12 +262,15 @@ export interface IStorage {
   // Role Management
   getRoles(): Promise<Role[]>;
   getRole(id: number): Promise<Role | undefined>;
+  getRolesByIds(roleIds: number[]): Promise<Role[]>;
   createRole(role: InsertRole): Promise<Role>;
   updateRole(id: number, role: Partial<InsertRole>): Promise<Role | undefined>;
+  updateRolePermissions(roleId: number, data: { permissions: number[] }): Promise<Role | undefined>;
   deleteRole(id: number): Promise<boolean>;
 
   // Permission Management
   getPermissions(): Promise<Permission[]>;
+  getAllPermissions(): Promise<Permission[]>;
   getPermission(id: number): Promise<Permission | undefined>;
   getPermissionsByFeature(feature: string): Promise<Permission[]>;
   createPermission(permission: InsertPermission): Promise<Permission>;
@@ -1993,6 +1996,34 @@ export class DatabaseStorage implements IStorage {
     return role || undefined;
   }
 
+  async getRolesByIds(roleIds: number[]): Promise<Role[]> {
+    if (roleIds.length === 0) return [];
+    return await db
+      .select({
+        id: roles.id,
+        name: roles.name,
+        description: roles.description,
+        isSystemRole: roles.isSystemRole,
+        createdAt: roles.createdAt,
+        permissions: sql<Permission[]>`
+          json_agg(
+            json_build_object(
+              'id', permissions.id,
+              'name', permissions.name,
+              'feature', permissions.feature,
+              'action', permissions.action,
+              'description', permissions.description
+            )
+          ) FILTER (WHERE permissions.id IS NOT NULL)
+        `
+      })
+      .from(roles)
+      .leftJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
+      .leftJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+      .where(sql`${roles.id} = ANY(${roleIds})`)
+      .groupBy(roles.id);
+  }
+
   async createRole(role: InsertRole): Promise<Role> {
     const [newRole] = await db
       .insert(roles)
@@ -2010,6 +2041,24 @@ export class DatabaseStorage implements IStorage {
     return updatedRole || undefined;
   }
 
+  async updateRolePermissions(roleId: number, data: { permissions: number[] }): Promise<Role | undefined> {
+    // Remove existing role permissions
+    await db.delete(rolePermissions).where(eq(rolePermissions.roleId, roleId));
+    
+    // Add new permissions
+    if (data.permissions.length > 0) {
+      await db.insert(rolePermissions).values(
+        data.permissions.map(permissionId => ({
+          roleId,
+          permissionId
+        }))
+      );
+    }
+    
+    // Return the updated role
+    return await this.getRole(roleId);
+  }
+
   async deleteRole(id: number): Promise<boolean> {
     const result = await db.delete(roles).where(eq(roles.id, id));
     return (result.rowCount || 0) > 0;
@@ -2017,6 +2066,10 @@ export class DatabaseStorage implements IStorage {
 
   // Permission Management
   async getPermissions(): Promise<Permission[]> {
+    return await db.select().from(permissions);
+  }
+
+  async getAllPermissions(): Promise<Permission[]> {
     return await db.select().from(permissions);
   }
 
