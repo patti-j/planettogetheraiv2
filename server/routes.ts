@@ -4055,7 +4055,31 @@ Return a JSON object with this structure:
         
         const permissionIds = suggestedPermissions
           .map(permName => {
-            const id = permissionMap.get(permName);
+            // Try exact match first
+            let id = permissionMap.get(permName);
+            
+            // If not found, try converting from colon format to dash format
+            if (!id && permName.includes(':')) {
+              const dashFormat = permName.replace(':', '-');
+              id = permissionMap.get(dashFormat);
+              console.log(`Converted '${permName}' to '${dashFormat}': ${id ? 'found' : 'not found'}`);
+            }
+            
+            // If still not found, try partial matching by feature name
+            if (!id) {
+              const featurePart = permName.split(':')[0] || permName.split('-')[0];
+              const matchingPermissions = Array.from(permissionMap.keys()).filter(p => p.startsWith(featurePart));
+              if (matchingPermissions.length > 0) {
+                console.log(`Partial matches for '${permName}':`, matchingPermissions);
+                // Try to find view permission as default
+                const viewPerm = matchingPermissions.find(p => p.endsWith('-view'));
+                if (viewPerm) {
+                  id = permissionMap.get(viewPerm);
+                  console.log(`Using view permission '${viewPerm}' for '${permName}'`);
+                }
+              }
+            }
+            
             if (!id) {
               console.log(`Permission '${permName}' not found in database`);
             }
