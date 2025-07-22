@@ -354,7 +354,7 @@ export default function HelpAndGuide() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Help & Guide</h1>
+          <h1 className="text-2xl font-bold">Getting Started</h1>
           <p className="text-gray-600 mt-1">
             Complete setup tasks, learn features, and track your implementation progress
           </p>
