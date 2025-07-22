@@ -289,14 +289,11 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [voiceEnabled, setVoiceEnabled] = useState(initialVoiceEnabled);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [showRoleSelection, setShowRoleSelection] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const cardRef = useRef<HTMLDivElement>(null);
   const speechRef = useRef<HTMLAudioElement | SpeechSynthesisUtterance | null>(null);
-  const preloadedAudioRef = useRef<{[key: string]: HTMLAudioElement}>({});
-  const [preloadingStatus, setPreloadingStatus] = useState<{[key: string]: 'loading' | 'ready' | 'error'}>({});
 
   // Fetch tours from database
   const { data: toursFromAPI = [], isLoading: toursLoading } = useQuery<any[]>({
@@ -385,58 +382,22 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
   
   console.log("GuidedTour initialized - tourSteps:", tourSteps, "currentStep:", currentStep, "loading:", toursLoading);
 
-  // Pre-load audio only for first step when tour starts (not all steps)
+  // Auto-start voice narration for welcome step if voice is enabled
   useEffect(() => {
-    if (voiceEnabled && currentStep === 0 && tourSteps.length > 0 && !preloadedAudioRef.current[tourSteps[0].id]) {
-      console.log("Pre-loading first step audio...");
-      preloadSingleStepAudio(tourSteps[0]);
+    console.log("Auto-start voice effect triggered:", { initialVoiceEnabled, currentStep, hasSteps: tourSteps.length > 0 });
+    if (initialVoiceEnabled && currentStep === 0 && tourSteps.length > 0) {
+      // Small delay to ensure component is ready
+      const timer = setTimeout(() => {
+        console.log("Auto-starting voice for welcome step since user enabled voice narration");
+        playPreloadedAudio(tourSteps[0].id);
+      }, 500);
+      return () => clearTimeout(timer);
     }
-  }, [voiceEnabled, tourSteps]);
-  
-  // Pre-load audio for a single step
-  const preloadSingleStepAudio = async (stepData: any) => {
-    const enhancedText = createEngagingNarration(stepData, role);
-    
-    setPreloadingStatus(prev => ({ ...prev, [stepData.id]: 'loading' }));
-    
-    try {
-      const response = await fetch("/api/ai/text-to-speech", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("authToken")}`
-        },
-        body: JSON.stringify({
-          text: enhancedText,
-          gender: "female",
-          voice: "nova",
-          speed: 1.15
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Audio generation failed for step ${stepData.id}`);
-      }
-
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-      audio.preload = "auto";
-      
-      preloadedAudioRef.current[stepData.id] = audio;
-      setPreloadingStatus(prev => ({ ...prev, [stepData.id]: 'ready' }));
-      
-      console.log(`Pre-loaded audio for step: ${stepData.id}`);
-      
-    } catch (error) {
-      console.error(`Failed to pre-load audio for step ${stepData.id}:`, error);
-      setPreloadingStatus(prev => ({ ...prev, [stepData.id]: 'error' }));
-    }
-  };
+  }, [initialVoiceEnabled, tourSteps, currentStep]);
   
   // Play cached audio directly from server for a specific step  
   const playPreloadedAudio = async (stepId: string) => {
-    if (!voiceEnabled || isGenerating || isPlaying) return;
+    if (!voiceEnabled || isPlaying) return;
     
     // Stop any currently playing audio
     if (speechRef.current) {
@@ -1080,32 +1041,13 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
               <Progress value={progress} className="h-2" />
             </div>
             
-            {/* Voice Status Indicator */}
-            {voiceEnabled && (
+            {/* Voice Status Indicator - only show when playing */}
+            {voiceEnabled && isPlaying && (
               <div className="text-sm text-blue-600 bg-blue-50 px-3 py-2 rounded-md">
-                {isGenerating || isPlaying ? (
-                  <div className="flex items-center gap-2">
-                    {isGenerating ? (
-                      <>
-                        <div className="h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                        <span>Generating voice narration...</span>
-                      </>
-                    ) : (
-                      <>
-                        <div className="h-3 w-3 bg-blue-500 rounded-full animate-pulse" />
-                        <span>Playing voice narration</span>
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  // Show pre-loading status
-                  <div className="flex items-center justify-between">
-                    <span>Voice Ready: {Object.values(preloadingStatus).filter(s => s === 'ready').length}/{tourSteps.length} steps</span>
-                    {Object.values(preloadingStatus).some(s => s === 'loading') && (
-                      <div className="h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                    )}
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 bg-blue-500 rounded-full animate-pulse" />
+                  <span>Playing voice narration</span>
+                </div>
               </div>
             )}
           </CardHeader>
@@ -1170,7 +1112,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
                     variant="outline"
                     size="sm"
                     onClick={replayCurrentStep}
-                    disabled={isGenerating}
+                    disabled={isPlaying}
                     className="px-2 text-blue-600 border-blue-200 hover:bg-blue-50"
                     title="Replay current step narration"
                   >
