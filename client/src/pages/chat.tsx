@@ -266,7 +266,7 @@ export default function Chat() {
       <div className="w-64 border-r bg-card flex flex-col">
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold">Messages</h2>
+            <h2 className="text-lg font-semibold md:ml-0 ml-12">Messages</h2>
             <Dialog open={showCreateChannel} onOpenChange={setShowCreateChannel}>
               <DialogTrigger asChild>
                 <Button size="sm" variant="outline">
@@ -345,8 +345,8 @@ export default function Chat() {
                 <div className="flex items-center space-x-3">
                   {getChannelIcon(selectedChannel)}
                   <div>
-                    <h3 className="font-semibold">{selectedChannel.name}</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-semibold md:ml-0 ml-12">{selectedChannel.name}</h3>
+                    <p className="text-sm text-muted-foreground md:ml-0 ml-12">
                       {selectedChannel.participants.length} participant{selectedChannel.participants.length !== 1 ? 's' : ''}
                     </p>
                   </div>
