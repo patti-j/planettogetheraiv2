@@ -4,19 +4,19 @@ import { useAuth } from "@/hooks/useAuth";
 
 interface TourContextType {
   isActive: boolean;
-  currentRole: string;
+  currentRoleId: number | null;
   voiceEnabled: boolean;
-  startTour: (role: string, voiceEnabled?: boolean) => void;
+  startTour: (roleId: number, voiceEnabled?: boolean) => void;
   completeTour: () => void;
   skipTour: () => void;
-  switchToRole: (newRole: string) => void;
+  switchToRole: (newRoleId: number) => void;
 }
 
 const TourContext = createContext<TourContextType | null>(null);
 
 export function TourProvider({ children }: { children: ReactNode }) {
   const [isActive, setIsActive] = useState(false);
-  const [currentRole, setCurrentRole] = useState("");
+  const [currentRoleId, setCurrentRoleId] = useState<number | null>(null);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -26,7 +26,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
     if (savedTourState) {
       const tourData = JSON.parse(savedTourState);
       setIsActive(true);
-      setCurrentRole(tourData.role);
+      setCurrentRoleId(tourData.roleId);
       setVoiceEnabled(tourData.voiceEnabled || false);
       console.log("Restored active tour from localStorage:", tourData, "voice enabled:", tourData.voiceEnabled);
     }
@@ -46,21 +46,21 @@ export function TourProvider({ children }: { children: ReactNode }) {
       
       console.log("User signed out during tour - closing tour window");
       setIsActive(false);
-      setCurrentRole("");
+      setCurrentRoleId(null);
       setVoiceEnabled(false);
       localStorage.removeItem("activeDemoTour");
     }
   }, [isAuthenticated, isLoading, isActive]);
 
-  const startTour = (role: string, voiceEnabledParam = false) => {
-    console.log("TourContext startTour called with role:", role, "voiceEnabledParam:", voiceEnabledParam);
+  const startTour = (roleId: number, voiceEnabledParam = false) => {
+    console.log("TourContext startTour called with roleId:", roleId, "voiceEnabledParam:", voiceEnabledParam);
     setIsActive(true);
-    setCurrentRole(role);
+    setCurrentRoleId(roleId);
     setVoiceEnabled(voiceEnabledParam);
     
     // Save tour state to localStorage
     const tourData = { 
-      role, 
+      roleId, 
       active: true, 
       voiceEnabled: voiceEnabledParam 
     };
@@ -71,24 +71,24 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const completeTour = () => {
     console.log("Completing global tour");
     setIsActive(false);
-    setCurrentRole("");
+    setCurrentRoleId(null);
     localStorage.removeItem("activeDemoTour");
   };
 
   const skipTour = () => {
     console.log("Skipping global tour");
     setIsActive(false);
-    setCurrentRole("");
+    setCurrentRoleId(null);
     localStorage.removeItem("activeDemoTour");
   };
 
-  const switchToRole = (newRole: string) => {
-    console.log("Switching to new role:", newRole);
-    setCurrentRole(newRole);
+  const switchToRole = (newRoleId: number) => {
+    console.log("Switching to new roleId:", newRoleId);
+    setCurrentRoleId(newRoleId);
     
     // Update localStorage with new role but keep voice setting
     const tourData = { 
-      role: newRole, 
+      roleId: newRoleId, 
       active: true, 
       voiceEnabled 
     };
@@ -99,7 +99,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
   return (
     <TourContext.Provider value={{
       isActive,
-      currentRole,
+      currentRoleId,
       voiceEnabled,
       startTour,
       completeTour,
@@ -109,9 +109,9 @@ export function TourProvider({ children }: { children: ReactNode }) {
       {children}
       
       {/* Global Tour Overlay - shows on any page when active */}
-      {isActive && currentRole && (
+      {isActive && currentRoleId && (
         <GuidedTour
-          role={currentRole}
+          roleId={currentRoleId}
           initialVoiceEnabled={voiceEnabled}
           onComplete={completeTour}
           onSkip={skipTour}
@@ -129,7 +129,7 @@ export function useTour() {
     // Return default values instead of throwing to prevent crashes
     return {
       isActive: false,
-      currentRole: "",
+      currentRoleId: null,
       voiceEnabled: false,
       startTour: () => {},
       completeTour: () => {},

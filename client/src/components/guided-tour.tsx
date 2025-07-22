@@ -40,12 +40,12 @@ interface TourStep {
 }
 
 interface GuidedTourProps {
-  role: string;
+  roleId: number;
   initialStep?: number;
   initialVoiceEnabled?: boolean;
   onComplete: () => void;
   onSkip: () => void;
-  onSwitchRole?: (newRole: string) => void;
+  onSwitchRole?: (newRoleId: number) => void;
 }
 
 // Available roles for tour selection
@@ -76,8 +76,8 @@ const getAvailableRoles = () => [
   }
 ];
 
-// Define role-specific tour steps
-const getTourSteps = (role: string): TourStep[] => {
+// Define role-specific tour steps - now fetched from database via roleId
+const getTourSteps = (roleId: number): TourStep[] => {
   const commonSteps: TourStep[] = [
     {
       id: "welcome",
@@ -279,8 +279,14 @@ const getTourSteps = (role: string): TourStep[] => {
   return [commonSteps[0], ...roleSpecificSteps, commonSteps[1]];
 };
 
-export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false, onComplete, onSkip, onSwitchRole }: GuidedTourProps) {
-  console.log("GuidedTour component mounted with role:", role, "initialVoiceEnabled:", initialVoiceEnabled);
+export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = false, onComplete, onSkip, onSwitchRole }: GuidedTourProps) {
+  console.log("GuidedTour component mounted with roleId:", roleId, "initialVoiceEnabled:", initialVoiceEnabled);
+  
+  // Fetch role data to get role name for compatibility
+  const { data: roleData } = useQuery({
+    queryKey: [`/api/roles/${roleId}`],
+    enabled: !!roleId,
+  });
   
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [isVisible, setIsVisible] = useState(true);
@@ -302,9 +308,8 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
   });
 
   // Convert database tour data to TourStep format
-  const getTourStepsFromDatabase = (role: string): TourStep[] => {
-    const roleKey = role.toLowerCase().replace(/\s+/g, '-');
-    const tourData = toursFromAPI.find((tour: any) => tour.role === roleKey);
+  const getTourStepsFromDatabase = (roleId: number): TourStep[] => {
+    const tourData = toursFromAPI.find((tour: any) => tour.roleId === roleId);
     
     const commonSteps: TourStep[] = [
       {
@@ -338,8 +343,8 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
     ];
 
     if (!tourData?.tourData?.steps) {
-      // Fallback to original hardcoded steps if no database data
-      return getTourSteps(role);
+      // Fallback to original hardcoded steps if no database data  
+      return getTourSteps(roleId);
     }
 
     // Convert database steps to TourStep format
@@ -416,7 +421,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
   };
 
   // Calculate tour steps safely after data is loaded
-  const tourSteps = toursLoading ? [] : getTourStepsFromDatabase(role);
+  const tourSteps = toursLoading ? [] : getTourStepsFromDatabase(roleId);
   const progress = tourSteps.length > 0 ? ((currentStep + 1) / tourSteps.length) * 100 : 0;
   
   console.log("GuidedTour initialized - tourSteps:", tourSteps, "currentStep:", currentStep, "loading:", toursLoading);
@@ -454,7 +459,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
     // Always use server-side cached audio for instant playback
     const currentStepData = tourSteps.find(step => step.id === stepId);
     if (currentStepData) {
-      const enhancedText = createEngagingNarration(currentStepData, role);
+      const enhancedText = createEngagingNarration(currentStepData, roleData?.name || 'unknown');
       console.log(`Playing cached audio for step: ${stepId}`);
       
       try {
@@ -472,7 +477,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
             gender: "female",
             voice: "alloy",
             speed: 1.15,
-            role: role,
+            role: roleData?.name || 'unknown',
             stepId: stepId
           })
         });
@@ -537,7 +542,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
     // Always use server-side cached audio for instant playback
     const currentStepData = tourSteps.find(step => step.id === stepId);
     if (currentStepData) {
-      const enhancedText = createEngagingNarration(currentStepData, role);
+      const enhancedText = createEngagingNarration(currentStepData, roleData?.name || 'unknown');
       console.log(`Playing cached audio for voice toggle on step: ${stepId}`);
       
       try {
@@ -555,7 +560,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
             gender: "female",
             voice: "alloy",
             speed: 1.15,
-            role: role,
+            role: roleData?.name || 'unknown',
             stepId: stepId
           })
         });
@@ -708,9 +713,26 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
     stopSpeech(); // Stop any playing audio before switching roles
     setShowRoleSelection(false);
     
-    // Use callback to inform parent component about role switch
-    if (onSwitchRole) {
-      onSwitchRole(newRole);
+    // Map role string to role ID
+    const roleMapping: Record<string, number> = {
+      "director": 1,
+      "plant-manager": 2,
+      "production-scheduler": 3,
+      "it-administrator": 4,
+      "systems-manager": 5,
+      "administrator": 6,
+      "maintenance-technician": 7,
+      "data-analyst": 8,
+      "trainer": 9,
+      "shop-floor-operations": 10
+    };
+    
+    const roleId = roleMapping[newRole];
+    
+    if (roleId && switchToRole) {
+      switchToRole(roleId);
+    } else {
+      console.error("No role ID found for role:", newRole);
     }
   };
 

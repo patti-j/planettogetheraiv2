@@ -262,6 +262,7 @@ export interface IStorage {
   // Role Management
   getRoles(): Promise<Role[]>;
   getRole(id: number): Promise<Role | undefined>;
+  getRoleById(id: number): Promise<Role | null>;
   getRoleByName(name: string): Promise<Role | undefined>;
   getRolesByIds(roleIds: number[]): Promise<Role[]>;
   createRole(role: InsertRole): Promise<Role>;
@@ -1996,6 +1997,14 @@ export class DatabaseStorage implements IStorage {
       .from(roles)
       .where(eq(roles.id, id));
     return role || undefined;
+  }
+
+  async getRoleById(id: number): Promise<Role | null> {
+    const [role] = await db
+      .select()
+      .from(roles)
+      .where(eq(roles.id, id));
+    return role || null;
   }
 
   async getRoleByName(name: string): Promise<Role | undefined> {

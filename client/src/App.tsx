@@ -58,12 +58,30 @@ function DashboardWithAutoTour() {
           const currentRole = await response.json();
           
           if (currentRole) {
-            // Map role name to tour format
-            const roleKey = currentRole.name.toLowerCase().replace(/\s+/g, '-');
-            console.log('Starting auto tour for role:', roleKey, currentRole.name);
+            // Map role name to role ID for tour system
+            const roleMapping: Record<string, number> = {
+              "director": 1,
+              "plant-manager": 2,
+              "production-scheduler": 3,
+              "it-administrator": 4,
+              "systems-manager": 5,
+              "administrator": 6,
+              "maintenance-technician": 7,
+              "data-analyst": 8,
+              "trainer": 9,
+              "shop-floor-operations": 10
+            };
             
-            // Start the tour with voice enabled by default
-            startTour(roleKey, true);
+            const roleKey = currentRole.name.toLowerCase().replace(/\s+/g, '-');
+            const roleId = roleMapping[roleKey];
+            console.log('Starting auto tour for role:', roleKey, currentRole.name, 'roleId:', roleId);
+            
+            if (roleId) {
+              // Start the tour with voice enabled by default
+              startTour(roleId, true);
+            } else {
+              console.error('No role ID found for role:', roleKey);
+            }
             
             // Clean up URL parameter
             const newUrl = window.location.pathname;

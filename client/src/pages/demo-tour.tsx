@@ -283,10 +283,31 @@ export default function DemoTour() {
       // Wait for authentication to be established
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Start guided tour using global context
+      // Map role string to role ID for tour system
+      const roleMapping: Record<string, number> = {
+        "director": 1,
+        "plant-manager": 2,
+        "production-scheduler": 3,
+        "it-administrator": 4,
+        "systems-manager": 5,
+        "administrator": 6,
+        "shop-floor-operations": 10,
+        "data-analyst": 8,
+        "trainer": 9,
+        "maintenance-technician": 7
+      };
+      
+      const roleId = roleMapping[primaryRole];
+      console.log("Mapped role string", primaryRole, "to role ID", roleId);
+      
+      if (!roleId) {
+        throw new Error(`Unknown role: ${primaryRole}`);
+      }
+      
+      // Start guided tour using global context with role ID
       setDemoRole(primaryRole);
-      startTour(primaryRole, voiceEnabledParam);
-      console.log("Demo tour started globally for role:", primaryRole, "with voice:", voiceEnabledParam);
+      startTour(roleId, voiceEnabledParam);
+      console.log("Demo tour started globally for roleId:", roleId, "with voice:", voiceEnabledParam);
       
       // Use proper navigation instead of window.location to avoid 404
       setLocation("/");

@@ -2850,6 +2850,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get individual role by ID
+  app.get("/api/roles/:roleId", async (req, res) => {
+    try {
+      const roleId = parseInt(req.params.roleId);
+      const role = await storage.getRoleById(roleId);
+      if (!role) {
+        return res.status(404).json({ message: "Role not found" });
+      }
+      res.json(role);
+    } catch (error) {
+      console.error("Error fetching role:", error);
+      res.status(500).json({ message: "Failed to fetch role" });
+    }
+  });
+
   // Get all system roles for role demonstration (trainers only) - MUST be before /api/roles/:id
   app.get("/api/roles/all", async (req, res) => {
     try {
