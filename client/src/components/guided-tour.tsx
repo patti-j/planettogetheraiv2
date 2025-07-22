@@ -289,6 +289,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [voiceEnabled, setVoiceEnabled] = useState(initialVoiceEnabled);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [audioCompleted, setAudioCompleted] = useState(false);
   const [showRoleSelection, setShowRoleSelection] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -418,18 +419,20 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
   
   console.log("GuidedTour initialized - tourSteps:", tourSteps, "currentStep:", currentStep, "loading:", toursLoading);
 
-  // Auto-start voice narration for welcome step if voice is enabled
+  // Auto-start voice narration for welcome step if voice is enabled (only once)
+  const [hasAutoStarted, setHasAutoStarted] = useState(false);
   useEffect(() => {
-    console.log("Auto-start voice effect triggered:", { initialVoiceEnabled, currentStep, hasSteps: tourSteps.length > 0 });
-    if (initialVoiceEnabled && currentStep === 0 && tourSteps.length > 0) {
+    console.log("Auto-start voice effect triggered:", { initialVoiceEnabled, currentStep, hasSteps: tourSteps.length > 0, hasAutoStarted });
+    if (initialVoiceEnabled && currentStep === 0 && tourSteps.length > 0 && !hasAutoStarted) {
       // Small delay to ensure component is ready
       const timer = setTimeout(() => {
         console.log("Auto-starting voice for welcome step since user enabled voice narration");
+        setHasAutoStarted(true);
         playPreloadedAudio(tourSteps[0].id);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [initialVoiceEnabled, tourSteps, currentStep]);
+  }, [initialVoiceEnabled, tourSteps, currentStep, hasAutoStarted]);
   
   // Play cached audio directly from server for a specific step  
   const playPreloadedAudio = async (stepId: string) => {
@@ -483,9 +486,10 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
         
         audio.onended = () => {
           setIsPlaying(false);
+          setAudioCompleted(true);
           URL.revokeObjectURL(audioUrl);
           speechRef.current = null;
-          console.log("Cached audio playback completed");
+          console.log("Cached audio playback completed - user can click Next");
         };
         
         audio.onerror = (e) => {
@@ -605,18 +609,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
     });
   }, []);
 
-  // Auto-start voice on first load if user selected voice narration during registration
-  useEffect(() => {
-    console.log("Auto-start voice effect triggered:", { initialVoiceEnabled, currentStep, hasSteps: tourSteps[0] != null });
-    if (initialVoiceEnabled && currentStep === 0 && tourSteps[0]) {
-      // Auto-start the first step's audio if voice was enabled during registration
-      console.log("Auto-starting voice for welcome step since user enabled voice narration");
-      const welcomeStepData = tourSteps[0];
-      // Also enable voice controls when auto-starting
-      setVoiceEnabled(true);
-      setTimeout(() => playPreloadedAudio(welcomeStepData.id), 300); // Small delay for smooth loading
-    }
-  }, [initialVoiceEnabled]); // Only run once when component mounts
+  // Remove duplicate auto-start effect - handled by the one above
 
   // Play cached audio when step changes and voice is enabled
   useEffect(() => {
@@ -673,6 +666,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
 
   const handleNext = () => {
     stopSpeech(); // Stop current speech before proceeding
+    setAudioCompleted(false); // Reset audio completed state for next step
     if (currentStep < tourSteps.length - 1) {
       const nextStep = currentStep + 1;
       const nextStepData = tourSteps[nextStep];
@@ -816,12 +810,11 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
     }
     
     setIsPlaying(false);
-    setIsGenerating(false);
   };
 
   const toggleVoice = () => {
-    // Prevent toggling while audio is generating or playing
-    if (isGenerating || isPlaying) return;
+    // Prevent toggling while audio is playing
+    if (isPlaying) return;
     
     const newVoiceEnabled = !voiceEnabled;
     setVoiceEnabled(newVoiceEnabled);
@@ -840,8 +833,8 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
   };
 
   const togglePlayPause = () => {
-    // Prevent multiple clicks during generation or if voice is disabled
-    if (isGenerating || !voiceEnabled) return;
+    // Prevent multiple clicks if voice is disabled
+    if (!voiceEnabled) return;
     
     if (isPlaying) {
       stopSpeech();
@@ -1067,7 +1060,13 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
                 )}
               </div>
               
-              <Button onClick={handleNext} size="sm" className="bg-blue-600 hover:bg-blue-700 px-3">
+              <Button 
+                onClick={handleNext} 
+                size="sm" 
+                className={`bg-blue-600 hover:bg-blue-700 px-3 transition-all duration-300 ${
+                  audioCompleted && voiceEnabled ? 'animate-pulse shadow-lg ring-2 ring-blue-300' : ''
+                }`}
+              >
                 {currentStep === tourSteps.length - 1 ? (
                   <>
                     Complete
@@ -1075,7 +1074,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
                   </>
                 ) : (
                   <>
-                    Next
+                    {audioCompleted && voiceEnabled ? '👉 ' : ''}Next
                     <ArrowRight className="h-3 w-3 ml-1" />
                   </>
                 )}
