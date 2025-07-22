@@ -1,7 +1,14 @@
 import { createRoot } from "react-dom/client";
-import App from "./App";
-import TestApp from "./App.test";
-import "./index.css";
 
-// Try test app first to isolate the issue
-createRoot(document.getElementById("root")!).render(<TestApp />);
+// Absolute minimal test - no CSS, no external dependencies
+function MinimalTest() {
+  return (
+    <div style={{ padding: '20px', fontFamily: 'Arial' }}>
+      <h1>Minimal React Test</h1>
+      <p>If you see this, React is working!</p>
+      <p>Date: {new Date().toLocaleString()}</p>
+    </div>
+  );
+}
+
+createRoot(document.getElementById("root")!).render(<MinimalTest />);
