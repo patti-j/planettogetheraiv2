@@ -256,7 +256,7 @@ export default function OnboardingWizard() {
       prerequisites: ["schedule_operations"],
       resources: {
         video: "https://example.com/max-ai-video",
-        documentation: "https://docs.planettogether.com/ai-assistant"
+        documentation: "https://docs.planettogether.com/max-ai-assistant"
       }
     },
     {
@@ -737,7 +737,7 @@ export default function OnboardingWizard() {
             <div className="bg-blue-50 p-4 rounded-lg">
               <h3 className="font-semibold mb-3">Quick Actions</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <Button size="sm" variant="outline" onClick={() => window.open("/", '_blank')}>
+                <Button size="sm" variant="outline" onClick={() => window.open("/production-schedule", '_blank')}>
                   <Calendar className="w-4 h-4 mr-2" />
                   View Schedule
                 </Button>
@@ -745,7 +745,7 @@ export default function OnboardingWizard() {
                   <Target className="w-4 h-4 mr-2" />
                   Open Boards
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => window.open("/ai-assistant", '_blank')}>
+                <Button size="sm" variant="outline" onClick={() => window.open("/max-ai-assistant", '_blank')}>
                   <Sparkles className="w-4 h-4 mr-2" />
                   Meet Max
                 </Button>

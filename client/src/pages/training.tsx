@@ -360,7 +360,7 @@ function RoleDemonstrationSection({ userId, currentRole }: RoleDemonstrationSect
           return '/training'; // These roles can access training
         }
         if (roleNameLower.includes('scheduler') || roleNameLower.includes('production')) {
-          return '/'; // Production schedulers go to main dashboard
+          return '/production-schedule'; // Production schedulers go to main dashboard
         }
         if (roleNameLower.includes('director')) {
           return '/business-goals'; // Directors go to business goals
@@ -369,7 +369,7 @@ function RoleDemonstrationSection({ userId, currentRole }: RoleDemonstrationSect
           return '/role-management'; // Admins go to user management
         }
         if (roleNameLower.includes('operator')) {
-          return '/operator'; // Operators go to operator dashboard
+          return '/operator-dashboard'; // Operators go to operator dashboard
         }
         if (roleNameLower.includes('sales')) {
           return '/sales'; // Sales go to sales dashboard
@@ -381,7 +381,7 @@ function RoleDemonstrationSection({ userId, currentRole }: RoleDemonstrationSect
           return '/analytics'; // Managers go to analytics
         }
         
-        return '/'; // Default to main dashboard
+        return '/production-schedule'; // Default to main dashboard
       };
       
       const redirectPath = getRedirectPath(roleName);

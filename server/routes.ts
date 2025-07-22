@@ -3891,46 +3891,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   async function getAccessibleRoutesForRole(roleId: number): Promise<{[key: string]: string}> {
     // Map routes to required permissions
     const routePermissions = {
-      '/': 'production-scheduling-view', // Main dashboard shows production schedule
+      '/production-schedule': 'production-scheduling-view', // Main dashboard shows production schedule
       '/analytics': 'analytics-view', 
       '/reports': 'reports-view',
-      '/ai-assistant': 'ai-assistant-view',
+      '/max-ai-assistant': 'ai-assistant-view',
       '/boards': 'boards-view',
       '/shop-floor': 'shop-floor-view',
-      '/operator': 'operator-dashboard-view',
+      '/operator-dashboard': 'operator-dashboard-view',
       '/maintenance': 'maintenance-view',
-      '/scheduling-optimizer': 'scheduling-optimizer-view',
+      '/optimize-orders': 'scheduling-optimizer-view',
       '/erp-import': 'erp-import-view',
-      '/plant-manager': 'plant-manager-view',
-      '/systems-management': 'systems-management-view',
+      '/plant-manager-dashboard': 'plant-manager-view',
+      '/systems-management-dashboard': 'systems-management-view',
       '/capacity-planning': 'capacity-planning-view',
       '/visual-factory': 'visual-factory-view',
       '/business-goals': 'business-goals-view',
       '/role-management': 'role-management-view',
-      '/user-role-assignments': 'user-management-view',
+      '/user-role-assignments-page': 'user-management-view',
       '/training': 'training-view',
       '/feedback': 'feedback-view'
     };
 
     // All system navigation paths
     const allSystemRoutes = {
-      '/': 'Dashboard - Main production schedule view with Gantt chart',
+      '/production-schedule': 'Production Schedule - Main production schedule view with Gantt chart',
       '/analytics': 'Analytics - Performance metrics and insights',
       '/reports': 'Reports - Production reporting and analysis',
-      '/ai-assistant': 'Max AI Assistant - AI-powered manufacturing assistant',
+      '/max-ai-assistant': 'Max AI Assistant - AI-powered manufacturing assistant',
       '/boards': 'Boards - Job and resource management boards',
       '/shop-floor': 'Shop Floor - Live floor status and resource monitoring',
-      '/operator': 'Operator Dashboard - Equipment operator interface',
+      '/operator-dashboard': 'Operator Dashboard - Equipment operator interface',
       '/maintenance': 'Maintenance - Equipment maintenance management',
-      '/scheduling-optimizer': 'Optimize Orders - Intelligent scheduling optimizer',
+      '/optimize-orders': 'Optimize Orders - Intelligent scheduling optimizer',
       '/erp-import': 'ERP Import - External system data integration',
-      '/plant-manager': 'Plant Manager - Overall plant operations management',
-      '/systems-management': 'Systems Management - System configuration and settings',
+      '/plant-manager-dashboard': 'Plant Manager Dashboard - Overall plant operations management',
+      '/systems-management-dashboard': 'Systems Management Dashboard - System configuration and settings',
       '/capacity-planning': 'Capacity Planning - Resource capacity analysis',
       '/visual-factory': 'Visual Factory - Large screen displays for manufacturing',
       '/business-goals': 'Business Goals - Strategic objectives and KPI tracking',
       '/role-management': 'Role Management - User roles and permissions',
-      '/user-role-assignments': 'User Management - User assignments and access control',
+      '/user-role-assignments-page': 'User Role Assignments - User assignments and access control',
       '/training': 'Training - Training modules and role demonstrations',
       '/feedback': 'Feedback - User feedback and suggestions'
     };
@@ -3941,7 +3941,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!role) {
         console.log(`Role not found: ${roleId}, using default routes`);
-        return { '/': allSystemRoutes['/'] }; // Fallback to dashboard only
+        return { '/production-schedule': allSystemRoutes['/production-schedule'] }; // Fallback to dashboard only
       }
 
       // Get role permissions using storage interface

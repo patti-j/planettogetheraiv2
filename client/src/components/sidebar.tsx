@@ -151,18 +151,18 @@ export default function Sidebar() {
 
   const navigationItems = [
     { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals", feature: "business-goals", action: "view" },
-    { icon: BarChart3, label: "Production Schedule", href: "/", active: location === "/", feature: "production-scheduling", action: "view" },
-    { icon: Target, label: "Optimize Orders", href: "/scheduling-optimizer", active: location === "/scheduling-optimizer", feature: "scheduling-optimizer", action: "view" },
+    { icon: BarChart3, label: "Production Schedule", href: "/production-schedule", active: location === "/production-schedule", feature: "production-scheduling", action: "view" },
+    { icon: Target, label: "Optimize Orders", href: "/optimize-orders", active: location === "/optimize-orders", feature: "scheduling-optimizer", action: "view" },
     { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", active: location === "/capacity-planning", feature: "capacity-planning", action: "view" },
     { icon: Factory, label: "Visual Factory", href: "/visual-factory", active: location === "/visual-factory", feature: "visual-factory", action: "view" },
     { icon: Smartphone, label: "Shop Floor", href: "/shop-floor", active: location === "/shop-floor", feature: "shop-floor", action: "view" },
-    { icon: Settings, label: "Operator", href: "/operator", active: location === "/operator", feature: "operator-dashboard", action: "view" },
-    { icon: Truck, label: "Forklift Driver", href: "/forklift", active: location === "/forklift", feature: "forklift-driver", action: "view" },
+    { icon: Settings, label: "Operator", href: "/operator-dashboard", active: location === "/operator-dashboard", feature: "operator-dashboard", action: "view" },
+    { icon: Truck, label: "Forklift Driver", href: "/forklift-driver", active: location === "/forklift-driver", feature: "forklift-driver", action: "view" },
     { icon: Wrench, label: "Maintenance", href: "/maintenance", active: location === "/maintenance", feature: "maintenance", action: "view" },
-    { icon: Building, label: "Plant Manager", href: "/plant-manager", active: location === "/plant-manager", feature: "plant-manager", action: "view" },
-    { icon: Server, label: "Systems Management", href: "/systems-management", active: location === "/systems-management", feature: "systems-management", action: "view" },
+    { icon: Building, label: "Plant Manager", href: "/plant-manager-dashboard", active: location === "/plant-manager-dashboard", feature: "plant-manager", action: "view" },
+    { icon: Server, label: "Systems Management", href: "/systems-management-dashboard", active: location === "/systems-management-dashboard", feature: "systems-management", action: "view" },
     { icon: Shield, label: "Role Management", href: "/role-management", active: location === "/role-management", feature: "user-management", action: "view" },
-    { icon: UserCheck, label: "User Role Assignments", href: "/user-role-assignments", active: location === "/user-role-assignments", feature: "user-management", action: "view" },
+    { icon: UserCheck, label: "User Role Assignments", href: "/user-role-assignments-page", active: location === "/user-role-assignments-page", feature: "user-management", action: "view" },
     { icon: GraduationCap, label: "Training", href: "/training", active: location === "/training", feature: "training", action: "view" },
     { icon: Columns3, label: "Boards", href: "/boards", active: location === "/boards", feature: "boards", action: "view" },
     { icon: Database, label: "ERP Import", href: "/erp-import", active: location === "/erp-import", feature: "erp-import", action: "view" },
@@ -171,10 +171,10 @@ export default function Sidebar() {
     { icon: BarChart3, label: "Analytics", href: "/analytics", active: location === "/analytics", feature: "analytics", action: "view" },
     { icon: FileText, label: "Reports", href: "/reports", active: location === "/reports", feature: "reports", action: "view" },
     { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback", feature: "feedback", action: "view" },
-    { icon: Bot, label: "Max", href: "/ai-assistant", active: location === "/ai-assistant", feature: "ai-assistant", action: "view" },
+    { icon: Bot, label: "Max", href: "/max-ai-assistant", active: location === "/max-ai-assistant", feature: "ai-assistant", action: "view" },
   ].filter(item => 
     // Always show Production Schedule dashboard for authenticated users
-    item.href === "/" || 
+    item.href === "/production-schedule" || 
     // Show item if user has permission
     hasPermission(item.feature || "", item.action || "")
   );
@@ -182,18 +182,18 @@ export default function Sidebar() {
   const getNavigationTooltip = (href: string) => {
     const tooltips: Record<string, string> = {
       "/business-goals": "Define strategic objectives, track progress, and monitor risks that impact business success",
-      "/": "View production schedule with interactive Gantt charts and scheduling tools",
-      "/scheduling-optimizer": "Optimize orders with intelligent scheduling and multi-operation planning",
+      "/production-schedule": "View production schedule with interactive Gantt charts and scheduling tools",
+      "/optimize-orders": "Optimize orders with intelligent scheduling and multi-operation planning",
       "/capacity-planning": "Plan and optimize production capacity including staffing, shifts, and equipment",
       "/visual-factory": "Automated large screen displays for manufacturing facilities with real-time information",
       "/shop-floor": "Mobile-optimized interface for production schedulers on the floor",
-      "/operator": "Review upcoming operations and report status or problems",
-      "/forklift": "Material movement tracking for forklift drivers",
+      "/operator-dashboard": "Review upcoming operations and report status or problems",
+      "/forklift-driver": "Material movement tracking for forklift drivers",
       "/maintenance": "Plan and manage resource maintenance schedules and work orders",
-      "/plant-manager": "Comprehensive plant operations oversight and strategic decision-making",
-      "/systems-management": "Monitor system health, manage users, and oversee IT infrastructure",
+      "/plant-manager-dashboard": "Comprehensive plant operations oversight and strategic decision-making",
+      "/systems-management-dashboard": "Monitor system health, manage users, and oversee IT infrastructure",
       "/role-management": "Define user roles and specify feature permissions for different user types",
-      "/user-role-assignments": "Assign multiple roles to users and manage user role relationships",
+      "/user-role-assignments-page": "Assign multiple roles to users and manage user role relationships",
       "/training": "Interactive training modules and role demonstrations for comprehensive system training",
       "/boards": "Organize jobs, operations, and resources with drag-and-drop boards",
       "/erp-import": "Import and manage data from external ERP systems with issue tracking",
@@ -202,7 +202,7 @@ export default function Sidebar() {
       "/analytics": "View production metrics and performance analytics",
       "/reports": "Generate detailed production reports and insights",
       "/feedback": "Submit feedback and suggestions to help improve the system",
-      "/ai-assistant": "Chat with Max for schedule optimization and analysis"
+      "/max-ai-assistant": "Chat with Max for schedule optimization and analysis"
     };
     return tooltips[href] || "Navigate to this page";
   };

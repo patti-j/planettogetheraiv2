@@ -386,27 +386,33 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     
     // Handle descriptive navigation paths from database
     const routeMapping: Record<string, string> = {
-      "Dashboard > Scheduling > Gantt Chart": "/",
+      "Dashboard > Scheduling > Gantt Chart": "/production-schedule",
       "Dashboard > Scheduling > Boards": "/boards",
       "Dashboard > Scheduling > Optimization": "/optimize-orders",
-      "Dashboard": "/",
+      "Dashboard": "/production-schedule",
       "Boards": "/boards",
-      "Scheduling": "/",
-      "Schedule": "/",
-      "Gantt Chart": "/",
+      "Scheduling": "/production-schedule",
+      "Schedule": "/production-schedule",
+      "Production Schedule": "/production-schedule",
+      "Gantt Chart": "/production-schedule",
       "Optimization": "/optimize-orders",
       "Analytics": "/analytics",
       "Reports": "/reports",
       "Business Goals": "/business-goals",
       "Capacity Planning": "/capacity-planning",
       "Shop Floor": "/shop-floor",
-      "Plant Manager": "/plant-manager",
-      "Systems Management": "/systems-management",
+      "Plant Manager": "/plant-manager-dashboard",
+      "Systems Management": "/systems-management-dashboard",
       "Role Management": "/role-management",
       "Training": "/training",
       "Scheduling Optimizer": "/optimize-orders",
       "Visual Factory": "/visual-factory",
-      "ERP Import": "/erp-import"
+      "ERP Import": "/erp-import",
+      "AI Assistant": "/max-ai-assistant",
+      "Max AI": "/max-ai-assistant",
+      "Operator": "/operator-dashboard",
+      "Operator Dashboard": "/operator-dashboard",
+      "Forklift Driver": "/forklift-driver"
     };
     
     // Check if it's already a valid URL path
@@ -424,16 +430,19 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       '/business-goals': TrendingUp,
       '/analytics': BarChart3,
       '/reports': Settings,
-      '/': BarChart3,
+      '/production-schedule': BarChart3,
       '/boards': Kanban,
-      '/scheduling-optimizer': Target,
-      '/plant-manager': Users,
+      '/optimize-orders': Target,
+      '/plant-manager-dashboard': Users,
       '/capacity-planning': BarChart3,
       '/shop-floor': Settings,
-      '/systems-management': Settings,
+      '/systems-management-dashboard': Settings,
       '/role-management': Users,
-      '/user-role-assignments': Users,
+      '/user-role-assignments-page': Users,
       '/training': Lightbulb,
+      '/max-ai-assistant': Settings,
+      '/operator-dashboard': Settings,
+      '/forklift-driver': Settings,
     };
     return pageIcons[page] || Settings;
   };

@@ -131,7 +131,7 @@ function Router() {
       <Sidebar />
       <main className="flex-1 overflow-y-auto w-full">
         <Switch>
-          <Route path="/">
+          <Route path="/production-schedule">
             <DashboardWithAutoTour />
           </Route>
           <Route path="/analytics">
@@ -144,7 +144,7 @@ function Router() {
               <Reports />
             </ProtectedRoute>
           </Route>
-          <Route path="/ai-assistant">
+          <Route path="/max-ai-assistant">
             <ProtectedRoute feature="ai-assistant" action="view">
               <AIAssistant />
             </ProtectedRoute>
@@ -169,7 +169,7 @@ function Router() {
               <CustomerService />
             </ProtectedRoute>
           </Route>
-          <Route path="/operator">
+          <Route path="/operator-dashboard">
             <ProtectedRoute feature="operator-dashboard" action="view">
               <OperatorDashboard />
             </ProtectedRoute>
@@ -184,7 +184,7 @@ function Router() {
               <Feedback />
             </ProtectedRoute>
           </Route>
-          <Route path="/forklift">
+          <Route path="/forklift-driver">
             <ProtectedRoute feature="forklift-driver" action="view">
               <ForkliftDriver />
             </ProtectedRoute>
@@ -194,7 +194,7 @@ function Router() {
               <EmailSettings />
             </ProtectedRoute>
           </Route>
-          <Route path="/scheduling-optimizer">
+          <Route path="/optimize-orders">
             <ProtectedRoute feature="scheduling-optimizer" action="view">
               <SchedulingOptimizer />
             </ProtectedRoute>
@@ -204,12 +204,12 @@ function Router() {
               <ERPImport />
             </ProtectedRoute>
           </Route>
-          <Route path="/plant-manager">
+          <Route path="/plant-manager-dashboard">
             <ProtectedRoute feature="plant-manager" action="view">
               <PlantManager />
             </ProtectedRoute>
           </Route>
-          <Route path="/systems-management">
+          <Route path="/systems-management-dashboard">
             <ProtectedRoute feature="systems-management" action="view">
               <SystemsManagement />
             </ProtectedRoute>
@@ -234,7 +234,7 @@ function Router() {
               <RoleManagement />
             </ProtectedRoute>
           </Route>
-          <Route path="/user-role-assignments">
+          <Route path="/user-role-assignments-page">
             <ProtectedRoute feature="user-management" action="view">
               <UserRoleAssignments />
             </ProtectedRoute>
@@ -244,6 +244,7 @@ function Router() {
               <Training />
             </ProtectedRoute>
           </Route>
+          <Route path="/" component={DashboardWithAutoTour} />
           <Route component={NotFound} />
         </Switch>
       </main>
