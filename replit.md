@@ -445,6 +445,14 @@ The application uses a modern full-stack architecture with strong typing through
 - Production Scheduler tours now properly validate and allow access to /scheduling-optimizer route
 - Enhanced permission validation system to catch route accessibility issues for all roles during tour generation
 
+✓ **Mobile Role Management Individual Permissions View Fix (July 22, 2025)**:
+- Fixed critical mobile visibility issue where individual role permissions weren't shown in role management
+- Added expandable permissions section to mobile role cards with chevron icon indicator
+- Mobile users can now tap permission counts to reveal detailed feature-based permission breakdowns
+- Enhanced mobile cards show individual permission badges organized by feature (capacity-planning, systems-management, etc.)
+- Implemented smooth expand/collapse animation with proper state management for multiple role expansions
+- Mobile view now provides same level of permission detail as desktop table view in mobile-friendly format
+
 ✓ **Profile Settings Tooltip Positioning Fix (July 22, 2025)**:
 - Fixed tooltip overlap issue where "Profile & Settings" tooltip was covering the logout button
 - Changed profile tooltip positioning from side="right" to side="top" to prevent UI conflicts

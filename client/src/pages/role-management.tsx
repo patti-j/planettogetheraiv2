@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { 
   UserCheck, Shield, Plus, Edit, Trash2, Users, Settings,
   CheckCircle, XCircle, AlertCircle, Maximize2, Minimize2, Sparkles, Copy,
-  ArrowRight, Check
+  ArrowRight, Check, ChevronDown
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -60,6 +60,7 @@ export default function RoleManagementPage() {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<number[]>([]);
+  const [expandedRoles, setExpandedRoles] = useState<number[]>([]);
   const [aiPermissionPreviewDialog, setAiPermissionPreviewDialog] = useState(false);
   const [aiPreviewData, setAiPreviewData] = useState<any>(null);
   const [aiPermissionForm, setAiPermissionForm] = useState({
@@ -377,6 +378,14 @@ export default function RoleManagementPage() {
       checked 
         ? [...prev, roleId]
         : prev.filter(id => id !== roleId)
+    );
+  };
+
+  const toggleRoleExpansion = (roleId: number) => {
+    setExpandedRoles(prev => 
+      prev.includes(roleId)
+        ? prev.filter(id => id !== roleId)
+        : [...prev, roleId]
     );
   };
 
@@ -783,64 +792,110 @@ export default function RoleManagementPage() {
               <span className="text-sm text-gray-600">{selectedRoles.length} selected</span>
             </div>
             
-            {roles.map((role) => (
-              <Card key={role.id} className="p-4">
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3 flex-1">
-                      <Checkbox 
-                        checked={selectedRoles.includes(role.id)}
-                        onCheckedChange={(checked) => handleRoleSelection(role.id, checked as boolean)}
-                      />
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-medium text-base">{role.name}</h3>
-                          <Badge variant={role.isSystemRole ? "default" : "secondary"} className="text-xs">
-                            {role.isSystemRole ? "System" : "Custom"}
-                          </Badge>
+            {roles.map((role) => {
+              const isExpanded = expandedRoles.includes(role.id);
+              const features = [...new Set(role.permissions.map(p => p.feature))];
+              
+              return (
+                <Card key={role.id} className="p-4">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3 flex-1">
+                        <Checkbox 
+                          checked={selectedRoles.includes(role.id)}
+                          onCheckedChange={(checked) => handleRoleSelection(role.id, checked as boolean)}
+                        />
+                        <div className="flex-1 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-medium text-base">{role.name}</h3>
+                            <Badge variant={role.isSystemRole ? "default" : "secondary"} className="text-xs">
+                              {role.isSystemRole ? "System" : "Custom"}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600">{role.description}</p>
                         </div>
-                        <p className="text-sm text-gray-600">{role.description}</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1">
-                        <Users className="w-4 h-4 text-gray-400" />
-                        <Badge variant="outline" className="text-xs">{role.userCount || 0}</Badge>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Shield className="w-4 h-4 text-gray-400" />
-                        <span className="text-xs text-gray-600">{role.permissions.length} perms</span>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditRole(role)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      {!role.isSystemRole && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1">
+                          <Users className="w-4 h-4 text-gray-400" />
+                          <Badge variant="outline" className="text-xs">{role.userCount || 0}</Badge>
+                        </div>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDeleteRole(role)}
-                          disabled={deleteRoleMutation.isPending}
+                          onClick={() => toggleRoleExpansion(role.id)}
+                          className="flex items-center gap-1 text-xs text-gray-600 h-6 px-2"
+                        >
+                          <Shield className="w-4 h-4 text-gray-400" />
+                          <span>{role.permissions.length} perms</span>
+                          <ChevronDown className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                        </Button>
+                      </div>
+                      
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditRole(role)}
                           className="h-8 w-8 p-0"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Edit className="w-4 h-4" />
                         </Button>
-                      )}
+                        {!role.isSystemRole && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteRole(role)}
+                            disabled={deleteRoleMutation.isPending}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
+                    
+                    {/* Expandable Permissions Details */}
+                    {isExpanded && (
+                      <div className="pt-3 border-t border-gray-200">
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-medium text-gray-800">Individual Permissions</h4>
+                          {features.map(feature => {
+                            const featurePerms = role.permissions.filter(p => p.feature === feature);
+                            return (
+                              <div key={feature} className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <h5 className="text-xs font-medium text-gray-700 capitalize">
+                                    {feature.replace('-', ' ')}
+                                  </h5>
+                                  <Badge variant="outline" className="text-xs">
+                                    {featurePerms.length} perms
+                                  </Badge>
+                                </div>
+                                <div className="flex flex-wrap gap-1">
+                                  {featurePerms.map(permission => (
+                                    <Badge 
+                                      key={permission.id} 
+                                      className={`text-xs ${getPermissionBadgeColor(permission.action)}`}
+                                      variant="outline"
+                                    >
+                                      {permission.action}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
