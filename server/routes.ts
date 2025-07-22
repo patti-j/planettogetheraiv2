@@ -3872,6 +3872,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return buffer;
   }
 
+  // Function to get accessible routes for a role
+  async function getAccessibleRoutesForRole(roleName: string): Promise<{[key: string]: string}> {
+    // Map routes to required permissions
+    const routePermissions = {
+      '/': 'dashboard-view',
+      '/analytics': 'analytics-view', 
+      '/reports': 'reports-view',
+      '/ai-assistant': 'ai-assistant-view',
+      '/boards': 'boards-view',
+      '/shop-floor': 'shop-floor-view',
+      '/operator': 'operator-dashboard-view',
+      '/maintenance': 'maintenance-view',
+      '/scheduling-optimizer': 'scheduling-optimizer-view',
+      '/erp-import': 'erp-import-view',
+      '/plant-manager': 'plant-manager-view',
+      '/systems-management': 'systems-management-view',
+      '/capacity-planning': 'capacity-planning-view',
+      '/visual-factory': 'visual-factory-view',
+      '/business-goals': 'business-goals-view',
+      '/role-management': 'role-management-view',
+      '/user-role-assignments': 'user-management-view',
+      '/training': 'training-view',
+      '/feedback': 'feedback-view'
+    };
+
+    // All system navigation paths
+    const allSystemRoutes = {
+      '/': 'Dashboard - Main production schedule view',
+      '/analytics': 'Analytics - Performance metrics and insights',
+      '/reports': 'Reports - Production reporting and analysis',
+      '/ai-assistant': 'Max AI Assistant - AI-powered manufacturing assistant',
+      '/boards': 'Boards - Job and resource management boards',
+      '/shop-floor': 'Shop Floor - Live floor status and resource monitoring',
+      '/operator': 'Operator Dashboard - Equipment operator interface',
+      '/maintenance': 'Maintenance - Equipment maintenance management',
+      '/scheduling-optimizer': 'Optimize Orders - Intelligent scheduling optimizer',
+      '/erp-import': 'ERP Import - External system data integration',
+      '/plant-manager': 'Plant Manager - Overall plant operations management',
+      '/systems-management': 'Systems Management - System configuration and settings',
+      '/capacity-planning': 'Capacity Planning - Resource capacity analysis',
+      '/visual-factory': 'Visual Factory - Large screen displays for manufacturing',
+      '/business-goals': 'Business Goals - Strategic objectives and KPI tracking',
+      '/role-management': 'Role Management - User roles and permissions',
+      '/user-role-assignments': 'User Management - User assignments and access control',
+      '/training': 'Training - Training modules and role demonstrations',
+      '/feedback': 'Feedback - User feedback and suggestions'
+    };
+
+    try {
+      // Get role by name
+      const roleKey = roleName.toLowerCase().replace(/\s+/g, '-');
+      const [role] = await db.select().from(roles).where(eq(roles.name, roleName));
+      
+      if (!role) {
+        console.log(`Role not found: ${roleName}, using default routes`);
+        return { '/': allSystemRoutes['/'] }; // Fallback to dashboard only
+      }
+
+      // Get role permissions
+      const rolePermissionsList = await db
+        .select({ permission: permissions })
+        .from(rolePermissions)
+        .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+        .where(eq(rolePermissions.roleId, role.id));
+
+      const permissionFeatures = rolePermissionsList.map(rp => rp.permission.feature);
+      console.log(`Role ${roleName} has permissions for features:`, permissionFeatures);
+
+      // Filter routes based on permissions
+      const accessibleRoutes: {[key: string]: string} = {};
+      
+      for (const [route, description] of Object.entries(allSystemRoutes)) {
+        const requiredPermission = routePermissions[route];
+        
+        if (requiredPermission) {
+          // Extract feature from permission (e.g., 'dashboard-view' -> 'dashboard')
+          const requiredFeature = requiredPermission.replace('-view', '');
+          
+          if (permissionFeatures.includes(requiredFeature)) {
+            accessibleRoutes[route] = description;
+            console.log(`✓ Role ${roleName} can access ${route} (${requiredFeature})`);
+          } else {
+            console.log(`✗ Role ${roleName} cannot access ${route} (missing ${requiredFeature})`);
+          }
+        } else {
+          // Routes without specific permission requirements (like root dashboard)
+          accessibleRoutes[route] = description;
+        }
+      }
+
+      console.log(`Final accessible routes for ${roleName}:`, Object.keys(accessibleRoutes));
+      return accessibleRoutes;
+      
+    } catch (error) {
+      console.error(`Error getting accessible routes for role ${roleName}:`, error);
+      return { '/': allSystemRoutes['/'] }; // Fallback to dashboard only
+    }
+  }
+
   // AI Tour Generation endpoint
   app.post("/api/ai/generate-tour", async (req, res) => {
     try {
@@ -3884,50 +3983,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const OpenAI = (await import("openai")).default;
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-      // Define actual system navigation paths
-      const systemRoutes = {
-        '/': 'Dashboard - Main production schedule view',
-        '/analytics': 'Analytics - Performance metrics and insights',
-        '/reports': 'Reports - Production reporting and analysis',
-        '/ai-assistant': 'Max AI Assistant - AI-powered manufacturing assistant',
-        '/boards': 'Boards - Job and resource management boards',
-        '/shop-floor': 'Shop Floor - Live floor status and resource monitoring',
-        '/operator': 'Operator Dashboard - Equipment operator interface',
-        '/maintenance': 'Maintenance - Equipment maintenance management',
-        '/scheduling-optimizer': 'Optimize Orders - Intelligent scheduling optimizer',
-        '/erp-import': 'ERP Import - External system data integration',
-        '/plant-manager': 'Plant Manager - Overall plant operations management',
-        '/systems-management': 'Systems Management - System configuration and settings',
-        '/capacity-planning': 'Capacity Planning - Resource capacity analysis',
-        '/visual-factory': 'Visual Factory - Large screen displays for manufacturing',
-        '/business-goals': 'Business Goals - Strategic objectives and KPI tracking',
-        '/role-management': 'Role Management - User roles and permissions',
-        '/user-role-assignments': 'User Management - User assignments and access control',
-        '/training': 'Training - Training modules and role demonstrations',
-        '/feedback': 'Feedback - User feedback and suggestions'
-      };
+      // Generate role-specific accessible routes
+      const roleRoutes: {[role: string]: {[path: string]: string}} = {};
+      
+      for (const role of roles) {
+        roleRoutes[role] = await getAccessibleRoutesForRole(role);
+      }
 
       let prompt = `Generate comprehensive guided tour content for PlanetTogether manufacturing system for these roles: ${roles.join(', ')}.
 
-IMPORTANT: Use only these actual system navigation paths in tour steps:
-${Object.entries(systemRoutes).map(([path, desc]) => `- ${path} (${desc})`).join('\n')}
+CRITICAL PERMISSION REQUIREMENT: You MUST ONLY use navigation paths that are accessible to each specific role based on their permissions.
+
+Role-specific accessible navigation paths:
+${roles.map(role => {
+  const accessibleRoutes = roleRoutes[role];
+  return `${role}:\n${Object.entries(accessibleRoutes).map(([path, desc]) => `  - ${path} (${desc})`).join('\n')}`;
+}).join('\n\n')}
+
+IMPORTANT RULES:
+1. NEVER include routes that are not listed for that specific role
+2. Each role can ONLY visit the pages listed above for that role
+3. Tours must respect role-based access control permissions
+4. Use ONLY the navigation paths listed for each role
 
 For each role, create:
-1. 3-5 tour steps covering key features
+1. 3-5 tour steps covering accessible features only
 2. Engaging voice scripts for each step (2-3 sentences each)
 3. Clear benefits for each feature (2-3 benefits per step)
-4. Use ONLY the actual navigation paths listed above
-
-Role-specific navigation guidelines:
-- Director: /business-goals, /analytics, /reports
-- Production Scheduler: /, /boards, /scheduling-optimizer
-- Plant Manager: /plant-manager, /capacity-planning, /shop-floor
-- Systems Manager: /systems-management, /role-management, /user-role-assignments
-- Trainer: /training, /analytics, /reports
-- Administrator: /systems-management, /user-role-assignments, /role-management
+4. Use ONLY the role-specific navigation paths listed above
 
 Each tour step must have:
-- navigationPath: One of the exact paths from the list above
+- navigationPath: One of the exact paths accessible to that role (from the role-specific list above)
 - stepName: Brief descriptive title (e.g., "Interactive Gantt Chart", "Scheduling Boards", "Optimization Tools")
 - description: Clear explanation of what the user will see and do on this page (optimized for tour playback)
 - benefits: Array of 2-3 specific business advantages from using this feature

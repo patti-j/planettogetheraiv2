@@ -126,6 +126,18 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 22, 2025)
 
+✓ **AI Tour Generation Permission-Aware System Implementation (July 22, 2025)**:
+- Fixed critical issue where AI tour generation created routes for pages that roles don't have permission to access
+- Implemented getAccessibleRoutesForRole function that filters available routes based on role permissions
+- Enhanced AI tour generation prompt to include role-specific accessible navigation paths
+- AI now only generates tours with routes that users can actually access based on their role permissions
+- Production Scheduler tours no longer include inaccessible routes like /boards (which requires boards-view permission)
+- System maps all routes to required permissions (e.g., /boards → boards-view, /analytics → analytics-view)
+- AI prompt explicitly instructs to "NEVER include routes that are not listed for that specific role"
+- Tour generation now respects role-based access control preventing access denied errors during demo tours
+- Enhanced permission checking system to ensure tours match actual system navigation capabilities
+- Fixed role permission validation to properly filter routes before passing to AI for tour content generation
+
 ✓ **Production Scheduler Tour Step Titles & Voice Cache Fix (July 22, 2025)**:
 - Fixed tour step titles showing proper names instead of generic "Tour Step" text
 - Updated tour data mapping to use stepName field from database (Interactive Gantt Chart, Scheduling Boards, Optimization Tools)
