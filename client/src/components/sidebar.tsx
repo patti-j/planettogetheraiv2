@@ -319,7 +319,7 @@ export default function Sidebar() {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center">
                 <Avatar className="w-8 h-8 mr-2">
-                  <AvatarImage src={user.avatar} alt="User avatar" />
+                  <AvatarImage src={user.avatar || undefined} alt="User avatar" />
                   <AvatarFallback className="text-xs">
                     {user.firstName && user.lastName 
                       ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
