@@ -3921,22 +3921,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
 
     try {
-      // Convert kebab-case to proper role name (e.g., "production-scheduler" -> "Production Scheduler")
-      const properRoleName = roleName
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-      
-      // Get role by name using storage interface
-      let role = await storage.getRoleByName(properRoleName);
-      
-      // If not found with proper name, try original name
-      if (!role) {
-        role = await storage.getRoleByName(roleName);
-      }
+      // Get role by name using storage interface (now using kebab-case consistently)
+      const role = await storage.getRoleByName(roleName);
       
       if (!role) {
-        console.log(`Role not found: ${roleName} (tried ${properRoleName}), using default routes`);
+        console.log(`Role not found: ${roleName}, using default routes`);
         return { '/': allSystemRoutes['/'] }; // Fallback to dashboard only
       }
 
@@ -3988,11 +3977,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const OpenAI = (await import("openai")).default;
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-      // Generate role-specific accessible routes
+      // Generate role-specific accessible routes (convert display names to kebab-case)
       const roleRoutes: {[role: string]: {[path: string]: string}} = {};
       
       for (const role of roles) {
-        roleRoutes[role] = await getAccessibleRoutesForRole(role);
+        const roleKey = role.toLowerCase().replace(/\s+/g, '-');
+        roleRoutes[role] = await getAccessibleRoutesForRole(roleKey);
       }
 
       let prompt = `Generate comprehensive guided tour content for PlanetTogether manufacturing system for these roles: ${roles.join(', ')}.

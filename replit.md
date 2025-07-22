@@ -202,6 +202,17 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 22, 2025)
 
+✓ **Database Role Name Standardization & AI Tour Navigation Fix (July 22, 2025)**:
+- Standardized all role names in database to use consistent kebab-case format (production-scheduler, plant-manager, etc.)
+- Migrated existing role data from "Production Scheduler" to "production-scheduler" format for consistency
+- Removed complex role name conversion logic that was causing errors in AI tour generation
+- Fixed AI tour generation bug where all steps defaulted to "/" navigation paths instead of proper routes
+- Tours now correctly generate navigation paths like "/reports", "/ai-assistant", "/scheduling-optimizer" based on role permissions
+- Eliminated error-prone string conversion between kebab-case and space-separated role names
+- Simplified getAccessibleRoutesForRole function to work directly with kebab-case role names
+- AI tour generation now properly maps role display names to database role keys for accurate permission checking
+- System architecture now uses consistent naming convention throughout: database storage, API calls, and frontend display
+
 ✓ **AI Permission Preview & Confirmation System Implementation (July 22, 2025)**:
 - Enhanced AI permission generation with two-step preview/confirm workflow to prevent unwanted changes
 - Updated AI to provide specific instructions only when explicitly given, role-based recommendations when no context provided
