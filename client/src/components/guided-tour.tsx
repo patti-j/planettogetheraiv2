@@ -167,6 +167,8 @@ const getTourSteps = (role: string): TourStep[] => {
 };
 
 export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
+  console.log("GuidedTour component mounted with role:", role);
+  
   const [, setLocation] = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
@@ -174,6 +176,8 @@ export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
 
   const tourSteps = getTourSteps(role);
   const progress = ((currentStep + 1) / tourSteps.length) * 100;
+  
+  console.log("GuidedTour initialized - tourSteps:", tourSteps, "currentStep:", currentStep);
 
   // Navigate to the first relevant step page when tour starts
   useEffect(() => {
