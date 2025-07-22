@@ -174,7 +174,7 @@ export default function Training() {
               <div className="flex items-center">
                 <Users className="h-8 w-8 text-green-600 mr-3" />
                 <div>
-                  <div className="text-2xl font-bold">{availableRoles.length}</div>
+                  <div className="text-2xl font-bold">{allRoles.length}</div>
                   <div className="text-xs text-gray-500">Available Roles</div>
                 </div>
               </div>
