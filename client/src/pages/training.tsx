@@ -356,7 +356,7 @@ export default function Training() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="modules" className="space-y-4 sm:space-y-6">
+        <TabsContent value="modules" className="space-y-4 sm:space-y-6 pt-6 sm:pt-8 mt-2 sm:mt-4">
           <div className="flex flex-wrap gap-2 mb-4">
             {categories.map((category) => (
               <Button
@@ -422,15 +422,15 @@ export default function Training() {
           </div>
         </TabsContent>
 
-        <TabsContent value="roles" className="space-y-6">
+        <TabsContent value="roles" className="space-y-6 pt-6 sm:pt-8 mt-2 sm:mt-4">
           <RoleDemonstrationSection userId={user?.id} currentRole={currentRole as Role} />
         </TabsContent>
 
-        <TabsContent value="tours" className="space-y-6">
+        <TabsContent value="tours" className="space-y-6 pt-6 sm:pt-8 mt-2 sm:mt-4">
           <TourManagementSection />
         </TabsContent>
 
-        <TabsContent value="resources" className="space-y-4 sm:space-y-6">
+        <TabsContent value="resources" className="space-y-4 sm:space-y-6 pt-6 sm:pt-8 mt-2 sm:mt-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <Card>
               <CardHeader className="p-4 sm:p-6">
