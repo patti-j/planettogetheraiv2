@@ -3661,7 +3661,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Text-to-Speech endpoint with caching for high-quality voice generation
   app.post("/api/ai/text-to-speech", async (req, res) => {
     try {
-      const { text, voice = "alloy", gender = "female", speed = 1.1, role = "demo", stepId = "" } = req.body;
+      const { text, voice = "alloy", gender = "female", speed = 1.1, role = "demo", stepId = "", cacheOnly = false } = req.body;
       
       if (!text) {
         return res.status(400).json({ error: "Text is required" });
@@ -3709,6 +3709,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'X-Voice-Cache': 'hit'
         });
         return res.send(audioBuffer);
+      }
+
+      // If cacheOnly is true and no cached recording found, return error
+      if (cacheOnly) {
+        console.log(`Cache-only request but no cached recording found for hash: ${textHash}`);
+        return res.status(404).json({ error: "No cached voice recording found for this text" });
       }
 
       // Choose voice based on gender preference outside the promise

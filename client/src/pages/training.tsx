@@ -876,10 +876,10 @@ function TourManagementSection() {
     },
   });
 
-  // Test voice functionality for tour steps
+  // Test voice functionality for tour steps - plays pre-cached recordings
   const handleTestVoice = async (step: any, role: string) => {
     try {
-      // Create engaging narration text (same as used in tour)
+      // Create the same narration text that was used during tour generation
       const createEngagingNarration = (stepData: any, role: string) => {
         if (stepData.voiceScript) {
           return stepData.voiceScript;
@@ -894,7 +894,7 @@ function TourManagementSection() {
 
       const enhancedText = createEngagingNarration(step, role);
       
-      // Make request to text-to-speech API
+      // Request the cached voice recording directly (this uses the cache, not generation)
       const response = await fetch('/api/ai/text-to-speech', {
         method: 'POST',
         headers: {
@@ -904,12 +904,13 @@ function TourManagementSection() {
         body: JSON.stringify({
           text: enhancedText,
           voice: 'nova',
-          speed: 1.15
+          speed: 1.15,
+          cacheOnly: true // Indicate we only want cached recordings
         }),
       });
       
       if (!response.ok) {
-        throw new Error('Failed to generate voice');
+        throw new Error('No cached voice recording found for this step');
       }
       
       const audioBlob = await response.blob();
@@ -920,7 +921,7 @@ function TourManagementSection() {
       
       toast({
         title: "Voice Test",
-        description: "Playing voice narration for tour step",
+        description: "Playing cached voice narration for tour step",
       });
       
       // Clean up URL after playing
@@ -931,8 +932,8 @@ function TourManagementSection() {
     } catch (error) {
       console.error('Voice test error:', error);
       toast({
-        title: "Voice Test Failed",
-        description: "Could not play voice narration",
+        title: "Voice Test Failed", 
+        description: "No cached voice recording found for this step. Try regenerating the tour.",
         variant: "destructive",
       });
     }

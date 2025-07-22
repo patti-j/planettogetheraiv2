@@ -136,6 +136,9 @@ The application uses a modern full-stack architecture with strong typing through
 - Tours now load instantly with pre-cached audio instead of generating voice content in real-time
 - System creates engaging narrations from tour step data and caches with role-specific metadata
 - Performance improvement: Voice generation moved from tour playback time to tour creation time
+- **Enhanced Test Voice functionality**: Added cacheOnly parameter to API to ensure Test Voice buttons only play pre-cached recordings
+- Test Voice now provides authentic preview of actual tour experience using stored voice recordings
+- Clear error handling when cached recordings don't exist, prompting tour regeneration
 
 ✓ **Complete "Start Live Tour" Functionality Implementation (July 22, 2025)**:
 - Fixed role switching dropdown to display all system roles instead of just assigned roles for comprehensive training demonstrations
