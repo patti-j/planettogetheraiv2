@@ -2257,7 +2257,8 @@ function TourManagementSection() {
                         setVoiceGenerationOptions(prev => ({ 
                           ...prev, 
                           voice: value,
-                          gender: ['alloy', 'nova', 'echo', 'shimmer', 'alloy-british', 'nova-british', 'echo-british', 'shimmer-british', 'alloy-business', 'nova-slow', 'echo-calm', 'shimmer-energetic'].includes(value) ? 'female' : 'male'
+                          gender: ['nova', 'shimmer', 'nova-british', 'shimmer-british', 'nova-slow', 'shimmer-energetic'].includes(value) ? 'female' : 
+                                 ['alloy', 'alloy-british', 'alloy-business'].includes(value) ? 'neutral' : 'male'
                         }))
                       }
                     >
@@ -2265,22 +2266,22 @@ function TourManagementSection() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="alloy">Alloy (Female - Most Popular American Voice)</SelectItem>
+                        <SelectItem value="alloy">Alloy (Neutral - Most Popular American Voice)</SelectItem>
                         <SelectItem value="nova">Nova (Female - Clear American Pronunciation)</SelectItem>
                         <SelectItem value="fable">Fable (Male - Top Rated American Voice)</SelectItem>
-                        <SelectItem value="echo">Echo (Female - Expressive American Voice)</SelectItem>
+                        <SelectItem value="echo">Echo (Male - Articulate American Voice)</SelectItem>
                         <SelectItem value="onyx">Onyx (Male - Deep American Voice)</SelectItem>
                         <SelectItem value="shimmer">Shimmer (Female - Bright American Accent)</SelectItem>
-                        <SelectItem value="alloy-british">Charlotte (Female - Elegant British-Style)</SelectItem>
+                        <SelectItem value="alloy-british">Alex (Neutral - Elegant British-Style)</SelectItem>
                         <SelectItem value="nova-british">Victoria (Female - Classic British-Style)</SelectItem>
                         <SelectItem value="fable-british">William (Male - Distinguished British-Style)</SelectItem>
-                        <SelectItem value="echo-british">Sophia (Female - Refined British-Style)</SelectItem>
+                        <SelectItem value="echo-british">James (Male - Refined British-Style)</SelectItem>
                         <SelectItem value="onyx-british">Oliver (Male - Deep British-Style)</SelectItem>
                         <SelectItem value="shimmer-british">Emma (Female - Bright British-Style)</SelectItem>
-                        <SelectItem value="alloy-business">Alloy Pro (Female - Professional American)</SelectItem>
+                        <SelectItem value="alloy-business">Alloy Pro (Neutral - Professional American)</SelectItem>
                         <SelectItem value="nova-slow">Nova Calm (Female - Gentle American)</SelectItem>
                         <SelectItem value="fable-fast">Fable Express (Male - Dynamic American)</SelectItem>
-                        <SelectItem value="echo-calm">Echo Steady (Female - Composed American)</SelectItem>
+                        <SelectItem value="echo-calm">Echo Steady (Male - Composed American)</SelectItem>
                         <SelectItem value="shimmer-energetic">Shimmer Bright (Female - Energetic American)</SelectItem>
                       </SelectContent>
                     </Select>

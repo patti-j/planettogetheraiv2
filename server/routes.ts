@@ -3734,17 +3734,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Map enhanced voice names to OpenAI voices and adjust speed
       const voiceMapping: { [key: string]: { voice: string, speedModifier: number } } = {
-        'alloy': { voice: 'alloy', speedModifier: 1.0 }, // Female - Most popular American voice
+        'alloy': { voice: 'alloy', speedModifier: 1.0 }, // Neutral - Most popular American voice
         'nova': { voice: 'nova', speedModifier: 1.0 }, // Female - Clear American pronunciation  
         'fable': { voice: 'fable', speedModifier: 1.0 }, // Male - Top rated American voice
-        'echo': { voice: 'echo', speedModifier: 1.0 }, // Female - Expressive American voice
+        'echo': { voice: 'echo', speedModifier: 1.0 }, // Male - Articulate American voice
         'onyx': { voice: 'onyx', speedModifier: 1.0 }, // Male - Deep American voice
         'shimmer': { voice: 'shimmer', speedModifier: 1.0 }, // Female - Bright American accent
         // British-style variations (Note: OpenAI TTS maintains American accent but with refined characteristics)
-        'alloy-british': { voice: 'alloy', speedModifier: 0.92 }, // Charlotte - Female, Elegant style
+        'alloy-british': { voice: 'alloy', speedModifier: 0.92 }, // Alex - Neutral, Elegant style
         'nova-british': { voice: 'nova', speedModifier: 0.88 }, // Victoria - Female, Classic style  
         'fable-british': { voice: 'fable', speedModifier: 0.90 }, // William - Male, Distinguished style
-        'echo-british': { voice: 'echo', speedModifier: 0.85 }, // Sophia - Female, Refined style
+        'echo-british': { voice: 'echo', speedModifier: 0.85 }, // James - Male, Refined style
         'onyx-british': { voice: 'onyx', speedModifier: 0.87 }, // Oliver - Male, Deep style
         'shimmer-british': { voice: 'shimmer', speedModifier: 0.93 }, // Emma - Female, Bright style
         // American variations
