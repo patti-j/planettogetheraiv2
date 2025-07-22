@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -1302,7 +1303,7 @@ function TourManagementSection() {
     }
     
     const selectedRoleNames = selectedMissingRoles.map(roleId => {
-      const role = systemRoles.find((r: any) => r.id.toString() === roleId);
+      const role = (systemRoles as any[]).find((r: any) => r.id.toString() === roleId);
       return role ? role.name : roleId;
     });
     
@@ -1327,14 +1328,14 @@ function TourManagementSection() {
   const handleGenerateVoiceForSelected = () => {
     // Allow opening dialog even with no tours selected for settings configuration
     const selectedTours = selectedRoles.length > 0 
-      ? toursFromAPI.filter((tour: any) => selectedRoles.includes(tour.roleDisplayName))
+      ? (toursFromAPI as any[]).filter((tour: any) => selectedRoles.includes(tour.roleDisplayName))
       : [];
     setVoiceGenerationTours(selectedTours);
     setShowVoiceGenerationDialog(true);
   };
 
   const handleGenerateVoiceForAll = () => {
-    setVoiceGenerationTours(toursFromAPI);
+    setVoiceGenerationTours(toursFromAPI as any[]);
     setShowVoiceGenerationDialog(true);
   };
 
@@ -1365,18 +1366,19 @@ function TourManagementSection() {
         
         // Store the generated tour data for preview
         console.log('AI Response:', response);
-        console.log('Response tours:', response.tours);
+        console.log('Response tours:', (response as any).tours);
         
         // Extract the tour data from the response
         let tourData;
-        if (response.tours && response.tours.length > 0) {
-          tourData = response.tours[0];
-        } else if (response.steps) {
+        const responseData = response as any;
+        if (responseData.tours && responseData.tours.length > 0) {
+          tourData = responseData.tours[0];
+        } else if (responseData.steps) {
           // Direct steps in response
-          tourData = { steps: response.steps };
+          tourData = { steps: responseData.steps };
         } else {
           // Fallback to the entire response
-          tourData = response;
+          tourData = responseData;
         }
         
         console.log('Processed tour data:', tourData);
@@ -1542,7 +1544,7 @@ function TourManagementSection() {
             </div>
           </div>
           
-          {toursFromAPI.map((tour: any) => (
+          {(toursFromAPI as any[])?.map((tour: any) => (
             <Card key={tour.id}>
               <CardHeader 
                 className="cursor-pointer hover:bg-gray-50" 
@@ -1823,7 +1825,7 @@ function TourManagementSection() {
               <Button variant="outline" onClick={() => setShowAIGuidanceDialog(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleConfirmTourGeneration} disabled={regenerateTourWithAI.isPending}>
+              <Button onClick={handleConfirmAIGeneration} disabled={regenerateTourWithAI.isPending}>
                 {regenerateTourWithAI.isPending && <RefreshCw className="h-4 w-4 mr-2 animate-spin" />}
                 Generate Tours
               </Button>
