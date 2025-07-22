@@ -27,6 +27,8 @@ import Feedback from "@/pages/feedback";
 import ForkliftDriver from "@/pages/forklift-driver";
 import EmailSettings from "@/pages/email-settings";
 import SchedulingOptimizer from "@/pages/scheduling-optimizer";
+import InventoryOptimization from "@/pages/inventory-optimization";
+import DemandForecasting from "@/pages/demand-forecasting";
 import ERPImport from "@/pages/erp-import";
 import PlantManager from "@/pages/plant-manager";
 import SystemsManagement from "@/pages/systems-management";
@@ -200,6 +202,16 @@ function Router() {
           <Route path="/optimize-orders">
             <ProtectedRoute feature="scheduling-optimizer" action="view">
               <SchedulingOptimizer />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/inventory-optimization">
+            <ProtectedRoute feature="inventory-optimization" action="view">
+              <InventoryOptimization />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/demand-forecasting">
+            <ProtectedRoute feature="demand-forecasting" action="view">
+              <DemandForecasting />
             </ProtectedRoute>
           </Route>
           <Route path="/erp-import">
