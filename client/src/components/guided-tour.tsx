@@ -21,7 +21,8 @@ import {
   Move,
   Volume2,
   VolumeX,
-  Pause
+  Pause,
+  RotateCcw
 } from "lucide-react";
 
 interface TourStep {
@@ -649,6 +650,21 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
     }
   };
 
+  const replayCurrentStep = () => {
+    // Replay the current step's narration
+    if (!voiceEnabled || isGenerating) return;
+    
+    // Stop any current speech
+    stopSpeech();
+    
+    // Play current step narration
+    if (tourSteps[currentStep]) {
+      const currentStepData = tourSteps[currentStep];
+      const enhancedText = createEngagingNarration(currentStepData, role);
+      speakText(enhancedText);
+    }
+  };
+
   const currentStepData = tourSteps[currentStep];
   const StepIcon = currentStepData.icon;
 
@@ -823,6 +839,20 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
                   <Button variant="outline" size="sm" onClick={handlePrevious} className="px-2">
                     <ChevronLeft className="h-3 w-3 mr-1" />
                     Back
+                  </Button>
+                )}
+                {/* Voice replay button (when voice is enabled) */}
+                {voiceEnabled && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={replayCurrentStep}
+                    disabled={isGenerating}
+                    className="px-2 text-blue-600 border-blue-200 hover:bg-blue-50"
+                    title="Replay current step narration"
+                  >
+                    <RotateCcw className="h-3 w-3 mr-1" />
+                    Replay
                   </Button>
                 )}
               </div>
