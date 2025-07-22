@@ -1290,11 +1290,7 @@ function TourManagementSection() {
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-between mt-4 pt-3 border-t">
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <MessageSquare className="h-3 w-3" />
-                          Action: "{step.actionText}"
-                        </div>
+                      <div className="flex items-center justify-end mt-4 pt-3 border-t">
                         <div className="flex items-center gap-2">
                           <Button 
                             size="sm" 
