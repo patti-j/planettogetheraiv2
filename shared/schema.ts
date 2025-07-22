@@ -1168,6 +1168,21 @@ export const demoTourParticipants = pgTable("demo_tour_participants", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Voice recordings cache for tour narration
+export const voiceRecordingsCache = pgTable("voice_recordings_cache", {
+  id: serial("id").primaryKey(),
+  textHash: varchar("text_hash", { length: 64 }).notNull().unique(), // SHA-256 hash of the text content
+  role: varchar("role", { length: 50 }).notNull(), // director, production-scheduler, etc.
+  stepId: varchar("step_id", { length: 100 }).notNull(), // tour step identifier
+  voice: varchar("voice", { length: 20 }).notNull(), // AI voice used (nova, alloy, etc.)
+  audioData: text("audio_data").notNull(), // Base64 encoded audio file
+  fileSize: integer("file_size").notNull(), // in bytes
+  duration: integer("duration"), // in milliseconds
+  createdAt: timestamp("created_at").defaultNow(),
+  lastUsedAt: timestamp("last_used_at").defaultNow(),
+  usageCount: integer("usage_count").default(1),
+});
+
 export const insertDemoTourParticipantSchema = createInsertSchema(demoTourParticipants).omit({
   id: true,
   tourStartedAt: true,
@@ -1175,5 +1190,14 @@ export const insertDemoTourParticipantSchema = createInsertSchema(demoTourPartic
   updatedAt: true,
 });
 
+export const insertVoiceRecordingsCacheSchema = createInsertSchema(voiceRecordingsCache).omit({
+  id: true,
+  createdAt: true,
+  lastUsedAt: true,
+  usageCount: true,
+});
+
 export type InsertDemoTourParticipant = z.infer<typeof insertDemoTourParticipantSchema>;
 export type DemoTourParticipant = typeof demoTourParticipants.$inferSelect;
+export type InsertVoiceRecordingsCache = z.infer<typeof insertVoiceRecordingsCacheSchema>;
+export type VoiceRecordingsCache = typeof voiceRecordingsCache.$inferSelect;

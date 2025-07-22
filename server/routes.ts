@@ -15,7 +15,8 @@ import {
   insertGoalIssueSchema, insertGoalKpiSchema, insertGoalActionSchema,
   insertUserSchema, insertRoleSchema, insertPermissionSchema,
   insertUserRoleSchema, insertRolePermissionSchema,
-  insertDemoTourParticipantSchema
+  insertDemoTourParticipantSchema,
+  insertVoiceRecordingsCacheSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -24,6 +25,7 @@ import session from "express-session";
 import bcrypt from "bcryptjs";
 import connectPg from "connect-pg-simple";
 import OpenAI from "openai";
+import crypto from "crypto";
 
 // Session interface is declared in index.ts
 
@@ -3572,22 +3574,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // AI Text-to-Speech endpoint for high-quality voice generation
+  // Voice Recordings Cache API routes
+  app.get('/api/voice-cache/:textHash', async (req, res) => {
+    try {
+      const textHash = req.params.textHash;
+      const recording = await storage.getVoiceRecording(textHash);
+      
+      if (!recording) {
+        return res.status(404).json({ error: 'Voice recording not found' });
+      }
+
+      // Update usage count
+      await storage.updateVoiceRecordingUsage(recording.id);
+      
+      res.json({
+        id: recording.id,
+        audioData: recording.audioData,
+        voice: recording.voice,
+        duration: recording.duration,
+        usageCount: recording.usageCount + 1
+      });
+    } catch (error) {
+      console.error('Error fetching cached voice recording:', error);
+      res.status(500).json({ error: 'Failed to fetch cached voice recording' });
+    }
+  });
+
+  app.post('/api/voice-cache', async (req, res) => {
+    try {
+      const validation = insertVoiceRecordingsCacheSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: 'Invalid voice recording data', details: validation.error.errors });
+      }
+
+      // Create text hash for caching
+      const textHash = crypto.createHash('sha256').update(validation.data.textHash).digest('hex');
+      
+      const recordingData = {
+        ...validation.data,
+        textHash,
+        fileSize: Buffer.byteLength(validation.data.audioData, 'base64')
+      };
+
+      const recording = await storage.createVoiceRecording(recordingData);
+      res.status(201).json(recording);
+    } catch (error) {
+      console.error('Error creating voice recording cache:', error);
+      res.status(500).json({ error: 'Failed to create voice recording cache' });
+    }
+  });
+
+  // AI Text-to-Speech endpoint with caching for high-quality voice generation
   app.post("/api/ai/text-to-speech", async (req, res) => {
     try {
-      const { text, voice = "alloy", gender = "female", speed = 1.1 } = req.body;
+      const { text, voice = "alloy", gender = "female", speed = 1.1, role = "demo", stepId = "" } = req.body;
       
       if (!text) {
         return res.status(400).json({ error: "Text is required" });
       }
 
+      // Create hash for cache lookup
+      const cacheKey = `${text}-${voice}-${gender}-${speed}`;
+      const textHash = crypto.createHash('sha256').update(cacheKey).digest('hex');
+
+      // Check cache first
+      console.log(`Checking voice cache for hash: ${textHash}`);
+      const cachedRecording = await storage.getVoiceRecording(textHash);
+      
+      if (cachedRecording) {
+        console.log(`Found cached recording, usage count: ${cachedRecording.usageCount}`);
+        await storage.updateVoiceRecordingUsage(cachedRecording.id);
+        
+        // Return cached audio
+        const audioBuffer = Buffer.from(cachedRecording.audioData, 'base64');
+        res.set({
+          'Content-Type': 'audio/mpeg',
+          'Content-Length': audioBuffer.length,
+          'Cache-Control': 'public, max-age=7200',
+          'X-Content-Type-Options': 'nosniff',
+          'X-Voice-Cache': 'hit'
+        });
+        return res.send(audioBuffer);
+      }
+
+      // Generate new voice if not cached
       const openai = new OpenAI({
         apiKey: process.env.OPENAI_API_KEY,
       });
 
       // Choose voice based on gender preference
       const voiceMap = {
-        female: ["nova", "alloy", "shimmer"], // nova first for best quality
+        female: ["nova", "alloy", "shimmer"], 
         male: ["echo", "fable", "onyx"]
       };
       
@@ -3597,22 +3674,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Generating AI speech for text: "${text.substring(0, 50)}..." using voice: ${selectedVoice}`);
 
       // Use faster tts-1 model for demo tours to reduce latency
-      const model = text.length > 200 ? "tts-1-hd" : "tts-1"; // Use faster model for shorter text
+      const model = text.length > 200 ? "tts-1-hd" : "tts-1";
       
       const mp3 = await openai.audio.speech.create({
         model: model,
         voice: selectedVoice as any,
         input: text,
-        speed: Math.min(Math.max(speed, 0.25), 4.0) // Clamp speed between 0.25 and 4.0
+        speed: Math.min(Math.max(speed, 0.25), 4.0)
       });
 
       const buffer = Buffer.from(await mp3.arrayBuffer());
       
+      // Cache the generated audio for future use
+      try {
+        const audioData = buffer.toString('base64');
+        await storage.createVoiceRecording({
+          textHash,
+          role,
+          stepId,
+          voice: selectedVoice,
+          audioData,
+          fileSize: buffer.length,
+          duration: null
+        });
+        console.log(`Cached new voice recording with hash: ${textHash}`);
+      } catch (cacheError) {
+        console.error('Error caching voice recording:', cacheError);
+        // Continue even if caching fails
+      }
+      
       res.set({
         'Content-Type': 'audio/mpeg',
         'Content-Length': buffer.length,
-        'Cache-Control': 'public, max-age=7200', // Cache for 2 hours for demo content
-        'X-Content-Type-Options': 'nosniff'
+        'Cache-Control': 'public, max-age=7200',
+        'X-Content-Type-Options': 'nosniff',
+        'X-Voice-Cache': 'miss'
       });
       
       res.send(buffer);

@@ -19,7 +19,8 @@ import {
   type InsertBusinessGoal, type InsertGoalProgress, type InsertGoalRisk, type InsertGoalIssue, type InsertGoalKpi, type InsertGoalAction,
   type InsertUser, type InsertRole, type InsertPermission, type InsertUserRole, type InsertRolePermission,
   type VisualFactoryDisplay, type InsertVisualFactoryDisplay,
-  demoTourParticipants, type DemoTourParticipant, type InsertDemoTourParticipant
+  demoTourParticipants, type DemoTourParticipant, type InsertDemoTourParticipant,
+  voiceRecordingsCache, type VoiceRecordingsCache, type InsertVoiceRecordingsCache
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, like, ne } from "drizzle-orm";
@@ -305,6 +306,11 @@ export interface IStorage {
   updateDemoTourParticipant(id: number, participant: Partial<InsertDemoTourParticipant>): Promise<DemoTourParticipant | undefined>;
   completeDemoTour(id: number, feedback?: string): Promise<DemoTourParticipant | undefined>;
   addTourStep(participantId: number, step: { stepId: string; stepTitle: string; roleId: string; completedAt: string; duration: number }): Promise<boolean>;
+
+  // Voice Recordings Cache
+  getVoiceRecording(textHash: string): Promise<VoiceRecordingsCache | undefined>;
+  createVoiceRecording(recording: InsertVoiceRecordingsCache): Promise<VoiceRecordingsCache>;
+  updateVoiceRecordingUsage(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -2498,6 +2504,27 @@ export class DatabaseStorage implements IStorage {
       .where(eq(demoTourParticipants.id, participantId));
 
     return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Voice Recordings Cache
+  async getVoiceRecording(textHash: string): Promise<VoiceRecordingsCache | undefined> {
+    const [recording] = await db.select().from(voiceRecordingsCache).where(eq(voiceRecordingsCache.textHash, textHash));
+    return recording;
+  }
+
+  async createVoiceRecording(recording: InsertVoiceRecordingsCache): Promise<VoiceRecordingsCache> {
+    const [newRecording] = await db.insert(voiceRecordingsCache).values(recording).returning();
+    return newRecording;
+  }
+
+  async updateVoiceRecordingUsage(id: number): Promise<void> {
+    await db
+      .update(voiceRecordingsCache)
+      .set({ 
+        usageCount: sql`${voiceRecordingsCache.usageCount} + 1`,
+        lastUsedAt: new Date()
+      })
+      .where(eq(voiceRecordingsCache.id, id));
   }
 }
 
