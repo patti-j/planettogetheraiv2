@@ -102,56 +102,35 @@ export default function Reports() {
     },
   });
 
-  const generateConciseTitle = (prompt: string, type: string): string => {
-    // Extract key words and create a meaningful title
-    const words = prompt.toLowerCase().split(' ').filter(word => 
-      !['report', 'create', 'generate', 'show', 'give', 'me', 'a', 'an', 'the', 'of', 'for', 'with'].includes(word)
-    );
-    
-    // Get first 3-4 meaningful words and capitalize properly
-    const keyWords = words.slice(0, 4).map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    );
-    
-    // Create title based on type and key words
-    const typePrefix = type.charAt(0).toUpperCase() + type.slice(1);
-    return keyWords.length > 0 ? `${typePrefix}: ${keyWords.join(' ')}` : `${typePrefix} Report`;
-  };
+
 
   const createAIReportMutation = useMutation({
     mutationFn: async (prompt: string) => {
-      // First get a title from AI
-      const titleResponse = await apiRequest('POST', '/api/ai-agent', { 
-        command: `Generate a concise professional title (maximum 5 words) for this report request: "${prompt}". Return only the title, nothing else.` 
-      });
-      
-      return { 
-        titleResponse, 
-        reportResponse: await apiRequest('POST', '/api/ai-agent', { command: `CREATE_REPORT: ${prompt}` })
-      };
+      return await apiRequest('POST', '/api/ai-agent', { command: `CREATE_REPORT: ${prompt}` });
     },
     onSuccess: (data) => {
-      // Extract title from AI response
-      let aiTitle = '';
-      try {
-        if (data.titleResponse && typeof data.titleResponse === 'string') {
-          aiTitle = data.titleResponse.replace(/^["']|["']$/g, '').trim();
-        } else if (data.titleResponse?.message) {
-          aiTitle = data.titleResponse.message.replace(/^["']|["']$/g, '').trim();
-        }
-      } catch (error) {
-        console.log('Error extracting AI title:', error);
-      }
-      
-      // Fallback to keyword extraction if AI title is empty or too long
       const reportType = aiPrompt.toLowerCase().includes('resource') ? 'resource' : 
                         aiPrompt.toLowerCase().includes('efficiency') ? 'efficiency' : 'production';
       
-      const finalTitle = (aiTitle && aiTitle.length <= 50) ? aiTitle : generateConciseTitle(aiPrompt, reportType);
+      // Create a clean, simple title from the user's prompt
+      const createSimpleTitle = (prompt: string, type: string): string => {
+        // Clean up the prompt by removing common report-related words
+        const cleanPrompt = prompt
+          .toLowerCase()
+          .replace(/\b(create|generate|show|give|me|a|an|the|report|analysis|data)\b/g, '')
+          .trim()
+          .split(/\s+/)
+          .filter(word => word.length > 0)
+          .slice(0, 3) // Take first 3 meaningful words
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+        
+        return cleanPrompt || `${type.charAt(0).toUpperCase() + type.slice(1)} Report`;
+      };
       
       const newReport: Report = {
         id: Date.now().toString(),
-        title: finalTitle,
+        title: createSimpleTitle(aiPrompt, reportType),
         type: reportType,
         description: aiPrompt,
         data: generateReportData(reportType),
