@@ -1104,11 +1104,11 @@ function TourManagementSection() {
               <CardContent className="pt-0">
                 <div className="space-y-6">
                   {tour.tourData.steps.map((step: any, index: number) => (
-                    <div key={step.id} className="border rounded-lg p-4 bg-gray-50">
+                    <div key={step.id || `step-${tour.role}-${index}`} className="border rounded-lg p-4 bg-gray-50">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center">
                           <Badge variant="outline" className="mr-3">Step {index + 1}</Badge>
-                          <h5 className="font-semibold">{step.title}</h5>
+                          <h5 className="font-semibold">{step.feature || step.title || 'Step ' + (index + 1)}</h5>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant="secondary">{step.duration}</Badge>
@@ -1121,24 +1121,30 @@ function TourManagementSection() {
                       <div className="grid md:grid-cols-2 gap-4 text-sm">
                         <div>
                           <p className="font-medium mb-2">Description</p>
-                          <p className="text-gray-600 mb-3">{step.description}</p>
+                          <p className="text-gray-600 mb-3">{step.description || step.benefits || 'No description available'}</p>
                           
                           <p className="font-medium mb-2">Page Navigation</p>
                           <code className="bg-white px-2 py-1 rounded text-xs border">
-                            {step.page}
+                            {step.navigationPath || step.page || 'Not specified'}
                           </code>
                         </div>
                         
                         <div>
                           <p className="font-medium mb-2">Key Benefits</p>
-                          <ul className="space-y-1 mb-3">
-                            {step.benefits && Array.isArray(step.benefits) && step.benefits.map((benefit: string, idx: number) => (
-                              <li key={idx} className="text-gray-600 text-xs flex items-start">
-                                <span className="text-green-600 mr-1">•</span>
-                                {benefit}
-                              </li>
-                            ))}
-                          </ul>
+                          <div className="mb-3">
+                            {Array.isArray(step.benefits) ? (
+                              <ul className="space-y-1">
+                                {step.benefits.map((benefit: string, idx: number) => (
+                                  <li key={idx} className="text-gray-600 text-xs flex items-start">
+                                    <span className="text-green-600 mr-1">•</span>
+                                    {benefit}
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="text-gray-600 text-xs">{step.benefits || 'No benefits specified'}</p>
+                            )}
+                          </div>
                           
                           {step.voiceScript && (
                             <div>
