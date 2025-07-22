@@ -3803,21 +3803,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const OpenAI = (await import("openai")).default;
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+      // Define actual system navigation paths
+      const systemRoutes = {
+        '/': 'Dashboard - Main production schedule view',
+        '/analytics': 'Analytics - Performance metrics and insights',
+        '/reports': 'Reports - Production reporting and analysis',
+        '/ai-assistant': 'Max AI Assistant - AI-powered manufacturing assistant',
+        '/boards': 'Boards - Job and resource management boards',
+        '/shop-floor': 'Shop Floor - Live floor status and resource monitoring',
+        '/operator': 'Operator Dashboard - Equipment operator interface',
+        '/maintenance': 'Maintenance - Equipment maintenance management',
+        '/scheduling-optimizer': 'Optimize Orders - Intelligent scheduling optimizer',
+        '/erp-import': 'ERP Import - External system data integration',
+        '/plant-manager': 'Plant Manager - Overall plant operations management',
+        '/systems-management': 'Systems Management - System configuration and settings',
+        '/capacity-planning': 'Capacity Planning - Resource capacity analysis',
+        '/visual-factory': 'Visual Factory - Large screen displays for manufacturing',
+        '/business-goals': 'Business Goals - Strategic objectives and KPI tracking',
+        '/role-management': 'Role Management - User roles and permissions',
+        '/user-role-assignments': 'User Management - User assignments and access control',
+        '/training': 'Training - Training modules and role demonstrations',
+        '/feedback': 'Feedback - User feedback and suggestions'
+      };
+
       let prompt = `Generate comprehensive guided tour content for PlanetTogether manufacturing system for these roles: ${roles.join(', ')}.
-      
+
+IMPORTANT: Use only these actual system navigation paths in tour steps:
+${Object.entries(systemRoutes).map(([path, desc]) => `- ${path} (${desc})`).join('\n')}
+
 For each role, create:
 1. 3-5 tour steps covering key features
-2. Engaging voice scripts for each step
-3. Clear benefits for each feature
-4. Appropriate page navigation paths
+2. Engaging voice scripts for each step (2-3 sentences each)
+3. Clear benefits for each feature (2-3 benefits per step)
+4. Use ONLY the actual navigation paths listed above
 
-Focus on role-specific features:
-- Director: Business goals, analytics, reports
-- Production Scheduler: Scheduling, boards, optimization
-- Plant Manager: Plant oversight, capacity planning
-- Systems Manager: System configuration, user management
+Role-specific navigation guidelines:
+- Director: /business-goals, /analytics, /reports
+- Production Scheduler: /, /boards, /scheduling-optimizer
+- Plant Manager: /plant-manager, /capacity-planning, /shop-floor
+- Systems Manager: /systems-management, /role-management, /user-role-assignments
+- Trainer: /training, /analytics, /reports
+- Administrator: /systems-management, /user-role-assignments, /role-management
 
-Return a JSON object with tour data for each role including steps, voice scripts, and benefits.`;
+Each tour step must have:
+- navigationPath: One of the exact paths from the list above
+- stepTitle: Brief descriptive title
+- description: What the user will see/do on this page
+- benefits: Array of 2-3 specific advantages
+- voiceScript: Natural narration explaining the step (2-3 sentences)
+
+Return JSON format with each role as a top-level key containing tourSteps array.`;
 
       // Add user guidance if provided
       if (guidance && guidance.trim()) {

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -296,10 +297,107 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
   const preloadedAudioRef = useRef<{[key: string]: HTMLAudioElement}>({});
   const [preloadingStatus, setPreloadingStatus] = useState<{[key: string]: 'loading' | 'ready' | 'error'}>({});
 
-  const tourSteps = getTourSteps(role);
+  // Fetch tours from database
+  const { data: toursFromAPI = [], isLoading: toursLoading } = useQuery({
+    queryKey: ["/api/tours"],
+  });
+
+  // Convert database tour data to TourStep format
+  const getTourStepsFromDatabase = (role: string): TourStep[] => {
+    const roleKey = role.toLowerCase().replace(/\s+/g, '-');
+    const tourData = toursFromAPI.find((tour: any) => tour.role === roleKey);
+    
+    const commonSteps: TourStep[] = [
+      {
+        id: "welcome",
+        title: "Welcome to Your Demo",
+        description: "Let's explore the key features that will transform your manufacturing operations.",
+        page: "current",
+        icon: Play,
+        benefits: [
+          "See real-time production insights",
+          "Experience intelligent scheduling",
+          "Understand role-based workflows"
+        ],
+        actionText: "Start Tour",
+        duration: "2 min tour"
+      },
+      {
+        id: "demo-complete",
+        title: "Demo Experience Complete",
+        description: "You now have access to explore all PlanetTogether features using the sidebar navigation.",
+        page: "current",
+        icon: CheckCircle,
+        benefits: [
+          "Use the sidebar to navigate between features",
+          "All demo data is available for exploration",
+          "Contact us to learn about implementation"
+        ],
+        actionText: "Finish Tour",
+        duration: "Complete"
+      }
+    ];
+
+    if (!tourData?.tourData?.steps) {
+      // Fallback to original hardcoded steps if no database data
+      return getTourSteps(role);
+    }
+
+    // Convert database steps to TourStep format
+    const databaseSteps: TourStep[] = tourData.tourData.steps.map((step: any) => ({
+      id: step.stepTitle?.toLowerCase().replace(/\s+/g, '-') || step.id || 'step',
+      title: step.stepTitle || step.title || 'Tour Step',
+      description: step.description || 'Explore this feature',
+      page: step.navigationPath || step.page || "current",
+      icon: getIconForPage(step.navigationPath || step.page),
+      benefits: step.benefits || ["Learn about this feature"],
+      actionText: step.stepTitle || "Continue",
+      duration: "2 min"
+    }));
+
+    return [commonSteps[0], ...databaseSteps, commonSteps[1]];
+  };
+
+  // Helper function to get appropriate icon for each page
+  const getIconForPage = (page: string): React.ElementType => {
+    const pageIcons: Record<string, React.ElementType> = {
+      '/business-goals': TrendingUp,
+      '/analytics': BarChart3,
+      '/reports': Settings,
+      '/': BarChart3,
+      '/boards': Kanban,
+      '/scheduling-optimizer': Target,
+      '/plant-manager': Users,
+      '/capacity-planning': BarChart3,
+      '/shop-floor': Settings,
+      '/systems-management': Settings,
+      '/role-management': Users,
+      '/user-role-assignments': Users,
+      '/training': Lightbulb,
+    };
+    return pageIcons[page] || Settings;
+  };
+
+  const tourSteps = getTourStepsFromDatabase(role);
   const progress = ((currentStep + 1) / tourSteps.length) * 100;
   
   console.log("GuidedTour initialized - tourSteps:", tourSteps, "currentStep:", currentStep);
+  
+  // Show loading state if tours are still being fetched
+  if (toursLoading) {
+    return (
+      <div className="fixed bottom-4 right-4 z-50">
+        <Card className="w-96 shadow-lg border-2 border-blue-200">
+          <CardContent className="p-6">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading tour data...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   
   // Pre-load all audio when voice is enabled and tour starts
   useEffect(() => {
