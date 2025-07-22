@@ -3899,7 +3899,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       '/shop-floor': 'shop-floor-view',
       '/operator': 'operator-dashboard-view',
       '/maintenance': 'maintenance-view',
-      '/scheduling-optimizer': 'schedule-optimization-view',
+      '/scheduling-optimizer': 'scheduling-optimizer-view',
       '/erp-import': 'erp-import-view',
       '/plant-manager': 'plant-manager-view',
       '/systems-management': 'systems-management-view',

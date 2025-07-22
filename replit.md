@@ -251,7 +251,7 @@ The application uses a modern full-stack architecture with strong typing through
 - Validation identifies permission mismatches and suggests accessible alternative routes for invalid tour steps
 - System validation confirms proper role-based access control working across all tour content
 
-✓ **Tour Window Responsive Design & Voice Loading Indicator Fix (July 22, 2025)**:
+✓ **Tour Window Responsive Design & Scheduling Optimizer Permission Fix (July 22, 2025)**:
 - Fixed critical "Can't find variable: role" JavaScript error in GuidedTour component by replacing undefined role references in handleSkipTour function
 - Updated all role variable references to use proper roleData?.name queries and roleId for filtering throughout the component
 - Implemented responsive tour window design that adapts to different screen sizes and prevents content being pushed out of viewport
@@ -264,6 +264,10 @@ The application uses a modern full-stack architecture with strong typing through
 - Enhanced voice status display with spinning loader during voice generation and pulse indicator during playback
 - Improved user experience by showing "Loading voice narration..." message while AI generates speech for new tour steps
 - Voice loading state prevents user confusion during the few seconds it takes to generate voice for uncached steps
+- **FIXED: Scheduling Optimizer Permission Issue** - Added missing `scheduling-optimizer-view` permission to Production Scheduler role
+- Corrected route permission mapping in `getAccessibleRoutesForRole` function from `schedule-optimization-view` to `scheduling-optimizer-view`
+- Production Scheduler tours now properly validate and allow access to /scheduling-optimizer route
+- Enhanced permission validation system to catch route accessibility issues for all roles during tour generation
 
 ✓ **Complete Tour System Migration to Role ID-Based Architecture (July 22, 2025)**:
 - Successfully completed comprehensive migration from role name strings to role ID-based lookups throughout entire tour system
