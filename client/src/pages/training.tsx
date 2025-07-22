@@ -1522,6 +1522,19 @@ function TourManagementSection() {
                 }
 
                 try {
+                  // Get fresh user data from the API
+                  const userResponse = await apiRequest('GET', '/api/auth/me');
+                  console.log('Fresh user data:', userResponse);
+                  
+                  if (!userResponse?.id) {
+                    toast({
+                      title: "Authentication Error",
+                      description: "Please log in again and try.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+
                   console.log('Tour data:', previewTourData);
                   console.log('System roles:', systemRoles);
                   console.log('Looking for role:', previewTourData.role, 'Display name:', previewTourData.roleDisplayName);
@@ -1542,38 +1555,21 @@ function TourManagementSection() {
 
                   if (roleId) {
                     console.log('Attempting to switch to role ID:', roleId);
-                    console.log('User data:', user);
-                    console.log('User ID:', user?.id);
                     
-                    if (!user?.id) {
-                      console.log('User ID not available - user object:', user);
-                      toast({
-                        title: "Error",
-                        description: "User data not loaded. Please refresh and try again.",
-                        variant: "destructive",
-                      });
-                      return;
-                    }
+                    // Switch role using fresh user data
+                    const response = await apiRequest('POST', `/api/users/${userResponse.id}/switch-role`, { roleId });
+                    console.log('Role switch response:', response);
                     
-                    // Switch role
-                    try {
-                      const response = await apiRequest('POST', `/api/users/${user.id}/switch-role`, { roleId });
-                      console.log('Role switch response:', response);
-                      
-                      toast({
-                        title: "Starting Live Tour",
-                        description: `Switching to ${previewTourData.roleDisplayName} role and launching tour...`,
-                      });
-                      
-                      // Clear cache and navigate to home to start the tour
-                      queryClient.clear();
-                      setTimeout(() => {
-                        window.location.href = '/?startTour=true';
-                      }, 1000);
-                    } catch (apiError) {
-                      console.error('API request failed:', apiError);
-                      throw apiError; // Re-throw to be caught by outer try-catch
-                    }
+                    toast({
+                      title: "Starting Live Tour",
+                      description: `Switching to ${previewTourData.roleDisplayName} role and launching tour...`,
+                    });
+                    
+                    // Clear cache and navigate to home to start the tour
+                    queryClient.clear();
+                    setTimeout(() => {
+                      window.location.href = '/?startTour=true';
+                    }, 1000);
                   } else {
                     toast({
                       title: "Role Not Found",
