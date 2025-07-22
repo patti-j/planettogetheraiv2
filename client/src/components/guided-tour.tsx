@@ -274,8 +274,17 @@ const getTourSteps = (roleId: number): TourStep[] => {
     ]
   };
 
+  // Map roleId to role key for fallback steps
+  const roleIdToKey: Record<number, string> = {
+    1: 'director',
+    3: 'production-scheduler', 
+    4: 'plant-manager',
+    5: 'systems-manager'
+  };
+
   // Return role-specific steps plus common steps
-  const roleSpecificSteps = roleSteps[role] || [];
+  const roleKey = roleIdToKey[roleId] || 'production-scheduler';
+  const roleSpecificSteps = roleSteps[roleKey] || [];
   return [commonSteps[0], ...roleSpecificSteps, commonSteps[1]];
 };
 
