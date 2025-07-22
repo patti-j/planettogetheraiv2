@@ -195,6 +195,7 @@ export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
       // Navigate to the next step's page
       const nextStepData = tourSteps[nextStep];
       if (nextStepData && nextStepData.page !== "current") {
+        console.log("Guided tour navigating to next step:", nextStepData.page);
         setTimeout(() => {
           setLocation(nextStepData.page);
         }, 100);

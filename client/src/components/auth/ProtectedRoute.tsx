@@ -34,6 +34,7 @@ export function ProtectedRoute({
   }
 
   if (!hasAccess) {
+    console.log(`ProtectedRoute BLOCKING ACCESS - showing access denied. feature=${feature}, action=${action}, hasAccess=${hasAccess}`);
     return fallback || (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="max-w-md mx-auto text-center">
