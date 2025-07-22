@@ -1118,7 +1118,10 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
                 Key Benefits
               </h4>
               <ul className="space-y-1">
-                {currentStepData.benefits.slice(0, 3).map((benefit, index) => (
+                {(Array.isArray(currentStepData.benefits) 
+                  ? currentStepData.benefits.slice(0, 3) 
+                  : [currentStepData.benefits].slice(0, 3)
+                ).map((benefit, index) => (
                   <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
                     <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
                     {benefit}
