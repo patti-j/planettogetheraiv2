@@ -488,10 +488,16 @@ export default function AccountPage() {
                 <div className="flex items-center mt-1">
                   <CreditCard className="h-4 w-4 mr-2" />
                   <span className="text-sm">
-                    {accountInfo.paymentMethod.brand?.toUpperCase()} ****{accountInfo.paymentMethod.last4}
+                    {accountInfo.paymentMethod ? (
+                      <>
+                        {accountInfo.paymentMethod.brand?.toUpperCase()} ****{accountInfo.paymentMethod.last4}
+                      </>
+                    ) : (
+                      <span className="text-gray-500">No payment method on file</span>
+                    )}
                   </span>
                 </div>
-                {accountInfo.paymentMethod.expiryMonth && accountInfo.paymentMethod.expiryYear && (
+                {accountInfo.paymentMethod?.expiryMonth && accountInfo.paymentMethod?.expiryYear && (
                   <p className="text-xs text-gray-500">
                     Expires {accountInfo.paymentMethod.expiryMonth.toString().padStart(2, '0')}/{accountInfo.paymentMethod.expiryYear}
                   </p>
@@ -501,9 +507,15 @@ export default function AccountPage() {
               <div>
                 <p className="text-sm text-gray-600">Billing Address</p>
                 <div className="text-sm mt-1">
-                  <p>{accountInfo.billingAddress.street}</p>
-                  <p>{accountInfo.billingAddress.city}, {accountInfo.billingAddress.state} {accountInfo.billingAddress.zipCode}</p>
-                  <p>{accountInfo.billingAddress.country}</p>
+                  {accountInfo.billingAddress ? (
+                    <>
+                      <p>{accountInfo.billingAddress.street}</p>
+                      <p>{accountInfo.billingAddress.city}, {accountInfo.billingAddress.state} {accountInfo.billingAddress.zipCode}</p>
+                      <p>{accountInfo.billingAddress.country}</p>
+                    </>
+                  ) : (
+                    <p className="text-gray-500">No billing address on file</p>
+                  )}
                 </div>
               </div>
 
