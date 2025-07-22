@@ -3996,8 +3996,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const roleRoutes: {[role: string]: {[path: string]: string}} = {};
       
       for (const role of roles) {
-        // Find role ID by display name
-        const roleRecord = await storage.getRoleByName(role.toLowerCase().replace(/\s+/g, '-'));
+        // Find role by exact name match (roles now use proper case)
+        const roleRecord = await storage.getRoleByName(role);
         if (roleRecord) {
           roleRoutes[role] = await getAccessibleRoutesForRole(roleRecord.id);
         } else {
@@ -4120,10 +4120,10 @@ Return JSON format with each role as a top-level key containing tourSteps array.
         
         if (steps && steps.length > 0) {
           try {
-            // Get role ID for this role display name
-            const roleRecord = await storage.getRoleByName(roleKey);
+            // Get role ID for this role display name - use proper case name directly
+            const roleRecord = await storage.getRoleByName(role);
             if (!roleRecord) {
-              console.error(`Role not found for key: ${roleKey}`);
+              console.error(`Role not found for name: ${role}`);
               continue;
             }
             
@@ -4144,7 +4144,7 @@ Return JSON format with each role as a top-level key containing tourSteps array.
             
             // Pre-generate voice recordings for all tour steps
             console.log(`Pre-generating voice recordings for ${role} tour...`);
-            await preGenerateVoiceRecordings(roleKey, steps);
+            await preGenerateVoiceRecordings(role, steps);
           } catch (saveError) {
             console.error(`Error saving tour for ${role}:`, saveError);
           }

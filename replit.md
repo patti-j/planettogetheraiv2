@@ -202,6 +202,17 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 22, 2025)
 
+✓ **Database Role Name Standardization & AI Tour Navigation Fix (July 22, 2025)**:
+- Standardized all role names in database to use consistent proper case format (Production Scheduler, Plant Manager, etc.)
+- Migrated existing role data from dash-separated format to proper case format for consistency
+- Removed complex role name conversion logic that was causing errors in AI tour generation
+- Fixed AI tour generation bug where all steps defaulted to "/" navigation paths instead of proper routes
+- Tours now correctly generate navigation paths like "/reports", "/ai-assistant", "/scheduling-optimizer" based on role permissions
+- Eliminated error-prone string conversion between dash-case and proper case role names
+- Simplified getAccessibleRoutesForRole function to work directly with proper case role names
+- AI tour generation now properly maps role display names to database role keys for accurate permission checking
+- System architecture now uses consistent naming convention throughout: database storage, API calls, and frontend display
+
 ✓ **Tour Validation System Bug Fix & Architecture Completion (July 22, 2025)**:
 - Fixed critical tour validation bug where `roleName` variable was undefined in `getAccessibleRoutesForRole` function
 - Updated all references from undefined `roleName` to proper `role.name` property throughout validation logic
