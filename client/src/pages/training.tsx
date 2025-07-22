@@ -1505,64 +1505,203 @@ function TourManagementSection() {
         </div>
       </div>
 
-      {/* Select All Controls for Tour Content */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-        <div className="flex items-center space-x-2">
-          <span className="text-sm font-medium text-gray-700">Select:</span>
-          <Button
-            onClick={selectAllTourContentRoles}
-            variant="outline"
-            size="sm"
-            className="text-xs"
-          >
-            All ({toursFromAPI?.length || 0})
-          </Button>
-          <Button
-            onClick={unselectAllTourContentRoles}
-            variant="outline"
-            size="sm"
-            className="text-xs"
-          >
-            None
-          </Button>
+      {/* Loading State */}
+      {toursLoading && (
+        <div className="flex justify-center items-center py-8">
+          <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+          <span>Loading tours from database...</span>
         </div>
-        <div className="text-sm text-gray-500">
-          {selectedRoles.length} of {toursFromAPI?.length || 0} tours selected
-        </div>
-      </div>
-
-      {/* Tour Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-        {toursFromAPI?.map((tour: any) => (
-          <Card key={tour.id} className={`cursor-pointer transition-all ${selectedRoles.includes(tour.roleDisplayName) ? 'ring-2 ring-purple-500 bg-purple-50' : 'hover:shadow-md'}`}>
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center justify-between mb-2 sm:mb-3">
-                <h4 className="font-semibold text-xs sm:text-sm truncate mr-2">{tour.roleDisplayName}</h4>
-                <input
-                  type="checkbox"
-                  checked={selectedRoles.includes(tour.roleDisplayName)}
-                  onChange={() => toggleRole(tour.roleDisplayName)}
-                  className="rounded text-purple-600 shrink-0"
-                />
+      )}
+      
+      {/* Detailed Tour Configuration - Moved to Top */}
+      {!toursLoading && toursFromAPI?.length > 0 && (
+        <div className="space-y-4">
+          {/* Select All Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-gray-700">Select:</span>
+              <Button
+                onClick={selectAllTourContentRoles}
+                variant="outline"
+                size="sm"
+                className="text-xs"
+              >
+                All ({toursFromAPI?.length || 0})
+              </Button>
+              <Button
+                onClick={unselectAllTourContentRoles}
+                variant="outline"
+                size="sm"
+                className="text-xs"
+              >
+                None
+              </Button>
+            </div>
+            <div className="text-sm text-gray-500">
+              {selectedRoles.length} of {toursFromAPI?.length || 0} tours selected
+            </div>
+          </div>
+          
+          {toursFromAPI.map((tour: any) => (
+            <Card key={tour.id}>
+              <CardHeader 
+                className="cursor-pointer hover:bg-gray-50" 
+                onClick={() => toggleTourExpansion(tour.id)}
+            >
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                <div className="flex items-center">
+                    {expandedTours.includes(tour.id) ? 
+                    <ChevronDown className="h-4 w-4 mr-2" /> : 
+                    <ChevronRight className="h-4 w-4 mr-2" />
+                  }
+                  <input
+                    type="checkbox"
+                    checked={selectedRoles.includes(tour.roleDisplayName)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      toggleRole(tour.roleDisplayName);
+                    }}
+                    className="rounded text-purple-600 shrink-0 mr-3"
+                  />
+                    <CardTitle className="text-lg">{tour.roleDisplayName} Tour</CardTitle>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-4">
+                    <span className="flex items-center">
+                      <FileText className="h-4 w-4 mr-1" />
+                        {tour.tourData?.steps?.length || 0} steps
+                    </span>
+                    <span className="flex items-center">
+                      <Clock className="h-4 w-4 mr-1" />
+                        {tour.tourData?.estimatedDuration || '5-10 min'}
+                    </span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="w-full sm:w-auto text-xs sm:text-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePreviewTour(tour);
+                      }}
+                    >
+                      <Play className="h-3 w-3 mr-1" />
+                      <span className="hidden sm:inline">Preview Tour</span>
+                      <span className="sm:hidden">Preview</span>
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 w-full sm:w-auto text-xs sm:text-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSingleTourRegenerate(tour);
+                      }}
+                      disabled={regenerateTourWithAI.isPending}
+                    >
+                      {regenerateTourWithAI.isPending ? (
+                        <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3 w-3 mr-1" />
+                      )}
+                      <span className="hidden sm:inline">Regenerate</span>
+                      <span className="sm:hidden">Regen</span>
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="w-full sm:w-auto text-xs sm:text-sm"
+                    >
+                      <Edit3 className="h-3 w-3 mr-1" />
+                      <span className="hidden sm:inline">Edit Tour</span>
+                      <span className="sm:hidden">Edit</span>
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 w-full sm:w-auto text-xs sm:text-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTourToDelete(tour);
+                        setShowDeleteDialog(true);
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      <span className="hidden sm:inline">Delete</span>
+                      <span className="sm:hidden">Delete</span>
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-1 sm:space-y-2 text-xs text-gray-600">
-                <div className="flex items-center">
-                  <FileText className="h-3 w-3 mr-1 shrink-0" />
-                  <span className="truncate">{tour.tourData?.totalSteps || 0} steps</span>
+            </CardHeader>
+            
+            {expandedTours.includes(tour.id) && tour.tourData?.steps && (
+              <CardContent className="pt-0">
+                <div className="space-y-6">
+                  {tour.tourData.steps.map((step: any, index: number) => (
+                    <div key={step.id || `step-${tour.id}-${index}`} className="border rounded-lg p-4 bg-gray-50">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
+                        <div className="flex items-center">
+                          <Badge variant="outline" className="mr-3">Step {index + 1}</Badge>
+                          <h5 className="font-semibold text-sm">{step.stepName || step.feature || step.title || `Step ${index + 1}`}</h5>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Badge variant="secondary" className="text-xs">{step.duration}</Badge>
+                          <Button size="sm" variant="ghost">
+                            <Edit3 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <p className="text-sm text-gray-600 mb-3">{step.description || step.stepDescription}</p>
+                      
+                      {step.benefits && step.benefits.length > 0 && (
+                        <div className="mb-3">
+                          <h6 className="text-xs font-semibold text-gray-700 mb-2">Benefits:</h6>
+                          <ul className="list-disc list-inside text-xs text-gray-600 space-y-1">
+                            {step.benefits.slice(0, 3).map((benefit: string, benefitIndex: number) => (
+                              <li key={benefitIndex}>{benefit}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      {step.voiceScript && (
+                        <div className="mb-3">
+                          <h6 className="text-xs font-semibold text-gray-700 mb-2">Voice Script:</h6>
+                          <p className="text-xs text-gray-600 bg-white p-2 rounded border">{step.voiceScript}</p>
+                        </div>
+                      )}
+                      
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          Page: {step.page || step.route || '/'}
+                        </Badge>
+                        {step.actionText && (
+                          <Badge variant="outline" className="text-xs">
+                            Action: {step.actionText}
+                          </Badge>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs"
+                          onClick={() => handlePreviewStep(step, tour.roleDisplayName)}
+                        >
+                          <Play className="h-3 w-3 mr-1" />
+                          Test Voice
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex items-center">
-                  <Clock className="h-3 w-3 mr-1 shrink-0" />
-                  <span className="truncate">{tour.tourData?.estimatedDuration || '5 min'}</span>
-                </div>
-                <div className="flex items-center">
-                  <Volume2 className="h-3 w-3 mr-1 shrink-0" />
-                  <span className="truncate">{tour.tourData?.voiceScriptCount || 0} voice scripts</span>
-                </div>
-              </div>
-            </CardContent>
+              </CardContent>
+            )}
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Generate Tours for Additional Roles */}
       {missingTourRoles.length > 0 && (
@@ -1657,1023 +1796,450 @@ function TourManagementSection() {
         </div>
       )}
 
-      {/* Detailed Tour Management */}
-      {/* Loading State */}
-      {toursLoading && (
-        <div className="flex justify-center items-center py-8">
-          <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-          <span>Loading tours from database...</span>
-        </div>
-      )}
+      {/* Dialog Components */}
       
-      {/* Detailed Tour Configuration */}
-      {!toursLoading && toursFromAPI?.length > 0 && (
-        <div className="space-y-4">
-          <h4 className="font-semibold">Detailed Tour Configuration</h4>
-          
-          {toursFromAPI.map((tour: any) => (
-            <Card key={tour.id}>
-              <CardHeader 
-                className="cursor-pointer hover:bg-gray-50" 
-                onClick={() => toggleTourExpansion(tour.id)}
-            >
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-                <div className="flex items-center">
-                    {expandedTours.includes(tour.id) ? 
-                    <ChevronDown className="h-4 w-4 mr-2" /> : 
-                    <ChevronRight className="h-4 w-4 mr-2" />
-                  }
-                    <CardTitle className="text-lg">{tour.roleDisplayName} Tour</CardTitle>
-                </div>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-600">
-                  <div className="flex items-center gap-4">
-                    <span className="flex items-center">
-                      <FileText className="h-4 w-4 mr-1" />
-                        {tour.tourData?.steps?.length || 0} steps
-                    </span>
-                    <span className="flex items-center">
-                      <Clock className="h-4 w-4 mr-1" />
-                        {tour.tourData?.estimatedDuration || '5-10 min'}
-                    </span>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="w-full sm:w-auto text-xs sm:text-sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handlePreviewTour(tour);
-                      }}
-                    >
-                      <Play className="h-3 w-3 mr-1" />
-                      <span className="hidden sm:inline">Preview Tour</span>
-                      <span className="sm:hidden">Preview</span>
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 w-full sm:w-auto text-xs sm:text-sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSingleTourRegenerate(tour);
-                      }}
-                      disabled={regenerateTourWithAI.isPending}
-                    >
-                      {regenerateTourWithAI.isPending ? (
-                        <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-3 w-3 mr-1" />
-                      )}
-                      <span className="hidden sm:inline">Regenerate</span>
-                      <span className="sm:hidden">Regen</span>
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="w-full sm:w-auto text-xs sm:text-sm"
-                    >
-                      <Edit3 className="h-3 w-3 mr-1" />
-                      <span className="hidden sm:inline">Edit Tour</span>
-                      <span className="sm:hidden">Edit</span>
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50 w-full sm:w-auto text-xs sm:text-sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setTourToDelete(tour);
-                        setShowDeleteDialog(true);
-                      }}
-                    >
-                      <Trash2 className="h-3 w-3 mr-1" />
-                      <span className="hidden sm:inline">Delete</span>
-                      <span className="sm:hidden">Delete</span>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-            
-            {expandedTours.includes(tour.id) && tour.tourData?.steps && (
-              <CardContent className="pt-0">
-                <div className="space-y-6">
-                  {tour.tourData.steps.map((step: any, index: number) => (
-                    <div key={step.id || `step-${tour.id}-${index}`} className="border rounded-lg p-4 bg-gray-50">
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
-                        <div className="flex items-center">
-                          <Badge variant="outline" className="mr-3">Step {index + 1}</Badge>
-                          <h5 className="font-semibold text-sm">{step.stepName || step.feature || step.title || `Step ${index + 1}`}</h5>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Badge variant="secondary" className="text-xs">{step.duration}</Badge>
-                          <Button size="sm" variant="ghost">
-                            <Edit3 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <p className="font-medium mb-2">Description</p>
-                          <p className="text-gray-600 mb-3">{step.description || step.benefits || 'No description available'}</p>
-                          
-                          <p className="font-medium mb-2">Page Navigation</p>
-                          <code className="bg-white px-2 py-1 rounded text-xs border">
-                            {step.navigationPath || step.page || 'Not specified'}
-                          </code>
-                        </div>
-                        
-                        <div>
-                          <p className="font-medium mb-2">Key Benefits</p>
-                          <div className="mb-3">
-                            {Array.isArray(step.benefits) ? (
-                              <ul className="space-y-1">
-                                {step.benefits.map((benefit: string, idx: number) => (
-                                  <li key={idx} className="text-gray-600 text-xs flex items-start">
-                                    <span className="text-green-600 mr-1">•</span>
-                                    {benefit}
-                                  </li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p className="text-gray-600 text-xs">{step.benefits || 'No benefits specified'}</p>
-                            )}
-                          </div>
-                          
-                          {step.voiceScript && (
-                            <div>
-                              <p className="font-medium mb-2 flex items-center">
-                                <Volume2 className="h-3 w-3 mr-1" />
-                                Voice Script
-                              </p>
-                              <div className="bg-white p-2 rounded border text-xs text-gray-700">
-                                {step.voiceScript}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 mt-4 pt-3 border-t">
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          className="w-full sm:w-auto text-xs sm:text-sm"
-                          onClick={() => handlePreviewStep(step, tour.roleDisplayName)}
-                        >
-                          <Eye className="h-3 w-3 mr-1" />
-                          Preview
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          className="w-full sm:w-auto text-xs sm:text-sm"
-                          onClick={() => handleTestVoice(step, tour.roleDisplayName)}
-                        >
-                          <Volume2 className="h-3 w-3 mr-1" />
-                          Test Voice
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            )}
-          </Card>
-          ))}
-        </div>
-      )}
-      
-      {/* Empty State */}
-      {!toursLoading && toursFromAPI?.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
-          <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-          <p>No tours found in database.</p>
-          <p className="text-sm">Generate new tours using the AI system above.</p>
-        </div>
-      )}
-
       {/* AI Guidance Dialog */}
       <Dialog open={showAIGuidanceDialog} onOpenChange={setShowAIGuidanceDialog}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <Sparkles className="h-5 w-5 mr-2 text-purple-600" />
-              AI Tour Generation Instructions
-            </DialogTitle>
+            <DialogTitle>AI Tour Generation Guidance</DialogTitle>
+            <DialogDescription>
+              Provide specific instructions to customize the tour generation for selected roles.
+            </DialogDescription>
           </DialogHeader>
-          
           <div className="space-y-4">
             <div>
-              <Label className="text-sm font-medium">
-                Additional Guidance for AI (Optional)
-              </Label>
-              <p className="text-xs text-gray-600 mb-2">
-                Provide specific instructions, focus areas, or requirements for the AI to consider when generating tours.
-              </p>
+              <Label htmlFor="guidance">Custom Instructions</Label>
               <Textarea
+                id="guidance"
+                placeholder="Example: Focus on operational efficiency features, emphasize scheduling optimization, include real-time monitoring capabilities..."
                 value={aiGuidance}
                 onChange={(e) => setAiGuidance(e.target.value)}
-                placeholder="e.g., Focus on advanced features, include more technical details, emphasize business benefits, add more interactive elements..."
-                className="min-h-[100px]"
+                className="mt-1"
+                rows={4}
               />
             </div>
-            
-            {pendingAction && (
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="text-sm font-medium mb-1">
-                  Action: {pendingAction.type === 'selected' ? 'Regenerate Selected Tours' :
-                          pendingAction.type === 'all' ? 'Regenerate All Tours' :
-                          'Generate New Tours'}
-                </p>
-                <p className="text-xs text-gray-600">
-                  {pendingAction.roles?.length || 0} role(s) selected: {pendingAction.roles?.join(', ')}
-                </p>
-              </div>
-            )}
-          </div>
-          
-          <div className="flex gap-2 justify-end">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setShowAIGuidanceDialog(false);
-                setAiGuidance("");
-                setPendingAction(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleConfirmAIGeneration}
-              disabled={regenerateTourWithAI.isPending || generateNewToursWithAI.isPending}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              {regenerateTourWithAI.isPending || generateNewToursWithAI.isPending ? 'Generating...' : 'Generate Tours'}
-            </Button>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setShowAIGuidanceDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleConfirmTourGeneration} disabled={regenerateTourWithAI.isPending}>
+                {regenerateTourWithAI.isPending && <RefreshCw className="h-4 w-4 mr-2 animate-spin" />}
+                Generate Tours
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center text-red-600">
-              <Trash2 className="h-5 w-5 mr-2" />
-              Delete Tour
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <p className="text-gray-600">
-              Are you sure you want to delete the tour for <strong>{tourToDelete?.roleDisplayName}</strong>? 
-              This action cannot be undone.
-            </p>
-            
-            {tourToDelete?.tourData?.steps && (
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="text-sm font-medium mb-1">This tour contains:</p>
-                <p className="text-xs text-gray-600">
-                  {tourToDelete.tourData.steps.length} steps • {tourToDelete.tourData.estimatedDuration || '5-10 min'}
-                </p>
-              </div>
-            )}
-          </div>
-          
-          <div className="flex gap-2 justify-end">
-            <Button 
-              variant="outline" 
+      {/* Delete Tour Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Tour</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the {tourToDelete?.roleDisplayName} tour? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
               onClick={() => {
-                setShowDeleteDialog(false);
-                setTourToDelete(null);
+                if (tourToDelete) {
+                  deleteTourMutation.mutate(tourToDelete.id);
+                }
               }}
+              className="bg-red-600 hover:bg-red-700"
             >
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive"
-              onClick={() => tourToDelete?.id && deleteTourMutation.mutate(tourToDelete.id)}
-              disabled={deleteTourMutation.isPending}
-            >
-              {deleteTourMutation.isPending ? 'Deleting...' : 'Delete Tour'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+              Delete Tour
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Step Preview Dialog */}
       <Dialog open={showStepPreviewDialog} onOpenChange={setShowStepPreviewDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <Eye className="h-5 w-5 mr-2" />
-              Step Preview
+            <DialogTitle>
+              {previewStepData?.step?.stepName || previewStepData?.step?.feature || previewStepData?.step?.title || 'Tour Step'}
             </DialogTitle>
+            <DialogDescription>
+              Preview step details and test voice narration for {previewStepData?.role}
+            </DialogDescription>
           </DialogHeader>
-          
           {previewStepData && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Badge variant="outline">{previewStepData.role} Tour</Badge>
-                <Badge variant="secondary">{previewStepData.step.duration}</Badge>
+              <div>
+                <h4 className="font-medium mb-2">Description</h4>
+                <p className="text-sm text-gray-600">{previewStepData.step.description || previewStepData.step.stepDescription}</p>
               </div>
               
-              <div>
-                <h4 className="font-semibold text-lg mb-2">{previewStepData.step.stepTitle || previewStepData.step.feature}</h4>
-                <p className="text-gray-600 mb-4">{previewStepData.step.description}</p>
-                
-                {previewStepData.step.benefits && Array.isArray(previewStepData.step.benefits) && (
-                  <div className="mb-4">
-                    <h5 className="font-medium mb-2">Benefits:</h5>
-                    <ul className="text-sm text-gray-600 space-y-1">
-                      {previewStepData.step.benefits.map((benefit: string, index: number) => (
-                        <li key={index} className="flex items-start">
-                          <span className="text-green-600 mr-2">•</span>
-                          {benefit}
-                        </li>
-                      ))}
-                    </ul>
+              {previewStepData.step.benefits && previewStepData.step.benefits.length > 0 && (
+                <div>
+                  <h4 className="font-medium mb-2">Benefits</h4>
+                  <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                    {previewStepData.step.benefits.map((benefit: string, index: number) => (
+                      <li key={index}>{benefit}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {previewStepData.step.voiceScript && (
+                <div>
+                  <h4 className="font-medium mb-2">Voice Script</h4>
+                  <div className="bg-gray-50 p-3 rounded text-sm">
+                    {previewStepData.step.voiceScript}
                   </div>
-                )}
-                
-                {previewStepData.step.navigationPath && (
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <p className="text-sm font-medium text-blue-800 mb-1">Navigation:</p>
-                    <code className="text-xs text-blue-600">{previewStepData.step.navigationPath}</code>
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        // Test voice generation here
+                        toast({
+                          title: "Voice Test",
+                          description: "Voice generation would play here",
+                        });
+                      }}
+                    >
+                      <Volume2 className="h-3 w-3 mr-1" />
+                      Test Voice
+                    </Button>
                   </div>
-                )}
-                
-                {previewStepData.step.voiceScript && (
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-sm font-medium mb-2">Voice Script:</p>
-                    <p className="text-xs text-gray-600">{previewStepData.step.voiceScript}</p>
-                  </div>
-                )}
+                </div>
+              )}
+              
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline">
+                  Page: {previewStepData.step.page || previewStepData.step.route || '/'}
+                </Badge>
+                <Badge variant="outline">
+                  Duration: {previewStepData.step.duration || '2 min'}
+                </Badge>
               </div>
             </div>
           )}
-          
-          <div className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={() => setShowStepPreviewDialog(false)}>
-              Close
-            </Button>
-          </div>
         </DialogContent>
       </Dialog>
 
       {/* Tour Preview Dialog */}
       <Dialog open={showTourPreviewDialog} onOpenChange={setShowTourPreviewDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] md:w-full overflow-hidden flex flex-col">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <Play className="h-5 w-5 mr-2" />
-              Tour Preview: {previewTourData?.roleDisplayName}
-            </DialogTitle>
+            <DialogTitle>{previewTourData?.roleDisplayName} Tour Preview</DialogTitle>
+            <DialogDescription>
+              Complete tour overview with all steps and content
+            </DialogDescription>
           </DialogHeader>
-          
           {previewTourData && (
-            <div className="flex-1 overflow-y-auto space-y-6 px-1">
-              <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
-                <div>
-                  <h4 className="font-semibold">{previewTourData.roleDisplayName} Tour</h4>
-                  <p className="text-sm text-gray-600">
-                    {previewTourData.tourData?.steps?.length || 0} steps • 
-                    {previewTourData.tourData?.estimatedDuration || '5-10 min'}
-                  </p>
+            <div className="space-y-6">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">{previewTourData.tourData?.steps?.length || 0}</div>
+                  <div className="text-sm text-gray-600">Steps</div>
                 </div>
-                <Badge variant="secondary">{previewTourData.role}</Badge>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">{previewTourData.tourData?.estimatedDuration || '5-10 min'}</div>
+                  <div className="text-sm text-gray-600">Duration</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-600">{previewTourData.tourData?.voiceScriptCount || 0}</div>
+                  <div className="text-sm text-gray-600">Voice Scripts</div>
+                </div>
               </div>
               
-              {previewTourData.tourData?.steps?.map((step: any, index: number) => (
-                <div key={step.id || index} className="border rounded-lg p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center">
-                      <Badge variant="outline" className="mr-3">Step {index + 1}</Badge>
-                      <h5 className="font-semibold">{step.stepTitle || step.feature}</h5>
+              <div className="space-y-4">
+                <h4 className="font-semibold">Tour Steps</h4>
+                {previewTourData.tourData?.steps?.map((step: any, index: number) => (
+                  <div key={step.id || index} className="border rounded p-4 bg-gray-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center">
+                        <Badge className="mr-2">Step {index + 1}</Badge>
+                        <span className="font-medium">{step.stepName || step.feature || step.title || `Step ${index + 1}`}</span>
+                      </div>
+                      <Badge variant="outline">{step.duration || '2 min'}</Badge>
                     </div>
-                    <Badge variant="secondary">{step.duration}</Badge>
-                  </div>
-                  
-                  <p className="text-gray-600 mb-3">{step.description}</p>
-                  
-                  {step.benefits && Array.isArray(step.benefits) && (
-                    <div className="mb-3">
-                      <h6 className="text-sm font-medium mb-1">Benefits:</h6>
-                      <ul className="text-sm text-gray-600 space-y-1">
-                        {step.benefits.map((benefit: string, benefitIndex: number) => (
-                          <li key={benefitIndex} className="flex items-start">
-                            <span className="text-green-600 mr-2">•</span>
-                            {benefit}
-                          </li>
-                        ))}
-                      </ul>
+                    <p className="text-sm text-gray-600 mb-2">{step.description || step.stepDescription}</p>
+                    <div className="text-xs text-gray-500">
+                      Page: {step.page || step.route || '/'}
                     </div>
-                  )}
-                  
-                  <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t">
-                    {step.navigationPath && (
-                      <div>
-                        <span className="font-medium">Navigation: </span>
-                        <code className="bg-gray-100 px-1 rounded">{step.navigationPath}</code>
-                      </div>
-                    )}
-                    {step.actionText && (
-                      <div>
-                        <span className="font-medium">Action: </span>
-                        "{step.actionText}"
-                      </div>
-                    )}
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-          
-          <div className="flex gap-2 justify-end pt-4 border-t bg-white">
-            <Button variant="outline" onClick={() => setShowTourPreviewDialog(false)}>
-              Close Preview
-            </Button>
-            <Button 
-              onClick={async () => {
-                setShowTourPreviewDialog(false);
-                
-                if (!previewTourData?.roleId && !previewTourData?.roleDisplayName) {
-                  toast({
-                    title: "Error",
-                    description: "Unable to determine role for tour. Please try again.",
-                    variant: "destructive",
-                  });
-                  return;
-                }
-
-                try {
-                  // Get fresh user data from the API
-                  const response = await apiRequest('GET', '/api/auth/me');
-                  const userResponse = await response.json();
-                  console.log('Fresh user data:', userResponse);
-                  console.log('User response type:', typeof userResponse);
-                  console.log('User response keys:', Object.keys(userResponse || {}));
-                  
-                  let userId;
-                  if (!userResponse || !userResponse.id) {
-                    console.log('User response invalid, trying to use hook user data:', user);
-                    // Fallback to hook user data if fresh fetch fails
-                    if (!user?.id) {
-                      toast({
-                        title: "Authentication Error", 
-                        description: "Please log in again and try.",
-                        variant: "destructive",
-                      });
-                      return;
-                    }
-                    // Use hook user data as fallback
-                    userId = user.id;
-                    console.log('Using fallback user ID:', userId);
-                  } else {
-                    userId = userResponse.id;
-                  }
-
-                  console.log('Tour data:', previewTourData);
-                  console.log('System roles:', systemRoles);
-                  console.log('Looking for role ID:', previewTourData.roleId, 'Display name:', previewTourData.roleDisplayName);
-                  
-                  // First, switch to the appropriate role
-                  let roleId = previewTourData.roleId; // Use direct roleId if available
-                  
-                  // Fallback to name matching if roleId not available
-                  if (!roleId && previewTourData.roleDisplayName) {
-                    roleId = Array.isArray(systemRoles) ? systemRoles.find((r: any) => {
-                      const displayNameMatch = r.name.toLowerCase() === previewTourData.roleDisplayName?.toLowerCase();
-                      
-                      console.log('Checking role:', r.name, 'ID:', r.id);
-                      console.log('Display name match:', displayNameMatch);
-                      
-                      return displayNameMatch;
-                    })?.id : undefined;
-                  }
-
-                  console.log('Found role ID:', roleId);
-
-                  if (roleId) {
-                    console.log('Attempting to switch to role ID:', roleId);
-                    console.log('Using user ID:', userId);
-                    
-                    // Switch role using user ID
-                    const response = await apiRequest('POST', `/api/users/${userId}/switch-role`, { roleId });
-                    console.log('Role switch response:', response);
-                    
-                    toast({
-                      title: "Starting Live Tour",
-                      description: `Switching to ${previewTourData.roleDisplayName} role and launching tour...`,
-                    });
-                    
-                    // Clear cache and navigate to home to start the tour
-                    queryClient.clear();
-                    setTimeout(() => {
-                      window.location.href = '/?startTour=true';
-                    }, 1000);
-                  } else {
-                    toast({
-                      title: "Role Not Found",
-                      description: `Could not find role for ${previewTourData.roleDisplayName}. Please switch manually.`,
-                      variant: "destructive",
-                    });
-                  }
-                } catch (error) {
-                  console.error('Failed to start live tour:', error);
-                  toast({
-                    title: "Error Starting Tour",
-                    description: "Failed to switch roles. Please try switching manually.",
-                    variant: "destructive",
-                  });
-                }
-              }}
-            >
-              Start Live Tour
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Tour Validation Results Dialog */}
-      <Dialog open={showValidationDialog} onOpenChange={setShowValidationDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] md:w-full overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <CheckCircle className="h-5 w-5 mr-2 text-blue-600" />
-              Tour Validation Results
-            </DialogTitle>
-          </DialogHeader>
-          
-          {validationResults && (
-            <div className="flex-1 overflow-y-auto space-y-6 px-1">
-              {/* Summary */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-semibold mb-3">Validation Summary</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-800">{validationResults.summary.totalTours}</div>
-                    <div className="text-gray-600">Total Tours</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">{validationResults.summary.validTours}</div>
-                    <div className="text-gray-600">Valid Tours</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-red-600">{validationResults.summary.invalidTours}</div>
-                    <div className="text-gray-600">Invalid Tours</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-amber-600">{validationResults.summary.totalIssues}</div>
-                    <div className="text-gray-600">Total Issues</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Valid Tours */}
-              {validationResults.valid.length > 0 && (
-                <div>
-                  <h3 className="font-semibold text-green-700 mb-3 flex items-center">
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Valid Tours ({validationResults.valid.length})
-                  </h3>
-                  <div className="space-y-2">
-                    {validationResults.valid.map((tour: any) => (
-                      <div key={tour.tourId} className="bg-green-50 border border-green-200 p-3 rounded">
-                        <div className="font-medium text-green-800">{tour.role}</div>
-                        <div className="text-sm text-green-600 mt-1">
-                          {tour.validSteps.length} valid steps - All routes are accessible to this role
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Invalid Tours */}
-              {validationResults.invalid.length > 0 && (
-                <div>
-                  <h3 className="font-semibold text-red-700 mb-3 flex items-center">
-                    <AlertTriangle className="h-4 w-4 mr-2" />
-                    Invalid Tours ({validationResults.invalid.length})
-                  </h3>
-                  <div className="space-y-4">
-                    {validationResults.invalid.map((tour: any) => (
-                      <div key={tour.tourId} className="bg-red-50 border border-red-200 p-4 rounded">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="font-medium text-red-800">{tour.role}</div>
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              regenerateTourWithAI.mutate({ roles: [tour.role], guidance: "Fix route permissions - only include accessible routes" });
-                              setShowValidationDialog(false);
-                            }}
-                            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                          >
-                            <Sparkles className="h-3 w-3 mr-1" />
-                            Regenerate Tour
-                          </Button>
-                        </div>
-                        
-                        <div className="space-y-3">
-                          {tour.issues.map((issue: any, index: number) => (
-                            <div key={index} className="bg-white p-3 rounded border border-red-200">
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <div className="font-medium text-sm text-red-800">
-                                    Step {issue.stepIndex}: {issue.stepName}
-                                  </div>
-                                  <div className="text-xs text-red-600 mt-1">
-                                    Route: <code className="bg-red-100 px-1 rounded">{issue.navigationPath}</code>
-                                  </div>
-                                  <div className="text-xs text-red-700 mt-1">{issue.issue}</div>
-                                  <div className="text-xs text-gray-600 mt-2">
-                                    <strong>Suggestion:</strong> {issue.suggestion}
-                                  </div>
-                                </div>
-                                <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0 mt-1" />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-            </div>
-          )}
-          
-          {/* Actions */}
-          <div className="flex justify-between pt-4 border-t bg-white">
-            <Button
-              variant="outline"
-              onClick={() => setShowValidationDialog(false)}
-            >
-              Close
-            </Button>
-            {validationResults && validationResults.invalid.length > 0 && (
-              <Button
-                    onClick={() => {
-                      const invalidRoles = validationResults.invalid.map((tour: any) => tour.role);
-                      regenerateTourWithAI.mutate({ 
-                        roles: invalidRoles, 
-                        guidance: "Fix all route permission issues - only include routes that are accessible to each specific role based on their permissions" 
-                      });
-                      setShowValidationDialog(false);
-                    }}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                  >
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Regenerate All Invalid Tours
-                  </Button>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* AI Voice Generation Dialog */}
-      <Dialog open={showVoiceGenerationDialog} onOpenChange={setShowVoiceGenerationDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <Mic className="h-5 w-5 mr-2 text-green-600" />
-              AI Voice Generation for Tours
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-6">
-            {/* Selected Tours Summary */}
-            <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-              <h4 className="font-semibold text-green-800 mb-2">Selected Tours ({voiceGenerationTours.length})</h4>
-              <div className="flex flex-wrap gap-2">
-                {voiceGenerationTours.map((tour: any) => (
-                  <Badge key={tour.id} variant="secondary" className="bg-green-100 text-green-800">
-                    {tour.roleDisplayName}
-                  </Badge>
                 ))}
               </div>
             </div>
-
-            {/* Voice Generation Options */}
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Script Options */}
-              <div className="space-y-4">
-                <h4 className="font-semibold">Script Options</h4>
-                
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="regenerateScript"
-                    checked={voiceGenerationOptions.regenerateScript}
-                    onCheckedChange={(checked) => 
-                      setVoiceGenerationOptions(prev => ({ ...prev, regenerateScript: checked as boolean }))
-                    }
-                  />
-                  <Label htmlFor="regenerateScript" className="text-sm">
-                    Rewrite scripts with AI before recording
-                  </Label>
-                </div>
-                
-                <p className="text-xs text-gray-600 ml-6">
-                  {voiceGenerationOptions.regenerateScript 
-                    ? "AI will rewrite and enhance the existing voice scripts before generating audio recordings."
-                    : "Use the current voice scripts as-is for audio generation (no script changes)."
-                  }
-                </p>
-
-                {voiceGenerationOptions.regenerateScript && (
-                  <div className="ml-6 space-y-2">
-                    <Label htmlFor="userInstructions" className="text-sm font-medium">
-                      Instructions for AI Script Generation
-                    </Label>
-                    <Textarea
-                      id="userInstructions"
-                      placeholder="e.g., Make the narration more conversational and engaging, focus on business benefits, explain technical features in simple terms..."
-                      value={voiceGenerationOptions.userInstructions}
-                      onChange={(e) => 
-                        setVoiceGenerationOptions(prev => ({ ...prev, userInstructions: e.target.value }))
-                      }
-                      rows={4}
-                      className="text-sm"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Voice Settings */}
-              <div className="space-y-4">
-                <h4 className="font-semibold">Voice Settings</h4>
-                
-                <div className="space-y-3">
-                  <div>
-                    <Label htmlFor="voiceSelect" className="text-sm font-medium">Voice Selection</Label>
-                    <Select
-                      value={voiceGenerationOptions.voice}
-                      onValueChange={(value) => 
-                        setVoiceGenerationOptions(prev => ({ 
-                          ...prev, 
-                          voice: value,
-                          gender: ['nova', 'shimmer', 'nova-british', 'shimmer-british', 'nova-slow', 'shimmer-energetic'].includes(value) ? 'female' : 
-                                 ['alloy', 'alloy-british', 'alloy-business'].includes(value) ? 'neutral' : 'male'
-                        }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="alloy">Alloy (Neutral - Most Popular American Voice)</SelectItem>
-                        <SelectItem value="nova">Nova (Female - Clear American Pronunciation)</SelectItem>
-                        <SelectItem value="fable">Fable (Male - Top Rated American Voice)</SelectItem>
-                        <SelectItem value="echo">Echo (Male - Articulate American Voice)</SelectItem>
-                        <SelectItem value="onyx">Onyx (Male - Deep American Voice)</SelectItem>
-                        <SelectItem value="shimmer">Shimmer (Female - Bright American Accent)</SelectItem>
-                        <SelectItem value="alloy-british">Alex (Neutral - American with Elegant Pacing)</SelectItem>
-                        <SelectItem value="nova-british">Victoria (Female - American with Classic Refinement)</SelectItem>
-                        <SelectItem value="fable-british">William (Male - American with Distinguished Tone)</SelectItem>
-                        <SelectItem value="echo-british">James (Male - American with Refined Delivery)</SelectItem>
-                        <SelectItem value="onyx-british">Oliver (Male - American with Deep Sophistication)</SelectItem>
-                        <SelectItem value="shimmer-british">Emma (Female - Heavy American with Refined Pacing)</SelectItem>
-                        <SelectItem value="alloy-business">Alloy Pro (Neutral - Professional American)</SelectItem>
-                        <SelectItem value="nova-slow">Nova Calm (Female - Gentle American)</SelectItem>
-                        <SelectItem value="fable-fast">Fable Express (Male - Dynamic American)</SelectItem>
-                        <SelectItem value="echo-calm">Echo Steady (Male - Composed American)</SelectItem>
-                        <SelectItem value="shimmer-energetic">Shimmer Bright (Female - Energetic American)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="speedSlider" className="text-sm font-medium">
-                      Speech Speed: {voiceGenerationOptions.speed}x
-                    </Label>
-                    <Input
-                      id="speedSlider"
-                      type="range"
-                      min="0.5"
-                      max="2.0"
-                      step="0.1"
-                      value={voiceGenerationOptions.speed}
-                      onChange={(e) => 
-                        setVoiceGenerationOptions(prev => ({ ...prev, speed: parseFloat(e.target.value) }))
-                      }
-                      className="mt-1"
-                    />
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>Slow (0.5x)</span>
-                      <span>Normal (1.0x)</span>
-                      <span>Fast (2.0x)</span>
-                    </div>
-                  </div>
-
-                  {/* Test Voice Button */}
-                  <div>
-                    <TestVoiceButton 
-                      voiceSettings={voiceGenerationOptions}
-                    />
-                    <p className="text-xs text-gray-500 mt-1 text-center">
-                      Preview current voice settings
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Generation Preview */}
-            <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
-              <h4 className="font-semibold text-gray-800 mb-2">Generation Preview</h4>
-              <div className="text-sm text-gray-600 space-y-1">
-                <p><strong>Tours:</strong> {voiceGenerationTours.length} tours selected</p>
-                <p><strong>Steps:</strong> ~{voiceGenerationTours.reduce((total, tour) => total + (tour.tourData?.steps?.length || 0), 0)} voice recordings will be generated</p>
-                <p><strong>Voice:</strong> {voiceGenerationOptions.voice} ({voiceGenerationOptions.gender}) at {voiceGenerationOptions.speed}x speed</p>
-                <p><strong>Script:</strong> {voiceGenerationOptions.regenerateScript ? 'AI-generated engaging scripts' : 'Use existing tour descriptions'}</p>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex justify-between pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => setShowVoiceGenerationDialog(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleVoiceGenerationSubmit}
-                disabled={voiceGenerationMutation.isPending || voiceGenerationTours.length === 0}
-                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
-              >
-                {voiceGenerationMutation.isPending ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Generating Voice...
-                  </>
-                ) : (
-                  <>
-                    <Mic className="h-4 w-4 mr-2" />
-                    Generate Voice Recordings
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
 
-      {/* Single Tour Regeneration Dialog */}
-      <Dialog open={showSingleTourGuidanceDialog} onOpenChange={setShowSingleTourGuidanceDialog}>
-        <DialogContent className="max-w-lg">
+      {/* Validation Results Dialog */}
+      <Dialog open={showValidationDialog} onOpenChange={setShowValidationDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <Sparkles className="h-5 w-5 mr-2 text-purple-600" />
-              Regenerate Tour: {selectedTourForRegeneration?.roleDisplayName}
-            </DialogTitle>
+            <DialogTitle>Tour Validation Results</DialogTitle>
+            <DialogDescription>
+              Comprehensive validation check for all tour content and accessibility
+            </DialogDescription>
           </DialogHeader>
-          
+          {validationResults && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">{validationResults.summary?.valid || 0}</div>
+                  <div className="text-sm text-gray-600">Valid Tours</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-yellow-600">{validationResults.summary?.warnings || 0}</div>
+                  <div className="text-sm text-gray-600">Warnings</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-600">{validationResults.summary?.errors || 0}</div>
+                  <div className="text-sm text-gray-600">Errors</div>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                {validationResults.results?.map((result: any, index: number) => (
+                  <div key={index} className="border rounded p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium">{result.roleName}</span>
+                      <Badge variant={result.isValid ? 'default' : 'destructive'}>
+                        {result.isValid ? 'Valid' : 'Invalid'}
+                      </Badge>
+                    </div>
+                    {result.issues?.length > 0 && (
+                      <div className="space-y-1">
+                        {result.issues.map((issue: any, issueIndex: number) => (
+                          <div key={issueIndex} className={`text-sm p-2 rounded ${
+                            issue.severity === 'ERROR' ? 'bg-red-50 text-red-700' : 
+                            issue.severity === 'WARNING' ? 'bg-yellow-50 text-yellow-700' : 
+                            'bg-blue-50 text-blue-700'
+                          }`}>
+                            <div className="font-medium">{issue.category}</div>
+                            <div>{issue.message}</div>
+                            {issue.suggestion && (
+                              <div className="text-xs mt-1 opacity-75">Suggestion: {issue.suggestion}</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Voice Generation Dialog */}
+      <Dialog open={showVoiceGenerationDialog} onOpenChange={setShowVoiceGenerationDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Voice Generation Settings</DialogTitle>
+            <DialogDescription>
+              Configure voice generation options for {voiceGenerationTours.length} tour(s)
+            </DialogDescription>
+          </DialogHeader>
           <div className="space-y-4">
-            <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
-              <p className="text-sm font-medium text-purple-800 mb-1">Regenerating Single Tour</p>
-              <p className="text-xs text-purple-600">
-                AI will create new tour content specifically for the {selectedTourForRegeneration?.roleDisplayName} role.
-              </p>
+            <div className="space-y-2">
+              <Label>Voice Settings</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="voice">Voice Type</Label>
+                  <Select value={voiceGenerationOptions.voice} onValueChange={(value) => setVoiceGenerationOptions(prev => ({ ...prev, voice: value }))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nova">Nova</SelectItem>
+                      <SelectItem value="alloy">Alloy</SelectItem>
+                      <SelectItem value="echo">Echo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="gender">Gender</Label>
+                  <Select value={voiceGenerationOptions.gender} onValueChange={(value) => setVoiceGenerationOptions(prev => ({ ...prev, gender: value }))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="male">Male</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
             
             <div>
-              <Label className="text-sm font-medium">
-                Special Instructions for AI (Optional)
-              </Label>
-              <p className="text-xs text-gray-600 mb-2">
-                Provide specific guidance for how you want this tour to be improved or modified.
-              </p>
-              <Textarea
-                value={singleTourGuidance}
-                onChange={(e) => setSingleTourGuidance(e.target.value)}
-                placeholder="e.g., Focus more on advanced features, include additional interactive elements, emphasize business benefits, add technical details..."
-                className="min-h-[100px]"
+              <Label htmlFor="speed">Speech Speed: {voiceGenerationOptions.speed}x</Label>
+              <input
+                type="range"
+                min="0.8"
+                max="1.5"
+                step="0.1"
+                value={voiceGenerationOptions.speed}
+                onChange={(e) => setVoiceGenerationOptions(prev => ({ ...prev, speed: parseFloat(e.target.value) }))}
+                className="w-full mt-1"
               />
             </div>
-          </div>
-          
-          <div className="flex gap-2 justify-end">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setShowSingleTourGuidanceDialog(false);
-                setSingleTourGuidance("");
-                setSelectedTourForRegeneration(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleConfirmSingleTourRegeneration}
-              disabled={isGeneratingSingleTour}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-            >
-              {isGeneratingSingleTour ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4 mr-2" />
-              )}
-              {isGeneratingSingleTour ? 'Generating Content...' : 'Generate Preview'}
-            </Button>
+            
+            <div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="regenerateScript"
+                  checked={voiceGenerationOptions.regenerateScript}
+                  onChange={(e) => setVoiceGenerationOptions(prev => ({ ...prev, regenerateScript: e.target.checked }))}
+                />
+                <Label htmlFor="regenerateScript">Regenerate voice scripts</Label>
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="userInstructions">Additional Instructions</Label>
+              <Textarea
+                id="userInstructions"
+                placeholder="Any specific voice or content requirements..."
+                value={voiceGenerationOptions.userInstructions}
+                onChange={(e) => setVoiceGenerationOptions(prev => ({ ...prev, userInstructions: e.target.value }))}
+                rows={3}
+              />
+            </div>
+            
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setShowVoiceGenerationDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleVoiceGenerationSubmit} disabled={voiceGenerationMutation.isPending}>
+                {voiceGenerationMutation.isPending && <RefreshCw className="h-4 w-4 mr-2 animate-spin" />}
+                Generate Voice
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Single Tour Content Preview Dialog */}
-      <Dialog open={showSingleTourPreviewDialog} onOpenChange={setShowSingleTourPreviewDialog}>
-        <DialogContent className="max-w-6xl max-h-[90vh] w-[95vw] md:w-full overflow-hidden flex flex-col">
+      {/* Single Tour Guidance Dialog */}
+      <Dialog open={showSingleTourGuidanceDialog} onOpenChange={setShowSingleTourGuidanceDialog}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <Eye className="h-5 w-5 mr-2 text-blue-600" />
-              Tour Content Preview: {singleTourPreviewData?.role}
-            </DialogTitle>
+            <DialogTitle>Regenerate {selectedTourForRegeneration?.roleDisplayName} Tour</DialogTitle>
+            <DialogDescription>
+              Provide specific instructions to customize this tour regeneration.
+            </DialogDescription>
           </DialogHeader>
-          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="singleGuidance">Custom Instructions</Label>
+              <Textarea
+                id="singleGuidance"
+                placeholder="Example: Focus on advanced scheduling features, add more detail about optimization tools, emphasize real-time capabilities..."
+                value={singleTourGuidance}
+                onChange={(e) => setSingleTourGuidance(e.target.value)}
+                className="mt-1"
+                rows={4}
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => {
+                setShowSingleTourGuidanceDialog(false);
+                clearSingleTourState();
+              }}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleConfirmSingleTourRegeneration} 
+                disabled={isGeneratingSingleTour}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+              >
+                {isGeneratingSingleTour ? (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4 mr-2" />
+                )}
+                Generate Preview
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Single Tour Preview Dialog */}
+      <Dialog open={showSingleTourPreviewDialog} onOpenChange={setShowSingleTourPreviewDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{singleTourPreviewData?.role} Tour Content Preview</DialogTitle>
+            <DialogDescription>
+              Review the generated tour content before approving and generating voice
+            </DialogDescription>
+          </DialogHeader>
           {singleTourPreviewData && (
-            <div className="flex-1 overflow-y-auto space-y-4">
-              {/* Tour Overview */}
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h3 className="font-semibold text-blue-800 mb-2">Generated Tour Overview</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+            <div className="space-y-6">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-800 mb-2">Tour Overview</h4>
+                <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
-                    <span className="font-medium text-blue-700">Role:</span>
-                    <div className="text-blue-600">{singleTourPreviewData.role}</div>
+                    <div className="text-lg font-bold text-blue-600">{singleTourPreviewData.generatedTour?.steps?.length || 0}</div>
+                    <div className="text-xs text-blue-700">Steps</div>
                   </div>
                   <div>
-                    <span className="font-medium text-blue-700">Steps:</span>
-                    <div className="text-blue-600">{singleTourPreviewData.generatedTour?.steps?.length || 0} steps</div>
+                    <div className="text-lg font-bold text-green-600">{singleTourPreviewData.generatedTour?.estimatedDuration || 'TBD'}</div>
+                    <div className="text-xs text-blue-700">Duration</div>
                   </div>
                   <div>
-                    <span className="font-medium text-blue-700">Estimated Duration:</span>
-                    <div className="text-blue-600">
-                      ~{Math.ceil((singleTourPreviewData.generatedTour?.steps?.length || 0) * 1.5)} minutes
-                    </div>
+                    <div className="text-lg font-bold text-purple-600">{singleTourPreviewData.generatedTour?.steps?.filter((s: any) => s.voiceScript).length || 0}</div>
+                    <div className="text-xs text-blue-700">Voice Scripts</div>
                   </div>
                 </div>
-                {singleTourPreviewData.originalGuidance && (
-                  <div className="mt-3 p-3 bg-white rounded border">
-                    <span className="font-medium text-blue-700">AI Instructions Used:</span>
-                    <div className="text-sm text-gray-600 italic mt-1">"{singleTourPreviewData.originalGuidance}"</div>
-                  </div>
-                )}
               </div>
-
-              {/* Tour Steps */}
-              <div className="space-y-3">
-                <h3 className="font-semibold text-gray-800">Tour Steps</h3>
+              
+              <div className="space-y-4">
+                <h4 className="font-semibold">Generated Tour Steps</h4>
                 {singleTourPreviewData.generatedTour?.steps?.map((step: any, index: number) => (
-                  <div key={step.id} className="bg-white border rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold text-sm">
-                        {index + 1}
+                  <div key={step.id || index} className="border rounded p-4 bg-gray-50">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center">
+                        <Badge className="mr-2">Step {index + 1}</Badge>
+                        <span className="font-medium">{step.stepName || step.feature || step.title || `Step ${index + 1}`}</span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                          <h4 className="font-medium text-gray-900">{step.stepName || step.title}</h4>
-                          <div className="flex gap-2 text-xs">
-                            <span className="bg-gray-100 px-2 py-1 rounded">
-                              Page: {step.navigationPath || step.page || '/'}
-                            </span>
-                            {step.duration && (
-                              <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded">
-                                {step.duration}
-                              </span>
-                            )}
-                          </div>
+                      <Badge variant="outline">{step.duration || '2 min'}</Badge>
+                    </div>
+                    
+                    <p className="text-sm text-gray-700 mb-3">{step.description || step.stepDescription}</p>
+                    
+                    {step.benefits && step.benefits.length > 0 && (
+                      <div className="mb-3">
+                        <h6 className="text-xs font-semibold text-gray-700 mb-1">Benefits:</h6>
+                        <ul className="list-disc list-inside text-xs text-gray-600 space-y-1">
+                          {step.benefits.slice(0, 3).map((benefit: string, benefitIndex: number) => (
+                            <li key={benefitIndex}>{benefit}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {step.voiceScript && (
+                      <div className="mb-3">
+                        <h6 className="text-xs font-semibold text-gray-700 mb-1">Voice Script:</h6>
+                        <div className="bg-white p-2 rounded border text-xs text-gray-600">
+                          {step.voiceScript}
                         </div>
-                        
-                        <p className="text-sm text-gray-600 mb-3">
-                          {step.description}
-                        </p>
-                        
-                        {step.benefits && step.benefits.length > 0 && (
-                          <div className="mb-3">
-                            <h5 className="text-xs font-medium text-gray-700 mb-1">Key Benefits:</h5>
-                            <ul className="text-xs text-gray-600 space-y-1">
-                              {step.benefits.slice(0, 3).map((benefit: string, idx: number) => (
-                                <li key={idx} className="flex items-start gap-1">
-                                  <span className="text-green-500 mt-0.5">•</span>
-                                  <span>{benefit}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        
-                        {step.voiceScript && (
-                          <div className="bg-gray-50 p-3 rounded border">
-                            <h5 className="text-xs font-medium text-gray-700 mb-1">Voice Script:</h5>
-                            <p className="text-xs text-gray-600 italic">"{step.voiceScript}"</p>
-                          </div>
-                        )}
                       </div>
+                    )}
+                    
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        Page: {step.page || step.route || '/'}
+                      </Badge>
+                      {step.actionText && (
+                        <Badge variant="outline" className="text-xs">
+                          Action: {step.actionText}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -2681,7 +2247,6 @@ function TourManagementSection() {
             </div>
           )}
           
-          {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-3 justify-between pt-4 border-t">
             <div className="flex gap-2">
               <Button
