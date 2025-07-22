@@ -354,8 +354,13 @@ export default function OnboardingWizard() {
   const totalSteps = onboardingSteps.filter(step => !step.optional).length;
   const progress = (completedSteps / totalSteps) * 100;
 
-  // Check if user is new (no existing data)
-  const isNewUser = jobs.length === 0 && resources.length === 0 && operations.length === 0;
+  // Check if user is in demo mode
+  const isDemo = localStorage.getItem("authToken")?.startsWith("demo_") || 
+                 user?.id?.startsWith("demo_") || 
+                 user?.username?.startsWith("demo_");
+  
+  // Check if user is new (no existing data) - but never consider demo users as new
+  const isNewUser = !isDemo && jobs.length === 0 && resources.length === 0 && operations.length === 0;
   
   // Check if user has seen onboarding before
   const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding') === 'true';
@@ -370,11 +375,6 @@ export default function OnboardingWizard() {
   // Listen for custom event to open onboarding
   useEffect(() => {
     const handleOpenOnboarding = () => {
-      // Check if user is in demo mode - if so, don't show onboarding popup
-      const isDemo = localStorage.getItem("authToken")?.startsWith("demo_") || 
-                     user?.id?.startsWith("demo_") || 
-                     user?.username?.startsWith("demo_");
-      
       // Only open onboarding for non-demo users
       if (!isDemo) {
         setIsOpen(true);

@@ -218,7 +218,7 @@ export default function DemoTour() {
       console.log("Participant created:", participant);
       setParticipantId(participant.id);
       toast({
-        title: "Welcome to PlanetTogether!",
+        title: "Registration Complete!",
         description: "Let's start your personalized demo tour.",
       });
       setShowParticipantForm(false);
@@ -326,7 +326,7 @@ export default function DemoTour() {
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold text-gray-900">
-            Welcome to PlanetTogether
+            Demo Tour Registration
           </CardTitle>
           <CardDescription className="text-lg text-gray-600">
             Experience the future of manufacturing production scheduling
