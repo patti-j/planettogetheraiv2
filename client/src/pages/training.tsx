@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play, UserCheck, Settings, Shield, Edit3, Eye, Volume2, MessageSquare, Sparkles, RefreshCw, ChevronDown, ChevronRight, FileText, Clock, Plus, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, usePermissions } from '@/hooks/useAuth';
@@ -571,6 +574,9 @@ function TourManagementSection() {
   const [selectedMissingRoles, setSelectedMissingRoles] = useState<string[]>([]);
   const [expandedTours, setExpandedTours] = useState<string[]>([]);
   const [editingStep, setEditingStep] = useState<{role: string, stepId: string} | null>(null);
+  const [showAIGuidanceDialog, setShowAIGuidanceDialog] = useState(false);
+  const [aiGuidance, setAiGuidance] = useState("");
+  const [pendingAction, setPendingAction] = useState<{ type: 'selected' | 'all' | 'missing', roles?: string[] } | null>(null);
 
   // Fetch all system roles
   const { data: systemRoles = [] } = useQuery({
@@ -800,17 +806,20 @@ function TourManagementSection() {
   });
 
   const regenerateTourWithAI = useMutation({
-    mutationFn: async (roles: string[]) => {
-      return apiRequest("POST", "/api/ai/generate-tour", { roles });
+    mutationFn: async ({ roles, guidance }: { roles: string[], guidance?: string }) => {
+      return apiRequest("POST", "/api/ai/generate-tour", { roles, guidance });
     },
     onSuccess: (data, variables) => {
       toast({
         title: "Tours Regenerated",
-        description: `AI has successfully regenerated tours for ${variables.length} role(s)`,
+        description: `AI has successfully regenerated tours for ${variables.roles.length} role(s)`,
         variant: "default",
       });
       // Clear selections after successful generation
       setSelectedRoles([]);
+      setAiGuidance("");
+      setPendingAction(null);
+      setShowAIGuidanceDialog(false);
       // Invalidate tours cache to show updated data
       queryClient.invalidateQueries({ queryKey: ["/api/tours"] });
     },
@@ -824,17 +833,20 @@ function TourManagementSection() {
   });
 
   const generateNewToursWithAI = useMutation({
-    mutationFn: async (roles: string[]) => {
-      return apiRequest("POST", "/api/ai/generate-tour", { roles });
+    mutationFn: async ({ roles, guidance }: { roles: string[], guidance?: string }) => {
+      return apiRequest("POST", "/api/ai/generate-tour", { roles, guidance });
     },
     onSuccess: (data, variables) => {
       toast({
         title: "Tours Generated",
-        description: `AI has successfully generated tours for ${variables.length} new role(s)`,
+        description: `AI has successfully generated tours for ${variables.roles.length} new role(s)`,
         variant: "default",
       });
       // Clear selections after successful generation
       setSelectedMissingRoles([]);
+      setAiGuidance("");
+      setPendingAction(null);
+      setShowAIGuidanceDialog(false);
       // Invalidate tours cache to show updated data
       queryClient.invalidateQueries({ queryKey: ["/api/tours"] });
     },
@@ -874,11 +886,13 @@ function TourManagementSection() {
       });
       return;
     }
-    regenerateTourWithAI.mutate(selectedRoles);
+    setPendingAction({ type: 'selected', roles: selectedRoles });
+    setShowAIGuidanceDialog(true);
   };
 
   const handleGenerateAllTours = () => {
-    regenerateTourWithAI.mutate(allRoles);
+    setPendingAction({ type: 'all', roles: allRoles });
+    setShowAIGuidanceDialog(true);
   };
 
   const handleGenerateMissingTours = () => {
@@ -896,7 +910,21 @@ function TourManagementSection() {
       return role ? role.name : roleId;
     });
     
-    generateNewToursWithAI.mutate(selectedRoleNames);
+    setPendingAction({ type: 'missing', roles: selectedRoleNames });
+    setShowAIGuidanceDialog(true);
+  };
+
+  const handleConfirmAIGeneration = () => {
+    if (!pendingAction) return;
+    
+    const { type, roles } = pendingAction;
+    const mutationData = { roles: roles || [], guidance: aiGuidance };
+    
+    if (type === 'missing') {
+      generateNewToursWithAI.mutate(mutationData);
+    } else {
+      regenerateTourWithAI.mutate(mutationData);
+    }
   };
 
   return (
@@ -1160,6 +1188,69 @@ function TourManagementSection() {
           <p className="text-sm">Generate new tours using the AI system above.</p>
         </div>
       )}
+
+      {/* AI Guidance Dialog */}
+      <Dialog open={showAIGuidanceDialog} onOpenChange={setShowAIGuidanceDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Sparkles className="h-5 w-5 mr-2 text-purple-600" />
+              AI Tour Generation Instructions
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium">
+                Additional Guidance for AI (Optional)
+              </Label>
+              <p className="text-xs text-gray-600 mb-2">
+                Provide specific instructions, focus areas, or requirements for the AI to consider when generating tours.
+              </p>
+              <Textarea
+                value={aiGuidance}
+                onChange={(e) => setAiGuidance(e.target.value)}
+                placeholder="e.g., Focus on advanced features, include more technical details, emphasize business benefits, add more interactive elements..."
+                className="min-h-[100px]"
+              />
+            </div>
+            
+            {pendingAction && (
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="text-sm font-medium mb-1">
+                  Action: {pendingAction.type === 'selected' ? 'Regenerate Selected Tours' :
+                          pendingAction.type === 'all' ? 'Regenerate All Tours' :
+                          'Generate New Tours'}
+                </p>
+                <p className="text-xs text-gray-600">
+                  {pendingAction.roles?.length || 0} role(s) selected: {pendingAction.roles?.join(', ')}
+                </p>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex gap-2 justify-end">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowAIGuidanceDialog(false);
+                setAiGuidance("");
+                setPendingAction(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmAIGeneration}
+              disabled={regenerateTourWithAI.isPending || generateNewToursWithAI.isPending}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              {regenerateTourWithAI.isPending || generateNewToursWithAI.isPending ? 'Generating...' : 'Generate Tours'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -3794,7 +3794,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Tour Generation endpoint
   app.post("/api/ai/generate-tour", async (req, res) => {
     try {
-      const { roles } = req.body;
+      const { roles, guidance } = req.body;
       if (!roles || !Array.isArray(roles)) {
         return res.status(400).json({ message: "Roles array is required" });
       }
@@ -3803,7 +3803,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const OpenAI = (await import("openai")).default;
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-      const prompt = `Generate comprehensive guided tour content for PlanetTogether manufacturing system for these roles: ${roles.join(', ')}.
+      let prompt = `Generate comprehensive guided tour content for PlanetTogether manufacturing system for these roles: ${roles.join(', ')}.
       
 For each role, create:
 1. 3-5 tour steps covering key features
@@ -3818,6 +3818,11 @@ Focus on role-specific features:
 - Systems Manager: System configuration, user management
 
 Return a JSON object with tour data for each role including steps, voice scripts, and benefits.`;
+
+      // Add user guidance if provided
+      if (guidance && guidance.trim()) {
+        prompt += `\n\nAdditional instructions: ${guidance.trim()}`;
+      }
 
       const completion = await openai.chat.completions.create({
         model: "gpt-4o", // Using latest model
