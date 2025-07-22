@@ -1509,13 +1509,55 @@ function TourManagementSection() {
               Close Preview
             </Button>
             <Button 
-              onClick={() => {
+              onClick={async () => {
                 setShowTourPreviewDialog(false);
-                // Could add functionality to start the actual tour here
-                toast({
-                  title: "Tour Preview Complete",
-                  description: "Use the role switcher to experience this tour live.",
-                });
+                
+                if (!previewTourData?.role) {
+                  toast({
+                    title: "Error",
+                    description: "Unable to determine role for tour. Please try again.",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                try {
+                  // First, switch to the appropriate role
+                  const roleId = systemRoles?.find((r: any) => 
+                    r.name.toLowerCase().replace(/\s+/g, '-') === previewTourData.role ||
+                    r.name.toLowerCase().replace(/\s+/g, '') === previewTourData.role.replace(/-/g, '') ||
+                    r.name.toLowerCase() === previewTourData.roleDisplayName?.toLowerCase()
+                  )?.id;
+
+                  if (roleId) {
+                    // Switch role
+                    await apiRequest('POST', `/api/users/${user?.id}/switch-role`, { roleId });
+                    
+                    toast({
+                      title: "Starting Live Tour",
+                      description: `Switching to ${previewTourData.roleDisplayName} role and launching tour...`,
+                    });
+                    
+                    // Clear cache and navigate to home to start the tour
+                    queryClient.clear();
+                    setTimeout(() => {
+                      window.location.href = '/?startTour=true';
+                    }, 1000);
+                  } else {
+                    toast({
+                      title: "Role Not Found",
+                      description: `Could not find role for ${previewTourData.roleDisplayName}. Please switch manually.`,
+                      variant: "destructive",
+                    });
+                  }
+                } catch (error) {
+                  console.error('Failed to start live tour:', error);
+                  toast({
+                    title: "Error Starting Tour",
+                    description: "Failed to switch roles. Please try switching manually.",
+                    variant: "destructive",
+                  });
+                }
               }}
             >
               Start Live Tour

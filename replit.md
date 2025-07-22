@@ -126,6 +126,18 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 22, 2025)
 
+✓ **Complete "Start Live Tour" Functionality Implementation (July 22, 2025)**:
+- Fixed role switching dropdown to display all system roles instead of just assigned roles for comprehensive training demonstrations
+- Changed role switcher API endpoint from `/api/users/${userId}/available-roles` to `/api/roles` to show all 10 system roles
+- Implemented "Start Live Tour" functionality that automatically switches roles and launches guided tours from previews
+- Added DashboardWithAutoTour component that detects `?startTour=true` URL parameter and auto-launches tours
+- Enhanced role switching system with proper role ID matching and automatic navigation
+- Tour previews now seamlessly transition into live demo experiences with proper role switching and voice narration
+- Trainers can preview any role's tour, click "Start Live Tour", and immediately experience the actual guided tour as that role
+- System automatically switches to appropriate role, navigates to dashboard, and launches guided tour with voice enabled by default
+- Enhanced role switching description to clarify trainers can "switch to any system role" for training purposes
+- URL parameters are cleaned up after tour launch to maintain clean navigation experience
+
 ✓ **Critical AI Tour Generation & Authentication System Fix (July 22, 2025)**:
 - Fixed critical authentication bug preventing tours from displaying in the training UI interface
 - Updated authentication middleware to support both session and token-based authentication in all API endpoints
