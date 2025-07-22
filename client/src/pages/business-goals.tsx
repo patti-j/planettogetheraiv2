@@ -643,24 +643,25 @@ export default function BusinessGoalsPage() {
 
       {/* Create Goal Form Dialog */}
       <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Create New Business Goal</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl">Create New Business Goal</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <Label htmlFor="goalTitle">Goal Title *</Label>
+                <Label htmlFor="goalTitle" className="text-sm sm:text-base">Goal Title *</Label>
                 <Input
                   id="goalTitle"
                   value={formData.goalTitle}
                   onChange={(e) => setFormData({...formData, goalTitle: e.target.value})}
                   placeholder="Enter goal title"
                   required
+                  className="text-sm sm:text-base"
                 />
               </div>
               <div>
-                <Label htmlFor="owner">Goal Owner *</Label>
+                <Label htmlFor="owner" className="text-sm sm:text-base">Goal Owner *</Label>
                 <Select value={formData.owner} onValueChange={(value) => setFormData({...formData, owner: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select goal owner" />
@@ -686,14 +687,15 @@ export default function BusinessGoalsPage() {
                 onChange={(e) => setFormData({...formData, goalDescription: e.target.value})}
                 placeholder="Describe the goal and its purpose"
                 rows={3}
+                className="text-sm sm:text-base"
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               <div>
-                <Label htmlFor="goalType">Goal Type</Label>
+                <Label htmlFor="goalType" className="text-sm sm:text-base">Goal Type</Label>
                 <Select value={formData.goalType} onValueChange={(value) => setFormData({...formData, goalType: value})}>
-                  <SelectTrigger>
+                  <SelectTrigger className="text-sm sm:text-base">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -707,9 +709,9 @@ export default function BusinessGoalsPage() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="priority">Priority</Label>
+                <Label htmlFor="priority" className="text-sm sm:text-base">Priority</Label>
                 <Select value={formData.priority} onValueChange={(value) => setFormData({...formData, priority: value})}>
-                  <SelectTrigger>
+                  <SelectTrigger className="text-sm sm:text-base">
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
                   <SelectContent>
@@ -721,64 +723,78 @@ export default function BusinessGoalsPage() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="category">Category</Label>
+                <Label htmlFor="category" className="text-sm sm:text-base">Category</Label>
                 <Input
                   id="category"
                   value={formData.category}
                   onChange={(e) => setFormData({...formData, category: e.target.value})}
                   placeholder="e.g., Production, Sales"
+                  className="text-sm sm:text-base"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <Label htmlFor="startDate">Start Date</Label>
+                <Label htmlFor="startDate" className="text-sm sm:text-base">Start Date</Label>
                 <Input
                   id="startDate"
                   type="date"
                   value={formData.startDate}
                   onChange={(e) => setFormData({...formData, startDate: e.target.value})}
+                  className="text-sm sm:text-base"
                 />
               </div>
               <div>
-                <Label htmlFor="targetDate">Target Date</Label>
+                <Label htmlFor="targetDate" className="text-sm sm:text-base">Target Date</Label>
                 <Input
                   id="targetDate"
                   type="date"
                   value={formData.targetDate}
                   onChange={(e) => setFormData({...formData, targetDate: e.target.value})}
+                  className="text-sm sm:text-base"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <Label htmlFor="targetValue">Target Value</Label>
+                <Label htmlFor="targetValue" className="text-sm sm:text-base">Target Value</Label>
                 <Input
                   id="targetValue"
                   type="number"
                   value={formData.targetValue}
                   onChange={(e) => setFormData({...formData, targetValue: e.target.value})}
                   placeholder="100"
+                  className="text-sm sm:text-base"
                 />
               </div>
               <div>
-                <Label htmlFor="targetUnit">Target Unit</Label>
+                <Label htmlFor="targetUnit" className="text-sm sm:text-base">Target Unit</Label>
                 <Input
                   id="targetUnit"
                   value={formData.targetUnit}
                   onChange={(e) => setFormData({...formData, targetUnit: e.target.value})}
                   placeholder="e.g., %, units, $"
+                  className="text-sm sm:text-base"
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setShowCreateForm(false)}>
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-3 sm:pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowCreateForm(false)}
+                className="w-full sm:w-auto text-sm sm:text-base"
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={createGoalMutation.isPending}>
+              <Button 
+                type="submit" 
+                disabled={createGoalMutation.isPending}
+                className="w-full sm:w-auto text-sm sm:text-base"
+              >
                 {createGoalMutation.isPending ? "Creating..." : "Create Goal"}
               </Button>
             </div>
