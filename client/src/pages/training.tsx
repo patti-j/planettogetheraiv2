@@ -1364,10 +1364,27 @@ function TourManagementSection() {
         });
         
         // Store the generated tour data for preview
+        console.log('AI Response:', response);
+        console.log('Response tours:', response.tours);
+        
+        // Extract the tour data from the response
+        let tourData;
+        if (response.tours && response.tours.length > 0) {
+          tourData = response.tours[0];
+        } else if (response.steps) {
+          // Direct steps in response
+          tourData = { steps: response.steps };
+        } else {
+          // Fallback to the entire response
+          tourData = response;
+        }
+        
+        console.log('Processed tour data:', tourData);
+        
         setSingleTourPreviewData({
           role: selectedTourForRegeneration.roleDisplayName,
           originalGuidance: singleTourGuidance,
-          generatedTour: response.tours?.[0] || response,
+          generatedTour: tourData,
           tourId: selectedTourForRegeneration.id
         });
         
@@ -2010,7 +2027,7 @@ function TourManagementSection() {
 
       {/* Tour Preview Dialog */}
       <Dialog open={showTourPreviewDialog} onOpenChange={setShowTourPreviewDialog}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] md:w-full overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center">
               <Play className="h-5 w-5 mr-2" />
@@ -2019,7 +2036,7 @@ function TourManagementSection() {
           </DialogHeader>
           
           {previewTourData && (
-            <div className="space-y-6">
+            <div className="flex-1 overflow-y-auto space-y-6 px-1">
               <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
                 <div>
                   <h4 className="font-semibold">{previewTourData.roleDisplayName} Tour</h4>
@@ -2076,7 +2093,7 @@ function TourManagementSection() {
             </div>
           )}
           
-          <div className="flex gap-2 justify-end">
+          <div className="flex gap-2 justify-end pt-4 border-t bg-white">
             <Button variant="outline" onClick={() => setShowTourPreviewDialog(false)}>
               Close Preview
             </Button>
@@ -2184,7 +2201,7 @@ function TourManagementSection() {
 
       {/* Tour Validation Results Dialog */}
       <Dialog open={showValidationDialog} onOpenChange={setShowValidationDialog}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] md:w-full overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center">
               <CheckCircle className="h-5 w-5 mr-2 text-blue-600" />
@@ -2193,7 +2210,7 @@ function TourManagementSection() {
           </DialogHeader>
           
           {validationResults && (
-            <div className="space-y-6">
+            <div className="flex-1 overflow-y-auto space-y-6 px-1">
               {/* Summary */}
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h3 className="font-semibold mb-3">Validation Summary</h3>
@@ -2289,16 +2306,19 @@ function TourManagementSection() {
                 </div>
               )}
 
-              {/* Actions */}
-              <div className="flex justify-between pt-4 border-t">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowValidationDialog(false)}
-                >
-                  Close
-                </Button>
-                {validationResults.invalid.length > 0 && (
-                  <Button
+            </div>
+          )}
+          
+          {/* Actions */}
+          <div className="flex justify-between pt-4 border-t bg-white">
+            <Button
+              variant="outline"
+              onClick={() => setShowValidationDialog(false)}
+            >
+              Close
+            </Button>
+            {validationResults && validationResults.invalid.length > 0 && (
+              <Button
                     onClick={() => {
                       const invalidRoles = validationResults.invalid.map((tour: any) => tour.role);
                       regenerateTourWithAI.mutate({ 
@@ -2312,10 +2332,8 @@ function TourManagementSection() {
                     <Sparkles className="h-4 w-4 mr-2" />
                     Regenerate All Invalid Tours
                   </Button>
-                )}
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
