@@ -3740,6 +3740,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'echo': { voice: 'echo', speedModifier: 1.0 }, // Strong American accent
         'onyx': { voice: 'onyx', speedModifier: 1.0 }, // Deep American voice
         'shimmer': { voice: 'shimmer', speedModifier: 1.0 }, // Bright American accent
+        // British-style variations (Note: OpenAI TTS maintains American accent but with refined characteristics)
+        'alloy-british': { voice: 'alloy', speedModifier: 0.92 }, // Charlotte - Elegant style
+        'nova-british': { voice: 'nova', speedModifier: 0.88 }, // Victoria - Classic style  
+        'fable-british': { voice: 'fable', speedModifier: 0.90 }, // William - Distinguished style
+        'echo-british': { voice: 'echo', speedModifier: 0.85 }, // James - Strong style
+        'onyx-british': { voice: 'onyx', speedModifier: 0.87 }, // Oliver - Deep style
+        'shimmer-british': { voice: 'shimmer', speedModifier: 0.93 }, // Emma - Bright style
+        // American variations
         'alloy-business': { voice: 'alloy', speedModifier: 0.95 }, // Professional American
         'nova-slow': { voice: 'nova', speedModifier: 0.8 }, // Gentle American
         'fable-fast': { voice: 'fable', speedModifier: 1.3 }, // Dynamic American

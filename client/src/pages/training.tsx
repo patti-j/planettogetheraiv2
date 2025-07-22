@@ -2248,13 +2248,16 @@ function TourManagementSection() {
                 <div className="space-y-3">
                   <div>
                     <Label htmlFor="voiceSelect" className="text-sm font-medium">Voice Selection</Label>
+                    <p className="text-xs text-gray-600 bg-blue-50 p-2 rounded border mb-2">
+                      <strong>Note:</strong> All voices use American pronunciation due to OpenAI TTS limitations. "British-style" voices have refined characteristics but maintain American accent.
+                    </p>
                     <Select
                       value={voiceGenerationOptions.voice}
                       onValueChange={(value) => 
                         setVoiceGenerationOptions(prev => ({ 
                           ...prev, 
                           voice: value,
-                          gender: ['alloy', 'nova', 'shimmer', 'alloy-business', 'nova-slow', 'shimmer-energetic'].includes(value) ? 'female' : 'male'
+                          gender: ['alloy', 'nova', 'shimmer', 'alloy-british', 'nova-british', 'shimmer-british', 'alloy-business', 'nova-slow', 'shimmer-energetic'].includes(value) ? 'female' : 'male'
                         }))
                       }
                     >
@@ -2268,6 +2271,12 @@ function TourManagementSection() {
                         <SelectItem value="echo">Echo (Male - Strong American Accent)</SelectItem>
                         <SelectItem value="onyx">Onyx (Male - Deep American Voice)</SelectItem>
                         <SelectItem value="shimmer">Shimmer (Female - Bright American Accent)</SelectItem>
+                        <SelectItem value="alloy-british">Charlotte (Female - Elegant British Accent)</SelectItem>
+                        <SelectItem value="nova-british">Victoria (Female - Classic British Voice)</SelectItem>
+                        <SelectItem value="fable-british">William (Male - Distinguished British Accent)</SelectItem>
+                        <SelectItem value="echo-british">James (Male - Strong British Voice)</SelectItem>
+                        <SelectItem value="onyx-british">Oliver (Male - Deep British Accent)</SelectItem>
+                        <SelectItem value="shimmer-british">Emma (Female - Bright British Voice)</SelectItem>
                         <SelectItem value="alloy-business">Alloy Pro (Female - Professional American)</SelectItem>
                         <SelectItem value="nova-slow">Nova Calm (Female - Gentle American)</SelectItem>
                         <SelectItem value="fable-fast">Fable Express (Male - Dynamic American)</SelectItem>
