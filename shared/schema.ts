@@ -1874,3 +1874,163 @@ export type InsertFeedbackComment = z.infer<typeof insertFeedbackCommentSchema>;
 
 export type FeedbackVote = typeof feedbackVotes.$inferSelect;
 export type InsertFeedbackVote = z.infer<typeof insertFeedbackVoteSchema>;
+
+// Industry Templates System
+export const industryTemplates = pgTable("industry_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(), // manufacturing, automotive, electronics, food_beverage, pharmaceutical, aerospace, textiles, chemicals, metals, custom
+  keywords: jsonb("keywords").$type<string[]>().default([]),
+  isActive: boolean("is_active").default(true),
+  isAiGenerated: boolean("is_ai_generated").default(false),
+  sourceUrl: text("source_url"), // Website URL used for AI generation
+  sourcePrompt: text("source_prompt"), // AI prompt used for custom industries
+  brandingImages: jsonb("branding_images").$type<{
+    logo: string; // base64 image data
+    banner: string; // base64 image data
+    background: string; // base64 image data
+    icon: string; // base64 image data
+  }>(),
+  colorScheme: jsonb("color_scheme").$type<{
+    primary: string;
+    secondary: string;
+    accent: string;
+    background: string;
+    text: string;
+  }>().default({ primary: "#3b82f6", secondary: "#64748b", accent: "#10b981", background: "#ffffff", text: "#1f2937" }),
+  configurations: jsonb("configurations").$type<{
+    analytics: {
+      kpis: Array<{
+        name: string;
+        description: string;
+        formula: string;
+        target: number;
+        unit: string;
+      }>;
+      dashboards: Array<{
+        name: string;
+        widgets: Array<{
+          type: string;
+          title: string;
+          config: any;
+        }>;
+      }>;
+    };
+    reports: Array<{
+      name: string;
+      description: string;
+      type: string;
+      schedule: string;
+      recipients: string[];
+      template: any;
+    }>;
+    visualFactory: {
+      displays: Array<{
+        name: string;
+        type: string;
+        content: any;
+        position: string;
+        settings: any;
+      }>;
+      layouts: Array<{
+        name: string;
+        displays: string[];
+        rotation: number;
+      }>;
+    };
+    shopFloor: {
+      workstations: Array<{
+        name: string;
+        type: string;
+        capabilities: string[];
+        layout: any;
+      }>;
+      workflows: Array<{
+        name: string;
+        steps: Array<{
+          name: string;
+          description: string;
+          requirements: string[];
+        }>;
+      }>;
+    };
+  }>().notNull(),
+  usageCount: integer("usage_count").default(0),
+  createdBy: text("created_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const userIndustryTemplates = pgTable("user_industry_templates", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  templateId: integer("template_id").references(() => industryTemplates.id).notNull(),
+  isActive: boolean("is_active").default(true),
+  customizations: jsonb("customizations").$type<any>().default({}),
+  appliedAt: timestamp("applied_at").defaultNow(),
+}, (table) => ({
+  userTemplateIdx: unique().on(table.userId, table.templateId),
+}));
+
+export const templateConfigurations = pgTable("template_configurations", {
+  id: serial("id").primaryKey(),
+  templateId: integer("template_id").references(() => industryTemplates.id).notNull(),
+  configurationType: text("configuration_type").notNull(), // analytics, reports, visual_factory, shop_floor
+  configurationName: text("configuration_name").notNull(),
+  configurationData: jsonb("configuration_data").$type<any>().notNull(),
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Industry Templates relations
+export const industryTemplatesRelations = relations(industryTemplates, ({ many }) => ({
+  userTemplates: many(userIndustryTemplates),
+  configurations: many(templateConfigurations),
+}));
+
+export const userIndustryTemplatesRelations = relations(userIndustryTemplates, ({ one }) => ({
+  user: one(users, {
+    fields: [userIndustryTemplates.userId],
+    references: [users.id],
+  }),
+  template: one(industryTemplates, {
+    fields: [userIndustryTemplates.templateId],
+    references: [industryTemplates.id],
+  }),
+}));
+
+export const templateConfigurationsRelations = relations(templateConfigurations, ({ one }) => ({
+  template: one(industryTemplates, {
+    fields: [templateConfigurations.templateId],
+    references: [industryTemplates.id],
+  }),
+}));
+
+// Industry Templates insert schemas
+export const insertIndustryTemplateSchema = createInsertSchema(industryTemplates).omit({
+  id: true,
+  usageCount: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUserIndustryTemplateSchema = createInsertSchema(userIndustryTemplates).omit({
+  id: true,
+  appliedAt: true,
+});
+
+export const insertTemplateConfigurationSchema = createInsertSchema(templateConfigurations).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Industry Templates types
+export type IndustryTemplate = typeof industryTemplates.$inferSelect;
+export type InsertIndustryTemplate = z.infer<typeof insertIndustryTemplateSchema>;
+
+export type UserIndustryTemplate = typeof userIndustryTemplates.$inferSelect;
+export type InsertUserIndustryTemplate = z.infer<typeof insertUserIndustryTemplateSchema>;
+
+export type TemplateConfiguration = typeof templateConfigurations.$inferSelect;
+export type InsertTemplateConfiguration = z.infer<typeof insertTemplateConfigurationSchema>;

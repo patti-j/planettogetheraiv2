@@ -34,7 +34,10 @@ import {
   type InsertChatChannel, type InsertChatMember, type InsertChatMessage, type InsertChatReaction,
   feedback, feedbackComments, feedbackVotes,
   type Feedback, type FeedbackComment, type FeedbackVote,
-  type InsertFeedback, type InsertFeedbackComment, type InsertFeedbackVote
+  type InsertFeedback, type InsertFeedbackComment, type InsertFeedbackVote,
+  industryTemplates, userIndustryTemplates, templateConfigurations,
+  type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
+  type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, like, ilike, ne, inArray } from "drizzle-orm";
@@ -462,6 +465,26 @@ export interface IStorage {
     topCategories: { category: string; count: number }[];
     recentActivity: number;
   }>;
+
+  // Industry Templates Management
+  getIndustryTemplates(): Promise<IndustryTemplate[]>;
+  getIndustryTemplate(id: number): Promise<IndustryTemplate | undefined>;
+  getIndustryTemplatesByCategory(category: string): Promise<IndustryTemplate[]>;
+  createIndustryTemplate(template: InsertIndustryTemplate): Promise<IndustryTemplate>;
+  updateIndustryTemplate(id: number, template: Partial<InsertIndustryTemplate>): Promise<IndustryTemplate | undefined>;
+  deleteIndustryTemplate(id: number): Promise<boolean>;
+  
+  getUserIndustryTemplates(userId: number): Promise<UserIndustryTemplate[]>;
+  getUserActiveTemplate(userId: number): Promise<UserIndustryTemplate | undefined>;
+  applyTemplateToUser(userId: number, templateId: number, customizations?: any): Promise<UserIndustryTemplate>;
+  removeTemplateFromUser(userId: number, templateId: number): Promise<boolean>;
+  updateUserTemplateCustomizations(userId: number, templateId: number, customizations: any): Promise<UserIndustryTemplate | undefined>;
+  
+  getTemplateConfigurations(templateId?: number): Promise<TemplateConfiguration[]>;
+  getTemplateConfigurationsByType(templateId: number, type: string): Promise<TemplateConfiguration[]>;
+  createTemplateConfiguration(config: InsertTemplateConfiguration): Promise<TemplateConfiguration>;
+  updateTemplateConfiguration(id: number, config: Partial<InsertTemplateConfiguration>): Promise<TemplateConfiguration | undefined>;
+  deleteTemplateConfiguration(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -3597,6 +3620,152 @@ export class DatabaseStorage implements IStorage {
       topCategories: categories.map(c => ({ category: c.category, count: c.count })),
       recentActivity: recentActivity[0].count
     };
+  }
+
+  // Industry Templates Management
+  async getIndustryTemplates(): Promise<IndustryTemplate[]> {
+    return await db.select().from(industryTemplates)
+      .where(eq(industryTemplates.isActive, true))
+      .orderBy(desc(industryTemplates.usageCount), asc(industryTemplates.name));
+  }
+
+  async getIndustryTemplate(id: number): Promise<IndustryTemplate | undefined> {
+    const [template] = await db.select().from(industryTemplates)
+      .where(eq(industryTemplates.id, id));
+    return template;
+  }
+
+  async getIndustryTemplatesByCategory(category: string): Promise<IndustryTemplate[]> {
+    return await db.select().from(industryTemplates)
+      .where(and(eq(industryTemplates.category, category), eq(industryTemplates.isActive, true)))
+      .orderBy(desc(industryTemplates.usageCount), asc(industryTemplates.name));
+  }
+
+  async createIndustryTemplate(template: InsertIndustryTemplate): Promise<IndustryTemplate> {
+    const [newTemplate] = await db.insert(industryTemplates).values(template).returning();
+    return newTemplate;
+  }
+
+  async updateIndustryTemplate(id: number, template: Partial<InsertIndustryTemplate>): Promise<IndustryTemplate | undefined> {
+    const [updated] = await db.update(industryTemplates)
+      .set({ ...template, updatedAt: new Date() })
+      .where(eq(industryTemplates.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteIndustryTemplate(id: number): Promise<boolean> {
+    const result = await db.delete(industryTemplates)
+      .where(eq(industryTemplates.id, id));
+    return result.rowCount! > 0;
+  }
+
+  async getUserIndustryTemplates(userId: number): Promise<UserIndustryTemplate[]> {
+    return await db.select().from(userIndustryTemplates)
+      .where(eq(userIndustryTemplates.userId, userId))
+      .orderBy(desc(userIndustryTemplates.appliedAt));
+  }
+
+  async getUserActiveTemplate(userId: number): Promise<UserIndustryTemplate | undefined> {
+    const [activeTemplate] = await db.select().from(userIndustryTemplates)
+      .where(and(eq(userIndustryTemplates.userId, userId), eq(userIndustryTemplates.isActive, true)));
+    return activeTemplate;
+  }
+
+  async applyTemplateToUser(userId: number, templateId: number, customizations: any = {}): Promise<UserIndustryTemplate> {
+    // First, deactivate any existing active templates for this user
+    await db.update(userIndustryTemplates)
+      .set({ isActive: false })
+      .where(eq(userIndustryTemplates.userId, userId));
+
+    // Check if user already has this template
+    const [existingTemplate] = await db.select().from(userIndustryTemplates)
+      .where(and(eq(userIndustryTemplates.userId, userId), eq(userIndustryTemplates.templateId, templateId)));
+
+    if (existingTemplate) {
+      // Reactivate existing template
+      const [updated] = await db.update(userIndustryTemplates)
+        .set({ 
+          isActive: true, 
+          customizations, 
+          appliedAt: new Date() 
+        })
+        .where(eq(userIndustryTemplates.id, existingTemplate.id))
+        .returning();
+      
+      // Increment usage count
+      await db.update(industryTemplates)
+        .set({ usageCount: sql`${industryTemplates.usageCount} + 1` })
+        .where(eq(industryTemplates.id, templateId));
+      
+      return updated;
+    } else {
+      // Create new template association
+      const [newAssociation] = await db.insert(userIndustryTemplates)
+        .values({
+          userId,
+          templateId,
+          isActive: true,
+          customizations
+        })
+        .returning();
+
+      // Increment usage count
+      await db.update(industryTemplates)
+        .set({ usageCount: sql`${industryTemplates.usageCount} + 1` })
+        .where(eq(industryTemplates.id, templateId));
+
+      return newAssociation;
+    }
+  }
+
+  async removeTemplateFromUser(userId: number, templateId: number): Promise<boolean> {
+    const result = await db.delete(userIndustryTemplates)
+      .where(and(eq(userIndustryTemplates.userId, userId), eq(userIndustryTemplates.templateId, templateId)));
+    return result.rowCount! > 0;
+  }
+
+  async updateUserTemplateCustomizations(userId: number, templateId: number, customizations: any): Promise<UserIndustryTemplate | undefined> {
+    const [updated] = await db.update(userIndustryTemplates)
+      .set({ customizations })
+      .where(and(eq(userIndustryTemplates.userId, userId), eq(userIndustryTemplates.templateId, templateId)))
+      .returning();
+    return updated;
+  }
+
+  async getTemplateConfigurations(templateId?: number): Promise<TemplateConfiguration[]> {
+    if (templateId) {
+      return await db.select().from(templateConfigurations)
+        .where(eq(templateConfigurations.templateId, templateId))
+        .orderBy(asc(templateConfigurations.configurationType), asc(templateConfigurations.configurationName));
+    }
+    return await db.select().from(templateConfigurations)
+      .orderBy(asc(templateConfigurations.templateId), asc(templateConfigurations.configurationType));
+  }
+
+  async getTemplateConfigurationsByType(templateId: number, type: string): Promise<TemplateConfiguration[]> {
+    return await db.select().from(templateConfigurations)
+      .where(and(eq(templateConfigurations.templateId, templateId), eq(templateConfigurations.configurationType, type)))
+      .orderBy(asc(templateConfigurations.configurationName));
+  }
+
+  async createTemplateConfiguration(config: InsertTemplateConfiguration): Promise<TemplateConfiguration> {
+    const [newConfig] = await db.insert(templateConfigurations).values(config).returning();
+    return newConfig;
+  }
+
+  async updateTemplateConfiguration(id: number, config: Partial<InsertTemplateConfiguration>): Promise<TemplateConfiguration | undefined> {
+    const [updated] = await db.update(templateConfigurations)
+      .set(config)
+      .where(eq(templateConfigurations.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteTemplateConfiguration(id: number): Promise<boolean> {
+    const result = await db.delete(templateConfigurations)
+      .where(eq(templateConfigurations.id, id));
+    return result.rowCount! > 0;
   }
 }
 

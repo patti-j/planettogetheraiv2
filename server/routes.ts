@@ -6781,6 +6781,346 @@ Create a natural, conversational voice script that explains this feature to some
     }
   });
 
+  // Industry Templates API Routes
+  app.get("/api/industry-templates", requireAuth, async (req, res) => {
+    try {
+      const category = req.query.category as string | undefined;
+      
+      if (category) {
+        const templates = await storage.getIndustryTemplatesByCategory(category);
+        res.json(templates);
+      } else {
+        const templates = await storage.getIndustryTemplates();
+        res.json(templates);
+      }
+    } catch (error) {
+      console.error("Error fetching industry templates:", error);
+      res.status(500).json({ error: "Failed to fetch industry templates" });
+    }
+  });
+
+  app.get("/api/industry-templates/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid template ID" });
+      }
+
+      const template = await storage.getIndustryTemplate(id);
+      if (!template) {
+        return res.status(404).json({ error: "Industry template not found" });
+      }
+      
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching industry template:", error);
+      res.status(500).json({ error: "Failed to fetch industry template" });
+    }
+  });
+
+  app.post("/api/industry-templates", requireAuth, async (req, res) => {
+    try {
+      const template = await storage.createIndustryTemplate(req.body);
+      res.status(201).json(template);
+    } catch (error) {
+      console.error("Error creating industry template:", error);
+      res.status(500).json({ error: "Failed to create industry template" });
+    }
+  });
+
+  app.put("/api/industry-templates/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid template ID" });
+      }
+
+      const template = await storage.updateIndustryTemplate(id, req.body);
+      if (!template) {
+        return res.status(404).json({ error: "Industry template not found" });
+      }
+      
+      res.json(template);
+    } catch (error) {
+      console.error("Error updating industry template:", error);
+      res.status(500).json({ error: "Failed to update industry template" });
+    }
+  });
+
+  app.delete("/api/industry-templates/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid template ID" });
+      }
+
+      const success = await storage.deleteIndustryTemplate(id);
+      if (!success) {
+        return res.status(404).json({ error: "Industry template not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting industry template:", error);
+      res.status(500).json({ error: "Failed to delete industry template" });
+    }
+  });
+
+  // User Industry Templates API Routes
+  app.get("/api/users/:userId/industry-templates", requireAuth, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const templates = await storage.getUserIndustryTemplates(userId);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching user industry templates:", error);
+      res.status(500).json({ error: "Failed to fetch user industry templates" });
+    }
+  });
+
+  app.get("/api/users/:userId/industry-templates/active", requireAuth, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const activeTemplate = await storage.getUserActiveTemplate(userId);
+      if (!activeTemplate) {
+        return res.status(404).json({ error: "No active template found" });
+      }
+      
+      res.json(activeTemplate);
+    } catch (error) {
+      console.error("Error fetching active user template:", error);
+      res.status(500).json({ error: "Failed to fetch active template" });
+    }
+  });
+
+  app.post("/api/users/:userId/industry-templates/:templateId/apply", requireAuth, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const templateId = parseInt(req.params.templateId);
+      
+      if (isNaN(userId) || isNaN(templateId)) {
+        return res.status(400).json({ error: "Invalid user ID or template ID" });
+      }
+
+      const { customizations } = req.body;
+      
+      const appliedTemplate = await storage.applyTemplateToUser(userId, templateId, customizations);
+      res.json(appliedTemplate);
+    } catch (error) {
+      console.error("Error applying template to user:", error);
+      res.status(500).json({ error: "Failed to apply template to user" });
+    }
+  });
+
+  app.delete("/api/users/:userId/industry-templates/:templateId", requireAuth, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const templateId = parseInt(req.params.templateId);
+      
+      if (isNaN(userId) || isNaN(templateId)) {
+        return res.status(400).json({ error: "Invalid user ID or template ID" });
+      }
+
+      const success = await storage.removeTemplateFromUser(userId, templateId);
+      if (!success) {
+        return res.status(404).json({ error: "Template association not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing template from user:", error);
+      res.status(500).json({ error: "Failed to remove template from user" });
+    }
+  });
+
+  // AI-powered industry template generation
+  app.post("/api/industry-templates/generate", requireAuth, async (req, res) => {
+    try {
+      const { industry, sourceUrl, sourcePrompt, createdBy } = req.body;
+      
+      if (!industry || !createdBy) {
+        return res.status(400).json({ error: "Industry name and creator are required" });
+      }
+
+      // Import OpenAI dynamically
+      const OpenAI = (await import("openai")).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      let analysisPrompt = '';
+      
+      if (sourceUrl) {
+        // Analyze website URL to generate industry template
+        analysisPrompt = `Analyze the following website and create a comprehensive manufacturing industry template based on the company's industry and operations: ${sourceUrl}
+        
+        Create a detailed template configuration that includes:`;
+      } else if (sourcePrompt) {
+        // Use user-provided description
+        analysisPrompt = `Based on this industry description, create a comprehensive manufacturing industry template: "${sourcePrompt}"
+        
+        Create a detailed template configuration that includes:`;
+      } else {
+        // Generic industry template
+        analysisPrompt = `Create a comprehensive manufacturing industry template for "${industry}" industry.
+        
+        Create a detailed template configuration that includes:`;
+      }
+
+      analysisPrompt += `
+
+      1. Analytics KPIs (5-8 relevant metrics with formulas, targets, and units)
+      2. Dashboard widgets (4-6 widgets with specific configurations)
+      3. Report templates (3-5 industry-specific reports)
+      4. Visual Factory displays (3-4 display types with content)
+      5. Shop Floor workstations and workflows
+      6. Color scheme appropriate for the industry
+      7. Keywords for search and categorization
+
+      Return ONLY a valid JSON object with this exact structure:
+      {
+        "name": "Industry Name Manufacturing",
+        "description": "Brief description of this industry template",
+        "category": "industry_category",
+        "keywords": ["keyword1", "keyword2", "keyword3"],
+        "colorScheme": {
+          "primary": "#hex",
+          "secondary": "#hex", 
+          "accent": "#hex",
+          "background": "#hex",
+          "text": "#hex"
+        },
+        "configurations": {
+          "analytics": {
+            "kpis": [
+              {
+                "name": "KPI Name",
+                "description": "KPI description",
+                "formula": "calculation formula",
+                "target": 95,
+                "unit": "unit"
+              }
+            ],
+            "dashboards": [
+              {
+                "name": "Dashboard Name",
+                "widgets": [
+                  {
+                    "type": "metric",
+                    "title": "Widget Title",
+                    "config": {}
+                  }
+                ]
+              }
+            ]
+          },
+          "reports": [
+            {
+              "name": "Report Name",
+              "description": "Report description",
+              "type": "operational",
+              "schedule": "daily",
+              "recipients": ["operations@company.com"],
+              "template": {}
+            }
+          ],
+          "visualFactory": {
+            "displays": [
+              {
+                "name": "Display Name",
+                "type": "kpi_dashboard",
+                "content": {},
+                "position": "main_floor",
+                "settings": {}
+              }
+            ],
+            "layouts": [
+              {
+                "name": "Main Floor Layout",
+                "displays": ["display1", "display2"],
+                "rotation": 30
+              }
+            ]
+          },
+          "shopFloor": {
+            "workstations": [
+              {
+                "name": "Workstation Name",
+                "type": "assembly",
+                "capabilities": ["capability1", "capability2"],
+                "layout": {}
+              }
+            ],
+            "workflows": [
+              {
+                "name": "Workflow Name",
+                "steps": [
+                  {
+                    "name": "Step Name",
+                    "description": "Step description",
+                    "requirements": ["requirement1"]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert in manufacturing operations and industry analysis. Generate comprehensive, realistic templates for manufacturing management systems."
+          },
+          {
+            role: "user",
+            content: analysisPrompt
+          }
+        ],
+        max_tokens: 4000,
+        temperature: 0.3
+      });
+
+      let generatedContent = response.choices[0].message.content || '';
+      
+      // Extract JSON from markdown code blocks if present
+      const jsonMatch = generatedContent.match(/```json\s*([\s\S]*?)\s*```/);
+      if (jsonMatch) {
+        generatedContent = jsonMatch[1];
+      }
+
+      let templateData;
+      try {
+        templateData = JSON.parse(generatedContent);
+      } catch (parseError) {
+        console.error("Failed to parse AI template response:", parseError);
+        return res.status(500).json({ message: "AI generated invalid template format" });
+      }
+
+      // Create the industry template
+      const newTemplate = await storage.createIndustryTemplate({
+        ...templateData,
+        isAiGenerated: true,
+        sourceUrl: sourceUrl || null,
+        sourcePrompt: sourcePrompt || null,
+        createdBy
+      });
+
+      res.json(newTemplate);
+    } catch (error) {
+      console.error("Error generating industry template:", error);
+      res.status(500).json({ error: "Failed to generate industry template" });
+    }
+  });
+
   // Subscription and Payment Routes (for prospects)
   
   // Start free trial - creates trial account
