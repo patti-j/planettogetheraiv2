@@ -3873,7 +3873,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // Function to get accessible routes for a role
-  async function getAccessibleRoutesForRole(roleName: string): Promise<{[key: string]: string}> {
+  async function getAccessibleRoutesForRole(roleId: number): Promise<{[key: string]: string}> {
     // Map routes to required permissions
     const routePermissions = {
       '/': 'dashboard-view',
@@ -3921,11 +3921,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
 
     try {
-      // Get role by name using storage interface (now using kebab-case consistently)
-      const role = await storage.getRoleByName(roleName);
+      // Get role by ID using storage interface  
+      const role = await storage.getRole(roleId);
       
       if (!role) {
-        console.log(`Role not found: ${roleName}, using default routes`);
+        console.log(`Role not found: ${roleId}, using default routes`);
         return { '/': allSystemRoutes['/'] }; // Fallback to dashboard only
       }
 
@@ -3977,12 +3977,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const OpenAI = (await import("openai")).default;
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-      // Generate role-specific accessible routes (convert display names to kebab-case)
+      // Generate role-specific accessible routes
       const roleRoutes: {[role: string]: {[path: string]: string}} = {};
       
       for (const role of roles) {
-        const roleKey = role.toLowerCase().replace(/\s+/g, '-');
-        roleRoutes[role] = await getAccessibleRoutesForRole(roleKey);
+        // Find role ID by display name
+        const roleRecord = await storage.getRoleByName(role.toLowerCase().replace(/\s+/g, '-'));
+        if (roleRecord) {
+          roleRoutes[role] = await getAccessibleRoutesForRole(roleRecord.id);
+        } else {
+          console.log(`Role not found for display name: ${role}`);
+          roleRoutes[role] = { '/': 'Dashboard - Main production schedule view' };
+        }
       }
 
       let prompt = `Generate comprehensive guided tour content for PlanetTogether manufacturing system for these roles: ${roles.join(', ')}.
@@ -4099,8 +4105,15 @@ Return JSON format with each role as a top-level key containing tourSteps array.
         
         if (steps && steps.length > 0) {
           try {
+            // Get role ID for this role display name
+            const roleRecord = await storage.getRoleByName(roleKey);
+            if (!roleRecord) {
+              console.error(`Role not found for key: ${roleKey}`);
+              continue;
+            }
+            
             const tourRecord = await storage.upsertTour({
-              role: roleKey,
+              roleId: roleRecord.id,
               roleDisplayName: role,
               tourData: {
                 steps: steps,
@@ -4174,7 +4187,7 @@ Return JSON format with each role as a top-level key containing tourSteps array.
     };
 
     for (const tour of tours) {
-      const roleAccessibleRoutes = await getAccessibleRoutesForRole(tour.roleDisplayName);
+      const roleAccessibleRoutes = await getAccessibleRoutesForRole(tour.roleId);
       const accessiblePaths = Object.keys(roleAccessibleRoutes);
       
       const tourValidation = {
@@ -4530,8 +4543,15 @@ Return a JSON object with this structure:
 
   app.get("/api/tours/role/:role", requireAuth, async (req, res) => {
     try {
-      const role = req.params.role;
-      const tour = await storage.getTourByRole(role);
+      const roleName = req.params.role;
+      
+      // First get the role ID by role name  
+      const role = await storage.getRoleByName(roleName);
+      if (!role) {
+        return res.status(404).json({ error: "Role not found" });
+      }
+      
+      const tour = await storage.getTourByRoleId(role.id);
       
       if (!tour) {
         return res.status(404).json({ error: "Tour not found for role" });

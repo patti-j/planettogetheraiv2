@@ -202,6 +202,20 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 22, 2025)
 
+✓ **Role Management Architecture Refactor - ID-Based System Implementation (July 22, 2025)**:
+- Completed major architectural refactor migrating from role name-based lookups to ID-based lookups throughout the system
+- Updated tours table schema to use `role_id` foreign key instead of `role` string field for proper relational database design
+- Migrated all existing tour data to use proper role ID references while preserving functionality
+- Refactored storage interface methods: `getTourByRole` → `getTourByRoleId` for consistency with other entity lookups
+- Updated `getAccessibleRoutesForRole` function to use role IDs instead of role names for permission checking
+- Enhanced tour creation and validation logic to use role IDs instead of display name strings
+- Database schema now properly enforces referential integrity between tours and roles tables
+- Code consistency improvement: Role management now follows same ID-based patterns as jobs, operations, and resources
+- System architecture simplified: Uses unique IDs for database operations and display names only for UI presentation
+- All tour-related API endpoints updated to work with role ID lookups while maintaining backward compatibility
+- Database migration completed successfully with all existing tours properly linked to role records
+- Enhanced data integrity with foreign key constraints preventing orphaned tour records
+
 ✓ **Database Role Name Standardization & AI Tour Navigation Fix (July 22, 2025)**:
 - Standardized all role names in database to use consistent kebab-case format (production-scheduler, plant-manager, etc.)
 - Migrated existing role data from "Production Scheduler" to "production-scheduler" format for consistency

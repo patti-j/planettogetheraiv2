@@ -1187,7 +1187,7 @@ export const voiceRecordingsCache = pgTable("voice_recordings_cache", {
 // Tours table for storing generated tour content
 export const tours = pgTable("tours", {
   id: serial("id").primaryKey(),
-  role: varchar("role", { length: 100 }).notNull(), // director, production-scheduler, shop-floor-operations, etc.
+  roleId: integer("role_id").references(() => roles.id).notNull(), // Reference to roles table
   roleDisplayName: varchar("role_display_name", { length: 100 }).notNull(), // Display name for the role
   tourData: jsonb("tour_data").$type<{
     steps: Array<{

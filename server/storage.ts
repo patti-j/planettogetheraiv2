@@ -321,7 +321,7 @@ export interface IStorage {
   // Tours
   getTours(): Promise<Tour[]>;
   getTour(id: number): Promise<Tour | undefined>;
-  getTourByRole(role: string): Promise<Tour | undefined>;
+  getTourByRoleId(roleId: number): Promise<Tour | undefined>;
   createTour(tour: InsertTour): Promise<Tour>;
   updateTour(id: number, tour: Partial<InsertTour>): Promise<Tour | undefined>;
   deleteTour(id: number): Promise<boolean>;
@@ -2633,8 +2633,8 @@ export class DatabaseStorage implements IStorage {
     return tour;
   }
 
-  async getTourByRole(role: string): Promise<Tour | undefined> {
-    const [tour] = await db.select().from(tours).where(eq(tours.role, role));
+  async getTourByRoleId(roleId: number): Promise<Tour | undefined> {
+    const [tour] = await db.select().from(tours).where(eq(tours.roleId, roleId));
     return tour;
   }
 
@@ -2659,14 +2659,14 @@ export class DatabaseStorage implements IStorage {
 
   async upsertTour(tour: InsertTour): Promise<Tour> {
     // Check if tour already exists for this role
-    const existingTour = await this.getTourByRole(tour.role);
+    const existingTour = await this.getTourByRoleId(tour.roleId);
     
     if (existingTour) {
       // Update existing tour
       const [updatedTour] = await db
         .update(tours)
         .set({ ...tour, updatedAt: new Date() })
-        .where(eq(tours.role, tour.role))
+        .where(eq(tours.roleId, tour.roleId))
         .returning();
       return updatedTour;
     } else {
