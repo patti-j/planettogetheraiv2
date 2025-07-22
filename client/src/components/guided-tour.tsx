@@ -399,6 +399,18 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       };
       
       console.log("MOBILE tour position calculated:", position, "windowSize:", { width: windowWidth, height: windowHeight }, "cardWidth:", cardWidth, "maxCardHeight:", maxCardHeight);
+      
+      // Log the exact calculation for debugging
+      console.log("Mobile calculation details:", {
+        windowWidth,
+        windowHeight,
+        cardWidth,
+        padding: 10,
+        targetX: windowWidth - cardWidth - 10,
+        targetY: windowHeight - maxCardHeight - 10,
+        finalPosition: position
+      });
+      
       return position;
     } else {
       // Desktop positioning
@@ -1466,11 +1478,11 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         style={{
           left: position.x,
           top: position.y,
-          width: windowSize.width < 768 ? `${Math.min(280, windowSize.width - 20)}px` : '384px',
+          width: windowSize.width < 768 ? `${Math.min(300, windowSize.width - 20)}px` : '384px',
           height: windowSize.width < 768 ? 
-            `${Math.min(200, windowSize.height * 0.35)}px` : 
+            `${Math.min(400, windowSize.height * 0.6)}px` : 
             `${Math.min(600, windowSize.height - 100)}px`,
-          maxHeight: windowSize.width < 768 ? '35vh' : '90vh'
+          maxHeight: windowSize.width < 768 ? '60vh' : '90vh'
         }}
       >
         <CardHeader 
