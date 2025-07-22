@@ -511,6 +511,16 @@ The application uses a modern full-stack architecture with strong typing through
 - Demo users now experience seamless tour initiation with automatic voice playback if they selected voice narration
 - All user-requested audio improvements completed: auto-start voice, replay button placement, cached audio speed, no simultaneous playback, and clean tour startup
 
+✓ **Voice Auto-Replay Bug Fix & Replay Button Implementation (July 22, 2025)**:
+- Fixed critical bug where voice narration would automatically restart after completion instead of waiting for user interaction
+- Root cause: Component remounting was resetting auto-start tracking, causing voice to replay when audio ended
+- Added persistent sessionStorage tracking using unique tour session keys (tour-roleId-welcome-auto-played) to prevent auto-replay
+- Implemented proper Replay button with RotateCcw icon allowing users to manually restart current step narration
+- Simplified audio completion handler to remove auto-replay logic - voice now only plays once unless user clicks Replay
+- Enhanced tour session management with session key cleanup when switching roles or starting new tours
+- Voice controls now work as expected: voice plays once, stops after completion, user can manually replay if desired
+- Mobile tour layout optimized with voice status indicator as floating overlay to prevent control buttons being pushed off-screen
+
 ✓ **Enhanced AI Voice Narration System with Engaging Content & Performance Optimizations (July 22, 2025)**:
 - Successfully implemented comprehensive voice narration system with AI text-to-speech functionality for guided tours
 - Added voice preference option in demo tour registration form with checkbox control for pre-tour voice selection

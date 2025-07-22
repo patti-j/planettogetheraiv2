@@ -345,11 +345,13 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   
   const [currentStep, setCurrentStep] = useState(initialStep);
   
-  // Reset to first step when role changes
+  // Reset to first step when role changes and clear auto-start tracking
   useEffect(() => {
     setCurrentStep(0);
     setHasAutoStarted(false); // Allow auto-start for new role
-  }, [roleId]);
+    // Clear previous tour auto-start tracking to allow fresh start
+    sessionStorage.removeItem(tourSessionKey);
+  }, [roleId, tourSessionKey]);
   const [isVisible, setIsVisible] = useState(true);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -509,20 +511,29 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   
   console.log("GuidedTour initialized - tourSteps:", tourSteps, "currentStep:", currentStep, "loading:", toursLoading);
 
-  // Auto-start voice narration for welcome step if voice is enabled (only once)
+  // Use a unique tour session key to track auto-start behavior
+  const tourSessionKey = `tour-${roleId}-welcome-auto-played`;
   const [hasAutoStarted, setHasAutoStarted] = useState(false);
+  
+  // Auto-start voice narration for welcome step if voice is enabled (only once per tour session)
   useEffect(() => {
     console.log("Auto-start voice effect triggered:", { initialVoiceEnabled, currentStep, hasSteps: tourSteps.length > 0, hasAutoStarted });
     if (initialVoiceEnabled && currentStep === 0 && tourSteps.length > 0 && !hasAutoStarted) {
-      // Small delay to ensure component is ready
-      const timer = setTimeout(() => {
-        console.log("Auto-starting voice for welcome step since user enabled voice narration");
-        setHasAutoStarted(true);
-        playPreloadedAudio(tourSteps[0].id);
-      }, 500);
-      return () => clearTimeout(timer);
+      // Check if we've already auto-played the welcome step for this tour session
+      const welcomeAlreadyPlayed = sessionStorage.getItem(tourSessionKey) === 'true';
+      
+      if (!welcomeAlreadyPlayed) {
+        // Small delay to ensure component is ready
+        const timer = setTimeout(() => {
+          console.log("Auto-starting voice for welcome step since user enabled voice narration");
+          setHasAutoStarted(true);
+          sessionStorage.setItem(tourSessionKey, 'true');
+          playPreloadedAudio(tourSteps[0].id);
+        }, 500);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [initialVoiceEnabled, tourSteps, currentStep, hasAutoStarted]);
+  }, [initialVoiceEnabled, tourSteps, currentStep, hasAutoStarted, tourSessionKey]);
   
   // Play cached audio directly from server for a specific step  
   const playPreloadedAudio = async (stepId: string) => {
@@ -581,6 +592,8 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           URL.revokeObjectURL(audioUrl);
           speechRef.current = null;
           console.log("Cached audio playback completed - user can click Next");
+          
+          // Audio completed - no action needed
           
           // Auto-advance to next step if enabled and not on last step
           if (autoAdvance && currentStep < tourSteps.length - 1) {
@@ -1196,7 +1209,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                 {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
               </Button>
               
-              {/* Play/Pause Button with Generation Indicator (only shown when voice is enabled) */}
+              {/* Voice Controls (only shown when voice is enabled) */}
               {voiceEnabled && (
                 <>
                   <Button
@@ -1213,7 +1226,23 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                     )}
                   </Button>
                   
-
+                  {/* Replay Button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      console.log("Replay button clicked for step:", tourSteps[currentStep]?.id);
+                      stopSpeech();
+                      // Small delay to ensure audio stops before starting new playback
+                      setTimeout(() => {
+                        playPreloadedAudio(tourSteps[currentStep]?.id);
+                      }, 100);
+                    }}
+                    className="text-gray-500 hover:text-gray-700"
+                    title="Replay current step narration"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
                 </>
               )}
               
