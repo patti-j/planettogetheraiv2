@@ -23,7 +23,8 @@ import {
   Volume2,
   VolumeX,
   Pause,
-  RotateCcw
+  RotateCcw,
+  Kanban
 } from "lucide-react";
 
 interface TourStep {
@@ -168,17 +169,31 @@ const getTourSteps = (role: string): TourStep[] => {
         duration: "3 min"
       },
       {
-        id: "shop-floor",
-        title: "Shop Floor Management",
-        description: "Mobile-optimized interface for managing operations on the production floor.",
-        page: "/shop-floor",
-        icon: Users,
+        id: "boards",
+        title: "Production Boards",
+        description: "Organize jobs, operations, and resources using customizable board views.",
+        page: "/boards",
+        icon: Kanban,
         benefits: [
-          "Real-time operation status",
-          "Mobile-friendly interface",
-          "Quick status updates"
+          "Kanban-style job management",
+          "Visual workflow organization",
+          "Customizable board layouts"
         ],
-        actionText: "Visit Shop Floor",
+        actionText: "View Boards",
+        duration: "2 min"
+      },
+      {
+        id: "scheduling-optimizer",
+        title: "Scheduling Optimizer",
+        description: "AI-powered optimization for multi-operation order planning and resource allocation.",
+        page: "/optimize-orders",
+        icon: Target,
+        benefits: [
+          "Intelligent scheduling recommendations",
+          "Optimize delivery timelines",
+          "Balance efficiency and customer satisfaction"
+        ],
+        actionText: "Optimize Orders",
         duration: "2 min"
       }
     ],
@@ -188,7 +203,7 @@ const getTourSteps = (role: string): TourStep[] => {
         title: "Plant Management",
         description: "Comprehensive oversight of plant operations and strategic decision-making.",
         page: "/plant-manager",
-        icon: Settings,
+        icon: Users,
         benefits: [
           "Complete plant visibility",
           "Strategic planning tools",
@@ -209,6 +224,50 @@ const getTourSteps = (role: string): TourStep[] => {
           "Balance workloads effectively"
         ],
         actionText: "Plan Capacity",
+        duration: "2 min"
+      },
+      {
+        id: "schedule",
+        title: "Production Schedule",
+        description: "Monitor and oversee production scheduling from a management perspective.",
+        page: "/",
+        icon: BarChart3,
+        benefits: [
+          "Track production progress",
+          "Monitor resource utilization",
+          "Identify operational bottlenecks"
+        ],
+        actionText: "View Schedule",
+        duration: "2 min"
+      }
+    ],
+    'systems-manager': [
+      {
+        id: "systems-management",
+        title: "Systems Management",
+        description: "Configure system settings, manage integrations, and oversee technical operations.",
+        page: "/systems-management",
+        icon: Settings,
+        benefits: [
+          "System configuration and monitoring",
+          "Integration management",
+          "Technical oversight"
+        ],
+        actionText: "Manage Systems",
+        duration: "3 min"
+      },
+      {
+        id: "user-management",
+        title: "User & Role Management",
+        description: "Manage user accounts, role assignments, and access permissions.",
+        page: "/user-role-assignments",
+        icon: Users,
+        benefits: [
+          "Control user access",
+          "Manage role permissions",
+          "Ensure security compliance"
+        ],
+        actionText: "Manage Users",
         duration: "2 min"
       }
     ]
