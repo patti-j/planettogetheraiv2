@@ -1973,6 +1973,79 @@ export const userIndustryTemplates = pgTable("user_industry_templates", {
   userTemplateIdx: unique().on(table.userId, table.templateId),
 }));
 
+// Account Management System
+export const accountInfo = pgTable("account_info", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull().unique(),
+  companyName: text("company_name").notNull(),
+  subscriptionPlan: text("subscription_plan").notNull().default("starter"), // starter, professional, enterprise, custom
+  subscriptionStatus: text("subscription_status").notNull().default("trial"), // active, past_due, canceled, trial
+  currentUsers: integer("current_users").notNull().default(1),
+  maxUsers: integer("max_users").notNull().default(5),
+  billingCycle: text("billing_cycle").notNull().default("monthly"), // monthly, annual
+  nextBillingDate: timestamp("next_billing_date"),
+  totalAmount: integer("total_amount").notNull().default(2900), // in cents
+  paymentMethod: jsonb("payment_method").$type<{
+    type: 'card' | 'bank';
+    last4: string;
+    brand?: string;
+    expiryMonth?: number;
+    expiryYear?: number;
+  }>(),
+  features: jsonb("features").$type<string[]>().default([]),
+  usage: jsonb("usage").$type<{
+    apiCalls: number;
+    apiLimit: number;
+    storage: number;
+    storageLimit: number;
+  }>().default({ apiCalls: 0, apiLimit: 10000, storage: 0, storageLimit: 5 }),
+  billingAddress: jsonb("billing_address").$type<{
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  }>(),
+  contactInfo: jsonb("contact_info").$type<{
+    primaryEmail: string;
+    billingEmail: string;
+    phone?: string;
+  }>(),
+  trialEndsAt: timestamp("trial_ends_at"),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const billingHistory = pgTable("billing_history", {
+  id: serial("id").primaryKey(),
+  accountId: integer("account_id").references(() => accountInfo.id).notNull(),
+  invoiceId: text("invoice_id").notNull().unique(),
+  amount: integer("amount").notNull(), // in cents
+  currency: text("currency").notNull().default("USD"),
+  status: text("status").notNull(), // paid, pending, failed, refunded
+  billingPeriodStart: timestamp("billing_period_start").notNull(),
+  billingPeriodEnd: timestamp("billing_period_end").notNull(),
+  paidAt: timestamp("paid_at"),
+  dueDate: timestamp("due_date").notNull(),
+  description: text("description"),
+  invoiceUrl: text("invoice_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const usageMetrics = pgTable("usage_metrics", {
+  id: serial("id").primaryKey(),
+  accountId: integer("account_id").references(() => accountInfo.id).notNull(),
+  metricType: text("metric_type").notNull(), // api_calls, storage, users, reports_generated, etc.
+  value: integer("value").notNull(),
+  period: text("period").notNull(), // daily, monthly, yearly
+  recordedAt: timestamp("recorded_at").notNull(),
+  metadata: jsonb("metadata").$type<Record<string, any>>().default({}),
+}, (table) => ({
+  accountMetricIdx: index().on(table.accountId, table.metricType, table.recordedAt),
+}));
+
 export const templateConfigurations = pgTable("template_configurations", {
   id: serial("id").primaryKey(),
   templateId: integer("template_id").references(() => industryTemplates.id).notNull(),
@@ -2034,3 +2107,53 @@ export type InsertUserIndustryTemplate = z.infer<typeof insertUserIndustryTempla
 
 export type TemplateConfiguration = typeof templateConfigurations.$inferSelect;
 export type InsertTemplateConfiguration = z.infer<typeof insertTemplateConfigurationSchema>;
+
+// Account Management relations
+export const accountInfoRelations = relations(accountInfo, ({ one, many }) => ({
+  user: one(users, {
+    fields: [accountInfo.userId],
+    references: [users.id],
+  }),
+  billingHistory: many(billingHistory),
+  usageMetrics: many(usageMetrics),
+}));
+
+export const billingHistoryRelations = relations(billingHistory, ({ one }) => ({
+  account: one(accountInfo, {
+    fields: [billingHistory.accountId],
+    references: [accountInfo.id],
+  }),
+}));
+
+export const usageMetricsRelations = relations(usageMetrics, ({ one }) => ({
+  account: one(accountInfo, {
+    fields: [usageMetrics.accountId],
+    references: [accountInfo.id],
+  }),
+}));
+
+// Account Management insert schemas
+export const insertAccountInfoSchema = createInsertSchema(accountInfo).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertBillingHistorySchema = createInsertSchema(billingHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUsageMetricsSchema = createInsertSchema(usageMetrics).omit({
+  id: true,
+});
+
+// Account Management types
+export type AccountInfo = typeof accountInfo.$inferSelect;
+export type InsertAccountInfo = z.infer<typeof insertAccountInfoSchema>;
+
+export type BillingHistory = typeof billingHistory.$inferSelect;
+export type InsertBillingHistory = z.infer<typeof insertBillingHistorySchema>;
+
+export type UsageMetrics = typeof usageMetrics.$inferSelect;
+export type InsertUsageMetrics = z.infer<typeof insertUsageMetricsSchema>;

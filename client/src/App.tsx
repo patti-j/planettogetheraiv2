@@ -43,6 +43,7 @@ import DemoTour from "@/pages/demo-tour";
 import DisruptionManagement from "@/pages/disruption-management";
 import Chat from "@/pages/chat";
 import Pricing from "@/pages/pricing";
+import Account from "@/pages/account";
 import IndustryTemplates from "@/pages/industry-templates";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
@@ -282,6 +283,7 @@ function Router() {
               <HelpAndGuide />
             </ProtectedRoute>
           </Route>
+          <Route path="/account" component={Account} />
           <Route path="/pricing" component={Pricing} />
           <Route path="/demo-tour" component={DemoTour} />
           <Route path="/" component={DashboardWithAutoTour} />

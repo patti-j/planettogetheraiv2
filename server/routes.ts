@@ -22,7 +22,8 @@ import {
   insertInventoryItemSchema, insertInventoryTransactionSchema, insertInventoryBalanceSchema,
   insertDemandForecastSchema, insertDemandDriverSchema, insertDemandHistorySchema,
   insertInventoryOptimizationScenarioSchema, insertOptimizationRecommendationSchema,
-  insertFeedbackSchema, insertFeedbackCommentSchema, insertFeedbackVoteSchema
+  insertFeedbackSchema, insertFeedbackCommentSchema, insertFeedbackVoteSchema,
+  insertAccountInfoSchema, insertBillingHistorySchema, insertUsageMetricsSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -7203,6 +7204,197 @@ Create a natural, conversational voice script that explains this feature to some
     } catch (error) {
       console.error("Error creating subscription:", error);
       res.status(500).json({ error: "Failed to create subscription" });
+    }
+  });
+
+  // Account Management Routes
+  app.get("/api/account", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const account = await storage.getAccountInfo(userId);
+      
+      if (!account) {
+        // Create default account info for existing users
+        const user = await storage.getUser(userId);
+        if (!user) {
+          return res.status(404).json({ error: "User not found" });
+        }
+        
+        const defaultAccount = await storage.createAccountInfo({
+          userId,
+          companyName: user.email?.split('@')[1]?.split('.')[0] || "Your Company",
+          subscriptionPlan: "starter",
+          subscriptionStatus: "trial",
+          currentUsers: 1,
+          maxUsers: 5,
+          billingCycle: "monthly",
+          nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+          totalAmount: 2900, // $29 in cents
+          paymentMethod: {
+            type: 'card',
+            last4: '1234',
+            brand: 'visa',
+            expiryMonth: 12,
+            expiryYear: 2025
+          },
+          features: [
+            "Basic scheduling",
+            "Standard reports", 
+            "Email support",
+            "Mobile app access"
+          ],
+          usage: {
+            apiCalls: 1234,
+            apiLimit: 10000,
+            storage: 2.3,
+            storageLimit: 5
+          },
+          billingAddress: {
+            street: "123 Main Street",
+            city: "San Francisco",
+            state: "CA",
+            zipCode: "94105",
+            country: "United States"
+          },
+          contactInfo: {
+            primaryEmail: user.email || "user@example.com",
+            billingEmail: user.email || "billing@example.com",
+            phone: "+1 (555) 123-4567"
+          },
+          trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14 days from now
+        });
+        
+        return res.json(defaultAccount);
+      }
+      
+      res.json(account);
+    } catch (error) {
+      console.error("Error fetching account info:", error);
+      res.status(500).json({ error: "Failed to fetch account information" });
+    }
+  });
+
+  app.post("/api/account/upgrade", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { planId } = req.body;
+      
+      const planPrices = {
+        starter: 2900, // $29
+        professional: 8900, // $89
+        enterprise: 24900, // $249
+        custom: 0 // Contact for pricing
+      };
+      
+      const planFeatures = {
+        starter: ['Basic scheduling', 'Standard reports', 'Email support', 'Mobile app access'],
+        professional: ['Advanced scheduling', 'Custom reports', 'Priority support', 'API access', 'Integration tools'],
+        enterprise: ['All features', 'Custom integrations', 'Dedicated support', 'Advanced analytics', 'White-label options'],
+        custom: ['Everything in Enterprise', 'Custom development', 'On-premise deployment', 'SLA guarantees']
+      };
+      
+      const planLimits = {
+        starter: { users: 5, apiLimit: 10000, storageLimit: 5 },
+        professional: { users: 25, apiLimit: 50000, storageLimit: 25 },
+        enterprise: { users: 100, apiLimit: 200000, storageLimit: 100 },
+        custom: { users: -1, apiLimit: -1, storageLimit: -1 }
+      };
+
+      const updatedAccount = await storage.updateAccountInfo(userId, {
+        subscriptionPlan: planId,
+        subscriptionStatus: "active",
+        totalAmount: planPrices[planId] || 0,
+        maxUsers: planLimits[planId]?.users || 5,
+        features: planFeatures[planId] || [],
+        usage: {
+          apiCalls: 0, // Reset usage on upgrade
+          apiLimit: planLimits[planId]?.apiLimit || 10000,
+          storage: 0,
+          storageLimit: planLimits[planId]?.storageLimit || 5
+        }
+      });
+
+      res.json(updatedAccount);
+    } catch (error) {
+      console.error("Error upgrading plan:", error);
+      res.status(500).json({ error: "Failed to upgrade subscription plan" });
+    }
+  });
+
+  app.put("/api/account/billing", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { paymentMethod, billingAddress, contactInfo } = req.body;
+
+      const updatedAccount = await storage.updateAccountInfo(userId, {
+        paymentMethod,
+        billingAddress,
+        contactInfo
+      });
+
+      res.json(updatedAccount);
+    } catch (error) {
+      console.error("Error updating billing info:", error);
+      res.status(500).json({ error: "Failed to update billing information" });
+    }
+  });
+
+  app.get("/api/account/billing-history", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const account = await storage.getAccountInfo(userId);
+      
+      if (!account) {
+        return res.status(404).json({ error: "Account not found" });
+      }
+      
+      const billingHistory = await storage.getBillingHistory(account.id);
+      res.json(billingHistory);
+    } catch (error) {
+      console.error("Error fetching billing history:", error);
+      res.status(500).json({ error: "Failed to fetch billing history" });
+    }
+  });
+
+  app.get("/api/account/usage", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { metricType } = req.query;
+      const account = await storage.getAccountInfo(userId);
+      
+      if (!account) {
+        return res.status(404).json({ error: "Account not found" });
+      }
+      
+      const usageMetrics = await storage.getUsageMetrics(account.id, metricType as string);
+      res.json(usageMetrics);
+    } catch (error) {
+      console.error("Error fetching usage metrics:", error);
+      res.status(500).json({ error: "Failed to fetch usage metrics" });
+    }
+  });
+
+  app.get("/api/account/invoice/latest", requireAuth, async (req, res) => {
+    try {
+      // Mock PDF generation for now
+      const pdfContent = `
+        Invoice #INV-${Date.now()}
+        
+        Date: ${new Date().toLocaleDateString()}
+        Due Date: ${new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+        
+        Subscription: Professional Plan
+        Amount: $89.00
+        
+        Thank you for your business!
+      `;
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename="invoice.pdf"');
+      res.send(Buffer.from(pdfContent, 'utf8'));
+    } catch (error) {
+      console.error("Error generating invoice:", error);
+      res.status(500).json({ error: "Failed to generate invoice" });
     }
   });
 

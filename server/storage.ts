@@ -37,7 +37,10 @@ import {
   type InsertFeedback, type InsertFeedbackComment, type InsertFeedbackVote,
   industryTemplates, userIndustryTemplates, templateConfigurations,
   type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
-  type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration
+  type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration,
+  accountInfo, billingHistory, usageMetrics,
+  type AccountInfo, type BillingHistory, type UsageMetrics,
+  type InsertAccountInfo, type InsertBillingHistory, type InsertUsageMetrics
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, like, ilike, ne, inArray } from "drizzle-orm";
@@ -485,6 +488,18 @@ export interface IStorage {
   createTemplateConfiguration(config: InsertTemplateConfiguration): Promise<TemplateConfiguration>;
   updateTemplateConfiguration(id: number, config: Partial<InsertTemplateConfiguration>): Promise<TemplateConfiguration | undefined>;
   deleteTemplateConfiguration(id: number): Promise<boolean>;
+
+  // Account Management
+  getAccountInfo(userId: number): Promise<AccountInfo | undefined>;
+  createAccountInfo(account: InsertAccountInfo): Promise<AccountInfo>;
+  updateAccountInfo(userId: number, account: Partial<InsertAccountInfo>): Promise<AccountInfo | undefined>;
+  
+  getBillingHistory(accountId: number): Promise<BillingHistory[]>;
+  createBillingHistory(billing: InsertBillingHistory): Promise<BillingHistory>;
+  
+  getUsageMetrics(accountId: number, metricType?: string): Promise<UsageMetrics[]>;
+  createUsageMetric(usage: InsertUsageMetrics): Promise<UsageMetrics>;
+  updateUsageMetric(accountId: number, metricType: string, value: number): Promise<UsageMetrics | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -3766,6 +3781,88 @@ export class DatabaseStorage implements IStorage {
     const result = await db.delete(templateConfigurations)
       .where(eq(templateConfigurations.id, id));
     return result.rowCount! > 0;
+  }
+
+  // Account Management Implementation
+  async getAccountInfo(userId: number): Promise<AccountInfo | undefined> {
+    const [account] = await db.select().from(accountInfo)
+      .where(eq(accountInfo.userId, userId));
+    return account;
+  }
+
+  async createAccountInfo(account: InsertAccountInfo): Promise<AccountInfo> {
+    const [newAccount] = await db.insert(accountInfo).values(account).returning();
+    return newAccount;
+  }
+
+  async updateAccountInfo(userId: number, account: Partial<InsertAccountInfo>): Promise<AccountInfo | undefined> {
+    const [updated] = await db.update(accountInfo)
+      .set({ ...account, updatedAt: new Date() })
+      .where(eq(accountInfo.userId, userId))
+      .returning();
+    return updated;
+  }
+
+  async getBillingHistory(accountId: number): Promise<BillingHistory[]> {
+    return await db.select().from(billingHistory)
+      .where(eq(billingHistory.accountId, accountId))
+      .orderBy(desc(billingHistory.createdAt));
+  }
+
+  async createBillingHistory(billing: InsertBillingHistory): Promise<BillingHistory> {
+    const [newBilling] = await db.insert(billingHistory).values(billing).returning();
+    return newBilling;
+  }
+
+  async getUsageMetrics(accountId: number, metricType?: string): Promise<UsageMetrics[]> {
+    let query = db.select().from(usageMetrics).where(eq(usageMetrics.accountId, accountId));
+    
+    if (metricType) {
+      query = query.where(and(eq(usageMetrics.accountId, accountId), eq(usageMetrics.metricType, metricType)));
+    }
+    
+    return await query.orderBy(desc(usageMetrics.recordedAt));
+  }
+
+  async createUsageMetric(usage: InsertUsageMetrics): Promise<UsageMetrics> {
+    const [newUsage] = await db.insert(usageMetrics).values(usage).returning();
+    return newUsage;
+  }
+
+  async updateUsageMetric(accountId: number, metricType: string, value: number): Promise<UsageMetrics | undefined> {
+    // First try to update existing metric for today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const [existing] = await db.select().from(usageMetrics)
+      .where(and(
+        eq(usageMetrics.accountId, accountId),
+        eq(usageMetrics.metricType, metricType),
+        gte(usageMetrics.recordedAt, today),
+        lte(usageMetrics.recordedAt, tomorrow)
+      ));
+
+    if (existing) {
+      const [updated] = await db.update(usageMetrics)
+        .set({ value })
+        .where(eq(usageMetrics.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      // Create new metric entry
+      const [newMetric] = await db.insert(usageMetrics)
+        .values({
+          accountId,
+          metricType,
+          value,
+          period: 'daily',
+          recordedAt: new Date()
+        })
+        .returning();
+      return newMetric;
+    }
   }
 }
 
