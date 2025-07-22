@@ -362,26 +362,28 @@ export default function OnboardingWizard() {
 
   // Auto-open for new users who haven't seen onboarding
   useEffect(() => {
-    // Check if user is in demo mode - if so, don't show onboarding popup
-    const isDemo = localStorage.getItem("authToken")?.startsWith("demo_") || 
-                   user?.id?.startsWith("demo_") || 
-                   user?.username?.startsWith("demo_");
-    
-    // Disable auto-opening for demo users and training purposes
-    if (!isDemo && isNewUser && !hasSeenOnboarding) {
-      setIsOpen(true);
-    }
+    // Always disable onboarding popup - never show it automatically
+    // Users can manually access it from the help menu if needed
+    return;
   }, [isNewUser, hasSeenOnboarding, user]);
 
   // Listen for custom event to open onboarding
   useEffect(() => {
     const handleOpenOnboarding = () => {
-      setIsOpen(true);
+      // Check if user is in demo mode - if so, don't show onboarding popup
+      const isDemo = localStorage.getItem("authToken")?.startsWith("demo_") || 
+                     user?.id?.startsWith("demo_") || 
+                     user?.username?.startsWith("demo_");
+      
+      // Only open onboarding for non-demo users
+      if (!isDemo) {
+        setIsOpen(true);
+      }
     };
 
     window.addEventListener('openOnboarding', handleOpenOnboarding);
     return () => window.removeEventListener('openOnboarding', handleOpenOnboarding);
-  }, []);
+  }, [user]);
 
   // Mark onboarding as seen when user closes it
   const handleClose = (open: boolean) => {
