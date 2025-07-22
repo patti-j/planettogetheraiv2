@@ -942,7 +942,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
             <div className="flex items-center gap-2">
               <Move className="h-4 w-4 text-gray-400" />
               <Badge variant="secondary" className="text-sm">
-                {role.charAt(0).toUpperCase() + role.slice(1).replace('-', ' ')} Demo
+                {roleData?.name || 'Demo'} Demo
               </Badge>
             </div>
             <div className="flex items-center gap-1">
@@ -1140,7 +1140,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
             <div className="space-y-6">
               <div className="text-center">
                 <p className="text-gray-600 mb-4">
-                  Great job completing the <strong>{role.charAt(0).toUpperCase() + role.slice(1).replace('-', ' ')}</strong> tour! 
+                  Great job completing the <strong>{roleData?.name || 'Demo'}</strong> tour! 
                   Would you like to explore PlanetTogether from another role's perspective?
                 </p>
                 <p className="text-sm text-gray-500 mb-6">
@@ -1150,7 +1150,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
 
               {/* Role Selection Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {getAvailableRoles().filter(availableRole => availableRole.id !== role).map((availableRole) => (
+                {getAvailableRoles().filter(availableRole => availableRole.id !== roleId).map((availableRole) => (
                   <Button
                     key={availableRole.id}
                     onClick={() => handleContinueWithNewRole(availableRole.id)}
