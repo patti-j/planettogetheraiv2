@@ -360,9 +360,19 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
     });
   }, []);
 
+  // Auto-start voice on first load if user selected voice narration during registration
+  useEffect(() => {
+    if (initialVoiceEnabled && currentStep === 0 && tourSteps[0]) {
+      // Auto-start the first step's audio if voice was enabled during registration
+      console.log("Auto-starting voice for welcome step since user enabled voice narration");
+      const welcomeStepData = tourSteps[0];
+      setTimeout(() => playPreloadedAudio(welcomeStepData.id), 200); // Small delay for smooth loading
+    }
+  }, [initialVoiceEnabled]); // Only run once when component mounts
+
   // Play cached audio when step changes and voice is enabled
   useEffect(() => {
-    if (voiceEnabled && tourSteps[currentStep]) {
+    if (voiceEnabled && tourSteps[currentStep] && currentStep > 0) {
       const currentStepData = tourSteps[currentStep];
       // Use server-side cached audio for instant playback
       setTimeout(() => playPreloadedAudio(currentStepData.id), 50); 
