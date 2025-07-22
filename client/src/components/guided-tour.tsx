@@ -290,6 +290,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
   const [voiceEnabled, setVoiceEnabled] = useState(initialVoiceEnabled);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showRoleSelection, setShowRoleSelection] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -298,7 +299,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
   const [preloadingStatus, setPreloadingStatus] = useState<{[key: string]: 'loading' | 'ready' | 'error'}>({});
 
   // Fetch tours from database
-  const { data: toursFromAPI = [], isLoading: toursLoading } = useQuery({
+  const { data: toursFromAPI = [], isLoading: toursLoading } = useQuery<any[]>({
     queryKey: ["/api/tours"],
   });
 
@@ -378,34 +379,19 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
     return pageIcons[page] || Settings;
   };
 
-  const tourSteps = getTourStepsFromDatabase(role);
-  const progress = ((currentStep + 1) / tourSteps.length) * 100;
+  // Calculate tour steps safely after data is loaded
+  const tourSteps = toursLoading ? [] : getTourStepsFromDatabase(role);
+  const progress = tourSteps.length > 0 ? ((currentStep + 1) / tourSteps.length) * 100 : 0;
   
-  console.log("GuidedTour initialized - tourSteps:", tourSteps, "currentStep:", currentStep);
-  
-  // Show loading state if tours are still being fetched
-  if (toursLoading) {
-    return (
-      <div className="fixed bottom-4 right-4 z-50">
-        <Card className="w-96 shadow-lg border-2 border-blue-200">
-          <CardContent className="p-6">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading tour data...</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-  
+  console.log("GuidedTour initialized - tourSteps:", tourSteps, "currentStep:", currentStep, "loading:", toursLoading);
+
   // Pre-load all audio when voice is enabled and tour starts
   useEffect(() => {
-    if (voiceEnabled && currentStep === 0) {
+    if (voiceEnabled && currentStep === 0 && tourSteps.length > 0) {
       console.log("Pre-loading all audio for tour steps...");
       preloadAllAudio();
     }
-  }, [voiceEnabled]);
+  }, [voiceEnabled, tourSteps]);
   
   // Pre-load audio for all tour steps
   const preloadAllAudio = async () => {
@@ -725,8 +711,6 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
     }
   };
 
-  const [showRoleSelection, setShowRoleSelection] = useState(false);
-
   const handleComplete = () => {
     stopSpeech();
     // Instead of completing immediately, show role selection dialog
@@ -980,10 +964,26 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
     }
   };
 
-  const currentStepData = tourSteps[currentStep];
-  const StepIcon = currentStepData.icon;
+  // Show loading state if tours are still being fetched
+  if (toursLoading) {
+    return (
+      <div className="fixed bottom-4 right-4 z-50">
+        <Card className="w-96 shadow-lg border-2 border-blue-200">
+          <CardContent className="p-6">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading tour data...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-  if (!isVisible) return null;
+  const currentStepData = tourSteps[currentStep];
+  const StepIcon = currentStepData?.icon || Settings;
+
+  if (!isVisible || !currentStepData) return null;
 
   return (
     <>
