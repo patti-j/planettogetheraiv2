@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { TourProvider } from "@/contexts/TourContext";
+import { TourProvider, useTour } from "@/contexts/TourContext";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/sidebar";
 import OnboardingWizard from "@/components/onboarding-wizard";
@@ -39,10 +39,9 @@ import NotFound from "@/pages/not-found";
 
 function Router() {
   const { isAuthenticated, isLoading, user, loginError } = useAuth();
+  const { isActive: isTourActive } = useTour();
 
-
-
-  if (isLoading) {
+  if (isLoading && !isTourActive) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -53,7 +52,8 @@ function Router() {
     );
   }
 
-  if (!isAuthenticated) {
+  // Allow access during demo tour or when authenticated
+  if (!isAuthenticated && !isTourActive) {
     return (
       <Switch>
         <Route path="/demo-tour" component={DemoTour} />
