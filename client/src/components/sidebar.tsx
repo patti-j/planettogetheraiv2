@@ -151,7 +151,7 @@ export default function Sidebar() {
 
   const navigationItems = [
     { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals", feature: "business-goals", action: "view" },
-    { icon: BarChart3, label: "Schedule", href: "/", active: location === "/", feature: "production-scheduling", action: "view" },
+    { icon: BarChart3, label: "Production Schedule", href: "/", active: location === "/", feature: "production-scheduling", action: "view" },
     { icon: Target, label: "Optimize Orders", href: "/scheduling-optimizer", active: location === "/scheduling-optimizer", feature: "scheduling-optimizer", action: "view" },
     { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", active: location === "/capacity-planning", feature: "capacity-planning", action: "view" },
     { icon: Factory, label: "Visual Factory", href: "/visual-factory", active: location === "/visual-factory", feature: "visual-factory", action: "view" },
@@ -173,7 +173,7 @@ export default function Sidebar() {
     { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback", feature: "feedback", action: "view" },
     { icon: Bot, label: "Max", href: "/ai-assistant", active: location === "/ai-assistant", feature: "ai-assistant", action: "view" },
   ].filter(item => 
-    // Always show Schedule dashboard for authenticated users
+    // Always show Production Schedule dashboard for authenticated users
     item.href === "/" || 
     // Show item if user has permission
     hasPermission(item.feature || "", item.action || "")
@@ -182,7 +182,7 @@ export default function Sidebar() {
   const getNavigationTooltip = (href: string) => {
     const tooltips: Record<string, string> = {
       "/business-goals": "Define strategic objectives, track progress, and monitor risks that impact business success",
-      "/": "View production schedule with interactive Gantt charts",
+      "/": "View production schedule with interactive Gantt charts and scheduling tools",
       "/scheduling-optimizer": "Optimize orders with intelligent scheduling and multi-operation planning",
       "/capacity-planning": "Plan and optimize production capacity including staffing, shifts, and equipment",
       "/visual-factory": "Automated large screen displays for manufacturing facilities with real-time information",

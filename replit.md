@@ -232,6 +232,12 @@ The application uses a modern full-stack architecture with strong typing through
 - Tour expansion now works correctly - only the clicked tour expands while others remain collapsed
 - Enhanced tour management interface with proper individual tour configuration access
 
+✓ **Schedule Menu and Page Rename to "Production Schedule" (July 22, 2025)**:
+- Renamed main navigation menu item from "Schedule" to "Production Schedule" for clearer terminology
+- Updated page title in dashboard component from "Schedule" to "Production Schedule"
+- Enhanced navigation tooltip to describe production schedule with interactive Gantt charts and scheduling tools
+- Improved user understanding by using more descriptive terminology throughout the interface
+
 ✓ **AI Tour Generation Enhancement - Flexible Permission Matching (July 22, 2025)**:
 - Removed rigid AI prompt requirements for specific dashboard and optimization pages
 - Implemented intelligent permission matching system that interprets user guidance flexibly rather than requiring exact matches

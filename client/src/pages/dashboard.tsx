@@ -655,7 +655,7 @@ export default function Dashboard() {
             {/* Title and Live Button Row */}
             <div className="flex items-center justify-between mb-4 md:mb-6">
               <div className="md:ml-0 ml-12">
-                <h2 className="text-xl md:text-2xl font-semibold text-gray-800">Schedule</h2>
+                <h2 className="text-xl md:text-2xl font-semibold text-gray-800">Production Schedule</h2>
                 <p className="text-sm md:text-base text-gray-600">Manage operations and resource allocation</p>
               </div>
               
