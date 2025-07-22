@@ -36,6 +36,7 @@ import UserRoleAssignments from "@/pages/user-role-assignments";
 import Training from "@/pages/training";
 import DemoTour from "@/pages/demo-tour";
 import NotFound from "@/pages/not-found";
+import { ResumeTourButton } from "@/components/resume-tour-button";
 
 function Router() {
   const { isAuthenticated, isLoading, user, loginError } = useAuth();
@@ -194,6 +195,7 @@ function App() {
           <TourProvider>
             <Router />
             <OnboardingWizard />
+            <ResumeTourButton />
             <Toaster />
           </TourProvider>
         </TooltipProvider>

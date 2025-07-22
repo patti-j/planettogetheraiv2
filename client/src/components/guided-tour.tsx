@@ -37,6 +37,7 @@ interface TourStep {
 
 interface GuidedTourProps {
   role: string;
+  initialStep?: number;
   initialVoiceEnabled?: boolean;
   onComplete: () => void;
   onSkip: () => void;
@@ -187,10 +188,10 @@ const getTourSteps = (role: string): TourStep[] => {
   return [commonSteps[0], ...roleSpecificSteps, commonSteps[1]];
 };
 
-export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSkip }: GuidedTourProps) {
+export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false, onComplete, onSkip }: GuidedTourProps) {
   console.log("GuidedTour component mounted with role:", role, "voice enabled:", initialVoiceEnabled);
   
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(initialStep);
   const [isVisible, setIsVisible] = useState(true);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -437,6 +438,16 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
 
   const handleSkipTour = () => {
     stopSpeech();
+    
+    // Save tour progress to localStorage so user can resume later
+    const tourState = {
+      role,
+      currentStep,
+      voiceEnabled,
+      timestamp: Date.now()
+    };
+    localStorage.setItem('tourProgress', JSON.stringify(tourState));
+    
     setIsVisible(false);
     onSkip();
   };

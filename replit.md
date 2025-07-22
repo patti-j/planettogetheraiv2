@@ -136,7 +136,8 @@ The application uses a modern full-stack architecture with strong typing through
 - **NEW: Performance Optimizations**: Reduced wait times by pre-loading voice generation, faster TTS model selection, and optimized timing
 - **NEW: Fixed Demo Popup Issue**: Prevented unwanted "Welcome to PlanetTogether" onboarding popup from appearing during demo login
 - **NEW: Audio Playback Fix**: Resolved voice narration playback issues with proper browser audio handling and fallback mechanisms
-- **NEW: Audio Pre-Loading System**: Implemented smart audio pre-loading that generates all voice content at tour start for instant playback without waiting
+- **NEW: Audio Pre-Loading System**: Implemented smart audio pre-loading that generates all voice content at tour start for instant playbook without waiting
+- **NEW: Resume Tour Feature**: Added resume tour button that appears after users exit the guided tour, allowing them to continue from where they left off
 - Implemented automatic speech synthesis on tour step changes with gender-based voice selection (male/female)
 - Added adjustable speech rate controls and proper speech cancellation on navigation
 - Voice functionality includes manual play/pause controls alongside automatic narration for enhanced accessibility
