@@ -1146,14 +1146,24 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   };
 
   const handleComplete = () => {
+    console.log("handleComplete called - stopping all audio and showing role selection");
     stopSpeech();
-    // Instead of completing immediately, show role selection dialog
-    setShowRoleSelection(true);
+    
+    // Add a small delay to ensure audio stops completely before showing dialog
+    setTimeout(() => {
+      setShowRoleSelection(true);
+    }, 200);
   };
 
   const handleContinueWithNewRole = (newRole: string) => {
     console.log("Starting new tour with role:", newRole);
     stopSpeech(); // Stop any playing audio before switching roles
+    
+    // Force cleanup of any audio elements
+    if (speechRef.current) {
+      speechRef.current = null;
+    }
+    
     setShowRoleSelection(false);
     
     // Map role string to role ID
@@ -1628,7 +1638,17 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         </Card>
 
         {/* Role Selection Dialog - Mobile Optimized */}
-        <Dialog open={showRoleSelection} onOpenChange={setShowRoleSelection}>
+        <Dialog 
+          open={showRoleSelection} 
+          onOpenChange={(open) => {
+            if (open) {
+              // Ensure audio is stopped when dialog opens
+              console.log("Role selection dialog opening - ensuring audio is stopped");
+              stopSpeech();
+            }
+            setShowRoleSelection(open);
+          }}
+        >
           <DialogContent className="max-w-2xl max-h-[85vh] sm:max-h-[90vh] flex flex-col">
             <DialogHeader className="flex-shrink-0">
               <DialogTitle className="text-xl font-semibold text-center mb-4">
