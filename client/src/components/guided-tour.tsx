@@ -283,8 +283,8 @@ const getTourSteps = (roleId: number): TourStep[] => {
   };
 
   // Return role-specific steps plus common steps
-  const roleKey = roleIdToKey[roleId] || 'production-scheduler';
-  const roleSpecificSteps = roleSteps[roleKey] || [];
+  const roleKey = roleIdToKey[roleId];
+  const roleSpecificSteps = roleKey ? roleSteps[roleKey] || [] : [];
   return [commonSteps[0], ...roleSpecificSteps, commonSteps[1]];
 };
 
