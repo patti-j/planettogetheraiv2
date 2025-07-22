@@ -572,7 +572,7 @@ function TourManagementSection() {
   
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [selectedMissingRoles, setSelectedMissingRoles] = useState<string[]>([]);
-  const [expandedTours, setExpandedTours] = useState<string[]>([]);
+  const [expandedTours, setExpandedTours] = useState<number[]>([]);
   const [editingStep, setEditingStep] = useState<{role: string, stepId: string} | null>(null);
   const [showAIGuidanceDialog, setShowAIGuidanceDialog] = useState(false);
   const [aiGuidance, setAiGuidance] = useState("");
@@ -1001,9 +1001,9 @@ function TourManagementSection() {
     );
   };
 
-  const toggleTourExpansion = (role: string) => {
+  const toggleTourExpansion = (tourId: number) => {
     setExpandedTours(prev => 
-      prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
+      prev.includes(tourId) ? prev.filter(r => r !== tourId) : [...prev, tourId]
     );
   };
 
@@ -1105,14 +1105,14 @@ function TourManagementSection() {
       {/* Tour Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {toursFromAPI?.map((tour: any) => (
-          <Card key={tour.role} className={`cursor-pointer transition-all ${selectedRoles.includes(tour.role) ? 'ring-2 ring-purple-500 bg-purple-50' : 'hover:shadow-md'}`}>
+          <Card key={tour.id} className={`cursor-pointer transition-all ${selectedRoles.includes(tour.roleDisplayName) ? 'ring-2 ring-purple-500 bg-purple-50' : 'hover:shadow-md'}`}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-semibold text-sm">{tour.roleDisplayName}</h4>
                 <input
                   type="checkbox"
-                  checked={selectedRoles.includes(tour.role)}
-                  onChange={() => toggleRole(tour.role)}
+                  checked={selectedRoles.includes(tour.roleDisplayName)}
+                  onChange={() => toggleRole(tour.roleDisplayName)}
                   className="rounded text-purple-600"
                 />
               </div>
@@ -1213,14 +1213,14 @@ function TourManagementSection() {
           <h4 className="font-semibold">Detailed Tour Configuration</h4>
           
           {toursFromAPI.map((tour: any) => (
-            <Card key={tour.role}>
+            <Card key={tour.id}>
               <CardHeader 
                 className="cursor-pointer hover:bg-gray-50" 
-                onClick={() => toggleTourExpansion(tour.role)}
+                onClick={() => toggleTourExpansion(tour.id)}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                    {expandedTours.includes(tour.role) ? 
+                    {expandedTours.includes(tour.id) ? 
                     <ChevronDown className="h-4 w-4 mr-2" /> : 
                     <ChevronRight className="h-4 w-4 mr-2" />
                   }
@@ -1269,11 +1269,11 @@ function TourManagementSection() {
               </div>
             </CardHeader>
             
-            {expandedTours.includes(tour.role) && tour.tourData?.steps && (
+            {expandedTours.includes(tour.id) && tour.tourData?.steps && (
               <CardContent className="pt-0">
                 <div className="space-y-6">
                   {tour.tourData.steps.map((step: any, index: number) => (
-                    <div key={step.id || `step-${tour.role}-${index}`} className="border rounded-lg p-4 bg-gray-50">
+                    <div key={step.id || `step-${tour.id}-${index}`} className="border rounded-lg p-4 bg-gray-50">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center">
                           <Badge variant="outline" className="mr-3">Step {index + 1}</Badge>
@@ -1334,7 +1334,7 @@ function TourManagementSection() {
                           <Button 
                             size="sm" 
                             variant="ghost"
-                            onClick={() => handlePreviewStep(step, tour.role)}
+                            onClick={() => handlePreviewStep(step, tour.roleDisplayName)}
                           >
                             <Eye className="h-3 w-3 mr-1" />
                             Preview
@@ -1342,7 +1342,7 @@ function TourManagementSection() {
                           <Button 
                             size="sm" 
                             variant="ghost"
-                            onClick={() => handleTestVoice(step, tour.role)}
+                            onClick={() => handleTestVoice(step, tour.roleDisplayName)}
                           >
                             <Volume2 className="h-3 w-3 mr-1" />
                             Test Voice

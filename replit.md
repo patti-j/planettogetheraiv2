@@ -207,11 +207,20 @@ The application uses a modern full-stack architecture with strong typing through
 - Migrated existing role data from dash-separated format to proper case format for consistency
 - Removed complex role name conversion logic that was causing errors in AI tour generation
 - Fixed AI tour generation bug where all steps defaulted to "/" navigation paths instead of proper routes
-- Tours now correctly generate navigation paths like "/reports", "/ai-assistant", "/scheduling-optimizer" based on role permissions
+- Tours now correctly generate navigation paths like "/reports", "/ai-assistant", "/scheduling-optimizer" based role permissions
 - Eliminated error-prone string conversion between dash-case and proper case role names
 - Simplified getAccessibleRoutesForRole function to work directly with proper case role names
 - AI tour generation now properly maps role display names to database role keys for accurate permission checking
 - System architecture now uses consistent naming convention throughout: database storage, API calls, and frontend display
+
+✓ **Tour Management UI Bug Fix - Individual Tour Expansion (July 22, 2025)**:
+- Fixed critical bug where expanding one tour in tour management screen expanded all tours instead of just the selected one
+- Updated tour expansion logic to use unique tour IDs instead of undefined role field for proper individual tour control
+- Changed tour card keys from tour.role to tour.id for unique identification and proper React rendering
+- Updated expandedTours state type from string[] to number[] to match tour ID data type
+- Modified toggleTourExpansion function to accept tour ID parameter for precise tour control
+- Tour expansion now works correctly - only the clicked tour expands while others remain collapsed
+- Enhanced tour management interface with proper individual tour configuration access
 
 ✓ **Tour Validation System Bug Fix & Architecture Completion (July 22, 2025)**:
 - Fixed critical tour validation bug where `roleName` variable was undefined in `getAccessibleRoutesForRole` function
