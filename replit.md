@@ -257,6 +257,17 @@ The application uses a modern full-stack architecture with strong typing through
 - Validation identifies permission mismatches and suggests accessible alternative routes for invalid tour steps
 - System validation confirms proper role-based access control working across all tour content
 
+✓ **Tour Continuation Bug Fix & Database Integration (July 22, 2025)**:
+- Fixed critical bug where new role tours started on the last step instead of the first step
+- Added useEffect hook to reset currentStep to 0 when roleId changes during role switching
+- Enhanced hasAutoStarted state reset to allow proper voice auto-start for new role tours
+- Tour completion dialog now displays all available tours from database instead of hardcoded roles
+- Database integration shows real role names and descriptions for all 10+ available tours
+- Users can now seamlessly continue exploring different role tours starting from the beginning
+- Added helper functions getRoleIcon() and getRoleKey() for proper role mapping in tour completion dialog
+- Smart filtering excludes current role from available continuation options
+- Fixed tour state management to ensure clean transitions between different role demonstrations
+
 ✓ **Tour Window Responsive Design & Scheduling Optimizer Permission Fix (July 22, 2025)**:
 - Fixed critical "Can't find variable: role" JavaScript error in GuidedTour component by replacing undefined role references in handleSkipTour function
 - Updated all role variable references to use proper roleData?.name queries and roleId for filtering throughout the component

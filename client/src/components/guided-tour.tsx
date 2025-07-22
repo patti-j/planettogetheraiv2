@@ -336,6 +336,12 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   });
   
   const [currentStep, setCurrentStep] = useState(initialStep);
+  
+  // Reset to first step when role changes
+  useEffect(() => {
+    setCurrentStep(0);
+    setHasAutoStarted(false); // Allow auto-start for new role
+  }, [roleId]);
   const [isVisible, setIsVisible] = useState(true);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
