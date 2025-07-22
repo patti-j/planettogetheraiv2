@@ -264,7 +264,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
     }
   };
   
-  // Play pre-loaded audio for a specific step
+  // Play cached audio directly from server for a specific step  
   const playPreloadedAudio = async (stepId: string) => {
     if (!voiceEnabled || isGenerating || isPlaying) return;
     
@@ -279,53 +279,71 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
       speechRef.current = null;
     }
     
-    // Check if pre-loaded audio exists
-    const preloadedAudio = preloadedAudioRef.current[stepId];
-    if (preloadedAudio && preloadingStatus[stepId] === 'ready') {
-      console.log(`Playing pre-loaded audio for step: ${stepId}`);
-      setIsPlaying(true);
-      setIsGenerating(false);
-      
-      speechRef.current = preloadedAudio;
-      
-      // Set up event handlers
-      preloadedAudio.onended = () => {
-        console.log("Pre-loaded audio playback completed");
-        setIsPlaying(false);
-      };
-      
-      preloadedAudio.onerror = () => {
-        console.error("Pre-loaded audio playback error");
-        setIsPlaying(false);
-        // Fall back to real-time generation
-        const currentStepData = tourSteps.find(step => step.id === stepId);
-        if (currentStepData) {
-          const enhancedText = createEngagingNarration(currentStepData, role);
-          speakText(enhancedText);
-        }
-      };
+    // Always use server-side cached audio for instant playback
+    const currentStepData = tourSteps.find(step => step.id === stepId);
+    if (currentStepData) {
+      const enhancedText = createEngagingNarration(currentStepData, role);
+      console.log(`Playing cached audio for step: ${stepId}`);
       
       try {
-        // Reset audio to beginning and play
-        preloadedAudio.currentTime = 0;
-        await preloadedAudio.play();
-      } catch (error) {
-        console.error("Failed to play pre-loaded audio:", error);
-        setIsPlaying(false);
-        // Fall back to real-time generation
-        const currentStepData = tourSteps.find(step => step.id === stepId);
-        if (currentStepData) {
-          const enhancedText = createEngagingNarration(currentStepData, role);
-          speakText(enhancedText);
+        setIsGenerating(true);
+        
+        const response = await fetch("/api/ai/text-to-speech", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}`
+          },
+          body: JSON.stringify({
+            text: enhancedText,
+            gender: "female",
+            voice: "nova",
+            speed: 1.15
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Cached audio fetch failed: ${response.status}`);
         }
-      }
-    } else {
-      // Fall back to real-time generation if pre-loading failed or is still in progress
-      console.log(`Pre-loaded audio not ready for step: ${stepId}, falling back to real-time generation`);
-      const currentStepData = tourSteps.find(step => step.id === stepId);
-      if (currentStepData) {
-        const enhancedText = createEngagingNarration(currentStepData, role);
-        speakText(enhancedText);
+
+        setIsGenerating(false);
+        setIsPlaying(true);
+        
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        
+        audio.preload = "auto";
+        
+        audio.onended = () => {
+          setIsPlaying(false);
+          URL.revokeObjectURL(audioUrl);
+          speechRef.current = null;
+          console.log("Cached audio playback completed");
+        };
+        
+        audio.onerror = (e) => {
+          console.error("Cached audio playback error:", e);
+          setIsPlaying(false);
+          setIsGenerating(false);
+          URL.revokeObjectURL(audioUrl);
+          speechRef.current = null;
+        };
+        
+        speechRef.current = audio;
+        
+        try {
+          await audio.play();
+          console.log("Cached audio started playing");
+        } catch (playError) {
+          console.error("Auto-play failed:", playError);
+          setIsPlaying(false);
+          setIsGenerating(false);
+        }
+        
+      } catch (error) {
+        console.error(`Failed to load cached audio for step ${stepId}:`, error);
+        setIsGenerating(false);
       }
     }
   };
@@ -342,12 +360,12 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
     });
   }, []);
 
-  // Play pre-loaded audio when step changes and voice is enabled
+  // Play cached audio when step changes and voice is enabled
   useEffect(() => {
     if (voiceEnabled && tourSteps[currentStep]) {
       const currentStepData = tourSteps[currentStep];
-      // Use pre-loaded audio if available, otherwise fall back to generation
-      setTimeout(() => playPreloadedAudio(currentStepData.id), 100); 
+      // Use server-side cached audio for instant playback
+      setTimeout(() => playPreloadedAudio(currentStepData.id), 50); 
     }
   }, [currentStep, voiceEnabled]);
 
@@ -403,13 +421,6 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
       
       console.log("Moving to tour step:", nextStep, "page:", nextStepData.page);
       
-      // Start voice generation immediately (before navigation) to reduce waiting
-      if (voiceEnabled) {
-        const enhancedText = createEngagingNarration(nextStepData, role);
-        // Pre-generate voice while navigating
-        setTimeout(() => speakText(enhancedText), 50);
-      }
-      
       // Navigate to the page if it's not current
       if (nextStepData.page && nextStepData.page !== "current") {
         console.log("Navigating to:", nextStepData.page);
@@ -417,6 +428,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
       }
       
       setCurrentStep(nextStep);
+      // Voice will be handled automatically by useEffect when currentStep changes
     } else {
       handleComplete();
     }
@@ -630,10 +642,8 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
     if (!newVoiceEnabled) {
       stopSpeech();
     } else if (newVoiceEnabled && tourSteps[currentStep]) {
-      // Speak current step when voice is enabled
-      const currentStepData = tourSteps[currentStep];
-      const enhancedText = createEngagingNarration(currentStepData, role);
-      speakText(enhancedText);
+      // Speak current step when voice is enabled using cached audio
+      playPreloadedAudio(tourSteps[currentStep].id);
     }
   };
 
@@ -644,9 +654,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
     if (isPlaying) {
       stopSpeech();
     } else if (tourSteps[currentStep]) {
-      const currentStepData = tourSteps[currentStep];
-      const enhancedText = createEngagingNarration(currentStepData, role);
-      speakText(enhancedText);
+      playPreloadedAudio(tourSteps[currentStep].id);
     }
   };
 
@@ -657,11 +665,9 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
     // Stop any current speech
     stopSpeech();
     
-    // Play current step narration
+    // Play current step narration using cached audio
     if (tourSteps[currentStep]) {
-      const currentStepData = tourSteps[currentStep];
-      const enhancedText = createEngagingNarration(currentStepData, role);
-      speakText(enhancedText);
+      playPreloadedAudio(tourSteps[currentStep].id);
     }
   };
 
@@ -709,22 +715,36 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
               
               {/* Play/Pause Button with Generation Indicator (only shown when voice is enabled) */}
               {voiceEnabled && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={togglePlayPause}
-                  disabled={isGenerating}
-                  className={`text-gray-500 hover:text-gray-700 ${isGenerating ? 'animate-pulse bg-blue-50' : ''}`}
-                  title={isGenerating ? "Generating voice..." : isPlaying ? "Pause narration" : "Play narration"}
-                >
-                  {isGenerating ? (
-                    <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                  ) : isPlaying ? (
-                    <Pause className="h-4 w-4" />
-                  ) : (
-                    <Play className="h-4 w-4" />
-                  )}
-                </Button>
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={togglePlayPause}
+                    disabled={isGenerating}
+                    className={`text-gray-500 hover:text-gray-700 ${isGenerating ? 'animate-pulse bg-blue-50' : ''}`}
+                    title={isGenerating ? "Generating voice..." : isPlaying ? "Pause narration" : "Play narration"}
+                  >
+                    {isGenerating ? (
+                      <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    ) : isPlaying ? (
+                      <Pause className="h-4 w-4" />
+                    ) : (
+                      <Play className="h-4 w-4" />
+                    )}
+                  </Button>
+                  
+                  {/* Replay Button next to audio controls */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={replayCurrentStep}
+                    disabled={isGenerating}
+                    className="text-gray-500 hover:text-gray-700"
+                    title="Replay current step narration"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                </>
               )}
               
               <Button
