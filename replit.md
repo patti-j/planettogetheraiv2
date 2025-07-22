@@ -222,6 +222,15 @@ The application uses a modern full-stack architecture with strong typing through
 - Tour expansion now works correctly - only the clicked tour expands while others remain collapsed
 - Enhanced tour management interface with proper individual tour configuration access
 
+✓ **AI Tour Generation Fix - Production Scheduling & Order Optimization (July 22, 2025)**:
+- Fixed critical issue where AI tour generator was not including production scheduling and order optimization pages for Production Scheduler role
+- Corrected route permission mapping: changed `/scheduling-optimizer` to require `schedule-optimization-view` (matching actual permission)
+- Fixed dashboard access: changed `/` to require `production-scheduling-view` permission instead of generic `dashboard-view`
+- Enhanced AI prompt with specific requirements for Production Scheduler to include main dashboard and scheduling optimizer
+- AI now correctly generates tours with "Interactive Gantt Chart" (/) and "Intelligent Scheduling Optimizer" (/scheduling-optimizer)
+- Production Scheduler tours now include all essential features: production scheduling dashboard, order optimization, reports, AI assistant, capacity planning, and business goals
+- Route accessibility validation working correctly with proper permission-to-feature mapping
+
 ✓ **Tour Validation System Bug Fix & Architecture Completion (July 22, 2025)**:
 - Fixed critical tour validation bug where `roleName` variable was undefined in `getAccessibleRoutesForRole` function
 - Updated all references from undefined `roleName` to proper `role.name` property throughout validation logic

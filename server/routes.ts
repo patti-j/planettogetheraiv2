@@ -3891,7 +3891,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   async function getAccessibleRoutesForRole(roleId: number): Promise<{[key: string]: string}> {
     // Map routes to required permissions
     const routePermissions = {
-      '/': 'dashboard-view',
+      '/': 'production-scheduling-view', // Main dashboard shows production schedule
       '/analytics': 'analytics-view', 
       '/reports': 'reports-view',
       '/ai-assistant': 'ai-assistant-view',
@@ -3899,7 +3899,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       '/shop-floor': 'shop-floor-view',
       '/operator': 'operator-dashboard-view',
       '/maintenance': 'maintenance-view',
-      '/scheduling-optimizer': 'scheduling-optimizer-view',
+      '/scheduling-optimizer': 'schedule-optimization-view',
       '/erp-import': 'erp-import-view',
       '/plant-manager': 'plant-manager-view',
       '/systems-management': 'systems-management-view',
@@ -3914,7 +3914,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // All system navigation paths
     const allSystemRoutes = {
-      '/': 'Dashboard - Main production schedule view',
+      '/': 'Dashboard - Main production schedule view with Gantt chart',
       '/analytics': 'Analytics - Performance metrics and insights',
       '/reports': 'Reports - Production reporting and analysis',
       '/ai-assistant': 'Max AI Assistant - AI-powered manufacturing assistant',
@@ -3956,8 +3956,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const requiredPermission = routePermissions[route];
         
         if (requiredPermission) {
-          // Extract feature from permission (e.g., 'dashboard-view' -> 'dashboard')
+          // Extract feature from permission (e.g., 'production-scheduling-view' -> 'production-scheduling')
           const requiredFeature = requiredPermission.replace('-view', '');
+          console.log(`Checking permission for ${route}: need '${requiredFeature}', have features:`, permissionFeatures.slice(0, 3));
           
           if (permissionFeatures.includes(requiredFeature)) {
             accessibleRoutes[route] = description;
@@ -4016,17 +4017,22 @@ ${roles.map(role => {
   return `${role}:\n${Object.entries(accessibleRoutes).map(([path, desc]) => `  - ${path} (${desc})`).join('\n')}`;
 }).join('\n\n')}
 
+SPECIAL REQUIREMENTS FOR PRODUCTION SCHEDULER:
+- MUST include the main dashboard ("/") which shows production scheduling with Gantt chart
+- MUST include order optimization ("/scheduling-optimizer") for intelligent scheduling
+- These are the core features Production Schedulers need to see in their guided tour
+
 IMPORTANT RULES:
 1. NEVER include routes that are not listed for that specific role
 2. Each role can ONLY visit the pages listed above for that role
 3. Tours must respect role-based access control permissions
-4. Use ONLY the navigation paths listed for each role
+4. Use ONLY the role-specific navigation paths listed for each role
 
 For each role, create:
 1. 3-5 tour steps covering accessible features only
 2. Engaging voice scripts for each step (2-3 sentences each)
 3. Clear benefits for each feature (2-3 benefits per step)
-4. Use ONLY the role-specific navigation paths listed above
+4. Use ONLY the role-specific navigation paths listed for each role
 
 Each tour step must have:
 - navigationPath: One of the exact paths accessible to that role (from the role-specific list above)
