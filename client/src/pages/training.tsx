@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play, UserCheck, Settings, Shield, Edit3, Eye, Volume2, MessageSquare, Sparkles, RefreshCw, ChevronDown, ChevronRight, FileText, Clock, Plus, AlertCircle, Trash2, CheckCircle, AlertTriangle, Mic, VolumeX, Info, ArrowLeft } from 'lucide-react';
+import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play, UserCheck, Settings, Shield, Edit3, Eye, Volume2, MessageSquare, Sparkles, RefreshCw, ChevronDown, ChevronRight, FileText, Clock, Plus, AlertCircle, Trash2, CheckCircle, AlertTriangle, Mic, VolumeX, Info, ArrowLeft, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, usePermissions } from '@/hooks/useAuth';
 import { RoleSwitcher } from '@/components/role-switcher';
@@ -38,65 +38,62 @@ interface TrainingModule {
 function TestVoiceButton({ voiceSettings }: { voiceSettings: { voice: string; gender: string; speed: number } }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
 
   const handleTestVoice = async () => {
     const testMessage = "Hello! This is a test of the voice settings you've selected. This will help you preview how the voice narration will sound during tours.";
     
-    if (!('speechSynthesis' in window)) {
-      console.error('Speech synthesis not supported');
-      return;
-    }
-
     try {
       setIsLoading(true);
       
-      // Cancel any ongoing speech
-      speechSynthesis.cancel();
+      // Stop any currently playing audio
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+      }
 
-      // Wait for voices to be loaded
-      const waitForVoices = () => {
-        return new Promise<void>((resolve) => {
-          const voices = speechSynthesis.getVoices();
-          if (voices.length > 0) {
-            resolve();
-          } else {
-            speechSynthesis.addEventListener('voiceschanged', () => resolve(), { once: true });
-          }
-        });
-      };
+      // Generate voice using OpenAI TTS API
+      const response = await fetch('/api/ai/text-to-speech', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: testMessage,
+          voice: voiceSettings.voice,
+          gender: voiceSettings.gender,
+          speed: voiceSettings.speed,
+          role: 'test'
+        })
+      });
 
-      await waitForVoices();
+      if (!response.ok) {
+        throw new Error('Failed to generate voice');
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      
+      setCurrentAudio(audio);
       setIsLoading(false);
       setIsPlaying(true);
 
-      const utterance = new SpeechSynthesisUtterance(testMessage);
-      utterance.rate = voiceSettings.speed;
-      
-      // Set voice based on gender preference  
-      const voices = speechSynthesis.getVoices();
-      const preferredVoice = voices.find(voice => {
-        const voiceName = voice.name.toLowerCase();
-        if (voiceSettings.gender === 'female') {
-          return voiceName.includes('female') || voiceName.includes('woman') || voiceName.includes('zira') || voiceName.includes('samantha');
-        } else {
-          return voiceName.includes('male') || voiceName.includes('man') || voiceName.includes('david') || voiceName.includes('alex');
-        }
-      });
-      
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
-      }
-
-      utterance.onend = () => {
+      audio.onended = () => {
         setIsPlaying(false);
+        URL.revokeObjectURL(audioUrl);
+        setCurrentAudio(null);
       };
 
-      utterance.onerror = () => {
+      audio.onerror = () => {
         setIsPlaying(false);
         setIsLoading(false);
+        URL.revokeObjectURL(audioUrl);
+        setCurrentAudio(null);
+        console.error('Error playing audio');
       };
       
-      speechSynthesis.speak(utterance);
+      await audio.play();
     } catch (error) {
       console.error('Error testing voice:', error);
       setIsLoading(false);
@@ -115,7 +112,7 @@ function TestVoiceButton({ voiceSettings }: { voiceSettings: { voice: string; ge
       {isLoading ? (
         <>
           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          Loading Voice...
+          Generating Voice...
         </>
       ) : isPlaying ? (
         <>
