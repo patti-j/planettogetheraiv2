@@ -126,6 +126,15 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 22, 2025)
 
+✓ **Multi-Role Tour Continuation & Registration Form Enhancement (July 22, 2025)**:
+- Successfully implemented multi-role tour continuation system allowing users to explore different role demonstrations
+- Added role selection dialog that appears at tour completion with available roles (Director, Production Scheduler, Plant Manager, Systems Manager)
+- Enhanced role switching functionality through TourContext with seamless authentication and voice preference preservation
+- Updated demo tour registration form to clarify role selection importance with explanatory text
+- Users can now complete multiple role demonstrations in single session, exploring different features and capabilities
+- Added comprehensive role descriptions and visual interface for easy role switching at tour completion
+- Voice narration preferences automatically carry over when switching between different role demonstrations
+
 ✓ **Complete Voice System Optimization & Welcome Message Fix (July 22, 2025)**:
 - Successfully eliminated unwanted "Welcome to PlanetTogether" popup from appearing at start of demo tours
 - Fixed onboarding wizard logic to never consider demo users as "new users" preventing automatic welcome dialogs
