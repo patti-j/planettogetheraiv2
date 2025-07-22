@@ -1088,6 +1088,10 @@ export const users = pgTable("users", {
   isActive: boolean("is_active").default(true),
   activeRoleId: integer("active_role_id").references(() => roles.id),
   lastLogin: timestamp("last_login"),
+  avatar: text("avatar"), // Base64 encoded avatar image or avatar URL
+  jobTitle: varchar("job_title", { length: 100 }),
+  department: varchar("department", { length: 100 }),
+  phoneNumber: varchar("phone_number", { length: 20 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -1127,6 +1131,31 @@ export const rolePermissions = pgTable("role_permissions", {
 }, (table) => ({
   pk: primaryKey({ columns: [table.roleId, table.permissionId] }),
 }));
+
+// User Preferences Table
+export const userPreferences = pgTable("user_preferences", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull().unique(),
+  theme: varchar("theme", { length: 20 }).notNull().default("light"), // light, dark, system
+  language: varchar("language", { length: 10 }).notNull().default("en"), // en, es, fr, etc.
+  timezone: varchar("timezone", { length: 50 }).notNull().default("UTC"),
+  dateFormat: varchar("date_format", { length: 20 }).notNull().default("MM/dd/yyyy"),
+  timeFormat: varchar("time_format", { length: 10 }).notNull().default("12h"), // 12h, 24h
+  notifications: jsonb("notifications").$type<{
+    email: boolean;
+    push: boolean;
+    desktop: boolean;
+    reminders: boolean;
+    tours: boolean;
+  }>().default(sql`'{"email": true, "push": true, "desktop": true, "reminders": true, "tours": true}'::jsonb`),
+  dashboardLayout: jsonb("dashboard_layout").$type<{
+    sidebarCollapsed: boolean;
+    defaultPage: string;
+    widgetPreferences: Record<string, any>;
+  }>().default(sql`'{"sidebarCollapsed": false, "defaultPage": "/", "widgetPreferences": {}}'::jsonb`),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
 
 // User Management Relations
 export const usersRelations = relations(users, ({ many }) => ({
@@ -1333,3 +1362,13 @@ export type InsertVoiceRecordingsCache = z.infer<typeof insertVoiceRecordingsCac
 export type VoiceRecordingsCache = typeof voiceRecordingsCache.$inferSelect;
 export type InsertTour = z.infer<typeof insertTourSchema>;
 export type Tour = typeof tours.$inferSelect;
+
+// User Preferences Schema and Types
+export const insertUserPreferencesSchema = createInsertSchema(userPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
+export type UserPreferences = typeof userPreferences.$inferSelect;

@@ -24,7 +24,8 @@ import {
   type InsertDisruption, type InsertDisruptionAction, type InsertDisruptionEscalation,
   demoTourParticipants, type DemoTourParticipant, type InsertDemoTourParticipant,
   voiceRecordingsCache, type VoiceRecordingsCache, type InsertVoiceRecordingsCache,
-  tours, type Tour, type InsertTour
+  tours, type Tour, type InsertTour,
+  userPreferences, type UserPreferences, type InsertUserPreferences
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, like, ne, inArray } from "drizzle-orm";
@@ -2859,6 +2860,57 @@ export class DatabaseStorage implements IStorage {
   async deleteDisruptionEscalation(id: number): Promise<boolean> {
     const result = await db.delete(disruptionEscalations).where(eq(disruptionEscalations.id, id));
     return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // User Preferences Operations
+  async getUserPreferences(userId: number): Promise<UserPreferences | undefined> {
+    const [preferences] = await db.select().from(userPreferences).where(eq(userPreferences.userId, userId));
+    return preferences || undefined;
+  }
+
+  async createUserPreferences(preferences: InsertUserPreferences): Promise<UserPreferences> {
+    const [newPreferences] = await db
+      .insert(userPreferences)
+      .values(preferences)
+      .returning();
+    return newPreferences;
+  }
+
+  async updateUserPreferences(userId: number, preferences: Partial<InsertUserPreferences>): Promise<UserPreferences | undefined> {
+    const [updatedPreferences] = await db
+      .update(userPreferences)
+      .set({ ...preferences, updatedAt: new Date() })
+      .where(eq(userPreferences.userId, userId))
+      .returning();
+    return updatedPreferences || undefined;
+  }
+
+  async upsertUserPreferences(preferences: InsertUserPreferences): Promise<UserPreferences> {
+    const [upsertedPreferences] = await db
+      .insert(userPreferences)
+      .values(preferences)
+      .onConflictDoUpdate({
+        target: userPreferences.userId,
+        set: {
+          ...preferences,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return upsertedPreferences;
+  }
+
+  // User Profile Operations
+  async updateUserProfile(userId: number, profile: { avatar?: string; jobTitle?: string; department?: string; phoneNumber?: string; }): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ 
+        ...profile,
+        updatedAt: new Date() 
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser || undefined;
   }
 }
 

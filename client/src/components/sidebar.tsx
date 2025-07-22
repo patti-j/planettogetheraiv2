@@ -14,6 +14,8 @@ import JobForm from "./job-form";
 import ResourceForm from "./resource-form";
 import { RoleSwitcher } from "./role-switcher";
 import { TrainingModeExit } from "./training-mode-exit";
+import { UserProfileDialog } from "./user-profile";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Capability } from "@shared/schema";
 
 export default function Sidebar() {
@@ -26,6 +28,7 @@ export default function Sidebar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [quickActionsExpanded, setQuickActionsExpanded] = useState(false);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+  const [userProfileOpen, setUserProfileOpen] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
@@ -306,10 +309,37 @@ export default function Sidebar() {
           <div className="mb-4 p-3 bg-gray-50 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center">
-                <User className="w-4 h-4 text-gray-600 mr-2" />
-                <span className="text-sm font-medium text-gray-800">
-                  {user.firstName} {user.lastName}
-                </span>
+                <Avatar className="w-8 h-8 mr-2">
+                  <AvatarImage src={user.avatar} alt="User avatar" />
+                  <AvatarFallback className="text-xs">
+                    {user.firstName && user.lastName 
+                      ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
+                      : <User className="w-3 h-3" />
+                    }
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm font-medium text-gray-800 truncate">
+                      {user.firstName} {user.lastName}
+                    </span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setUserProfileOpen(true)}
+                          className="h-5 w-5 p-0 text-gray-500 hover:text-gray-700"
+                        >
+                          <Settings className="w-3 h-3" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <p>Profile & Settings</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </div>
               </div>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -570,6 +600,12 @@ export default function Sidebar() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* User Profile Dialog */}
+      <UserProfileDialog
+        open={userProfileOpen}
+        onOpenChange={setUserProfileOpen}
+      />
     </TooltipProvider>
   );
 }

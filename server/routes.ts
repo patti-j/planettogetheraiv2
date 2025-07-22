@@ -5331,6 +5331,114 @@ Create a natural, conversational voice script that explains this feature to some
     }
   });
 
+  // User Profile and Preferences Routes
+  app.get("/api/users/:userId/profile", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Return profile fields only
+      const profile = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatar: user.avatar,
+        jobTitle: user.jobTitle,
+        department: user.department,
+        phoneNumber: user.phoneNumber,
+        lastLogin: user.lastLogin,
+        createdAt: user.createdAt,
+      };
+      
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      res.status(500).json({ error: "Failed to fetch user profile" });
+    }
+  });
+
+  app.put("/api/users/:userId/profile", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const { avatar, jobTitle, department, phoneNumber } = req.body;
+      const profile = { avatar, jobTitle, department, phoneNumber };
+
+      const updatedUser = await storage.updateUserProfile(userId, profile);
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json({
+        id: updatedUser.id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        avatar: updatedUser.avatar,
+        jobTitle: updatedUser.jobTitle,
+        department: updatedUser.department,
+        phoneNumber: updatedUser.phoneNumber,
+        lastLogin: updatedUser.lastLogin,
+        createdAt: updatedUser.createdAt,
+      });
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      res.status(500).json({ error: "Failed to update user profile" });
+    }
+  });
+
+  app.get("/api/users/:userId/preferences", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      let preferences = await storage.getUserPreferences(userId);
+      if (!preferences) {
+        // Create default preferences if they don't exist
+        preferences = await storage.upsertUserPreferences({ userId });
+      }
+
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error fetching user preferences:", error);
+      res.status(500).json({ error: "Failed to fetch user preferences" });
+    }
+  });
+
+  app.put("/api/users/:userId/preferences", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const preferences = await storage.upsertUserPreferences({
+        userId,
+        ...req.body
+      });
+
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error updating user preferences:", error);
+      res.status(500).json({ error: "Failed to update user preferences" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
