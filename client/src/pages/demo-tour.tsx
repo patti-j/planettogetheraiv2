@@ -70,6 +70,7 @@ export default function DemoTour() {
   useEffect(() => {
     if (showGuidedTour && demoRole) {
       console.log("Starting guided tour for role:", demoRole);
+      console.log("Current location:", window.location.pathname);
       // Don't navigate away, just render the guided tour overlay
     }
   }, [showGuidedTour, demoRole]);
@@ -231,30 +232,24 @@ export default function DemoTour() {
 
   const handleTourComplete = () => {
     setShowGuidedTour(false);
+    console.log("Tour completed, staying on demo-tour page");
     toast({
       title: "Demo Complete!",
-      description: "Continue exploring PlanetTogether features. Contact us to learn more!",
+      description: "Continue exploring PlanetTogether features. Use the sidebar to navigate or contact us to learn more!",
     });
+    // Don't navigate away - keep the user on the demo tour page
+    // They now have full access to the application via the sidebar
   };
 
   const handleTourSkip = () => {
     setShowGuidedTour(false);
-    // Navigate to default page based on role
-    const roleRoutes = {
-      'director': '/business-goals',
-      'plant-manager': '/plant-manager',
-      'production-scheduler': '/',
-      'it-administrator': '/systems-management',
-      'systems-manager': '/systems-management',
-      'administrator': '/role-management',
-      'shop-floor-operations': '/shop-floor',
-      'data-analyst': '/analytics',
-      'trainer': '/training',
-      'maintenance-technician': '/maintenance-planning'
-    };
-    
-    const route = roleRoutes[demoRole as keyof typeof roleRoutes] || '/';
-    setLocation(route);
+    console.log("Tour skipped, staying on demo-tour page");
+    toast({
+      title: "Tour Skipped",
+      description: "You can continue exploring PlanetTogether features. Contact us to learn more!",
+    });
+    // Don't navigate away - keep the user on the demo tour page
+    // They can use the sidebar to explore different sections
   };
 
   if (!showParticipantForm && !showGuidedTour) {
