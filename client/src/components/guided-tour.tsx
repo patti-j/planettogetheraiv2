@@ -197,6 +197,7 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [voiceEnabled, setVoiceEnabled] = useState(initialVoiceEnabled);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -223,8 +224,9 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
   useEffect(() => {
     if (voiceEnabled && tourSteps[currentStep]) {
       const currentStepData = tourSteps[currentStep];
-      const textToSpeak = `${currentStepData.title}. ${currentStepData.description}`;
-      setTimeout(() => speakText(textToSpeak), 500); // Small delay to ensure UI is ready
+      const enhancedText = createEngagingNarration(currentStepData, role);
+      // Reduce delay and start generation immediately
+      setTimeout(() => speakText(enhancedText), 100); 
     }
   }, [currentStep, voiceEnabled]);
 
@@ -280,6 +282,13 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
       
       console.log("Moving to tour step:", nextStep, "page:", nextStepData.page);
       
+      // Start voice generation immediately (before navigation) to reduce waiting
+      if (voiceEnabled) {
+        const enhancedText = createEngagingNarration(nextStepData, role);
+        // Pre-generate voice while navigating
+        setTimeout(() => speakText(enhancedText), 50);
+      }
+      
       // Navigate to the page if it's not current
       if (nextStepData.page && nextStepData.page !== "current") {
         console.log("Navigating to:", nextStepData.page);
@@ -315,6 +324,31 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
     onSkip();
   };
 
+  // Create engaging narration for each step
+  const createEngagingNarration = (step: TourStep, userRole: string): string => {
+    const engagingNarrations: { [key: string]: string } = {
+      "welcome": "Welcome to your personalized PlanetTogether demo! I'm excited to show you how our intelligent manufacturing platform can revolutionize your production operations. In the next few minutes, you'll discover features specifically tailored for your role that will save time, reduce costs, and boost efficiency. Let's begin this journey together!",
+      
+      "business-goals": "Now we're entering the Strategic Business Goals module - this is where directors like yourself align manufacturing operations with strategic objectives. Here you can set KPIs, monitor progress in real-time, and identify risks before they impact your business. Think of this as your command center for ensuring production supports your broader business strategy. You can track metrics like on-time delivery, cost per unit, and quality scores.",
+      
+      "analytics": "Welcome to the Executive Analytics dashboard - your data-driven decision-making hub! This powerful interface transforms complex production data into actionable insights. You can spot trends, identify bottlenecks, and discover optimization opportunities at a glance. The customizable widgets adapt to show the metrics that matter most to directors - from overall equipment effectiveness to profit margins. Notice how everything updates in real-time to give you the current pulse of your operation.",
+      
+      "reports": "Here's the Executive Reports center where you can generate comprehensive reports for stakeholders and board presentations. These aren't just basic charts - they're intelligent reports that highlight key insights and recommendations. You can schedule automatic delivery to executives, customize layouts for different audiences, and drill down into specific metrics. Perfect for monthly reviews, quarterly business reports, and strategic planning sessions.",
+      
+      "schedule": "Now you're seeing the heart of PlanetTogether - our intelligent production scheduler! This interactive Gantt chart gives you complete visibility into your manufacturing operations. Watch how you can drag and drop operations between resources, see real-time capacity utilization, and instantly understand the impact of schedule changes. The system automatically checks resource capabilities and highlights potential conflicts. This is where efficiency gains happen!",
+      
+      "shop-floor": "This is our mobile-optimized Shop Floor interface - designed for managers who need to stay connected while walking the production floor. You can monitor operations in real-time, respond to issues instantly, and keep production moving smoothly. The interface adapts perfectly to tablets and smartphones, so you're never out of touch with what's happening on the floor.",
+      
+      "plant-overview": "Welcome to Plant Management central command! This comprehensive view gives plant managers complete oversight of all operations. You can monitor multiple production lines, track key performance indicators, and coordinate between departments seamlessly. The dashboard aggregates data from across your facility to provide the big picture while allowing you to drill down into specific areas when needed.",
+      
+      "capacity-planning": "Here's where strategic capacity planning comes alive! This module helps you balance current workloads while planning for future growth. You can model different scenarios, understand resource constraints, and make informed decisions about staffing and equipment needs. The system shows you exactly where bottlenecks might occur and suggests optimal resource allocation strategies.",
+      
+      "demo-complete": "Congratulations! You've experienced the core capabilities of PlanetTogether that are transforming manufacturing operations worldwide. Take your time exploring these features using the navigation menu - all the demo data is ready for you to experiment with. When you're ready to see how PlanetTogether can work with your specific operations, our team is here to help you get started. Thank you for taking this journey with us!"
+    };
+
+    return engagingNarrations[step.id] || `Let me show you ${step.title}. ${step.description} This feature will help you ${step.benefits[0]?.toLowerCase()}.`;
+  };
+
   // AI Voice functionality using OpenAI text-to-speech
   const speakText = async (text: string) => {
     if (!voiceEnabled) return;
@@ -328,7 +362,7 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
     }
     
     try {
-      setIsPlaying(true);
+      setIsGenerating(true);
       console.log("Generating AI speech for:", text.substring(0, 50) + "...");
       
       const response = await fetch("/api/ai/text-to-speech", {
@@ -340,7 +374,8 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
         body: JSON.stringify({
           text: text,
           gender: "female", // Use female voice for engaging tour experience
-          voice: "nova" // High-quality AI voice from OpenAI
+          voice: "nova", // High-quality AI voice from OpenAI
+          speed: 1.15 // Slightly faster speech for better engagement and reduced wait time
         })
       });
 
@@ -348,9 +383,15 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
         throw new Error(`AI speech generation failed: ${response.status}`);
       }
 
+      setIsGenerating(false);
+      setIsPlaying(true);
+      
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
+      
+      // Pre-load audio for faster playback
+      audio.preload = "auto";
       
       audio.onended = () => {
         setIsPlaying(false);
@@ -362,6 +403,7 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
       audio.onerror = (e) => {
         console.error("AI audio playback error:", e);
         setIsPlaying(false);
+        setIsGenerating(false);
         URL.revokeObjectURL(audioUrl);
         speechRef.current = null;
         // Fallback to browser speech synthesis if AI playback fails
@@ -375,6 +417,7 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
     } catch (error) {
       console.error("AI speech generation error:", error);
       setIsPlaying(false);
+      setIsGenerating(false);
       // Fallback to browser speech synthesis if AI fails
       fallbackSpeech(text);
     }
@@ -426,6 +469,7 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
     }
     
     setIsPlaying(false);
+    setIsGenerating(false);
   };
 
   const toggleVoice = () => {
@@ -437,8 +481,8 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
     } else if (newVoiceEnabled && tourSteps[currentStep]) {
       // Speak current step when voice is enabled
       const currentStepData = tourSteps[currentStep];
-      const textToSpeak = `${currentStepData.title}. ${currentStepData.description}`;
-      speakText(textToSpeak);
+      const enhancedText = createEngagingNarration(currentStepData, role);
+      speakText(enhancedText);
     }
   };
 
@@ -447,8 +491,8 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
       stopSpeech();
     } else if (voiceEnabled && tourSteps[currentStep]) {
       const currentStepData = tourSteps[currentStep];
-      const textToSpeak = `${currentStepData.title}. ${currentStepData.description}`;
-      speakText(textToSpeak);
+      const enhancedText = createEngagingNarration(currentStepData, role);
+      speakText(enhancedText);
     }
   };
 
@@ -494,16 +538,23 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
                 {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
               </Button>
               
-              {/* Play/Pause Button (only shown when voice is enabled) */}
+              {/* Play/Pause Button with Generation Indicator (only shown when voice is enabled) */}
               {voiceEnabled && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={togglePlayPause}
-                  className="text-gray-500 hover:text-gray-700"
-                  title={isPlaying ? "Pause narration" : "Play narration"}
+                  disabled={isGenerating}
+                  className={`text-gray-500 hover:text-gray-700 ${isGenerating ? 'animate-pulse bg-blue-50' : ''}`}
+                  title={isGenerating ? "Generating voice..." : isPlaying ? "Pause narration" : "Play narration"}
                 >
-                  {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                  {isGenerating ? (
+                    <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  ) : isPlaying ? (
+                    <Pause className="h-4 w-4" />
+                  ) : (
+                    <Play className="h-4 w-4" />
+                  )}
                 </Button>
               )}
               
@@ -539,6 +590,23 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
               </div>
               <Progress value={progress} className="h-2" />
             </div>
+            
+            {/* Voice Status Indicator */}
+            {voiceEnabled && (isGenerating || isPlaying) && (
+              <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-2 rounded-md">
+                {isGenerating ? (
+                  <>
+                    <div className="h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    <span>Generating voice narration...</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="h-3 w-3 bg-blue-500 rounded-full animate-pulse" />
+                    <span>Playing voice narration</span>
+                  </>
+                )}
+              </div>
+            )}
           </CardHeader>
 
           <CardContent className="space-y-4 pointer-events-auto" onMouseDown={(e) => e.stopPropagation()}>

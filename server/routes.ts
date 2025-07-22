@@ -3575,7 +3575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Text-to-Speech endpoint for high-quality voice generation
   app.post("/api/ai/text-to-speech", async (req, res) => {
     try {
-      const { text, voice = "alloy", gender = "female" } = req.body;
+      const { text, voice = "alloy", gender = "female", speed = 1.1 } = req.body;
       
       if (!text) {
         return res.status(400).json({ error: "Text is required" });
@@ -3587,7 +3587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Choose voice based on gender preference
       const voiceMap = {
-        female: ["alloy", "nova", "shimmer"],
+        female: ["nova", "alloy", "shimmer"], // nova first for best quality
         male: ["echo", "fable", "onyx"]
       };
       
@@ -3596,11 +3596,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`Generating AI speech for text: "${text.substring(0, 50)}..." using voice: ${selectedVoice}`);
 
+      // Use faster tts-1 model for demo tours to reduce latency
+      const model = text.length > 200 ? "tts-1-hd" : "tts-1"; // Use faster model for shorter text
+      
       const mp3 = await openai.audio.speech.create({
-        model: "tts-1-hd", // Use higher quality model for better voice
+        model: model,
         voice: selectedVoice as any,
         input: text,
-        speed: 1.0
+        speed: Math.min(Math.max(speed, 0.25), 4.0) // Clamp speed between 0.25 and 4.0
       });
 
       const buffer = Buffer.from(await mp3.arrayBuffer());
@@ -3608,7 +3611,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.set({
         'Content-Type': 'audio/mpeg',
         'Content-Length': buffer.length,
-        'Cache-Control': 'public, max-age=3600' // Cache for 1 hour
+        'Cache-Control': 'public, max-age=7200', // Cache for 2 hours for demo content
+        'X-Content-Type-Options': 'nosniff'
       });
       
       res.send(buffer);
