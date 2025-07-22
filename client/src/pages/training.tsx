@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play, UserCheck, Settings, Shield, Edit3, Eye, Volume2, MessageSquare, Sparkles, RefreshCw, ChevronDown, ChevronRight, FileText, Clock } from 'lucide-react';
+import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play, UserCheck, Settings, Shield, Edit3, Eye, Volume2, MessageSquare, Sparkles, RefreshCw, ChevronDown, ChevronRight, FileText, Clock, Plus, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, usePermissions } from '@/hooks/useAuth';
 import { RoleSwitcher } from '@/components/role-switcher';
@@ -561,8 +561,14 @@ interface TourData {
 function TourManagementSection() {
   const { toast } = useToast();
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [selectedMissingRoles, setSelectedMissingRoles] = useState<string[]>([]);
   const [expandedTours, setExpandedTours] = useState<string[]>([]);
   const [editingStep, setEditingStep] = useState<{role: string, stepId: string} | null>(null);
+
+  // Fetch all system roles
+  const { data: systemRoles = [] } = useQuery({
+    queryKey: ["/api/roles"],
+  });
 
   // Mock tour data - in real implementation this would come from the tour configuration
   const tourData: Record<string, TourData> = {
@@ -778,6 +784,13 @@ function TourManagementSection() {
   };
 
   const allRoles = Object.keys(tourData);
+  
+  // Identify roles that don't have tours yet
+  const existingTourRoles = new Set(allRoles);
+  const missingTourRoles = systemRoles.filter((role: any) => {
+    const roleKey = role.name.toLowerCase().replace(/\s+/g, '-');
+    return !existingTourRoles.has(roleKey);
+  });
 
   const generateTourWithAI = useMutation({
     mutationFn: async (roles: string[]) => {
@@ -805,6 +818,12 @@ function TourManagementSection() {
     );
   };
 
+  const toggleMissingRole = (roleId: string) => {
+    setSelectedMissingRoles(prev => 
+      prev.includes(roleId) ? prev.filter(r => r !== roleId) : [...prev, roleId]
+    );
+  };
+
   const toggleTourExpansion = (role: string) => {
     setExpandedTours(prev => 
       prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
@@ -825,6 +844,24 @@ function TourManagementSection() {
 
   const handleGenerateAllTours = () => {
     generateTourWithAI.mutate(allRoles);
+  };
+
+  const handleGenerateMissingTours = () => {
+    if (selectedMissingRoles.length === 0) {
+      toast({
+        title: "No Roles Selected",
+        description: "Please select at least one role to generate tours for",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const selectedRoleNames = selectedMissingRoles.map(roleId => {
+      const role = systemRoles.find((r: any) => r.id.toString() === roleId);
+      return role ? role.name : roleId;
+    });
+    
+    generateTourWithAI.mutate(selectedRoleNames);
   };
 
   return (
@@ -891,6 +928,65 @@ function TourManagementSection() {
           </Card>
         ))}
       </div>
+
+      {/* Generate Tours for Additional Roles */}
+      {missingTourRoles.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <h4 className="font-semibold mb-2">Generate Tours for Additional Roles</h4>
+              <p className="text-gray-600 text-sm">
+                These roles exist in your system but don't have guided tours yet. Generate AI-powered tours for them.
+              </p>
+            </div>
+            <Button
+              onClick={handleGenerateMissingTours}
+              disabled={generateTourWithAI.isPending || selectedMissingRoles.length === 0}
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Generate Tours ({selectedMissingRoles.length})
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {missingTourRoles.map((role: any) => (
+              <Card 
+                key={role.id} 
+                className={`cursor-pointer transition-all border-dashed ${
+                  selectedMissingRoles.includes(role.id.toString()) 
+                    ? 'ring-2 ring-green-500 bg-green-50 border-green-300' 
+                    : 'hover:shadow-md border-gray-300'
+                }`}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-sm">{role.name}</h4>
+                    <input
+                      type="checkbox"
+                      checked={selectedMissingRoles.includes(role.id.toString())}
+                      onChange={() => toggleMissingRole(role.id.toString())}
+                      className="rounded text-green-600"
+                    />
+                  </div>
+                  <div className="space-y-2 text-xs text-gray-600">
+                    <p className="text-xs">{role.description}</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <AlertCircle className="h-3 w-3 mr-1 text-amber-500" />
+                        No tour yet
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        New Role
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Detailed Tour Management */}
       <div className="space-y-4">
