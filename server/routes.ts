@@ -6107,15 +6107,29 @@ Create a natural, conversational voice script that explains this feature to some
   // Create a new channel
   app.post("/api/chat/channels", requireAuth, async (req, res) => {
     try {
+      console.log("Channel creation request body:", req.body);
+      console.log("User ID:", req.user.id);
+      
       const channelData = insertChatChannelSchema.parse({
         ...req.body,
         createdBy: req.user.id
       });
+      
+      console.log("Parsed channel data:", channelData);
+      
       const channel = await storage.createChatChannel(channelData);
       res.status(201).json(channel);
     } catch (error) {
       console.error("Error creating channel:", error);
-      res.status(500).json({ error: "Failed to create channel" });
+      if (error.name === 'ZodError') {
+        console.error("Validation errors:", error.errors);
+        res.status(400).json({ 
+          error: "Invalid channel data", 
+          details: error.errors 
+        });
+      } else {
+        res.status(500).json({ error: "Failed to create channel" });
+      }
     }
   });
 

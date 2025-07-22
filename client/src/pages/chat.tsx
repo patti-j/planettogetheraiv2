@@ -612,9 +612,12 @@ function CreateChannelDialog({
     if (!formData.name.trim()) return;
 
     onSubmit({
-      ...formData,
-      objectType: formData.objectType === "none" ? "" : formData.objectType,
-      objectId: formData.objectId ? parseInt(formData.objectId) : undefined
+      name: formData.name,
+      description: formData.description,
+      type: formData.type,
+      isPrivate: formData.isPrivate,
+      contextType: formData.objectType === "none" ? null : formData.objectType || null,
+      contextId: formData.objectId ? parseInt(formData.objectId) : null
     });
   };
 
