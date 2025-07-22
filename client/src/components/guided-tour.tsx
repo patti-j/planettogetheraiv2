@@ -437,6 +437,90 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
     }
   };
 
+  // Separate function for voice toggle that bypasses voice enabled check
+  const playPreloadedAudioForToggle = async (stepId: string) => {
+    if (isGenerating || isPlaying) return;
+    
+    // Stop any currently playing audio
+    if (speechRef.current) {
+      if (speechRef.current instanceof Audio) {
+        speechRef.current.pause();
+        speechRef.current.currentTime = 0;
+      } else if (speechRef.current instanceof SpeechSynthesisUtterance) {
+        speechSynthesis.cancel();
+      }
+      speechRef.current = null;
+    }
+    
+    // Always use server-side cached audio for instant playback
+    const currentStepData = tourSteps.find(step => step.id === stepId);
+    if (currentStepData) {
+      const enhancedText = createEngagingNarration(currentStepData, role);
+      console.log(`Playing cached audio for voice toggle on step: ${stepId}`);
+      
+      try {
+        setIsGenerating(true);
+        
+        const response = await fetch("/api/ai/text-to-speech", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}`
+          },
+          body: JSON.stringify({
+            text: enhancedText,
+            gender: "female",
+            voice: "nova",
+            speed: 1.15
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Cached audio fetch failed: ${response.status}`);
+        }
+
+        setIsGenerating(false);
+        setIsPlaying(true);
+        
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        
+        audio.preload = "auto";
+        
+        audio.onended = () => {
+          setIsPlaying(false);
+          URL.revokeObjectURL(audioUrl);
+          speechRef.current = null;
+          console.log("Voice toggle audio playback completed");
+        };
+        
+        audio.onerror = (e) => {
+          console.error("Voice toggle audio playback error:", e);
+          setIsPlaying(false);
+          setIsGenerating(false);
+          URL.revokeObjectURL(audioUrl);
+          speechRef.current = null;
+        };
+        
+        speechRef.current = audio;
+        
+        try {
+          await audio.play();
+          console.log("Voice toggle audio started playing");
+        } catch (playError) {
+          console.error("Voice toggle auto-play failed:", playError);
+          setIsPlaying(false);
+          setIsGenerating(false);
+        }
+        
+      } catch (error) {
+        console.error(`Failed to load cached audio for voice toggle on step ${stepId}:`, error);
+        setIsGenerating(false);
+      }
+    }
+  };
+
   // Set initial position to lower right corner
   useEffect(() => {
     const cardWidth = 384; // w-96 in pixels
@@ -762,8 +846,13 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
     if (!newVoiceEnabled) {
       stopSpeech();
     } else if (newVoiceEnabled && tourSteps[currentStep]) {
-      // Speak current step when voice is enabled using cached audio
-      playPreloadedAudio(tourSteps[currentStep].id);
+      // Immediately start playing when voice is enabled
+      // Set voice as enabled first, then play audio
+      setTimeout(() => {
+        if (tourSteps[currentStep]) {
+          playPreloadedAudioForToggle(tourSteps[currentStep].id);
+        }
+      }, 100); // Small delay to ensure state is updated
     }
   };
 
