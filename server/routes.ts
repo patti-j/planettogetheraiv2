@@ -4556,6 +4556,7 @@ Return a JSON object with this structure:
     }
   });
 
+  // Legacy endpoint for backwards compatibility (role name)
   app.get("/api/tours/role/:role", requireAuth, async (req, res) => {
     try {
       const roleName = req.params.role;
@@ -4575,6 +4576,28 @@ Return a JSON object with this structure:
       res.json(tour);
     } catch (error) {
       console.error("Error fetching tour by role:", error);
+      res.status(500).json({ error: "Failed to fetch tour" });
+    }
+  });
+
+  // New standardized endpoint using role ID
+  app.get("/api/tours/role-id/:roleId", requireAuth, async (req, res) => {
+    try {
+      const roleId = parseInt(req.params.roleId);
+      
+      if (isNaN(roleId)) {
+        return res.status(400).json({ error: "Invalid role ID" });
+      }
+      
+      const tour = await storage.getTourByRoleId(roleId);
+      
+      if (!tour) {
+        return res.status(404).json({ error: "Tour not found for role" });
+      }
+      
+      res.json(tour);
+    } catch (error) {
+      console.error("Error fetching tour by role ID:", error);
       res.status(500).json({ error: "Failed to fetch tour" });
     }
   });

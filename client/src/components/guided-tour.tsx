@@ -302,14 +302,22 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   const cardRef = useRef<HTMLDivElement>(null);
   const speechRef = useRef<HTMLAudioElement | SpeechSynthesisUtterance | null>(null);
 
-  // Fetch tours from database
+  // Fetch tours from database (all tours for fallback)
   const { data: toursFromAPI = [], isLoading: toursLoading } = useQuery<any[]>({
     queryKey: ["/api/tours"],
   });
 
+  // Fetch specific tour by role ID for better performance
+  const { data: specificTourData, isLoading: specificTourLoading } = useQuery<any>({
+    queryKey: [`/api/tours/role-id/${roleId}`],
+    enabled: !!roleId,
+    retry: false, // Don't retry if tour doesn't exist
+  });
+
   // Convert database tour data to TourStep format
   const getTourStepsFromDatabase = (roleId: number): TourStep[] => {
-    const tourData = toursFromAPI.find((tour: any) => tour.roleId === roleId);
+    // Use specific tour data if available, otherwise fall back to searching all tours
+    const tourData = specificTourData || toursFromAPI.find((tour: any) => tour.roleId === roleId);
     
     const commonSteps: TourStep[] = [
       {
@@ -421,7 +429,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   };
 
   // Calculate tour steps safely after data is loaded
-  const tourSteps = toursLoading ? [] : getTourStepsFromDatabase(roleId);
+  const tourSteps = (toursLoading || specificTourLoading) ? [] : getTourStepsFromDatabase(roleId);
   const progress = tourSteps.length > 0 ? ((currentStep + 1) / tourSteps.length) * 100 : 0;
   
   console.log("GuidedTour initialized - tourSteps:", tourSteps, "currentStep:", currentStep, "loading:", toursLoading);

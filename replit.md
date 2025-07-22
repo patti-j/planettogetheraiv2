@@ -202,6 +202,20 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 22, 2025)
 
+✓ **Complete Tour System Migration to Role ID-Based Architecture (July 22, 2025)**:
+- Successfully completed comprehensive migration from role name strings to role ID-based lookups throughout entire tour system
+- Added getRoleById method to storage interface and DatabaseStorage implementation for consistent role retrieval
+- Updated demo-tour.tsx with role string to role ID mapping before calling startTour function
+- Enhanced App.tsx auto-tour functionality to map role names to role IDs for proper tour initiation
+- Modified guided-tour.tsx role switching to use role IDs instead of role strings for tour continuation
+- Added new API endpoint `/api/tours/role-id/:roleId` for direct role ID-based tour retrieval (improved performance)
+- Maintained legacy `/api/tours/role/:role` endpoint for backwards compatibility
+- Enhanced tour component with dual query system: specific tour by role ID with fallback to all tours search
+- All TypeScript compilation errors resolved with consistent role ID usage throughout frontend and backend
+- System now uses database role IDs (1=director, 2=plant-manager, 3=production-scheduler, etc.) for all tour operations
+- Improved performance by eliminating role name string conversions and lookups during tour operations
+- Tour system architecture now fully consistent with other entity management using ID-based database relationships
+
 ✓ **Role Management Architecture Refactor - ID-Based System Implementation (July 22, 2025)**:
 - Completed major architectural refactor migrating from role name-based lookups to ID-based lookups throughout the system
 - Updated tours table schema to use `role_id` foreign key instead of `role` string field for proper relational database design
