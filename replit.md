@@ -126,6 +126,13 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 22, 2025)
 
+✓ **Production Scheduler Tour Step Titles & Voice Cache Fix (July 22, 2025)**:
+- Fixed tour step titles showing proper names instead of generic "Tour Step" text
+- Updated tour data mapping to use stepName field from database (Interactive Gantt Chart, Scheduling Boards, Optimization Tools)
+- Generated voice recordings for new step IDs to match corrected tour structure
+- Enhanced route translation for Dashboard > Scheduling > Optimization path
+- Tour steps now display accurate titles and descriptions with matching voice narration
+
 ✓ **Voice Pre-Generation Architecture Implementation (July 22, 2025)**:
 - Implemented pre-generation of voice recordings during tour creation to eliminate real-time generation delays
 - Added preGenerateVoiceRecordings function that runs automatically after tours are saved to database

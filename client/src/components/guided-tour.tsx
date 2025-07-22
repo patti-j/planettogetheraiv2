@@ -344,13 +344,13 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
 
     // Convert database steps to TourStep format
     const databaseSteps: TourStep[] = tourData.tourData.steps.map((step: any) => ({
-      id: step.stepTitle?.toLowerCase().replace(/\s+/g, '-') || step.id || 'step',
-      title: step.stepTitle || step.title || 'Tour Step',
-      description: step.description || 'Explore this feature',
+      id: (step.stepName || step.stepTitle)?.toLowerCase().replace(/\s+/g, '-') || step.id || 'step',
+      title: step.stepName || step.stepTitle || step.title || 'Tour Step',
+      description: step.description || step.voiceScript || 'Explore this feature',
       page: translateNavPath(step.navigationPath || step.page) || "current",
       icon: getIconForPage(translateNavPath(step.navigationPath || step.page)),
-      benefits: step.benefits || ["Learn about this feature"],
-      actionText: step.stepTitle || "Continue",
+      benefits: Array.isArray(step.benefits) ? step.benefits : [step.benefits || "Learn about this feature"],
+      actionText: step.stepName || step.stepTitle || "Continue",
       duration: "2 min"
     }));
 
@@ -365,11 +365,13 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
     const routeMapping: Record<string, string> = {
       "Dashboard > Scheduling > Gantt Chart": "/",
       "Dashboard > Scheduling > Boards": "/boards",
+      "Dashboard > Scheduling > Optimization": "/optimize-orders",
       "Dashboard": "/",
       "Boards": "/boards",
       "Scheduling": "/",
       "Schedule": "/",
       "Gantt Chart": "/",
+      "Optimization": "/optimize-orders",
       "Analytics": "/analytics",
       "Reports": "/reports",
       "Business Goals": "/business-goals",
@@ -379,7 +381,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
       "Systems Management": "/systems-management",
       "Role Management": "/role-management",
       "Training": "/training",
-      "Scheduling Optimizer": "/scheduling-optimizer",
+      "Scheduling Optimizer": "/optimize-orders",
       "Visual Factory": "/visual-factory",
       "ERP Import": "/erp-import"
     };
