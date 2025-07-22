@@ -1542,9 +1542,9 @@ function TourManagementSection() {
 
                   if (roleId) {
                     console.log('Attempting to switch to role ID:', roleId);
-                    console.log('User data:', userData);
+                    console.log('User data:', user);
                     
-                    if (!userData?.id) {
+                    if (!user?.id) {
                       toast({
                         title: "Error",
                         description: "User ID not available. Please try again.",
@@ -1555,7 +1555,7 @@ function TourManagementSection() {
                     
                     // Switch role
                     try {
-                      const response = await apiRequest('POST', `/api/users/${userData.id}/switch-role`, { roleId });
+                      const response = await apiRequest('POST', `/api/users/${user.id}/switch-role`, { roleId });
                       console.log('Role switch response:', response);
                       
                       toast({
