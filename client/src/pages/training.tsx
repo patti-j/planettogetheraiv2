@@ -1523,7 +1523,8 @@ function TourManagementSection() {
 
                 try {
                   // Get fresh user data from the API
-                  const userResponse = await apiRequest('GET', '/api/auth/me');
+                  const response = await apiRequest('GET', '/api/auth/me');
+                  const userResponse = await response.json();
                   console.log('Fresh user data:', userResponse);
                   console.log('User response type:', typeof userResponse);
                   console.log('User response keys:', Object.keys(userResponse || {}));
