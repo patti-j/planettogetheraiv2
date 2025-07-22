@@ -42,7 +42,10 @@ export default function Sidebar() {
     const checkScrollIndicator = () => {
       if (navRef.current) {
         const { scrollTop, scrollHeight, clientHeight } = navRef.current;
-        setShowScrollIndicator(scrollHeight > clientHeight && scrollTop < scrollHeight - clientHeight - 10);
+        // Show indicator only if there's content to scroll AND user hasn't scrolled to the bottom
+        const hasScrollableContent = scrollHeight > clientHeight;
+        const isAtBottom = scrollTop >= scrollHeight - clientHeight - 5; // 5px tolerance
+        setShowScrollIndicator(hasScrollableContent && !isAtBottom);
       }
     };
 
