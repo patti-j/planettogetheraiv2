@@ -1542,20 +1542,36 @@ function TourManagementSection() {
 
                   if (roleId) {
                     console.log('Attempting to switch to role ID:', roleId);
+                    console.log('User data:', userData);
+                    
+                    if (!userData?.id) {
+                      toast({
+                        title: "Error",
+                        description: "User ID not available. Please try again.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    
                     // Switch role
-                    const response = await apiRequest('POST', `/api/users/${userData?.id}/switch-role`, { roleId });
-                    console.log('Role switch response:', response);
-                    
-                    toast({
-                      title: "Starting Live Tour",
-                      description: `Switching to ${previewTourData.roleDisplayName} role and launching tour...`,
-                    });
-                    
-                    // Clear cache and navigate to home to start the tour
-                    queryClient.clear();
-                    setTimeout(() => {
-                      window.location.href = '/?startTour=true';
-                    }, 1000);
+                    try {
+                      const response = await apiRequest('POST', `/api/users/${userData.id}/switch-role`, { roleId });
+                      console.log('Role switch response:', response);
+                      
+                      toast({
+                        title: "Starting Live Tour",
+                        description: `Switching to ${previewTourData.roleDisplayName} role and launching tour...`,
+                      });
+                      
+                      // Clear cache and navigate to home to start the tour
+                      queryClient.clear();
+                      setTimeout(() => {
+                        window.location.href = '/?startTour=true';
+                      }, 1000);
+                    } catch (apiError) {
+                      console.error('API request failed:', apiError);
+                      throw apiError; // Re-throw to be caught by outer try-catch
+                    }
                   } else {
                     toast({
                       title: "Role Not Found",
