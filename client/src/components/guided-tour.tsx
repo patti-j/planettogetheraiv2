@@ -623,17 +623,49 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     }
   };
 
-  // Set initial position to lower right corner
+  // Track window size for responsive design
+  const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+
+  // Set initial position to lower right corner with boundary checking
   useEffect(() => {
     const cardWidth = 384; // w-96 in pixels
-    const cardHeight = 500; // approximate height
+    const maxCardHeight = Math.min(600, windowSize.height - 100); // Dynamic height based on viewport
     const padding = 20; // padding from edges
     
     setPosition({
-      x: Math.max(0, window.innerWidth - cardWidth - padding),
-      y: Math.max(0, window.innerHeight - cardHeight - padding)
+      x: Math.max(0, windowSize.width - cardWidth - padding),
+      y: Math.max(0, windowSize.height - maxCardHeight - padding)
     });
-  }, []);
+  }, [windowSize]);
+
+  // Handle window resize to keep tour window in bounds
+  useEffect(() => {
+    const handleResize = () => {
+      const newSize = { width: window.innerWidth, height: window.innerHeight };
+      setWindowSize(newSize);
+      
+      // Constrain current position to new window bounds
+      const constrainedPosition = constrainToViewport(position);
+      if (constrainedPosition.x !== position.x || constrainedPosition.y !== position.y) {
+        setPosition(constrainedPosition);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [position]);
+
+  // Boundary checking function to keep window in viewport
+  const constrainToViewport = (newPosition: { x: number; y: number }) => {
+    const cardWidth = 384;
+    const maxCardHeight = Math.min(600, windowSize.height - 100);
+    const padding = 10;
+    
+    return {
+      x: Math.max(padding, Math.min(newPosition.x, windowSize.width - cardWidth - padding)),
+      y: Math.max(padding, Math.min(newPosition.y, windowSize.height - maxCardHeight - padding))
+    };
+  };
 
   // Remove duplicate auto-start effect - handled by the one above
 
@@ -653,14 +685,15 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     };
   }, []);
 
-  // Drag functionality
+  // Drag functionality with boundary checking
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging) {
-        setPosition({
+        const newPosition = constrainToViewport({
           x: e.clientX - dragOffset.x,
           y: e.clientY - dragOffset.y
         });
+        setPosition(newPosition);
       }
     };
 
@@ -928,10 +961,12 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       {/* Draggable tour window */}
       <Card 
         ref={cardRef}
-        className="fixed w-96 h-[600px] bg-white shadow-2xl z-50 cursor-move flex flex-col"
+        className="fixed w-96 bg-white shadow-2xl z-50 cursor-move flex flex-col"
         style={{
           left: position.x,
           top: position.y,
+          height: `${Math.min(600, windowSize.height - 100)}px`,
+          maxHeight: '90vh'
         }}
       >
         <CardHeader 
