@@ -202,11 +202,129 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
   const { toast } = useToast();
   const cardRef = useRef<HTMLDivElement>(null);
   const speechRef = useRef<HTMLAudioElement | SpeechSynthesisUtterance | null>(null);
+  const preloadedAudioRef = useRef<{[key: string]: HTMLAudioElement}>({});
+  const [preloadingStatus, setPreloadingStatus] = useState<{[key: string]: 'loading' | 'ready' | 'error'}>({});
 
   const tourSteps = getTourSteps(role);
   const progress = ((currentStep + 1) / tourSteps.length) * 100;
   
   console.log("GuidedTour initialized - tourSteps:", tourSteps, "currentStep:", currentStep);
+  
+  // Pre-load all audio when voice is enabled and tour starts
+  useEffect(() => {
+    if (voiceEnabled && currentStep === 0) {
+      console.log("Pre-loading all audio for tour steps...");
+      preloadAllAudio();
+    }
+  }, [voiceEnabled]);
+  
+  // Pre-load audio for all tour steps
+  const preloadAllAudio = async () => {
+    for (let i = 0; i < tourSteps.length; i++) {
+      const stepData = tourSteps[i];
+      const enhancedText = createEngagingNarration(stepData, role);
+      
+      setPreloadingStatus(prev => ({ ...prev, [stepData.id]: 'loading' }));
+      
+      try {
+        const response = await fetch("/api/ai/text-to-speech", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}`
+          },
+          body: JSON.stringify({
+            text: enhancedText,
+            gender: "female",
+            voice: "nova",
+            speed: 1.15
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Audio generation failed for step ${stepData.id}`);
+        }
+
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audio.preload = "auto";
+        
+        preloadedAudioRef.current[stepData.id] = audio;
+        setPreloadingStatus(prev => ({ ...prev, [stepData.id]: 'ready' }));
+        
+        console.log(`Pre-loaded audio for step: ${stepData.id}`);
+        
+      } catch (error) {
+        console.error(`Failed to pre-load audio for step ${stepData.id}:`, error);
+        setPreloadingStatus(prev => ({ ...prev, [stepData.id]: 'error' }));
+      }
+    }
+  };
+  
+  // Play pre-loaded audio for a specific step
+  const playPreloadedAudio = async (stepId: string) => {
+    if (!voiceEnabled) return;
+    
+    // Stop any currently playing audio
+    if (speechRef.current) {
+      if (speechRef.current instanceof Audio) {
+        speechRef.current.pause();
+        speechRef.current.currentTime = 0;
+      }
+      speechRef.current = null;
+    }
+    
+    // Check if pre-loaded audio exists
+    const preloadedAudio = preloadedAudioRef.current[stepId];
+    if (preloadedAudio && preloadingStatus[stepId] === 'ready') {
+      console.log(`Playing pre-loaded audio for step: ${stepId}`);
+      setIsPlaying(true);
+      setIsGenerating(false);
+      
+      speechRef.current = preloadedAudio;
+      
+      // Set up event handlers
+      preloadedAudio.onended = () => {
+        console.log("Pre-loaded audio playback completed");
+        setIsPlaying(false);
+      };
+      
+      preloadedAudio.onerror = () => {
+        console.error("Pre-loaded audio playback error");
+        setIsPlaying(false);
+        // Fall back to real-time generation
+        const currentStepData = tourSteps.find(step => step.id === stepId);
+        if (currentStepData) {
+          const enhancedText = createEngagingNarration(currentStepData, role);
+          speakText(enhancedText);
+        }
+      };
+      
+      try {
+        // Reset audio to beginning and play
+        preloadedAudio.currentTime = 0;
+        await preloadedAudio.play();
+      } catch (error) {
+        console.error("Failed to play pre-loaded audio:", error);
+        setIsPlaying(false);
+        // Fall back to real-time generation
+        const currentStepData = tourSteps.find(step => step.id === stepId);
+        if (currentStepData) {
+          const enhancedText = createEngagingNarration(currentStepData, role);
+          speakText(enhancedText);
+        }
+      }
+    } else {
+      // Fall back to real-time generation if pre-loading failed or is still in progress
+      console.log(`Pre-loaded audio not ready for step: ${stepId}, falling back to real-time generation`);
+      const currentStepData = tourSteps.find(step => step.id === stepId);
+      if (currentStepData) {
+        const enhancedText = createEngagingNarration(currentStepData, role);
+        speakText(enhancedText);
+      }
+    }
+  };
 
   // Set initial position to lower right corner
   useEffect(() => {
@@ -220,13 +338,12 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
     });
   }, []);
 
-  // Speak text when step changes and voice is enabled
+  // Play pre-loaded audio when step changes and voice is enabled
   useEffect(() => {
     if (voiceEnabled && tourSteps[currentStep]) {
       const currentStepData = tourSteps[currentStep];
-      const enhancedText = createEngagingNarration(currentStepData, role);
-      // Reduce delay and start generation immediately
-      setTimeout(() => speakText(enhancedText), 100); 
+      // Use pre-loaded audio if available, otherwise fall back to generation
+      setTimeout(() => playPreloadedAudio(currentStepData.id), 100); 
     }
   }, [currentStep, voiceEnabled]);
 
@@ -606,18 +723,30 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
             </div>
             
             {/* Voice Status Indicator */}
-            {voiceEnabled && (isGenerating || isPlaying) && (
-              <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-2 rounded-md">
-                {isGenerating ? (
-                  <>
-                    <div className="h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                    <span>Generating voice narration...</span>
-                  </>
+            {voiceEnabled && (
+              <div className="text-sm text-blue-600 bg-blue-50 px-3 py-2 rounded-md">
+                {isGenerating || isPlaying ? (
+                  <div className="flex items-center gap-2">
+                    {isGenerating ? (
+                      <>
+                        <div className="h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        <span>Generating voice narration...</span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="h-3 w-3 bg-blue-500 rounded-full animate-pulse" />
+                        <span>Playing voice narration</span>
+                      </>
+                    )}
+                  </div>
                 ) : (
-                  <>
-                    <div className="h-3 w-3 bg-blue-500 rounded-full animate-pulse" />
-                    <span>Playing voice narration</span>
-                  </>
+                  // Show pre-loading status
+                  <div className="flex items-center justify-between">
+                    <span>Voice Ready: {Object.values(preloadingStatus).filter(s => s === 'ready').length}/{tourSteps.length} steps</span>
+                    {Object.values(preloadingStatus).some(s => s === 'loading') && (
+                      <div className="h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    )}
+                  </div>
                 )}
               </div>
             )}
