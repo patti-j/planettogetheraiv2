@@ -1217,7 +1217,7 @@ function TourManagementSection() {
             size="sm"
           >
             <Sparkles className="h-4 w-4 mr-2" />
-            Regenerate Selected ({selectedRoles.length})
+            Regenerate Tours ({selectedRoles.length})
           </Button>
           <Button
             onClick={handleGenerateVoiceForSelected}
