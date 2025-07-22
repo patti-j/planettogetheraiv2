@@ -460,8 +460,7 @@ export default function RoleManagementPage() {
                 size="sm"
               >
                 <Sparkles className="w-4 h-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">{generateAiPermissionsMutation.isPending ? "Generating..." : "Permissions"}</span>
-                <span className="sm:hidden">{generateAiPermissionsMutation.isPending ? "Gen" : "Perms"}</span>
+                {generateAiPermissionsMutation.isPending ? "Generating..." : "Permissions"}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
