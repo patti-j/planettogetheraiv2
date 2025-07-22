@@ -34,6 +34,104 @@ interface TrainingModule {
   completed: boolean;
 }
 
+// Test Voice Button Component
+function TestVoiceButton({ voiceSettings }: { voiceSettings: { voice: string; gender: string; speed: number } }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleTestVoice = async () => {
+    const testMessage = "Hello! This is a test of the voice settings you've selected. This will help you preview how the voice narration will sound during tours.";
+    
+    if (!('speechSynthesis' in window)) {
+      console.error('Speech synthesis not supported');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      // Cancel any ongoing speech
+      speechSynthesis.cancel();
+
+      // Wait for voices to be loaded
+      const waitForVoices = () => {
+        return new Promise<void>((resolve) => {
+          const voices = speechSynthesis.getVoices();
+          if (voices.length > 0) {
+            resolve();
+          } else {
+            speechSynthesis.addEventListener('voiceschanged', () => resolve(), { once: true });
+          }
+        });
+      };
+
+      await waitForVoices();
+      setIsLoading(false);
+      setIsPlaying(true);
+
+      const utterance = new SpeechSynthesisUtterance(testMessage);
+      utterance.rate = voiceSettings.speed;
+      
+      // Set voice based on gender preference  
+      const voices = speechSynthesis.getVoices();
+      const preferredVoice = voices.find(voice => {
+        const voiceName = voice.name.toLowerCase();
+        if (voiceSettings.gender === 'female') {
+          return voiceName.includes('female') || voiceName.includes('woman') || voiceName.includes('zira') || voiceName.includes('samantha');
+        } else {
+          return voiceName.includes('male') || voiceName.includes('man') || voiceName.includes('david') || voiceName.includes('alex');
+        }
+      });
+      
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      }
+
+      utterance.onend = () => {
+        setIsPlaying(false);
+      };
+
+      utterance.onerror = () => {
+        setIsPlaying(false);
+        setIsLoading(false);
+      };
+      
+      speechSynthesis.speak(utterance);
+    } catch (error) {
+      console.error('Error testing voice:', error);
+      setIsLoading(false);
+      setIsPlaying(false);
+    }
+  };
+
+  return (
+    <Button
+      onClick={handleTestVoice}
+      disabled={isLoading || isPlaying}
+      variant="outline" 
+      size="sm"
+      className="w-full bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100"
+    >
+      {isLoading ? (
+        <>
+          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          Loading Voice...
+        </>
+      ) : isPlaying ? (
+        <>
+          <Volume2 className="h-4 w-4 mr-2 animate-pulse" />
+          Playing...
+        </>
+      ) : (
+        <>
+          <Volume2 className="h-4 w-4 mr-2" />
+          Test Voice
+        </>
+      )}
+    </Button>
+  );
+}
+
 const trainingModules: TrainingModule[] = [
   {
     id: 'admin-overview',
@@ -2174,38 +2272,9 @@ function TourManagementSection() {
 
                   {/* Test Voice Button */}
                   <div>
-                    <Button
-                      onClick={() => {
-                        const testMessage = "Hello! This is a test of the voice settings you've selected. This will help you preview how the voice narration will sound during tours.";
-                        
-                        // Use browser's speech synthesis for immediate preview
-                        if ('speechSynthesis' in window) {
-                          const utterance = new SpeechSynthesisUtterance(testMessage);
-                          utterance.rate = voiceGenerationOptions.speed;
-                          
-                          // Set voice based on gender preference  
-                          const voices = speechSynthesis.getVoices();
-                          const preferredVoice = voices.find(voice => 
-                            voiceGenerationOptions.gender === 'female' 
-                              ? voice.name.toLowerCase().includes('female') || voice.name.toLowerCase().includes('woman')
-                              : voice.name.toLowerCase().includes('male') || voice.name.toLowerCase().includes('man')
-                          );
-                          
-                          if (preferredVoice) {
-                            utterance.voice = preferredVoice;
-                          }
-                          
-                          speechSynthesis.cancel(); // Cancel any ongoing speech
-                          speechSynthesis.speak(utterance);
-                        }
-                      }}
-                      variant="outline" 
-                      size="sm"
-                      className="w-full bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100"
-                    >
-                      <Volume2 className="h-4 w-4 mr-2" />
-                      Test Voice
-                    </Button>
+                    <TestVoiceButton 
+                      voiceSettings={voiceGenerationOptions}
+                    />
                     <p className="text-xs text-gray-500 mt-1 text-center">
                       Preview current voice settings
                     </p>
