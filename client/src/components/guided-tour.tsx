@@ -526,9 +526,15 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   
   // Play cached audio directly from server for a specific step  
   const playPreloadedAudio = async (stepId: string) => {
-    if (!voiceEnabled || isLoadingVoice || isPlaying) return;
-    
-    // Stop any currently playing audio first
+    if (!voiceEnabled || isLoadingVoice || isPlaying) {
+      console.log("Audio already loading or playing, skipping:", { voiceEnabled, isLoadingVoice, isPlaying });
+      return;
+    }
+
+    // Double-check and stop any currently playing audio first
+    if (speechRef.current) {
+      console.log("Stopping existing audio before starting new playback");
+    }
     stopSpeech();
     
     // Always use server-side cached audio for instant playback
@@ -756,10 +762,22 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   useEffect(() => {
     if (voiceEnabled && tourSteps[currentStep] && currentStep > 0) {
       const currentStepData = tourSteps[currentStep];
+      
+      console.log("Step change detected, stopping any existing audio");
       // Stop any existing audio before starting new audio
       stopSpeech();
+      
       // Use server-side cached audio for instant playback with longer delay to ensure cleanup
-      setTimeout(() => playPreloadedAudio(currentStepData.id), 100); 
+      // Increased timeout to ensure proper audio cleanup
+      const audioTimeout = setTimeout(() => {
+        console.log("Starting new audio for step:", currentStepData.id);
+        playPreloadedAudio(currentStepData.id);
+      }, 250); // Extended delay for better audio state cleanup
+      
+      // Cleanup timeout if component unmounts or step changes again quickly
+      return () => {
+        clearTimeout(audioTimeout);
+      };
     }
   }, [currentStep, voiceEnabled]);
 
@@ -889,8 +907,14 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       autoAdvanceTimeoutRef.current = null;
     }
     
-    stopSpeech(); // Stop current speech before proceeding
+    console.log("handlePrevious called - stopping all audio");
+    // Stop current speech before proceeding with extended delay
+    stopSpeech(); 
+    
+    // Reset audio states
     setAudioCompleted(false); // Reset audio completed state for previous step
+    setHasAutoStarted(false); // Allow auto-start for previous step
+    
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
@@ -1036,22 +1060,41 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   };
 
   const stopSpeech = () => {
-    // Stop any Audio elements
+    // Comprehensive audio cleanup
     if (speechRef.current) {
       if (speechRef.current instanceof Audio) {
-        speechRef.current.pause();
-        speechRef.current.currentTime = 0;
-        speechRef.current.removeEventListener('ended', () => {});
-        speechRef.current.removeEventListener('error', () => {});
+        try {
+          // Pause and reset audio
+          speechRef.current.pause();
+          speechRef.current.currentTime = 0;
+          
+          // Remove all event listeners by setting to null
+          speechRef.current.onended = null;
+          speechRef.current.onerror = null;
+          speechRef.current.onloadstart = null;
+          speechRef.current.oncanplay = null;
+          
+          // If there's a URL object, revoke it to free memory
+          if (speechRef.current.src && speechRef.current.src.startsWith('blob:')) {
+            URL.revokeObjectURL(speechRef.current.src);
+          }
+        } catch (error) {
+          console.warn("Error stopping audio:", error);
+        }
       }
       speechRef.current = null;
     }
     
     // Also cancel browser speech synthesis as fallback
     if ('speechSynthesis' in window) {
-      speechSynthesis.cancel();
+      try {
+        speechSynthesis.cancel();
+      } catch (error) {
+        console.warn("Error canceling speech synthesis:", error);
+      }
     }
     
+    // Reset all audio-related states
     setIsPlaying(false);
     setIsLoadingVoice(false);
   };

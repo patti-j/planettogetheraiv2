@@ -328,6 +328,15 @@ The application uses a modern full-stack architecture with strong typing through
 - Improved mobile UX with proper viewport constraints and responsive positioning for all screen sizes
 - Tour windows now draggable on both desktop (mouse) and mobile (touch) with smooth movement and boundary checking
 
+✓ **Tour Voice Narration Overlap Bug Fix (July 22, 2025)**:
+- Fixed critical audio management issue where using back button during tours caused multiple voice recordings to play simultaneously
+- Enhanced stopSpeech function with comprehensive audio cleanup including event listener removal and proper resource management
+- Added audio state checks in playPreloadedAudio functions to prevent multiple audio streams from starting concurrently
+- Improved useEffect for step changes to call stopSpeech before starting new audio with extended delay for proper cleanup
+- Enhanced handlePrevious function to reset audio completed state and ensure clean audio transitions
+- Added isLoadingVoice and isPlaying state guards to prevent race conditions during navigation
+- Audio management now properly handles rapid navigation changes without overlapping voice narrations
+
 ✓ **Systems Manager Permission Fix & Validation System Analysis (July 22, 2025)**:
 - Fixed missing `analytics-view` permission for Systems Manager role that was causing access denied errors during demo tours
 - Root cause analysis revealed timing issue: tours were created when permission was missing, but validation ran after permission was added
