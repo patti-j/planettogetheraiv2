@@ -38,6 +38,7 @@ import UserRoleAssignments from "@/pages/user-role-assignments";
 import Training from "@/pages/training";
 import HelpAndGuide from "@/pages/help";
 import DemoTour from "@/pages/demo-tour";
+import DisruptionManagement from "@/pages/disruption-management";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 
@@ -238,6 +239,11 @@ function Router() {
           <Route path="/user-role-assignments-page">
             <ProtectedRoute feature="user-management" action="view">
               <UserRoleAssignments />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/disruption-management">
+            <ProtectedRoute feature="disruption-management" action="view">
+              <DisruptionManagement />
             </ProtectedRoute>
           </Route>
           <Route path="/training">

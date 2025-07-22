@@ -16,7 +16,8 @@ import {
   insertUserSchema, insertRoleSchema, insertPermissionSchema,
   insertUserRoleSchema, insertRolePermissionSchema,
   insertDemoTourParticipantSchema,
-  insertVoiceRecordingsCacheSchema
+  insertVoiceRecordingsCacheSchema,
+  insertDisruptionSchema, insertDisruptionActionSchema, insertDisruptionEscalationSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -5058,6 +5059,275 @@ Create a natural, conversational voice script that explains this feature to some
         error: 'Failed to generate voice recordings',
         details: error.message 
       });
+    }
+  });
+
+  // Disruption Management API Routes
+  
+  // Disruptions
+  app.get("/api/disruptions", async (req, res) => {
+    try {
+      const disruptions = await storage.getDisruptions();
+      res.json(disruptions);
+    } catch (error) {
+      console.error("Error fetching disruptions:", error);
+      res.status(500).json({ error: "Failed to fetch disruptions" });
+    }
+  });
+
+  app.get("/api/disruptions/active", async (req, res) => {
+    try {
+      const disruptions = await storage.getActiveDisruptions();
+      res.json(disruptions);
+    } catch (error) {
+      console.error("Error fetching active disruptions:", error);
+      res.status(500).json({ error: "Failed to fetch active disruptions" });
+    }
+  });
+
+  app.get("/api/disruptions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid disruption ID" });
+      }
+
+      const disruption = await storage.getDisruption(id);
+      if (!disruption) {
+        return res.status(404).json({ error: "Disruption not found" });
+      }
+      res.json(disruption);
+    } catch (error) {
+      console.error("Error fetching disruption:", error);
+      res.status(500).json({ error: "Failed to fetch disruption" });
+    }
+  });
+
+  app.post("/api/disruptions", async (req, res) => {
+    try {
+      const validation = insertDisruptionSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid disruption data", details: validation.error.errors });
+      }
+
+      const disruption = await storage.createDisruption(validation.data);
+      res.status(201).json(disruption);
+    } catch (error) {
+      console.error("Error creating disruption:", error);
+      res.status(500).json({ error: "Failed to create disruption" });
+    }
+  });
+
+  app.put("/api/disruptions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid disruption ID" });
+      }
+
+      const validation = insertDisruptionSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid disruption data", details: validation.error.errors });
+      }
+
+      const disruption = await storage.updateDisruption(id, validation.data);
+      if (!disruption) {
+        return res.status(404).json({ error: "Disruption not found" });
+      }
+      res.json(disruption);
+    } catch (error) {
+      console.error("Error updating disruption:", error);
+      res.status(500).json({ error: "Failed to update disruption" });
+    }
+  });
+
+  app.delete("/api/disruptions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid disruption ID" });
+      }
+
+      const success = await storage.deleteDisruption(id);
+      if (!success) {
+        return res.status(404).json({ error: "Disruption not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting disruption:", error);
+      res.status(500).json({ error: "Failed to delete disruption" });
+    }
+  });
+
+  // Disruption Actions
+  app.get("/api/disruption-actions", async (req, res) => {
+    try {
+      const disruptionId = req.query.disruptionId ? parseInt(req.query.disruptionId as string) : undefined;
+      const actions = await storage.getDisruptionActions(disruptionId);
+      res.json(actions);
+    } catch (error) {
+      console.error("Error fetching disruption actions:", error);
+      res.status(500).json({ error: "Failed to fetch disruption actions" });
+    }
+  });
+
+  app.get("/api/disruption-actions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid disruption action ID" });
+      }
+
+      const action = await storage.getDisruptionAction(id);
+      if (!action) {
+        return res.status(404).json({ error: "Disruption action not found" });
+      }
+      res.json(action);
+    } catch (error) {
+      console.error("Error fetching disruption action:", error);
+      res.status(500).json({ error: "Failed to fetch disruption action" });
+    }
+  });
+
+  app.post("/api/disruption-actions", async (req, res) => {
+    try {
+      const validation = insertDisruptionActionSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid disruption action data", details: validation.error.errors });
+      }
+
+      const action = await storage.createDisruptionAction(validation.data);
+      res.status(201).json(action);
+    } catch (error) {
+      console.error("Error creating disruption action:", error);
+      res.status(500).json({ error: "Failed to create disruption action" });
+    }
+  });
+
+  app.put("/api/disruption-actions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid disruption action ID" });
+      }
+
+      const validation = insertDisruptionActionSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid disruption action data", details: validation.error.errors });
+      }
+
+      const action = await storage.updateDisruptionAction(id, validation.data);
+      if (!action) {
+        return res.status(404).json({ error: "Disruption action not found" });
+      }
+      res.json(action);
+    } catch (error) {
+      console.error("Error updating disruption action:", error);
+      res.status(500).json({ error: "Failed to update disruption action" });
+    }
+  });
+
+  app.delete("/api/disruption-actions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid disruption action ID" });
+      }
+
+      const success = await storage.deleteDisruptionAction(id);
+      if (!success) {
+        return res.status(404).json({ error: "Disruption action not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting disruption action:", error);
+      res.status(500).json({ error: "Failed to delete disruption action" });
+    }
+  });
+
+  // Disruption Escalations
+  app.get("/api/disruption-escalations", async (req, res) => {
+    try {
+      const disruptionId = req.query.disruptionId ? parseInt(req.query.disruptionId as string) : undefined;
+      const escalations = await storage.getDisruptionEscalations(disruptionId);
+      res.json(escalations);
+    } catch (error) {
+      console.error("Error fetching disruption escalations:", error);
+      res.status(500).json({ error: "Failed to fetch disruption escalations" });
+    }
+  });
+
+  app.get("/api/disruption-escalations/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid disruption escalation ID" });
+      }
+
+      const escalation = await storage.getDisruptionEscalation(id);
+      if (!escalation) {
+        return res.status(404).json({ error: "Disruption escalation not found" });
+      }
+      res.json(escalation);
+    } catch (error) {
+      console.error("Error fetching disruption escalation:", error);
+      res.status(500).json({ error: "Failed to fetch disruption escalation" });
+    }
+  });
+
+  app.post("/api/disruption-escalations", async (req, res) => {
+    try {
+      const validation = insertDisruptionEscalationSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid disruption escalation data", details: validation.error.errors });
+      }
+
+      const escalation = await storage.createDisruptionEscalation(validation.data);
+      res.status(201).json(escalation);
+    } catch (error) {
+      console.error("Error creating disruption escalation:", error);
+      res.status(500).json({ error: "Failed to create disruption escalation" });
+    }
+  });
+
+  app.put("/api/disruption-escalations/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid disruption escalation ID" });
+      }
+
+      const validation = insertDisruptionEscalationSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid disruption escalation data", details: validation.error.errors });
+      }
+
+      const escalation = await storage.updateDisruptionEscalation(id, validation.data);
+      if (!escalation) {
+        return res.status(404).json({ error: "Disruption escalation not found" });
+      }
+      res.json(escalation);
+    } catch (error) {
+      console.error("Error updating disruption escalation:", error);
+      res.status(500).json({ error: "Failed to update disruption escalation" });
+    }
+  });
+
+  app.delete("/api/disruption-escalations/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid disruption escalation ID" });
+      }
+
+      const success = await storage.deleteDisruptionEscalation(id);
+      if (!success) {
+        return res.status(404).json({ error: "Disruption escalation not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting disruption escalation:", error);
+      res.status(500).json({ error: "Failed to delete disruption escalation" });
     }
   });
 

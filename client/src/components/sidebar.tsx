@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, Book, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, LogOut, User, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle } from "lucide-react";
+import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, Book, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, LogOut, User, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, usePermissions } from "@/hooks/useAuth";
@@ -174,6 +174,7 @@ export default function Sidebar() {
     { icon: Settings, label: "Operator", href: "/operator-dashboard", active: location === "/operator-dashboard", feature: "operator-dashboard", action: "view" },
     { icon: Truck, label: "Forklift Driver", href: "/forklift-driver", active: location === "/forklift-driver", feature: "forklift-driver", action: "view" },
     { icon: Wrench, label: "Maintenance", href: "/maintenance", active: location === "/maintenance", feature: "maintenance", action: "view" },
+    { icon: AlertTriangle, label: "Disruption Management", href: "/disruption-management", active: location === "/disruption-management", feature: "disruption-management", action: "view" },
     { icon: Building, label: "Plant Manager", href: "/plant-manager-dashboard", active: location === "/plant-manager-dashboard", feature: "plant-manager", action: "view" },
     { icon: Server, label: "Systems Management", href: "/systems-management-dashboard", active: location === "/systems-management-dashboard", feature: "systems-management", action: "view" },
     { icon: Shield, label: "Role Management", href: "/role-management", active: location === "/role-management", feature: "user-management", action: "view" },
@@ -207,6 +208,7 @@ export default function Sidebar() {
       "/operator-dashboard": "Review upcoming operations and report status or problems",
       "/forklift-driver": "Material movement tracking for forklift drivers",
       "/maintenance": "Plan and manage resource maintenance schedules and work orders",
+      "/disruption-management": "Track and manage production disruptions including machine breakdowns, material shortages, and personnel issues",
       "/plant-manager-dashboard": "Comprehensive plant operations oversight and strategic decision-making",
       "/systems-management-dashboard": "Monitor system health, manage users, and oversee IT infrastructure",
       "/role-management": "Define user roles and specify feature permissions for different user types",

@@ -383,6 +383,66 @@ export const systemSettings = pgTable("system_settings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Disruption Management
+export const disruptions = pgTable("disruptions", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  type: text("type").notNull(), // machine_breakdown, material_shortage, absent_employee, quality_issue, equipment_maintenance, supplier_delay, weather, power_outage, other
+  severity: text("severity").notNull().default("medium"), // low, medium, high, critical
+  status: text("status").notNull().default("active"), // active, resolved, monitoring, escalated
+  description: text("description"),
+  affectedResourceId: integer("affected_resource_id").references(() => resources.id),
+  affectedJobId: integer("affected_job_id").references(() => jobs.id),
+  affectedOperationId: integer("affected_operation_id").references(() => operations.id),
+  startTime: timestamp("start_time").notNull(),
+  estimatedDuration: integer("estimated_duration"), // in hours
+  actualEndTime: timestamp("actual_end_time"),
+  reportedBy: text("reported_by").notNull(),
+  assignedTo: text("assigned_to"),
+  impactAssessment: jsonb("impact_assessment").$type<{
+    delayedOperations: number;
+    affectedJobs: number;
+    estimatedDelay: number; // hours
+    financialImpact: number;
+    customerImpact: string;
+  }>().default({ delayedOperations: 0, affectedJobs: 0, estimatedDelay: 0, financialImpact: 0, customerImpact: "none" }),
+  resolutionPlan: text("resolution_plan"),
+  resolutionNotes: text("resolution_notes"),
+  preventiveMeasures: text("preventive_measures"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const disruptionActions = pgTable("disruption_actions", {
+  id: serial("id").primaryKey(),
+  disruptionId: integer("disruption_id").references(() => disruptions.id).notNull(),
+  actionType: text("action_type").notNull(), // reschedule_operation, reassign_resource, delay_job, order_materials, repair_equipment, hire_temp_staff, notify_customer, escalate
+  description: text("description").notNull(),
+  targetId: integer("target_id"), // ID of affected operation, job, or resource
+  targetType: text("target_type"), // operation, job, resource
+  status: text("status").notNull().default("pending"), // pending, in_progress, completed, cancelled
+  assignedTo: text("assigned_to"),
+  scheduledTime: timestamp("scheduled_time"),
+  completedTime: timestamp("completed_time"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const disruptionEscalations = pgTable("disruption_escalations", {
+  id: serial("id").primaryKey(),
+  disruptionId: integer("disruption_id").references(() => disruptions.id).notNull(),
+  escalatedBy: text("escalated_by").notNull(),
+  escalatedTo: text("escalated_to").notNull(),
+  reason: text("reason").notNull(),
+  urgencyLevel: text("urgency_level").notNull(), // low, medium, high, urgent
+  expectedResponse: timestamp("expected_response"),
+  actualResponse: timestamp("actual_response"),
+  resolutionRequired: boolean("resolution_required").default(true),
+  status: text("status").notNull().default("pending"), // pending, acknowledged, resolved
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertCapabilitySchema = createInsertSchema(capabilities).omit({
   id: true,
 });
@@ -495,6 +555,32 @@ export const insertSystemSettingsSchema = createInsertSchema(systemSettings).omi
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+// Disruption Management Insert Schemas
+export const insertDisruptionSchema = createInsertSchema(disruptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  startTime: z.union([z.string().datetime(), z.date()]),
+  actualEndTime: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertDisruptionActionSchema = createInsertSchema(disruptionActions).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  scheduledTime: z.union([z.string().datetime(), z.date()]).optional(),
+  completedTime: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertDisruptionEscalationSchema = createInsertSchema(disruptionEscalations).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  expectedResponse: z.union([z.string().datetime(), z.date()]).optional(),
+  actualResponse: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
 // Capacity Planning Tables for Production Planners
@@ -709,6 +795,16 @@ export type SystemAuditLog = typeof systemAuditLog.$inferSelect;
 
 export type InsertSystemSettings = z.infer<typeof insertSystemSettingsSchema>;
 export type SystemSettings = typeof systemSettings.$inferSelect;
+
+// Disruption Management Types
+export type InsertDisruption = z.infer<typeof insertDisruptionSchema>;
+export type Disruption = typeof disruptions.$inferSelect;
+
+export type InsertDisruptionAction = z.infer<typeof insertDisruptionActionSchema>;
+export type DisruptionAction = typeof disruptionActions.$inferSelect;
+
+export type InsertDisruptionEscalation = z.infer<typeof insertDisruptionEscalationSchema>;
+export type DisruptionEscalation = typeof disruptionEscalations.$inferSelect;
 
 // Capacity Planning Insert Schemas
 export const insertCapacityPlanningScenarioSchema = createInsertSchema(capacityPlanningScenarios).omit({

@@ -5,12 +5,14 @@ import {
   capacityPlanningScenarios, staffingPlans, shiftPlans, equipmentPlans, capacityProjections,
   businessGoals, goalProgress, goalRisks, goalIssues, goalKpis, goalActions,
   users, roles, permissions, userRoles, rolePermissions, visualFactoryDisplays,
+  disruptions, disruptionActions, disruptionEscalations,
   type Capability, type Resource, type Job, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
   type CapacityPlanningScenario, type StaffingPlan, type ShiftPlan, type EquipmentPlan, type CapacityProjection,
   type BusinessGoal, type GoalProgress, type GoalRisk, type GoalIssue, type GoalKpi, type GoalAction,
   type User, type Role, type Permission, type UserRole, type RolePermission, type UserWithRoles,
+  type Disruption, type DisruptionAction, type DisruptionEscalation,
   type InsertCapability, type InsertResource, type InsertJob, 
   type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
@@ -19,6 +21,7 @@ import {
   type InsertBusinessGoal, type InsertGoalProgress, type InsertGoalRisk, type InsertGoalIssue, type InsertGoalKpi, type InsertGoalAction,
   type InsertUser, type InsertRole, type InsertPermission, type InsertUserRole, type InsertRolePermission,
   type VisualFactoryDisplay, type InsertVisualFactoryDisplay,
+  type InsertDisruption, type InsertDisruptionAction, type InsertDisruptionEscalation,
   demoTourParticipants, type DemoTourParticipant, type InsertDemoTourParticipant,
   voiceRecordingsCache, type VoiceRecordingsCache, type InsertVoiceRecordingsCache,
   tours, type Tour, type InsertTour
@@ -246,6 +249,28 @@ export interface IStorage {
   createGoalAction(action: InsertGoalAction): Promise<GoalAction>;
   updateGoalAction(id: number, action: Partial<InsertGoalAction>): Promise<GoalAction | undefined>;
   deleteGoalAction(id: number): Promise<boolean>;
+
+  // Disruption Management
+  getDisruptions(): Promise<Disruption[]>;
+  getActiveDisruptions(): Promise<Disruption[]>;
+  getDisruption(id: number): Promise<Disruption | undefined>;
+  createDisruption(disruption: InsertDisruption): Promise<Disruption>;
+  updateDisruption(id: number, disruption: Partial<InsertDisruption>): Promise<Disruption | undefined>;
+  deleteDisruption(id: number): Promise<boolean>;
+
+  // Disruption Actions
+  getDisruptionActions(disruptionId?: number): Promise<DisruptionAction[]>;
+  getDisruptionAction(id: number): Promise<DisruptionAction | undefined>;
+  createDisruptionAction(action: InsertDisruptionAction): Promise<DisruptionAction>;
+  updateDisruptionAction(id: number, action: Partial<InsertDisruptionAction>): Promise<DisruptionAction | undefined>;
+  deleteDisruptionAction(id: number): Promise<boolean>;
+
+  // Disruption Escalations
+  getDisruptionEscalations(disruptionId?: number): Promise<DisruptionEscalation[]>;
+  getDisruptionEscalation(id: number): Promise<DisruptionEscalation | undefined>;
+  createDisruptionEscalation(escalation: InsertDisruptionEscalation): Promise<DisruptionEscalation>;
+  updateDisruptionEscalation(id: number, escalation: Partial<InsertDisruptionEscalation>): Promise<DisruptionEscalation | undefined>;
+  deleteDisruptionEscalation(id: number): Promise<boolean>;
 
   // User Management
   getUsers(): Promise<User[]>;
@@ -2683,6 +2708,157 @@ export class DatabaseStorage implements IStorage {
       const [newTour] = await db.insert(tours).values(tour).returning();
       return newTour;
     }
+  }
+
+  // Disruption Management Implementation
+  async getDisruptions(): Promise<Disruption[]> {
+    return await db.select().from(disruptions).orderBy(desc(disruptions.createdAt));
+  }
+
+  async getActiveDisruptions(): Promise<Disruption[]> {
+    return await db.select()
+      .from(disruptions)
+      .where(eq(disruptions.status, 'active'))
+      .orderBy(desc(disruptions.severity), desc(disruptions.createdAt));
+  }
+
+  async getDisruption(id: number): Promise<Disruption | undefined> {
+    const [disruption] = await db.select().from(disruptions).where(eq(disruptions.id, id));
+    return disruption;
+  }
+
+  async createDisruption(disruption: InsertDisruption): Promise<Disruption> {
+    const [newDisruption] = await db.insert(disruptions).values({
+      ...disruption,
+      startTime: typeof disruption.startTime === 'string' ? new Date(disruption.startTime) : disruption.startTime,
+      actualEndTime: disruption.actualEndTime 
+        ? (typeof disruption.actualEndTime === 'string' ? new Date(disruption.actualEndTime) : disruption.actualEndTime)
+        : undefined
+    }).returning();
+    return newDisruption;
+  }
+
+  async updateDisruption(id: number, disruption: Partial<InsertDisruption>): Promise<Disruption | undefined> {
+    const updateData: any = { ...disruption, updatedAt: new Date() };
+    
+    if (disruption.startTime) {
+      updateData.startTime = typeof disruption.startTime === 'string' ? new Date(disruption.startTime) : disruption.startTime;
+    }
+    if (disruption.actualEndTime) {
+      updateData.actualEndTime = typeof disruption.actualEndTime === 'string' ? new Date(disruption.actualEndTime) : disruption.actualEndTime;
+    }
+
+    const [updatedDisruption] = await db
+      .update(disruptions)
+      .set(updateData)
+      .where(eq(disruptions.id, id))
+      .returning();
+    return updatedDisruption;
+  }
+
+  async deleteDisruption(id: number): Promise<boolean> {
+    const result = await db.delete(disruptions).where(eq(disruptions.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Disruption Actions Implementation
+  async getDisruptionActions(disruptionId?: number): Promise<DisruptionAction[]> {
+    const query = db.select().from(disruptionActions);
+    if (disruptionId) {
+      return await query.where(eq(disruptionActions.disruptionId, disruptionId)).orderBy(desc(disruptionActions.createdAt));
+    }
+    return await query.orderBy(desc(disruptionActions.createdAt));
+  }
+
+  async getDisruptionAction(id: number): Promise<DisruptionAction | undefined> {
+    const [action] = await db.select().from(disruptionActions).where(eq(disruptionActions.id, id));
+    return action;
+  }
+
+  async createDisruptionAction(action: InsertDisruptionAction): Promise<DisruptionAction> {
+    const [newAction] = await db.insert(disruptionActions).values({
+      ...action,
+      scheduledTime: action.scheduledTime 
+        ? (typeof action.scheduledTime === 'string' ? new Date(action.scheduledTime) : action.scheduledTime)
+        : undefined,
+      completedTime: action.completedTime 
+        ? (typeof action.completedTime === 'string' ? new Date(action.completedTime) : action.completedTime)
+        : undefined
+    }).returning();
+    return newAction;
+  }
+
+  async updateDisruptionAction(id: number, action: Partial<InsertDisruptionAction>): Promise<DisruptionAction | undefined> {
+    const updateData: any = { ...action };
+    
+    if (action.scheduledTime) {
+      updateData.scheduledTime = typeof action.scheduledTime === 'string' ? new Date(action.scheduledTime) : action.scheduledTime;
+    }
+    if (action.completedTime) {
+      updateData.completedTime = typeof action.completedTime === 'string' ? new Date(action.completedTime) : action.completedTime;
+    }
+
+    const [updatedAction] = await db
+      .update(disruptionActions)
+      .set(updateData)
+      .where(eq(disruptionActions.id, id))
+      .returning();
+    return updatedAction;
+  }
+
+  async deleteDisruptionAction(id: number): Promise<boolean> {
+    const result = await db.delete(disruptionActions).where(eq(disruptionActions.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Disruption Escalations Implementation
+  async getDisruptionEscalations(disruptionId?: number): Promise<DisruptionEscalation[]> {
+    const query = db.select().from(disruptionEscalations);
+    if (disruptionId) {
+      return await query.where(eq(disruptionEscalations.disruptionId, disruptionId)).orderBy(desc(disruptionEscalations.createdAt));
+    }
+    return await query.orderBy(desc(disruptionEscalations.createdAt));
+  }
+
+  async getDisruptionEscalation(id: number): Promise<DisruptionEscalation | undefined> {
+    const [escalation] = await db.select().from(disruptionEscalations).where(eq(disruptionEscalations.id, id));
+    return escalation;
+  }
+
+  async createDisruptionEscalation(escalation: InsertDisruptionEscalation): Promise<DisruptionEscalation> {
+    const [newEscalation] = await db.insert(disruptionEscalations).values({
+      ...escalation,
+      expectedResponse: escalation.expectedResponse 
+        ? (typeof escalation.expectedResponse === 'string' ? new Date(escalation.expectedResponse) : escalation.expectedResponse)
+        : undefined,
+      actualResponse: escalation.actualResponse 
+        ? (typeof escalation.actualResponse === 'string' ? new Date(escalation.actualResponse) : escalation.actualResponse)
+        : undefined
+    }).returning();
+    return newEscalation;
+  }
+
+  async updateDisruptionEscalation(id: number, escalation: Partial<InsertDisruptionEscalation>): Promise<DisruptionEscalation | undefined> {
+    const updateData: any = { ...escalation };
+    
+    if (escalation.expectedResponse) {
+      updateData.expectedResponse = typeof escalation.expectedResponse === 'string' ? new Date(escalation.expectedResponse) : escalation.expectedResponse;
+    }
+    if (escalation.actualResponse) {
+      updateData.actualResponse = typeof escalation.actualResponse === 'string' ? new Date(escalation.actualResponse) : escalation.actualResponse;
+    }
+
+    const [updatedEscalation] = await db
+      .update(disruptionEscalations)
+      .set(updateData)
+      .where(eq(disruptionEscalations.id, id))
+      .returning();
+    return updatedEscalation;
+  }
+
+  async deleteDisruptionEscalation(id: number): Promise<boolean> {
+    const result = await db.delete(disruptionEscalations).where(eq(disruptionEscalations.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
   }
 }
 
