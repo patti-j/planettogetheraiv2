@@ -575,6 +575,11 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
             autoAdvanceTimeoutRef.current = setTimeout(() => {
               handleNext();
             }, 2000); // Wait 2 seconds after audio ends before advancing
+          } else if (autoAdvance && currentStep === tourSteps.length - 1) {
+            // Auto-complete tour if on last step
+            autoAdvanceTimeoutRef.current = setTimeout(() => {
+              handleComplete();
+            }, 2000); // Wait 2 seconds after audio ends before showing completion dialog
           }
         };
         
