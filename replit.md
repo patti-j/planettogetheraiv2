@@ -157,6 +157,18 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 22, 2025)
 
+✓ **AI Permission Preview & Confirmation System Implementation (July 22, 2025)**:
+- Enhanced AI permission generation with two-step preview/confirm workflow to prevent unwanted changes
+- Updated AI to provide specific instructions only when explicitly given, role-based recommendations when no context provided
+- Implemented separate preview endpoint `/api/ai/generate-permissions-preview` that shows planned changes before application
+- Added confirmation endpoint `/api/ai/apply-permissions` for user-approved permission updates
+- Created comprehensive preview dialog showing detailed permission changes, role impacts, and permission counts
+- Enhanced permission preservation system that merges new permissions with existing ones instead of replacement
+- Improved AI matching logic with colon-to-dash format conversion and partial feature matching for better accuracy
+- Added visual indicators for current vs new permission counts and clear change summaries
+- Users can now review, modify, and approve all AI-suggested permission changes before they're applied to roles
+- System prevents accidental permission modifications with clear cancel/apply workflow
+
 ✓ **Multi-Role Tour Continuation & Registration Form Enhancement (July 22, 2025)**:
 - Successfully implemented multi-role tour continuation system allowing users to explore different role demonstrations
 - Added role selection dialog that appears at tour completion with available roles (Director, Production Scheduler, Plant Manager, Systems Manager)

@@ -13,7 +13,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   UserCheck, Shield, Plus, Edit, Trash2, Users, Settings,
-  CheckCircle, XCircle, AlertCircle, Maximize2, Minimize2, Sparkles, Copy
+  CheckCircle, XCircle, AlertCircle, Maximize2, Minimize2, Sparkles, Copy,
+  ArrowRight, Check
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -56,6 +57,8 @@ export default function RoleManagementPage() {
   const [aiPermissionDialog, setAiPermissionDialog] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<number[]>([]);
+  const [aiPermissionPreviewDialog, setAiPermissionPreviewDialog] = useState(false);
+  const [aiPreviewData, setAiPreviewData] = useState<any>(null);
   const [aiPermissionForm, setAiPermissionForm] = useState({
     description: ""
   });
@@ -151,21 +154,16 @@ export default function RoleManagementPage() {
     },
   });
 
-  // AI permission generation mutation
+  // AI permission generation preview mutation
   const generateAiPermissionsMutation = useMutation({
     mutationFn: async (data: { roleIds: number[], description: string }) => {
-      const response = await apiRequest("POST", "/api/ai/generate-permissions", data);
+      const response = await apiRequest("POST", "/api/ai/generate-permissions-preview", data);
       return response.json();
     },
     onSuccess: (data) => {
-      toast({
-        title: "Permissions Generated",
-        description: `AI has generated permissions for ${selectedRoles.length} role(s). ${data.message || 'Check each role to review the new permissions.'}`,
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/roles-management"] });
+      setAiPreviewData(data);
       setAiPermissionDialog(false);
-      setSelectedRoles([]);
-      setAiPermissionForm({ description: "" });
+      setAiPermissionPreviewDialog(true);
     },
     onError: (error: any) => {
       const errorMessage = error.message || "Failed to generate permissions with AI";
@@ -187,6 +185,32 @@ export default function RoleManagementPage() {
             </Button>
           </div>
         ),
+        variant: "destructive",
+      });
+    },
+  });
+
+  // AI permission application mutation
+  const applyAiPermissionsMutation = useMutation({
+    mutationFn: async (changes: any[]) => {
+      const response = await apiRequest("POST", "/api/ai/apply-permissions", { changes });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Permissions Applied",
+        description: `Successfully applied permissions to ${data.totalRolesModified} role(s)`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/roles-management"] });
+      setAiPermissionPreviewDialog(false);
+      setSelectedRoles([]);
+      setAiPermissionForm({ description: "" });
+      setAiPreviewData(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Application Failed",
+        description: error.message || "Failed to apply permission changes",
         variant: "destructive",
       });
     },
@@ -737,6 +761,97 @@ export default function RoleManagementPage() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Permission Preview Dialog */}
+      <Dialog open={aiPermissionPreviewDialog} onOpenChange={setAiPermissionPreviewDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-600" />
+              Review Permission Changes
+            </DialogTitle>
+            <DialogDescription>
+              Review the AI-suggested permission changes before applying them to your roles.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {aiPreviewData && (
+            <div className="space-y-4">
+              {/* Summary */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-900 mb-2">Summary</h4>
+                <p className="text-blue-800 text-sm">{aiPreviewData.summary}</p>
+                {aiPreviewData.reasoning && (
+                  <p className="text-blue-700 text-xs mt-2">{aiPreviewData.reasoning}</p>
+                )}
+              </div>
+
+              {/* Changes Preview */}
+              <div className="space-y-4">
+                <h4 className="font-medium">Planned Changes</h4>
+                {aiPreviewData.changes?.length > 0 ? (
+                  <div className="space-y-3">
+                    {aiPreviewData.changes.map((change: any, index: number) => (
+                      <div key={index} className="border rounded-lg p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h5 className="font-medium text-gray-900">{change.roleName}</h5>
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <span>{change.currentPermissionCount} current permissions</span>
+                            <ArrowRight className="w-3 h-3" />
+                            <span>{change.totalPermissionsAfter} total after changes</span>
+                          </div>
+                        </div>
+                        
+                        {change.newPermissions?.length > 0 ? (
+                          <div>
+                            <h6 className="text-sm font-medium text-green-700 mb-2">
+                              Adding {change.newPermissions.length} new permission(s):
+                            </h6>
+                            <div className="grid grid-cols-2 gap-2">
+                              {change.newPermissions.map((perm: any, permIndex: number) => (
+                                <div key={permIndex} className="flex items-center gap-2 text-sm">
+                                  <Badge className={getPermissionBadgeColor(perm.permission.action)}>
+                                    {perm.permission.action}
+                                  </Badge>
+                                  <span className="text-green-700">{perm.permission.description}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-sm text-gray-600">No new permissions to add for this role</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    No permission changes suggested
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-2 pt-4 border-t">
+                <Button variant="outline" onClick={() => {
+                  setAiPermissionPreviewDialog(false);
+                  setAiPreviewData(null);
+                }}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={() => applyAiPermissionsMutation.mutate(aiPreviewData.changes)}
+                  disabled={applyAiPermissionsMutation.isPending || !aiPreviewData.changes?.some((change: any) => change.newPermissions?.length > 0)}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                >
+                  <Check className="w-4 h-4 mr-2" />
+                  {applyAiPermissionsMutation.isPending ? "Applying Changes..." : "Apply Changes"}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

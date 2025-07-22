@@ -3950,8 +3950,8 @@ Return a JSON object with tour data for each role including steps, voice scripts
     }
   });
 
-  // AI Permission Generation
-  app.post("/api/ai/generate-permissions", requireAuth, async (req, res) => {
+  // AI Permission Generation - Preview
+  app.post("/api/ai/generate-permissions-preview", requireAuth, async (req, res) => {
     try {
       const { roleIds, description = "" } = req.body;
       
@@ -3985,7 +3985,10 @@ Return a JSON object with tour data for each role including steps, voice scripts
         description: p.description
       }));
 
-      const prompt = `You are a permission management assistant. Follow the user's specific instructions exactly.
+      const hasSpecificInstructions = description.trim().length > 0;
+      
+      const prompt = hasSpecificInstructions 
+        ? `You are a permission management assistant. Follow the user's specific instructions exactly.
 
 Roles to modify:
 ${roleContext.map(r => `- ${r.name}: ${r.description || 'No description'}\n  Current permissions: ${r.currentPermissions.join(', ') || 'None'}`).join('\n')}
@@ -3993,22 +3996,44 @@ ${roleContext.map(r => `- ${r.name}: ${r.description || 'No description'}\n  Cur
 Available Permissions:
 ${availablePermissions.map(p => `- ${p.name}: ${p.description} (${p.feature}-${p.action})`).join('\n')}
 
-User Instructions: ${description || 'No specific instructions provided.'}
+User Instructions: ${description}
 
 IMPORTANT RULES:
 1. ONLY add the specific permissions mentioned in the user instructions
 2. If the user says "add visual factory permission", only add visual-factory-view permission
 3. If the user says "add visual factory and shop floor permissions", only add those two specific permissions
 4. Do NOT add additional permissions beyond what the user specifically requested
-5. If no specific permissions are mentioned, do not add any permissions
-6. Preserve existing permissions unless specifically told to remove them
+5. Preserve existing permissions unless specifically told to remove them
 
 Return a JSON object with this structure:
 {
   "rolePermissions": {
     "RoleName": ["specific-permission-mentioned-by-user"]
   },
-  "reasoning": "Added only the permissions specifically requested by the user"
+  "reasoning": "Added only the permissions specifically requested by the user",
+  "summary": "Brief summary of what will be changed"
+}`
+        : `You are a permission management assistant. Recommend appropriate permissions based on role names and responsibilities.
+
+Roles to analyze:
+${roleContext.map(r => `- ${r.name}: ${r.description || 'No description'}\n  Current permissions: ${r.currentPermissions.join(', ') || 'None'}`).join('\n')}
+
+Available Permissions:
+${availablePermissions.map(p => `- ${p.name}: ${p.description} (${p.feature}-${p.action})`).join('\n')}
+
+RULES for role-based recommendations:
+1. Analyze each role name and determine what permissions are typically needed
+2. Follow principle of least privilege - only essential permissions
+3. Focus on view permissions primarily, add create/edit/delete only when clearly needed for the role
+4. Consider manufacturing workflow and organizational hierarchy
+
+Return a JSON object with this structure:
+{
+  "rolePermissions": {
+    "RoleName": ["recommended-permission-1", "recommended-permission-2"]
+  },
+  "reasoning": "Explanation of why these permissions fit the role",
+  "summary": "Brief summary of recommended changes"
 }`;
 
       const completion = await openai.chat.completions.create({
@@ -4043,9 +4068,9 @@ Return a JSON object with this structure:
         return res.status(500).json({ message: "AI generated invalid response format" });
       }
 
-      // Apply the AI-suggested permissions to each role
-      const updatedRoles = [];
+      // Generate preview of suggested permissions
       const permissionMap = new Map(allPermissions.map(p => [p.name, p.id]));
+      const previewChanges = [];
 
       console.log("AI Response:", JSON.stringify(aiResponse, null, 2));
       console.log("Available permission names:", Array.from(permissionMap.keys()));
@@ -4054,16 +4079,20 @@ Return a JSON object with this structure:
         const suggestedPermissions = aiResponse.rolePermissions?.[role.name] || [];
         console.log(`Processing role ${role.name}, suggested permissions:`, suggestedPermissions);
         
-        const permissionIds = suggestedPermissions
+        const permissionDetails = suggestedPermissions
           .map(permName => {
             // Try exact match first
             let id = permissionMap.get(permName);
+            let resolvedName = permName;
             
             // If not found, try converting from colon format to dash format
             if (!id && permName.includes(':')) {
               const dashFormat = permName.replace(':', '-');
               id = permissionMap.get(dashFormat);
-              console.log(`Converted '${permName}' to '${dashFormat}': ${id ? 'found' : 'not found'}`);
+              if (id) {
+                resolvedName = dashFormat;
+                console.log(`Converted '${permName}' to '${dashFormat}': found`);
+              }
             }
             
             // If still not found, try partial matching by feature name
@@ -4071,51 +4100,48 @@ Return a JSON object with this structure:
               const featurePart = permName.split(':')[0] || permName.split('-')[0];
               const matchingPermissions = Array.from(permissionMap.keys()).filter(p => p.startsWith(featurePart));
               if (matchingPermissions.length > 0) {
-                console.log(`Partial matches for '${permName}':`, matchingPermissions);
-                // Try to find view permission as default
                 const viewPerm = matchingPermissions.find(p => p.endsWith('-view'));
                 if (viewPerm) {
                   id = permissionMap.get(viewPerm);
+                  resolvedName = viewPerm;
                   console.log(`Using view permission '${viewPerm}' for '${permName}'`);
                 }
               }
             }
             
-            if (!id) {
-              console.log(`Permission '${permName}' not found in database`);
-            }
-            return id;
+            return id ? { 
+              originalName: permName, 
+              resolvedName, 
+              id,
+              permission: allPermissions.find(p => p.id === id)
+            } : null;
           })
-          .filter(id => id !== undefined);
+          .filter(item => item !== null);
 
-        console.log(`Found ${permissionIds.length} valid permission IDs:`, permissionIds);
-
-        if (permissionIds.length > 0) {
-          // Get current permissions for this role
+        if (permissionDetails.length > 0) {
+          // Get current permissions for this role  
           const currentRole = await storage.getRole(role.id);
           const currentPermissionIds = currentRole?.permissions?.map(p => p.id) || [];
+          const newPermissionIds = permissionDetails.map(p => p.id);
+          const actuallyNewPermissions = permissionDetails.filter(p => !currentPermissionIds.includes(p.id));
           
-          // Merge new permissions with existing ones (avoid duplicates)
-          const mergedPermissionIds = Array.from(new Set([...currentPermissionIds, ...permissionIds]));
-          
-          await storage.updateRolePermissions(role.id, { permissions: mergedPermissionIds });
-          updatedRoles.push({
+          previewChanges.push({
             roleName: role.name,
-            addedPermissions: suggestedPermissions,
-            permissionCount: permissionIds.length,
-            totalPermissions: mergedPermissionIds.length
+            roleId: role.id,
+            currentPermissionCount: currentPermissionIds.length,
+            newPermissions: actuallyNewPermissions,
+            totalPermissionsAfter: Array.from(new Set([...currentPermissionIds, ...newPermissionIds])).length
           });
-          console.log(`Added ${permissionIds.length} new permissions to role ${role.name}, total: ${mergedPermissionIds.length}`);
-        } else {
-          console.log(`No valid permissions found for role ${role.name}`);
         }
       }
 
       res.json({ 
-        success: true, 
-        message: aiResponse.reasoning || "Permissions generated and assigned successfully",
-        updatedRoles,
-        totalRoles: updatedRoles.length
+        success: true,
+        preview: true,
+        summary: aiResponse.summary || "Permission changes ready for review",
+        reasoning: aiResponse.reasoning || "AI generated permission recommendations",
+        changes: previewChanges,
+        hasSpecificInstructions
       });
 
     } catch (error) {
@@ -4123,6 +4149,54 @@ Return a JSON object with this structure:
       res.status(500).json({ 
         success: false, 
         message: "Failed to generate permissions with AI" 
+      });
+    }
+  });
+
+  // AI Permission Generation - Apply Changes
+  app.post("/api/ai/apply-permissions", requireAuth, async (req, res) => {
+    try {
+      const { changes } = req.body;
+      
+      if (!changes || !Array.isArray(changes) || changes.length === 0) {
+        return res.status(400).json({ message: "Changes array is required" });
+      }
+
+      const appliedChanges = [];
+
+      for (const change of changes) {
+        if (change.newPermissions && change.newPermissions.length > 0) {
+          // Get current permissions for this role
+          const currentRole = await storage.getRole(change.roleId);
+          const currentPermissionIds = currentRole?.permissions?.map(p => p.id) || [];
+          
+          // Add new permissions
+          const newPermissionIds = change.newPermissions.map(p => p.id);
+          const mergedPermissionIds = Array.from(new Set([...currentPermissionIds, ...newPermissionIds]));
+          
+          await storage.updateRolePermissions(change.roleId, { permissions: mergedPermissionIds });
+          appliedChanges.push({
+            roleName: change.roleName,
+            addedPermissions: change.newPermissions.map(p => p.resolvedName),
+            addedCount: change.newPermissions.length
+          });
+          
+          console.log(`Applied ${change.newPermissions.length} permissions to role ${change.roleName}`);
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        message: "Permissions applied successfully",
+        appliedChanges,
+        totalRolesModified: appliedChanges.length
+      });
+
+    } catch (error) {
+      console.error("AI permission application error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to apply permission changes" 
       });
     }
   });
