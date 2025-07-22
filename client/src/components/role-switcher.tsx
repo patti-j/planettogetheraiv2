@@ -72,26 +72,59 @@ export function RoleSwitcher({ userId, currentRole }: RoleSwitcherProps) {
     mutationFn: ({ roleId, targetRole }: { roleId: number; targetRole?: string }) => 
       apiRequest('POST', `/api/users/${userId}/switch-role`, { roleId }),
     onSuccess: async (_, variables) => {
-      toast({
-        title: "Role Switched Successfully!",
-        description: "You have switched to the new role. The interface will update to reflect your new permissions.",
-        duration: 2000,
-      });
       setIsOpen(false);
       setSelectedRoleId('');
       
-      // Clear all cached queries and refetch auth data immediately
+      // Show smooth transition overlay
+      const overlay = document.createElement('div');
+      overlay.id = 'role-switch-overlay';
+      overlay.className = 'fixed inset-0 bg-gradient-to-br from-blue-50 to-white z-[9999] flex items-center justify-center';
+      overlay.innerHTML = `
+        <div class="text-center space-y-6 max-w-md mx-auto p-8 bg-white/90 backdrop-blur-sm rounded-2xl border border-blue-200 shadow-xl">
+          <div class="relative">
+            <div class="role-switch-spinner rounded-full h-16 w-16 border-4 mx-auto"></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+              <div class="w-4 h-4 bg-blue-600 rounded-full animate-pulse"></div>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <div class="text-xl font-semibold text-gray-900">Switching to ${variables.targetRole === 'Trainer' ? 'Trainer Mode' : 'New Role'}</div>
+            <div class="text-sm text-gray-600">Updating interface and permissions...</div>
+          </div>
+          <div class="flex items-center justify-center space-x-1">
+            <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
+            <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+            <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      // Toast notification
+      toast({
+        title: "Role Switch in Progress",
+        description: `Switching to ${variables.targetRole === 'Trainer' ? 'Trainer mode' : 'new role'}...`,
+        duration: 1500,
+      });
+      
+      // Clear all cached queries
       queryClient.clear();
       
       // Determine redirect path based on target role
       const redirectPath = variables.targetRole === 'Trainer' ? '/training' : '/';
       
-      // Immediately redirect to force a full page refresh with new permissions
+      // Smooth transition with reduced delay
       setTimeout(() => {
         window.location.href = redirectPath;
-      }, 500);
+      }, 800);
     },
     onError: (error: any) => {
+      // Remove overlay on error if it exists
+      const overlay = document.getElementById('role-switch-overlay');
+      if (overlay) {
+        overlay.remove();
+      }
+      
       toast({
         title: "Switch Failed",
         description: error.message || "Failed to switch roles",
@@ -201,10 +234,19 @@ export function RoleSwitcher({ userId, currentRole }: RoleSwitcherProps) {
               }
             }}
             disabled={switchRoleMutation.isPending || displayCurrentRole?.name === 'Trainer'}
-            className="gap-2 text-orange-600 border-orange-200 hover:bg-orange-50"
+            className="gap-2 text-orange-600 border-orange-200 hover:bg-orange-50 role-switch-btn"
           >
-            <RotateCcw className="h-4 w-4" />
-            Exit Training Mode
+            {switchRoleMutation.isPending && displayCurrentRole?.name !== 'Trainer' ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                Returning to Trainer...
+              </>
+            ) : (
+              <>
+                <RotateCcw className="h-4 w-4" />
+                Exit to Trainer
+              </>
+            )}
           </Button>
           
           <div className="flex space-x-2">
@@ -214,7 +256,7 @@ export function RoleSwitcher({ userId, currentRole }: RoleSwitcherProps) {
             <Button
               onClick={handleSwitchRole}
               disabled={!selectedRoleId || switchRoleMutation.isPending}
-              className="gap-2"
+              className="gap-2 role-switch-btn"
             >
               {switchRoleMutation.isPending ? (
                 <>

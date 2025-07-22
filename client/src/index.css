@@ -475,3 +475,41 @@ div[data-radix-tooltip-content] {
     -webkit-appearance: none;
   }
 }
+
+/* Role switching transition overlay */
+#role-switch-overlay {
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Smooth loading spinner */
+.role-switch-spinner {
+  border-color: #3b82f6;
+  border-top-color: transparent;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Enhanced transition for role switching buttons */
+.role-switch-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.role-switch-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
