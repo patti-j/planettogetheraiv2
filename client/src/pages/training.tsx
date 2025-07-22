@@ -1453,17 +1453,17 @@ function TourManagementSection() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4">
-        <div>
-          <h3 className="text-lg font-semibold mb-2">Tour Content Management</h3>
-          <p className="text-gray-600 text-sm">
+      <div className="flex flex-col gap-3 sm:gap-4">
+        <div className="space-y-2">
+          <h3 className="text-base sm:text-lg font-semibold">Tour Content Management</h3>
+          <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
             Manage guided tour content, steps, voice scripts, and benefits for each role.
             Use AI to regenerate and optimize tour experiences.
           </p>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-2 lg:justify-end">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-2 lg:justify-end pt-2">
           <Button
             onClick={handleGenerateSelectedTours}
             disabled={regenerateTourWithAI.isPending || selectedRoles.length === 0}
@@ -1509,17 +1509,17 @@ function TourManagementSection() {
 
       {/* Loading State */}
       {toursLoading && (
-        <div className="flex justify-center items-center py-8">
-          <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-          <span>Loading tours from database...</span>
+        <div className="flex justify-center items-center py-6 sm:py-8">
+          <RefreshCw className="h-5 w-5 sm:h-6 sm:w-6 animate-spin mr-2" />
+          <span className="text-sm sm:text-base">Loading tours from database...</span>
         </div>
       )}
       
       {/* Detailed Tour Configuration - Moved to Top */}
       {!toursLoading && toursFromAPI?.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {/* Select All Controls */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-2 mb-3 sm:mb-4 pt-2 sm:pt-0">
             <div className="flex items-center space-x-2">
               <span className="text-sm font-medium text-gray-700">Select:</span>
               <Button
@@ -1545,16 +1545,16 @@ function TourManagementSection() {
           </div>
           
           {(toursFromAPI as any[])?.map((tour: any) => (
-            <Card key={tour.id}>
+            <Card key={tour.id} className="mb-3 sm:mb-4">
               <CardHeader 
-                className="cursor-pointer hover:bg-gray-50" 
+                className="cursor-pointer hover:bg-gray-50 p-3 sm:p-6" 
                 onClick={() => toggleTourExpansion(tour.id)}
             >
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-                <div className="flex items-center">
+              <div className="flex flex-col gap-3 sm:gap-2 lg:flex-row lg:items-center lg:justify-between lg:gap-3">
+                <div className="flex items-center min-w-0">
                     {expandedTours.includes(tour.id) ? 
-                    <ChevronDown className="h-4 w-4 mr-2" /> : 
-                    <ChevronRight className="h-4 w-4 mr-2" />
+                    <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 mr-2 shrink-0" /> : 
+                    <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 mr-2 shrink-0" />
                   }
                   <input
                     type="checkbox"
@@ -1563,26 +1563,26 @@ function TourManagementSection() {
                       e.stopPropagation();
                       toggleRole(tour.roleDisplayName);
                     }}
-                    className="rounded text-purple-600 shrink-0 mr-3"
+                    className="rounded text-purple-600 shrink-0 mr-2 sm:mr-3"
                   />
-                    <CardTitle className="text-lg">{tour.roleDisplayName} Tour</CardTitle>
+                    <CardTitle className="text-sm sm:text-lg truncate">{tour.roleDisplayName} Tour</CardTitle>
                 </div>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-600">
-                  <div className="flex items-center gap-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4 text-xs sm:text-sm text-gray-600 ml-7 sm:ml-0">
+                  <div className="flex items-center gap-3 sm:gap-4">
                     <span className="flex items-center">
-                      <FileText className="h-4 w-4 mr-1" />
-                        {tour.tourData?.steps?.length || 0} steps
+                      <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                        <span className="text-xs sm:text-sm">{tour.tourData?.steps?.length || 0} steps</span>
                     </span>
                     <span className="flex items-center">
-                      <Clock className="h-4 w-4 mr-1" />
-                        {tour.tourData?.estimatedDuration || '5-10 min'}
+                      <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                        <span className="text-xs sm:text-sm">{tour.tourData?.estimatedDuration || '5-10 min'}</span>
                     </span>
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 w-full sm:w-auto">
                     <Button 
                       size="sm" 
                       variant="outline"
-                      className="w-full sm:w-auto text-xs sm:text-sm"
+                      className="w-full sm:w-auto text-xs px-2 py-1"
                       onClick={(e) => {
                         e.stopPropagation();
                         handlePreviewTour(tour);
@@ -1595,7 +1595,7 @@ function TourManagementSection() {
                     <Button 
                       size="sm" 
                       variant="outline"
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 w-full sm:w-auto text-xs sm:text-sm"
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 w-full sm:w-auto text-xs px-2 py-1"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleSingleTourRegenerate(tour);
@@ -1613,7 +1613,7 @@ function TourManagementSection() {
                     <Button 
                       size="sm" 
                       variant="outline"
-                      className="w-full sm:w-auto text-xs sm:text-sm"
+                      className="w-full sm:w-auto text-xs px-2 py-1"
                     >
                       <Edit3 className="h-3 w-3 mr-1" />
                       <span className="hidden sm:inline">Edit Tour</span>
@@ -1622,7 +1622,7 @@ function TourManagementSection() {
                     <Button 
                       size="sm" 
                       variant="outline" 
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50 w-full sm:w-auto text-xs sm:text-sm"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 w-full sm:w-auto text-xs px-2 py-1"
                       onClick={(e) => {
                         e.stopPropagation();
                         setTourToDelete(tour);
