@@ -1522,12 +1522,23 @@ function TourManagementSection() {
                 }
 
                 try {
+                  console.log('Tour data:', previewTourData);
+                  console.log('System roles:', systemRoles);
+                  console.log('Looking for role:', previewTourData.role, 'Display name:', previewTourData.roleDisplayName);
+                  
                   // First, switch to the appropriate role
-                  const roleId = systemRoles?.find((r: any) => 
-                    r.name.toLowerCase().replace(/\s+/g, '-') === previewTourData.role ||
-                    r.name.toLowerCase().replace(/\s+/g, '') === previewTourData.role.replace(/-/g, '') ||
-                    r.name.toLowerCase() === previewTourData.roleDisplayName?.toLowerCase()
-                  )?.id;
+                  const roleId = systemRoles?.find((r: any) => {
+                    const nameMatch = r.name.toLowerCase().replace(/\s+/g, '-') === previewTourData.role;
+                    const nameNoSpaceMatch = r.name.toLowerCase().replace(/\s+/g, '') === previewTourData.role.replace(/-/g, '');
+                    const displayNameMatch = r.name.toLowerCase() === previewTourData.roleDisplayName?.toLowerCase();
+                    
+                    console.log('Checking role:', r.name, 'ID:', r.id);
+                    console.log('Name match:', nameMatch, 'No space match:', nameNoSpaceMatch, 'Display name match:', displayNameMatch);
+                    
+                    return nameMatch || nameNoSpaceMatch || displayNameMatch;
+                  })?.id;
+
+                  console.log('Found role ID:', roleId);
 
                   if (roleId) {
                     // Switch role
