@@ -1397,7 +1397,7 @@ function TourManagementSection() {
                 <h4 className="font-semibold text-lg mb-2">{previewStepData.step.stepTitle || previewStepData.step.feature}</h4>
                 <p className="text-gray-600 mb-4">{previewStepData.step.description}</p>
                 
-                {previewStepData.step.benefits && (
+                {previewStepData.step.benefits && Array.isArray(previewStepData.step.benefits) && (
                   <div className="mb-4">
                     <h5 className="font-medium mb-2">Benefits:</h5>
                     <ul className="text-sm text-gray-600 space-y-1">
@@ -1471,7 +1471,7 @@ function TourManagementSection() {
                   
                   <p className="text-gray-600 mb-3">{step.description}</p>
                   
-                  {step.benefits && (
+                  {step.benefits && Array.isArray(step.benefits) && (
                     <div className="mb-3">
                       <h6 className="text-sm font-medium mb-1">Benefits:</h6>
                       <ul className="text-sm text-gray-600 space-y-1">
