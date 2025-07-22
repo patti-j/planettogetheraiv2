@@ -39,6 +39,7 @@ function TestVoiceButton({ voiceSettings }: { voiceSettings: { voice: string; ge
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
+  const { toast } = useToast();
 
   const handleTestVoice = async () => {
     const testMessage = "Hello! This is a test of the voice settings you've selected. This will help you preview how the voice narration will sound during tours.";
@@ -68,12 +69,22 @@ function TestVoiceButton({ voiceSettings }: { voiceSettings: { voice: string; ge
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate voice');
+        throw new Error(`Failed to generate voice: ${response.status} ${response.statusText}`);
       }
 
       const audioBlob = await response.blob();
+      console.log('Audio blob received:', audioBlob.size, 'bytes, type:', audioBlob.type);
+      
+      if (audioBlob.size === 0) {
+        throw new Error('Received empty audio data');
+      }
+      
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
+      
+      // Set audio properties for better compatibility
+      audio.preload = 'auto';
+      audio.volume = 0.8;
       
       setCurrentAudio(audio);
       setIsLoading(false);
@@ -85,19 +96,41 @@ function TestVoiceButton({ voiceSettings }: { voiceSettings: { voice: string; ge
         setCurrentAudio(null);
       };
 
-      audio.onerror = () => {
+      audio.onerror = (e) => {
         setIsPlaying(false);
         setIsLoading(false);
         URL.revokeObjectURL(audioUrl);
         setCurrentAudio(null);
-        console.error('Error playing audio');
+        console.error('Error playing audio:', e);
       };
       
-      await audio.play();
+      try {
+        await audio.play();
+        console.log('Audio playback started successfully');
+      } catch (playError) {
+        console.error('Audio play() failed:', playError);
+        setIsPlaying(false);
+        setIsLoading(false);
+        URL.revokeObjectURL(audioUrl);
+        setCurrentAudio(null);
+        
+        toast({
+          title: "Audio Playback Failed",
+          description: "Could not play the voice preview. Try adjusting browser audio settings or reload the page.",
+          variant: "destructive",
+        });
+        throw playError;
+      }
     } catch (error) {
       console.error('Error testing voice:', error);
       setIsLoading(false);
       setIsPlaying(false);
+      
+      toast({
+        title: "Voice Test Failed",
+        description: "Could not generate voice preview. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
