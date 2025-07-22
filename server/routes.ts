@@ -4119,9 +4119,8 @@ Return a JSON object with this structure:
           .filter(item => item !== null);
 
         if (permissionDetails.length > 0) {
-          // Get current permissions for this role  
-          const currentRole = await storage.getRole(role.id);
-          const currentPermissionIds = currentRole?.permissions?.map(p => p.id) || [];
+          // Get current permissions for this role (use original role data from roles array which includes permissions)
+          const currentPermissionIds = role.permissions?.map(p => p.id) || [];
           const newPermissionIds = permissionDetails.map(p => p.id);
           const actuallyNewPermissions = permissionDetails.filter(p => !currentPermissionIds.includes(p.id));
           
