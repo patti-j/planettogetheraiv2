@@ -48,6 +48,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Job, Resource, Operation } from "@shared/schema";
+import { useAuth } from "@/hooks/useAuth";
 
 interface OnboardingStep {
   id: string;
@@ -105,6 +106,7 @@ export default function OnboardingWizard() {
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // Check if user is new (no existing data)
   const { data: jobs = [] } = useQuery<Job[]>({
@@ -361,13 +363,15 @@ export default function OnboardingWizard() {
   // Auto-open for new users who haven't seen onboarding
   useEffect(() => {
     // Check if user is in demo mode - if so, don't show onboarding popup
-    const isDemo = localStorage.getItem("authToken")?.startsWith("demo_");
+    const isDemo = localStorage.getItem("authToken")?.startsWith("demo_") || 
+                   user?.id?.startsWith("demo_") || 
+                   user?.username?.startsWith("demo_");
     
     // Disable auto-opening for demo users and training purposes
     if (!isDemo && isNewUser && !hasSeenOnboarding) {
       setIsOpen(true);
     }
-  }, [isNewUser, hasSeenOnboarding]);
+  }, [isNewUser, hasSeenOnboarding, user]);
 
   // Listen for custom event to open onboarding
   useEffect(() => {

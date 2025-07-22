@@ -134,7 +134,7 @@ The application uses a modern full-stack architecture with strong typing through
 - **NEW: Enhanced Voice Content**: Replaced basic screen reading with engaging, explanatory narrations that provide context and insights
 - **NEW: Visual Generation Indicators**: Added spinning loading indicator and status messages showing when AI voice is being generated
 - **NEW: Performance Optimizations**: Reduced wait times by pre-loading voice generation, faster TTS model selection, and optimized timing
-- **NEW: Fixed Demo Popup Issue**: Prevented unwanted "Welcome to PlanetTogether" onboarding popup from appearing during demo login
+- **NEW: Fixed Demo Popup Issue**: Completely eliminated unwanted "Welcome to PlanetTogether" onboarding popup from appearing during demo tours by enhancing demo user detection with multiple authentication checks
 - **NEW: Audio Playback Fix**: Resolved voice narration playback issues with proper browser audio handling and fallback mechanisms
 - **NEW: Audio Pre-Loading System**: Implemented smart audio pre-loading that generates all voice content at tour start for instant playbook without waiting
 - **NEW: Resume Tour Feature**: Added resume tour button that appears after users exit the guided tour, allowing them to continue from where they left off
