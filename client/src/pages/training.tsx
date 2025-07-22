@@ -1565,7 +1565,7 @@ function TourManagementSection() {
                 className="cursor-pointer hover:bg-gray-50" 
                 onClick={() => toggleTourExpansion(tour.id)}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
                 <div className="flex items-center">
                     {expandedTours.includes(tour.id) ? 
                     <ChevronDown className="h-4 w-4 mr-2" /> : 
@@ -1573,35 +1573,44 @@ function TourManagementSection() {
                   }
                     <CardTitle className="text-lg">{tour.roleDisplayName} Tour</CardTitle>
                 </div>
-                <div className="flex items-center gap-4 text-sm text-gray-600">
-                  <span className="flex items-center">
-                    <FileText className="h-4 w-4 mr-1" />
-                      {tour.tourData?.steps?.length || 0} steps
-                  </span>
-                  <span className="flex items-center">
-                    <Clock className="h-4 w-4 mr-1" />
-                      {tour.tourData?.estimatedDuration || '5-10 min'}
-                  </span>
-                  <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-4">
+                    <span className="flex items-center">
+                      <FileText className="h-4 w-4 mr-1" />
+                        {tour.tourData?.steps?.length || 0} steps
+                    </span>
+                    <span className="flex items-center">
+                      <Clock className="h-4 w-4 mr-1" />
+                        {tour.tourData?.estimatedDuration || '5-10 min'}
+                    </span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Button 
                       size="sm" 
                       variant="outline"
+                      className="w-full sm:w-auto text-xs sm:text-sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         handlePreviewTour(tour);
                       }}
                     >
                       <Play className="h-3 w-3 mr-1" />
-                      Preview Tour
+                      <span className="hidden sm:inline">Preview Tour</span>
+                      <span className="sm:hidden">Preview</span>
                     </Button>
-                    <Button size="sm" variant="outline">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="w-full sm:w-auto text-xs sm:text-sm"
+                    >
                       <Edit3 className="h-3 w-3 mr-1" />
-                      Edit Tour
+                      <span className="hidden sm:inline">Edit Tour</span>
+                      <span className="sm:hidden">Edit</span>
                     </Button>
                     <Button 
                       size="sm" 
                       variant="outline" 
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 w-full sm:w-auto text-xs sm:text-sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         setTourToDelete(tour);
@@ -1609,7 +1618,8 @@ function TourManagementSection() {
                       }}
                     >
                       <Trash2 className="h-3 w-3 mr-1" />
-                      Delete
+                      <span className="hidden sm:inline">Delete</span>
+                      <span className="sm:hidden">Delete</span>
                     </Button>
                   </div>
                 </div>
@@ -1621,20 +1631,20 @@ function TourManagementSection() {
                 <div className="space-y-6">
                   {tour.tourData.steps.map((step: any, index: number) => (
                     <div key={step.id || `step-${tour.id}-${index}`} className="border rounded-lg p-4 bg-gray-50">
-                      <div className="flex items-start justify-between mb-3">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
                         <div className="flex items-center">
                           <Badge variant="outline" className="mr-3">Step {index + 1}</Badge>
-                          <h5 className="font-semibold">{step.stepName || step.feature || step.title || `Step ${index + 1}`}</h5>
+                          <h5 className="font-semibold text-sm">{step.stepName || step.feature || step.title || `Step ${index + 1}`}</h5>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary">{step.duration}</Badge>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Badge variant="secondary" className="text-xs">{step.duration}</Badge>
                           <Button size="sm" variant="ghost">
                             <Edit3 className="h-3 w-3" />
                           </Button>
                         </div>
                       </div>
                       
-                      <div className="grid md:grid-cols-2 gap-4 text-sm">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-sm">
                         <div>
                           <p className="font-medium mb-2">Description</p>
                           <p className="text-gray-600 mb-3">{step.description || step.benefits || 'No description available'}</p>
@@ -1676,25 +1686,25 @@ function TourManagementSection() {
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-end mt-4 pt-3 border-t">
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="ghost"
-                            onClick={() => handlePreviewStep(step, tour.roleDisplayName)}
-                          >
-                            <Eye className="h-3 w-3 mr-1" />
-                            Preview
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="ghost"
-                            onClick={() => handleTestVoice(step, tour.roleDisplayName)}
-                          >
-                            <Volume2 className="h-3 w-3 mr-1" />
-                            Test Voice
-                          </Button>
-                        </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 mt-4 pt-3 border-t">
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          className="w-full sm:w-auto text-xs sm:text-sm"
+                          onClick={() => handlePreviewStep(step, tour.roleDisplayName)}
+                        >
+                          <Eye className="h-3 w-3 mr-1" />
+                          Preview
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          className="w-full sm:w-auto text-xs sm:text-sm"
+                          onClick={() => handleTestVoice(step, tour.roleDisplayName)}
+                        >
+                          <Volume2 className="h-3 w-3 mr-1" />
+                          Test Voice
+                        </Button>
                       </div>
                     </div>
                   ))}
