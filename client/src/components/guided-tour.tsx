@@ -39,6 +39,30 @@ interface TourStep {
   benefits: string[];
   actionText: string;
   duration: string;
+  voiceScript?: string;
+  // Enhanced navigation controls
+  target?: {
+    type: 'page' | 'tab' | 'section' | 'element' | 'button' | 'dialog';
+    selector?: string; // CSS selector or data attribute
+    tabId?: string; // For tab navigation (e.g., "tour-management", "role-demonstrations")
+    action?: 'click' | 'hover' | 'focus' | 'scroll' | 'highlight';
+    waitFor?: string; // Element to wait for after navigation
+    description?: string; // Description of what to show/highlight
+  };
+  // Pre-actions to set up the step (optional)
+  preActions?: Array<{
+    type: 'click' | 'navigate' | 'scroll' | 'wait';
+    selector?: string;
+    value?: string | number;
+    description?: string;
+  }>;
+  // Visual highlighting and focus
+  spotlight?: {
+    enabled: boolean;
+    selector?: string; // What to highlight
+    overlay?: boolean; // Show dark overlay on rest of screen
+    position?: 'top' | 'bottom' | 'left' | 'right' | 'center';
+  };
 }
 
 interface RoleData {
@@ -885,7 +909,190 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     }
   };
 
-  const handleNext = () => {
+  // Enhanced navigation function that handles target actions
+  const executeStepNavigation = async (step: TourStep) => {
+    try {
+      console.log("Executing enhanced navigation for step:", step.title, step.target);
+      
+      // Execute pre-actions if defined
+      if (step.preActions) {
+        for (const preAction of step.preActions) {
+          await executeAction(preAction);
+        }
+      }
+
+      // Navigate to page if needed
+      if (step.page && step.page !== "current") {
+        console.log("Navigating to page:", step.page);
+        setLocation(step.page);
+        // Wait for navigation to complete
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+
+      // Execute target action if defined
+      if (step.target) {
+        await executeTargetAction(step.target);
+      }
+
+      // Apply spotlight if defined
+      if (step.spotlight?.enabled) {
+        applySpotlight(step.spotlight);
+      }
+
+    } catch (error) {
+      console.error("Error executing step navigation:", error);
+    }
+  };
+
+  // Execute individual actions
+  const executeAction = async (action: any): Promise<void> => {
+    return new Promise((resolve) => {
+      switch (action.type) {
+        case 'click':
+          if (action.selector) {
+            const element = document.querySelector(action.selector);
+            if (element) {
+              (element as HTMLElement).click();
+              console.log(`Clicked element: ${action.selector}`);
+            }
+          }
+          break;
+        case 'scroll':
+          if (action.selector) {
+            const element = document.querySelector(action.selector);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              console.log(`Scrolled to element: ${action.selector}`);
+            }
+          }
+          break;
+        case 'wait':
+          setTimeout(resolve, action.value as number || 1000);
+          return;
+      }
+      setTimeout(resolve, 500); // Default wait time
+    });
+  };
+
+  // Execute target actions with enhanced functionality
+  const executeTargetAction = async (target: any): Promise<void> => {
+    return new Promise((resolve) => {
+      switch (target.type) {
+        case 'tab':
+          // Click on a tab to show it
+          if (target.tabId || target.selector) {
+            const tabSelector = target.selector || `[data-tab="${target.tabId}"]`;
+            const tabElement = document.querySelector(tabSelector);
+            if (tabElement) {
+              (tabElement as HTMLElement).click();
+              console.log(`Clicked tab: ${target.tabId || target.selector}`);
+            } else {
+              // Try alternative selectors for tabs
+              const altSelectors = [
+                `button[value="${target.tabId}"]`,
+                `[role="tab"][data-value="${target.tabId}"]`,
+                `[data-testid="${target.tabId}"]`,
+                `.tabs [data-value="${target.tabId}"]`
+              ];
+              for (const selector of altSelectors) {
+                const elem = document.querySelector(selector);
+                if (elem) {
+                  (elem as HTMLElement).click();
+                  console.log(`Clicked tab via selector: ${selector}`);
+                  break;
+                }
+              }
+            }
+          }
+          break;
+        case 'section':
+          // Scroll to and highlight a section
+          if (target.selector) {
+            const element = document.querySelector(target.selector);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              // Add visual highlight
+              element.classList.add('tour-highlight');
+              setTimeout(() => element.classList.remove('tour-highlight'), 3000);
+              console.log(`Highlighted section: ${target.selector}`);
+            }
+          }
+          break;
+        case 'element':
+        case 'button':
+          // Highlight an element or button
+          if (target.selector) {
+            const element = document.querySelector(target.selector);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              if (target.action === 'click') {
+                (element as HTMLElement).click();
+                console.log(`Clicked element: ${target.selector}`);
+              } else {
+                // Just highlight
+                element.classList.add('tour-highlight');
+                setTimeout(() => element.classList.remove('tour-highlight'), 3000);
+                console.log(`Highlighted element: ${target.selector}`);
+              }
+            }
+          }
+          break;
+      }
+      setTimeout(resolve, 1000); // Wait for action to complete
+    });
+  };
+
+  // Apply visual spotlight effect
+  const applySpotlight = (spotlight: any) => {
+    if (spotlight.selector) {
+      const element = document.querySelector(spotlight.selector);
+      if (element) {
+        // Create spotlight overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'tour-spotlight-overlay';
+        overlay.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.7);
+          pointer-events: none;
+          z-index: 9998;
+        `;
+        
+        // Get element position
+        const rect = element.getBoundingClientRect();
+        const spotlight = document.createElement('div');
+        spotlight.className = 'tour-spotlight';
+        spotlight.style.cssText = `
+          position: fixed;
+          top: ${rect.top - 10}px;
+          left: ${rect.left - 10}px;
+          width: ${rect.width + 20}px;
+          height: ${rect.height + 20}px;
+          border: 3px solid #3b82f6;
+          border-radius: 8px;
+          box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
+          pointer-events: none;
+          z-index: 9999;
+        `;
+        
+        document.body.appendChild(overlay);
+        document.body.appendChild(spotlight);
+        
+        // Remove spotlight after 5 seconds
+        setTimeout(() => {
+          if (document.body.contains(overlay)) document.body.removeChild(overlay);
+          if (document.body.contains(spotlight)) document.body.removeChild(spotlight);
+        }, 5000);
+        
+        console.log(`Applied spotlight to: ${spotlight.selector}`);
+      }
+    }
+  };
+
+  const handleNext = async () => {
     // Clear any pending auto-advance timeout
     if (autoAdvanceTimeoutRef.current) {
       clearTimeout(autoAdvanceTimeoutRef.current);
@@ -894,19 +1101,20 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     
     stopSpeech(); // Stop current speech before proceeding
     setAudioCompleted(false); // Reset audio completed state for next step
+    
     if (currentStep < tourSteps.length - 1) {
       const nextStep = currentStep + 1;
       const nextStepData = tourSteps[nextStep];
       
       console.log("Moving to tour step:", nextStep, "page:", nextStepData.page);
       
-      // Navigate to the page if it's not current
-      if (nextStepData.page && nextStepData.page !== "current") {
-        console.log("Navigating to:", nextStepData.page);
-        setLocation(nextStepData.page);
-      }
-      
       setCurrentStep(nextStep);
+      
+      // Execute enhanced navigation for the next step
+      setTimeout(async () => {
+        await executeStepNavigation(nextStepData);
+      }, 100); // Small delay to ensure step is set
+      
       // Voice will be handled automatically by useEffect when currentStep changes
     } else {
       handleComplete();

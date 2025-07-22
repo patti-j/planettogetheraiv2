@@ -1,0 +1,208 @@
+{
+  "tourData": {
+    "steps": [
+      {
+        "id": "trainer-welcome",
+        "title": "Welcome to the Trainer Experience",
+        "description": "As a Trainer, you have comprehensive access to all system features to demonstrate and teach other users. Let's explore the powerful training tools available to you.",
+        "page": "/training",
+        "icon": "GraduationCap",
+        "benefits": [
+          "Access all system training modules and resources",
+          "Demonstrate any role to prospective users",
+          "Manage guided tours and training content"
+        ],
+        "actionText": "Start Training Tour",
+        "duration": "30 seconds",
+        "voiceScript": "Welcome to your comprehensive Trainer experience! You have access to powerful tools that let you demonstrate the system to new users and manage all training content.",
+        "target": {
+          "type": "page",
+          "description": "Navigate to training page"
+        }
+      },
+      {
+        "id": "trainer-modules-tab",
+        "title": "Training Modules Overview",
+        "description": "The Training Modules tab shows interactive learning content for different user roles. Each module provides step-by-step tutorials and best practices.",
+        "page": "/training",
+        "icon": "BookOpen",
+        "benefits": [
+          "Browse comprehensive training curricula",
+          "Access role-specific learning paths",
+          "Track user progress and completion rates"
+        ],
+        "actionText": "Explore Training Modules",
+        "duration": "45 seconds",
+        "voiceScript": "The Training Modules section contains structured learning content organized by role and difficulty level, helping you guide users through comprehensive system training.",
+        "target": {
+          "type": "tab",
+          "tabId": "modules",
+          "selector": "[data-tab='training-modules']",
+          "description": "Show the Training Modules tab"
+        },
+        "spotlight": {
+          "enabled": true,
+          "selector": "[data-tour-target='training-modules-tab']",
+          "overlay": true,
+          "position": "center"
+        }
+      },
+      {
+        "id": "role-demonstrations-tab",
+        "title": "Role Demonstrations Center",
+        "description": "This is where you can switch to any role in the system to demonstrate features and capabilities to prospective users. Perfect for live demonstrations.",
+        "page": "/training",
+        "icon": "Users",
+        "benefits": [
+          "Switch between any system role instantly",
+          "Demonstrate role-specific features live",
+          "Show users exactly what they'll experience"
+        ],
+        "actionText": "Access Role Switching",
+        "duration": "60 seconds",
+        "voiceScript": "The Role Demonstrations center is your most powerful tool - you can instantly switch to any role like Director, Production Scheduler, or Plant Manager to show users exactly what their experience will be like.",
+        "target": {
+          "type": "tab",
+          "tabId": "roles",
+          "selector": "[data-tab='role-demonstrations']",
+          "description": "Switch to Role Demonstrations tab"
+        },
+        "spotlight": {
+          "enabled": true,
+          "selector": "[data-tour-target='role-demonstrations-tab']",
+          "overlay": true,
+          "position": "center"
+        }
+      },
+      {
+        "id": "role-switching-demo",
+        "title": "Role Switching Demonstration",
+        "description": "Let's highlight the role switching area where you can select any role to demonstrate. Each role card shows what features and pages they'll access.",
+        "page": "/training",
+        "icon": "RefreshCw",
+        "benefits": [
+          "Instant role switching without logout",
+          "See role-specific navigation and permissions",
+          "Perfect for sales demonstrations and training"
+        ],
+        "actionText": "Try Role Switching",
+        "duration": "45 seconds",
+        "voiceScript": "Here you can click any role card to instantly switch and demonstrate that role's specific features, navigation, and capabilities - perfect for showing prospects exactly what their experience will be.",
+        "target": {
+          "type": "section",
+          "selector": ".role-cards-grid",
+          "description": "Highlight the role switching cards area"
+        },
+        "spotlight": {
+          "enabled": true,
+          "selector": ".role-cards-grid",
+          "overlay": true,
+          "position": "center"
+        }
+      },
+      {
+        "id": "tour-management-tab",
+        "title": "Tour Management System",
+        "description": "The Tour Management tab is where you create, edit, and manage all guided tours. You can generate AI-powered tours and customize the experience for each role.",
+        "page": "/training",
+        "icon": "Settings",
+        "benefits": [
+          "Create and customize guided tours",
+          "Use AI to generate tour content automatically",
+          "Manage voice narrations and tour flow"
+        ],
+        "actionText": "Manage Tours",
+        "duration": "60 seconds",
+        "voiceScript": "Tour Management is where the magic happens - you can create detailed guided tours with AI assistance, manage voice narrations, and ensure every user gets a perfect introduction to their role.",
+        "target": {
+          "type": "tab",
+          "tabId": "tours",
+          "selector": "[data-tab='tour-management']",
+          "description": "Switch to Tour Management tab"
+        },
+        "spotlight": {
+          "enabled": true,
+          "selector": "[data-tour-target='tour-management-tab']",
+          "overlay": true,
+          "position": "center"
+        }
+      },
+      {
+        "id": "tour-creation-tools",
+        "title": "AI-Powered Tour Creation",
+        "description": "Within Tour Management, you'll find powerful AI tools that can automatically generate comprehensive tours for any role, complete with step-by-step guidance and voice narration.",
+        "page": "/training",
+        "icon": "Sparkles",
+        "benefits": [
+          "Generate tours automatically with AI",
+          "Customize tour content for specific needs",
+          "Pre-generate voice narrations for smooth delivery"
+        ],
+        "actionText": "Use AI Tour Generation",
+        "duration": "45 seconds",
+        "voiceScript": "The AI tour generation tools can create comprehensive guided tours automatically, saving you hours of work while ensuring every role gets perfectly tailored guidance through their specific features.",
+        "target": {
+          "type": "section",
+          "selector": ".tour-management-section",
+          "description": "Highlight the tour creation and management tools"
+        },
+        "preActions": [
+          {
+            "type": "click",
+            "selector": "[data-tab='tour-management']",
+            "description": "Ensure Tour Management tab is active"
+          }
+        ]
+      },
+      {
+        "id": "training-resources-tab",
+        "title": "Training Resources Library",
+        "description": "The Training Resources tab contains documentation, video tutorials, best practices guides, and other materials to support comprehensive user training.",
+        "page": "/training",
+        "icon": "FileText",
+        "benefits": [
+          "Access comprehensive documentation",
+          "Share best practices and guides",
+          "Provide additional learning resources"
+        ],
+        "actionText": "Browse Resources",
+        "duration": "30 seconds",
+        "voiceScript": "The Training Resources library provides all the supplementary materials you need - documentation, video tutorials, and best practices guides to support comprehensive user education.",
+        "target": {
+          "type": "tab",
+          "tabId": "resources",
+          "selector": "[data-tab='training-resources']",
+          "description": "Switch to Training Resources tab"
+        },
+        "spotlight": {
+          "enabled": true,
+          "selector": "[data-tour-target='training-resources-tab']",
+          "overlay": true,
+          "position": "center"
+        }
+      },
+      {
+        "id": "trainer-capabilities-summary",
+        "title": "Your Training Superpowers",
+        "description": "As a Trainer, you have the unique ability to demonstrate the full system to anyone, create engaging learning experiences, and ensure every user gets the perfect introduction to their role.",
+        "page": "/training",
+        "icon": "Star",
+        "benefits": [
+          "Demonstrate any role instantly",
+          "Create and manage all training content",
+          "Provide world-class user onboarding experiences"
+        ],
+        "actionText": "Complete Training",
+        "duration": "30 seconds",
+        "voiceScript": "You now have the knowledge to leverage your full Trainer capabilities - demonstrate any role, create engaging tours, and provide world-class user onboarding experiences that will wow your prospects and users.",
+        "target": {
+          "type": "page",
+          "description": "Stay on training page for summary"
+        }
+      }
+    ],
+    "totalSteps": 8,
+    "estimatedDuration": "5 minutes",
+    "voiceScriptCount": 8
+  }
+}

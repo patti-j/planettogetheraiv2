@@ -1493,6 +1493,29 @@ export const tours = pgTable("tours", {
       actionText: string;
       duration: string;
       voiceScript?: string;
+      // Enhanced navigation controls
+      target?: {
+        type: 'page' | 'tab' | 'section' | 'element' | 'button' | 'dialog';
+        selector?: string; // CSS selector or data attribute
+        tabId?: string; // For tab navigation (e.g., "tour-management", "role-demonstrations")
+        action?: 'click' | 'hover' | 'focus' | 'scroll' | 'highlight';
+        waitFor?: string; // Element to wait for after navigation
+        description?: string; // Description of what to show/highlight
+      };
+      // Pre-actions to set up the step (optional)
+      preActions?: Array<{
+        type: 'click' | 'navigate' | 'scroll' | 'wait';
+        selector?: string;
+        value?: string | number;
+        description?: string;
+      }>;
+      // Visual highlighting and focus
+      spotlight?: {
+        enabled: boolean;
+        selector?: string; // What to highlight
+        overlay?: boolean; // Show dark overlay on rest of screen
+        position?: 'top' | 'bottom' | 'left' | 'right' | 'center';
+      };
     }>;
     totalSteps: number;
     estimatedDuration: string;

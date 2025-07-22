@@ -337,19 +337,19 @@ export default function Training() {
 
       <Tabs defaultValue="modules" className="space-y-4 sm:space-y-6">
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-          <TabsTrigger value="modules" className="text-xs sm:text-sm">
+          <TabsTrigger value="modules" className="text-xs sm:text-sm" data-tab="training-modules" data-tour-target="training-modules-tab">
             <span className="hidden sm:inline">Training Modules</span>
             <span className="sm:hidden">Modules</span>
           </TabsTrigger>
-          <TabsTrigger value="roles" className="text-xs sm:text-sm">
+          <TabsTrigger value="roles" className="text-xs sm:text-sm" data-tab="role-demonstrations" data-tour-target="role-demonstrations-tab">
             <span className="hidden sm:inline">Role Demonstrations</span>
             <span className="sm:hidden">Roles</span>
           </TabsTrigger>
-          <TabsTrigger value="tours" className="text-xs sm:text-sm">
+          <TabsTrigger value="tours" className="text-xs sm:text-sm" data-tab="tour-management" data-tour-target="tour-management-tab">
             <span className="hidden sm:inline">Tour Management</span>
             <span className="sm:hidden">Tours</span>
           </TabsTrigger>
-          <TabsTrigger value="resources" className="text-xs sm:text-sm">
+          <TabsTrigger value="resources" className="text-xs sm:text-sm" data-tab="training-resources" data-tour-target="training-resources-tab">
             <span className="hidden sm:inline">Training Resources</span>
             <span className="sm:hidden">Resources</span>
           </TabsTrigger>
