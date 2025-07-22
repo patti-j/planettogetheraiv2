@@ -41,6 +41,12 @@ interface TourStep {
   duration: string;
 }
 
+interface RoleData {
+  id: number;
+  name: string;
+  description: string;
+}
+
 interface GuidedTourProps {
   roleId: number;
   initialStep?: number;
@@ -332,7 +338,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   console.log("GuidedTour component mounted with roleId:", roleId, "initialVoiceEnabled:", initialVoiceEnabled);
   
   // Fetch role data to get role name for compatibility
-  const { data: roleData } = useQuery({
+  const { data: roleData } = useQuery<RoleData>({
     queryKey: [`/api/roles/${roleId}`],
     enabled: !!roleId,
   });
@@ -528,7 +534,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     // Always use server-side cached audio for instant playback
     const currentStepData = tourSteps.find(step => step.id === stepId);
     if (currentStepData) {
-      const enhancedText = createEngagingNarration(currentStepData, roleData?.name || 'unknown');
+      const enhancedText = createEngagingNarration(currentStepData, (roleData as any)?.name || 'unknown');
       console.log(`Playing cached audio for step: ${stepId}`);
       
       try {
@@ -892,6 +898,26 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       description: "Thanks for exploring PlanetTogether! Continue exploring the features on your own.",
     });
     onComplete();
+  };
+
+  const handleExitApplication = () => {
+    stopSpeech(); // Stop any playing audio before exiting
+    setShowRoleSelection(false);
+    setIsVisible(false);
+    toast({
+      title: "Thanks for visiting!",
+      description: "Closing PlanetTogether demo...",
+    });
+    
+    // Exit the application by closing the window
+    setTimeout(() => {
+      window.close();
+      
+      // If window.close() doesn't work (security restrictions), redirect to about:blank
+      setTimeout(() => {
+        window.location.href = 'about:blank';
+      }, 1000);
+    }, 1500);
   };
 
   const handleSkipTour = () => {
@@ -1305,7 +1331,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                         className="h-auto p-4 text-left hover:bg-blue-50 hover:border-blue-300 min-h-[80px] flex items-start"
                       >
                         <div className="flex items-start gap-3 w-full">
-                          <roleIcon className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                          {React.createElement(roleIcon, { className: "h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" })}
                           <div className="flex-1 min-w-0">
                             <div className="font-medium text-gray-900 mb-1">{tourRole}</div>
                             <div className="text-xs text-gray-500 leading-relaxed overflow-hidden">
@@ -1349,7 +1375,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4 border-t">
                 <Button 
-                  onClick={handleFinishAllTours}
+                  onClick={handleExitApplication}
                   variant="outline" 
                   className="flex-1"
                 >
