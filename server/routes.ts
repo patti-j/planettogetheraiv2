@@ -3958,16 +3958,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (requiredPermission) {
           // Extract feature from permission (e.g., 'production-scheduling-view' -> 'production-scheduling')
           const requiredFeature = requiredPermission.replace('-view', '');
-          console.log(`Checking permission for ${route}: need '${requiredFeature}', have features:`, permissionFeatures.slice(0, 3));
           
-          if (permissionFeatures.includes(requiredFeature)) {
+          // Use flexible permission matching - check for exact match or related features
+          const hasPermission = permissionFeatures.includes(requiredFeature) || 
+            permissionFeatures.some(feature => {
+              // Flexible matching for common cases
+              if (requiredFeature.includes('scheduling') && (feature.includes('production-scheduling') || feature.includes('schedule'))) return true;
+              if (requiredFeature.includes('optimization') && feature.includes('schedule-optimization')) return true;
+              if (requiredFeature.includes('dashboard') && feature.includes('production-scheduling')) return true;
+              if (requiredFeature.includes('analytics') && (feature.includes('reports') || feature.includes('analytics'))) return true;
+              return false;
+            });
+          
+          if (hasPermission) {
             accessibleRoutes[route] = description;
             console.log(`✓ Role ${role.name} can access ${route} (${requiredFeature})`);
           } else {
             console.log(`✗ Role ${role.name} cannot access ${route} (missing ${requiredFeature})`);
           }
         } else {
-          // Routes without specific permission requirements (like root dashboard)
+          // Routes without specific permission requirements
           accessibleRoutes[route] = description;
         }
       }
@@ -4009,7 +4019,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let prompt = `Generate comprehensive guided tour content for PlanetTogether manufacturing system for these roles: ${roles.join(', ')}.
 
-CRITICAL PERMISSION REQUIREMENT: You MUST ONLY use navigation paths that are accessible to each specific role based on their permissions.
+IMPORTANT: You MUST ONLY use navigation paths that are accessible to each specific role based on their permissions.
 
 Role-specific accessible navigation paths:
 ${roles.map(role => {
@@ -4017,16 +4027,25 @@ ${roles.map(role => {
   return `${role}:\n${Object.entries(accessibleRoutes).map(([path, desc]) => `  - ${path} (${desc})`).join('\n')}`;
 }).join('\n\n')}
 
-SPECIAL REQUIREMENTS FOR PRODUCTION SCHEDULER:
-- MUST include the main dashboard ("/") which shows production scheduling with Gantt chart
-- MUST include order optimization ("/scheduling-optimizer") for intelligent scheduling
-- These are the core features Production Schedulers need to see in their guided tour
+INTELLIGENT TOUR CREATION GUIDELINES:
+1. Analyze each role's accessible routes and select the most valuable features for that role's responsibilities
+2. For Production Schedulers: Focus on scheduling, optimization, and planning features
+3. For Plant Managers: Emphasize oversight, reporting, and management features  
+4. For Directors: Highlight strategic, analytical, and goal-tracking features
+5. Adapt tour content based on the role's core job functions and available permissions
 
-IMPORTANT RULES:
+PERMISSION MATCHING RULES:
+- Use flexible matching when interpreting user guidance - if user mentions "scheduling" look for routes with scheduling, optimization, or planning
+- If user mentions "analytics" or "reports" look for reporting, analytics, or dashboard features
+- Match user intent to available permissions rather than requiring exact terminology
+- Prioritize the most relevant features for each role from their accessible routes
+
+REQUIREMENTS:
 1. NEVER include routes that are not listed for that specific role
-2. Each role can ONLY visit the pages listed above for that role
+2. Each role can ONLY visit the pages listed above for that role  
 3. Tours must respect role-based access control permissions
 4. Use ONLY the role-specific navigation paths listed for each role
+5. Create 3-5 engaging tour steps per role covering their most important accessible features
 
 For each role, create:
 1. 3-5 tour steps covering accessible features only
