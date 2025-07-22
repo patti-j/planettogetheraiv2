@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, X } from "lucide-react";
 import { GuidedTour } from "./guided-tour";
+import { useTour } from "@/contexts/TourContext";
 
 interface ResumeTourButtonProps {
   className?: string;
@@ -11,6 +12,7 @@ export function ResumeTourButton({ className = "" }: ResumeTourButtonProps) {
   const [showButton, setShowButton] = useState(false);
   const [tourState, setTourState] = useState<any>(null);
   const [showTour, setShowTour] = useState(false);
+  const { isActive: isTourActive } = useTour();
 
   useEffect(() => {
     // Check if there's a saved tour state
@@ -55,7 +57,9 @@ export function ResumeTourButton({ className = "" }: ResumeTourButtonProps) {
     setShowButton(true);
   };
 
+  // Don't show resume button if there's an active tour running
   if (!showButton && !showTour) return null;
+  if (isTourActive && !showTour) return null;
 
   return (
     <>
@@ -100,7 +104,7 @@ export function ResumeTourButton({ className = "" }: ResumeTourButtonProps) {
       {/* Resumed Tour Component */}
       {showTour && tourState && (
         <GuidedTour
-          role={tourState.role}
+          roleId={tourState.roleId}
           initialStep={tourState.currentStep}
           initialVoiceEnabled={tourState.voiceEnabled}
           onComplete={handleTourComplete}

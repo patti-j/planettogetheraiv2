@@ -383,19 +383,28 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   }, [roleId, tourSessionKey]);
   // Initialize position to bottom-right corner immediately
   const getInitialPosition = () => {
-    const isMobile = window.innerWidth < 768;
-    const cardWidth = isMobile ? Math.min(320, window.innerWidth - 20) : 384;
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    const isMobile = windowWidth < 768;
+    const cardWidth = isMobile ? Math.min(280, windowWidth - 60) : 384; // Smaller width on mobile for more margin
     const maxCardHeight = isMobile ? 
-      Math.min(350, window.innerHeight * 0.5) : 
-      Math.min(600, window.innerHeight - 100);
-    const padding = isMobile ? 10 : 20;
+      Math.min(350, windowHeight * 0.5) : 
+      Math.min(600, windowHeight - 100);
+    const padding = 20; // Consistent padding
+    
+    // For mobile, we want to ensure the tour window stays on screen
+    // Calculate position to be in bottom-right with proper margins
+    const targetX = isMobile ? 
+      Math.max(padding, windowWidth - cardWidth - padding) : 
+      windowWidth - cardWidth - padding;
+    const targetY = windowHeight - maxCardHeight - padding;
     
     const position = {
-      x: window.innerWidth - cardWidth - padding,
-      y: window.innerHeight - maxCardHeight - padding - (isMobile ? 20 : 0)
+      x: Math.max(padding, targetX),
+      y: Math.max(padding, targetY)
     };
     
-    console.log("Initial tour position calculated:", position, "isMobile:", isMobile, "windowSize:", { width: window.innerWidth, height: window.innerHeight });
+    console.log("INITIAL tour position calculated:", position, "isMobile:", isMobile, "windowSize:", { width: windowWidth, height: windowHeight }, "cardWidth:", cardWidth, "targetX:", targetX);
     return position;
   };
 
@@ -769,26 +778,30 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
 
   // Set initial position to lower right corner with boundary checking
   useEffect(() => {
-    const isMobile = windowSize.width < 768; // md breakpoint
-    const cardWidth = isMobile ? Math.min(320, windowSize.width - 20) : 384; // Responsive width with more margin
+    const windowWidth = windowSize.width;
+    const windowHeight = windowSize.height;
+    const isMobile = windowWidth < 768; // md breakpoint
+    const cardWidth = isMobile ? Math.min(280, windowWidth - 60) : 384; // Smaller width on mobile for more margin
     const maxCardHeight = isMobile ? 
-      Math.min(350, windowSize.height * 0.5) : // Mobile: 50% of screen height, max 350px
-      Math.min(600, windowSize.height - 100); // Desktop: original behavior
-    const padding = isMobile ? 10 : 20; // Less padding on mobile
+      Math.min(350, windowHeight * 0.5) : // Mobile: 50% of screen height, max 350px
+      Math.min(600, windowHeight - 100); // Desktop: original behavior
+    const padding = 20; // Consistent padding
     
     // Calculate bottom-right position more reliably
-    const newPosition = {
-      x: windowSize.width - cardWidth - padding,
-      y: windowSize.height - maxCardHeight - padding - (isMobile ? 20 : 0) // Extra margin on mobile
-    };
+    const targetX = isMobile ? 
+      Math.max(padding, windowWidth - cardWidth - padding) : 
+      windowWidth - cardWidth - padding;
+    const targetY = windowHeight - maxCardHeight - padding;
     
-    // Ensure position is within bounds
+    // Ensure position is within bounds with proper minimums
     const constrainedPosition = {
-      x: Math.max(padding, Math.min(newPosition.x, windowSize.width - cardWidth - padding)),
-      y: Math.max(padding, Math.min(newPosition.y, windowSize.height - maxCardHeight - padding))
+      x: Math.max(padding, targetX),
+      y: Math.max(padding, targetY)
     };
     
-    console.log("Setting tour position:", constrainedPosition, "for window size:", windowSize, "mobile:", isMobile);
+    console.log("UPDATED tour position:", constrainedPosition, "for window size:", windowSize, "mobile:", isMobile, "calculations:", {
+      windowWidth, windowHeight, cardWidth, maxCardHeight, padding, targetX, targetY
+    });
     setPosition(constrainedPosition);
   }, [windowSize]);
 
@@ -812,11 +825,11 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   // Boundary checking function to keep window in viewport
   const constrainToViewport = (newPosition: { x: number; y: number }) => {
     const isMobile = windowSize.width < 768;
-    const cardWidth = isMobile ? Math.min(320, windowSize.width - 20) : 384;
+    const cardWidth = isMobile ? Math.min(280, windowSize.width - 60) : 384;
     const maxCardHeight = isMobile ? 
       Math.min(350, windowSize.height * 0.5) : 
       Math.min(600, windowSize.height - 100);
-    const padding = isMobile ? 10 : 20;
+    const padding = 20;
     
     return {
       x: Math.max(padding, Math.min(newPosition.x, windowSize.width - cardWidth - padding)),
