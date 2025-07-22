@@ -97,7 +97,16 @@ export function TourProvider({ children }: { children: ReactNode }) {
 export function useTour() {
   const context = useContext(TourContext);
   if (!context) {
-    throw new Error("useTour must be used within a TourProvider");
+    console.warn("useTour called outside TourProvider - returning default values");
+    // Return default values instead of throwing to prevent crashes
+    return {
+      isActive: false,
+      currentRole: "",
+      voiceEnabled: false,
+      startTour: () => {},
+      completeTour: () => {},
+      skipTour: () => {}
+    };
   }
   return context;
 }
