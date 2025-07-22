@@ -674,14 +674,16 @@ export default function RoleManagementPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {isMaximized ? (
-        <div className="fixed inset-0 bg-white z-50 overflow-auto">
-          <div className="h-full p-6">
+        <div className="fixed inset-0 bg-white z-50 flex flex-col">
+          <div className="flex-1 p-6 overflow-hidden">
             {mainContent}
           </div>
         </div>
       ) : (
-        <div className="max-w-7xl mx-auto p-6">
-          {mainContent}
+        <div className="max-w-7xl mx-auto p-6 h-screen flex flex-col">
+          <div className="flex-1 overflow-hidden">
+            {mainContent}
+          </div>
         </div>
       )}
 
