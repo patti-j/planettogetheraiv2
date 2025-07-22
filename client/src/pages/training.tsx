@@ -2254,7 +2254,7 @@ function TourManagementSection() {
                         setVoiceGenerationOptions(prev => ({ 
                           ...prev, 
                           voice: value,
-                          gender: ['nova', 'alloy', 'shimmer', 'nova-slow', 'alloy-business', 'shimmer-energetic'].includes(value) ? 'female' : 'male'
+                          gender: ['alloy', 'nova', 'shimmer', 'alloy-business', 'nova-slow', 'shimmer-energetic'].includes(value) ? 'female' : 'male'
                         }))
                       }
                     >
@@ -2262,17 +2262,17 @@ function TourManagementSection() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="nova">Nova (Female - Natural)</SelectItem>
-                        <SelectItem value="alloy">Alloy (Female - Clear)</SelectItem>
-                        <SelectItem value="shimmer">Shimmer (Female - Warm)</SelectItem>
-                        <SelectItem value="echo">Echo (Male - Deep)</SelectItem>
-                        <SelectItem value="fable">Fable (Male - Expressive)</SelectItem>
-                        <SelectItem value="onyx">Onyx (Male - Professional)</SelectItem>
-                        <SelectItem value="nova-slow">Luna (Female - Gentle & Slow)</SelectItem>
-                        <SelectItem value="echo-fast">Thunder (Male - Dynamic & Fast)</SelectItem>
-                        <SelectItem value="alloy-business">Aria (Female - Business Professional)</SelectItem>
-                        <SelectItem value="onyx-calm">Sage (Male - Calm & Steady)</SelectItem>
-                        <SelectItem value="shimmer-energetic">Spark (Female - Energetic & Bright)</SelectItem>
+                        <SelectItem value="alloy">Alloy (Female - Most Popular American Voice)</SelectItem>
+                        <SelectItem value="nova">Nova (Female - Clear American Pronunciation)</SelectItem>
+                        <SelectItem value="fable">Fable (Male - Top Rated American Voice)</SelectItem>
+                        <SelectItem value="echo">Echo (Male - Strong American Accent)</SelectItem>
+                        <SelectItem value="onyx">Onyx (Male - Deep American Voice)</SelectItem>
+                        <SelectItem value="shimmer">Shimmer (Female - Bright American Accent)</SelectItem>
+                        <SelectItem value="alloy-business">Alloy Pro (Female - Professional American)</SelectItem>
+                        <SelectItem value="nova-slow">Nova Calm (Female - Gentle American)</SelectItem>
+                        <SelectItem value="fable-fast">Fable Express (Male - Dynamic American)</SelectItem>
+                        <SelectItem value="echo-calm">Echo Steady (Male - Composed American)</SelectItem>
+                        <SelectItem value="shimmer-energetic">Shimmer Bright (Female - Energetic American)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

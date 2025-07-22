@@ -3734,17 +3734,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Map enhanced voice names to OpenAI voices and adjust speed
       const voiceMapping: { [key: string]: { voice: string, speedModifier: number } } = {
-        'nova': { voice: 'nova', speedModifier: 1.0 },
-        'alloy': { voice: 'alloy', speedModifier: 1.0 },
-        'shimmer': { voice: 'shimmer', speedModifier: 1.0 },
-        'echo': { voice: 'echo', speedModifier: 1.0 },
-        'fable': { voice: 'fable', speedModifier: 1.0 },
-        'onyx': { voice: 'onyx', speedModifier: 1.0 },
-        'nova-slow': { voice: 'nova', speedModifier: 0.8 },
-        'echo-fast': { voice: 'echo', speedModifier: 1.3 },
-        'alloy-business': { voice: 'alloy', speedModifier: 0.95 },
-        'onyx-calm': { voice: 'onyx', speedModifier: 0.9 },
-        'shimmer-energetic': { voice: 'shimmer', speedModifier: 1.2 }
+        'alloy': { voice: 'alloy', speedModifier: 1.0 }, // Most popular American voice
+        'nova': { voice: 'nova', speedModifier: 1.0 }, // Clear American pronunciation  
+        'fable': { voice: 'fable', speedModifier: 1.0 }, // Top rated American voice
+        'echo': { voice: 'echo', speedModifier: 1.0 }, // Strong American accent
+        'onyx': { voice: 'onyx', speedModifier: 1.0 }, // Deep American voice
+        'shimmer': { voice: 'shimmer', speedModifier: 1.0 }, // Bright American accent
+        'alloy-business': { voice: 'alloy', speedModifier: 0.95 }, // Professional American
+        'nova-slow': { voice: 'nova', speedModifier: 0.8 }, // Gentle American
+        'fable-fast': { voice: 'fable', speedModifier: 1.3 }, // Dynamic American
+        'echo-calm': { voice: 'echo', speedModifier: 0.9 }, // Composed American
+        'shimmer-energetic': { voice: 'shimmer', speedModifier: 1.2 } // Energetic American
       };
 
       const voiceConfig = voiceMapping[voice] || { voice: 'nova', speedModifier: 1.0 };
