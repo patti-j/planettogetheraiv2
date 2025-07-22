@@ -9,6 +9,7 @@ interface TourContextType {
   startTour: (roleId: number, voiceEnabled?: boolean) => void;
   completeTour: () => void;
   skipTour: () => void;
+  closeTour: () => void;
   switchToRole: (newRoleId: number) => void;
 }
 
@@ -82,6 +83,14 @@ export function TourProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("activeDemoTour");
   };
 
+  const closeTour = () => {
+    console.log("Closing tour (triggered by logout)");
+    setIsActive(false);
+    setCurrentRoleId(null);
+    setVoiceEnabled(false);
+    localStorage.removeItem("activeDemoTour");
+  };
+
   const switchToRole = (newRoleId: number) => {
     console.log("Switching to new roleId:", newRoleId);
     setCurrentRoleId(newRoleId);
@@ -104,6 +113,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
       startTour,
       completeTour,
       skipTour,
+      closeTour,
       switchToRole
     }}>
       {children}

@@ -750,15 +750,24 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     }
   }, [currentStep, voiceEnabled]);
 
-  // Clean up speech and timeouts on component unmount
+  // Clean up speech and timeouts on component unmount, and listen for logout tour close events
   useEffect(() => {
+    const handleTourClose = () => {
+      console.log("Tour close event received from logout - closing tour window");
+      onSkip(); // Close the tour window
+    };
+
+    // Listen for tour close events from logout
+    window.addEventListener('tourClose', handleTourClose);
+
     return () => {
       stopSpeech(); // Use our comprehensive stop function instead of just speechSynthesis.cancel()
       if (autoAdvanceTimeoutRef.current) {
         clearTimeout(autoAdvanceTimeoutRef.current);
       }
+      window.removeEventListener('tourClose', handleTourClose);
     };
-  }, []);
+  }, [onSkip]);
 
   // Drag functionality with boundary checking
   useEffect(() => {

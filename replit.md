@@ -303,6 +303,8 @@ The application uses a modern full-stack architecture with strong typing through
 - Users can now enable hands-free tour progression or disable for manual control
 - Auto-advance functionality respects voice settings and only activates after audio completion
 - Fixed tour completion logic to properly show role selection dialog instead of restarting when auto-advance reaches final step
+- **NEW: Tour-Logout Integration** - Logout button now properly closes active tour windows before logging out using custom event system
+- Tour windows automatically close when logout is initiated, preventing UI conflicts and ensuring clean session termination
 
 ✓ **Tour Window Responsive Design & Scheduling Optimizer Permission Fix (July 22, 2025)**:
 - Fixed critical "Can't find variable: role" JavaScript error in GuidedTour component by replacing undefined role references in handleSkipTour function

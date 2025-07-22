@@ -111,6 +111,15 @@ export function useAuth() {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
+      // Close any active tour before logout
+      const savedTourState = localStorage.getItem("activeDemoTour");
+      if (savedTourState) {
+        console.log("Closing active tour before logout");
+        localStorage.removeItem("activeDemoTour");
+        // Dispatch a custom event to notify tour components to close
+        window.dispatchEvent(new CustomEvent('tourClose'));
+      }
+      
       return apiRequest("POST", "/api/auth/logout", {});
     },
     onSuccess: () => {
