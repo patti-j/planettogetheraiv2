@@ -1525,14 +1525,26 @@ function TourManagementSection() {
                   // Get fresh user data from the API
                   const userResponse = await apiRequest('GET', '/api/auth/me');
                   console.log('Fresh user data:', userResponse);
+                  console.log('User response type:', typeof userResponse);
+                  console.log('User response keys:', Object.keys(userResponse || {}));
                   
-                  if (!userResponse?.id) {
-                    toast({
-                      title: "Authentication Error",
-                      description: "Please log in again and try.",
-                      variant: "destructive",
-                    });
-                    return;
+                  let userId;
+                  if (!userResponse || !userResponse.id) {
+                    console.log('User response invalid, trying to use hook user data:', user);
+                    // Fallback to hook user data if fresh fetch fails
+                    if (!user?.id) {
+                      toast({
+                        title: "Authentication Error",
+                        description: "Please log in again and try.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    // Use hook user data as fallback
+                    userId = user.id;
+                    console.log('Using fallback user ID:', userId);
+                  } else {
+                    userId = userResponse.id;
                   }
 
                   console.log('Tour data:', previewTourData);
@@ -1555,9 +1567,10 @@ function TourManagementSection() {
 
                   if (roleId) {
                     console.log('Attempting to switch to role ID:', roleId);
+                    console.log('Using user ID:', userId);
                     
-                    // Switch role using fresh user data
-                    const response = await apiRequest('POST', `/api/users/${userResponse.id}/switch-role`, { roleId });
+                    // Switch role using user ID
+                    const response = await apiRequest('POST', `/api/users/${userId}/switch-role`, { roleId });
                     console.log('Role switch response:', response);
                     
                     toast({
