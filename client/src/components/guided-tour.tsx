@@ -346,14 +346,50 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
       id: step.stepTitle?.toLowerCase().replace(/\s+/g, '-') || step.id || 'step',
       title: step.stepTitle || step.title || 'Tour Step',
       description: step.description || 'Explore this feature',
-      page: step.navigationPath || step.page || "current",
-      icon: getIconForPage(step.navigationPath || step.page),
+      page: translateNavPath(step.navigationPath || step.page) || "current",
+      icon: getIconForPage(translateNavPath(step.navigationPath || step.page)),
       benefits: step.benefits || ["Learn about this feature"],
       actionText: step.stepTitle || "Continue",
       duration: "2 min"
     }));
 
     return [commonSteps[0], ...databaseSteps, commonSteps[1]];
+  };
+
+  // Helper function to translate descriptive navigation paths to actual URL routes
+  const translateNavPath = (navPath: string): string => {
+    if (!navPath || navPath === "current") return "current";
+    
+    // Handle descriptive navigation paths from database
+    const routeMapping: Record<string, string> = {
+      "Dashboard > Scheduling > Gantt Chart": "/",
+      "Dashboard > Scheduling > Boards": "/boards",
+      "Dashboard": "/",
+      "Boards": "/boards",
+      "Scheduling": "/",
+      "Schedule": "/",
+      "Gantt Chart": "/",
+      "Analytics": "/analytics",
+      "Reports": "/reports",
+      "Business Goals": "/business-goals",
+      "Capacity Planning": "/capacity-planning",
+      "Shop Floor": "/shop-floor",
+      "Plant Manager": "/plant-manager",
+      "Systems Management": "/systems-management",
+      "Role Management": "/role-management",
+      "Training": "/training",
+      "Scheduling Optimizer": "/scheduling-optimizer",
+      "Visual Factory": "/visual-factory",
+      "ERP Import": "/erp-import"
+    };
+    
+    // Check if it's already a valid URL path
+    if (navPath.startsWith('/')) {
+      return navPath;
+    }
+    
+    // Look up the mapping
+    return routeMapping[navPath] || "current";
   };
 
   // Helper function to get appropriate icon for each page
@@ -478,7 +514,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
 
   // Separate function for voice toggle that bypasses voice enabled check
   const playPreloadedAudioForToggle = async (stepId: string) => {
-    if (isGenerating || isPlaying) return;
+    if (isPlaying) return;
     
     // Stop any currently playing audio
     if (speechRef.current) {
@@ -732,96 +768,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
     return engagingNarrations[step.id] || `Let me show you ${step.title}. ${step.description} This feature will help you ${step.benefits[0]?.toLowerCase()}.`;
   };
 
-  // AI Voice functionality using OpenAI text-to-speech
-  const speakText = async (text: string) => {
-    if (!voiceEnabled || isGenerating || isPlaying) return;
-    
-    // Stop any currently playing audio
-    if (speechRef.current) {
-      if (speechRef.current instanceof Audio) {
-        speechRef.current.pause();
-        speechRef.current.currentTime = 0;
-      } else if (speechRef.current instanceof SpeechSynthesisUtterance) {
-        speechSynthesis.cancel();
-      }
-      speechRef.current = null;
-    }
-    
-    try {
-      setIsGenerating(true);
-      console.log("Generating AI speech for:", text.substring(0, 50) + "...");
-      
-      const response = await fetch("/api/ai/text-to-speech", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("authToken")}`
-        },
-        body: JSON.stringify({
-          text: text,
-          gender: "female", // Use female voice for engaging tour experience
-          voice: "nova", // High-quality AI voice from OpenAI
-          speed: 1.15 // Slightly faster speech for better engagement and reduced wait time
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`AI speech generation failed: ${response.status}`);
-      }
-
-      setIsGenerating(false);
-      setIsPlaying(true);
-      
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-      
-      // Pre-load audio for faster playback
-      audio.preload = "auto";
-      
-      audio.onended = () => {
-        setIsPlaying(false);
-        URL.revokeObjectURL(audioUrl);
-        speechRef.current = null;
-        console.log("AI speech playback completed");
-      };
-      
-      audio.onerror = (e) => {
-        console.error("AI audio playback error:", e);
-        setIsPlaying(false);
-        setIsGenerating(false);
-        URL.revokeObjectURL(audioUrl);
-        speechRef.current = null;
-        // Fallback to browser speech synthesis if AI playback fails
-        fallbackSpeech(text);
-      };
-      
-      speechRef.current = audio;
-      
-      // Add user interaction requirement for audio playback (browser security)
-      const playAudio = async () => {
-        try {
-          await audio.play();
-          console.log("AI speech started playing");
-        } catch (playError) {
-          console.error("Auto-play failed, likely due to browser policy:", playError);
-          // Show user interaction prompt if auto-play fails
-          setIsPlaying(false);
-          setIsGenerating(false);
-          fallbackSpeech(text);
-        }
-      };
-      
-      await playAudio();
-      
-    } catch (error) {
-      console.error("AI speech generation error:", error);
-      setIsPlaying(false);
-      setIsGenerating(false);
-      // Fallback to browser speech synthesis if AI fails
-      fallbackSpeech(text);
-    }
-  };
+  // Legacy speakText function - removed since we only use cached audio now
 
   // Fallback to browser speech if AI fails
   const fallbackSpeech = (text: string) => {
@@ -981,13 +928,11 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
                     variant="ghost"
                     size="sm"
                     onClick={togglePlayPause}
-                    disabled={isGenerating}
-                    className={`text-gray-500 hover:text-gray-700 ${isGenerating ? 'animate-pulse bg-blue-50' : ''}`}
-                    title={isGenerating ? "Generating voice..." : isPlaying ? "Pause narration" : "Play narration"}
+                    disabled={isPlaying}
+                    className="text-gray-500 hover:text-gray-700"
+                    title={isPlaying ? "Pause narration" : "Play narration"}
                   >
-                    {isGenerating ? (
-                      <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                    ) : isPlaying ? (
+                    {isPlaying ? (
                       <Pause className="h-4 w-4" />
                     ) : (
                       <Play className="h-4 w-4" />
@@ -999,7 +944,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
                     variant="ghost"
                     size="sm"
                     onClick={replayCurrentStep}
-                    disabled={isGenerating}
+                    disabled={isPlaying}
                     className="text-gray-500 hover:text-gray-700"
                     title="Replay current step narration"
                   >
