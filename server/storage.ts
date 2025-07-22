@@ -262,6 +262,7 @@ export interface IStorage {
   // Role Management
   getRoles(): Promise<Role[]>;
   getRole(id: number): Promise<Role | undefined>;
+  getRoleByName(name: string): Promise<Role | undefined>;
   getRolesByIds(roleIds: number[]): Promise<Role[]>;
   createRole(role: InsertRole): Promise<Role>;
   updateRole(id: number, role: Partial<InsertRole>): Promise<Role | undefined>;
@@ -283,7 +284,7 @@ export interface IStorage {
   removeUserRole(userId: number, roleId: number): Promise<boolean>;
 
   // Role Permission Assignment
-  getRolePermissions(roleId: number): Promise<RolePermission[]>;
+  getRolePermissions(roleId: number): Promise<Permission[]>;
   assignRolePermission(rolePermission: InsertRolePermission): Promise<RolePermission>;
   removeRolePermission(roleId: number, permissionId: number): Promise<boolean>;
 
@@ -1997,6 +1998,14 @@ export class DatabaseStorage implements IStorage {
     return role || undefined;
   }
 
+  async getRoleByName(name: string): Promise<Role | undefined> {
+    const [role] = await db
+      .select()
+      .from(roles)
+      .where(eq(roles.name, name));
+    return role || undefined;
+  }
+
   async getRolesByIds(roleIds: number[]): Promise<Role[]> {
     if (roleIds.length === 0) return [];
     return await db
@@ -2145,11 +2154,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Role Permission Assignment
-  async getRolePermissions(roleId: number): Promise<RolePermission[]> {
-    return await db
-      .select()
+  async getRolePermissions(roleId: number): Promise<Permission[]> {
+    const results = await db
+      .select({
+        id: permissions.id,
+        name: permissions.name,
+        feature: permissions.feature,
+        action: permissions.action,
+        description: permissions.description
+      })
       .from(rolePermissions)
+      .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
       .where(eq(rolePermissions.roleId, roleId));
+    
+    return results;
   }
 
   async assignRolePermission(rolePermission: InsertRolePermission): Promise<RolePermission> {
