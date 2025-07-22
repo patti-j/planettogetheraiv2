@@ -456,7 +456,8 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
       console.log(`Playing cached audio for step: ${stepId}`);
       
       try {
-        setIsGenerating(true);
+        // Directly play cached recording without showing "generating" status
+        setIsPlaying(true);
         
         const response = await fetch("/api/ai/text-to-speech", {
           method: "POST",
@@ -468,16 +469,14 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
             text: enhancedText,
             gender: "female",
             voice: "nova",
-            speed: 1.15
+            speed: 1.15,
+            cacheOnly: true // Only play cached recordings, don't generate new ones
           })
         });
 
         if (!response.ok) {
-          throw new Error(`Cached audio fetch failed: ${response.status}`);
+          throw new Error(`No cached audio available: ${response.status}`);
         }
-
-        setIsGenerating(false);
-        setIsPlaying(true);
         
         const audioBlob = await response.blob();
         const audioUrl = URL.createObjectURL(audioBlob);
@@ -495,7 +494,6 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
         audio.onerror = (e) => {
           console.error("Cached audio playback error:", e);
           setIsPlaying(false);
-          setIsGenerating(false);
           URL.revokeObjectURL(audioUrl);
           speechRef.current = null;
         };
@@ -508,12 +506,11 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
         } catch (playError) {
           console.error("Auto-play failed:", playError);
           setIsPlaying(false);
-          setIsGenerating(false);
         }
         
       } catch (error) {
         console.error(`Failed to load cached audio for step ${stepId}:`, error);
-        setIsGenerating(false);
+        setIsPlaying(false);
       }
     }
   };
@@ -540,7 +537,8 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
       console.log(`Playing cached audio for voice toggle on step: ${stepId}`);
       
       try {
-        setIsGenerating(true);
+        // Directly play cached recording without showing "generating" status
+        setIsPlaying(true);
         
         const response = await fetch("/api/ai/text-to-speech", {
           method: "POST",
@@ -552,16 +550,14 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
             text: enhancedText,
             gender: "female",
             voice: "nova",
-            speed: 1.15
+            speed: 1.15,
+            cacheOnly: true // Only play cached recordings, don't generate new ones
           })
         });
 
         if (!response.ok) {
-          throw new Error(`Cached audio fetch failed: ${response.status}`);
+          throw new Error(`No cached audio available: ${response.status}`);
         }
-
-        setIsGenerating(false);
-        setIsPlaying(true);
         
         const audioBlob = await response.blob();
         const audioUrl = URL.createObjectURL(audioBlob);
@@ -579,7 +575,6 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
         audio.onerror = (e) => {
           console.error("Voice toggle audio playback error:", e);
           setIsPlaying(false);
-          setIsGenerating(false);
           URL.revokeObjectURL(audioUrl);
           speechRef.current = null;
         };
@@ -592,12 +587,11 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
         } catch (playError) {
           console.error("Voice toggle auto-play failed:", playError);
           setIsPlaying(false);
-          setIsGenerating(false);
         }
         
       } catch (error) {
         console.error(`Failed to load cached audio for voice toggle on step ${stepId}:`, error);
-        setIsGenerating(false);
+        setIsPlaying(false);
       }
     }
   };
