@@ -217,20 +217,20 @@ export default function VisualFactory() {
       switch (widget.type) {
         case 'metrics':
           return (
-            <div className="grid grid-cols-3 gap-4 h-full">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 h-full">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{jobs.length}</div>
-                <div className="text-sm text-gray-600">Active Jobs</div>
+                <div className="text-xl sm:text-2xl font-bold text-blue-600">{jobs.length}</div>
+                <div className="text-xs sm:text-sm text-gray-600">Active Jobs</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{metrics?.utilization || 0}%</div>
-                <div className="text-sm text-gray-600">Utilization</div>
+                <div className="text-xl sm:text-2xl font-bold text-green-600">{(metrics as any)?.utilization || 0}%</div>
+                <div className="text-xs sm:text-sm text-gray-600">Utilization</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">
-                  {Math.round((metrics?.onTimeDelivery || 0) * 100)}%
+                <div className="text-xl sm:text-2xl font-bold text-orange-600">
+                  {Math.round(((metrics as any)?.onTimeDelivery || 0) * 100)}%
                 </div>
-                <div className="text-sm text-gray-600">On Time</div>
+                <div className="text-xs sm:text-sm text-gray-600">On Time</div>
               </div>
             </div>
           );
@@ -246,18 +246,18 @@ export default function VisualFactory() {
           return (
             <div className="space-y-2">
               {todayOperations.slice(0, 6).map(operation => (
-                <div key={operation.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <div>
-                    <div className="font-medium">{operation.name}</div>
-                    <div className="text-sm text-gray-600">
+                <div key={operation.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-2 bg-gray-50 rounded gap-1 sm:gap-0">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm truncate">{operation.name}</div>
+                    <div className="text-xs sm:text-sm text-gray-600 truncate">
                       {jobs.find(j => j.id === operation.jobId)?.name}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <Badge variant={operation.status === 'Completed' ? 'default' : 'secondary'}>
+                  <div className="flex items-center justify-between sm:flex-col sm:text-right">
+                    <Badge variant={operation.status === 'Completed' ? 'default' : 'secondary'} className="text-xs">
                       {operation.status}
                     </Badge>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-xs text-gray-600 ml-2 sm:ml-0">
                       {operation.startTime ? new Date(operation.startTime).toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit'
@@ -273,17 +273,17 @@ export default function VisualFactory() {
           return (
             <div className="space-y-2">
               {jobs.slice(0, 8).map(job => (
-                <div key={job.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <div>
-                    <div className="font-medium">{job.name}</div>
-                    <div className="text-sm text-gray-600">{job.customer}</div>
+                <div key={job.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-2 bg-gray-50 rounded gap-1 sm:gap-0">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm truncate">{job.name}</div>
+                    <div className="text-xs sm:text-sm text-gray-600 truncate">{job.customer}</div>
                   </div>
-                  <div className="text-right">
+                  <div className="flex items-center justify-between sm:flex-col sm:text-right">
                     <Badge variant={job.priority === 'High' ? 'destructive' : 
-                                  job.priority === 'Medium' ? 'default' : 'secondary'}>
+                                  job.priority === 'Medium' ? 'default' : 'secondary'} className="text-xs">
                       {job.priority}
                     </Badge>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-xs text-gray-600 ml-2 sm:ml-0">
                       {job.dueDate ? new Date(job.dueDate).toLocaleDateString() : 'No due date'}
                     </div>
                   </div>
@@ -302,12 +302,12 @@ export default function VisualFactory() {
           return (
             <div className="space-y-2">
               {alerts.map((alert, index) => (
-                <div key={index} className="flex items-center space-x-3 p-2 bg-gray-50 rounded">
-                  {alert.type === 'warning' && <AlertTriangle className="w-5 h-5 text-orange-500" />}
-                  {alert.type === 'info' && <Clock className="w-5 h-5 text-blue-500" />}
-                  {alert.type === 'success' && <CheckCircle className="w-5 h-5 text-green-500" />}
-                  <div className="flex-1">
-                    <div className="text-sm">{alert.message}</div>
+                <div key={index} className="flex items-start space-x-2 sm:space-x-3 p-2 bg-gray-50 rounded">
+                  {alert.type === 'warning' && <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500 mt-0.5" />}
+                  {alert.type === 'info' && <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 mt-0.5" />}
+                  {alert.type === 'success' && <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 mt-0.5" />}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs sm:text-sm">{alert.message}</div>
                     <div className="text-xs text-gray-500">{alert.time}</div>
                   </div>
                 </div>
@@ -323,11 +323,11 @@ export default function VisualFactory() {
           return (
             <div className="text-center">
               <div className="mb-4">
-                <div className="text-3xl font-bold">{Math.round(progressPercent)}%</div>
-                <div className="text-sm text-gray-600">Daily Progress</div>
+                <div className="text-2xl sm:text-3xl font-bold">{Math.round(progressPercent)}%</div>
+                <div className="text-xs sm:text-sm text-gray-600">Daily Progress</div>
               </div>
-              <Progress value={progressPercent} className="w-full h-4" />
-              <div className="mt-2 text-sm text-gray-600">
+              <Progress value={progressPercent} className="w-full h-3 sm:h-4" />
+              <div className="mt-2 text-xs sm:text-sm text-gray-600">
                 {completedOps} of {totalOps} operations completed
               </div>
             </div>
@@ -340,17 +340,17 @@ export default function VisualFactory() {
 
     return (
       <Card className="h-full">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center justify-between">
+        <CardHeader className="pb-2 p-3 sm:p-4">
+          <CardTitle className="text-base sm:text-lg flex items-center justify-between">
             {widget.title}
             {isPlaying && currentDisplay && currentDisplay.widgets.length > 1 && (
-              <div className="text-sm font-normal text-gray-500">
+              <div className="text-xs sm:text-sm font-normal text-gray-500">
                 {Math.ceil(timeRemaining)}s
               </div>
             )}
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-4">
           {widgetContent()}
         </CardContent>
       </Card>
@@ -384,12 +384,13 @@ export default function VisualFactory() {
                   </h1>
                   <p className="text-gray-600">Automated large screen displays for manufacturing facilities</p>
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Dialog open={aiConfigDialogOpen} onOpenChange={setAiConfigDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600">
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        Configure
+                      <Button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 text-xs sm:text-sm">
+                        <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">Configure</span>
+                        <span className="sm:hidden">AI</span>
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
@@ -420,9 +421,10 @@ export default function VisualFactory() {
 
                   <Dialog open={newDisplayDialogOpen} onOpenChange={setNewDisplayDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button>
-                        <Monitor className="w-4 h-4 mr-2" />
-                        New Display
+                      <Button className="text-xs sm:text-sm">
+                        <Monitor className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">New Display</span>
+                        <span className="sm:hidden">New</span>
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-2xl">
@@ -443,8 +445,8 @@ export default function VisualFactory() {
 
         {/* Display Selection - Hidden in fullscreen during playback */}
         {!isFullscreen && (
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="px-3 sm:px-6 py-4 border-b border-gray-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {displays.map(display => (
                 <Card 
                   key={display.id} 
@@ -452,18 +454,18 @@ export default function VisualFactory() {
                   onClick={() => setCurrentDisplay(display)}
                 >
                   <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{display.name}</CardTitle>
-                      <div className="flex items-center space-x-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <CardTitle className="text-base sm:text-lg">{display.name}</CardTitle>
+                      <div className="flex items-center gap-2 self-start sm:self-auto">
                         {getAudienceIcon(display.audience)}
-                        <Badge variant={display.isActive ? 'default' : 'secondary'}>
+                        <Badge variant={display.isActive ? 'default' : 'secondary'} className="text-xs">
                           {display.isActive ? 'Active' : 'Inactive'}
                         </Badge>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-gray-600 mb-2">{display.description}</p>
+                    <p className="text-xs sm:text-sm text-gray-600 mb-2">{display.description}</p>
                     <div className="flex items-center justify-between text-xs text-gray-500">
                       <span>{display.location}</span>
                       <span>{display.widgets.length} widgets</span>
@@ -477,25 +479,28 @@ export default function VisualFactory() {
 
         {/* Display Controls */}
         {currentDisplay && (
-          <div className={`${isFullscreen ? 'absolute top-4 right-4 z-50' : 'px-6 py-4 border-b border-gray-200'} flex items-center space-x-2`}>
-            <Button
-              onClick={handlePlay}
-              variant={isPlaying ? "destructive" : "default"}
-              size="sm"
-            >
-              {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-              {isPlaying ? 'Pause' : 'Play'}
-            </Button>
-            <Button onClick={resetRotation} variant="outline" size="sm">
-              <RotateCcw className="w-4 h-4" />
-              Reset
-            </Button>
-            <Button onClick={handleFullscreen} variant="outline" size="sm">
-              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-              {isFullscreen ? 'Exit' : 'Fullscreen'}
-            </Button>
+          <div className={`${isFullscreen ? 'absolute top-4 right-4 z-50' : 'px-3 sm:px-6 py-4 border-b border-gray-200'} flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2`}>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={handlePlay}
+                variant={isPlaying ? "destructive" : "default"}
+                size="sm"
+                className="text-xs"
+              >
+                {isPlaying ? <Pause className="w-3 h-3 sm:w-4 sm:h-4" /> : <Play className="w-3 h-3 sm:w-4 sm:h-4" />}
+                <span className="ml-1">{isPlaying ? 'Pause' : 'Play'}</span>
+              </Button>
+              <Button onClick={resetRotation} variant="outline" size="sm" className="text-xs">
+                <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="ml-1 hidden sm:inline">Reset</span>
+              </Button>
+              <Button onClick={handleFullscreen} variant="outline" size="sm" className="text-xs">
+                {isFullscreen ? <Minimize2 className="w-3 h-3 sm:w-4 sm:h-4" /> : <Maximize2 className="w-3 h-3 sm:w-4 sm:h-4" />}
+                <span className="ml-1 hidden sm:inline">{isFullscreen ? 'Exit' : 'Fullscreen'}</span>
+              </Button>
+            </div>
             {!isFullscreen && (
-              <div className="text-sm text-gray-600 ml-4">
+              <div className="text-xs sm:text-sm text-gray-600">
                 {currentDisplay.name} • Widget {currentWidgetIndex + 1} of {currentDisplay.widgets.length}
               </div>
             )}
@@ -503,17 +508,17 @@ export default function VisualFactory() {
         )}
 
         {/* Main Display Area */}
-        <div className={`${isFullscreen ? 'h-screen p-8' : 'p-6'} bg-gray-50`}>
+        <div className={`${isFullscreen ? 'h-screen p-4 sm:p-8' : 'p-3 sm:p-6'} bg-gray-50`}>
           {currentDisplay && currentWidget ? (
-            <div className={`${isFullscreen ? 'h-full' : 'h-96'}`}>
+            <div className={`${isFullscreen ? 'h-full' : 'h-80 sm:h-96'}`}>
               {renderWidget(currentWidget)}
             </div>
           ) : (
-            <div className="h-96 flex items-center justify-center bg-white rounded-lg border-2 border-dashed border-gray-300">
-              <div className="text-center">
-                <Monitor className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Display Selected</h3>
-                <p className="text-gray-600">Choose a display configuration to start the visual factory experience</p>
+            <div className="h-80 sm:h-96 flex items-center justify-center bg-white rounded-lg border-2 border-dashed border-gray-300">
+              <div className="text-center px-4">
+                <Monitor className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No Display Selected</h3>
+                <p className="text-sm sm:text-base text-gray-600">Choose a display configuration to start the visual factory experience</p>
               </div>
             </div>
           )}
@@ -554,45 +559,48 @@ function CreateDisplayForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="name">Display Name</Label>
+          <Label htmlFor="name" className="text-sm">Display Name</Label>
           <Input
             id="name"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="Shop Floor Display 1"
+            className="text-sm"
             required
           />
         </div>
         <div>
-          <Label htmlFor="location">Location</Label>
+          <Label htmlFor="location" className="text-sm">Location</Label>
           <Input
             id="location"
             value={formData.location}
             onChange={(e) => setFormData({ ...formData, location: e.target.value })}
             placeholder="Production Area A"
+            className="text-sm"
             required
           />
         </div>
       </div>
 
       <div>
-        <Label htmlFor="description">Description</Label>
+        <Label htmlFor="description" className="text-sm">Description</Label>
         <Textarea
           id="description"
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           placeholder="Main production display showing real-time metrics and schedules"
+          className="text-sm"
           rows={2}
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="audience">Target Audience</Label>
+          <Label htmlFor="audience" className="text-sm">Target Audience</Label>
           <Select value={formData.audience} onValueChange={(value: any) => setFormData({ ...formData, audience: value })}>
-            <SelectTrigger>
+            <SelectTrigger className="text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -605,7 +613,7 @@ function CreateDisplayForm({
           </Select>
         </div>
         <div>
-          <Label htmlFor="interval">Auto-rotation (seconds)</Label>
+          <Label htmlFor="interval" className="text-sm">Auto-rotation (seconds)</Label>
           <Input
             id="interval"
             type="number"
@@ -613,26 +621,27 @@ function CreateDisplayForm({
             max="300"
             value={formData.autoRotationInterval}
             onChange={(e) => setFormData({ ...formData, autoRotationInterval: parseInt(e.target.value) })}
+            className="text-sm"
           />
         </div>
       </div>
 
-      <div className="flex items-center space-x-4">
-        <div className="flex items-center space-x-2">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex items-center gap-2">
           <Switch
             id="active"
             checked={formData.isActive}
             onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
           />
-          <Label htmlFor="active">Active</Label>
+          <Label htmlFor="active" className="text-sm">Active</Label>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           <Switch
             id="ai-mode"
             checked={formData.useAiMode}
             onCheckedChange={(checked) => setFormData({ ...formData, useAiMode: checked })}
           />
-          <Label htmlFor="ai-mode">AI Dynamic Mode</Label>
+          <Label htmlFor="ai-mode" className="text-sm">AI Dynamic Mode</Label>
         </div>
       </div>
 
