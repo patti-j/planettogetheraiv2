@@ -558,7 +558,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
   // Clean up speech on component unmount
   useEffect(() => {
     return () => {
-      speechSynthesis.cancel();
+      stopSpeech(); // Use our comprehensive stop function instead of just speechSynthesis.cancel()
     };
   }, []);
 
@@ -637,6 +637,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
 
   const handleContinueWithNewRole = (newRole: string) => {
     console.log("Starting new tour with role:", newRole);
+    stopSpeech(); // Stop any playing audio before switching roles
     setShowRoleSelection(false);
     
     // Use callback to inform parent component about role switch
@@ -646,6 +647,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
   };
 
   const handleFinishAllTours = () => {
+    stopSpeech(); // Stop any playing audio before finishing
     setShowRoleSelection(false);
     setIsVisible(false);
     toast({
