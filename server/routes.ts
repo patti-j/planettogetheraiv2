@@ -23,6 +23,7 @@ import multer from "multer";
 import session from "express-session";
 import bcrypt from "bcryptjs";
 import connectPg from "connect-pg-simple";
+import OpenAI from "openai";
 
 // Session interface is declared in index.ts
 
@@ -3568,6 +3569,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error adding tour step:', error);
       res.status(500).json({ error: 'Failed to add tour step' });
+    }
+  });
+
+  // AI Text-to-Speech endpoint for high-quality voice generation
+  app.post("/api/ai/text-to-speech", async (req, res) => {
+    try {
+      const { text, voice = "alloy", gender = "female" } = req.body;
+      
+      if (!text) {
+        return res.status(400).json({ error: "Text is required" });
+      }
+
+      const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+
+      // Choose voice based on gender preference
+      const voiceMap = {
+        female: ["alloy", "nova", "shimmer"],
+        male: ["echo", "fable", "onyx"]
+      };
+      
+      const availableVoices = voiceMap[gender as keyof typeof voiceMap] || voiceMap.female;
+      const selectedVoice = availableVoices.includes(voice) ? voice : availableVoices[0];
+
+      console.log(`Generating AI speech for text: "${text.substring(0, 50)}..." using voice: ${selectedVoice}`);
+
+      const mp3 = await openai.audio.speech.create({
+        model: "tts-1-hd", // Use higher quality model for better voice
+        voice: selectedVoice as any,
+        input: text,
+        speed: 1.0
+      });
+
+      const buffer = Buffer.from(await mp3.arrayBuffer());
+      
+      res.set({
+        'Content-Type': 'audio/mpeg',
+        'Content-Length': buffer.length,
+        'Cache-Control': 'public, max-age=3600' // Cache for 1 hour
+      });
+      
+      res.send(buffer);
+    } catch (error) {
+      console.error("AI text-to-speech error:", error);
+      res.status(500).json({ error: "Failed to generate AI speech" });
     }
   });
 

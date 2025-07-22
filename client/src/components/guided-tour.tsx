@@ -200,7 +200,7 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const cardRef = useRef<HTMLDivElement>(null);
-  const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const speechRef = useRef<Audio | SpeechSynthesisUtterance | null>(null);
 
   const tourSteps = getTourSteps(role);
   const progress = ((currentStep + 1) / tourSteps.length) * 100;
@@ -315,58 +315,116 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
     onSkip();
   };
 
-  // Voice functionality
-  const getPreferredVoice = () => {
-    const voices = speechSynthesis.getVoices();
-    // Prefer female voices as they tend to be more engaging for tutorials
-    const preferredVoices = [
-      'Google UK English Female',
-      'Microsoft Zira Desktop',
-      'Samantha',
-      'Alex',
-      'Victoria'
-    ];
+  // AI Voice functionality using OpenAI text-to-speech
+  const speakText = async (text: string) => {
+    if (!voiceEnabled) return;
     
-    for (const preferredName of preferredVoices) {
-      const voice = voices.find(v => v.name.includes(preferredName));
-      if (voice) return voice;
+    // Stop any currently playing audio
+    if (speechRef.current) {
+      if (speechRef.current instanceof Audio) {
+        speechRef.current.pause();
+      }
+      speechRef.current = null;
     }
     
-    // Fallback to first available female voice
-    const femaleVoice = voices.find(v => v.name.toLowerCase().includes('female'));
-    if (femaleVoice) return femaleVoice;
-    
-    // Final fallback to first available voice
-    return voices[0] || null;
+    try {
+      setIsPlaying(true);
+      console.log("Generating AI speech for:", text.substring(0, 50) + "...");
+      
+      const response = await fetch("/api/ai/text-to-speech", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("authToken")}`
+        },
+        body: JSON.stringify({
+          text: text,
+          gender: "female", // Use female voice for engaging tour experience
+          voice: "nova" // High-quality AI voice from OpenAI
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`AI speech generation failed: ${response.status}`);
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      
+      audio.onended = () => {
+        setIsPlaying(false);
+        URL.revokeObjectURL(audioUrl);
+        speechRef.current = null;
+        console.log("AI speech playback completed");
+      };
+      
+      audio.onerror = (e) => {
+        console.error("AI audio playback error:", e);
+        setIsPlaying(false);
+        URL.revokeObjectURL(audioUrl);
+        speechRef.current = null;
+        // Fallback to browser speech synthesis if AI playback fails
+        fallbackSpeech(text);
+      };
+      
+      speechRef.current = audio;
+      await audio.play();
+      console.log("AI speech started playing");
+      
+    } catch (error) {
+      console.error("AI speech generation error:", error);
+      setIsPlaying(false);
+      // Fallback to browser speech synthesis if AI fails
+      fallbackSpeech(text);
+    }
   };
 
-  const speakText = (text: string) => {
-    if (!voiceEnabled || !('speechSynthesis' in window)) return;
+  // Fallback to browser speech if AI fails
+  const fallbackSpeech = (text: string) => {
+    if (!('speechSynthesis' in window)) return;
     
-    // Stop any current speech
+    console.log("Using fallback browser speech synthesis");
     speechSynthesis.cancel();
     
     const utterance = new SpeechSynthesisUtterance(text);
-    const preferredVoice = getPreferredVoice();
+    const voices = speechSynthesis.getVoices();
+    
+    // Try to find a good female voice for fallback
+    const preferredVoice = voices.find(voice => 
+      voice.name.toLowerCase().includes('female') || 
+      voice.name.toLowerCase().includes('zira') ||
+      voice.name.toLowerCase().includes('samantha')
+    ) || voices[0];
     
     if (preferredVoice) {
       utterance.voice = preferredVoice;
     }
     
-    utterance.rate = 0.9; // Slightly slower for better comprehension
+    utterance.rate = 0.9;
     utterance.pitch = 1.0;
     utterance.volume = 0.8;
     
-    utterance.onstart = () => setIsPlaying(true);
     utterance.onend = () => setIsPlaying(false);
     utterance.onerror = () => setIsPlaying(false);
     
-    speechRef.current = utterance;
     speechSynthesis.speak(utterance);
   };
 
   const stopSpeech = () => {
-    speechSynthesis.cancel();
+    if (speechRef.current) {
+      if (speechRef.current instanceof Audio) {
+        speechRef.current.pause();
+        speechRef.current.currentTime = 0;
+      }
+      speechRef.current = null;
+    }
+    
+    // Also cancel browser speech synthesis as fallback
+    if ('speechSynthesis' in window) {
+      speechSynthesis.cancel();
+    }
+    
     setIsPlaying(false);
   };
 
