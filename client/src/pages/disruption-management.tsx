@@ -77,15 +77,15 @@ function getSeverityColor(severity: number) {
 function getStatusColor(status: string) {
   switch (status) {
     case "active":
-      return "destructive";
+      return "destructive" as const;
     case "investigating":
-      return "default";
+      return "default" as const;
     case "resolved":
-      return "success";
+      return "outline" as const;
     case "cancelled":
-      return "secondary";
+      return "secondary" as const;
     default:
-      return "default";
+      return "default" as const;
   }
 }
 
@@ -113,17 +113,12 @@ function DisruptionForm({ disruption, onSuccess }: { disruption?: Disruption; on
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
-      if (disruption) {
-        return apiRequest(`/api/disruptions/${disruption.id}`, {
-          method: "PUT",
-          body: JSON.stringify(data),
-        });
-      } else {
-        return apiRequest("/api/disruptions", {
-          method: "POST",
-          body: JSON.stringify(data),
-        });
-      }
+      const options = {
+        method: disruption ? "PUT" : "POST",
+        body: JSON.stringify(data),
+      };
+      const url = disruption ? `/api/disruptions/${disruption.id}` : "/api/disruptions";
+      return apiRequest(url, options);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/disruptions"] });
@@ -149,7 +144,7 @@ function DisruptionForm({ disruption, onSuccess }: { disruption?: Disruption; on
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <FormField
             control={form.control}
             name="title"
@@ -207,7 +202,7 @@ function DisruptionForm({ disruption, onSuccess }: { disruption?: Disruption; on
           )}
         />
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <FormField
             control={form.control}
             name="severity"
@@ -270,7 +265,7 @@ function DisruptionForm({ disruption, onSuccess }: { disruption?: Disruption; on
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <FormField
             control={form.control}
             name="affectedResource"
@@ -299,7 +294,7 @@ function DisruptionForm({ disruption, onSuccess }: { disruption?: Disruption; on
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <FormField
             control={form.control}
             name="reportedBy"
@@ -362,9 +357,10 @@ function DisruptionForm({ disruption, onSuccess }: { disruption?: Disruption; on
           />
         )}
 
-        <div className="flex justify-end gap-2">
-          <Button type="submit" disabled={mutation.isPending}>
-            {mutation.isPending ? "Saving..." : disruption ? "Update Disruption" : "Create Disruption"}
+        <div className="flex flex-col sm:flex-row justify-end gap-2">
+          <Button type="submit" disabled={mutation.isPending} className="w-full sm:w-auto">
+            <span className="hidden sm:inline">{mutation.isPending ? "Saving..." : disruption ? "Update Disruption" : "Create Disruption"}</span>
+            <span className="sm:hidden">{mutation.isPending ? "Saving..." : disruption ? "Update" : "Create"}</span>
           </Button>
         </div>
       </form>
@@ -378,19 +374,17 @@ export default function DisruptionManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: disruptions = [], isLoading } = useQuery({
+  const { data: disruptions = [], isLoading } = useQuery<Disruption[]>({
     queryKey: ["/api/disruptions"],
   });
 
-  const { data: activeDisruptions = [] } = useQuery({
+  const { data: activeDisruptions = [] } = useQuery<Disruption[]>({
     queryKey: ["/api/disruptions/active"],
   });
 
   const deleteDisruptionMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/disruptions/${id}`, {
-        method: "DELETE",
-      });
+      return apiRequest(`/api/disruptions/${id}`, { method: "DELETE" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/disruptions"] });
@@ -426,18 +420,19 @@ export default function DisruptionManagement() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center md:ml-0 ml-12">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 md:ml-0 ml-12">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Disruption Management</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Disruption Management</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Track and manage production disruptions including machine breakdowns, material shortages, and personnel issues
           </p>
         </div>
         <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
-              Report Disruption
+              <span className="hidden sm:inline">Report Disruption</span>
+              <span className="sm:hidden">Report</span>
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
@@ -453,32 +448,32 @@ export default function DisruptionManagement() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Disruptions</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-500" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4">
+            <CardTitle className="text-xs sm:text-sm font-medium">Active Disruptions</CardTitle>
+            <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-red-500" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{activeDisruptions.length}</div>
+          <CardContent className="p-3 sm:p-4">
+            <div className="text-xl sm:text-2xl font-bold text-red-600">{activeDisruptions.length}</div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Disruptions</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4">
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Disruptions</CardTitle>
+            <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{disruptions.length}</div>
+          <CardContent className="p-3 sm:p-4">
+            <div className="text-xl sm:text-2xl font-bold">{disruptions.length}</div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resolved Today</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4">
+            <CardTitle className="text-xs sm:text-sm font-medium">Resolved Today</CardTitle>
+            <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+          <CardContent className="p-3 sm:p-4">
+            <div className="text-xl sm:text-2xl font-bold text-green-600">
               {disruptions.filter((d: Disruption) => 
                 d.status === "resolved" && 
                 new Date(d.updatedAt).toDateString() === new Date().toDateString()
@@ -487,66 +482,76 @@ export default function DisruptionManagement() {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Resolution Time</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4">
+            <CardTitle className="text-xs sm:text-sm font-medium">Avg Resolution Time</CardTitle>
+            <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">2.5h</div>
+          <CardContent className="p-3 sm:p-4">
+            <div className="text-xl sm:text-2xl font-bold">2.5h</div>
           </CardContent>
         </Card>
       </div>
 
       <Tabs defaultValue="active" className="w-full">
-        <TabsList>
-          <TabsTrigger value="active">Active Disruptions</TabsTrigger>
-          <TabsTrigger value="all">All Disruptions</TabsTrigger>
-          <TabsTrigger value="resolved">Recently Resolved</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="active" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">Active Disruptions</span>
+            <span className="sm:hidden">Active</span>
+          </TabsTrigger>
+          <TabsTrigger value="all" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">All Disruptions</span>
+            <span className="sm:hidden">All</span>
+          </TabsTrigger>
+          <TabsTrigger value="resolved" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">Recently Resolved</span>
+            <span className="sm:hidden">Resolved</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="active" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             {activeDisruptions.map((disruption: Disruption) => (
               <Card key={disruption.id} className="relative">
                 <div className={`absolute top-0 left-0 w-1 h-full ${getSeverityColor(disruption.severity)} rounded-l-lg`} />
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg">{disruption.title}</CardTitle>
-                    <Badge variant={getStatusColor(disruption.status)}>
+                <CardHeader className="pb-2 p-3 sm:p-4">
+                  <div className="flex justify-between items-start gap-2">
+                    <CardTitle className="text-sm sm:text-lg flex-1 min-w-0">{disruption.title}</CardTitle>
+                    <Badge variant={getStatusColor(disruption.status)} className="text-xs shrink-0">
                       {disruption.status}
                     </Badge>
                   </div>
-                  <CardDescription className="text-sm text-muted-foreground">
+                  <CardDescription className="text-xs sm:text-sm text-muted-foreground">
                     {disruption.type.replace("_", " ")} • {disruption.department}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <p className="text-sm line-clamp-2">{disruption.description}</p>
+                <CardContent className="space-y-3 p-3 sm:p-4">
+                  <p className="text-xs sm:text-sm line-clamp-2">{disruption.description}</p>
                   
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <AlertTriangle className="h-3 w-3" />
-                      <span>Severity: {disruption.severity}/100</span>
+                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                      <AlertTriangle className="h-3 w-3 shrink-0" />
+                      <span className="truncate">Severity: {disruption.severity}/100</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Settings className="h-3 w-3" />
-                      <span>Resource: {disruption.affectedResource}</span>
+                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                      <Settings className="h-3 w-3 shrink-0" />
+                      <span className="truncate">Resource: {disruption.affectedResource}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <User className="h-3 w-3" />
-                      <span>Assigned: {disruption.assignedTo || "Unassigned"}</span>
+                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                      <User className="h-3 w-3 shrink-0" />
+                      <span className="truncate">Assigned: {disruption.assignedTo || "Unassigned"}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-3 w-3" />
-                      <span>Started: {format(new Date(disruption.startTime), "MMM d, HH:mm")}</span>
+                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                      <Calendar className="h-3 w-3 shrink-0" />
+                      <span className="truncate">Started: {format(new Date(disruption.startTime), "MMM d, HH:mm")}</span>
                     </div>
                   </div>
 
-                  <div className="flex gap-2 pt-2">
+                  <div className="flex flex-col sm:flex-row gap-2 pt-2">
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="flex-1">
-                          View Details
+                        <Button variant="outline" size="sm" className="flex-1 text-xs sm:text-sm">
+                          <span className="hidden sm:inline">View Details</span>
+                          <span className="sm:hidden">Details</span>
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="max-w-2xl">
@@ -585,7 +590,7 @@ export default function DisruptionManagement() {
         </TabsContent>
 
         <TabsContent value="all" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             {disruptions.map((disruption: Disruption) => (
               <Card key={disruption.id} className="relative">
                 <div className={`absolute top-0 left-0 w-1 h-full ${getSeverityColor(disruption.severity)} rounded-l-lg`} />
