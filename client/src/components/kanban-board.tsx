@@ -918,22 +918,24 @@ function KanbanBoard({
               </div>
 
               {/* Command button last */}
-              <Button 
-                className="bg-primary hover:bg-blue-700 text-white text-xs w-full" 
-                size="sm"
-                onClick={() => {
-                  if (selectedConfig?.viewType === "jobs") {
-                    onCreateJob && onCreateJob();
-                  } else if (selectedConfig?.viewType === "operations") {
-                    handleAddOperation();
-                  } else if (selectedConfig?.viewType === "resources") {
-                    onCreateResource && onCreateResource();
-                  }
-                }}
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                New {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
-              </Button>
+              {selectedConfig && (
+                <Button 
+                  className="bg-primary hover:bg-blue-700 text-white text-xs w-full" 
+                  size="sm"
+                  onClick={() => {
+                    if (selectedConfig?.viewType === "jobs") {
+                      onCreateJob && onCreateJob();
+                    } else if (selectedConfig?.viewType === "operations") {
+                      handleAddOperation();
+                    } else if (selectedConfig?.viewType === "resources") {
+                      onCreateResource && onCreateResource();
+                    }
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  New {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
+                </Button>
+              )}
             </div>
           </div>
 
@@ -1003,24 +1005,26 @@ function KanbanBoard({
             </div>
 
             {/* Command buttons */}
-            <div className="flex items-center space-x-2">
-              <Button 
-                className="bg-primary hover:bg-blue-700 text-white flex-1" 
-                size="sm"
-                onClick={() => {
-                  if (selectedConfig?.viewType === "jobs") {
-                    onCreateJob && onCreateJob();
-                  } else if (selectedConfig?.viewType === "operations") {
-                    handleAddOperation();
-                  } else if (selectedConfig?.viewType === "resources") {
-                    onCreateResource && onCreateResource();
-                  }
-                }}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
-              </Button>
-            </div>
+            {selectedConfig && (
+              <div className="flex items-center space-x-2">
+                <Button 
+                  className="bg-primary hover:bg-blue-700 text-white flex-1" 
+                  size="sm"
+                  onClick={() => {
+                    if (selectedConfig?.viewType === "jobs") {
+                      onCreateJob && onCreateJob();
+                    } else if (selectedConfig?.viewType === "operations") {
+                      handleAddOperation();
+                    } else if (selectedConfig?.viewType === "resources") {
+                      onCreateResource && onCreateResource();
+                    }
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 

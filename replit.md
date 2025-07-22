@@ -159,6 +159,20 @@ The application uses a modern full-stack architecture with strong typing through
 - Test Voice now provides authentic preview of actual tour experience using stored voice recordings
 - Clear error handling when cached recordings don't exist, prompting tour regeneration
 
+✓ **Critical AI Kanban Board Creation Bug Fix (July 22, 2025)**:
+- Fixed critical OpenAI token limit exceeded error (3.4M+ tokens) preventing AI kanban board creation
+- Reduced system context size by limiting data samples instead of loading full datasets (jobs, operations, resources)
+- AI kanban board creation now works successfully via `/api/ai-agent/command` endpoint
+- Updated getSystemContext() function to only load first 10 jobs, 20 operations, and 10 resources for AI requests
+- Fixed context overflow issue caused by large base64 images embedded in resource data
+- AI functionality now operational for creating kanban boards from natural language descriptions
+
+✓ **Kanban Board UI Conditional Create Buttons Fix (July 22, 2025)**:
+- Fixed issue where "New Resource" button was visible even when no kanban board was selected
+- Create buttons (New Job/Operation/Resource) now only appear when a board configuration is active
+- Buttons are properly conditional based on selectedConfig existence and viewType
+- Improved user experience by hiding inappropriate create actions when no board context exists
+
 ✓ **Complete "Start Live Tour" Functionality Implementation (July 22, 2025)**:
 - Fixed role switching dropdown to display all system roles instead of just assigned roles for comprehensive training demonstrations
 - Changed role switcher API endpoint from `/api/users/${userId}/available-roles` to `/api/roles` to show all 10 system roles
