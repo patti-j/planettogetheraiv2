@@ -31,7 +31,10 @@ import {
   userPreferences, type UserPreferences, type InsertUserPreferences,
   chatChannels, chatMembers, chatMessages, chatReactions,
   type ChatChannel, type ChatMember, type ChatMessage, type ChatReaction,
-  type InsertChatChannel, type InsertChatMember, type InsertChatMessage, type InsertChatReaction
+  type InsertChatChannel, type InsertChatMember, type InsertChatMessage, type InsertChatReaction,
+  feedback, feedbackComments, feedbackVotes,
+  type Feedback, type FeedbackComment, type FeedbackVote,
+  type InsertFeedback, type InsertFeedbackComment, type InsertFeedbackVote
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, like, ilike, ne, inArray } from "drizzle-orm";
@@ -435,6 +438,30 @@ export interface IStorage {
   createOptimizationRecommendation(recommendation: InsertOptimizationRecommendation): Promise<OptimizationRecommendation>;
   updateOptimizationRecommendation(id: number, recommendation: Partial<InsertOptimizationRecommendation>): Promise<OptimizationRecommendation | undefined>;
   deleteOptimizationRecommendation(id: number): Promise<boolean>;
+  
+  // Feedback Management
+  getFeedback(): Promise<Feedback[]>;
+  getFeedbackItem(id: number): Promise<Feedback | undefined>;
+  createFeedback(feedback: InsertFeedback): Promise<Feedback>;
+  updateFeedback(id: number, feedback: Partial<InsertFeedback>): Promise<Feedback | undefined>;
+  deleteFeedback(id: number): Promise<boolean>;
+  
+  getFeedbackComments(feedbackId: number): Promise<FeedbackComment[]>;
+  createFeedbackComment(comment: InsertFeedbackComment): Promise<FeedbackComment>;
+  deleteFeedbackComment(id: number): Promise<boolean>;
+  
+  getFeedbackVotes(feedbackId: number): Promise<FeedbackVote[]>;
+  voteFeedback(vote: InsertFeedbackVote): Promise<FeedbackVote>;
+  removeVote(userId: number, feedbackId: number): Promise<boolean>;
+  
+  getFeedbackStats(): Promise<{
+    totalSubmissions: number;
+    openItems: number;
+    completedItems: number;
+    averageResponseTime: number;
+    topCategories: { category: string; count: number }[];
+    recentActivity: number;
+  }>;
 }
 
 export class MemStorage implements IStorage {
@@ -3454,6 +3481,122 @@ export class DatabaseStorage implements IStorage {
   async deleteOptimizationRecommendation(id: number): Promise<boolean> {
     const result = await db.delete(optimizationRecommendations).where(eq(optimizationRecommendations.id, id));
     return result.rowCount! > 0;
+  }
+
+  // Feedback Management
+  async getFeedback(): Promise<Feedback[]> {
+    return await db.select().from(feedback).orderBy(desc(feedback.createdAt));
+  }
+
+  async getFeedbackItem(id: number): Promise<Feedback | undefined> {
+    const [feedbackItem] = await db.select().from(feedback).where(eq(feedback.id, id));
+    return feedbackItem || undefined;
+  }
+
+  async createFeedback(feedbackData: InsertFeedback): Promise<Feedback> {
+    const [newFeedback] = await db.insert(feedback).values(feedbackData).returning();
+    return newFeedback;
+  }
+
+  async updateFeedback(id: number, feedbackData: Partial<InsertFeedback>): Promise<Feedback | undefined> {
+    const [updatedFeedback] = await db
+      .update(feedback)
+      .set({ ...feedbackData, updatedAt: new Date() })
+      .where(eq(feedback.id, id))
+      .returning();
+    return updatedFeedback || undefined;
+  }
+
+  async deleteFeedback(id: number): Promise<boolean> {
+    const result = await db.delete(feedback).where(eq(feedback.id, id));
+    return result.rowCount! > 0;
+  }
+
+  async getFeedbackComments(feedbackId: number): Promise<FeedbackComment[]> {
+    return await db.select().from(feedbackComments)
+      .where(eq(feedbackComments.feedbackId, feedbackId))
+      .orderBy(desc(feedbackComments.createdAt));
+  }
+
+  async createFeedbackComment(comment: InsertFeedbackComment): Promise<FeedbackComment> {
+    const [newComment] = await db.insert(feedbackComments).values(comment).returning();
+    return newComment;
+  }
+
+  async deleteFeedbackComment(id: number): Promise<boolean> {
+    const result = await db.delete(feedbackComments).where(eq(feedbackComments.id, id));
+    return result.rowCount! > 0;
+  }
+
+  async getFeedbackVotes(feedbackId: number): Promise<FeedbackVote[]> {
+    return await db.select().from(feedbackVotes)
+      .where(eq(feedbackVotes.feedbackId, feedbackId))
+      .orderBy(desc(feedbackVotes.createdAt));
+  }
+
+  async voteFeedback(vote: InsertFeedbackVote): Promise<FeedbackVote> {
+    // Handle upserting - if user already voted, update their vote
+    const existingVote = await db.select().from(feedbackVotes)
+      .where(eq(feedbackVotes.userId, vote.userId))
+      .where(eq(feedbackVotes.feedbackId, vote.feedbackId));
+    
+    if (existingVote.length > 0) {
+      const [updatedVote] = await db
+        .update(feedbackVotes)
+        .set({ voteType: vote.voteType })
+        .where(eq(feedbackVotes.id, existingVote[0].id))
+        .returning();
+      return updatedVote;
+    }
+    
+    const [newVote] = await db.insert(feedbackVotes).values(vote).returning();
+    return newVote;
+  }
+
+  async removeVote(userId: number, feedbackId: number): Promise<boolean> {
+    const result = await db.delete(feedbackVotes)
+      .where(eq(feedbackVotes.userId, userId))
+      .where(eq(feedbackVotes.feedbackId, feedbackId));
+    return result.rowCount! > 0;
+  }
+
+  async getFeedbackStats(): Promise<{
+    totalSubmissions: number;
+    openItems: number;
+    completedItems: number;
+    averageResponseTime: number;
+    topCategories: { category: string; count: number }[];
+    recentActivity: number;
+  }> {
+    // Get total submissions
+    const totalSubmissions = await db.select({ count: count() }).from(feedback);
+    
+    // Get open and completed items
+    const openItems = await db.select({ count: count() }).from(feedback)
+      .where(ne(feedback.status, 'resolved'));
+    const completedItems = await db.select({ count: count() }).from(feedback)
+      .where(eq(feedback.status, 'resolved'));
+    
+    // Get top categories
+    const categories = await db.select({
+      category: feedback.category,
+      count: count()
+    }).from(feedback).groupBy(feedback.category);
+    
+    // Get recent activity (last 7 days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const recentActivity = await db.select({ count: count() }).from(feedback)
+      .where(gte(feedback.createdAt, sevenDaysAgo));
+    
+    return {
+      totalSubmissions: totalSubmissions[0].count,
+      openItems: openItems[0].count,
+      completedItems: completedItems[0].count,
+      averageResponseTime: 2.5, // Mock for now - would need actual calculation
+      topCategories: categories.map(c => ({ category: c.category, count: c.count })),
+      recentActivity: recentActivity[0].count
+    };
   }
 }
 

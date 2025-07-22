@@ -1772,3 +1772,105 @@ export type InsertInventoryOptimizationScenario = z.infer<typeof insertInventory
 
 export type OptimizationRecommendation = typeof optimizationRecommendations.$inferSelect;
 export type InsertOptimizationRecommendation = z.infer<typeof insertOptimizationRecommendationSchema>;
+
+// Feedback Management Tables
+export const feedback = pgTable("feedback", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull(), // suggestion, bug, feature_request, improvement, complaint, praise
+  category: text("category").notNull(), // scheduling, ui_ux, performance, reporting, mobile, integration, general
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  submittedBy: text("submitted_by").notNull(),
+  userId: integer("user_id").references(() => users.id),
+  status: text("status").notNull().default("new"), // new, under_review, in_progress, completed, rejected, duplicate
+  priority: text("priority").notNull().default("medium"), // low, medium, high, critical
+  votes: integer("votes").default(0),
+  tags: jsonb("tags").$type<string[]>().default([]),
+  assignedTo: text("assigned_to"),
+  resolution: text("resolution"),
+  implementationVersion: text("implementation_version"),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const feedbackComments = pgTable("feedback_comments", {
+  id: serial("id").primaryKey(),
+  feedbackId: integer("feedback_id").references(() => feedback.id).notNull(),
+  author: text("author").notNull(),
+  userId: integer("user_id").references(() => users.id),
+  content: text("content").notNull(),
+  isOfficial: boolean("is_official").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const feedbackVotes = pgTable("feedback_votes", {
+  id: serial("id").primaryKey(),
+  feedbackId: integer("feedback_id").references(() => feedback.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  voteType: text("vote_type").notNull(), // up, down
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  userFeedbackIdx: unique().on(table.userId, table.feedbackId),
+}));
+
+// Feedback relations
+export const feedbackRelations = relations(feedback, ({ many, one }) => ({
+  comments: many(feedbackComments),
+  votes: many(feedbackVotes),
+  user: one(users, {
+    fields: [feedback.userId],
+    references: [users.id],
+  }),
+}));
+
+export const feedbackCommentsRelations = relations(feedbackComments, ({ one }) => ({
+  feedback: one(feedback, {
+    fields: [feedbackComments.feedbackId],
+    references: [feedback.id],
+  }),
+  user: one(users, {
+    fields: [feedbackComments.userId],
+    references: [users.id],
+  }),
+}));
+
+export const feedbackVotesRelations = relations(feedbackVotes, ({ one }) => ({
+  feedback: one(feedback, {
+    fields: [feedbackVotes.feedbackId],
+    references: [feedback.id],
+  }),
+  user: one(users, {
+    fields: [feedbackVotes.userId],
+    references: [users.id],
+  }),
+}));
+
+// Feedback schemas
+export const insertFeedbackSchema = createInsertSchema(feedback).omit({
+  id: true,
+  votes: true,
+  createdAt: true,
+  updatedAt: true,
+  resolvedAt: true,
+});
+
+export const insertFeedbackCommentSchema = createInsertSchema(feedbackComments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertFeedbackVoteSchema = createInsertSchema(feedbackVotes).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Feedback types
+export type Feedback = typeof feedback.$inferSelect;
+export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
+
+export type FeedbackComment = typeof feedbackComments.$inferSelect;
+export type InsertFeedbackComment = z.infer<typeof insertFeedbackCommentSchema>;
+
+export type FeedbackVote = typeof feedbackVotes.$inferSelect;
+export type InsertFeedbackVote = z.infer<typeof insertFeedbackVoteSchema>;

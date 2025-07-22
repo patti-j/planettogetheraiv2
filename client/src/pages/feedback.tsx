@@ -104,7 +104,17 @@ export default function Feedback() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Mock feedback data
+  // Fetch feedback data from API
+  const { data: feedbackData = [], isLoading: feedbackLoading } = useQuery({
+    queryKey: ["/api/feedback"],
+  });
+
+  // Fetch feedback stats from API  
+  const { data: feedbackStats, isLoading: statsLoading } = useQuery({
+    queryKey: ["/api/feedback/stats"],
+  });
+
+  // Mock feedback data (to be removed after API integration)
   const mockFeedback: FeedbackItem[] = [
     {
       id: 1,
@@ -244,8 +254,10 @@ export default function Feedback() {
   // Submit feedback mutation
   const submitFeedbackMutation = useMutation({
     mutationFn: async (feedback: Partial<FeedbackItem>) => {
-      // In real app, this would submit to API
-      return new Promise(resolve => setTimeout(resolve, 1000));
+      return apiRequest("/api/feedback", {
+        method: "POST",
+        body: JSON.stringify(feedback),
+      });
     },
     onSuccess: () => {
       toast({
@@ -253,6 +265,8 @@ export default function Feedback() {
         description: "Thank you for your feedback! We'll review it and get back to you soon.",
       });
       setFeedbackDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/feedback"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/feedback/stats"] });
     },
     onError: () => {
       toast({
@@ -266,13 +280,24 @@ export default function Feedback() {
   // Vote on feedback mutation
   const voteFeedbackMutation = useMutation({
     mutationFn: async ({ id, vote }: { id: number; vote: "up" | "down" }) => {
-      // In real app, this would update vote in API
-      return new Promise(resolve => setTimeout(resolve, 500));
+      return apiRequest(`/api/feedback/${id}/vote`, {
+        method: "POST",
+        body: JSON.stringify({ voteType: vote }),
+      });
     },
     onSuccess: () => {
       toast({
         title: "Vote Recorded",
         description: "Your vote has been recorded. Thank you for your input!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/feedback"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/feedback/stats"] });
+    },
+    onError: () => {
+      toast({
+        title: "Vote Failed",
+        description: "Failed to record your vote. Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -331,7 +356,9 @@ export default function Feedback() {
   };
 
   // Filter feedback
-  const filteredFeedback = mockFeedback.filter(item => {
+  const currentFeedback = feedbackLoading ? [] : feedbackData;
+  
+  const filteredFeedback = currentFeedback.filter((item: any) => {
     const matchesSearch = searchTerm === "" || 
       item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -345,12 +372,12 @@ export default function Feedback() {
   });
 
   // Sort feedback
-  const sortedFeedback = [...filteredFeedback].sort((a, b) => {
+  const sortedFeedback = [...filteredFeedback].sort((a: any, b: any) => {
     switch (sortBy) {
       case "newest":
-        return new Date(b.submittedDate).getTime() - new Date(a.submittedDate).getTime();
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       case "oldest":
-        return new Date(a.submittedDate).getTime() - new Date(b.submittedDate).getTime();
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       case "most_votes":
         return b.votes - a.votes;
       case "least_votes":
@@ -474,19 +501,27 @@ export default function Feedback() {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{mockStats.totalSubmissions}</div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {statsLoading ? "..." : feedbackStats?.totalSubmissions || 0}
+                  </div>
                   <div className="text-sm text-gray-500">Total Submissions</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">{mockStats.openItems}</div>
+                  <div className="text-2xl font-bold text-orange-600">
+                    {statsLoading ? "..." : feedbackStats?.openItems || 0}
+                  </div>
                   <div className="text-sm text-gray-500">Open Items</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{mockStats.completedItems}</div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {statsLoading ? "..." : feedbackStats?.completedItems || 0}
+                  </div>
                   <div className="text-sm text-gray-500">Completed</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">{mockStats.averageResponseTime}d</div>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {statsLoading ? "..." : feedbackStats?.averageResponseTime || 0}d
+                  </div>
                   <div className="text-sm text-gray-500">Avg Response Time</div>
                 </div>
               </div>
@@ -570,11 +605,11 @@ export default function Feedback() {
                       <div className="flex items-center gap-4 text-sm text-gray-500">
                         <span className="flex items-center gap-1">
                           <User className="w-4 h-4" />
-                          {item.submittedBy}
+                          {item.submitterName || item.submittedBy || "Unknown"}
                         </span>
                         <span className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
-                          {new Date(item.submittedDate).toLocaleDateString()}
+                          {new Date(item.createdAt || item.submittedDate).toLocaleDateString()}
                         </span>
                         <span className="flex items-center gap-1">
                           <Tag className="w-4 h-4" />
@@ -687,7 +722,9 @@ export default function Feedback() {
             <Card>
               <CardContent className="p-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{mockStats.totalSubmissions}</div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {statsLoading ? "..." : feedbackStats?.totalSubmissions || 0}
+                  </div>
                   <div className="text-sm text-gray-500">Total Submissions</div>
                 </div>
               </CardContent>
@@ -695,7 +732,9 @@ export default function Feedback() {
             <Card>
               <CardContent className="p-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">{mockStats.openItems}</div>
+                  <div className="text-2xl font-bold text-orange-600">
+                    {statsLoading ? "..." : feedbackStats?.openItems || 0}
+                  </div>
                   <div className="text-sm text-gray-500">Open Items</div>
                 </div>
               </CardContent>
@@ -703,7 +742,9 @@ export default function Feedback() {
             <Card>
               <CardContent className="p-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{mockStats.completedItems}</div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {statsLoading ? "..." : feedbackStats?.completedItems || 0}
+                  </div>
                   <div className="text-sm text-gray-500">Completed</div>
                 </div>
               </CardContent>
@@ -711,7 +752,9 @@ export default function Feedback() {
             <Card>
               <CardContent className="p-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">{mockStats.averageResponseTime}d</div>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {statsLoading ? "..." : feedbackStats?.averageResponseTime || 0}d
+                  </div>
                   <div className="text-sm text-gray-500">Avg Response Time</div>
                 </div>
               </CardContent>
@@ -724,20 +767,26 @@ export default function Feedback() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {mockStats.topCategories.map((category, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <span className="capitalize">{category.category.replace("_", " ")}</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-32 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full" 
-                          style={{ width: `${(category.count / mockStats.totalSubmissions) * 100}%` }}
-                        ></div>
+                {statsLoading ? (
+                  <div className="text-center text-gray-500">Loading...</div>
+                ) : feedbackStats?.topCategories?.length > 0 ? (
+                  feedbackStats.topCategories.map((category: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <span className="capitalize">{category.category.replace("_", " ")}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-32 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full" 
+                            style={{ width: `${(category.count / (feedbackStats?.totalSubmissions || 1)) * 100}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm text-gray-600">{category.count}</span>
                       </div>
-                      <span className="text-sm text-gray-600">{category.count}</span>
                     </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <div className="text-center text-gray-500">No category data available</div>
+                )}
               </div>
             </CardContent>
           </Card>

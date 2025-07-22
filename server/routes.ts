@@ -21,7 +21,8 @@ import {
   insertChatChannelSchema, insertChatMemberSchema, insertChatMessageSchema, insertChatReactionSchema,
   insertInventoryItemSchema, insertInventoryTransactionSchema, insertInventoryBalanceSchema,
   insertDemandForecastSchema, insertDemandDriverSchema, insertDemandHistorySchema,
-  insertInventoryOptimizationScenarioSchema, insertOptimizationRecommendationSchema
+  insertInventoryOptimizationScenarioSchema, insertOptimizationRecommendationSchema,
+  insertFeedbackSchema, insertFeedbackCommentSchema, insertFeedbackVoteSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -1260,6 +1261,217 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error setting default dashboard config:", error);
       res.status(500).json({ error: "Failed to set default dashboard config" });
+    }
+  });
+
+  // Feedback Management Routes
+  app.get("/api/feedback", async (req, res) => {
+    try {
+      const feedback = await storage.getFeedback();
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error fetching feedback:", error);
+      res.status(500).json({ error: "Failed to fetch feedback" });
+    }
+  });
+
+  app.get("/api/feedback/stats", async (req, res) => {
+    try {
+      const stats = await storage.getFeedbackStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching feedback stats:", error);
+      res.status(500).json({ error: "Failed to fetch feedback stats" });
+    }
+  });
+
+  app.get("/api/feedback/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid feedback ID" });
+      }
+      
+      const feedback = await storage.getFeedbackItem(id);
+      if (!feedback) {
+        return res.status(404).json({ error: "Feedback not found" });
+      }
+      
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error fetching feedback:", error);
+      res.status(500).json({ error: "Failed to fetch feedback" });
+    }
+  });
+
+  app.post("/api/feedback", async (req, res) => {
+    try {
+      const validatedData = insertFeedbackSchema.parse(req.body);
+      const feedback = await storage.createFeedback(validatedData);
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error creating feedback:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid feedback data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create feedback" });
+    }
+  });
+
+  app.put("/api/feedback/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid feedback ID" });
+      }
+
+      const feedback = await storage.updateFeedback(id, req.body);
+      if (!feedback) {
+        return res.status(404).json({ error: "Feedback not found" });
+      }
+
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error updating feedback:", error);
+      res.status(500).json({ error: "Failed to update feedback" });
+    }
+  });
+
+  app.delete("/api/feedback/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid feedback ID" });
+      }
+
+      const deleted = await storage.deleteFeedback(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Feedback not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting feedback:", error);
+      res.status(500).json({ error: "Failed to delete feedback" });
+    }
+  });
+
+  // Feedback Comments Routes
+  app.get("/api/feedback/:id/comments", async (req, res) => {
+    try {
+      const feedbackId = parseInt(req.params.id);
+      if (isNaN(feedbackId)) {
+        return res.status(400).json({ error: "Invalid feedback ID" });
+      }
+
+      const comments = await storage.getFeedbackComments(feedbackId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching feedback comments:", error);
+      res.status(500).json({ error: "Failed to fetch feedback comments" });
+    }
+  });
+
+  app.post("/api/feedback/:id/comments", async (req, res) => {
+    try {
+      const feedbackId = parseInt(req.params.id);
+      if (isNaN(feedbackId)) {
+        return res.status(400).json({ error: "Invalid feedback ID" });
+      }
+
+      const commentData = {
+        ...req.body,
+        feedbackId
+      };
+      
+      const validatedData = insertFeedbackCommentSchema.parse(commentData);
+      const comment = await storage.createFeedbackComment(validatedData);
+      res.json(comment);
+    } catch (error) {
+      console.error("Error creating feedback comment:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid comment data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create comment" });
+    }
+  });
+
+  app.delete("/api/feedback/comments/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid comment ID" });
+      }
+
+      const deleted = await storage.deleteFeedbackComment(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Comment not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      res.status(500).json({ error: "Failed to delete comment" });
+    }
+  });
+
+  // Feedback Voting Routes
+  app.get("/api/feedback/:id/votes", async (req, res) => {
+    try {
+      const feedbackId = parseInt(req.params.id);
+      if (isNaN(feedbackId)) {
+        return res.status(400).json({ error: "Invalid feedback ID" });
+      }
+
+      const votes = await storage.getFeedbackVotes(feedbackId);
+      res.json(votes);
+    } catch (error) {
+      console.error("Error fetching feedback votes:", error);
+      res.status(500).json({ error: "Failed to fetch feedback votes" });
+    }
+  });
+
+  app.post("/api/feedback/:id/vote", requireAuth, async (req, res) => {
+    try {
+      const feedbackId = parseInt(req.params.id);
+      if (isNaN(feedbackId)) {
+        return res.status(400).json({ error: "Invalid feedback ID" });
+      }
+
+      const voteData = {
+        feedbackId,
+        userId: req.user.id,
+        voteType: req.body.voteType
+      };
+
+      const validatedData = insertFeedbackVoteSchema.parse(voteData);
+      const vote = await storage.voteFeedback(validatedData);
+      res.json(vote);
+    } catch (error) {
+      console.error("Error voting on feedback:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid vote data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to vote on feedback" });
+    }
+  });
+
+  app.delete("/api/feedback/:id/vote", requireAuth, async (req, res) => {
+    try {
+      const feedbackId = parseInt(req.params.id);
+      if (isNaN(feedbackId)) {
+        return res.status(400).json({ error: "Invalid feedback ID" });
+      }
+
+      const removed = await storage.removeVote(req.user.id, feedbackId);
+      if (!removed) {
+        return res.status(404).json({ error: "Vote not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing vote:", error);
+      res.status(500).json({ error: "Failed to remove vote" });
     }
   });
 
