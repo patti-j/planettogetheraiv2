@@ -607,6 +607,22 @@ export default function Reports() {
         </DialogContent>
       </Dialog>
 
+    </div>
+  );
+
+  return (
+    <>
+      {isMaximized ? (
+        <div className="fixed inset-0 bg-white z-50">
+          <PageContent />
+        </div>
+      ) : (
+        <div className="h-screen bg-gray-50 dark:bg-gray-900">
+          <PageContent />
+        </div>
+      )}
+
+      {/* Move dialogs outside conditional rendering to prevent remounting */}
       <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -634,20 +650,6 @@ export default function Reports() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-
-  return (
-    <>
-      {isMaximized ? (
-        <div className="fixed inset-0 bg-white z-50">
-          <PageContent />
-        </div>
-      ) : (
-        <div className="h-screen bg-gray-50 dark:bg-gray-900">
-          <PageContent />
-        </div>
-      )}
     </>
   );
 }
