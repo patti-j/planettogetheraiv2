@@ -889,7 +889,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
       {/* Draggable tour window */}
       <Card 
         ref={cardRef}
-        className="fixed w-96 bg-white shadow-2xl z-50 cursor-move max-h-[90vh] flex flex-col"
+        className="fixed w-96 h-[600px] bg-white shadow-2xl z-50 cursor-move flex flex-col"
         style={{
           left: position.x,
           top: position.y,
