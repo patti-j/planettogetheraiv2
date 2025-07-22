@@ -181,6 +181,7 @@ export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
       // For the welcome step, navigate to the first actual feature page
       const firstFeatureStep = tourSteps.find(step => step.page !== "current");
       if (firstFeatureStep) {
+        console.log("Guided tour navigating to:", firstFeatureStep.page);
         setLocation(firstFeatureStep.page);
       }
     }

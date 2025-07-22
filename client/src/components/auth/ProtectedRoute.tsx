@@ -27,6 +27,7 @@ export function ProtectedRoute({
     hasAccess = hasAnyPermission(permissions);
   } else if (feature && action) {
     hasAccess = hasPermission(feature, action);
+    console.log(`ProtectedRoute check: feature=${feature}, action=${action}, hasAccess=${hasAccess}`);
   } else {
     // No restrictions, allow access
     hasAccess = true;

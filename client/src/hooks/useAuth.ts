@@ -136,11 +136,18 @@ export function usePermissions() {
   const { user } = useAuth();
 
   const hasPermission = (feature: string, action: string): boolean => {
-    if (!user) return false;
+    if (!user) {
+      console.log("hasPermission: no user");
+      return false;
+    }
+
+    console.log("hasPermission check:", { feature, action, user: { isDemo: (user as any).isDemo, role: (user as any).role, permissions: (user as any).permissions } });
 
     // Handle demo users who have a simple role string instead of roles array
     if ((user as any).isDemo && (user as any).role) {
-      return getDemoPermissions((user as any).role, feature, action);
+      const result = getDemoPermissions((user as any).role, feature, action);
+      console.log("Demo permissions result:", result);
+      return result;
     }
 
     // Handle demo users from server who have permissions array directly on user object
