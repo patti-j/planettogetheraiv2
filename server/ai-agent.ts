@@ -24,74 +24,30 @@ export async function processAICommand(command: string): Promise<AIAgentResponse
     // Get current system context
     const context = await getSystemContext();
     
+    // Limit context size to prevent token overflow - just get counts and basic info
+    const contextSummary = {
+      jobCount: context.jobs.length,
+      operationCount: context.operations.length,
+      resourceCount: context.resources.length,
+      capabilityCount: context.capabilities.length,
+      sampleJobs: context.jobs.slice(0, 3).map(j => ({ id: j.id, name: j.name, status: j.status })),
+      sampleResources: context.resources.slice(0, 3).map(r => ({ id: r.id, name: r.name, type: r.type })),
+      sampleCapabilities: context.capabilities.slice(0, 5).map(c => ({ id: c.id, name: c.name }))
+    };
+    
     // Use GPT-4o to interpret the command and determine actions
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: `You are an AI agent for a manufacturing production scheduling system. 
-          
-Current system state:
-- Jobs: ${JSON.stringify(context.jobs, null, 2)}
-- Operations: ${JSON.stringify(context.operations, null, 2)}
-- Resources: ${JSON.stringify(context.resources, null, 2)}
-- Capabilities: ${JSON.stringify(context.capabilities, null, 2)}
+          content: `AI agent for manufacturing system. Current state: ${contextSummary.jobCount} jobs, ${contextSummary.operationCount} operations, ${contextSummary.resourceCount} resources.
 
-You can perform these actions:
-1. CREATE_JOB - Create a new production job
-2. CREATE_OPERATION - Create a new operation for a job
-3. CREATE_RESOURCE - Create a new resource
-4. UPDATE_OPERATION - Update an existing operation
-5. ASSIGN_OPERATION - Assign an operation to a resource
-6. GET_STATUS - Get current system status
-7. SEARCH_JOBS - Search for jobs by criteria
-8. SEARCH_OPERATIONS - Search for operations by criteria
-9. ANALYZE_LATE_JOBS - Analyze which jobs are late and provide detailed information
-10. CREATE_CUSTOM_METRIC - Create a custom metric for tracking specific KPIs
-11. CALCULATE_CUSTOM_METRIC - Calculate and return custom metrics values
-12. CHANGE_COLOR_SCHEME - Change the color scheme for Resource Gantt blocks
-13. CHANGE_TEXT_LABELING - Change the text labeling for Resource Gantt blocks
-14. CREATE_KANBAN_BOARD - Create a Kanban board configuration based on user description
-15. CREATE_RESOURCE_VIEW - Create a resource Gantt view configuration based on user description
-16. SET_GANTT_ZOOM - Set the zoom level for the Resource Gantt chart
-17. SET_GANTT_SCROLL - Set the scroll position for the Resource Gantt chart
-18. SCROLL_TO_TODAY - Scroll the Gantt chart to show today's date
-19. CREATE_CUSTOM_TEXT_LABELS - Create custom text labels based on user description
-20. CREATE_ANALYTICS_WIDGETS - Create analytics widgets for reports and dashboards
+Available actions: CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, and others.
 
-Respond with JSON in this format:
-{
-  "action": "ACTION_NAME",
-  "parameters": { /* action parameters */ },
-  "message": "Human-readable response message"
-}
+For CREATE_KANBAN_BOARD: parameters need name, description, viewType (jobs/operations), swimLaneField (status/priority/customer), filters (optional).
 
-For CREATE_JOB, parameters should include: name, description, customer, priority, dueDate
-For CREATE_OPERATION, parameters should include: name, description, jobId, duration, requiredCapabilities
-For CREATE_RESOURCE, parameters should include: name, type, capabilities
-For UPDATE_OPERATION, parameters should include: id, and fields to update
-For ASSIGN_OPERATION, parameters should include: operationId, resourceId
-For ANALYZE_LATE_JOBS, no parameters needed - analyze current jobs and operations to determine which are late
-For CREATE_CUSTOM_METRIC, parameters should include: name, description, calculation (formula or logic)
-For CALCULATE_CUSTOM_METRIC, parameters should include: metricName or calculation logic
-For CREATE_CUSTOM_TEXT_LABELS, parameters should include: labelConfigurations (array of label objects with name and field configurations)
-For CHANGE_COLOR_SCHEME, parameters should include: colorScheme (by_job, by_priority, by_status, by_operation_type, by_resource)
-For CHANGE_TEXT_LABELING, parameters should include: textLabeling (operation_name, job_name, both, duration, progress, none)
-For CREATE_KANBAN_BOARD, parameters should include: name, description, viewType (jobs/operations), swimLaneField (status/priority/customer/assignedResourceId), filters (optional)
-For CREATE_RESOURCE_VIEW, parameters should include: name, description, resourceIds (array of resource IDs to include), colorScheme (optional), textLabeling (optional)
-For SET_GANTT_ZOOM, parameters should include: zoomLevel (hour/day/week/month)
-For SET_GANTT_SCROLL, parameters should include: scrollPosition (percentage 0-100 or time-based like "2024-01-15")
-For SCROLL_TO_TODAY, no parameters needed - scroll to today's date on the timeline
-For CREATE_ANALYTICS_WIDGETS, parameters should include: widgets (array of widget objects with title, type, data, config)
-
-When analyzing late jobs, provide specific information about:
-- Which jobs are late and by how much
-- Current status of operations
-- Impact on production schedule
-- Recommended actions
-
-Be helpful and interpret natural language commands into appropriate actions. When asked about late jobs, overdue operations, or scheduling issues, use ANALYZE_LATE_JOBS to provide detailed analysis.`
+Respond with JSON: {"action": "ACTION_NAME", "parameters": {...}, "message": "response"}`
         },
         {
           role: "user",
@@ -117,10 +73,12 @@ Be helpful and interpret natural language commands into appropriate actions. Whe
 }
 
 async function getSystemContext(): Promise<SystemContext> {
+  // For AI requests, don't load full data to prevent token overflow
+  // Just get counts and limited samples
   const [jobs, operations, resources, capabilities] = await Promise.all([
-    storage.getJobs(),
-    storage.getOperations(),
-    storage.getResources(),
+    storage.getJobs().then(jobs => jobs.slice(0, 10)), // Max 10 jobs for context
+    storage.getOperations().then(ops => ops.slice(0, 20)), // Max 20 operations
+    storage.getResources().then(res => res.slice(0, 10)), // Max 10 resources
     storage.getCapabilities()
   ]);
 
