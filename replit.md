@@ -319,6 +319,15 @@ The application uses a modern full-stack architecture with strong typing through
 - Streamlined UX: Click regenerate → add instructions → preview content → revise if needed → approve & generate voice
 - System prevents wasted time on voice generation for unsatisfactory content by allowing content refinement first
 
+✓ **Mobile Tour Window Optimization & Drag Fix (July 22, 2025)**:
+- Hidden step subtitles/descriptions on mobile screens to save valuable space and improve readability
+- Updated tour window positioning to always default to bottom-right corner on both mobile and desktop
+- Fixed drag functionality by adding comprehensive touch event support for mobile devices
+- Enhanced touch handling with proper event prevention to avoid scrolling conflicts during dragging
+- Added touch event listeners (touchstart, touchmove, touchend) alongside mouse events for full mobile compatibility
+- Improved mobile UX with proper viewport constraints and responsive positioning for all screen sizes
+- Tour windows now draggable on both desktop (mouse) and mobile (touch) with smooth movement and boundary checking
+
 ✓ **Systems Manager Permission Fix & Validation System Analysis (July 22, 2025)**:
 - Fixed missing `analytics-view` permission for Systems Manager role that was causing access denied errors during demo tours
 - Root cause analysis revealed timing issue: tours were created when permission was missing, but validation ran after permission was added

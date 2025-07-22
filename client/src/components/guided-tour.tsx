@@ -711,9 +711,10 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       Math.min(600, windowSize.height - 100); // Desktop: original behavior
     const padding = isMobile ? 10 : 20; // Less padding on mobile
     
+    // Always position in bottom right corner for both mobile and desktop
     setPosition({
-      x: isMobile ? padding : Math.max(0, windowSize.width - cardWidth - padding),
-      y: isMobile ? Math.max(padding, windowSize.height - maxCardHeight - padding - 60) : Math.max(0, windowSize.height - maxCardHeight - padding)
+      x: Math.max(padding, windowSize.width - cardWidth - padding),
+      y: Math.max(padding, windowSize.height - maxCardHeight - padding)
     });
   }, [windowSize]);
 
@@ -781,7 +782,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     };
   }, [onSkip]);
 
-  // Drag functionality with boundary checking
+  // Drag functionality with boundary checking (mouse and touch support)
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging) {
@@ -793,18 +794,38 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       }
     };
 
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isDragging && e.touches.length === 1) {
+        const touch = e.touches[0];
+        const newPosition = constrainToViewport({
+          x: touch.clientX - dragOffset.x,
+          y: touch.clientY - dragOffset.y
+        });
+        setPosition(newPosition);
+        e.preventDefault(); // Prevent scrolling during drag
+      }
+    };
+
     const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    const handleTouchEnd = () => {
       setIsDragging(false);
     };
 
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('touchend', handleTouchEnd);
     }
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
     };
   }, [isDragging, dragOffset]);
 
@@ -816,6 +837,20 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         y: e.clientY - rect.top
       });
       setIsDragging(true);
+      e.preventDefault(); // Prevent default behavior
+    }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (cardRef.current && e.touches.length === 1) {
+      const rect = cardRef.current.getBoundingClientRect();
+      const touch = e.touches[0];
+      setDragOffset({
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top
+      });
+      setIsDragging(true);
+      e.preventDefault(); // Prevent default touch behavior
     }
   };
 
@@ -1097,6 +1132,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         <CardHeader 
           className="relative cursor-move flex-shrink-0 p-2 sm:p-6"
           onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
         >
           <div className="flex items-center justify-between mb-2 sm:mb-4">
             <div className="flex items-center gap-2">
@@ -1157,7 +1193,8 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                 <CardTitle className="text-lg sm:text-xl text-gray-900 leading-tight">
                   {currentStepData.title}
                 </CardTitle>
-                <p className="text-gray-600 mt-1 text-sm sm:text-base line-clamp-2">
+                {/* Hide description on mobile to save space */}
+                <p className="text-gray-600 mt-1 text-sm sm:text-base line-clamp-2 hidden sm:block">
                   {currentStepData.description}
                 </p>
               </div>
