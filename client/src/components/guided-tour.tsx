@@ -438,7 +438,7 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
   
   // Play cached audio directly from server for a specific step  
   const playPreloadedAudio = async (stepId: string) => {
-    if (!voiceEnabled || isPlaying) return;
+    if (!voiceEnabled) return;
     
     // Stop any currently playing audio
     if (speechRef.current) {
@@ -470,9 +470,10 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
           body: JSON.stringify({
             text: enhancedText,
             gender: "female",
-            voice: "nova",
+            voice: "alloy",
             speed: 1.15,
-            cacheOnly: true // Only play cached recordings, don't generate new ones
+            role: role,
+            stepId: stepId
           })
         });
 
@@ -552,9 +553,10 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
           body: JSON.stringify({
             text: enhancedText,
             gender: "female",
-            voice: "nova",
+            voice: "alloy",
             speed: 1.15,
-            cacheOnly: true // Only play cached recordings, don't generate new ones
+            role: role,
+            stepId: stepId
           })
         });
 
@@ -923,7 +925,6 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
                     variant="ghost"
                     size="sm"
                     onClick={togglePlayPause}
-                    disabled={isPlaying}
                     className="text-gray-500 hover:text-gray-700"
                     title={isPlaying ? "Pause narration" : "Play narration"}
                   >
