@@ -1490,7 +1490,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
             
             {/* Voice Status Indicator - positioned as floating overlay on mobile */}
             {voiceEnabled && (isLoadingVoice || isPlaying) && (
-              <div className="absolute top-14 right-2 sm:static sm:top-auto sm:right-auto text-xs sm:text-sm text-blue-600 bg-blue-50 px-2 py-1 sm:px-3 sm:py-2 rounded-md shadow-sm sm:shadow-none">
+              <div className="absolute top-20 right-2 sm:static sm:top-auto sm:right-auto text-xs sm:text-sm text-blue-600 bg-blue-50 px-2 py-1 sm:px-3 sm:py-2 rounded-md shadow-sm sm:shadow-none z-10">
                 <div className="flex items-center gap-2">
                   {isLoadingVoice ? (
                     <>
