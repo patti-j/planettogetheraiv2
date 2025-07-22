@@ -796,12 +796,15 @@ function TourManagementSection() {
     mutationFn: async (roles: string[]) => {
       return apiRequest("POST", "/api/ai/generate-tour", { roles });
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       toast({
         title: "Tour Generated",
-        description: `AI has successfully regenerated tours for ${selectedRoles.length} role(s)`,
+        description: `AI has successfully generated tours for ${variables.length} role(s)`,
         variant: "default",
       });
+      // Clear selections after successful generation
+      setSelectedRoles([]);
+      setSelectedMissingRoles([]);
     },
     onError: (error: any) => {
       toast({
