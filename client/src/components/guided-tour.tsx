@@ -889,14 +889,14 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
       {/* Draggable tour window */}
       <Card 
         ref={cardRef}
-        className="fixed w-96 bg-white shadow-2xl z-50 cursor-move"
+        className="fixed w-96 bg-white shadow-2xl z-50 cursor-move max-h-[90vh] flex flex-col"
         style={{
           left: position.x,
           top: position.y,
         }}
       >
         <CardHeader 
-          className="relative cursor-move"
+          className="relative cursor-move flex-shrink-0"
           onMouseDown={handleMouseDown}
         >
           <div className="flex items-center justify-between mb-4">
@@ -993,45 +993,48 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
             )}
           </CardHeader>
 
-          <CardContent className="space-y-4 pointer-events-auto" onMouseDown={(e) => e.stopPropagation()}>
-            {/* Benefits */}
-            <div>
-              <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
-                <Lightbulb className="h-4 w-4 text-yellow-500" />
-                Key Benefits
-              </h4>
-              <ul className="space-y-1">
-                {(Array.isArray(currentStepData.benefits) 
-                  ? currentStepData.benefits.slice(0, 3) 
-                  : [currentStepData.benefits].slice(0, 3)
-                ).map((benefit, index) => (
-                  <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
-                    <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
-                    {benefit}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Visit Page Button for steps with specific pages */}
-            {currentStepData.page && currentStepData.page !== "current" && (
-              <div className="flex justify-center">
-                <Button
-                  onClick={() => {
-                    console.log("Visiting page:", currentStepData.page);
-                    setLocation(currentStepData.page);
-                  }}
-                  variant="outline"
-                  className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                >
-                  <Target className="h-4 w-4 mr-2" />
-                  {currentStepData.actionText}
-                </Button>
+          <CardContent className="pointer-events-auto flex-1 flex flex-col min-h-0" onMouseDown={(e) => e.stopPropagation()}>
+            {/* Scrollable content area */}
+            <div className="flex-1 overflow-y-auto min-h-0 space-y-4">
+              {/* Benefits */}
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                  <Lightbulb className="h-4 w-4 text-yellow-500" />
+                  Key Benefits
+                </h4>
+                <ul className="space-y-1">
+                  {(Array.isArray(currentStepData.benefits) 
+                    ? currentStepData.benefits.slice(0, 3) 
+                    : [currentStepData.benefits].slice(0, 3)
+                  ).map((benefit, index) => (
+                    <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
+                      <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
+                      {benefit}
+                    </li>
+                  ))}
+                </ul>
               </div>
-            )}
 
-            {/* Action Buttons */}
-            <div className="flex items-center justify-between pt-3 border-t">
+              {/* Visit Page Button for steps with specific pages */}
+              {currentStepData.page && currentStepData.page !== "current" && (
+                <div className="flex justify-center">
+                  <Button
+                    onClick={() => {
+                      console.log("Visiting page:", currentStepData.page);
+                      setLocation(currentStepData.page);
+                    }}
+                    variant="outline"
+                    className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                  >
+                    <Target className="h-4 w-4 mr-2" />
+                    {currentStepData.actionText}
+                  </Button>
+                </div>
+              )}
+            </div>
+            
+            {/* Fixed Action Buttons at bottom */}
+            <div className="flex items-center justify-between pt-3 border-t bg-white flex-shrink-0">
               <div className="flex gap-1">
                 <Button
                   variant="ghost"
