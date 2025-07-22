@@ -976,19 +976,24 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
               </div>
 
               {/* Role Selection Grid */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {getAvailableRoles().filter(availableRole => availableRole.id !== role).map((availableRole) => (
                   <Button
                     key={availableRole.id}
                     onClick={() => handleContinueWithNewRole(availableRole.id)}
                     variant="outline"
-                    className="h-auto p-4 text-left hover:bg-blue-50 hover:border-blue-300"
+                    className="h-auto p-4 text-left hover:bg-blue-50 hover:border-blue-300 min-h-[80px] flex items-start"
                   >
-                    <div className="flex items-center gap-3">
-                      <availableRole.icon className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                      <div>
-                        <div className="font-medium text-gray-900">{availableRole.name}</div>
-                        <div className="text-xs text-gray-500 line-clamp-2">{availableRole.description}</div>
+                    <div className="flex items-start gap-3 w-full">
+                      <availableRole.icon className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-gray-900 mb-1">{availableRole.name}</div>
+                        <div className="text-xs text-gray-500 leading-relaxed overflow-hidden">
+                          {availableRole.description.length > 60 
+                            ? `${availableRole.description.substring(0, 60)}...` 
+                            : availableRole.description
+                          }
+                        </div>
                       </div>
                     </div>
                   </Button>

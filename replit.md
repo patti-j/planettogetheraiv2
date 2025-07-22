@@ -134,6 +134,7 @@ The application uses a modern full-stack architecture with strong typing through
 - Users can now complete multiple role demonstrations in single session, exploring different features and capabilities
 - Added comprehensive role descriptions and visual interface for easy role switching at tour completion
 - Voice narration preferences automatically carry over when switching between different role demonstrations
+- Fixed text overflow issue in tour completion role selection dialog with responsive layout and proper text truncation
 
 ✓ **Complete Voice System Optimization & Welcome Message Fix (July 22, 2025)**:
 - Successfully eliminated unwanted "Welcome to PlanetTogether" popup from appearing at start of demo tours
