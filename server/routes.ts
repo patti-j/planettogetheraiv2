@@ -4046,11 +4046,24 @@ Return a JSON object with this structure:
       const updatedRoles = [];
       const permissionMap = new Map(allPermissions.map(p => [p.name, p.id]));
 
+      console.log("AI Response:", JSON.stringify(aiResponse, null, 2));
+      console.log("Available permission names:", Array.from(permissionMap.keys()));
+
       for (const role of roles) {
         const suggestedPermissions = aiResponse.rolePermissions?.[role.name] || [];
+        console.log(`Processing role ${role.name}, suggested permissions:`, suggestedPermissions);
+        
         const permissionIds = suggestedPermissions
-          .map(permName => permissionMap.get(permName))
+          .map(permName => {
+            const id = permissionMap.get(permName);
+            if (!id) {
+              console.log(`Permission '${permName}' not found in database`);
+            }
+            return id;
+          })
           .filter(id => id !== undefined);
+
+        console.log(`Found ${permissionIds.length} valid permission IDs:`, permissionIds);
 
         if (permissionIds.length > 0) {
           await storage.updateRolePermissions(role.id, { permissions: permissionIds });
@@ -4059,6 +4072,9 @@ Return a JSON object with this structure:
             addedPermissions: suggestedPermissions,
             permissionCount: permissionIds.length
           });
+          console.log(`Updated role ${role.name} with ${permissionIds.length} permissions`);
+        } else {
+          console.log(`No valid permissions found for role ${role.name}`);
         }
       }
 
