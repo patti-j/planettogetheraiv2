@@ -1966,10 +1966,14 @@ function TourManagementSection() {
                   onClick={() => {
                     if (previewTourData) {
                       // Find the role by display name to get the role ID
-                      const role = (allRoles as any[]).find((r: any) => r.name === previewTourData.roleDisplayName);
+                      const role = Array.isArray(allRoles) 
+                        ? allRoles.find((r: any) => r && r.name === previewTourData.roleDisplayName)
+                        : null;
                       if (role) {
                         // Start the live tour by redirecting with tour parameters
                         window.location.href = `/demo-tour?role=${encodeURIComponent(role.name)}&startTour=true`;
+                      } else {
+                        console.error('Could not find role:', previewTourData.roleDisplayName, 'in roles:', allRoles);
                       }
                     }
                   }}
