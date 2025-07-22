@@ -1627,28 +1627,29 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           </CardContent>
         </Card>
 
-        {/* Role Selection Dialog */}
+        {/* Role Selection Dialog - Mobile Optimized */}
         <Dialog open={showRoleSelection} onOpenChange={setShowRoleSelection}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
+          <DialogContent className="max-w-2xl max-h-[85vh] sm:max-h-[90vh] flex flex-col">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle className="text-xl font-semibold text-center mb-4">
                 🎉 Tour Complete! Continue Exploring?
               </DialogTitle>
             </DialogHeader>
             
-            <div className="space-y-6">
+            {/* Scrollable content area */}
+            <div className="flex-1 overflow-y-auto min-h-0 space-y-4 sm:space-y-6">
               <div className="text-center">
                 <p className="text-gray-600 mb-4">
                   Great job completing the <strong>{roleData?.name || 'Demo'}</strong> tour! 
                   Would you like to explore PlanetTogether from another role's perspective?
                 </p>
-                <p className="text-sm text-gray-500 mb-6">
+                <p className="text-sm text-gray-500 mb-4 sm:mb-6">
                   Each role shows different features and capabilities tailored to specific responsibilities.
                 </p>
               </div>
 
               {/* Available Tours Grid - Show All Tours from Database */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
                 {toursFromAPI
                   .filter((tour: any) => tour.roleId !== roleId) // Exclude current role
                   .map((tour: any) => {
@@ -1661,15 +1662,15 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                         key={tour.id}
                         onClick={() => handleContinueWithNewRole(getRoleKey(tourRole))}
                         variant="outline"
-                        className="h-auto p-4 text-left hover:bg-blue-50 hover:border-blue-300 min-h-[80px] flex items-start"
+                        className="h-auto p-3 sm:p-4 text-left hover:bg-blue-50 hover:border-blue-300 min-h-[70px] sm:min-h-[80px] flex items-start"
                       >
-                        <div className="flex items-start gap-3 w-full">
-                          {React.createElement(roleIcon, { className: "h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" })}
+                        <div className="flex items-start gap-2 sm:gap-3 w-full">
+                          {React.createElement(roleIcon, { className: "h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0 mt-0.5" })}
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-gray-900 mb-1">{tourRole}</div>
+                            <div className="font-medium text-gray-900 mb-1 text-sm sm:text-base">{tourRole}</div>
                             <div className="text-xs text-gray-500 leading-relaxed overflow-hidden">
-                              {tourDescription.length > 60 
-                                ? `${tourDescription.substring(0, 60)}...` 
+                              {tourDescription.length > 50 
+                                ? `${tourDescription.substring(0, 50)}...` 
                                 : tourDescription
                               }
                             </div>
@@ -1687,15 +1688,15 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                       key={availableRole.id}
                       onClick={() => handleContinueWithNewRole(availableRole.id)}
                       variant="outline"
-                      className="h-auto p-4 text-left hover:bg-blue-50 hover:border-blue-300 min-h-[80px] flex items-start"
+                      className="h-auto p-3 sm:p-4 text-left hover:bg-blue-50 hover:border-blue-300 min-h-[70px] sm:min-h-[80px] flex items-start"
                     >
-                      <div className="flex items-start gap-3 w-full">
-                        <availableRole.icon className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <div className="flex items-start gap-2 sm:gap-3 w-full">
+                        <availableRole.icon className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-gray-900 mb-1">{availableRole.name}</div>
+                          <div className="font-medium text-gray-900 mb-1 text-sm sm:text-base">{availableRole.name}</div>
                           <div className="text-xs text-gray-500 leading-relaxed overflow-hidden">
-                            {availableRole.description.length > 60 
-                              ? `${availableRole.description.substring(0, 60)}...` 
+                            {availableRole.description.length > 50 
+                              ? `${availableRole.description.substring(0, 50)}...` 
                               : availableRole.description
                             }
                           </div>
@@ -1705,37 +1706,38 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                   ))}
               </div>
 
-              {/* Action Buttons */}
-              <div className="space-y-3 pt-4 border-t">
-                {/* Primary CTA for prospects */}
+            </div>
+
+            {/* Fixed Action Buttons at bottom */}
+            <div className="flex-shrink-0 space-y-3 pt-4 border-t bg-white">
+              {/* Primary CTA for prospects */}
+              <Button 
+                onClick={() => {
+                  setShowRoleSelection(false);
+                  window.location.href = '/pricing';
+                }}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-sm sm:text-base py-2 sm:py-3"
+              >
+                <Star className="h-4 w-4 mr-2" />
+                View Pricing & Plans
+              </Button>
+              
+              {/* Secondary actions */}
+              <div className="flex gap-2 sm:gap-3">
                 <Button 
-                  onClick={() => {
-                    setShowRoleSelection(false);
-                    window.location.href = '/pricing';
-                  }}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                  onClick={handleExitApplication}
+                  variant="outline" 
+                  className="flex-1 text-sm sm:text-base py-2 sm:py-3"
                 >
-                  <Star className="h-4 w-4 mr-2" />
-                  View Pricing & Plans
+                  Exit Demo
                 </Button>
-                
-                {/* Secondary actions */}
-                <div className="flex gap-3">
-                  <Button 
-                    onClick={handleExitApplication}
-                    variant="outline" 
-                    className="flex-1"
-                  >
-                    Exit Demo
-                  </Button>
-                  <Button 
-                    onClick={handleFinishAllTours}
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    Explore More
-                  </Button>
-                </div>
+                <Button 
+                  onClick={handleFinishAllTours}
+                  variant="outline"
+                  className="flex-1 text-sm sm:text-base py-2 sm:py-3"
+                >
+                  Explore More
+                </Button>
               </div>
             </div>
           </DialogContent>
