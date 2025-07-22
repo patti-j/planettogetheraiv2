@@ -352,14 +352,16 @@ export default function RoleManagementPage() {
   }
 
   const mainContent = (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="md:ml-0 ml-12">
-          <h1 className="text-2xl font-semibold text-gray-800">Role Management</h1>
-          <p className="text-gray-600">Define roles and specify feature permissions for different user types</p>
-        </div>
-        <div className="flex items-center gap-2">
+    <div className="flex flex-col h-full">
+      {/* Fixed Header */}
+      <div className="flex-shrink-0 space-y-6 pb-6 bg-white">
+        {/* Page Header */}
+        <div className="flex items-center justify-between">
+          <div className="md:ml-0 ml-12">
+            <h1 className="text-2xl font-semibold text-gray-800">Role Management</h1>
+            <p className="text-gray-600">Define roles and specify feature permissions for different user types</p>
+          </div>
+          <div className="flex items-center gap-2">
           <Dialog open={aiPermissionDialog} onOpenChange={setAiPermissionDialog}>
             <DialogTrigger asChild>
               <Button 
@@ -370,6 +372,61 @@ export default function RoleManagementPage() {
                 {generateAiPermissionsMutation.isPending ? "Generating..." : "AI Permissions"}
               </Button>
             </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>AI Permission Generation</DialogTitle>
+                <DialogDescription>
+                  Select roles and let AI generate appropriate permissions based on their responsibilities.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Selected Roles</Label>
+                  {selectedRoles.length === 0 ? (
+                    <p className="text-sm text-gray-500 mt-1">No roles selected. Select roles from the table below to generate permissions.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {selectedRoles.map(roleId => {
+                        const role = roles.find(r => r.id === roleId);
+                        return role ? (
+                          <Badge key={roleId} variant="secondary">
+                            {role.name}
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                </div>
+                
+                <div>
+                  <Label htmlFor="ai-description">Additional Context (Optional)</Label>
+                  <Textarea
+                    id="ai-description"
+                    placeholder="Describe how permissions should be assigned to these roles. For example: 'Give the Quality Manager role permissions to view reports and manage quality control processes, but not delete data' or 'Marketing roles should have access to analytics and customer data but no system administration'"
+                    value={aiPermissionForm.description}
+                    onChange={(e) => setAiPermissionForm({...aiPermissionForm, description: e.target.value})}
+                    className="mt-1 min-h-[100px]"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    AI will analyze role names and this description to generate appropriate permissions.
+                  </p>
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={() => setAiPermissionDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleAiPermissionGeneration}
+                    disabled={generateAiPermissionsMutation.isPending || selectedRoles.length === 0}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    {generateAiPermissionsMutation.isPending ? "Generating..." : "Generate Permissions"}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
           </Dialog>
           <Dialog open={newRoleDialog} onOpenChange={setNewRoleDialog}>
             <DialogTrigger asChild>
@@ -476,51 +533,54 @@ export default function RoleManagementPage() {
             {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </Button>
         </div>
+        </div>
+
+        {/* Roles Overview - still in fixed header */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Roles</CardTitle>
+              <Shield className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{roles.length}</div>
+              <p className="text-xs text-muted-foreground">
+                {roles.filter(r => r.isSystemRole).length} system, {roles.filter(r => !r.isSystemRole).length} custom
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Permissions</CardTitle>
+              <UserCheck className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{allPermissions.length}</div>
+              <p className="text-xs text-muted-foreground">
+                Across {features.length} features
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Users Assigned</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {roles.reduce((sum, role) => sum + (role.userCount || 0), 0)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Total role assignments
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
-      {/* Roles Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Roles</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{roles.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {roles.filter(r => r.isSystemRole).length} system, {roles.filter(r => !r.isSystemRole).length} custom
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Permissions</CardTitle>
-            <UserCheck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{allPermissions.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Across {features.length} features
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Users Assigned</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {roles.reduce((sum, role) => sum + (role.userCount || 0), 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Total role assignments
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Roles Table */}
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Roles Table */}
       <Card>
         <CardHeader>
           <CardTitle>Roles & Permissions</CardTitle>
@@ -607,7 +667,25 @@ export default function RoleManagementPage() {
           </Table>
         </CardContent>
       </Card>
+      </div>
+    </div>
+  );
 
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {isMaximized ? (
+        <div className="fixed inset-0 bg-white z-50 overflow-auto">
+          <div className="h-full p-6">
+            {mainContent}
+          </div>
+        </div>
+      ) : (
+        <div className="max-w-7xl mx-auto p-6">
+          {mainContent}
+        </div>
+      )}
+
+      {/* All Dialogs */}
       {/* Edit Role Dialog */}
       <Dialog open={editRoleDialog} onOpenChange={setEditRoleDialog}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -854,24 +932,6 @@ export default function RoleManagementPage() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
-  );
-
-  if (isMaximized) {
-    return (
-      <div className="fixed inset-0 z-50 bg-white">
-        <div className="h-full overflow-y-auto">
-          <div className="container mx-auto px-4 py-6">
-            {mainContent}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="container mx-auto px-4 py-6">
-      {mainContent}
     </div>
   );
 }
