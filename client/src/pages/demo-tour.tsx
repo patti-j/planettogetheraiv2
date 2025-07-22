@@ -284,10 +284,13 @@ export default function DemoTour() {
       // Invalidate auth cache to refresh authentication state
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       
-      // Start guided tour using global context
+      // Start guided tour using global context immediately
       setDemoRole(primaryRole);
       startTour(primaryRole, voiceEnabledParam);
       console.log("Demo tour started globally for role:", primaryRole, "with voice:", voiceEnabledParam);
+      
+      // Redirect to main app immediately to avoid showing loading screen
+      window.location.href = "/";
       
     } catch (error) {
       console.error("Demo login error:", error);
@@ -306,22 +309,9 @@ export default function DemoTour() {
 
   // Tour completion and skip handling is now managed by global TourContext
 
+  // Since we redirect immediately after tour start, no need to show loading screen
   if (!showParticipantForm) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Demo Starting...</CardTitle>
-            <CardDescription>
-              Preparing your personalized demo experience
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return null;
   }
   
 
