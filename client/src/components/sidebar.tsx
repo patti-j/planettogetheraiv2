@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, Book, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, LogOut, User, Shield, GraduationCap, UserCheck } from "lucide-react";
+import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, Book, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, LogOut, User, Shield, GraduationCap, UserCheck, BookOpen } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, usePermissions } from "@/hooks/useAuth";
@@ -149,7 +149,22 @@ export default function Sidebar() {
     }
   };
 
-  const navigationItems = [
+  // Function to open onboarding wizard
+  const openOnboardingWizard = () => {
+    window.dispatchEvent(new CustomEvent('openOnboarding'));
+    setMobileMenuOpen(false);
+  };
+
+  const navigationItems: Array<{
+    icon: any;
+    label: string;
+    href: string;
+    active: boolean;
+    feature: string;
+    action: string;
+    onClick?: () => void;
+  }> = [
+    { icon: BookOpen, label: "Getting Started", href: "#", active: false, feature: "", action: "", onClick: openOnboardingWizard },
     { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals", feature: "business-goals", action: "view" },
     { icon: BarChart3, label: "Production Schedule", href: "/production-schedule", active: location === "/production-schedule", feature: "production-scheduling", action: "view" },
     { icon: Target, label: "Optimize Orders", href: "/optimize-orders", active: location === "/optimize-orders", feature: "scheduling-optimizer", action: "view" },
@@ -173,7 +188,8 @@ export default function Sidebar() {
     { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback", feature: "feedback", action: "view" },
     { icon: Bot, label: "Max", href: "/max-ai-assistant", active: location === "/max-ai-assistant", feature: "ai-assistant", action: "view" },
   ].filter(item => 
-    // Always show Production Schedule dashboard for authenticated users
+    // Always show Getting Started and Production Schedule dashboard for authenticated users
+    item.href === "#" || 
     item.href === "/production-schedule" || 
     // Show item if user has permission
     hasPermission(item.feature || "", item.action || "")
@@ -181,6 +197,7 @@ export default function Sidebar() {
 
   const getNavigationTooltip = (href: string) => {
     const tooltips: Record<string, string> = {
+      "#": "Track your implementation progress and complete setup tasks with guided help",
       "/business-goals": "Define strategic objectives, track progress, and monitor risks that impact business success",
       "/production-schedule": "View production schedule with interactive Gantt charts and scheduling tools",
       "/optimize-orders": "Optimize orders with intelligent scheduling and multi-operation planning",
@@ -221,9 +238,9 @@ export default function Sidebar() {
           {navigationItems.map((item) => (
             <Tooltip key={item.href}>
               <TooltipTrigger asChild>
-                <Link href={item.href}>
-                  <a
-                    className={`flex items-center px-3 py-2 rounded-lg transition-colors text-sm md:text-base whitespace-nowrap ${
+                {item.onClick ? (
+                  <button
+                    className={`w-full flex items-center px-3 py-2 rounded-lg transition-colors text-sm md:text-base whitespace-nowrap ${
                       item.href === "/ai-assistant"
                         ? item.active
                           ? "text-white bg-gradient-to-r from-purple-500 to-pink-500 border-l-4 border-purple-600"
@@ -232,12 +249,30 @@ export default function Sidebar() {
                           ? "text-gray-700 bg-blue-50 border-l-4 border-primary"
                           : "text-gray-600 hover:bg-gray-100"
                     }`}
-                    onClick={() => setMobileMenuOpen(false)}
+                    onClick={item.onClick}
                   >
                     <item.icon className="w-4 h-4 md:w-5 md:h-5 mr-3 flex-shrink-0" />
                     <span className="truncate">{item.label}</span>
-                  </a>
-                </Link>
+                  </button>
+                ) : (
+                  <Link href={item.href}>
+                    <a
+                      className={`flex items-center px-3 py-2 rounded-lg transition-colors text-sm md:text-base whitespace-nowrap ${
+                        item.href === "/ai-assistant"
+                          ? item.active
+                            ? "text-white bg-gradient-to-r from-purple-500 to-pink-500 border-l-4 border-purple-600"
+                            : "text-gray-600 hover:text-white hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500"
+                          : item.active
+                            ? "text-gray-700 bg-blue-50 border-l-4 border-primary"
+                            : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <item.icon className="w-4 h-4 md:w-5 md:h-5 mr-3 flex-shrink-0" />
+                      <span className="truncate">{item.label}</span>
+                    </a>
+                  </Link>
+                )}
               </TooltipTrigger>
               <TooltipContent side="right">
                 <p>{getNavigationTooltip(item.href)}</p>
