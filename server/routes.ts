@@ -5444,7 +5444,7 @@ Create a natural, conversational voice script that explains this feature to some
   // Get all channels for a user
   app.get("/api/chat/channels", requireAuth, async (req, res) => {
     try {
-      const channels = await storage.getUserChannels(req.user.id);
+      const channels = await storage.getChatChannels(req.user.id);
       res.json(channels);
     } catch (error) {
       console.error("Error fetching channels:", error);
@@ -5459,7 +5459,7 @@ Create a natural, conversational voice script that explains this feature to some
         ...req.body,
         createdBy: req.user.id
       });
-      const channel = await storage.createChannel(channelData);
+      const channel = await storage.createChatChannel(channelData);
       res.status(201).json(channel);
     } catch (error) {
       console.error("Error creating channel:", error);
@@ -5475,7 +5475,7 @@ Create a natural, conversational voice script that explains this feature to some
         return res.status(400).json({ error: "Invalid channel ID" });
       }
 
-      const channel = await storage.getChannelWithParticipants(channelId);
+      const channel = await storage.getChatChannel(channelId);
       if (!channel) {
         return res.status(404).json({ error: "Channel not found" });
       }
@@ -5507,7 +5507,7 @@ Create a natural, conversational voice script that explains this feature to some
         addedBy: req.user.id
       });
       
-      const member = await storage.addChannelParticipant(memberData);
+      const member = await storage.addChatMember(memberData);
       res.status(201).json(member);
     } catch (error) {
       console.error("Error adding participant:", error);
@@ -5525,7 +5525,7 @@ Create a natural, conversational voice script that explains this feature to some
         return res.status(400).json({ error: "Invalid channel ID or user ID" });
       }
 
-      const success = await storage.removeChannelParticipant(channelId, userId);
+      const success = await storage.removeChatMember(channelId, userId);
       if (!success) {
         return res.status(404).json({ error: "Participant not found" });
       }
@@ -5548,7 +5548,7 @@ Create a natural, conversational voice script that explains this feature to some
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = parseInt(req.query.offset as string) || 0;
 
-      const messages = await storage.getChannelMessages(channelId, limit, offset);
+      const messages = await storage.getChatMessages(channelId, limit, offset);
       res.json(messages);
     } catch (error) {
       console.error("Error fetching messages:", error);
@@ -5570,7 +5570,7 @@ Create a natural, conversational voice script that explains this feature to some
         senderId: req.user.id
       });
 
-      const message = await storage.createMessage(messageData);
+      const message = await storage.createChatMessage(messageData);
       res.status(201).json(message);
     } catch (error) {
       console.error("Error sending message:", error);
@@ -5591,7 +5591,7 @@ Create a natural, conversational voice script that explains this feature to some
         return res.status(400).json({ error: "Content is required" });
       }
 
-      const message = await storage.updateMessage(messageId, req.user.id, content);
+      const message = await storage.updateChatMessage(messageId, { content, editedAt: new Date() });
       if (!message) {
         return res.status(404).json({ error: "Message not found or access denied" });
       }
@@ -5611,7 +5611,7 @@ Create a natural, conversational voice script that explains this feature to some
         return res.status(400).json({ error: "Invalid message ID" });
       }
 
-      const success = await storage.deleteMessage(messageId, req.user.id);
+      const success = await storage.deleteChatMessage(messageId);
       if (!success) {
         return res.status(404).json({ error: "Message not found or access denied" });
       }
@@ -5637,7 +5637,7 @@ Create a natural, conversational voice script that explains this feature to some
         userId: req.user.id
       });
 
-      const reaction = await storage.addReaction(reactionData);
+      const reaction = await storage.addChatReaction(reactionData);
       res.status(201).json(reaction);
     } catch (error) {
       console.error("Error adding reaction:", error);
@@ -5655,7 +5655,7 @@ Create a natural, conversational voice script that explains this feature to some
         return res.status(400).json({ error: "Invalid message ID" });
       }
 
-      const success = await storage.removeReaction(messageId, req.user.id, emoji);
+      const success = await storage.removeChatReaction(messageId, req.user.id, emoji);
       if (!success) {
         return res.status(404).json({ error: "Reaction not found" });
       }

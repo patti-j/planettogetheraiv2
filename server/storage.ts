@@ -31,7 +31,7 @@ import {
   type InsertChatChannel, type InsertChatMember, type InsertChatMessage, type InsertChatReaction
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, like, ne, inArray } from "drizzle-orm";
+import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, like, ilike, ne, inArray } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export interface IStorage {
@@ -378,6 +378,7 @@ export interface IStorage {
   updateChatMessage(id: number, message: Partial<InsertChatMessage>): Promise<ChatMessage | undefined>;
   deleteChatMessage(id: number): Promise<boolean>;
   updateMessageTranslation(messageId: number, targetLanguage: string, translatedText: string): Promise<ChatMessage | undefined>;
+  searchMessages(userId: number, query: string, channelId?: number): Promise<ChatMessage[]>;
   
   // Chat Reactions
   getChatReactions(messageId: number): Promise<ChatReaction[]>;
@@ -3078,6 +3079,40 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return updatedMessage || undefined;
+  }
+
+  async searchMessages(userId: number, query: string, channelId?: number): Promise<ChatMessage[]> {
+    const whereConditions = [
+      isNull(chatMessages.deletedAt),
+      ilike(chatMessages.content, `%${query}%`)
+    ];
+
+    if (channelId) {
+      whereConditions.push(eq(chatMessages.channelId, channelId));
+    }
+
+    // First get channels the user is a member of
+    const userChannels = await db
+      .select({ channelId: chatMembers.channelId })
+      .from(chatMembers)
+      .where(eq(chatMembers.userId, userId));
+
+    const userChannelIds = userChannels.map(c => c.channelId);
+    
+    if (userChannelIds.length === 0) {
+      return [];
+    }
+
+    if (!channelId) {
+      whereConditions.push(inArray(chatMessages.channelId, userChannelIds));
+    }
+
+    return await db
+      .select()
+      .from(chatMessages)
+      .where(and(...whereConditions))
+      .orderBy(desc(chatMessages.createdAt))
+      .limit(50);
   }
 
   // Chat Reactions
