@@ -179,26 +179,8 @@ export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
   
   console.log("GuidedTour initialized - tourSteps:", tourSteps, "currentStep:", currentStep);
 
-  // Navigate to the first relevant step page when tour starts
-  useEffect(() => {
-    if (currentStep === 0) {
-      // For the welcome step, navigate to the first actual feature page immediately
-      const firstFeatureStep = tourSteps.find(step => step.page !== "current");
-      if (firstFeatureStep) {
-        console.log("Guided tour navigating to:", firstFeatureStep.page);
-        console.log("Tour steps:", tourSteps);
-        console.log("Current step:", currentStep);
-        try {
-          setLocation(firstFeatureStep.page);
-          console.log("Navigation completed successfully");
-        } catch (error) {
-          console.error("Navigation error:", error);
-        }
-      } else {
-        console.log("No feature step found");
-      }
-    }
-  }, []);
+  // Navigation is now handled by the parent demo-tour component
+  // This component only manages the tour UI and step progression
 
   const handleNext = () => {
     if (currentStep < tourSteps.length - 1) {
