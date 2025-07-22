@@ -97,10 +97,10 @@ export default function Training() {
   // Check if user has training permissions
   const canAccessTraining = hasPermission('training', 'view');
 
-  // Get available roles for demonstration
-  const { data: availableRoles = [] } = useQuery<Role[]>({
-    queryKey: [`/api/users/${user?.id}/available-roles`],
-    enabled: !!user?.id && canAccessTraining,
+  // Get all system roles for demonstration (not just available roles)
+  const { data: allRoles = [] } = useQuery<Role[]>({
+    queryKey: ["/api/roles"],
+    enabled: canAccessTraining,
     staleTime: 0, // Always refetch to ensure fresh data
   });
 
@@ -481,7 +481,7 @@ function RoleDemonstrationSection({ userId, currentRole }: RoleDemonstrationSect
               </div>
             </div>
             <CardDescription className="text-blue-700">
-              {currentRole.description}
+              {currentRole.description || `Experiencing the system from ${currentRole.name} perspective`}
               {currentRole.name !== 'Trainer' && (
                 <span className="block mt-1 text-xs text-blue-600">
                   Use the sidebar menu to explore features available to this role, or click "Return to Trainer" above
