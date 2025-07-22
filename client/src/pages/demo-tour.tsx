@@ -76,7 +76,7 @@ export default function DemoTour() {
     }
   }, [showGuidedTour, demoRole]);
 
-  // Add error boundary for debugging
+  // Add comprehensive error and navigation debugging
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {
       console.error("Page error:", event.error, event.filename, event.lineno);
@@ -86,12 +86,43 @@ export default function DemoTour() {
       console.error("Unhandled promise rejection:", event.reason);
     };
 
+    // Track all navigation changes
+    const handlePopstate = (event: PopStateEvent) => {
+      console.log("Navigation change detected:", {
+        url: window.location.href,
+        pathname: window.location.pathname,
+        state: event.state
+      });
+    };
+
+    // Track fetch errors that might be 404s
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+      try {
+        const response = await originalFetch(...args);
+        if (response.status === 404) {
+          console.error("404 Error detected in fetch:", {
+            url: args[0],
+            status: response.status,
+            statusText: response.statusText
+          });
+        }
+        return response;
+      } catch (error) {
+        console.error("Fetch error:", error, "URL:", args[0]);
+        throw error;
+      }
+    };
+
     window.addEventListener('error', handleError);
     window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    window.addEventListener('popstate', handlePopstate);
 
     return () => {
       window.removeEventListener('error', handleError);
       window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+      window.removeEventListener('popstate', handlePopstate);
+      window.fetch = originalFetch;
     };
   }, []);
 
