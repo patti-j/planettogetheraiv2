@@ -271,24 +271,21 @@ export default function Sidebar() {
                   {user.firstName} {user.lastName}
                 </span>
               </div>
-              {/* Hide logout button for demo users to prevent accidental logout */}
-              {!(user as any).isDemo && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => logout()}
-                      className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
-                    >
-                      <LogOut className="w-3 h-3" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p>Sign out</p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => logout()}
+                    className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
+                  >
+                    <LogOut className="w-3 h-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Sign out</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
             <div className="text-xs text-gray-600 mb-2">
               Roles: {user.roles?.map(role => role.name).join(", ") || "No roles"}

@@ -241,7 +241,32 @@ export default function DemoTour() {
   const startDemoTour = async (primaryRole: string) => {
     try {
       console.log("Starting demo tour with role:", primaryRole);
-      // Authenticate as demo user for the selected role
+      
+      // First, clear any existing authentication to prevent conflicts
+      console.log("Clearing existing authentication before demo...");
+      
+      // Clear localStorage token
+      localStorage.removeItem("authToken");
+      
+      // Clear any existing session by calling logout
+      try {
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          credentials: "include",
+        });
+        console.log("Existing session cleared");
+      } catch (logoutError) {
+        console.log("No existing session to clear");
+      }
+      
+      // Clear React Query cache
+      queryClient.clear();
+      
+      // Small delay to ensure cleanup is complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Now authenticate as demo user for the selected role
+      console.log("Starting fresh demo authentication...");
       const response = await fetch("/api/auth/demo-login", {
         method: "POST",
         headers: {
@@ -258,6 +283,7 @@ export default function DemoTour() {
       
       // Store demo token in localStorage
       localStorage.setItem("authToken", data.token);
+      console.log("Demo token stored, starting tour...");
       
       // Invalidate auth cache to refresh authentication state
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
