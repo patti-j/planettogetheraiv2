@@ -884,6 +884,8 @@ function TourManagementSection() {
       return apiRequest("GET", "/api/tours/validate");
     },
     onSuccess: (data) => {
+      console.log("Validation response:", data);
+      console.log("Validation results:", data.validation);
       setValidationResults(data.validation);
       setShowValidationDialog(true);
       toast({
@@ -1720,6 +1722,8 @@ function TourManagementSection() {
           
           {validationResults && (
             <div className="space-y-6">
+              {/* Debug logging */}
+              {console.log("Rendering validation dialog with:", validationResults)}
               {/* Summary */}
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h3 className="font-semibold mb-3">Validation Summary</h3>
