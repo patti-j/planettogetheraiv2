@@ -1,0 +1,118 @@
+5 voice scripts
+Generate Tours for Additional Roles
+
+These roles exist in your system but don't have guided tours yet. Generate AI-powered tours for them.
+AI Generate Tours (0)
+director
+
+Executive leadership with access to strategic planning and business goals
+No tour yet
+New Role
+plant-manager
+
+Factory operations oversight with capacity planning and strategic resource management
+No tour yet
+New Role
+production-scheduler
+
+Production planning, scheduling optimization, and resource allocation
+No tour yet
+New Role
+it-administrator
+
+System management, user administration, and technical infrastructure
+No tour yet
+New Role
+systems-manager
+
+IT systems oversight, security management, and infrastructure monitoring
+No tour yet
+New Role
+administrator
+
+Full system access with all permissions across all features
+No tour yet
+New Role
+it-systems-administrator
+
+IT infrastructure management with user and system administration
+No tour yet
+New Role
+data-analyst
+
+Business intelligence with reporting and analytics access
+No tour yet
+New Role
+trainer
+
+Comprehensive training oversight with view access to all system modules for demonstration purposes
+No tour yet
+New Role
+shop-floor-operations
+
+Floor operators managing daily equipment operation, task status updates, and quality reporting
+No tour yet
+New Role
+Detailed Tour Configuration
+Administrator Tour
+3 steps
+5 min
+Preview Tour
+Edit Tour
+Delete
+Data Analyst Tour
+2 steps
+5 min
+Preview Tour
+Edit Tour
+Delete
+Director Tour
+2 steps
+5 min
+Preview Tour
+Edit Tour
+Delete
+IT Administrator Tour
+2 steps
+5 min
+Preview Tour
+Edit Tour
+Delete
+IT Systems Administrator Tour
+2 steps
+5 min
+Preview Tour
+Edit Tour
+Delete
+Plant Manager Tour
+2 steps
+5 min
+Preview Tour
+Edit Tour
+Delete
+Shop Floor Operations Tour
+2 steps
+5 min
+Preview Tour
+Edit Tour
+Delete
+Systems Manager Tour
+2 steps
+5 min
+Preview Tour
+Edit Tour
+Delete
+Trainer Tour
+2 steps
+5 min
+Preview Tour
+Edit Tour
+Delete
+production-scheduler Tour
+5 steps
+5 min
+Preview Tour
+Edit Tour
+Delete
+Validation Failed
+500: {"error":"Failed to validate tours","details":"roleName is not defined"}

@@ -3947,7 +3947,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get role permissions using storage interface
       const rolePermissionsList = await storage.getRolePermissions(role.id);
       const permissionFeatures = rolePermissionsList.map(p => p.feature);
-      console.log(`Role ${roleName} has permissions for features:`, permissionFeatures);
+      console.log(`Role ${role.name} has permissions for features:`, permissionFeatures);
 
       // Filter routes based on permissions
       const accessibleRoutes: {[key: string]: string} = {};
@@ -3961,9 +3961,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           if (permissionFeatures.includes(requiredFeature)) {
             accessibleRoutes[route] = description;
-            console.log(`✓ Role ${roleName} can access ${route} (${requiredFeature})`);
+            console.log(`✓ Role ${role.name} can access ${route} (${requiredFeature})`);
           } else {
-            console.log(`✗ Role ${roleName} cannot access ${route} (missing ${requiredFeature})`);
+            console.log(`✗ Role ${role.name} cannot access ${route} (missing ${requiredFeature})`);
           }
         } else {
           // Routes without specific permission requirements (like root dashboard)
@@ -3971,11 +3971,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      console.log(`Final accessible routes for ${roleName}:`, Object.keys(accessibleRoutes));
+      console.log(`Final accessible routes for ${role.name}:`, Object.keys(accessibleRoutes));
       return accessibleRoutes;
       
     } catch (error) {
-      console.error(`Error getting accessible routes for role ${roleName}:`, error);
+      console.error(`Error getting accessible routes for role ID ${roleId}:`, error);
       return { '/': allSystemRoutes['/'] }; // Fallback to dashboard only
     }
   }
