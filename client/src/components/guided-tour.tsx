@@ -737,9 +737,9 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   // Boundary checking function to keep window in viewport
   const constrainToViewport = (newPosition: { x: number; y: number }) => {
     const isMobile = windowSize.width < 768;
-    const cardWidth = isMobile ? Math.min(320, windowSize.width - 40) : 384;
+    const cardWidth = isMobile ? Math.min(280, windowSize.width - 20) : 384;
     const maxCardHeight = isMobile ? 
-      Math.min(400, windowSize.height * 0.6) : 
+      Math.min(200, windowSize.height * 0.35) : 
       Math.min(600, windowSize.height - 100);
     const padding = isMobile ? 10 : 20;
     
@@ -1087,18 +1087,18 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         style={{
           left: position.x,
           top: position.y,
-          width: windowSize.width < 768 ? `${Math.min(320, windowSize.width - 40)}px` : '384px',
+          width: windowSize.width < 768 ? `${Math.min(280, windowSize.width - 20)}px` : '384px',
           height: windowSize.width < 768 ? 
-            `${Math.min(400, windowSize.height * 0.6)}px` : 
+            `${Math.min(200, windowSize.height * 0.35)}px` : 
             `${Math.min(600, windowSize.height - 100)}px`,
-          maxHeight: windowSize.width < 768 ? '60vh' : '90vh'
+          maxHeight: windowSize.width < 768 ? '35vh' : '90vh'
         }}
       >
         <CardHeader 
-          className="relative cursor-move flex-shrink-0 p-3 sm:p-6"
+          className="relative cursor-move flex-shrink-0 p-2 sm:p-6"
           onMouseDown={handleMouseDown}
         >
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-2 sm:mb-4">
             <div className="flex items-center gap-2">
               <Move className="h-4 w-4 text-gray-400" />
               <Badge variant="secondary" className="text-sm">
@@ -1149,7 +1149,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
             </div>
           </div>
             
-            <div className="flex items-center gap-3 sm:gap-4 mb-4">
+            <div className="flex items-center gap-2 sm:gap-4 mb-2 sm:mb-4">
               <div className="p-2 sm:p-3 rounded-full bg-blue-100">
                 <StepIcon className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
               </div>
@@ -1193,19 +1193,19 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
             )}
           </CardHeader>
 
-          <CardContent className="pointer-events-auto flex-1 flex flex-col min-h-0 p-3 sm:p-6 pt-0" onMouseDown={(e) => e.stopPropagation()}>
+          <CardContent className="pointer-events-auto flex-1 flex flex-col min-h-0 p-2 sm:p-6 pt-0" onMouseDown={(e) => e.stopPropagation()}>
             {/* Scrollable content area */}
-            <div className="flex-1 overflow-y-auto min-h-0 space-y-4">
-              {/* Benefits */}
-              <div>
+            <div className="flex-1 overflow-y-auto min-h-0 space-y-2 sm:space-y-4">
+              {/* Benefits - hidden on mobile to save space */}
+              <div className="hidden sm:block">
                 <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2 text-sm sm:text-base">
                   <Lightbulb className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-500" />
                   Key Benefits
                 </h4>
                 <ul className="space-y-1">
                   {(Array.isArray(currentStepData.benefits) 
-                    ? currentStepData.benefits.slice(0, windowSize.width < 768 ? 2 : 3) 
-                    : [currentStepData.benefits].slice(0, windowSize.width < 768 ? 2 : 3)
+                    ? currentStepData.benefits.slice(0, 3) 
+                    : [currentStepData.benefits].slice(0, 3)
                   ).map((benefit, index) => (
                     <li key={index} className="flex items-start gap-2 text-xs sm:text-sm text-gray-600">
                       <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
@@ -1234,20 +1234,20 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
             </div>
             
             {/* Fixed Action Buttons at bottom */}
-            <div className="flex items-center justify-between pt-2 sm:pt-3 border-t bg-white flex-shrink-0">
+            <div className="flex items-center justify-between pt-1 sm:pt-3 border-t bg-white flex-shrink-0">
               <div className="flex gap-1">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleSkipTour}
-                  className="text-gray-500 px-2"
+                  className="text-gray-500 px-1 sm:px-2 text-xs sm:text-sm h-6 sm:h-8"
                 >
                   Skip
                 </Button>
                 {currentStep > 0 && (
-                  <Button variant="outline" size="sm" onClick={handlePrevious} className="px-2">
-                    <ChevronLeft className="h-3 w-3 mr-1" />
-                    Back
+                  <Button variant="outline" size="sm" onClick={handlePrevious} className="px-1 sm:px-2 text-xs sm:text-sm h-6 sm:h-8">
+                    <ChevronLeft className="h-3 w-3 mr-0 sm:mr-1" />
+                    <span className="hidden sm:inline">Back</span>
                   </Button>
                 )}
 
@@ -1274,29 +1274,30 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                       }, 100); // Very quick completion when toggling on
                     }
                   }}
-                  className={`px-2 ${autoAdvance ? 'bg-green-600 hover:bg-green-700 text-white' : 'text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                  className={`px-1 sm:px-2 text-xs sm:text-sm h-6 sm:h-8 ${autoAdvance ? 'bg-green-600 hover:bg-green-700 text-white' : 'text-gray-600 border-gray-200 hover:bg-gray-50'}`}
                   title={autoAdvance ? "Turn off auto-advance" : "Turn on auto-advance"}
                 >
-                  {autoAdvance ? <Timer className="h-3 w-3 mr-1" /> : <TimerOff className="h-3 w-3 mr-1" />}
-                  {autoAdvance ? "Auto" : "Manual"}
+                  {autoAdvance ? <Timer className="h-3 w-3 mr-0 sm:mr-1" /> : <TimerOff className="h-3 w-3 mr-0 sm:mr-1" />}
+                  <span className="hidden sm:inline">{autoAdvance ? "Auto" : "Manual"}</span>
                 </Button>
                 
                 <Button 
                   onClick={handleNext} 
                   size="sm" 
-                  className={`bg-blue-600 hover:bg-blue-700 px-3 transition-all duration-300 ${
+                  className={`bg-blue-600 hover:bg-blue-700 px-2 sm:px-3 text-xs sm:text-sm h-6 sm:h-8 transition-all duration-300 ${
                     audioCompleted && voiceEnabled && !autoAdvance ? 'animate-pulse shadow-lg ring-2 ring-blue-300' : ''
                   }`}
                 >
                   {currentStep === tourSteps.length - 1 ? (
                     <>
-                      Complete
-                      <CheckCircle className="h-3 w-3 ml-1" />
+                      <span className="hidden sm:inline">Complete</span>
+                      <span className="sm:hidden">Done</span>
+                      <CheckCircle className="h-3 w-3 ml-0 sm:ml-1" />
                     </>
                   ) : (
                     <>
-                      {audioCompleted && voiceEnabled && !autoAdvance ? '👉 ' : ''}Next
-                      <ArrowRight className="h-3 w-3 ml-1" />
+                      {audioCompleted && voiceEnabled && !autoAdvance ? <span className="hidden sm:inline">👉 </span> : ''}<span className="hidden sm:inline">Next</span><span className="sm:hidden">→</span>
+                      <ArrowRight className="h-3 w-3 ml-0 sm:ml-1" />
                     </>
                   )}
                 </Button>
