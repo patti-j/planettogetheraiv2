@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   UserCheck, Shield, Plus, Edit, Trash2, Users, Settings,
-  CheckCircle, XCircle, AlertCircle, Maximize2, Minimize2, Sparkles
+  CheckCircle, XCircle, AlertCircle, Maximize2, Minimize2, Sparkles, Copy
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -168,9 +168,25 @@ export default function RoleManagementPage() {
       setAiPermissionForm({ description: "" });
     },
     onError: (error: any) => {
+      const errorMessage = error.message || "Failed to generate permissions with AI";
       toast({
-        title: "Generation Failed",
-        description: error.message || "Failed to generate permissions with AI",
+        title: "Generation Failed", 
+        description: (
+          <div className="flex items-center gap-2">
+            <span className="flex-1">{errorMessage}</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                navigator.clipboard.writeText(errorMessage);
+                toast({ title: "Copied!", description: "Error message copied to clipboard" });
+              }}
+              className="h-6 px-2"
+            >
+              <Copy className="w-3 h-3" />
+            </Button>
+          </div>
+        ),
         variant: "destructive",
       });
     },
@@ -251,7 +267,7 @@ export default function RoleManagementPage() {
     setRoleForm(prev => {
       if (action === "all") {
         // Add all feature permissions
-        const newPermissions = [...new Set([...prev.permissions, ...featurePermissionIds])];
+        const newPermissions = Array.from(new Set([...prev.permissions, ...featurePermissionIds]));
         return { ...prev, permissions: newPermissions };
       } else {
         // Remove all feature permissions

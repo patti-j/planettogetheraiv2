@@ -24,7 +24,7 @@ import {
   tours, type Tour, type InsertTour
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, like, ne } from "drizzle-orm";
+import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, like, ne, inArray } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export interface IStorage {
@@ -2020,7 +2020,7 @@ export class DatabaseStorage implements IStorage {
       .from(roles)
       .leftJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
       .leftJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
-      .where(sql`${roles.id} = ANY(${roleIds})`)
+      .where(inArray(roles.id, roleIds))
       .groupBy(roles.id);
   }
 
