@@ -445,6 +445,12 @@ The application uses a modern full-stack architecture with strong typing through
 - Production Scheduler tours now properly validate and allow access to /scheduling-optimizer route
 - Enhanced permission validation system to catch route accessibility issues for all roles during tour generation
 
+✓ **Profile Settings Tooltip Positioning Fix (July 22, 2025)**:
+- Fixed tooltip overlap issue where "Profile & Settings" tooltip was covering the logout button
+- Changed profile tooltip positioning from side="right" to side="top" to prevent UI conflicts
+- Both profile settings and logout buttons now have proper tooltip visibility without interference
+- Enhanced user experience by ensuring all sidebar controls remain accessible
+
 ✓ **Complete Tour System Migration to Role ID-Based Architecture (July 22, 2025)**:
 - Successfully completed comprehensive migration from role name strings to role ID-based lookups throughout entire tour system
 - Added getRoleById method to storage interface and DatabaseStorage implementation for consistent role retrieval

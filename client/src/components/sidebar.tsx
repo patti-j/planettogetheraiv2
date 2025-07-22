@@ -337,7 +337,7 @@ export default function Sidebar() {
                           <Settings className="w-3 h-3" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent side="right">
+                      <TooltipContent side="top">
                         <p>Profile & Settings</p>
                       </TooltipContent>
                     </Tooltip>
