@@ -55,12 +55,16 @@ export default function RoleManagementPage() {
   const [newRoleDialog, setNewRoleDialog] = useState(false);
   const [editRoleDialog, setEditRoleDialog] = useState(false);
   const [aiPermissionDialog, setAiPermissionDialog] = useState(false);
+  const [aiRoleDialog, setAiRoleDialog] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<number[]>([]);
   const [aiPermissionPreviewDialog, setAiPermissionPreviewDialog] = useState(false);
   const [aiPreviewData, setAiPreviewData] = useState<any>(null);
   const [aiPermissionForm, setAiPermissionForm] = useState({
     description: ""
+  });
+  const [aiRoleForm, setAiRoleForm] = useState({
+    prompt: ""
   });
   const [roleForm, setRoleForm] = useState({
     name: "",
@@ -216,6 +220,30 @@ export default function RoleManagementPage() {
     },
   });
 
+  // AI role creation mutation
+  const createAiRoleMutation = useMutation({
+    mutationFn: async (prompt: string) => {
+      const response = await apiRequest("POST", "/api/ai/create-role", { prompt });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Role Created",
+        description: `AI has successfully created the role: ${data.name}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/roles-management"] });
+      setAiRoleDialog(false);
+      setAiRoleForm({ prompt: "" });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Creation Failed",
+        description: error.message || "Failed to create role with AI",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreateRole = () => {
     if (!roleForm.name.trim()) {
       toast({
@@ -362,6 +390,54 @@ export default function RoleManagementPage() {
             <p className="text-gray-600">Define roles and specify feature permissions for different user types</p>
           </div>
           <div className="flex items-center gap-2">
+          <Dialog open={aiRoleDialog} onOpenChange={setAiRoleDialog}>
+            <DialogTrigger asChild>
+              <Button 
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                disabled={createAiRoleMutation.isPending}
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                {createAiRoleMutation.isPending ? "Creating..." : "Create Role"}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>AI Role Creation</DialogTitle>
+                <DialogDescription>
+                  Describe the role you want to create and AI will generate the role with appropriate permissions.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="ai-role-prompt">Role Description</Label>
+                  <Textarea
+                    id="ai-role-prompt"
+                    placeholder="Describe the role you want to create. For example: 'Create a Quality Manager role that can view all reports, manage quality control processes, and access analytics but cannot delete data or manage users' or 'Create a Marketing Coordinator role with access to customer data, reports, and sales information'"
+                    value={aiRoleForm.prompt}
+                    onChange={(e) => setAiRoleForm({...aiRoleForm, prompt: e.target.value})}
+                    className="mt-1 min-h-[150px]"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Be specific about what this role should be able to do and any restrictions. AI will create the role name, description, and assign appropriate permissions.
+                  </p>
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={() => setAiRoleDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={() => createAiRoleMutation.mutate(aiRoleForm.prompt)}
+                    disabled={createAiRoleMutation.isPending || !aiRoleForm.prompt.trim()}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    {createAiRoleMutation.isPending ? "Creating..." : "Create Role"}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
           <Dialog open={aiPermissionDialog} onOpenChange={setAiPermissionDialog}>
             <DialogTrigger asChild>
               <Button 

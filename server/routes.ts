@@ -4671,6 +4671,114 @@ Return a JSON object with this structure:
     }
   });
 
+  // AI Role Creation
+  app.post("/api/ai/create-role", requireAuth, async (req, res) => {
+    try {
+      const { prompt } = req.body;
+      
+      if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
+        return res.status(400).json({ message: "Prompt is required" });
+      }
+
+      // Import OpenAI dynamically
+      const OpenAI = (await import("openai")).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      // Get all available permissions for context
+      const allPermissions = await storage.getAllPermissions();
+      const availablePermissions = allPermissions.map(p => ({
+        name: p.name,
+        feature: p.feature,
+        action: p.action,
+        description: p.description
+      }));
+
+      const systemPrompt = `You are an AI assistant that creates system roles based on user descriptions. 
+      
+Given a role description, you must:
+1. Create an appropriate role name (e.g., "Quality Manager", "Marketing Coordinator") 
+2. Write a clear role description
+3. Select appropriate permissions from the available list
+
+Available Permissions:
+${availablePermissions.map(p => `- ${p.name}: ${p.description} (${p.feature}-${p.action})`).join('\n')}
+
+IMPORTANT RULES:
+1. Only select permissions that are actually available in the list above
+2. Choose permissions that logically match the role's responsibilities
+3. Be conservative - better to give fewer permissions that make sense than too many
+4. Consider the principle of least privilege - give only what's needed for the role to function
+5. For management roles, include appropriate view permissions but be careful with edit/delete permissions
+6. For operational roles, focus on the specific features they need access to
+
+Return a JSON object with this exact structure:
+{
+  "name": "Role Name",
+  "description": "Clear description of what this role does",
+  "permissions": ["permission-name-1", "permission-name-2"],
+  "reasoning": "Brief explanation of why these permissions were selected"
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      let roleData;
+      try {
+        roleData = JSON.parse(response.choices[0].message.content || "{}");
+      } catch (parseError) {
+        console.error("Failed to parse AI response:", parseError);
+        return res.status(500).json({ message: "AI returned invalid response format" });
+      }
+
+      // Validate required fields
+      if (!roleData.name || !roleData.description || !Array.isArray(roleData.permissions)) {
+        return res.status(500).json({ message: "AI response missing required fields" });
+      }
+
+      // Map permission names to IDs and validate they exist
+      const permissionIds = [];
+      for (const permissionName of roleData.permissions) {
+        const permission = allPermissions.find(p => p.name === permissionName);
+        if (permission) {
+          permissionIds.push(permission.id);
+        } else {
+          console.warn(`Permission not found: ${permissionName}`);
+        }
+      }
+
+      // Create the role
+      const newRole = await storage.createRole({
+        name: roleData.name,
+        description: roleData.description,
+        permissions: permissionIds
+      });
+
+      console.log(`AI created role: ${roleData.name} with ${permissionIds.length} permissions`);
+
+      res.json({
+        success: true,
+        name: newRole.name,
+        description: newRole.description,
+        permissionCount: permissionIds.length,
+        reasoning: roleData.reasoning,
+        role: newRole
+      });
+
+    } catch (error) {
+      console.error("AI role creation error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to create role with AI" 
+      });
+    }
+  });
+
   // Tours API endpoints
   app.get("/api/tours", requireAuth, async (req, res) => {
     try {
