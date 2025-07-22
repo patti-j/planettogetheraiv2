@@ -1541,8 +1541,10 @@ function TourManagementSection() {
                   console.log('Found role ID:', roleId);
 
                   if (roleId) {
+                    console.log('Attempting to switch to role ID:', roleId);
                     // Switch role
-                    await apiRequest('POST', `/api/users/${user?.id}/switch-role`, { roleId });
+                    const response = await apiRequest('POST', `/api/users/${userData?.id}/switch-role`, { roleId });
+                    console.log('Role switch response:', response);
                     
                     toast({
                       title: "Starting Live Tour",
