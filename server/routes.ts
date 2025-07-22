@@ -33,9 +33,34 @@ import crypto from "crypto";
 
 // Authentication middleware
 function requireAuth(req: any, res: any, next: any) {
-  if (!req.session?.userId) {
+  let userId = req.session?.userId;
+  
+  // Check for token in Authorization header if session fails
+  if (!userId && req.headers.authorization) {
+    const token = req.headers.authorization.replace('Bearer ', '');
+    
+    // Handle demo tokens
+    if (token.startsWith('demo_')) {
+      const tokenParts = token.split('_');
+      if (tokenParts.length >= 3) {
+        userId = tokenParts[1] + '_' + tokenParts[2]; // demo_exec, demo_prod, etc.
+      }
+    }
+    // Extract user ID from regular token (format: user_ID_timestamp_random)
+    else if (token.startsWith('user_')) {
+      const tokenParts = token.split('_');
+      if (tokenParts.length >= 2) {
+        userId = parseInt(tokenParts[1]);
+      }
+    }
+  }
+  
+  if (!userId) {
     return res.status(401).json({ message: "Unauthorized" });
   }
+  
+  // Add userId to request for use in route handlers
+  req.user = { id: userId };
   next();
 }
 
@@ -3804,13 +3829,22 @@ Return a JSON object with tour data for each role including steps, voice scripts
         temperature: 0.7
       });
 
-      const generatedContent = completion.choices[0].message.content;
+      let generatedContent = completion.choices[0].message.content || '';
+      
+      // Extract JSON content from markdown code blocks if present
+      const jsonMatch = generatedContent.match(/```json\s*([\s\S]*?)\s*```/);
+      if (jsonMatch) {
+        generatedContent = jsonMatch[1];
+      }
       
       // Try to parse as JSON, fallback to text response if needed
       let tourData;
       try {
-        tourData = JSON.parse(generatedContent || '{}');
+        tourData = JSON.parse(generatedContent);
+        console.log("Successfully parsed AI tour data:", Object.keys(tourData));
       } catch (parseError) {
+        console.error("Failed to parse AI response as JSON:", parseError.message);
+        console.error("Content to parse:", generatedContent);
         tourData = { content: generatedContent, roles: roles };
       }
 
@@ -3818,26 +3852,64 @@ Return a JSON object with tour data for each role including steps, voice scripts
       const savedTours = [];
       for (const role of roles) {
         const roleKey = role.toLowerCase().replace(/\s+/g, '-');
-        const roleTourData = tourData[roleKey] || tourData[role] || tourData;
+        const roleKeyPascal = role.replace(/\s+/g, ''); // ProductionScheduler format
         
-        if (roleTourData && roleTourData.steps) {
+        // Try different ways to access the tour data based on AI response format
+        let roleTourData = null;
+        
+        // Check for nested roles structure (roles.Director.tourSteps)
+        if (tourData.roles && tourData.roles[role]) {
+          roleTourData = tourData.roles[role];
+        }
+        // Check for PascalCase key (ProductionScheduler)
+        else if (tourData[roleKeyPascal]) {
+          roleTourData = tourData[roleKeyPascal];
+        }
+        // Check for PascalCase key with "Tour" suffix (ProductionSchedulerTour)
+        else if (tourData[roleKeyPascal + 'Tour']) {
+          roleTourData = tourData[roleKeyPascal + 'Tour'];
+        }
+        // Check for direct role key with spaces
+        else if (tourData[role]) {
+          roleTourData = tourData[role];
+        }
+        // Check for lowercase-dash key
+        else if (tourData[roleKey]) {
+          roleTourData = tourData[roleKey];
+        }
+        // Fallback to using the whole tourData if it has steps directly
+        else if (tourData.steps || tourData.tourSteps) {
+          roleTourData = tourData;
+        }
+        else {
+          console.log(`No role data found for ${role}. Available keys:`, Object.keys(tourData));
+        }
+        
+        // Handle both 'steps' and 'tourSteps' property names
+        const steps = roleTourData?.steps || roleTourData?.tourSteps || [];
+        console.log(`Extracted ${steps.length} steps for ${role}`);
+        
+        if (steps && steps.length > 0) {
           try {
             const tourRecord = await storage.upsertTour({
               role: roleKey,
               roleDisplayName: role,
               tourData: {
-                steps: roleTourData.steps || [],
-                totalSteps: roleTourData.steps?.length || 0,
-                estimatedDuration: roleTourData.estimatedDuration || "5 min",
-                voiceScriptCount: roleTourData.steps?.filter((s: any) => s.voiceScript).length || 0
+                steps: steps,
+                totalSteps: steps.length,
+                estimatedDuration: roleTourData?.estimatedDuration || "5 min",
+                voiceScriptCount: steps.filter((s: any) => s.voiceScript).length
               },
               isGenerated: true,
               createdBy: req.user?.id || 'system'
             });
             savedTours.push(tourRecord);
+            console.log(`Successfully saved tour for ${role}:`, tourRecord.id);
           } catch (saveError) {
             console.error(`Error saving tour for ${role}:`, saveError);
           }
+        } else {
+          console.log(`No valid tour data found for ${role}`, { roleTourData, steps });
         }
       }
 

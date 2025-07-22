@@ -126,6 +126,19 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 22, 2025)
 
+✓ **Critical AI Tour Generation & Authentication System Fix (July 22, 2025)**:
+- Fixed critical authentication bug preventing tours from displaying in the training UI interface
+- Updated authentication middleware to support both session and token-based authentication in all API endpoints
+- Resolved AI tour data parsing issues with JSON responses wrapped in markdown code blocks using regex extraction
+- Enhanced role key matching system to handle multiple AI response formats (PascalCase, Tour suffix, nested structures)
+- Fixed tour generation processing for multi-role scenarios with comprehensive role mapping (ProductionScheduler, PlantManager, SystemsManager)
+- Successfully tested end-to-end AI tour generation pipeline: OpenAI GPT-4o → JSON parsing → database persistence → API retrieval
+- Tour management system now fully functional with generation, saving, and retrieval working across all roles
+- Added comprehensive debugging and error handling for tour generation process with detailed console logging
+- Tours now properly persist to PostgreSQL database with complete metadata and step-by-step content structure
+- Verified multi-role tour generation creating separate database records for each role with unique tour content
+- System successfully generates high-quality, contextual tour content for Director, Systems Manager, Production Scheduler, and Plant Manager roles
+
 ✓ **Comprehensive Tour Management System Implementation (July 22, 2025)**:
 - Successfully created comprehensive Tour Management screen for trainers in the training page
 - Added new "Tour Management" tab alongside existing training modules, role demonstrations, and resources
