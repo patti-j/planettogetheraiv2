@@ -1301,15 +1301,10 @@ function TourManagementSection() {
 
   // Voice generation handlers
   const handleGenerateVoiceForSelected = () => {
-    if (selectedRoles.length === 0) {
-      toast({
-        title: "No Tours Selected",
-        description: "Please select at least one tour to generate voice recordings",
-        variant: "destructive",
-      });
-      return;
-    }
-    const selectedTours = toursFromAPI.filter((tour: any) => selectedRoles.includes(tour.roleDisplayName));
+    // Allow opening dialog even with no tours selected for settings configuration
+    const selectedTours = selectedRoles.length > 0 
+      ? toursFromAPI.filter((tour: any) => selectedRoles.includes(tour.roleDisplayName))
+      : [];
     setVoiceGenerationTours(selectedTours);
     setShowVoiceGenerationDialog(true);
   };
