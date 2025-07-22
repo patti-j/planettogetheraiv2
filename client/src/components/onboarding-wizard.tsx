@@ -356,7 +356,7 @@ export default function OnboardingWizard() {
 
   // Check if user is in demo mode
   const isDemo = localStorage.getItem("authToken")?.startsWith("demo_") || 
-                 user?.id?.startsWith("demo_") || 
+                 String(user?.id || "").startsWith("demo_") || 
                  user?.username?.startsWith("demo_");
   
   // Check if user is new (no existing data) - but never consider demo users as new
