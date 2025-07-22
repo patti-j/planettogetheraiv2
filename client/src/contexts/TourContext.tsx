@@ -9,6 +9,7 @@ interface TourContextType {
   startTour: (role: string, voiceEnabled?: boolean) => void;
   completeTour: () => void;
   skipTour: () => void;
+  switchToRole: (newRole: string) => void;
 }
 
 const TourContext = createContext<TourContextType | null>(null);
@@ -81,6 +82,20 @@ export function TourProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("activeDemoTour");
   };
 
+  const switchToRole = (newRole: string) => {
+    console.log("Switching to new role:", newRole);
+    setCurrentRole(newRole);
+    
+    // Update localStorage with new role but keep voice setting
+    const tourData = { 
+      role: newRole, 
+      active: true, 
+      voiceEnabled 
+    };
+    localStorage.setItem("activeDemoTour", JSON.stringify(tourData));
+    console.log("Updated tour state for role switch:", tourData);
+  };
+
   return (
     <TourContext.Provider value={{
       isActive,
@@ -88,7 +103,8 @@ export function TourProvider({ children }: { children: ReactNode }) {
       voiceEnabled,
       startTour,
       completeTour,
-      skipTour
+      skipTour,
+      switchToRole
     }}>
       {children}
       
@@ -99,6 +115,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
           initialVoiceEnabled={voiceEnabled}
           onComplete={completeTour}
           onSkip={skipTour}
+          onSwitchRole={switchToRole}
         />
       )}
     </TourContext.Provider>
@@ -116,7 +133,8 @@ export function useTour() {
       voiceEnabled: false,
       startTour: () => {},
       completeTour: () => {},
-      skipTour: () => {}
+      skipTour: () => {},
+      switchToRole: () => {}
     };
   }
   return context;

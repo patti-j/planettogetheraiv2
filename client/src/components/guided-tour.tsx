@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { 
   ChevronRight, 
@@ -42,7 +43,36 @@ interface GuidedTourProps {
   initialVoiceEnabled?: boolean;
   onComplete: () => void;
   onSkip: () => void;
+  onSwitchRole?: (newRole: string) => void;
 }
+
+// Available roles for tour selection
+const getAvailableRoles = () => [
+  {
+    id: "director",
+    name: "Director",
+    description: "Strategic oversight, business goals, and executive reporting",
+    icon: TrendingUp
+  },
+  {
+    id: "production-scheduler",
+    name: "Production Scheduler",
+    description: "Resource planning, job scheduling, and capacity optimization", 
+    icon: BarChart3
+  },
+  {
+    id: "plant-manager",
+    name: "Plant Manager",
+    description: "Overall operations management and department coordination",
+    icon: Users
+  },
+  {
+    id: "systems-manager",
+    name: "Systems Manager", 
+    description: "Technical administration, user management, and system configuration",
+    icon: Settings
+  }
+];
 
 // Define role-specific tour steps
 const getTourSteps = (role: string): TourStep[] => {
@@ -189,7 +219,7 @@ const getTourSteps = (role: string): TourStep[] => {
   return [commonSteps[0], ...roleSpecificSteps, commonSteps[1]];
 };
 
-export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false, onComplete, onSkip }: GuidedTourProps) {
+export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false, onComplete, onSkip, onSwitchRole }: GuidedTourProps) {
   console.log("GuidedTour component mounted with role:", role, "initialVoiceEnabled:", initialVoiceEnabled);
   
   const [currentStep, setCurrentStep] = useState(initialStep);
@@ -454,12 +484,30 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
     }
   };
 
+  const [showRoleSelection, setShowRoleSelection] = useState(false);
+
   const handleComplete = () => {
     stopSpeech();
+    // Instead of completing immediately, show role selection dialog
+    setShowRoleSelection(true);
+  };
+
+  const handleContinueWithNewRole = (newRole: string) => {
+    console.log("Starting new tour with role:", newRole);
+    setShowRoleSelection(false);
+    
+    // Use callback to inform parent component about role switch
+    if (onSwitchRole) {
+      onSwitchRole(newRole);
+    }
+  };
+
+  const handleFinishAllTours = () => {
+    setShowRoleSelection(false);
     setIsVisible(false);
     toast({
-      title: "Tour Complete!",
-      description: "You've successfully completed the demo tour. Continue exploring the features.",
+      title: "All Tours Complete!",
+      description: "Thanks for exploring PlanetTogether! Continue exploring the features on your own.",
     });
     onComplete();
   };
@@ -906,6 +954,66 @@ export function GuidedTour({ role, initialStep = 0, initialVoiceEnabled = false,
             </div>
           </CardContent>
         </Card>
+
+        {/* Role Selection Dialog */}
+        <Dialog open={showRoleSelection} onOpenChange={setShowRoleSelection}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold text-center mb-4">
+                🎉 Tour Complete! Continue Exploring?
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-6">
+              <div className="text-center">
+                <p className="text-gray-600 mb-4">
+                  Great job completing the <strong>{role.charAt(0).toUpperCase() + role.slice(1).replace('-', ' ')}</strong> tour! 
+                  Would you like to explore PlanetTogether from another role's perspective?
+                </p>
+                <p className="text-sm text-gray-500 mb-6">
+                  Each role shows different features and capabilities tailored to specific responsibilities.
+                </p>
+              </div>
+
+              {/* Role Selection Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                {getAvailableRoles().filter(availableRole => availableRole.id !== role).map((availableRole) => (
+                  <Button
+                    key={availableRole.id}
+                    onClick={() => handleContinueWithNewRole(availableRole.id)}
+                    variant="outline"
+                    className="h-auto p-4 text-left hover:bg-blue-50 hover:border-blue-300"
+                  >
+                    <div className="flex items-center gap-3">
+                      <availableRole.icon className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <div>
+                        <div className="font-medium text-gray-900">{availableRole.name}</div>
+                        <div className="text-xs text-gray-500 line-clamp-2">{availableRole.description}</div>
+                      </div>
+                    </div>
+                  </Button>
+                ))}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 border-t">
+                <Button 
+                  onClick={handleFinishAllTours}
+                  variant="outline" 
+                  className="flex-1"
+                >
+                  No Thanks, I'm Done
+                </Button>
+                <Button 
+                  onClick={handleFinishAllTours}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  Explore On My Own
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
     </>
   );
 }
