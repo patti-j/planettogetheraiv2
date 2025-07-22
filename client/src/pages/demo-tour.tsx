@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { GuidedTour } from "@/components/guided-tour";
+import { useTour } from "@/contexts/TourContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -61,10 +61,10 @@ export default function DemoTour() {
   const [, setLocation] = useLocation();
   const [showParticipantForm, setShowParticipantForm] = useState(true);
   const [participantId, setParticipantId] = useState<number | null>(null);
-  const [showGuidedTour, setShowGuidedTour] = useState(false);
   const [demoRole, setDemoRole] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { startTour } = useTour();
 
   // Handle guided tour - stay on demo-tour page and render overlay
   useEffect(() => {
@@ -288,10 +288,10 @@ export default function DemoTour() {
       // Invalidate auth cache to refresh authentication state
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       
-      // Start guided tour instead of direct navigation
+      // Start guided tour using global context
       setDemoRole(primaryRole);
-      setShowGuidedTour(true);
-      console.log("Demo tour state updated - role:", primaryRole, "showGuidedTour: true");
+      startTour(primaryRole);
+      console.log("Demo tour started globally for role:", primaryRole);
       
     } catch (error) {
       console.error("Demo login error:", error);

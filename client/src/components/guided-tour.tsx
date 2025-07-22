@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -176,8 +177,9 @@ const getTourSteps = (role: string): TourStep[] => {
     ]
   };
 
-  // Simplified tour - only use common steps to prevent navigation issues
-  return commonSteps;
+  // Return role-specific steps plus common steps
+  const roleSpecificSteps = roleSteps[role] || [];
+  return [commonSteps[0], ...roleSpecificSteps, commonSteps[1]];
 };
 
 export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
@@ -185,6 +187,7 @@ export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
   
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const tourSteps = getTourSteps(role);
@@ -192,14 +195,20 @@ export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
   
   console.log("GuidedTour initialized - tourSteps:", tourSteps, "currentStep:", currentStep);
 
-  // Navigation is now handled by the parent demo-tour component
-  // This component only manages the tour UI and step progression
-
   const handleNext = () => {
     if (currentStep < tourSteps.length - 1) {
       const nextStep = currentStep + 1;
+      const nextStepData = tourSteps[nextStep];
+      
+      console.log("Moving to tour step:", nextStep, "page:", nextStepData.page);
+      
+      // Navigate to the page if it's not current
+      if (nextStepData.page && nextStepData.page !== "current") {
+        console.log("Navigating to:", nextStepData.page);
+        setLocation(nextStepData.page);
+      }
+      
       setCurrentStep(nextStep);
-      console.log("Moving to tour step:", nextStep);
     } else {
       handleComplete();
     }
@@ -290,6 +299,23 @@ export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
               </ul>
             </div>
 
+            {/* Visit Page Button for steps with specific pages */}
+            {currentStepData.page && currentStepData.page !== "current" && (
+              <div className="flex justify-center">
+                <Button
+                  onClick={() => {
+                    console.log("Visiting page:", currentStepData.page);
+                    setLocation(currentStepData.page);
+                  }}
+                  variant="outline"
+                  className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                >
+                  <Target className="h-4 w-4 mr-2" />
+                  {currentStepData.actionText}
+                </Button>
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className="flex items-center justify-between pt-4 border-t">
               <div className="flex gap-2">
@@ -316,7 +342,7 @@ export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
                   </>
                 ) : (
                   <>
-                    {currentStepData.actionText}
+                    Next Step
                     <ArrowRight className="h-4 w-4 ml-1" />
                   </>
                 )}

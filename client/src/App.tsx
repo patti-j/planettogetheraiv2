@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import { TourProvider } from "@/contexts/TourContext";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/sidebar";
 import OnboardingWizard from "@/components/onboarding-wizard";
@@ -190,9 +191,11 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <DndProvider backend={HTML5Backend}>
         <TooltipProvider>
-          <Router />
-          <OnboardingWizard />
-          <Toaster />
+          <TourProvider>
+            <Router />
+            <OnboardingWizard />
+            <Toaster />
+          </TourProvider>
         </TooltipProvider>
       </DndProvider>
     </QueryClientProvider>
