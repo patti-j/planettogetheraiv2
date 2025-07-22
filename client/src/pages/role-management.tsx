@@ -684,59 +684,138 @@ export default function RoleManagementPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table className="min-w-full">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">
-                    <Checkbox 
-                      checked={selectedRoles.length === roles.length}
-                      onCheckedChange={(checked) => {
-                        setSelectedRoles(checked ? roles.map(r => r.id) : []);
-                      }}
-                    />
-                  </TableHead>
-                  <TableHead className="min-w-[120px]">Role Name</TableHead>
-                  <TableHead className="hidden md:table-cell min-w-[200px]">Description</TableHead>
-                  <TableHead className="min-w-[60px]">Users</TableHead>
-                  <TableHead className="hidden lg:table-cell min-w-[200px]">Permissions</TableHead>
-                  <TableHead className="min-w-[80px]">Type</TableHead>
-                  <TableHead className="min-w-[100px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-            <TableBody>
-              {roles.map((role) => (
-                <TableRow key={role.id}>
-                  <TableCell>
-                    <Checkbox 
-                      checked={selectedRoles.includes(role.id)}
-                      onCheckedChange={(checked) => handleRoleSelection(role.id, checked as boolean)}
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium">{role.name}</TableCell>
-                  <TableCell className="hidden md:table-cell">{role.description}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{role.userCount || 0}</Badge>
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    <div className="flex flex-wrap gap-1">
-                      {features.map(feature => {
-                        const featurePerms = role.permissions.filter(p => p.feature === feature);
-                        if (featurePerms.length === 0) return null;
-                        return (
-                          <Badge key={feature} variant="secondary" className="text-xs">
-                            {feature.replace('-', ' ')}: {featurePerms.length}
+          {/* Desktop Table View */}
+          <div className="hidden md:block">
+            <div className="overflow-x-auto">
+              <Table className="w-full">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox 
+                        checked={selectedRoles.length === roles.length}
+                        onCheckedChange={(checked) => {
+                          setSelectedRoles(checked ? roles.map(r => r.id) : []);
+                        }}
+                      />
+                    </TableHead>
+                    <TableHead className="min-w-[120px]">Role Name</TableHead>
+                    <TableHead className="min-w-[200px]">Description</TableHead>
+                    <TableHead className="min-w-[60px]">Users</TableHead>
+                    <TableHead className="hidden lg:table-cell min-w-[200px]">Permissions</TableHead>
+                    <TableHead className="min-w-[80px]">Type</TableHead>
+                    <TableHead className="min-w-[100px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {roles.map((role) => (
+                    <TableRow key={role.id}>
+                      <TableCell>
+                        <Checkbox 
+                          checked={selectedRoles.includes(role.id)}
+                          onCheckedChange={(checked) => handleRoleSelection(role.id, checked as boolean)}
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">{role.name}</TableCell>
+                      <TableCell>{role.description}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{role.userCount || 0}</Badge>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <div className="flex flex-wrap gap-1">
+                          {features.map(feature => {
+                            const featurePerms = role.permissions.filter(p => p.feature === feature);
+                            if (featurePerms.length === 0) return null;
+                            return (
+                              <Badge key={feature} variant="secondary" className="text-xs">
+                                {feature.replace('-', ' ')}: {featurePerms.length}
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={role.isSystemRole ? "default" : "secondary"}>
+                          {role.isSystemRole ? "System" : "Custom"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditRole(role)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          {!role.isSystemRole && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteRole(role)}
+                              disabled={deleteRoleMutation.isPending}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Checkbox 
+                  checked={selectedRoles.length === roles.length}
+                  onCheckedChange={(checked) => {
+                    setSelectedRoles(checked ? roles.map(r => r.id) : []);
+                  }}
+                />
+                <span className="text-sm text-gray-600">Select All</span>
+              </div>
+              <span className="text-sm text-gray-600">{selectedRoles.length} selected</span>
+            </div>
+            
+            {roles.map((role) => (
+              <Card key={role.id} className="p-4">
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3 flex-1">
+                      <Checkbox 
+                        checked={selectedRoles.includes(role.id)}
+                        onCheckedChange={(checked) => handleRoleSelection(role.id, checked as boolean)}
+                      />
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-medium text-base">{role.name}</h3>
+                          <Badge variant={role.isSystemRole ? "default" : "secondary"} className="text-xs">
+                            {role.isSystemRole ? "System" : "Custom"}
                           </Badge>
-                        );
-                      })}
+                        </div>
+                        <p className="text-sm text-gray-600">{role.description}</p>
+                      </div>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={role.isSystemRole ? "default" : "secondary"}>
-                      {role.isSystemRole ? "System" : "Custom"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1">
+                        <Users className="w-4 h-4 text-gray-400" />
+                        <Badge variant="outline" className="text-xs">{role.userCount || 0}</Badge>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Shield className="w-4 h-4 text-gray-400" />
+                        <span className="text-xs text-gray-600">{role.permissions.length} perms</span>
+                      </div>
+                    </div>
+                    
                     <div className="flex items-center gap-1">
                       <Button
                         variant="ghost"
@@ -758,11 +837,10 @@ export default function RoleManagementPage() {
                         </Button>
                       )}
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-            </Table>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
         </CardContent>
       </Card>
