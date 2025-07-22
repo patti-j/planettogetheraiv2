@@ -119,8 +119,8 @@ export default function Boards() {
       <header className="bg-white shadow-sm border-b border-gray-200 px-4 py-3 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div className="mb-2 sm:mb-0 md:ml-0 ml-12">
-            <h1 className="text-2xl font-semibold text-gray-800">Boards</h1>
-            <p className="text-gray-600 mt-1 text-sm sm:text-base">Organize jobs, operations, and resources using customizable board views</p>
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">Boards</h1>
+            <p className="text-gray-600 mt-1 text-xs sm:text-sm">Organize jobs, operations, and resources using customizable board views</p>
           </div>
         </div>
       </header>
@@ -148,7 +148,7 @@ export default function Boards() {
   if (isMaximized) {
     return (
       <TooltipProvider>
-        <div className="fixed inset-0 bg-white z-50">
+        <div className="fixed inset-0 bg-white z-40">
           <PageContent />
           
           {/* Dialogs for maximized view */}
