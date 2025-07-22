@@ -4809,6 +4809,133 @@ Return a JSON object with this structure:
     }
   });
 
+  // Voice generation for tours endpoint
+  app.post('/api/tours/generate-voice', requireAuth, async (req, res) => {
+    try {
+      const { tours, options } = req.body;
+      
+      if (!tours || !Array.isArray(tours)) {
+        return res.status(400).json({ error: 'Tours array is required' });
+      }
+
+      const results = {
+        total: 0,
+        generated: 0,
+        cached: 0,
+        errors: []
+      };
+
+      for (const tour of tours) {
+        try {
+          console.log(`Generating voice for tour: ${tour.roleDisplayName}`);
+          
+          if (!tour.tourData?.steps || !Array.isArray(tour.tourData.steps)) {
+            console.log(`No steps found for tour: ${tour.roleDisplayName}`);
+            continue;
+          }
+
+          for (const step of tour.tourData.steps) {
+            results.total++;
+            
+            try {
+              let voiceScript = step.voiceScript || step.description;
+              
+              // If user requested script regeneration, enhance with AI
+              if (options.regenerateScript && options.userInstructions) {
+                // Use OpenAI to enhance the script based on user instructions
+                const OpenAI = (await import("openai")).default;
+                const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+                
+                const enhancementResponse = await openai.chat.completions.create({
+                  model: "gpt-4o",
+                  messages: [{
+                    role: "user",
+                    content: `Transform this tour step into an engaging voice narration following these instructions: "${options.userInstructions}"
+                    
+Original step:
+Title: ${step.title}
+Description: ${step.description}
+Benefits: ${step.benefits?.join(', ') || 'None'}
+Role: ${tour.roleDisplayName}
+
+Create a natural, conversational voice script that explains this feature to someone in the ${tour.roleDisplayName} role. Keep it under 30 seconds when spoken.`
+                  }],
+                  max_tokens: 200
+                });
+                
+                voiceScript = enhancementResponse.choices[0]?.message?.content?.trim() || voiceScript;
+              }
+              
+              // Generate voice hash with selected options
+              const cacheKey = `${voiceScript}-${options.voice || 'nova'}-${options.gender || 'female'}-${options.speed || 1.0}`;
+              const textHash = crypto.createHash('sha256').update(cacheKey).digest('hex');
+              
+              // Check if already cached
+              const existingCache = await storage.getVoiceRecording(textHash);
+              if (existingCache) {
+                results.cached++;
+                console.log(`Voice already cached for step ${step.id} in ${tour.roleDisplayName}`);
+                continue;
+              }
+              
+              // Generate new voice recording
+              console.log(`Generating voice for step: ${step.id} in ${tour.roleDisplayName}`);
+              const audioBuffer = await generateTTSAudio(
+                voiceScript, 
+                options.voice || 'nova', 
+                options.speed || 1.0
+              );
+              
+              // Save to cache
+              await storage.saveVoiceRecording({
+                textHash,
+                role: tour.roleDisplayName,
+                stepId: step.id,
+                voice: options.voice || 'nova',
+                audioData: audioBuffer.toString('base64'),
+                fileSize: audioBuffer.length,
+                duration: Math.ceil(voiceScript.length * 50), // Estimate duration
+              });
+              
+              results.generated++;
+              console.log(`Successfully generated and cached voice for step ${step.id} in ${tour.roleDisplayName}`);
+              
+            } catch (stepError) {
+              console.error(`Error generating voice for step ${step.id} in ${tour.roleDisplayName}:`, stepError);
+              results.errors.push({
+                tour: tour.roleDisplayName,
+                step: step.id,
+                error: stepError.message
+              });
+            }
+          }
+          
+        } catch (tourError) {
+          console.error(`Error processing tour ${tour.roleDisplayName}:`, tourError);
+          results.errors.push({
+            tour: tour.roleDisplayName,
+            error: tourError.message
+          });
+        }
+      }
+      
+      console.log(`Voice generation completed: ${results.generated} generated, ${results.cached} cached, ${results.errors.length} errors`);
+      
+      res.json({
+        success: true,
+        message: `Voice generation completed: ${results.generated} new recordings generated, ${results.cached} already cached`,
+        results
+      });
+      
+    } catch (error) {
+      console.error('Voice generation error:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate voice recordings',
+        details: error.message 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

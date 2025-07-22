@@ -7,7 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play, UserCheck, Settings, Shield, Edit3, Eye, Volume2, MessageSquare, Sparkles, RefreshCw, ChevronDown, ChevronRight, FileText, Clock, Plus, AlertCircle, Trash2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play, UserCheck, Settings, Shield, Edit3, Eye, Volume2, MessageSquare, Sparkles, RefreshCw, ChevronDown, ChevronRight, FileText, Clock, Plus, AlertCircle, Trash2, CheckCircle, AlertTriangle, Mic, VolumeX } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, usePermissions } from '@/hooks/useAuth';
 import { RoleSwitcher } from '@/components/role-switcher';
@@ -585,6 +588,15 @@ function TourManagementSection() {
   const [previewTourData, setPreviewTourData] = useState<any>(null);
   const [showValidationDialog, setShowValidationDialog] = useState(false);
   const [validationResults, setValidationResults] = useState<any>(null);
+  const [showVoiceGenerationDialog, setShowVoiceGenerationDialog] = useState(false);
+  const [voiceGenerationTours, setVoiceGenerationTours] = useState<any[]>([]);
+  const [voiceGenerationOptions, setVoiceGenerationOptions] = useState({
+    regenerateScript: false,
+    voice: 'nova',
+    gender: 'female',
+    speed: 1.1,
+    userInstructions: ''
+  });
 
   // Preview handlers
   const handlePreviewStep = (step: any, role: string) => {
@@ -902,6 +914,38 @@ function TourManagementSection() {
     },
   });
 
+  // Voice generation mutation
+  const voiceGenerationMutation = useMutation({
+    mutationFn: async (data: {
+      tours: any[];
+      options: {
+        regenerateScript: boolean;
+        voice: string;
+        gender: string;
+        speed: number;
+        userInstructions: string;
+      };
+    }) => {
+      const response = await apiRequest("POST", "/api/tours/generate-voice", data);
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Voice Generation Complete",
+        description: "Voice recordings have been successfully generated for the selected tours.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/tours"] });
+      setShowVoiceGenerationDialog(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Voice Generation Failed",
+        description: error.message || "Failed to generate voice recordings",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Test voice functionality for tour steps - plays pre-cached recordings
   const handleTestVoice = async (step: any, role: string) => {
     try {
@@ -1057,6 +1101,33 @@ function TourManagementSection() {
     }
   };
 
+  // Voice generation handlers
+  const handleGenerateVoiceForSelected = () => {
+    if (selectedRoles.length === 0) {
+      toast({
+        title: "No Tours Selected",
+        description: "Please select at least one tour to generate voice recordings",
+        variant: "destructive",
+      });
+      return;
+    }
+    const selectedTours = toursFromAPI.filter((tour: any) => selectedRoles.includes(tour.role));
+    setVoiceGenerationTours(selectedTours);
+    setShowVoiceGenerationDialog(true);
+  };
+
+  const handleGenerateVoiceForAll = () => {
+    setVoiceGenerationTours(toursFromAPI);
+    setShowVoiceGenerationDialog(true);
+  };
+
+  const handleVoiceGenerationSubmit = () => {
+    voiceGenerationMutation.mutate({
+      tours: voiceGenerationTours,
+      options: voiceGenerationOptions
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -1068,20 +1139,36 @@ function TourManagementSection() {
             Use AI to regenerate and optimize tour experiences.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button
             onClick={handleGenerateSelectedTours}
             disabled={regenerateTourWithAI.isPending || selectedRoles.length === 0}
             className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+            size="sm"
           >
             <Sparkles className="h-4 w-4 mr-2" />
             AI Regenerate Selected ({selectedRoles.length})
+          </Button>
+          <Button
+            onClick={handleGenerateVoiceForAll}
+            disabled={voiceGenerationMutation.isPending || !toursFromAPI?.length}
+            variant="outline"
+            className="border-green-300 text-green-600 hover:bg-green-50"
+            size="sm"
+          >
+            {voiceGenerationMutation.isPending ? (
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Mic className="h-4 w-4 mr-2" />
+            )}
+            AI Voice Generation
           </Button>
           <Button
             onClick={handleGenerateAllTours}
             disabled={regenerateTourWithAI.isPending}
             variant="outline"
             className="border-purple-300 text-purple-700 hover:bg-purple-50"
+            size="sm"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${regenerateTourWithAI.isPending ? 'animate-spin' : ''}`} />
             AI Regenerate All Tours
@@ -1091,6 +1178,7 @@ function TourManagementSection() {
             disabled={validateToursMutation.isPending}
             variant="outline"
             className="border-blue-300 text-blue-600 hover:bg-blue-50"
+            size="sm"
           >
             {validateToursMutation.isPending ? (
               <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -1846,6 +1934,172 @@ function TourManagementSection() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Voice Generation Dialog */}
+      <Dialog open={showVoiceGenerationDialog} onOpenChange={setShowVoiceGenerationDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Mic className="h-5 w-5 mr-2 text-green-600" />
+              AI Voice Generation for Tours
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Selected Tours Summary */}
+            <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+              <h4 className="font-semibold text-green-800 mb-2">Selected Tours ({voiceGenerationTours.length})</h4>
+              <div className="flex flex-wrap gap-2">
+                {voiceGenerationTours.map((tour: any) => (
+                  <Badge key={tour.id} variant="secondary" className="bg-green-100 text-green-800">
+                    {tour.roleDisplayName}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* Voice Generation Options */}
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Script Options */}
+              <div className="space-y-4">
+                <h4 className="font-semibold">Script Options</h4>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="regenerateScript"
+                    checked={voiceGenerationOptions.regenerateScript}
+                    onCheckedChange={(checked) => 
+                      setVoiceGenerationOptions(prev => ({ ...prev, regenerateScript: checked as boolean }))
+                    }
+                  />
+                  <Label htmlFor="regenerateScript" className="text-sm">
+                    Regenerate voice scripts with AI
+                  </Label>
+                </div>
+                
+                <p className="text-xs text-gray-600 ml-6">
+                  {voiceGenerationOptions.regenerateScript 
+                    ? "AI will create new engaging voice scripts for each tour step based on your instructions."
+                    : "Use existing tour descriptions as voice scripts (faster but less engaging)."
+                  }
+                </p>
+
+                {voiceGenerationOptions.regenerateScript && (
+                  <div className="ml-6 space-y-2">
+                    <Label htmlFor="userInstructions" className="text-sm font-medium">
+                      Instructions for AI Script Generation
+                    </Label>
+                    <Textarea
+                      id="userInstructions"
+                      placeholder="e.g., Make the narration more conversational and engaging, focus on business benefits, explain technical features in simple terms..."
+                      value={voiceGenerationOptions.userInstructions}
+                      onChange={(e) => 
+                        setVoiceGenerationOptions(prev => ({ ...prev, userInstructions: e.target.value }))
+                      }
+                      rows={4}
+                      className="text-sm"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Voice Settings */}
+              <div className="space-y-4">
+                <h4 className="font-semibold">Voice Settings</h4>
+                
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="voiceSelect" className="text-sm font-medium">Voice Selection</Label>
+                    <Select
+                      value={voiceGenerationOptions.voice}
+                      onValueChange={(value) => 
+                        setVoiceGenerationOptions(prev => ({ 
+                          ...prev, 
+                          voice: value,
+                          gender: ['nova', 'alloy', 'shimmer'].includes(value) ? 'female' : 'male'
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nova">Nova (Female - Natural)</SelectItem>
+                        <SelectItem value="alloy">Alloy (Female - Clear)</SelectItem>
+                        <SelectItem value="shimmer">Shimmer (Female - Warm)</SelectItem>
+                        <SelectItem value="echo">Echo (Male - Deep)</SelectItem>
+                        <SelectItem value="fable">Fable (Male - Expressive)</SelectItem>
+                        <SelectItem value="onyx">Onyx (Male - Professional)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="speedSlider" className="text-sm font-medium">
+                      Speech Speed: {voiceGenerationOptions.speed}x
+                    </Label>
+                    <Input
+                      id="speedSlider"
+                      type="range"
+                      min="0.5"
+                      max="2.0"
+                      step="0.1"
+                      value={voiceGenerationOptions.speed}
+                      onChange={(e) => 
+                        setVoiceGenerationOptions(prev => ({ ...prev, speed: parseFloat(e.target.value) }))
+                      }
+                      className="mt-1"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>Slow (0.5x)</span>
+                      <span>Normal (1.0x)</span>
+                      <span>Fast (2.0x)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Generation Preview */}
+            <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
+              <h4 className="font-semibold text-gray-800 mb-2">Generation Preview</h4>
+              <div className="text-sm text-gray-600 space-y-1">
+                <p><strong>Tours:</strong> {voiceGenerationTours.length} tours selected</p>
+                <p><strong>Steps:</strong> ~{voiceGenerationTours.reduce((total, tour) => total + (tour.tourData?.steps?.length || 0), 0)} voice recordings will be generated</p>
+                <p><strong>Voice:</strong> {voiceGenerationOptions.voice} ({voiceGenerationOptions.gender}) at {voiceGenerationOptions.speed}x speed</p>
+                <p><strong>Script:</strong> {voiceGenerationOptions.regenerateScript ? 'AI-generated engaging scripts' : 'Use existing tour descriptions'}</p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-between pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => setShowVoiceGenerationDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleVoiceGenerationSubmit}
+                disabled={voiceGenerationMutation.isPending}
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+              >
+                {voiceGenerationMutation.isPending ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Generating Voice...
+                  </>
+                ) : (
+                  <>
+                    <Mic className="h-4 w-4 mr-2" />
+                    Generate Voice Recordings
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
