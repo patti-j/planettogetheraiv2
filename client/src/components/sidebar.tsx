@@ -349,15 +349,14 @@ export default function Sidebar() {
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Link to="/account">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-5 w-5 p-0 text-gray-500 hover:text-gray-700"
-                          >
-                            <CreditCard className="w-3 h-3" />
-                          </Button>
-                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => window.location.href = '/account'}
+                          className="h-5 w-5 p-0 text-gray-500 hover:text-gray-700"
+                        >
+                          <CreditCard className="w-3 h-3" />
+                        </Button>
                       </TooltipTrigger>
                       <TooltipContent side="top">
                         <p>Account & Billing</p>
@@ -507,15 +506,15 @@ export default function Sidebar() {
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Link href="/account">
-                    <a
-                      className="flex items-center px-3 py-2 rounded-lg transition-colors text-base w-full text-gray-600 hover:bg-gray-100"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <CreditCard className="w-4 h-4 mr-2" />
-                      Account & Billing
-                    </a>
-                  </Link>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => window.location.href = '/account'}
+                    className="w-full justify-start text-sm"
+                  >
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Account & Billing
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent side="right">
                   <p>Manage subscription, billing, and account settings</p>
