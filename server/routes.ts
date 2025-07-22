@@ -4046,19 +4046,28 @@ REQUIREMENTS:
 3. Tours must respect role-based access control permissions
 4. Use ONLY the role-specific navigation paths listed for each role
 5. Create 3-5 engaging tour steps per role covering their most important accessible features
+6. IMPORTANT: End each tour by explaining this was a role-specific overview and encourage exploring other role perspectives
 
 For each role, create:
 1. 3-5 tour steps covering accessible features only
 2. Engaging voice scripts for each step (2-3 sentences each)
 3. Clear benefits for each feature (2-3 benefits per step)
 4. Use ONLY the role-specific navigation paths listed for each role
+5. Final step should mention this covers their role's key features and encourage multi-role exploration
 
 Each tour step must have:
 - navigationPath: One of the exact paths accessible to that role (from the role-specific list above)
 - stepName: Brief descriptive title (e.g., "Interactive Gantt Chart", "Scheduling Boards", "Optimization Tools")
-- description: Clear explanation of what the user will see and do on this page (optimized for tour playback)
+- description: Clear explanation of what the user will see and do on this page (optimized for tour playbook)
 - benefits: Array of 2-3 specific business advantages from using this feature
 - voiceScript: Natural narration explaining the step (2-3 sentences, engaging and informative)
+
+TOUR CONCLUSION GUIDELINES:
+- The final step should emphasize that this tour covered the most important features for their specific role
+- Mention that PlanetTogether has many more features accessible to different roles (Production Schedulers, Plant Managers, Systems Managers, etc.)
+- Encourage users to explore other role perspectives to see the full scope of the platform
+- Make users aware that what they saw is role-specific and there's much more to discover
+- Use language like "This tour showcased the key features for your role as a [Role Name]" and "Explore other roles to see additional capabilities"
 
 Return JSON format with each role as a top-level key containing tourSteps array.`;
 
