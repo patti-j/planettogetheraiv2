@@ -3877,17 +3877,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log(`Completed voice pre-generation for ${role}`);
   }
   
-  // Create engaging narration (same logic as guided-tour.tsx)
+  // Create engaging narration with role-specific focus
   function createEngagingNarration(stepData: any, role: string): string {
     if (stepData.voiceScript) {
       return stepData.voiceScript;
     }
     
+    // Create role-specific opening based on common concerns
+    const roleOpenings: {[key: string]: string} = {
+      'production-scheduler': 'As a Production Scheduler, you know how critical efficient scheduling is.',
+      'plant-manager': 'As a Plant Manager, you need complete visibility into operations.',
+      'director': 'As a Director, strategic insights drive your decisions.',
+      'systems-manager': 'As a Systems Manager, seamless integration is key.',
+      'trainer': 'As a Trainer, comprehensive learning tools are essential.',
+      'shop-floor-operations': 'As a Shop Floor operator, real-time information is crucial.'
+    };
+    
     const benefit = Array.isArray(stepData.benefits) && stepData.benefits.length > 0 
       ? stepData.benefits[0] 
       : stepData.description;
     
-    return `Let me show you ${stepData.title}. ${stepData.description} ${benefit}`;
+    const roleKey = role?.toLowerCase().replace(/\s+/g, '-') || 'user';
+    const opening = roleOpenings[roleKey] || `Here's a powerful feature for your role:`;
+    
+    return `${opening} Let me show you ${stepData.title}. ${stepData.description} This feature helps you ${benefit?.toLowerCase() || 'achieve better results'}.`;
   }
   
   // Generate TTS audio using OpenAI
@@ -4047,12 +4060,31 @@ ${roles.map(role => {
   return `${role}:\n${Object.entries(accessibleRoutes).map(([path, desc]) => `  - ${path} (${desc})`).join('\n')}`;
 }).join('\n\n')}
 
+ROLE-FOCUSED BENEFITS & MESSAGING GUIDELINES:
+Create tours that deeply resonate with each role by emphasizing benefits that matter most to their daily responsibilities and business impact:
+
+**Production Schedulers:** Focus on efficiency, time savings, and operational control
+- Emphasize: "Reduce scheduling time by 60%", "Prevent costly production delays", "Optimize resource utilization"
+- Language: "streamline your scheduling workflow", "eliminate manual planning headaches", "achieve on-time delivery targets"
+
+**Plant Managers:** Focus on oversight, KPIs, and facility-wide performance  
+- Emphasize: "Real-time visibility across all operations", "Improve OEE by 15%", "Reduce operational costs"
+- Language: "monitor plant performance at a glance", "identify bottlenecks before they impact delivery", "maximize facility productivity"
+
+**Directors:** Focus on strategic impact, ROI, and competitive advantage
+- Emphasize: "Increase profit margins", "Strategic decision support", "Drive competitive advantage"
+- Language: "accelerate business growth", "optimize capital investment", "achieve strategic manufacturing goals"
+
+**Systems Managers:** Focus on system efficiency, integration, and technical capabilities
+- Emphasize: "Seamless system integration", "Reduced IT overhead", "Enhanced data security"
+- Language: "streamline system administration", "eliminate technical bottlenecks", "ensure reliable operations"
+
 INTELLIGENT TOUR CREATION GUIDELINES:
-1. Analyze each role's accessible routes and select the most valuable features for that role's responsibilities
-2. For Production Schedulers: Focus on scheduling, optimization, and planning features
-3. For Plant Managers: Emphasize oversight, reporting, and management features  
-4. For Directors: Highlight strategic, analytical, and goal-tracking features
-5. Adapt tour content based on the role's core job functions and available permissions
+1. Start each tour with a compelling value proposition specific to that role's primary concerns
+2. Connect every feature to tangible business outcomes the role cares about
+3. Use role-appropriate language and terminology (operational vs strategic vs technical)
+4. Highlight pain points the role commonly faces and how features solve them
+5. Quantify benefits with realistic metrics when possible (time savings, cost reduction, efficiency gains)
 
 PERMISSION MATCHING RULES:
 - Use flexible matching when interpreting user guidance - if user mentions "scheduling" look for routes with scheduling, optimization, or planning
@@ -4077,10 +4109,17 @@ For each role, create:
 
 Each tour step must have:
 - navigationPath: One of the exact paths accessible to that role (from the role-specific list above)
-- stepName: Brief descriptive title (e.g., "Interactive Gantt Chart", "Scheduling Boards", "Optimization Tools")
-- description: Clear explanation of what the user will see and do on this page (optimized for tour playbook)
-- benefits: Array of 2-3 specific business advantages from using this feature
-- voiceScript: Natural narration explaining the step (2-3 sentences, engaging and informative)
+- stepName: Brief descriptive title that resonates with the role (e.g., "Scheduling Efficiency Dashboard", "Strategic Performance Analytics", "System Integration Hub")
+- description: Role-focused explanation connecting features to their daily work and challenges
+- benefits: Array of 2-3 role-specific advantages using language and metrics that matter to them
+- voiceScript: Compelling narration that speaks directly to their responsibilities and goals (2-3 sentences)
+
+CONTENT CREATION REQUIREMENTS:
+1. **Role-Specific Language**: Use terminology and concepts familiar to each role
+2. **Business Impact Focus**: Every benefit should tie to measurable business outcomes
+3. **Pain Point Resolution**: Address common frustrations and challenges for each role
+4. **Success Metrics**: Include realistic performance improvements (time, cost, quality, efficiency)
+5. **Emotional Resonance**: Create excitement about solving real problems they face daily
 
 TOUR CONCLUSION GUIDELINES:
 - The final step should emphasize that this tour covered the most important features for their specific role
@@ -4101,7 +4140,7 @@ Return JSON format with each role as a top-level key containing tourSteps array.
         messages: [
           {
             role: "system",
-            content: "You are a manufacturing software expert creating guided tours for different user roles. Generate comprehensive, engaging tour content with clear benefits and professional voice narration scripts."
+            content: "You are a manufacturing software expert creating guided tours for different user roles. Focus on explaining benefits and features in ways that deeply resonate with each role's daily responsibilities, challenges, and success metrics. Create content that makes each viewer excited about solving their specific problems and achieving their goals. Use role-appropriate language, quantify benefits with realistic metrics, and connect every feature to tangible business impact."
           },
           {
             role: "user",

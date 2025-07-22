@@ -345,13 +345,17 @@ The application uses a modern full-stack architecture with strong typing through
 - Systems Manager now has proper access to both systems-management-view and analytics-view permissions
 - Tour validation endpoint provides comprehensive checking of role permissions vs tour routes
 
-✓ **AI Tour Generation Enhancement - Multi-Role Exploration Encouragement (July 22, 2025)**:
-- Enhanced AI tour generation prompt to encourage multi-role exploration at the end of each tour
-- Added specific instructions for AI to mention that tours show role-specific features and encourage exploring other role perspectives
-- Tours now conclude by explaining this was a role-specific overview with language like "This tour showcased the key features for your role as a [Role Name]"
-- AI instructed to make users aware there are many more features accessible to different roles (Production Schedulers, Plant Managers, Systems Managers, etc.)
-- Enhanced tour conclusion guidelines to prevent users from thinking they've seen all available features
-- Tours now explicitly encourage users to "Explore other roles to see additional capabilities" ensuring comprehensive platform discovery
+✓ **Enhanced AI Tour Generation - Role-Specific Benefits & Messaging System (July 22, 2025)**:
+- Completely restructured AI tour generation to focus on benefits and features that deeply resonate with each viewer's role
+- Added comprehensive role-focused benefit guidelines emphasizing specific pain points and success metrics for each role
+- Production Schedulers: Focus on efficiency, time savings, and operational control with language like "streamline scheduling workflow"
+- Plant Managers: Emphasize oversight, KPIs, and facility-wide performance with messaging about "real-time visibility"
+- Directors: Highlight strategic impact, ROI, and competitive advantage using "accelerate business growth" terminology  
+- Systems Managers: Focus on integration, technical capabilities, and system efficiency
+- Enhanced voice narration system with role-specific openings that acknowledge each role's primary concerns
+- AI now creates content that makes viewers excited about solving their specific daily challenges
+- Every benefit now tied to measurable business outcomes using role-appropriate language and realistic metrics
+- Tour content creation requirements include emotional resonance, pain point resolution, and business impact focus
 
 ✓ **Tour Voice Narration Overlap Bug Fix (July 22, 2025)**:
 - Fixed critical audio management issue where using back button during tours caused multiple voice recordings to play simultaneously
