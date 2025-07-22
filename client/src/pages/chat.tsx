@@ -613,6 +613,7 @@ function CreateChannelDialog({
 
     onSubmit({
       ...formData,
+      objectType: formData.objectType === "none" ? "" : formData.objectType,
       objectId: formData.objectId ? parseInt(formData.objectId) : undefined
     });
   };
@@ -673,7 +674,7 @@ function CreateChannelDialog({
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="none">None</SelectItem>
                 <SelectItem value="job">Job/Order</SelectItem>
                 <SelectItem value="operation">Operation</SelectItem>
                 <SelectItem value="resource">Resource</SelectItem>
@@ -681,7 +682,7 @@ function CreateChannelDialog({
               </SelectContent>
             </Select>
             
-            {formData.objectType && (
+            {formData.objectType && formData.objectType !== "none" && (
               <Input
                 type="number"
                 value={formData.objectId}
