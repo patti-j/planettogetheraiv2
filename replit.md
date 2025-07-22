@@ -293,6 +293,16 @@ The application uses a modern full-stack architecture with strong typing through
 - Added isLoadingVoice and isPlaying state guards to prevent race conditions during navigation
 - Audio management now properly handles rapid navigation changes without overlapping voice narrations
 
+✓ **Auto-Advance Tour Feature Implementation (July 22, 2025)**:
+- Removed Replay button from tour window bottom controls per user request
+- Added auto-advance toggle button next to Next button for seamless tour progression
+- Implemented intelligent auto-advance system that waits 2 seconds after voice narration ends before automatically proceeding
+- Added Timer/TimerOff icons to clearly indicate auto-advance status (green when active, gray when disabled)
+- Enhanced audio completion handler to trigger auto-advance when enabled and not on final step
+- Added proper timeout cleanup in navigation handlers to prevent race conditions
+- Users can now enable hands-free tour progression or disable for manual control
+- Auto-advance functionality respects voice settings and only activates after audio completion
+
 ✓ **Tour Window Responsive Design & Scheduling Optimizer Permission Fix (July 22, 2025)**:
 - Fixed critical "Can't find variable: role" JavaScript error in GuidedTour component by replacing undefined role references in handleSkipTour function
 - Updated all role variable references to use proper roleData?.name queries and roleId for filtering throughout the component

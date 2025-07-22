@@ -25,7 +25,9 @@ import {
   VolumeX,
   Pause,
   RotateCcw,
-  Kanban
+  Kanban,
+  Timer,
+  TimerOff
 } from "lucide-react";
 
 interface TourStep {
@@ -351,6 +353,10 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   const [isLoadingVoice, setIsLoadingVoice] = useState(false);
   const [audioCompleted, setAudioCompleted] = useState(false);
   const [showRoleSelection, setShowRoleSelection] = useState(false);
+  
+  // Auto-advance state
+  const [autoAdvance, setAutoAdvance] = useState(false);
+  const autoAdvanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -563,6 +569,13 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           URL.revokeObjectURL(audioUrl);
           speechRef.current = null;
           console.log("Cached audio playback completed - user can click Next");
+          
+          // Auto-advance to next step if enabled and not on last step
+          if (autoAdvance && currentStep < tourSteps.length - 1) {
+            autoAdvanceTimeoutRef.current = setTimeout(() => {
+              handleNext();
+            }, 2000); // Wait 2 seconds after audio ends before advancing
+          }
         };
         
         audio.onerror = (e) => {
@@ -732,10 +745,13 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     }
   }, [currentStep, voiceEnabled]);
 
-  // Clean up speech on component unmount
+  // Clean up speech and timeouts on component unmount
   useEffect(() => {
     return () => {
       stopSpeech(); // Use our comprehensive stop function instead of just speechSynthesis.cancel()
+      if (autoAdvanceTimeoutRef.current) {
+        clearTimeout(autoAdvanceTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -778,6 +794,12 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   };
 
   const handleNext = () => {
+    // Clear any pending auto-advance timeout
+    if (autoAdvanceTimeoutRef.current) {
+      clearTimeout(autoAdvanceTimeoutRef.current);
+      autoAdvanceTimeoutRef.current = null;
+    }
+    
     stopSpeech(); // Stop current speech before proceeding
     setAudioCompleted(false); // Reset audio completed state for next step
     if (currentStep < tourSteps.length - 1) {
@@ -800,6 +822,12 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   };
 
   const handlePrevious = () => {
+    // Clear any pending auto-advance timeout
+    if (autoAdvanceTimeoutRef.current) {
+      clearTimeout(autoAdvanceTimeoutRef.current);
+      autoAdvanceTimeoutRef.current = null;
+    }
+    
     stopSpeech(); // Stop current speech before proceeding
     setAudioCompleted(false); // Reset audio completed state for previous step
     if (currentStep > 0) {
@@ -978,18 +1006,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     }
   };
 
-  const replayCurrentStep = () => {
-    // Replay the current step's narration
-    if (!voiceEnabled || isGenerating) return;
-    
-    // Stop any current speech
-    stopSpeech();
-    
-    // Play current step narration using cached audio
-    if (tourSteps[currentStep]) {
-      playPreloadedAudio(tourSteps[currentStep].id);
-    }
-  };
+
 
   // Show loading state if tours are still being fetched
   if (toursLoading) {
@@ -1192,41 +1209,41 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                     Back
                   </Button>
                 )}
-                {/* Voice replay button (when voice is enabled) */}
-                {voiceEnabled && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={replayCurrentStep}
-                    disabled={isPlaying}
-                    className="px-2 text-blue-600 border-blue-200 hover:bg-blue-50"
-                    title="Replay current step narration"
-                  >
-                    <RotateCcw className="h-3 w-3 mr-1" />
-                    Replay
-                  </Button>
-                )}
+
               </div>
               
-              <Button 
-                onClick={handleNext} 
-                size="sm" 
-                className={`bg-blue-600 hover:bg-blue-700 px-3 transition-all duration-300 ${
-                  audioCompleted && voiceEnabled ? 'animate-pulse shadow-lg ring-2 ring-blue-300' : ''
-                }`}
-              >
-                {currentStep === tourSteps.length - 1 ? (
-                  <>
-                    Complete
-                    <CheckCircle className="h-3 w-3 ml-1" />
-                  </>
-                ) : (
-                  <>
-                    {audioCompleted && voiceEnabled ? '👉 ' : ''}Next
-                    <ArrowRight className="h-3 w-3 ml-1" />
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-1">
+                {/* Auto-advance toggle button */}
+                <Button
+                  variant={autoAdvance ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setAutoAdvance(!autoAdvance)}
+                  className={`px-2 ${autoAdvance ? 'bg-green-600 hover:bg-green-700 text-white' : 'text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                  title={autoAdvance ? "Turn off auto-advance" : "Turn on auto-advance"}
+                >
+                  {autoAdvance ? <Timer className="h-3 w-3" /> : <TimerOff className="h-3 w-3" />}
+                </Button>
+                
+                <Button 
+                  onClick={handleNext} 
+                  size="sm" 
+                  className={`bg-blue-600 hover:bg-blue-700 px-3 transition-all duration-300 ${
+                    audioCompleted && voiceEnabled ? 'animate-pulse shadow-lg ring-2 ring-blue-300' : ''
+                  }`}
+                >
+                  {currentStep === tourSteps.length - 1 ? (
+                    <>
+                      Complete
+                      <CheckCircle className="h-3 w-3 ml-1" />
+                    </>
+                  ) : (
+                    <>
+                      {audioCompleted && voiceEnabled ? '👉 ' : ''}Next
+                      <ArrowRight className="h-3 w-3 ml-1" />
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
