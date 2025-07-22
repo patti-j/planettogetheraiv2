@@ -1147,7 +1147,7 @@ function TourManagementSection() {
             size="sm"
           >
             <Sparkles className="h-4 w-4 mr-2" />
-            AI Regenerate Selected ({selectedRoles.length})
+            Regenerate Selected ({selectedRoles.length})
           </Button>
           <Button
             onClick={handleGenerateVoiceForAll}
@@ -1161,7 +1161,7 @@ function TourManagementSection() {
             ) : (
               <Mic className="h-4 w-4 mr-2" />
             )}
-            AI Voice Generation
+            Voice Generation
           </Button>
           <Button
             onClick={handleGenerateAllTours}
@@ -1171,7 +1171,7 @@ function TourManagementSection() {
             size="sm"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${regenerateTourWithAI.isPending ? 'animate-spin' : ''}`} />
-            AI Regenerate All Tours
+            Regenerate All Tours
           </Button>
           <Button
             onClick={() => validateToursMutation.mutate()}
@@ -1243,7 +1243,7 @@ function TourManagementSection() {
               ) : (
                 <Sparkles className="h-4 w-4 mr-2" />
               )}
-              AI Generate Tours ({selectedMissingRoles.length})
+              Generate Tours ({selectedMissingRoles.length})
             </Button>
           </div>
           

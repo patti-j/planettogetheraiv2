@@ -541,7 +541,7 @@ export default function KanbanConfigManager({ open, onOpenChange, jobs, resource
                   className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
-                  AI Create
+                  Create
                 </Button>
                 <Button onClick={() => setShowForm(true)}>
                   <Plus className="w-4 h-4 mr-2" />

@@ -913,7 +913,7 @@ function KanbanBoard({
                   onClick={onAICreateBoards}
                 >
                   <Sparkles className="w-4 h-4 mr-1" />
-                  AI Create
+                  Create
                 </Button>
               </div>
 
@@ -997,7 +997,7 @@ function KanbanBoard({
                   onClick={onAICreateBoards}
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
-                  AI Create
+                  Create
                 </Button>
               </div>
             </div>

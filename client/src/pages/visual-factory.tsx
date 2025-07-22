@@ -389,7 +389,7 @@ export default function VisualFactory() {
                     <DialogTrigger asChild>
                       <Button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600">
                         <Sparkles className="w-4 h-4 mr-2" />
-                        AI Configure
+                        Configure
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
@@ -412,7 +412,7 @@ export default function VisualFactory() {
                           disabled={!aiPrompt.trim() || aiConfigMutation.isPending}
                           className="w-full"
                         >
-                          {aiConfigMutation.isPending ? 'Creating...' : 'Create with AI'}
+                          {aiConfigMutation.isPending ? 'Creating...' : 'Create'}
                         </Button>
                       </div>
                     </DialogContent>
