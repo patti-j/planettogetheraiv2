@@ -2211,14 +2211,14 @@ function TourManagementSection() {
                     }
                   />
                   <Label htmlFor="regenerateScript" className="text-sm">
-                    Regenerate voice scripts with AI
+                    Rewrite scripts with AI before recording
                   </Label>
                 </div>
                 
                 <p className="text-xs text-gray-600 ml-6">
                   {voiceGenerationOptions.regenerateScript 
-                    ? "AI will create new engaging voice scripts for each tour step based on your instructions."
-                    : "Use existing tour descriptions as voice scripts (faster but less engaging)."
+                    ? "AI will rewrite and enhance the existing voice scripts before generating audio recordings."
+                    : "Use the current voice scripts as-is for audio generation (no script changes)."
                   }
                 </p>
 
