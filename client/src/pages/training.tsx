@@ -1316,7 +1316,7 @@ function TourManagementSection() {
           </Button>
           <Button
             onClick={handleGenerateVoiceForSelected}
-            disabled={voiceGenerationMutation.isPending || selectedRoles.length === 0}
+            disabled={voiceGenerationMutation.isPending}
             variant="outline"
             className="border-green-300 text-green-600 hover:bg-green-50"
             size="sm"
@@ -2306,7 +2306,7 @@ function TourManagementSection() {
               </Button>
               <Button
                 onClick={handleVoiceGenerationSubmit}
-                disabled={voiceGenerationMutation.isPending}
+                disabled={voiceGenerationMutation.isPending || voiceGenerationTours.length === 0}
                 className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
               >
                 {voiceGenerationMutation.isPending ? (
