@@ -130,7 +130,7 @@ The application uses a modern full-stack architecture with strong typing through
 - Successfully implemented multi-role tour continuation system allowing users to explore different role demonstrations
 - Added role selection dialog that appears at tour completion with available roles (Director, Production Scheduler, Plant Manager, Systems Manager)
 - Enhanced role switching functionality through TourContext with seamless authentication and voice preference preservation
-- Updated demo tour registration form to clarify role selection importance with explanatory text
+- Updated demo tour registration form to clarify role selection importance and reassure users about multi-role exploration
 - Users can now complete multiple role demonstrations in single session, exploring different features and capabilities
 - Added comprehensive role descriptions and visual interface for easy role switching at tour completion
 - Voice narration preferences automatically carry over when switching between different role demonstrations

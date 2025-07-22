@@ -429,10 +429,16 @@ export default function DemoTour() {
                     <FormLabel className="text-lg font-semibold">
                       What role best describes you?
                     </FormLabel>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Your selection determines which features and capabilities you'll see during the demo tour, 
-                      tailored to your specific role and responsibilities.
-                    </p>
+                    <div className="text-sm text-gray-600 mb-3 space-y-1">
+                      <p>
+                        Your selection determines which features and capabilities you'll see during the demo tour, 
+                        tailored to your specific role and responsibilities.
+                      </p>
+                      <p className="text-blue-600 font-medium">
+                        💡 Don't worry - you can explore other roles too! At the end of your tour, 
+                        you'll have the option to continue with additional role demonstrations.
+                      </p>
+                    </div>
                     <FormControl>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <SelectTrigger className="h-12">
