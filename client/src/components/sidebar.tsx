@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Book, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, LogOut, User, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain } from "lucide-react";
+import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Book, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, LogOut, User, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain, CreditCard } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, usePermissions } from "@/hooks/useAuth";
@@ -347,6 +347,22 @@ export default function Sidebar() {
                         <p>Profile & Settings</p>
                       </TooltipContent>
                     </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Link to="/account">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 w-5 p-0 text-gray-500 hover:text-gray-700"
+                          >
+                            <CreditCard className="w-3 h-3" />
+                          </Button>
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <p>Account & Billing</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
               </div>
@@ -487,6 +503,22 @@ export default function Sidebar() {
                 </TooltipTrigger>
                 <TooltipContent side="right">
                   <p>Configure AI-powered quick actions</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link href="/account">
+                    <a
+                      className="flex items-center px-3 py-2 rounded-lg transition-colors text-base w-full text-gray-600 hover:bg-gray-100"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Account & Billing
+                    </a>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Manage subscription, billing, and account settings</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
