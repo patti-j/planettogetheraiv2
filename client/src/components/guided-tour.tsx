@@ -803,8 +803,8 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     
     const roleId = roleMapping[newRole];
     
-    if (roleId && switchToRole) {
-      switchToRole(roleId);
+    if (roleId && onSwitchRole) {
+      onSwitchRole(roleId);
     } else {
       console.error("No role ID found for role:", newRole);
     }
