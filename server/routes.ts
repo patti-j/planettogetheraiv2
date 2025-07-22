@@ -3814,11 +3814,39 @@ Return a JSON object with tour data for each role including steps, voice scripts
         tourData = { content: generatedContent, roles: roles };
       }
 
+      // Save generated tours to database
+      const savedTours = [];
+      for (const role of roles) {
+        const roleKey = role.toLowerCase().replace(/\s+/g, '-');
+        const roleTourData = tourData[roleKey] || tourData[role] || tourData;
+        
+        if (roleTourData && roleTourData.steps) {
+          try {
+            const tourRecord = await storage.upsertTour({
+              role: roleKey,
+              roleDisplayName: role,
+              tourData: {
+                steps: roleTourData.steps || [],
+                totalSteps: roleTourData.steps?.length || 0,
+                estimatedDuration: roleTourData.estimatedDuration || "5 min",
+                voiceScriptCount: roleTourData.steps?.filter((s: any) => s.voiceScript).length || 0
+              },
+              isGenerated: true,
+              createdBy: req.user?.id || 'system'
+            });
+            savedTours.push(tourRecord);
+          } catch (saveError) {
+            console.error(`Error saving tour for ${role}:`, saveError);
+          }
+        }
+      }
+
       res.json({ 
         success: true,
         tourData,
+        savedTours,
         generatedFor: roles,
-        message: `Tour content generated for ${roles.length} role(s)`
+        message: `Tour content generated and saved for ${roles.length} role(s)`
       });
 
     } catch (error) {
@@ -3841,6 +3869,90 @@ Return a JSON object with tour data for each role including steps, voice scripts
           error: errorMessage
         });
       }
+    }
+  });
+
+  // Tours API endpoints
+  app.get("/api/tours", requireAuth, async (req, res) => {
+    try {
+      const tours = await storage.getTours();
+      res.json(tours);
+    } catch (error) {
+      console.error("Error fetching tours:", error);
+      res.status(500).json({ error: "Failed to fetch tours" });
+    }
+  });
+
+  app.get("/api/tours/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid tour ID" });
+      }
+      
+      const tour = await storage.getTour(id);
+      if (!tour) {
+        return res.status(404).json({ error: "Tour not found" });
+      }
+      
+      res.json(tour);
+    } catch (error) {
+      console.error("Error fetching tour:", error);
+      res.status(500).json({ error: "Failed to fetch tour" });
+    }
+  });
+
+  app.get("/api/tours/role/:role", requireAuth, async (req, res) => {
+    try {
+      const role = req.params.role;
+      const tour = await storage.getTourByRole(role);
+      
+      if (!tour) {
+        return res.status(404).json({ error: "Tour not found for role" });
+      }
+      
+      res.json(tour);
+    } catch (error) {
+      console.error("Error fetching tour by role:", error);
+      res.status(500).json({ error: "Failed to fetch tour" });
+    }
+  });
+
+  app.put("/api/tours/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid tour ID" });
+      }
+      
+      const updatedTour = await storage.updateTour(id, req.body);
+      if (!updatedTour) {
+        return res.status(404).json({ error: "Tour not found" });
+      }
+      
+      res.json(updatedTour);
+    } catch (error) {
+      console.error("Error updating tour:", error);
+      res.status(500).json({ error: "Failed to update tour" });
+    }
+  });
+
+  app.delete("/api/tours/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid tour ID" });
+      }
+      
+      const deleted = await storage.deleteTour(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Tour not found" });
+      }
+      
+      res.json({ message: "Tour deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting tour:", error);
+      res.status(500).json({ error: "Failed to delete tour" });
     }
   });
 

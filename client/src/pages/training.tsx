@@ -560,6 +560,13 @@ interface TourData {
 
 function TourManagementSection() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  // Fetch tours from database
+  const { data: toursFromAPI = [], isLoading: toursLoading } = useQuery({
+    queryKey: ["/api/tours"],
+  });
+  
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [selectedMissingRoles, setSelectedMissingRoles] = useState<string[]>([]);
   const [expandedTours, setExpandedTours] = useState<string[]>([]);
@@ -783,10 +790,10 @@ function TourManagementSection() {
     }
   };
 
-  const allRoles = Object.keys(tourData);
+  const allRoles = toursFromAPI?.map((tour: any) => tour.role) || [];
   
   // Identify roles that don't have tours yet
-  const existingTourRoles = new Set(allRoles);
+  const existingTourRoles = new Set(toursFromAPI?.map((tour: any) => tour.role) || []);
   const missingTourRoles = systemRoles.filter((role: any) => {
     const roleKey = role.name.toLowerCase().replace(/\s+/g, '-');
     return !existingTourRoles.has(roleKey);
@@ -804,6 +811,8 @@ function TourManagementSection() {
       });
       // Clear selections after successful generation
       setSelectedRoles([]);
+      // Invalidate tours cache to show updated data
+      queryClient.invalidateQueries({ queryKey: ["/api/tours"] });
     },
     onError: (error: any) => {
       toast({
@@ -826,6 +835,8 @@ function TourManagementSection() {
       });
       // Clear selections after successful generation
       setSelectedMissingRoles([]);
+      // Invalidate tours cache to show updated data
+      queryClient.invalidateQueries({ queryKey: ["/api/tours"] });
     },
     onError: (error: any) => {
       toast({
@@ -922,30 +933,30 @@ function TourManagementSection() {
 
       {/* Tour Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {Object.entries(tourData).map(([role, data]) => (
-          <Card key={role} className={`cursor-pointer transition-all ${selectedRoles.includes(role) ? 'ring-2 ring-purple-500 bg-purple-50' : 'hover:shadow-md'}`}>
+        {toursFromAPI?.map((tour: any) => (
+          <Card key={tour.role} className={`cursor-pointer transition-all ${selectedRoles.includes(tour.role) ? 'ring-2 ring-purple-500 bg-purple-50' : 'hover:shadow-md'}`}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="font-semibold text-sm">{data.role}</h4>
+                <h4 className="font-semibold text-sm">{tour.roleDisplayName}</h4>
                 <input
                   type="checkbox"
-                  checked={selectedRoles.includes(role)}
-                  onChange={() => toggleRole(role)}
+                  checked={selectedRoles.includes(tour.role)}
+                  onChange={() => toggleRole(tour.role)}
                   className="rounded text-purple-600"
                 />
               </div>
               <div className="space-y-2 text-xs text-gray-600">
                 <div className="flex items-center">
                   <FileText className="h-3 w-3 mr-1" />
-                  {data.totalSteps} steps
+                  {tour.tourData?.totalSteps || 0} steps
                 </div>
                 <div className="flex items-center">
                   <Clock className="h-3 w-3 mr-1" />
-                  {data.totalDuration}
+                  {tour.tourData?.estimatedDuration || '5 min'}
                 </div>
                 <div className="flex items-center">
                   <Volume2 className="h-3 w-3 mr-1" />
-                  {Object.keys(data.voiceScripts).length} voice scripts
+                  {tour.tourData?.voiceScriptCount || 0} voice scripts
                 </div>
               </div>
             </CardContent>
@@ -1017,31 +1028,41 @@ function TourManagementSection() {
       )}
 
       {/* Detailed Tour Management */}
-      <div className="space-y-4">
-        <h4 className="font-semibold">Detailed Tour Configuration</h4>
-        
-        {Object.entries(tourData).map(([role, data]) => (
-          <Card key={role}>
-            <CardHeader 
-              className="cursor-pointer hover:bg-gray-50" 
-              onClick={() => toggleTourExpansion(role)}
+      {/* Loading State */}
+      {toursLoading && (
+        <div className="flex justify-center items-center py-8">
+          <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+          <span>Loading tours from database...</span>
+        </div>
+      )}
+      
+      {/* Detailed Tour Configuration */}
+      {!toursLoading && toursFromAPI?.length > 0 && (
+        <div className="space-y-4">
+          <h4 className="font-semibold">Detailed Tour Configuration</h4>
+          
+          {toursFromAPI.map((tour: any) => (
+            <Card key={tour.role}>
+              <CardHeader 
+                className="cursor-pointer hover:bg-gray-50" 
+                onClick={() => toggleTourExpansion(tour.role)}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  {expandedTours.includes(role) ? 
+                    {expandedTours.includes(tour.role) ? 
                     <ChevronDown className="h-4 w-4 mr-2" /> : 
                     <ChevronRight className="h-4 w-4 mr-2" />
                   }
-                  <CardTitle className="text-lg">{data.role} Tour</CardTitle>
+                    <CardTitle className="text-lg">{tour.roleDisplayName} Tour</CardTitle>
                 </div>
                 <div className="flex items-center gap-4 text-sm text-gray-600">
                   <span className="flex items-center">
                     <FileText className="h-4 w-4 mr-1" />
-                    {data.totalSteps} steps
+                      {tour.tourData?.steps?.length || 0} steps
                   </span>
                   <span className="flex items-center">
                     <Clock className="h-4 w-4 mr-1" />
-                    {data.totalDuration}
+                      {tour.tourData?.estimatedDuration || '5-10 min'}
                   </span>
                   <Button size="sm" variant="outline">
                     <Edit3 className="h-3 w-3 mr-1" />
@@ -1051,10 +1072,10 @@ function TourManagementSection() {
               </div>
             </CardHeader>
             
-            {expandedTours.includes(role) && (
+            {expandedTours.includes(tour.role) && tour.tourData?.steps && (
               <CardContent className="pt-0">
                 <div className="space-y-6">
-                  {data.steps.map((step, index) => (
+                  {tour.tourData.steps.map((step: any, index: number) => (
                     <div key={step.id} className="border rounded-lg p-4 bg-gray-50">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center">
@@ -1083,7 +1104,7 @@ function TourManagementSection() {
                         <div>
                           <p className="font-medium mb-2">Key Benefits</p>
                           <ul className="space-y-1 mb-3">
-                            {step.benefits.map((benefit, idx) => (
+                            {step.benefits && Array.isArray(step.benefits) && step.benefits.map((benefit: string, idx: number) => (
                               <li key={idx} className="text-gray-600 text-xs flex items-start">
                                 <span className="text-green-600 mr-1">•</span>
                                 {benefit}
@@ -1091,14 +1112,14 @@ function TourManagementSection() {
                             ))}
                           </ul>
                           
-                          {data.voiceScripts[step.id] && (
+                          {step.voiceScript && (
                             <div>
                               <p className="font-medium mb-2 flex items-center">
                                 <Volume2 className="h-3 w-3 mr-1" />
                                 Voice Script
                               </p>
                               <div className="bg-white p-2 rounded border text-xs text-gray-700">
-                                {data.voiceScripts[step.id]}
+                                {step.voiceScript}
                               </div>
                             </div>
                           )}
@@ -1127,8 +1148,18 @@ function TourManagementSection() {
               </CardContent>
             )}
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
+      
+      {/* Empty State */}
+      {!toursLoading && toursFromAPI?.length === 0 && (
+        <div className="text-center py-8 text-gray-500">
+          <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+          <p>No tours found in database.</p>
+          <p className="text-sm">Generate new tours using the AI system above.</p>
+        </div>
+      )}
     </div>
   );
 }

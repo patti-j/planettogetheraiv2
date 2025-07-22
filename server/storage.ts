@@ -20,7 +20,8 @@ import {
   type InsertUser, type InsertRole, type InsertPermission, type InsertUserRole, type InsertRolePermission,
   type VisualFactoryDisplay, type InsertVisualFactoryDisplay,
   demoTourParticipants, type DemoTourParticipant, type InsertDemoTourParticipant,
-  voiceRecordingsCache, type VoiceRecordingsCache, type InsertVoiceRecordingsCache
+  voiceRecordingsCache, type VoiceRecordingsCache, type InsertVoiceRecordingsCache,
+  tours, type Tour, type InsertTour
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, like, ne } from "drizzle-orm";
@@ -311,6 +312,15 @@ export interface IStorage {
   getVoiceRecording(textHash: string): Promise<VoiceRecordingsCache | undefined>;
   createVoiceRecording(recording: InsertVoiceRecordingsCache): Promise<VoiceRecordingsCache>;
   updateVoiceRecordingUsage(id: number): Promise<void>;
+  
+  // Tours
+  getTours(): Promise<Tour[]>;
+  getTour(id: number): Promise<Tour | undefined>;
+  getTourByRole(role: string): Promise<Tour | undefined>;
+  createTour(tour: InsertTour): Promise<Tour>;
+  updateTour(id: number, tour: Partial<InsertTour>): Promise<Tour | undefined>;
+  deleteTour(id: number): Promise<boolean>;
+  upsertTour(tour: InsertTour): Promise<Tour>;
 }
 
 export class MemStorage implements IStorage {
@@ -2525,6 +2535,59 @@ export class DatabaseStorage implements IStorage {
         lastUsedAt: new Date()
       })
       .where(eq(voiceRecordingsCache.id, id));
+  }
+
+  // Tours methods
+  async getTours(): Promise<Tour[]> {
+    return await db.select().from(tours).orderBy(asc(tours.roleDisplayName));
+  }
+
+  async getTour(id: number): Promise<Tour | undefined> {
+    const [tour] = await db.select().from(tours).where(eq(tours.id, id));
+    return tour;
+  }
+
+  async getTourByRole(role: string): Promise<Tour | undefined> {
+    const [tour] = await db.select().from(tours).where(eq(tours.role, role));
+    return tour;
+  }
+
+  async createTour(tour: InsertTour): Promise<Tour> {
+    const [newTour] = await db.insert(tours).values(tour).returning();
+    return newTour;
+  }
+
+  async updateTour(id: number, tour: Partial<InsertTour>): Promise<Tour | undefined> {
+    const [updatedTour] = await db
+      .update(tours)
+      .set({ ...tour, updatedAt: new Date() })
+      .where(eq(tours.id, id))
+      .returning();
+    return updatedTour;
+  }
+
+  async deleteTour(id: number): Promise<boolean> {
+    const result = await db.delete(tours).where(eq(tours.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async upsertTour(tour: InsertTour): Promise<Tour> {
+    // Check if tour already exists for this role
+    const existingTour = await this.getTourByRole(tour.role);
+    
+    if (existingTour) {
+      // Update existing tour
+      const [updatedTour] = await db
+        .update(tours)
+        .set({ ...tour, updatedAt: new Date() })
+        .where(eq(tours.role, tour.role))
+        .returning();
+      return updatedTour;
+    } else {
+      // Create new tour
+      const [newTour] = await db.insert(tours).values(tour).returning();
+      return newTour;
+    }
   }
 }
 
