@@ -131,6 +131,16 @@ export default function VisualFactory() {
     queryKey: ['/api/operations'],
   });
 
+  const { data: resources = [] } = useQuery<Resource[]>({
+    queryKey: ['/api/resources'],
+  });
+
+  // Calculate metrics from available data
+  const metrics = {
+    utilization: Math.round((operations.filter(op => op.status === 'In Progress').length / Math.max(operations.length, 1)) * 100),
+    onTimeDelivery: operations.filter(op => op.status === 'Completed').length / Math.max(operations.length, 1)
+  };
+
   const { data: liveData } = useQuery({
     queryKey: ['/api/visual-factory/live-data', { audience, includeRealTime }],
     refetchInterval: adaptiveMode ? 30000 : 0, // Refresh every 30s in adaptive mode
@@ -238,10 +248,6 @@ export default function VisualFactory() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/visual-factory/displays'] });
     }
-  });
-
-  const { data: resources = [] } = useQuery<Resource[]>({
-    queryKey: ['/api/resources'],
   });
 
   // Auto-rotation effect with adaptive content
@@ -384,12 +390,12 @@ export default function VisualFactory() {
                 <div className="text-xs sm:text-sm text-gray-600">Active Jobs</div>
               </div>
               <div className="text-center">
-                <div className="text-xl sm:text-2xl font-bold text-green-600">{(metrics as any)?.utilization || 0}%</div>
+                <div className="text-xl sm:text-2xl font-bold text-green-600">{metrics.utilization}%</div>
                 <div className="text-xs sm:text-sm text-gray-600">Utilization</div>
               </div>
               <div className="text-center">
                 <div className="text-xl sm:text-2xl font-bold text-orange-600">
-                  {Math.round(((metrics as any)?.onTimeDelivery || 0) * 100)}%
+                  {Math.round(metrics.onTimeDelivery * 100)}%
                 </div>
                 <div className="text-xs sm:text-sm text-gray-600">On Time</div>
               </div>
