@@ -3523,6 +3523,267 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI-powered Visual Factory content generation
+  app.post('/api/visual-factory/ai/generate-content', requireAuth, async (req, res) => {
+    try {
+      const { prompt, audience, location, displayType, includeRealTime } = req.body;
+      
+      if (!prompt) {
+        return res.status(400).json({ error: 'Prompt is required' });
+      }
+
+      // Get current system data for context
+      const jobs = await storage.getJobs();
+      const operations = await storage.getOperations(); 
+      const resources = await storage.getResources();
+      
+      // Create system context for AI
+      const systemContext = `You are an AI assistant that creates engaging visual factory displays for manufacturing environments.
+      
+Current System Data:
+- Active Jobs: ${jobs.length} (${jobs.filter(j => j.status === 'in-progress').length} in progress)
+- Total Operations: ${operations.length} (${operations.filter(o => o.status === 'scheduled' || o.status === 'in-progress').length} active)
+- Resources: ${resources.length} available
+
+Context:
+- Location: ${location || 'Manufacturing Floor'}
+- Target Audience: ${audience || 'General'}
+- Display Type: ${displayType || 'Large Screen Display'}
+- Include Real-time Data: ${includeRealTime ? 'Yes' : 'No'}
+
+Your task is to generate a visual factory display configuration that is:
+1. Engaging and easy to read from a distance
+2. Relevant to the target audience
+3. Uses appropriate widgets and layouts
+4. Includes valuable metrics and information
+5. Optimized for cycling between different content types
+
+Return a JSON response with this structure:
+{
+  "displayConfig": {
+    "name": "Generated Display Name",
+    "description": "Brief description of the display purpose",
+    "audience": "${audience || 'general'}",
+    "autoRotationInterval": 30,
+    "widgets": [
+      {
+        "id": "unique-id",
+        "type": "metrics|schedule|orders|alerts|progress|announcements|chart",
+        "title": "Widget Title",
+        "position": {"x": 0, "y": 0, "width": 4, "height": 2},
+        "config": {},
+        "priority": 1-10,
+        "audienceRelevance": {"${audience || 'general'}": 10}
+      }
+    ]
+  },
+  "insights": "Brief explanation of why this configuration works well for the specified context"
+}`;
+
+      const openai = new (await import("openai")).default({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemContext },
+          { role: "user", content: `Create a visual factory display for: ${prompt}` }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+        max_tokens: 2000
+      });
+
+      const result = JSON.parse(response.choices[0].message.content);
+      res.json(result);
+
+    } catch (error) {
+      console.error('Error generating AI content:', error);
+      res.status(500).json({ error: 'Failed to generate AI content' });
+    }
+  });
+
+  // Generate adaptive content based on current system state
+  app.post('/api/visual-factory/ai/adaptive-content', requireAuth, async (req, res) => {
+    try {
+      const { displayId, timeOfDay, audience } = req.body;
+      
+      // Get current system metrics
+      const jobs = await storage.getJobs();
+      const operations = await storage.getOperations();
+      const resources = await storage.getResources();
+      
+      // Calculate key metrics
+      const activeJobs = jobs.filter(j => j.status === 'in-progress');
+      const overdueJobs = jobs.filter(j => new Date(j.dueDate) < new Date() && j.status !== 'completed');
+      const scheduledOps = operations.filter(o => o.status === 'scheduled');
+      const inProgressOps = operations.filter(o => o.status === 'in-progress');
+      
+      // Determine priority content based on context
+      let contentPriorities = [];
+      
+      if (overdueJobs.length > 0) {
+        contentPriorities.push({
+          type: 'urgent-orders',
+          priority: 10,
+          data: { overdueCount: overdueJobs.length }
+        });
+      }
+      
+      if (timeOfDay === 'morning' || timeOfDay === 'shift-start') {
+        contentPriorities.push({
+          type: 'daily-schedule',
+          priority: 9,
+          data: { scheduledCount: scheduledOps.length }
+        });
+      }
+      
+      if (audience === 'management' || audience === 'general') {
+        contentPriorities.push({
+          type: 'production-metrics',
+          priority: 8,
+          data: { 
+            activeJobs: activeJobs.length,
+            inProgressOps: inProgressOps.length,
+            totalResources: resources.length
+          }
+        });
+      }
+
+      // Generate adaptive widget configuration
+      const adaptiveWidgets = contentPriorities.map((content, index) => {
+        const baseConfig = {
+          id: `adaptive-${content.type}-${Date.now()}`,
+          priority: content.priority,
+          audienceRelevance: { [audience || 'general']: content.priority }
+        };
+
+        switch (content.type) {
+          case 'urgent-orders':
+            return {
+              ...baseConfig,
+              type: 'alerts',
+              title: `🚨 Urgent: ${content.data.overdueCount} Overdue Orders`,
+              position: { x: 0, y: 0, width: 6, height: 2 },
+              config: { 
+                alertLevel: 'critical',
+                showCount: true,
+                overdueJobs: content.data.overdueCount
+              }
+            };
+          
+          case 'daily-schedule':
+            return {
+              ...baseConfig,
+              type: 'schedule',
+              title: `Today's Production Schedule`,
+              position: { x: 0, y: 2, width: 8, height: 4 },
+              config: { 
+                timeRange: 'today',
+                showOperations: content.data.scheduledCount,
+                highlightCurrent: true
+              }
+            };
+            
+          case 'production-metrics':
+            return {
+              ...baseConfig,
+              type: 'metrics',
+              title: 'Live Production Overview',
+              position: { x: 8, y: 0, width: 4, height: 3 },
+              config: {
+                showJobs: true,
+                activeJobs: content.data.activeJobs,
+                inProgressOps: content.data.inProgressOps,
+                totalResources: content.data.totalResources,
+                refreshInterval: 30
+              }
+            };
+            
+          default:
+            return {
+              ...baseConfig,
+              type: 'announcements',
+              title: 'System Updates',
+              position: { x: 6, y: 6, width: 6, height: 2 },
+              config: { showLatest: true }
+            };
+        }
+      });
+
+      res.json({
+        adaptiveContent: {
+          widgets: adaptiveWidgets,
+          recommendedInterval: overdueJobs.length > 0 ? 20 : 45,
+          contextInfo: {
+            timeOfDay,
+            audience,
+            urgentItems: overdueJobs.length,
+            scheduledItems: scheduledOps.length
+          }
+        },
+        insights: `Generated ${adaptiveWidgets.length} adaptive widgets based on current system state and ${audience} audience needs.`
+      });
+
+    } catch (error) {
+      console.error('Error generating adaptive content:', error);
+      res.status(500).json({ error: 'Failed to generate adaptive content' });
+    }
+  });
+
+  // Get live data for Visual Factory displays
+  app.get('/api/visual-factory/live-data', async (req, res) => {
+    try {
+      const { audience, metrics } = req.query;
+      
+      // Fetch all required data
+      const [jobs, operations, resources] = await Promise.all([
+        storage.getJobs(),
+        storage.getOperations(),
+        storage.getResources()
+      ]);
+      
+      // Calculate real-time metrics
+      const liveData = {
+        timestamp: new Date().toISOString(),
+        production: {
+          activeJobs: jobs.filter(j => j.status === 'in-progress').length,
+          completedJobs: jobs.filter(j => j.status === 'completed').length,
+          totalJobs: jobs.length,
+          overdueJobs: jobs.filter(j => new Date(j.dueDate) < new Date() && j.status !== 'completed').length
+        },
+        operations: {
+          scheduled: operations.filter(o => o.status === 'scheduled').length,
+          inProgress: operations.filter(o => o.status === 'in-progress').length,
+          completed: operations.filter(o => o.status === 'completed').length,
+          total: operations.length
+        },
+        resources: {
+          available: resources.filter(r => r.isAvailable !== false).length,
+          total: resources.length,
+          utilizationRate: Math.round((operations.filter(o => o.status === 'in-progress').length / resources.length) * 100)
+        },
+        performance: {
+          onTimeDelivery: Math.round(85 + Math.random() * 10), // Simulate live metric
+          efficiency: Math.round(78 + Math.random() * 15),
+          quality: Math.round(92 + Math.random() * 6)
+        },
+        alerts: {
+          critical: jobs.filter(j => new Date(j.dueDate) < new Date() && j.status !== 'completed').length,
+          warnings: Math.floor(Math.random() * 3),
+          info: Math.floor(Math.random() * 5)
+        }
+      };
+      
+      res.json(liveData);
+      
+    } catch (error) {
+      console.error('Error fetching live data:', error);
+      res.status(500).json({ error: 'Failed to fetch live data' });
+    }
+  });
+
   // Demo Tour Participants Routes
   app.get('/api/demo-tour-participants', async (req, res) => {
     try {

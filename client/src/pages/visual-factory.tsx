@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
@@ -105,7 +106,14 @@ export default function VisualFactory() {
   const [newDisplayDialogOpen, setNewDisplayDialogOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [timeRemaining, setTimeRemaining] = useState(0);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [adaptiveMode, setAdaptiveMode] = useState(false);
+  const [audience, setAudience] = useState<string>('general');
+  const [location, setLocation] = useState('');
+  const [displayType, setDisplayType] = useState('Large Screen Display');
+  const [includeRealTime, setIncludeRealTime] = useState(true);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const adaptiveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -123,15 +131,120 @@ export default function VisualFactory() {
     queryKey: ['/api/operations'],
   });
 
+  const { data: liveData } = useQuery({
+    queryKey: ['/api/visual-factory/live-data', { audience, includeRealTime }],
+    refetchInterval: adaptiveMode ? 30000 : 0, // Refresh every 30s in adaptive mode
+    enabled: !!currentDisplay && (includeRealTime || adaptiveMode)
+  });
+
+  // AI Content Generation Mutations
+  const generateAIContentMutation = useMutation({
+    mutationFn: async (params: {
+      prompt: string;
+      audience: string;
+      location: string;
+      displayType: string;
+      includeRealTime: boolean;
+    }) => {
+      return await apiRequest('/api/visual-factory/ai/generate-content', {
+        method: 'POST',
+        body: params
+      });
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "AI Content Generated",
+        description: "Your display configuration has been created successfully!"
+      });
+      setAiConfigDialogOpen(false);
+      setAiPrompt('');
+      
+      // Apply the generated content to create a new display
+      if (data.displayConfig) {
+        createDisplayMutation.mutate({
+          ...data.displayConfig,
+          location: location || 'Generated Display',
+          useAiMode: true,
+          isActive: true
+        });
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: "Generation Failed",
+        description: "Failed to generate AI content. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const generateAdaptiveContentMutation = useMutation({
+    mutationFn: async (params: {
+      displayId?: number;
+      timeOfDay: string;
+      audience: string;
+    }) => {
+      return await apiRequest('/api/visual-factory/ai/adaptive-content', {
+        method: 'POST',
+        body: params
+      });
+    },
+    onSuccess: (data) => {
+      if (currentDisplay && data.adaptiveContent) {
+        // Update current display with adaptive content
+        updateDisplayMutation.mutate({
+          id: currentDisplay.id,
+          widgets: data.adaptiveContent.widgets,
+          autoRotationInterval: data.adaptiveContent.recommendedInterval,
+          useAiMode: true
+        });
+        
+        toast({
+          title: "Adaptive Content Applied",
+          description: data.insights
+        });
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: "Adaptive Content Failed",
+        description: "Failed to generate adaptive content. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Display Management Mutations
+  const createDisplayMutation = useMutation({
+    mutationFn: async (display: any) => {
+      return await apiRequest('/api/visual-factory/displays', {
+        method: 'POST',
+        body: display
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/visual-factory/displays'] });
+      setNewDisplayDialogOpen(false);
+    }
+  });
+
+  const updateDisplayMutation = useMutation({
+    mutationFn: async ({ id, ...updates }: { id: number } & any) => {
+      return await apiRequest(`/api/visual-factory/displays/${id}`, {
+        method: 'PUT',
+        body: updates
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/visual-factory/displays'] });
+    }
+  });
+
   const { data: resources = [] } = useQuery<Resource[]>({
     queryKey: ['/api/resources'],
   });
 
-  const { data: metrics } = useQuery({
-    queryKey: ['/api/metrics'],
-  });
-
-  // Auto-rotation effect
+  // Auto-rotation effect with adaptive content
   useEffect(() => {
     if (isPlaying && currentDisplay && currentDisplay.widgets.length > 1) {
       const interval = currentDisplay.autoRotationInterval * 1000;
@@ -154,37 +267,85 @@ export default function VisualFactory() {
     }
   }, [isPlaying, currentDisplay, currentWidgetIndex]);
 
-  // Mutations
-  const createDisplayMutation = useMutation({
-    mutationFn: async (display: Omit<VisualFactoryDisplay, 'id' | 'createdAt'>) => {
-      const response = await apiRequest('POST', '/api/visual-factory/displays', display);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/visual-factory/displays'] });
-      setNewDisplayDialogOpen(false);
-      toast({ title: 'Display created successfully' });
-    }
-  });
+  // Adaptive content refresh effect
+  useEffect(() => {
+    if (adaptiveMode && currentDisplay) {
+      const refreshAdaptiveContent = () => {
+        const currentHour = new Date().getHours();
+        let timeOfDay = 'general';
+        
+        if (currentHour >= 6 && currentHour < 12) timeOfDay = 'morning';
+        else if (currentHour >= 12 && currentHour < 18) timeOfDay = 'afternoon';
+        else if (currentHour >= 18 && currentHour < 22) timeOfDay = 'evening';
+        else timeOfDay = 'night';
 
-  const aiConfigMutation = useMutation({
-    mutationFn: async (prompt: string) => {
-      const response = await apiRequest('POST', '/api/ai-agent/command', {
-        command: `Create visual factory display configuration: ${prompt}`,
-        action: 'CREATE_VISUAL_FACTORY_DISPLAY'
+        generateAdaptiveContentMutation.mutate({
+          displayId: currentDisplay.id,
+          timeOfDay,
+          audience
+        });
+      };
+
+      // Refresh adaptive content every 5 minutes
+      adaptiveIntervalRef.current = setInterval(refreshAdaptiveContent, 5 * 60 * 1000);
+      
+      return () => {
+        if (adaptiveIntervalRef.current) {
+          clearInterval(adaptiveIntervalRef.current);
+        }
+      };
+    }
+  }, [adaptiveMode, currentDisplay, audience]);
+
+  // AI Content Generation Functions
+  const handleGenerateAIContent = () => {
+    if (!aiPrompt.trim()) {
+      toast({
+        title: "Prompt Required",
+        description: "Please enter a description for your display.",
+        variant: "destructive"
       });
-      return response.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/visual-factory/displays'] });
-      setAiConfigDialogOpen(false);
-      setAiPrompt('');
-      toast({ 
-        title: 'AI Display Created',
-        description: data.message || 'Visual factory display configured successfully'
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    generateAIContentMutation.mutate({
+      prompt: aiPrompt,
+      audience,
+      location,
+      displayType,
+      includeRealTime
+    });
+  };
+
+  const handleToggleAdaptiveMode = () => {
+    setAdaptiveMode(!adaptiveMode);
+    
+    if (!adaptiveMode && currentDisplay) {
+      // Enable adaptive mode - generate initial adaptive content
+      const currentHour = new Date().getHours();
+      let timeOfDay = 'morning';
+      if (currentHour >= 12 && currentHour < 18) timeOfDay = 'afternoon';
+      else if (currentHour >= 18 && currentHour < 22) timeOfDay = 'evening';
+      else if (currentHour >= 22 || currentHour < 6) timeOfDay = 'night';
+
+      generateAdaptiveContentMutation.mutate({
+        displayId: currentDisplay.id,
+        timeOfDay,
+        audience
+      });
+      
+      toast({
+        title: "Adaptive Mode Enabled",
+        description: "Display will now automatically adjust content based on real-time conditions."
+      });
+    } else {
+      toast({
+        title: "Adaptive Mode Disabled",
+        description: "Display content will remain static."
       });
     }
-  });
+  };
 
   const handleFullscreen = () => {
     if (!isFullscreen) {
@@ -408,12 +569,49 @@ export default function VisualFactory() {
                             rows={4}
                           />
                         </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="audience">Target Audience</Label>
+                            <Select value={audience} onValueChange={setAudience}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select audience" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="general">General</SelectItem>
+                                <SelectItem value="management">Management</SelectItem>
+                                <SelectItem value="shop-floor">Shop Floor</SelectItem>
+                                <SelectItem value="customer-service">Customer Service</SelectItem>
+                                <SelectItem value="sales">Sales Team</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="location">Location</Label>
+                            <Input
+                              id="location"
+                              placeholder="e.g., Main Production Floor"
+                              value={location}
+                              onChange={(e) => setLocation(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="includeRealTime"
+                            checked={includeRealTime}
+                            onCheckedChange={setIncludeRealTime}
+                          />
+                          <Label htmlFor="includeRealTime">Include real-time data</Label>
+                        </div>
+                        
                         <Button
-                          onClick={() => aiConfigMutation.mutate(aiPrompt)}
-                          disabled={!aiPrompt.trim() || aiConfigMutation.isPending}
-                          className="w-full"
+                          onClick={handleGenerateAIContent}
+                          disabled={!aiPrompt.trim() || generateAIContentMutation.isPending}
+                          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
                         >
-                          {aiConfigMutation.isPending ? 'Creating...' : 'Create'}
+                          {generateAIContentMutation.isPending ? 'Generating...' : 'Generate Display'}
                         </Button>
                       </div>
                     </DialogContent>
@@ -645,7 +843,7 @@ function CreateDisplayForm({
         </div>
       </div>
 
-      <Button type="submit" disabled={isLoading} className="w-full">
+      <Button type="submit" disabled={isLoading || !formData.name || !formData.location} className="w-full">
         {isLoading ? 'Creating...' : 'Create Display'}
       </Button>
     </form>
