@@ -179,27 +179,46 @@ export function RoleSwitcher({ userId, currentRole }: RoleSwitcherProps) {
           </div>
         </div>
 
-        <div className="flex justify-end space-x-2">
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
-            Cancel
-          </Button>
+        <div className="flex justify-between">
+          {/* Exit Training Mode Button */}
           <Button
-            onClick={handleSwitchRole}
-            disabled={!selectedRoleId || switchRoleMutation.isPending}
-            className="gap-2"
+            variant="outline"
+            onClick={() => {
+              // Find the Trainer role ID and switch back to it
+              const trainerRole = availableRoles.find((role: Role) => role.name === 'Trainer');
+              if (trainerRole) {
+                switchRoleMutation.mutate(trainerRole.id);
+              }
+            }}
+            disabled={switchRoleMutation.isPending || displayCurrentRole?.name === 'Trainer'}
+            className="gap-2 text-orange-600 border-orange-200 hover:bg-orange-50"
           >
-            {switchRoleMutation.isPending ? (
-              <>
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                Switching...
-              </>
-            ) : (
-              <>
-                <RotateCcw className="h-4 w-4" />
-                Switch Role
-              </>
-            )}
+            <RotateCcw className="h-4 w-4" />
+            Exit Training Mode
           </Button>
+          
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={() => setIsOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSwitchRole}
+              disabled={!selectedRoleId || switchRoleMutation.isPending}
+              className="gap-2"
+            >
+              {switchRoleMutation.isPending ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Switching...
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="h-4 w-4" />
+                  Switch Role
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
