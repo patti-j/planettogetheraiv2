@@ -2171,6 +2171,45 @@ function TourManagementSection() {
                       <span>Fast (2.0x)</span>
                     </div>
                   </div>
+
+                  {/* Test Voice Button */}
+                  <div>
+                    <Button
+                      onClick={() => {
+                        const testMessage = "Hello! This is a test of the voice settings you've selected. This will help you preview how the voice narration will sound during tours.";
+                        
+                        // Use browser's speech synthesis for immediate preview
+                        if ('speechSynthesis' in window) {
+                          const utterance = new SpeechSynthesisUtterance(testMessage);
+                          utterance.rate = voiceGenerationOptions.speed;
+                          
+                          // Set voice based on gender preference  
+                          const voices = speechSynthesis.getVoices();
+                          const preferredVoice = voices.find(voice => 
+                            voiceGenerationOptions.gender === 'female' 
+                              ? voice.name.toLowerCase().includes('female') || voice.name.toLowerCase().includes('woman')
+                              : voice.name.toLowerCase().includes('male') || voice.name.toLowerCase().includes('man')
+                          );
+                          
+                          if (preferredVoice) {
+                            utterance.voice = preferredVoice;
+                          }
+                          
+                          speechSynthesis.cancel(); // Cancel any ongoing speech
+                          speechSynthesis.speak(utterance);
+                        }
+                      }}
+                      variant="outline" 
+                      size="sm"
+                      className="w-full bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100"
+                    >
+                      <Volume2 className="h-4 w-4 mr-2" />
+                      Test Voice
+                    </Button>
+                    <p className="text-xs text-gray-500 mt-1 text-center">
+                      Preview current voice settings
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

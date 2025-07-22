@@ -36,6 +36,7 @@ import BusinessGoals from "@/pages/business-goals";
 import RoleManagement from "@/pages/role-management";
 import UserRoleAssignments from "@/pages/user-role-assignments";
 import Training from "@/pages/training";
+import HelpAndGuide from "@/pages/help";
 import DemoTour from "@/pages/demo-tour";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
@@ -244,6 +245,10 @@ function Router() {
               <Training />
             </ProtectedRoute>
           </Route>
+          <Route path="/help">
+            <HelpAndGuide />
+          </Route>
+          <Route path="/demo-tour" component={DemoTour} />
           <Route path="/" component={DashboardWithAutoTour} />
           <Route component={NotFound} />
         </Switch>

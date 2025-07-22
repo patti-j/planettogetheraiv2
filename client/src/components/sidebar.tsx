@@ -164,7 +164,7 @@ export default function Sidebar() {
     action: string;
     onClick?: () => void;
   }> = [
-    { icon: BookOpen, label: "Getting Started", href: "#", active: false, feature: "", action: "", onClick: openOnboardingWizard },
+    { icon: BookOpen, label: "Help & Guide", href: "/help", active: location === "/help", feature: "", action: "" },
     { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals", feature: "business-goals", action: "view" },
     { icon: BarChart3, label: "Production Schedule", href: "/production-schedule", active: location === "/production-schedule", feature: "production-scheduling", action: "view" },
     { icon: Target, label: "Optimize Orders", href: "/optimize-orders", active: location === "/optimize-orders", feature: "scheduling-optimizer", action: "view" },
