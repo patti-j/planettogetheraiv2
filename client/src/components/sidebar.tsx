@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, Book, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, LogOut, User, Shield, GraduationCap, UserCheck, BookOpen } from "lucide-react";
+import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, Book, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, LogOut, User, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, usePermissions } from "@/hooks/useAuth";
@@ -164,7 +164,8 @@ export default function Sidebar() {
     action: string;
     onClick?: () => void;
   }> = [
-    { icon: BookOpen, label: "Help & Guide", href: "/help", active: location === "/help", feature: "", action: "" },
+    { icon: BookOpen, label: "Getting Started", href: "#", active: false, feature: "", action: "", onClick: openOnboardingWizard },
+    { icon: HelpCircle, label: "Help & Guide", href: "/help", active: location === "/help", feature: "", action: "" },
     { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals", feature: "business-goals", action: "view" },
     { icon: BarChart3, label: "Production Schedule", href: "/production-schedule", active: location === "/production-schedule", feature: "production-scheduling", action: "view" },
     { icon: Target, label: "Optimize Orders", href: "/optimize-orders", active: location === "/optimize-orders", feature: "scheduling-optimizer", action: "view" },
