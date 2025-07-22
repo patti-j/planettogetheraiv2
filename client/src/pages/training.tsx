@@ -795,6 +795,9 @@ function TourManagementSection() {
     speed: 1.1,
     userInstructions: ''
   });
+  const [showSingleTourGuidanceDialog, setShowSingleTourGuidanceDialog] = useState(false);
+  const [singleTourGuidance, setSingleTourGuidance] = useState("");
+  const [selectedTourForRegeneration, setSelectedTourForRegeneration] = useState<any>(null);
 
   // Preview handlers
   const handlePreviewStep = (step: any, role: string) => {
@@ -1339,6 +1342,28 @@ function TourManagementSection() {
     });
   };
 
+  // Single tour regeneration handler
+  const handleSingleTourRegenerate = (tour: any) => {
+    setSelectedTourForRegeneration(tour);
+    setShowSingleTourGuidanceDialog(true);
+  };
+
+  const handleConfirmSingleTourRegeneration = () => {
+    if (selectedTourForRegeneration) {
+      const mutationData = {
+        roles: [selectedTourForRegeneration.roleDisplayName],
+        guidance: singleTourGuidance
+      };
+      
+      regenerateTourWithAI.mutate(mutationData);
+      
+      // Clear the dialog state
+      setShowSingleTourGuidanceDialog(false);
+      setSingleTourGuidance("");
+      setSelectedTourForRegeneration(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -1598,6 +1623,24 @@ function TourManagementSection() {
                       <Play className="h-3 w-3 mr-1" />
                       <span className="hidden sm:inline">Preview Tour</span>
                       <span className="sm:hidden">Preview</span>
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 w-full sm:w-auto text-xs sm:text-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSingleTourRegenerate(tour);
+                      }}
+                      disabled={regenerateTourWithAI.isPending}
+                    >
+                      {regenerateTourWithAI.isPending ? (
+                        <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3 w-3 mr-1" />
+                      )}
+                      <span className="hidden sm:inline">Regenerate</span>
+                      <span className="sm:hidden">Regen</span>
                     </Button>
                     <Button 
                       size="sm" 
@@ -2391,6 +2434,63 @@ function TourManagementSection() {
                 )}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Single Tour Regeneration Dialog */}
+      <Dialog open={showSingleTourGuidanceDialog} onOpenChange={setShowSingleTourGuidanceDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Sparkles className="h-5 w-5 mr-2 text-purple-600" />
+              Regenerate Tour: {selectedTourForRegeneration?.roleDisplayName}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+              <p className="text-sm font-medium text-purple-800 mb-1">Regenerating Single Tour</p>
+              <p className="text-xs text-purple-600">
+                AI will create new tour content specifically for the {selectedTourForRegeneration?.roleDisplayName} role.
+              </p>
+            </div>
+            
+            <div>
+              <Label className="text-sm font-medium">
+                Special Instructions for AI (Optional)
+              </Label>
+              <p className="text-xs text-gray-600 mb-2">
+                Provide specific guidance for how you want this tour to be improved or modified.
+              </p>
+              <Textarea
+                value={singleTourGuidance}
+                onChange={(e) => setSingleTourGuidance(e.target.value)}
+                placeholder="e.g., Focus more on advanced features, include additional interactive elements, emphasize business benefits, add technical details..."
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+          
+          <div className="flex gap-2 justify-end">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowSingleTourGuidanceDialog(false);
+                setSingleTourGuidance("");
+                setSelectedTourForRegeneration(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmSingleTourRegeneration}
+              disabled={regenerateTourWithAI.isPending}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              {regenerateTourWithAI.isPending ? 'Regenerating...' : 'Regenerate Tour'}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
