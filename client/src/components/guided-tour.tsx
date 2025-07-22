@@ -1221,7 +1221,22 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                 <Button
                   variant={autoAdvance ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setAutoAdvance(!autoAdvance)}
+                  onClick={() => {
+                    const newAutoAdvance = !autoAdvance;
+                    setAutoAdvance(newAutoAdvance);
+                    
+                    // If turning on auto-advance and audio has completed, immediately advance
+                    if (newAutoAdvance && audioCompleted && currentStep < tourSteps.length - 1) {
+                      autoAdvanceTimeoutRef.current = setTimeout(() => {
+                        handleNext();
+                      }, 100); // Very quick advance when toggling on
+                    } else if (newAutoAdvance && audioCompleted && currentStep === tourSteps.length - 1) {
+                      // Auto-complete tour if on last step
+                      autoAdvanceTimeoutRef.current = setTimeout(() => {
+                        handleComplete();
+                      }, 100); // Very quick completion when toggling on
+                    }
+                  }}
                   className={`px-2 ${autoAdvance ? 'bg-green-600 hover:bg-green-700 text-white' : 'text-gray-600 border-gray-200 hover:bg-gray-50'}`}
                   title={autoAdvance ? "Turn off auto-advance" : "Turn on auto-advance"}
                 >
@@ -1233,7 +1248,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                   onClick={handleNext} 
                   size="sm" 
                   className={`bg-blue-600 hover:bg-blue-700 px-3 transition-all duration-300 ${
-                    audioCompleted && voiceEnabled ? 'animate-pulse shadow-lg ring-2 ring-blue-300' : ''
+                    audioCompleted && voiceEnabled && !autoAdvance ? 'animate-pulse shadow-lg ring-2 ring-blue-300' : ''
                   }`}
                 >
                   {currentStep === tourSteps.length - 1 ? (
@@ -1243,7 +1258,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                     </>
                   ) : (
                     <>
-                      {audioCompleted && voiceEnabled ? '👉 ' : ''}Next
+                      {audioCompleted && voiceEnabled && !autoAdvance ? '👉 ' : ''}Next
                       <ArrowRight className="h-3 w-3 ml-1" />
                     </>
                   )}
