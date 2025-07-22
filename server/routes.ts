@@ -5688,6 +5688,74 @@ Create a natural, conversational voice script that explains this feature to some
     }
   });
 
+  // Translation endpoints
+  app.post("/api/chat/messages/:messageId/translate", requireAuth, async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.messageId);
+      if (isNaN(messageId)) {
+        return res.status(400).json({ error: "Invalid message ID" });
+      }
+
+      const { targetLanguage } = req.body;
+      if (!targetLanguage) {
+        return res.status(400).json({ error: "Target language is required" });
+      }
+
+      const message = await storage.getChatMessage(messageId);
+      if (!message) {
+        return res.status(404).json({ error: "Message not found" });
+      }
+
+      // Check if translation already exists in cache
+      const cachedTranslations = message.translations || {};
+      if (cachedTranslations[targetLanguage]) {
+        return res.json({ 
+          translatedText: cachedTranslations[targetLanguage],
+          fromCache: true 
+        });
+      }
+
+      // Import translation service
+      const { translateText, detectLanguage } = await import("./translation");
+
+      // Detect source language if not stored
+      let sourceLanguage = message.originalLanguage;
+      if (!sourceLanguage || sourceLanguage === 'en') {
+        sourceLanguage = await detectLanguage(message.content);
+      }
+
+      // Translate the message
+      const translationResult = await translateText({
+        text: message.content,
+        sourceLanguage,
+        targetLanguage
+      });
+
+      // Store the translation in the database
+      await storage.updateMessageTranslation(messageId, targetLanguage, translationResult.translatedText);
+
+      res.json({ 
+        translatedText: translationResult.translatedText,
+        fromCache: false 
+      });
+    } catch (error) {
+      console.error("Error translating message:", error);
+      res.status(500).json({ error: "Failed to translate message" });
+    }
+  });
+
+  // Get available languages for translation
+  app.get("/api/chat/languages", requireAuth, async (req, res) => {
+    try {
+      const { getAvailableLanguages } = await import("./translation");
+      const languages = getAvailableLanguages();
+      res.json(languages);
+    } catch (error) {
+      console.error("Error fetching languages:", error);
+      res.status(500).json({ error: "Failed to fetch languages" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

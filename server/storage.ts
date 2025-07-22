@@ -377,6 +377,7 @@ export interface IStorage {
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
   updateChatMessage(id: number, message: Partial<InsertChatMessage>): Promise<ChatMessage | undefined>;
   deleteChatMessage(id: number): Promise<boolean>;
+  updateMessageTranslation(messageId: number, targetLanguage: string, translatedText: string): Promise<ChatMessage | undefined>;
   
   // Chat Reactions
   getChatReactions(messageId: number): Promise<ChatReaction[]>;
@@ -3058,6 +3059,25 @@ export class DatabaseStorage implements IStorage {
       .where(eq(chatMessages.id, id))
       .returning();
     return !!deletedMessage;
+  }
+
+  async updateMessageTranslation(messageId: number, targetLanguage: string, translatedText: string): Promise<ChatMessage | undefined> {
+    const message = await this.getChatMessage(messageId);
+    if (!message) return undefined;
+
+    const currentTranslations = message.translations || {};
+    const updatedTranslations = {
+      ...currentTranslations,
+      [targetLanguage]: translatedText
+    };
+
+    const [updatedMessage] = await db
+      .update(chatMessages)
+      .set({ translations: updatedTranslations })
+      .where(eq(chatMessages.id, messageId))
+      .returning();
+    
+    return updatedMessage || undefined;
   }
 
   // Chat Reactions

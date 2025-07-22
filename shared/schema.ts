@@ -1404,6 +1404,8 @@ export const chatMessages = pgTable("chat_messages", {
   channelId: integer("channel_id").notNull().references(() => chatChannels.id, { onDelete: "cascade" }),
   senderId: integer("sender_id").notNull().references(() => users.id),
   content: text("content").notNull(),
+  originalLanguage: varchar("original_language", { length: 10 }).default("en"), // Language the message was written in
+  translations: jsonb("translations").$type<Record<string, string>>().default(sql`'{}'::jsonb`), // Cached translations by language code
   messageType: varchar("message_type", { length: 50 }).default("text"), // 'text', 'file', 'system', 'mention'
   replyToId: integer("reply_to_id").references(() => chatMessages.id),
   attachments: jsonb("attachments"), // Array of file attachments

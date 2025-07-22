@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -23,7 +24,9 @@ import {
   Settings,
   Smile,
   Edit,
-  Trash2
+  Trash2,
+  Languages,
+  Globe
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -53,6 +56,8 @@ interface Participant {
 interface Message {
   id: number;
   content: string;
+  originalLanguage?: string;
+  translations?: Record<string, string>;
   senderId: number;
   senderName: string;
   senderAvatar?: string;
@@ -71,6 +76,11 @@ interface Reaction {
   username: string;
 }
 
+interface Language {
+  code: string;
+  name: string;
+}
+
 export default function Chat() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -79,6 +89,8 @@ export default function Chat() {
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateChannel, setShowCreateChannel] = useState(false);
+  const [languageSettingsOpen, setLanguageSettingsOpen] = useState(false);
+  const [translatingMessages, setTranslatingMessages] = useState<Set<number>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch user's channels
@@ -90,6 +102,16 @@ export default function Chat() {
   const { data: messages = [], isLoading: messagesLoading } = useQuery<Message[]>({
     queryKey: ['/api/chat/channels', selectedChannelId, 'messages'],
     enabled: !!selectedChannelId,
+  });
+
+  // Get user preferences for language settings
+  const { data: userPreferences } = useQuery({
+    queryKey: ["/api/user/preferences"],
+  });
+
+  // Get available languages for translation
+  const { data: availableLanguages = [] } = useQuery<Language[]>({
+    queryKey: ["/api/chat/languages"],
   });
 
   // Send message mutation
@@ -131,6 +153,56 @@ export default function Chat() {
         variant: "destructive",
       });
     },
+  });
+
+  // Translation mutation
+  const translateMessageMutation = useMutation({
+    mutationFn: async ({ messageId, targetLanguage }: { messageId: number; targetLanguage: string }) => {
+      return apiRequest('POST', `/api/chat/messages/${messageId}/translate`, { targetLanguage });
+    },
+    onMutate: ({ messageId }) => {
+      setTranslatingMessages(prev => new Set([...prev, messageId]));
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/chat/channels', selectedChannelId, 'messages'] 
+      });
+    },
+    onError: (error, variables) => {
+      toast({
+        title: "Translation Error",
+        description: "Failed to translate message",
+        variant: "destructive",
+      });
+    },
+    onSettled: (data, error, variables) => {
+      setTranslatingMessages(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(variables.messageId);
+        return newSet;
+      });
+    }
+  });
+
+  // Update language preference mutation
+  const updateLanguageMutation = useMutation({
+    mutationFn: async ({ language }: { language: string }) => {
+      return apiRequest('PUT', `/api/user/preferences`, { language });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user/preferences"] });
+      toast({
+        title: "Success",
+        description: "Language preference updated!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error", 
+        description: "Failed to update language preference",
+        variant: "destructive",
+      });
+    }
   });
 
   // Scroll to bottom of messages
@@ -284,6 +356,13 @@ export default function Chat() {
                   <Button variant="ghost" size="sm">
                     <UserPlus className="h-4 w-4" />
                   </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setLanguageSettingsOpen(true)}
+                  >
+                    <Globe className="h-4 w-4" />
+                  </Button>
                   <Button variant="ghost" size="sm">
                     <Settings className="h-4 w-4" />
                   </Button>
@@ -317,33 +396,83 @@ export default function Chat() {
                         </div>
                         <div className="bg-secondary/50 rounded-lg p-3">
                           <p className="text-sm">{message.content}</p>
-                          {message.reactions.length > 0 && (
-                            <div className="flex gap-1 mt-2">
-                              {message.reactions.reduce((acc: any[], reaction) => {
-                                const existing = acc.find(r => r.emoji === reaction.emoji);
-                                if (existing) {
-                                  existing.count++;
-                                  existing.users.push(reaction.username);
-                                } else {
-                                  acc.push({ 
-                                    emoji: reaction.emoji, 
-                                    count: 1, 
-                                    users: [reaction.username] 
-                                  });
-                                }
-                                return acc;
-                              }, []).map((reaction, index) => (
-                                <Button
-                                  key={index}
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-6 px-2 text-xs"
-                                >
-                                  {reaction.emoji} {reaction.count}
-                                </Button>
-                              ))}
+                          
+                          {/* Show translation if available */}
+                          {userPreferences?.language && 
+                           message.translations?.[userPreferences.language] && 
+                           message.originalLanguage !== userPreferences.language && (
+                            <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 rounded-r">
+                              <div className="flex items-center gap-1 mb-1">
+                                <Languages className="h-3 w-3 text-blue-600" />
+                                <span className="text-xs text-blue-600 font-medium">Translated</span>
+                              </div>
+                              <p className="text-sm">{message.translations[userPreferences.language]}</p>
                             </div>
                           )}
+                          
+                          <div className="flex items-center justify-between mt-2">
+                            {/* Message actions */}
+                            <div className="flex items-center gap-1">
+                              {userPreferences?.language && 
+                               message.originalLanguage !== userPreferences.language &&
+                               !message.translations?.[userPreferences.language] && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 px-2"
+                                        onClick={() => translateMessageMutation.mutate({
+                                          messageId: message.id,
+                                          targetLanguage: userPreferences.language
+                                        })}
+                                        disabled={translatingMessages.has(message.id)}
+                                      >
+                                        {translatingMessages.has(message.id) ? (
+                                          <div className="h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+                                        ) : (
+                                          <Languages className="h-3 w-3" />
+                                        )}
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Translate to {availableLanguages.find(l => l.code === userPreferences.language)?.name || userPreferences.language}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </div>
+                            
+                            {/* Reactions */}
+                            {message.reactions.length > 0 && (
+                              <div className="flex gap-1">
+                                {message.reactions.reduce((acc: any[], reaction) => {
+                                  const existing = acc.find(r => r.emoji === reaction.emoji);
+                                  if (existing) {
+                                    existing.count++;
+                                    existing.users.push(reaction.username);
+                                  } else {
+                                    acc.push({ 
+                                      emoji: reaction.emoji, 
+                                      count: 1, 
+                                      users: [reaction.username] 
+                                    });
+                                  }
+                                  return acc;
+                                }, []).map((reaction, index) => (
+                                  <Button
+                                    key={index}
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 px-2 text-xs"
+                                  >
+                                    {reaction.emoji} {reaction.count}
+                                  </Button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -396,6 +525,68 @@ export default function Chat() {
           </div>
         )}
       </div>
+
+      {/* Language Settings Dialog */}
+      <Dialog open={languageSettingsOpen} onOpenChange={setLanguageSettingsOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Language Preferences</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Preferred Language for Chat Messages
+              </label>
+              <p className="text-xs text-muted-foreground mb-3">
+                Messages in other languages will show translation buttons
+              </p>
+              
+              <Select
+                value={userPreferences?.language || "en"}
+                onValueChange={(language) => updateLanguageMutation.mutate({ language })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select language" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableLanguages.map((lang) => (
+                    <SelectItem key={lang.code} value={lang.code}>
+                      {lang.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <div className="flex items-start gap-2">
+                <Languages className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">
+                    How Translation Works
+                  </p>
+                  <ul className="text-blue-700 dark:text-blue-200 space-y-1 text-xs">
+                    <li>• Click translate button on messages in other languages</li>
+                    <li>• Translations are cached for faster access</li>
+                    <li>• Original message is always preserved</li>
+                    <li>• AI-powered translation using OpenAI</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-2 mt-6">
+            <Button 
+              variant="outline" 
+              onClick={() => setLanguageSettingsOpen(false)}
+            >
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
