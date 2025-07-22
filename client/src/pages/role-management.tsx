@@ -396,20 +396,22 @@ export default function RoleManagementPage() {
       {/* Fixed Header */}
       <div className="flex-shrink-0 space-y-6 pb-6 bg-white">
         {/* Page Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="md:ml-0 ml-12">
-            <h1 className="text-2xl font-semibold text-gray-800">Role Management</h1>
-            <p className="text-gray-600">Define roles and specify feature permissions for different user types</p>
+            <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Role Management</h1>
+            <p className="text-sm md:text-base text-gray-600">Define roles and specify feature permissions for different user types</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 lg:flex-shrink-0">
           <Dialog open={aiRoleDialog} onOpenChange={setAiRoleDialog}>
             <DialogTrigger asChild>
               <Button 
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-sm sm:text-base"
                 disabled={createAiRoleMutation.isPending}
+                size="sm"
               >
-                <Sparkles className="w-4 h-4 mr-2" />
-                {createAiRoleMutation.isPending ? "Creating..." : "Create Role"}
+                <Sparkles className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">{createAiRoleMutation.isPending ? "Creating..." : "Create Role"}</span>
+                <span className="sm:hidden">{createAiRoleMutation.isPending ? "Creating" : "Create"}</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
@@ -453,11 +455,13 @@ export default function RoleManagementPage() {
           <Dialog open={aiPermissionDialog} onOpenChange={setAiPermissionDialog}>
             <DialogTrigger asChild>
               <Button 
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-sm sm:text-base"
                 disabled={generateAiPermissionsMutation.isPending}
+                size="sm"
               >
-                <Sparkles className="w-4 h-4 mr-2" />
-                {generateAiPermissionsMutation.isPending ? "Generating..." : "Permissions"}
+                <Sparkles className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">{generateAiPermissionsMutation.isPending ? "Generating..." : "Permissions"}</span>
+                <span className="sm:hidden">{generateAiPermissionsMutation.isPending ? "Gen" : "Perms"}</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
@@ -518,9 +522,13 @@ export default function RoleManagementPage() {
           </Dialog>
           <Dialog open={newRoleDialog} onOpenChange={setNewRoleDialog}>
             <DialogTrigger asChild>
-              <Button className="bg-primary hover:bg-blue-700 text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                New Role
+              <Button 
+                className="bg-primary hover:bg-blue-700 text-white text-sm sm:text-base"
+                size="sm"
+              >
+                <Plus className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">New Role</span>
+                <span className="sm:hidden">New</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -677,25 +685,26 @@ export default function RoleManagementPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">
-                  <Checkbox 
-                    checked={selectedRoles.length === roles.length}
-                    onCheckedChange={(checked) => {
-                      setSelectedRoles(checked ? roles.map(r => r.id) : []);
-                    }}
-                  />
-                </TableHead>
-                <TableHead>Role Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Users</TableHead>
-                <TableHead>Permissions</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
+          <div className="overflow-x-auto">
+            <Table className="min-w-full">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox 
+                      checked={selectedRoles.length === roles.length}
+                      onCheckedChange={(checked) => {
+                        setSelectedRoles(checked ? roles.map(r => r.id) : []);
+                      }}
+                    />
+                  </TableHead>
+                  <TableHead className="min-w-[120px]">Role Name</TableHead>
+                  <TableHead className="hidden md:table-cell min-w-[200px]">Description</TableHead>
+                  <TableHead className="min-w-[60px]">Users</TableHead>
+                  <TableHead className="hidden lg:table-cell min-w-[200px]">Permissions</TableHead>
+                  <TableHead className="min-w-[80px]">Type</TableHead>
+                  <TableHead className="min-w-[100px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
             <TableBody>
               {roles.map((role) => (
                 <TableRow key={role.id}>
@@ -706,11 +715,11 @@ export default function RoleManagementPage() {
                     />
                   </TableCell>
                   <TableCell className="font-medium">{role.name}</TableCell>
-                  <TableCell>{role.description}</TableCell>
+                  <TableCell className="hidden md:table-cell">{role.description}</TableCell>
                   <TableCell>
                     <Badge variant="outline">{role.userCount || 0}</Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden lg:table-cell">
                     <div className="flex flex-wrap gap-1">
                       {features.map(feature => {
                         const featurePerms = role.permissions.filter(p => p.feature === feature);
@@ -729,11 +738,12 @@ export default function RoleManagementPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex space-x-2">
+                    <div className="flex items-center gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleEditRole(role)}
+                        className="h-8 w-8 p-0"
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -743,6 +753,7 @@ export default function RoleManagementPage() {
                           size="sm"
                           onClick={() => handleDeleteRole(role)}
                           disabled={deleteRoleMutation.isPending}
+                          className="h-8 w-8 p-0"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -752,7 +763,8 @@ export default function RoleManagementPage() {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+            </Table>
+          </div>
         </CardContent>
       </Card>
       </div>
