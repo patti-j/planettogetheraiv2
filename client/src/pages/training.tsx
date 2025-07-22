@@ -829,11 +829,10 @@ function TourManagementSection() {
 
   const allRoles = toursFromAPI?.map((tour: any) => tour.role) || [];
   
-  // Identify roles that don't have tours yet
-  const existingTourRoles = new Set(toursFromAPI?.map((tour: any) => tour.role) || []);
+  // Identify roles that don't have tours yet - use roleId for accurate matching
+  const existingTourRoleIds = new Set(toursFromAPI?.map((tour: any) => tour.roleId) || []);
   const missingTourRoles = systemRoles.filter((role: any) => {
-    const roleKey = role.name.toLowerCase().replace(/\s+/g, '-');
-    return !existingTourRoles.has(roleKey);
+    return !existingTourRoleIds.has(role.id);
   });
 
   const regenerateTourWithAI = useMutation({

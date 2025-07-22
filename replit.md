@@ -257,6 +257,14 @@ The application uses a modern full-stack architecture with strong typing through
 - Validation identifies permission mismatches and suggests accessible alternative routes for invalid tour steps
 - System validation confirms proper role-based access control working across all tour content
 
+✓ **Tour Management UI Enhancements & Duplicate Role Fix (July 22, 2025)**:
+- Added "Select All" functionality to both tour management sections with "All (X)" and "None" buttons
+- Enhanced user experience with selection counters showing "X of Y selected" for both sections
+- Removed redundant "Regenerate All Tours" button - users can now select all and use "Regenerate Selected" instead
+- Fixed critical duplicate role issue in "Generate Tours for Additional Roles" section by using role ID matching instead of name-based matching
+- Additional roles section now correctly shows only roles without existing tours, eliminating duplicates like Director appearing in both areas
+- Streamlined interface provides efficient bulk operations while maintaining clear separation between existing and missing tour content
+
 ✓ **AI Button Text Cleanup & Enhanced Role Switching UX (July 22, 2025)**:
 - Removed "AI" prefix from all buttons that used AI functionality while maintaining AI visual branding (purple gradients, Sparkles icons)
 - Updated button text: "AI Regenerate Selected" → "Regenerate Selected", "AI Create" → "Create", "AI Generate Tours" → "Generate Tours", etc.
