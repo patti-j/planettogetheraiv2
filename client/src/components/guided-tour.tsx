@@ -411,8 +411,22 @@ export function GuidedTour({ role, initialVoiceEnabled = false, onComplete, onSk
       };
       
       speechRef.current = audio;
-      await audio.play();
-      console.log("AI speech started playing");
+      
+      // Add user interaction requirement for audio playback (browser security)
+      const playAudio = async () => {
+        try {
+          await audio.play();
+          console.log("AI speech started playing");
+        } catch (playError) {
+          console.error("Auto-play failed, likely due to browser policy:", playError);
+          // Show user interaction prompt if auto-play fails
+          setIsPlaying(false);
+          setIsGenerating(false);
+          fallbackSpeech(text);
+        }
+      };
+      
+      await playAudio();
       
     } catch (error) {
       console.error("AI speech generation error:", error);

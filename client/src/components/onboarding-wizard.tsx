@@ -360,10 +360,13 @@ export default function OnboardingWizard() {
 
   // Auto-open for new users who haven't seen onboarding
   useEffect(() => {
-    // Temporarily disable auto-opening for training/demo purposes
-    // if (isNewUser && !hasSeenOnboarding) {
-    //   setIsOpen(true);
-    // }
+    // Check if user is in demo mode - if so, don't show onboarding popup
+    const isDemo = localStorage.getItem("authToken")?.startsWith("demo_");
+    
+    // Disable auto-opening for demo users and training purposes
+    if (!isDemo && isNewUser && !hasSeenOnboarding) {
+      setIsOpen(true);
+    }
   }, [isNewUser, hasSeenOnboarding]);
 
   // Listen for custom event to open onboarding

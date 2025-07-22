@@ -134,6 +134,8 @@ The application uses a modern full-stack architecture with strong typing through
 - **NEW: Enhanced Voice Content**: Replaced basic screen reading with engaging, explanatory narrations that provide context and insights
 - **NEW: Visual Generation Indicators**: Added spinning loading indicator and status messages showing when AI voice is being generated
 - **NEW: Performance Optimizations**: Reduced wait times by pre-loading voice generation, faster TTS model selection, and optimized timing
+- **NEW: Fixed Demo Popup Issue**: Prevented unwanted "Welcome to PlanetTogether" onboarding popup from appearing during demo login
+- **NEW: Audio Playback Fix**: Resolved voice narration playback issues with proper browser audio handling and fallback mechanisms
 - Implemented automatic speech synthesis on tour step changes with gender-based voice selection (male/female)
 - Added adjustable speech rate controls and proper speech cancellation on navigation
 - Voice functionality includes manual play/pause controls alongside automatic narration for enhanced accessibility
@@ -142,6 +144,7 @@ The application uses a modern full-stack architecture with strong typing through
 - System tested successfully with Director role demo showing proper voice integration and tour progression
 - Enhanced narrations now explain business value and feature benefits rather than just describing what's visible on screen
 - Optimized server-side text-to-speech with faster model selection and improved caching for reduced latency
+- Demo users no longer see intrusive onboarding popups - they go directly into their guided tour experience
 
 ✓ **Demo Tour Window Enhancement - Draggable & Repositioned (July 22, 2025)**:
 - Made guided tour window smaller and draggable for improved user experience
