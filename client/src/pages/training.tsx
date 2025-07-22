@@ -1045,6 +1045,25 @@ function TourManagementSection() {
     );
   };
 
+  // Helper functions for selecting all roles in each section
+  const selectAllTourContentRoles = () => {
+    const allRoles = toursFromAPI?.map((tour: any) => tour.roleDisplayName) || [];
+    setSelectedRoles(allRoles);
+  };
+
+  const unselectAllTourContentRoles = () => {
+    setSelectedRoles([]);
+  };
+
+  const selectAllMissingRoles = () => {
+    const allMissingIds = missingTourRoles.map((role: any) => role.id.toString());
+    setSelectedMissingRoles(allMissingIds);
+  };
+
+  const unselectAllMissingRoles = () => {
+    setSelectedMissingRoles([]);
+  };
+
   const toggleTourExpansion = (tourId: number) => {
     setExpandedTours(prev => 
       prev.includes(tourId) ? prev.filter(r => r !== tourId) : [...prev, tourId]
@@ -1163,16 +1182,7 @@ function TourManagementSection() {
             )}
             Voice Generation
           </Button>
-          <Button
-            onClick={handleGenerateAllTours}
-            disabled={regenerateTourWithAI.isPending}
-            variant="outline"
-            className="border-purple-300 text-purple-700 hover:bg-purple-50"
-            size="sm"
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${regenerateTourWithAI.isPending ? 'animate-spin' : ''}`} />
-            Regenerate All Tours
-          </Button>
+
           <Button
             onClick={() => validateToursMutation.mutate()}
             disabled={validateToursMutation.isPending}
@@ -1187,6 +1197,32 @@ function TourManagementSection() {
             )}
             Validate All Tours
           </Button>
+        </div>
+      </div>
+
+      {/* Select All Controls for Tour Content */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center space-x-2">
+          <span className="text-sm font-medium text-gray-700">Select:</span>
+          <Button
+            onClick={selectAllTourContentRoles}
+            variant="outline"
+            size="sm"
+            className="text-xs"
+          >
+            All ({toursFromAPI?.length || 0})
+          </Button>
+          <Button
+            onClick={unselectAllTourContentRoles}
+            variant="outline"
+            size="sm"
+            className="text-xs"
+          >
+            None
+          </Button>
+        </div>
+        <div className="text-sm text-gray-500">
+          {selectedRoles.length} of {toursFromAPI?.length || 0} tours selected
         </div>
       </div>
 
@@ -1245,6 +1281,32 @@ function TourManagementSection() {
               )}
               Generate Tours ({selectedMissingRoles.length})
             </Button>
+          </div>
+          
+          {/* Select All Controls for Missing Tours */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-gray-700">Select:</span>
+              <Button
+                onClick={selectAllMissingRoles}
+                variant="outline"
+                size="sm"
+                className="text-xs"
+              >
+                All ({missingTourRoles.length})
+              </Button>
+              <Button
+                onClick={unselectAllMissingRoles}
+                variant="outline"
+                size="sm"
+                className="text-xs"
+              >
+                None
+              </Button>
+            </div>
+            <div className="text-sm text-gray-500">
+              {selectedMissingRoles.length} of {missingTourRoles.length} roles selected
+            </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
