@@ -445,7 +445,7 @@ export default function RoleManagementPage() {
                 disabled={generateAiPermissionsMutation.isPending}
               >
                 <Sparkles className="w-4 h-4 mr-2" />
-                {generateAiPermissionsMutation.isPending ? "Generating..." : "AI Permissions"}
+                {generateAiPermissionsMutation.isPending ? "Generating..." : "Permissions"}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">

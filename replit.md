@@ -274,7 +274,7 @@ The application uses a modern full-stack architecture with strong typing through
 
 ✓ **AI Button Text Cleanup & Enhanced Role Switching UX (July 22, 2025)**:
 - Removed "AI" prefix from all buttons that used AI functionality while maintaining AI visual branding (purple gradients, Sparkles icons)
-- Updated button text: "AI Regenerate Selected" → "Regenerate Selected", "AI Create" → "Create", "AI Generate Tours" → "Generate Tours", etc.
+- Updated button text: "AI Regenerate Selected" → "Regenerate Selected", "AI Create" → "Create", "AI Generate Tours" → "Generate Tours", "AI Permissions" → "Permissions", etc.
 - Enhanced role switching transition overlay with professional gradient background, backdrop blur, and animated loading indicators
 - Improved button loading states with role-specific messages ("Switching to Trainer Mode", "Returning to Trainer...")
 - Added smooth CSS animations and enhanced spinner designs for better user experience during role transitions
