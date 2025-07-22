@@ -71,9 +71,29 @@ export default function DemoTour() {
     if (showGuidedTour && demoRole) {
       console.log("Starting guided tour for role:", demoRole);
       console.log("Current location:", window.location.pathname);
+      console.log("Current URL:", window.location.href);
       // Don't navigate away, just render the guided tour overlay
     }
   }, [showGuidedTour, demoRole]);
+
+  // Add error boundary for debugging
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error("Page error:", event.error, event.filename, event.lineno);
+    };
+    
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error("Unhandled promise rejection:", event.reason);
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
 
   const form = useForm<ParticipantFormData>({
     resolver: zodResolver(participantFormSchema),
@@ -214,6 +234,7 @@ export default function DemoTour() {
       // Start guided tour instead of direct navigation
       setDemoRole(primaryRole);
       setShowGuidedTour(true);
+      console.log("Demo tour state updated - role:", primaryRole, "showGuidedTour: true");
       
     } catch (error) {
       console.error("Demo login error:", error);

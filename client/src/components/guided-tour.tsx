@@ -51,7 +51,21 @@ const getTourSteps = (role: string): TourStep[] => {
         "Understand role-based workflows"
       ],
       actionText: "Start Tour",
-      duration: "5 min tour"
+      duration: "2 min tour"
+    },
+    {
+      id: "demo-complete",
+      title: "Demo Experience Complete",
+      description: "You now have access to explore all PlanetTogether features using the sidebar navigation.",
+      page: "current",
+      icon: CheckCircle,
+      benefits: [
+        "Use the sidebar to navigate between features",
+        "All demo data is available for exploration",
+        "Contact us to learn about implementation"
+      ],
+      actionText: "Finish Tour",
+      duration: "Complete"
     }
   ];
 
@@ -162,7 +176,8 @@ const getTourSteps = (role: string): TourStep[] => {
     ]
   };
 
-  return [...commonSteps, ...(roleSteps[role] || roleSteps['production-scheduler'])];
+  // Simplified tour - only use common steps to prevent navigation issues
+  return commonSteps;
 };
 
 export function GuidedTour({ role, onComplete, onSkip }: GuidedTourProps) {
