@@ -66,6 +66,29 @@ export default function DemoTour() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Handle guided tour navigation - moved to top to follow React hooks rules
+  useEffect(() => {
+    if (showGuidedTour && demoRole) {
+      // Navigate to the appropriate role page immediately
+      const roleRoutes = {
+        'director': '/business-goals',
+        'plant-manager': '/plant-manager',
+        'production-scheduler': '/',
+        'it-administrator': '/systems-management',
+        'systems-manager': '/systems-management',
+        'administrator': '/role-management',
+        'shop-floor-operations': '/shop-floor',
+        'data-analyst': '/analytics',
+        'trainer': '/training',
+        'maintenance-technician': '/maintenance-planning'
+      };
+      
+      const route = roleRoutes[demoRole as keyof typeof roleRoutes] || '/';
+      console.log("Demo tour navigating to role page:", route);
+      setLocation(route);
+    }
+  }, [showGuidedTour, demoRole, setLocation]);
+
   const form = useForm<ParticipantFormData>({
     resolver: zodResolver(participantFormSchema),
     defaultValues: {
@@ -267,28 +290,7 @@ export default function DemoTour() {
     );
   }
   
-  // Handle guided tour navigation
-  useEffect(() => {
-    if (showGuidedTour && demoRole) {
-      // Navigate to the appropriate role page immediately
-      const roleRoutes = {
-        'director': '/business-goals',
-        'plant-manager': '/plant-manager',
-        'production-scheduler': '/',
-        'it-administrator': '/systems-management',
-        'systems-manager': '/systems-management',
-        'administrator': '/role-management',
-        'shop-floor-operations': '/shop-floor',
-        'data-analyst': '/analytics',
-        'trainer': '/training',
-        'maintenance-technician': '/maintenance-planning'
-      };
-      
-      const route = roleRoutes[demoRole as keyof typeof roleRoutes] || '/';
-      console.log("Demo tour navigating to role page:", route);
-      setLocation(route);
-    }
-  }, [showGuidedTour, demoRole, setLocation]);
+
 
   // Show guided tour if active
   if (showGuidedTour) {
