@@ -1238,7 +1238,7 @@ function TourManagementSection() {
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center">
                           <Badge variant="outline" className="mr-3">Step {index + 1}</Badge>
-                          <h5 className="font-semibold">{step.feature || step.title || 'Step ' + (index + 1)}</h5>
+                          <h5 className="font-semibold">{step.stepName || step.feature || step.title || `Step ${index + 1}`}</h5>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant="secondary">{step.duration}</Badge>

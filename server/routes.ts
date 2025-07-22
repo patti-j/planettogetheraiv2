@@ -3928,10 +3928,10 @@ Role-specific navigation guidelines:
 
 Each tour step must have:
 - navigationPath: One of the exact paths from the list above
-- stepTitle: Brief descriptive title
-- description: What the user will see/do on this page
-- benefits: Array of 2-3 specific advantages
-- voiceScript: Natural narration explaining the step (2-3 sentences)
+- stepName: Brief descriptive title (e.g., "Interactive Gantt Chart", "Scheduling Boards", "Optimization Tools")
+- description: Clear explanation of what the user will see and do on this page (optimized for tour playback)
+- benefits: Array of 2-3 specific business advantages from using this feature
+- voiceScript: Natural narration explaining the step (2-3 sentences, engaging and informative)
 
 Return JSON format with each role as a top-level key containing tourSteps array.`;
 
