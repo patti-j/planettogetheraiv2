@@ -39,6 +39,7 @@ import Training from "@/pages/training";
 import HelpAndGuide from "@/pages/help";
 import DemoTour from "@/pages/demo-tour";
 import DisruptionManagement from "@/pages/disruption-management";
+import Chat from "@/pages/chat";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 
@@ -249,6 +250,11 @@ function Router() {
           <Route path="/training">
             <ProtectedRoute feature="training" action="view">
               <Training />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/chat">
+            <ProtectedRoute feature="chat" action="view">
+              <Chat />
             </ProtectedRoute>
           </Route>
           <Route path="/help">

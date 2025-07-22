@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar, primaryKey, index, unique } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -1372,3 +1372,137 @@ export const insertUserPreferencesSchema = createInsertSchema(userPreferences).o
 
 export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
 export type UserPreferences = typeof userPreferences.$inferSelect;
+
+// Chat System Tables
+export const chatChannels = pgTable("chat_channels", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  type: varchar("type", { length: 50 }).notNull(), // 'direct', 'group', 'contextual'
+  description: text("description"),
+  contextType: varchar("context_type", { length: 50 }), // 'job', 'operation', 'resource', 'goal', etc.
+  contextId: integer("context_id"), // ID of the related object
+  isPrivate: boolean("is_private").default(false),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  lastMessageAt: timestamp("last_message_at"),
+});
+
+export const chatMembers = pgTable("chat_members", {
+  id: serial("id").primaryKey(),
+  channelId: integer("channel_id").notNull().references(() => chatChannels.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  role: varchar("role", { length: 50 }).default("member"), // 'owner', 'admin', 'member'
+  joinedAt: timestamp("joined_at").defaultNow(),
+  lastReadAt: timestamp("last_read_at"),
+}, (table) => ({
+  channelUserUnique: unique().on(table.channelId, table.userId),
+}));
+
+export const chatMessages = pgTable("chat_messages", {
+  id: serial("id").primaryKey(),
+  channelId: integer("channel_id").notNull().references(() => chatChannels.id, { onDelete: "cascade" }),
+  senderId: integer("sender_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  messageType: varchar("message_type", { length: 50 }).default("text"), // 'text', 'file', 'system', 'mention'
+  replyToId: integer("reply_to_id").references(() => chatMessages.id),
+  attachments: jsonb("attachments"), // Array of file attachments
+  metadata: jsonb("metadata"), // Additional message data
+  isEdited: boolean("is_edited").default(false),
+  editedAt: timestamp("edited_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  deletedAt: timestamp("deleted_at"),
+}, (table) => ({
+  channelCreatedAtIdx: index("chat_messages_channel_created_at_idx").on(table.channelId, table.createdAt),
+}));
+
+export const chatReactions = pgTable("chat_reactions", {
+  id: serial("id").primaryKey(),
+  messageId: integer("message_id").notNull().references(() => chatMessages.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  emoji: varchar("emoji", { length: 50 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  messageUserEmojiUnique: unique().on(table.messageId, table.userId, table.emoji),
+}));
+
+// Chat Relations
+export const chatChannelsRelations = relations(chatChannels, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [chatChannels.createdBy],
+    references: [users.id],
+  }),
+  members: many(chatMembers),
+  messages: many(chatMessages),
+}));
+
+export const chatMembersRelations = relations(chatMembers, ({ one }) => ({
+  channel: one(chatChannels, {
+    fields: [chatMembers.channelId],
+    references: [chatChannels.id],
+  }),
+  user: one(users, {
+    fields: [chatMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const chatMessagesRelations = relations(chatMessages, ({ one, many }) => ({
+  channel: one(chatChannels, {
+    fields: [chatMessages.channelId],
+    references: [chatChannels.id],
+  }),
+  sender: one(users, {
+    fields: [chatMessages.senderId],
+    references: [users.id],
+  }),
+  replyTo: one(chatMessages, {
+    fields: [chatMessages.replyToId],
+    references: [chatMessages.id],
+  }),
+  reactions: many(chatReactions),
+}));
+
+export const chatReactionsRelations = relations(chatReactions, ({ one }) => ({
+  message: one(chatMessages, {
+    fields: [chatReactions.messageId],
+    references: [chatMessages.id],
+  }),
+  user: one(users, {
+    fields: [chatReactions.userId],
+    references: [users.id],
+  }),
+}));
+
+// Chat Insert Schemas
+export const insertChatChannelSchema = createInsertSchema(chatChannels).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastMessageAt: true,
+});
+
+export const insertChatMemberSchema = createInsertSchema(chatMembers).omit({
+  id: true,
+  joinedAt: true,
+});
+
+export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertChatReactionSchema = createInsertSchema(chatReactions).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Chat Types
+export type ChatChannel = typeof chatChannels.$inferSelect;
+export type InsertChatChannel = z.infer<typeof insertChatChannelSchema>;
+export type ChatMember = typeof chatMembers.$inferSelect;
+export type InsertChatMember = z.infer<typeof insertChatMemberSchema>;
+export type ChatMessage = typeof chatMessages.$inferSelect;
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+export type ChatReaction = typeof chatReactions.$inferSelect;
+export type InsertChatReaction = z.infer<typeof insertChatReactionSchema>;

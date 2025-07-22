@@ -25,7 +25,10 @@ import {
   demoTourParticipants, type DemoTourParticipant, type InsertDemoTourParticipant,
   voiceRecordingsCache, type VoiceRecordingsCache, type InsertVoiceRecordingsCache,
   tours, type Tour, type InsertTour,
-  userPreferences, type UserPreferences, type InsertUserPreferences
+  userPreferences, type UserPreferences, type InsertUserPreferences,
+  chatChannels, chatMembers, chatMessages, chatReactions,
+  type ChatChannel, type ChatMember, type ChatMessage, type ChatReaction,
+  type InsertChatChannel, type InsertChatMember, type InsertChatMessage, type InsertChatReaction
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, like, ne, inArray } from "drizzle-orm";
@@ -353,6 +356,39 @@ export interface IStorage {
   updateTour(id: number, tour: Partial<InsertTour>): Promise<Tour | undefined>;
   deleteTour(id: number): Promise<boolean>;
   upsertTour(tour: InsertTour): Promise<Tour>;
+
+  // Chat System
+  // Chat Channels
+  getChatChannels(userId: number): Promise<ChatChannel[]>;
+  getChatChannel(id: number): Promise<ChatChannel | undefined>;
+  createChatChannel(channel: InsertChatChannel): Promise<ChatChannel>;
+  updateChatChannel(id: number, channel: Partial<InsertChatChannel>): Promise<ChatChannel | undefined>;
+  deleteChatChannel(id: number): Promise<boolean>;
+  
+  // Chat Members
+  getChatMembers(channelId: number): Promise<ChatMember[]>;
+  addChatMember(member: InsertChatMember): Promise<ChatMember>;
+  removeChatMember(channelId: number, userId: number): Promise<boolean>;
+  updateChatMemberRole(channelId: number, userId: number, role: string): Promise<ChatMember | undefined>;
+  
+  // Chat Messages
+  getChatMessages(channelId: number, limit?: number, offset?: number): Promise<ChatMessage[]>;
+  getChatMessage(id: number): Promise<ChatMessage | undefined>;
+  createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  updateChatMessage(id: number, message: Partial<InsertChatMessage>): Promise<ChatMessage | undefined>;
+  deleteChatMessage(id: number): Promise<boolean>;
+  
+  // Chat Reactions
+  getChatReactions(messageId: number): Promise<ChatReaction[]>;
+  addChatReaction(reaction: InsertChatReaction): Promise<ChatReaction>;
+  removeChatReaction(messageId: number, userId: number, emoji: string): Promise<boolean>;
+  
+  // Direct Messages
+  getOrCreateDirectChannel(user1Id: number, user2Id: number): Promise<ChatChannel>;
+  
+  // Contextual Chats
+  getContextualChannel(contextType: string, contextId: number): Promise<ChatChannel | undefined>;
+  createContextualChannel(contextType: string, contextId: number, name: string, createdBy: number): Promise<ChatChannel>;
 }
 
 export class MemStorage implements IStorage {
@@ -2911,6 +2947,221 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return updatedUser || undefined;
+  }
+
+  // Chat System Implementations
+
+  // Chat Channels
+  async getChatChannels(userId: number): Promise<ChatChannel[]> {
+    return await db
+      .select()
+      .from(chatChannels)
+      .innerJoin(chatMembers, eq(chatChannels.id, chatMembers.channelId))
+      .where(eq(chatMembers.userId, userId))
+      .orderBy(desc(chatChannels.lastMessageAt));
+  }
+
+  async getChatChannel(id: number): Promise<ChatChannel | undefined> {
+    const [channel] = await db.select().from(chatChannels).where(eq(chatChannels.id, id));
+    return channel || undefined;
+  }
+
+  async createChatChannel(channel: InsertChatChannel): Promise<ChatChannel> {
+    const [newChannel] = await db.insert(chatChannels).values(channel).returning();
+    return newChannel;
+  }
+
+  async updateChatChannel(id: number, channel: Partial<InsertChatChannel>): Promise<ChatChannel | undefined> {
+    const [updatedChannel] = await db
+      .update(chatChannels)
+      .set({ ...channel, updatedAt: new Date() })
+      .where(eq(chatChannels.id, id))
+      .returning();
+    return updatedChannel || undefined;
+  }
+
+  async deleteChatChannel(id: number): Promise<boolean> {
+    const result = await db.delete(chatChannels).where(eq(chatChannels.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Chat Members
+  async getChatMembers(channelId: number): Promise<ChatMember[]> {
+    return await db.select().from(chatMembers).where(eq(chatMembers.channelId, channelId));
+  }
+
+  async addChatMember(member: InsertChatMember): Promise<ChatMember> {
+    const [newMember] = await db.insert(chatMembers).values(member).returning();
+    return newMember;
+  }
+
+  async removeChatMember(channelId: number, userId: number): Promise<boolean> {
+    const result = await db
+      .delete(chatMembers)
+      .where(and(eq(chatMembers.channelId, channelId), eq(chatMembers.userId, userId)));
+    return result.rowCount > 0;
+  }
+
+  async updateChatMemberRole(channelId: number, userId: number, role: string): Promise<ChatMember | undefined> {
+    const [updatedMember] = await db
+      .update(chatMembers)
+      .set({ role })
+      .where(and(eq(chatMembers.channelId, channelId), eq(chatMembers.userId, userId)))
+      .returning();
+    return updatedMember || undefined;
+  }
+
+  // Chat Messages
+  async getChatMessages(channelId: number, limit: number = 50, offset: number = 0): Promise<ChatMessage[]> {
+    return await db
+      .select()
+      .from(chatMessages)
+      .where(and(eq(chatMessages.channelId, channelId), isNull(chatMessages.deletedAt)))
+      .orderBy(desc(chatMessages.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async getChatMessage(id: number): Promise<ChatMessage | undefined> {
+    const [message] = await db
+      .select()
+      .from(chatMessages)
+      .where(and(eq(chatMessages.id, id), isNull(chatMessages.deletedAt)));
+    return message || undefined;
+  }
+
+  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
+    const [newMessage] = await db.insert(chatMessages).values(message).returning();
+    
+    // Update the channel's lastMessageAt timestamp
+    await db
+      .update(chatChannels)
+      .set({ lastMessageAt: new Date() })
+      .where(eq(chatChannels.id, message.channelId));
+    
+    return newMessage;
+  }
+
+  async updateChatMessage(id: number, message: Partial<InsertChatMessage>): Promise<ChatMessage | undefined> {
+    const [updatedMessage] = await db
+      .update(chatMessages)
+      .set({ ...message, isEdited: true, editedAt: new Date() })
+      .where(eq(chatMessages.id, id))
+      .returning();
+    return updatedMessage || undefined;
+  }
+
+  async deleteChatMessage(id: number): Promise<boolean> {
+    const [deletedMessage] = await db
+      .update(chatMessages)
+      .set({ deletedAt: new Date() })
+      .where(eq(chatMessages.id, id))
+      .returning();
+    return !!deletedMessage;
+  }
+
+  // Chat Reactions
+  async getChatReactions(messageId: number): Promise<ChatReaction[]> {
+    return await db.select().from(chatReactions).where(eq(chatReactions.messageId, messageId));
+  }
+
+  async addChatReaction(reaction: InsertChatReaction): Promise<ChatReaction> {
+    const [newReaction] = await db.insert(chatReactions).values(reaction).returning();
+    return newReaction;
+  }
+
+  async removeChatReaction(messageId: number, userId: number, emoji: string): Promise<boolean> {
+    const result = await db
+      .delete(chatReactions)
+      .where(
+        and(
+          eq(chatReactions.messageId, messageId),
+          eq(chatReactions.userId, userId),
+          eq(chatReactions.emoji, emoji)
+        )
+      );
+    return result.rowCount > 0;
+  }
+
+  // Direct Messages
+  async getOrCreateDirectChannel(user1Id: number, user2Id: number): Promise<ChatChannel> {
+    // First try to find existing direct message channel between these users
+    const existingChannel = await db
+      .select({ channel: chatChannels })
+      .from(chatChannels)
+      .innerJoin(chatMembers, eq(chatChannels.id, chatMembers.channelId))
+      .where(
+        and(
+          eq(chatChannels.type, 'direct'),
+          or(
+            and(eq(chatMembers.userId, user1Id)),
+            and(eq(chatMembers.userId, user2Id))
+          )
+        )
+      )
+      .groupBy(chatChannels.id)
+      .having(sql`count(distinct ${chatMembers.userId}) = 2`);
+
+    if (existingChannel.length > 0) {
+      return existingChannel[0].channel;
+    }
+
+    // Create new direct message channel
+    const [newChannel] = await db
+      .insert(chatChannels)
+      .values({
+        name: `Direct Message`,
+        type: 'direct',
+        isPrivate: true,
+        createdBy: user1Id,
+      })
+      .returning();
+
+    // Add both users as members
+    await db.insert(chatMembers).values([
+      { channelId: newChannel.id, userId: user1Id, role: 'member' },
+      { channelId: newChannel.id, userId: user2Id, role: 'member' },
+    ]);
+
+    return newChannel;
+  }
+
+  // Contextual Chats
+  async getContextualChannel(contextType: string, contextId: number): Promise<ChatChannel | undefined> {
+    const [channel] = await db
+      .select()
+      .from(chatChannels)
+      .where(
+        and(
+          eq(chatChannels.type, 'contextual'),
+          eq(chatChannels.contextType, contextType),
+          eq(chatChannels.contextId, contextId)
+        )
+      );
+    return channel || undefined;
+  }
+
+  async createContextualChannel(contextType: string, contextId: number, name: string, createdBy: number): Promise<ChatChannel> {
+    const [newChannel] = await db
+      .insert(chatChannels)
+      .values({
+        name,
+        type: 'contextual',
+        contextType,
+        contextId,
+        isPrivate: false,
+        createdBy,
+      })
+      .returning();
+
+    // Add creator as owner
+    await db.insert(chatMembers).values({
+      channelId: newChannel.id,
+      userId: createdBy,
+      role: 'owner',
+    });
+
+    return newChannel;
   }
 }
 

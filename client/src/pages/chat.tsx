@@ -1,0 +1,524 @@
+import { useState, useEffect, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  MessageCircle, 
+  Plus, 
+  Send, 
+  Search, 
+  Users, 
+  Hash, 
+  UserPlus,
+  Settings,
+  Smile,
+  Edit,
+  Trash2
+} from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+
+interface Channel {
+  id: number;
+  name: string;
+  description?: string;
+  type: "direct" | "group" | "general";
+  isPrivate: boolean;
+  objectType?: string;
+  objectId?: number;
+  participants: Participant[];
+  createdAt: string;
+  unreadCount?: number;
+}
+
+interface Participant {
+  userId: number;
+  username: string;
+  firstName?: string;
+  lastName?: string;
+  profileImageUrl?: string;
+  role: "member" | "admin";
+  joinedAt: string;
+}
+
+interface Message {
+  id: number;
+  content: string;
+  senderId: number;
+  senderName: string;
+  senderAvatar?: string;
+  channelId: number;
+  messageType: "text" | "file" | "system";
+  parentMessageId?: number;
+  editedAt?: string;
+  reactions: Reaction[];
+  createdAt: string;
+}
+
+interface Reaction {
+  id: number;
+  emoji: string;
+  userId: number;
+  username: string;
+}
+
+export default function Chat() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [selectedChannelId, setSelectedChannelId] = useState<number | null>(null);
+  const [newMessage, setNewMessage] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showCreateChannel, setShowCreateChannel] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Fetch user's channels
+  const { data: channels = [], isLoading: channelsLoading } = useQuery<Channel[]>({
+    queryKey: ['/api/chat/channels'],
+  });
+
+  // Fetch messages for selected channel
+  const { data: messages = [], isLoading: messagesLoading } = useQuery<Message[]>({
+    queryKey: ['/api/chat/channels', selectedChannelId, 'messages'],
+    enabled: !!selectedChannelId,
+  });
+
+  // Send message mutation
+  const sendMessageMutation = useMutation({
+    mutationFn: async (data: { channelId: number; content: string; messageType?: string }) => {
+      return apiRequest('POST', `/api/chat/channels/${data.channelId}/messages`, data);
+    },
+    onSuccess: () => {
+      setNewMessage("");
+      queryClient.invalidateQueries({ queryKey: ['/api/chat/channels', selectedChannelId, 'messages'] });
+      scrollToBottom();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create channel mutation
+  const createChannelMutation = useMutation({
+    mutationFn: async (channelData: any) => {
+      return apiRequest('POST', '/api/chat/channels', channelData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/chat/channels'] });
+      setShowCreateChannel(false);
+      toast({
+        title: "Success",
+        description: "Channel created successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error", 
+        description: "Failed to create channel",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Scroll to bottom of messages
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // Auto-select first channel if none selected
+  useEffect(() => {
+    if (channels.length > 0 && !selectedChannelId) {
+      setSelectedChannelId(channels[0].id);
+    }
+  }, [channels, selectedChannelId]);
+
+  const handleSendMessage = () => {
+    if (!newMessage.trim() || !selectedChannelId) return;
+    
+    sendMessageMutation.mutate({
+      channelId: selectedChannelId,
+      content: newMessage.trim(),
+      messageType: "text"
+    });
+  };
+
+  const selectedChannel = channels.find(c => c.id === selectedChannelId);
+
+  const getChannelIcon = (channel: Channel) => {
+    switch (channel.type) {
+      case "direct":
+        return <MessageCircle className="h-4 w-4" />;
+      case "group":
+        return <Users className="h-4 w-4" />;
+      default:
+        return <Hash className="h-4 w-4" />;
+    }
+  };
+
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    
+    if (isToday) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  return (
+    <div className="flex h-screen bg-background">
+      {/* Sidebar - Channels List */}
+      <div className="w-64 border-r bg-card flex flex-col">
+        <div className="p-4 border-b">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold">Messages</h2>
+            <Dialog open={showCreateChannel} onOpenChange={setShowCreateChannel}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <CreateChannelDialog 
+                onSubmit={createChannelMutation.mutate}
+                isLoading={createChannelMutation.isPending}
+              />
+            </Dialog>
+          </div>
+          
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search conversations..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        <ScrollArea className="flex-1">
+          <div className="p-2 space-y-1">
+            {channelsLoading ? (
+              <div className="p-4 text-center text-sm text-muted-foreground">Loading channels...</div>
+            ) : channels.length === 0 ? (
+              <div className="p-4 text-center text-sm text-muted-foreground">No conversations yet</div>
+            ) : (
+              channels
+                .filter(channel => 
+                  !searchQuery || 
+                  channel.name.toLowerCase().includes(searchQuery.toLowerCase())
+                )
+                .map((channel) => (
+                  <Button
+                    key={channel.id}
+                    variant={selectedChannelId === channel.id ? "secondary" : "ghost"}
+                    className="w-full justify-start p-3 h-auto"
+                    onClick={() => setSelectedChannelId(channel.id)}
+                  >
+                    <div className="flex items-start space-x-3 w-full">
+                      <div className="mt-0.5">
+                        {getChannelIcon(channel)}
+                      </div>
+                      <div className="flex-1 min-w-0 text-left">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium truncate">{channel.name}</span>
+                          {channel.unreadCount && (
+                            <Badge variant="destructive" className="text-xs">
+                              {channel.unreadCount}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {channel.participants.length} participant{channel.participants.length !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    </div>
+                  </Button>
+                ))
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {selectedChannel ? (
+          <>
+            {/* Chat Header */}
+            <div className="border-b p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  {getChannelIcon(selectedChannel)}
+                  <div>
+                    <h3 className="font-semibold">{selectedChannel.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedChannel.participants.length} participant{selectedChannel.participants.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Button variant="ghost" size="sm">
+                    <UserPlus className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Messages Area */}
+            <ScrollArea className="flex-1 p-4">
+              <div className="space-y-4">
+                {messagesLoading ? (
+                  <div className="text-center text-sm text-muted-foreground">Loading messages...</div>
+                ) : messages.length === 0 ? (
+                  <div className="text-center text-sm text-muted-foreground">No messages yet. Start the conversation!</div>
+                ) : (
+                  messages.map((message) => (
+                    <div key={message.id} className="flex items-start space-x-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={message.senderAvatar} />
+                        <AvatarFallback>{getInitials(message.senderName)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium text-sm">{message.senderName}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatTime(message.createdAt)}
+                          </span>
+                          {message.editedAt && (
+                            <span className="text-xs text-muted-foreground">(edited)</span>
+                          )}
+                        </div>
+                        <div className="bg-secondary/50 rounded-lg p-3">
+                          <p className="text-sm">{message.content}</p>
+                          {message.reactions.length > 0 && (
+                            <div className="flex gap-1 mt-2">
+                              {message.reactions.reduce((acc: any[], reaction) => {
+                                const existing = acc.find(r => r.emoji === reaction.emoji);
+                                if (existing) {
+                                  existing.count++;
+                                  existing.users.push(reaction.username);
+                                } else {
+                                  acc.push({ 
+                                    emoji: reaction.emoji, 
+                                    count: 1, 
+                                    users: [reaction.username] 
+                                  });
+                                }
+                                return acc;
+                              }, []).map((reaction, index) => (
+                                <Button
+                                  key={index}
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-6 px-2 text-xs"
+                                >
+                                  {reaction.emoji} {reaction.count}
+                                </Button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
+
+            {/* Message Input */}
+            <div className="border-t p-4">
+              <div className="flex items-end space-x-2">
+                <div className="flex-1">
+                  <Textarea
+                    placeholder="Type your message..."
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    className="min-h-[40px] max-h-32 resize-none"
+                  />
+                </div>
+                <Button 
+                  onClick={handleSendMessage}
+                  disabled={!newMessage.trim() || sendMessageMutation.isPending}
+                  size="sm"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="font-semibold mb-2">Select a conversation</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Choose a conversation from the sidebar to start messaging
+              </p>
+              <Button onClick={() => setShowCreateChannel(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Start New Conversation
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CreateChannelDialog({ 
+  onSubmit, 
+  isLoading 
+}: { 
+  onSubmit: (data: any) => void; 
+  isLoading: boolean; 
+}) {
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    type: "group" as "direct" | "group" | "general",
+    isPrivate: false,
+    objectType: "",
+    objectId: ""
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim()) return;
+
+    onSubmit({
+      ...formData,
+      objectId: formData.objectId ? parseInt(formData.objectId) : undefined
+    });
+  };
+
+  return (
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Create New Conversation</DialogTitle>
+      </DialogHeader>
+      
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="text-sm font-medium">Conversation Name</label>
+          <Input
+            value={formData.name}
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            placeholder="Enter conversation name"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-medium">Description (Optional)</label>
+          <Textarea
+            value={formData.description}
+            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+            placeholder="Describe what this conversation is about"
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-medium">Type</label>
+          <Select 
+            value={formData.type} 
+            onValueChange={(value: "direct" | "group" | "general") => 
+              setFormData(prev => ({ ...prev, type: value }))
+            }
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="direct">Direct Message</SelectItem>
+              <SelectItem value="group">Group Chat</SelectItem>
+              <SelectItem value="general">General Discussion</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium">Related to (Optional)</label>
+          <div className="grid grid-cols-2 gap-2">
+            <Select
+              value={formData.objectType}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, objectType: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">None</SelectItem>
+                <SelectItem value="job">Job/Order</SelectItem>
+                <SelectItem value="operation">Operation</SelectItem>
+                <SelectItem value="resource">Resource</SelectItem>
+                <SelectItem value="project">Project</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {formData.objectType && (
+              <Input
+                type="number"
+                value={formData.objectId}
+                onChange={(e) => setFormData(prev => ({ ...prev, objectId: e.target.value }))}
+                placeholder="ID"
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="isPrivate"
+            checked={formData.isPrivate}
+            onChange={(e) => setFormData(prev => ({ ...prev, isPrivate: e.target.checked }))}
+            className="rounded"
+          />
+          <label htmlFor="isPrivate" className="text-sm">Private conversation</label>
+        </div>
+
+        <div className="flex justify-end space-x-2">
+          <Button type="button" variant="outline">Cancel</Button>
+          <Button type="submit" disabled={isLoading || !formData.name.trim()}>
+            {isLoading ? "Creating..." : "Create Conversation"}
+          </Button>
+        </div>
+      </form>
+    </DialogContent>
+  );
+}

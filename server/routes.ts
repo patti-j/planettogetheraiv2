@@ -17,7 +17,8 @@ import {
   insertUserRoleSchema, insertRolePermissionSchema,
   insertDemoTourParticipantSchema,
   insertVoiceRecordingsCacheSchema,
-  insertDisruptionSchema, insertDisruptionActionSchema, insertDisruptionEscalationSchema
+  insertDisruptionSchema, insertDisruptionActionSchema, insertDisruptionEscalationSchema,
+  insertChatChannelSchema, insertChatMemberSchema, insertChatMessageSchema, insertChatReactionSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -5436,6 +5437,254 @@ Create a natural, conversational voice script that explains this feature to some
     } catch (error) {
       console.error("Error updating user preferences:", error);
       res.status(500).json({ error: "Failed to update user preferences" });
+    }
+  });
+
+  // Chat API routes
+  // Get all channels for a user
+  app.get("/api/chat/channels", requireAuth, async (req, res) => {
+    try {
+      const channels = await storage.getUserChannels(req.user.id);
+      res.json(channels);
+    } catch (error) {
+      console.error("Error fetching channels:", error);
+      res.status(500).json({ error: "Failed to fetch channels" });
+    }
+  });
+
+  // Create a new channel
+  app.post("/api/chat/channels", requireAuth, async (req, res) => {
+    try {
+      const channelData = insertChatChannelSchema.parse({
+        ...req.body,
+        createdBy: req.user.id
+      });
+      const channel = await storage.createChannel(channelData);
+      res.status(201).json(channel);
+    } catch (error) {
+      console.error("Error creating channel:", error);
+      res.status(500).json({ error: "Failed to create channel" });
+    }
+  });
+
+  // Get channel details with participants
+  app.get("/api/chat/channels/:channelId", requireAuth, async (req, res) => {
+    try {
+      const channelId = parseInt(req.params.channelId);
+      if (isNaN(channelId)) {
+        return res.status(400).json({ error: "Invalid channel ID" });
+      }
+
+      const channel = await storage.getChannelWithParticipants(channelId);
+      if (!channel) {
+        return res.status(404).json({ error: "Channel not found" });
+      }
+
+      // Check if user is a participant
+      const isParticipant = channel.participants.some(p => p.userId === req.user.id);
+      if (!isParticipant) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      res.json(channel);
+    } catch (error) {
+      console.error("Error fetching channel:", error);
+      res.status(500).json({ error: "Failed to fetch channel" });
+    }
+  });
+
+  // Add participant to channel
+  app.post("/api/chat/channels/:channelId/participants", requireAuth, async (req, res) => {
+    try {
+      const channelId = parseInt(req.params.channelId);
+      if (isNaN(channelId)) {
+        return res.status(400).json({ error: "Invalid channel ID" });
+      }
+
+      const memberData = insertChatMemberSchema.parse({
+        ...req.body,
+        channelId,
+        addedBy: req.user.id
+      });
+      
+      const member = await storage.addChannelParticipant(memberData);
+      res.status(201).json(member);
+    } catch (error) {
+      console.error("Error adding participant:", error);
+      res.status(500).json({ error: "Failed to add participant" });
+    }
+  });
+
+  // Remove participant from channel
+  app.delete("/api/chat/channels/:channelId/participants/:userId", requireAuth, async (req, res) => {
+    try {
+      const channelId = parseInt(req.params.channelId);
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(channelId) || isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid channel ID or user ID" });
+      }
+
+      const success = await storage.removeChannelParticipant(channelId, userId);
+      if (!success) {
+        return res.status(404).json({ error: "Participant not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing participant:", error);
+      res.status(500).json({ error: "Failed to remove participant" });
+    }
+  });
+
+  // Get messages for a channel
+  app.get("/api/chat/channels/:channelId/messages", requireAuth, async (req, res) => {
+    try {
+      const channelId = parseInt(req.params.channelId);
+      if (isNaN(channelId)) {
+        return res.status(400).json({ error: "Invalid channel ID" });
+      }
+
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = parseInt(req.query.offset as string) || 0;
+
+      const messages = await storage.getChannelMessages(channelId, limit, offset);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ error: "Failed to fetch messages" });
+    }
+  });
+
+  // Send a message
+  app.post("/api/chat/channels/:channelId/messages", requireAuth, async (req, res) => {
+    try {
+      const channelId = parseInt(req.params.channelId);
+      if (isNaN(channelId)) {
+        return res.status(400).json({ error: "Invalid channel ID" });
+      }
+
+      const messageData = insertChatMessageSchema.parse({
+        ...req.body,
+        channelId,
+        senderId: req.user.id
+      });
+
+      const message = await storage.createMessage(messageData);
+      res.status(201).json(message);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      res.status(500).json({ error: "Failed to send message" });
+    }
+  });
+
+  // Update a message
+  app.patch("/api/chat/messages/:messageId", requireAuth, async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.messageId);
+      if (isNaN(messageId)) {
+        return res.status(400).json({ error: "Invalid message ID" });
+      }
+
+      const { content } = req.body;
+      if (!content) {
+        return res.status(400).json({ error: "Content is required" });
+      }
+
+      const message = await storage.updateMessage(messageId, req.user.id, content);
+      if (!message) {
+        return res.status(404).json({ error: "Message not found or access denied" });
+      }
+
+      res.json(message);
+    } catch (error) {
+      console.error("Error updating message:", error);
+      res.status(500).json({ error: "Failed to update message" });
+    }
+  });
+
+  // Delete a message
+  app.delete("/api/chat/messages/:messageId", requireAuth, async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.messageId);
+      if (isNaN(messageId)) {
+        return res.status(400).json({ error: "Invalid message ID" });
+      }
+
+      const success = await storage.deleteMessage(messageId, req.user.id);
+      if (!success) {
+        return res.status(404).json({ error: "Message not found or access denied" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      res.status(500).json({ error: "Failed to delete message" });
+    }
+  });
+
+  // Add reaction to message
+  app.post("/api/chat/messages/:messageId/reactions", requireAuth, async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.messageId);
+      if (isNaN(messageId)) {
+        return res.status(400).json({ error: "Invalid message ID" });
+      }
+
+      const reactionData = insertChatReactionSchema.parse({
+        ...req.body,
+        messageId,
+        userId: req.user.id
+      });
+
+      const reaction = await storage.addReaction(reactionData);
+      res.status(201).json(reaction);
+    } catch (error) {
+      console.error("Error adding reaction:", error);
+      res.status(500).json({ error: "Failed to add reaction" });
+    }
+  });
+
+  // Remove reaction from message
+  app.delete("/api/chat/messages/:messageId/reactions/:emoji", requireAuth, async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.messageId);
+      const { emoji } = req.params;
+      
+      if (isNaN(messageId)) {
+        return res.status(400).json({ error: "Invalid message ID" });
+      }
+
+      const success = await storage.removeReaction(messageId, req.user.id, emoji);
+      if (!success) {
+        return res.status(404).json({ error: "Reaction not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing reaction:", error);
+      res.status(500).json({ error: "Failed to remove reaction" });
+    }
+  });
+
+  // Search messages
+  app.get("/api/chat/search", requireAuth, async (req, res) => {
+    try {
+      const { query, channelId } = req.query;
+      if (!query) {
+        return res.status(400).json({ error: "Search query is required" });
+      }
+
+      const messages = await storage.searchMessages(
+        req.user.id, 
+        query as string, 
+        channelId ? parseInt(channelId as string) : undefined
+      );
+      
+      res.json(messages);
+    } catch (error) {
+      console.error("Error searching messages:", error);
+      res.status(500).json({ error: "Failed to search messages" });
     }
   });
 
