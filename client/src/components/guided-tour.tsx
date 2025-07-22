@@ -1216,7 +1216,8 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                   className={`px-2 ${autoAdvance ? 'bg-green-600 hover:bg-green-700 text-white' : 'text-gray-600 border-gray-200 hover:bg-gray-50'}`}
                   title={autoAdvance ? "Turn off auto-advance" : "Turn on auto-advance"}
                 >
-                  {autoAdvance ? <Timer className="h-3 w-3" /> : <TimerOff className="h-3 w-3" />}
+                  {autoAdvance ? <Timer className="h-3 w-3 mr-1" /> : <TimerOff className="h-3 w-3 mr-1" />}
+                  {autoAdvance ? "Auto" : "Manual"}
                 </Button>
                 
                 <Button 
