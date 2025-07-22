@@ -792,18 +792,39 @@ function TourManagementSection() {
     return !existingTourRoles.has(roleKey);
   });
 
-  const generateTourWithAI = useMutation({
+  const regenerateTourWithAI = useMutation({
     mutationFn: async (roles: string[]) => {
       return apiRequest("POST", "/api/ai/generate-tour", { roles });
     },
     onSuccess: (data, variables) => {
       toast({
-        title: "Tour Generated",
-        description: `AI has successfully generated tours for ${variables.length} role(s)`,
+        title: "Tours Regenerated",
+        description: `AI has successfully regenerated tours for ${variables.length} role(s)`,
         variant: "default",
       });
       // Clear selections after successful generation
       setSelectedRoles([]);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Regeneration Failed",
+        description: error.message || "Failed to regenerate tour content",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const generateNewToursWithAI = useMutation({
+    mutationFn: async (roles: string[]) => {
+      return apiRequest("POST", "/api/ai/generate-tour", { roles });
+    },
+    onSuccess: (data, variables) => {
+      toast({
+        title: "Tours Generated",
+        description: `AI has successfully generated tours for ${variables.length} new role(s)`,
+        variant: "default",
+      });
+      // Clear selections after successful generation
       setSelectedMissingRoles([]);
     },
     onError: (error: any) => {
@@ -842,11 +863,11 @@ function TourManagementSection() {
       });
       return;
     }
-    generateTourWithAI.mutate(selectedRoles);
+    regenerateTourWithAI.mutate(selectedRoles);
   };
 
   const handleGenerateAllTours = () => {
-    generateTourWithAI.mutate(allRoles);
+    regenerateTourWithAI.mutate(allRoles);
   };
 
   const handleGenerateMissingTours = () => {
@@ -864,7 +885,7 @@ function TourManagementSection() {
       return role ? role.name : roleId;
     });
     
-    generateTourWithAI.mutate(selectedRoleNames);
+    generateNewToursWithAI.mutate(selectedRoleNames);
   };
 
   return (
@@ -881,7 +902,7 @@ function TourManagementSection() {
         <div className="flex gap-2">
           <Button
             onClick={handleGenerateSelectedTours}
-            disabled={generateTourWithAI.isPending || selectedRoles.length === 0}
+            disabled={regenerateTourWithAI.isPending || selectedRoles.length === 0}
             className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
           >
             <Sparkles className="h-4 w-4 mr-2" />
@@ -889,11 +910,11 @@ function TourManagementSection() {
           </Button>
           <Button
             onClick={handleGenerateAllTours}
-            disabled={generateTourWithAI.isPending}
+            disabled={regenerateTourWithAI.isPending}
             variant="outline"
             className="border-purple-300 text-purple-700 hover:bg-purple-50"
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${generateTourWithAI.isPending ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 mr-2 ${regenerateTourWithAI.isPending ? 'animate-spin' : ''}`} />
             AI Regenerate All Tours
           </Button>
         </div>
@@ -944,11 +965,15 @@ function TourManagementSection() {
             </div>
             <Button
               onClick={handleGenerateMissingTours}
-              disabled={generateTourWithAI.isPending || selectedMissingRoles.length === 0}
-              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+              disabled={generateNewToursWithAI.isPending || selectedMissingRoles.length === 0}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Generate Tours ({selectedMissingRoles.length})
+              {generateNewToursWithAI.isPending ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4 mr-2" />
+              )}
+              AI Generate Tours ({selectedMissingRoles.length})
             </Button>
           </div>
           
