@@ -314,6 +314,7 @@ export interface IStorage {
   // Voice Recordings Cache
   getVoiceRecording(textHash: string): Promise<VoiceRecordingsCache | undefined>;
   createVoiceRecording(recording: InsertVoiceRecordingsCache): Promise<VoiceRecordingsCache>;
+  saveVoiceRecording(recording: InsertVoiceRecordingsCache): Promise<VoiceRecordingsCache>;
   updateVoiceRecordingUsage(id: number): Promise<void>;
   
   // Tours
@@ -2598,6 +2599,10 @@ export class DatabaseStorage implements IStorage {
         lastUsedAt: new Date()
       })
       .where(eq(voiceRecordingsCache.id, id));
+  }
+
+  async saveVoiceRecording(recording: InsertVoiceRecordingsCache): Promise<VoiceRecordingsCache> {
+    return this.createVoiceRecording(recording);
   }
 
   // Tours methods

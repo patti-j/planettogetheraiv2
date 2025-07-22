@@ -3791,6 +3791,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Pre-generate voice recordings for tour steps
+  async function preGenerateVoiceRecordings(role: string, steps: any[]) {
+    console.log(`Starting voice pre-generation for ${role} with ${steps.length} steps`);
+    
+    for (const step of steps) {
+      if (step.voiceScript) {
+        try {
+          // Create enhanced narration text (same logic as in guided-tour.tsx)
+          const enhancedText = createEngagingNarration(step, role);
+          
+          // Generate voice hash 
+          const cacheKey = `${enhancedText}-nova-female-1.15`;
+          const textHash = crypto.createHash('sha256').update(cacheKey).digest('hex');
+          
+          // Check if already cached
+          const existingCache = await storage.getVoiceRecording(textHash);
+          if (existingCache) {
+            console.log(`Voice already cached for step ${step.id}`);
+            continue;
+          }
+          
+          // Generate new voice recording
+          console.log(`Generating voice for step: ${step.id}`);
+          const audioBuffer = await generateTTSAudio(enhancedText, 'nova', 1.15);
+          
+          // Save to cache
+          await storage.saveVoiceRecording({
+            textHash,
+            role,
+            stepId: step.id,
+            voice: 'nova',
+            audioData: audioBuffer.toString('base64'),
+            fileSize: audioBuffer.length,
+            duration: Math.ceil(enhancedText.length * 50), // Estimate duration
+          });
+          
+          console.log(`Successfully cached voice for step ${step.id}`);
+        } catch (error) {
+          console.error(`Failed to pre-generate voice for step ${step.id}:`, error);
+        }
+      }
+    }
+    console.log(`Completed voice pre-generation for ${role}`);
+  }
+  
+  // Create engaging narration (same logic as guided-tour.tsx)
+  function createEngagingNarration(stepData: any, role: string): string {
+    if (stepData.voiceScript) {
+      return stepData.voiceScript;
+    }
+    
+    const benefit = Array.isArray(stepData.benefits) && stepData.benefits.length > 0 
+      ? stepData.benefits[0] 
+      : stepData.description;
+    
+    return `Let me show you ${stepData.title}. ${stepData.description} ${benefit}`;
+  }
+  
+  // Generate TTS audio using OpenAI
+  async function generateTTSAudio(text: string, voice: string = 'nova', speed: number = 1.15): Promise<Buffer> {
+    const OpenAI = (await import("openai")).default;
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    
+    const response = await openai.audio.speech.create({
+      model: "tts-1",
+      voice: voice as any,
+      input: text,
+      speed: speed,
+      response_format: "mp3"
+    });
+    
+    const buffer = Buffer.from(await response.arrayBuffer());
+    return buffer;
+  }
+
   // AI Tour Generation endpoint
   app.post("/api/ai/generate-tour", async (req, res) => {
     try {
@@ -3951,6 +4026,10 @@ Return JSON format with each role as a top-level key containing tourSteps array.
             });
             savedTours.push(tourRecord);
             console.log(`Successfully saved tour for ${role}:`, tourRecord.id);
+            
+            // Pre-generate voice recordings for all tour steps
+            console.log(`Pre-generating voice recordings for ${role} tour...`);
+            await preGenerateVoiceRecordings(roleKey, steps);
           } catch (saveError) {
             console.error(`Error saving tour for ${role}:`, saveError);
           }

@@ -126,6 +126,17 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 22, 2025)
 
+✓ **Voice Pre-Generation Architecture Implementation (July 22, 2025)**:
+- Implemented pre-generation of voice recordings during tour creation to eliminate real-time generation delays
+- Added preGenerateVoiceRecordings function that runs automatically after tours are saved to database
+- Enhanced tour generation endpoint to pre-cache all voice narrations using OpenAI TTS API
+- Added saveVoiceRecording method to storage interface for voice cache management
+- Voice recordings now stored in voiceRecordingsCache table with textHash for instant retrieval
+- Eliminated infinite loop issues caused by multiple simultaneous voice generation requests
+- Tours now load instantly with pre-cached audio instead of generating voice content in real-time
+- System creates engaging narrations from tour step data and caches with role-specific metadata
+- Performance improvement: Voice generation moved from tour playback time to tour creation time
+
 ✓ **Complete "Start Live Tour" Functionality Implementation (July 22, 2025)**:
 - Fixed role switching dropdown to display all system roles instead of just assigned roles for comprehensive training demonstrations
 - Changed role switcher API endpoint from `/api/users/${userId}/available-roles` to `/api/roles` to show all 10 system roles
