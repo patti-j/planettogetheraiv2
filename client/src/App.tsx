@@ -246,7 +246,9 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/help">
-            <HelpAndGuide />
+            <ProtectedRoute feature="getting-started" action="view">
+              <HelpAndGuide />
+            </ProtectedRoute>
           </Route>
           <Route path="/demo-tour" component={DemoTour} />
           <Route path="/" component={DashboardWithAutoTour} />
