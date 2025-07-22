@@ -18,7 +18,10 @@ import {
   insertDemoTourParticipantSchema,
   insertVoiceRecordingsCacheSchema,
   insertDisruptionSchema, insertDisruptionActionSchema, insertDisruptionEscalationSchema,
-  insertChatChannelSchema, insertChatMemberSchema, insertChatMessageSchema, insertChatReactionSchema
+  insertChatChannelSchema, insertChatMemberSchema, insertChatMessageSchema, insertChatReactionSchema,
+  insertInventoryItemSchema, insertInventoryTransactionSchema, insertInventoryBalanceSchema,
+  insertDemandForecastSchema, insertDemandDriverSchema, insertDemandHistorySchema,
+  insertInventoryOptimizationScenarioSchema, insertOptimizationRecommendationSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -5891,6 +5894,379 @@ Create a natural, conversational voice script that explains this feature to some
     } catch (error) {
       console.error("Error fetching languages:", error);
       res.status(500).json({ error: "Failed to fetch languages" });
+    }
+  });
+
+  // Inventory Management Routes
+  app.get("/api/inventory-items", requireAuth, async (req, res) => {
+    try {
+      const items = await storage.getInventoryItems();
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching inventory items:", error);
+      res.status(500).json({ error: "Failed to fetch inventory items" });
+    }
+  });
+
+  app.get("/api/inventory-items/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const item = await storage.getInventoryItem(id);
+      if (!item) {
+        return res.status(404).json({ error: "Inventory item not found" });
+      }
+      res.json(item);
+    } catch (error) {
+      console.error("Error fetching inventory item:", error);
+      res.status(500).json({ error: "Failed to fetch inventory item" });
+    }
+  });
+
+  app.post("/api/inventory-items", requireAuth, async (req, res) => {
+    try {
+      const data = insertInventoryItemSchema.parse(req.body);
+      const item = await storage.createInventoryItem(data);
+      res.json(item);
+    } catch (error: any) {
+      console.error("Error creating inventory item:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/inventory-items/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const data = insertInventoryItemSchema.partial().parse(req.body);
+      const item = await storage.updateInventoryItem(id, data);
+      if (!item) {
+        return res.status(404).json({ error: "Inventory item not found" });
+      }
+      res.json(item);
+    } catch (error: any) {
+      console.error("Error updating inventory item:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/inventory-items/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteInventoryItem(id);
+      if (!success) {
+        return res.status(404).json({ error: "Inventory item not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting inventory item:", error);
+      res.status(500).json({ error: "Failed to delete inventory item" });
+    }
+  });
+
+  // Inventory Transactions
+  app.get("/api/inventory-transactions", requireAuth, async (req, res) => {
+    try {
+      const itemId = req.query.itemId ? parseInt(req.query.itemId as string) : undefined;
+      const transactions = await storage.getInventoryTransactions(itemId);
+      res.json(transactions);
+    } catch (error) {
+      console.error("Error fetching inventory transactions:", error);
+      res.status(500).json({ error: "Failed to fetch inventory transactions" });
+    }
+  });
+
+  app.post("/api/inventory-transactions", requireAuth, async (req, res) => {
+    try {
+      const data = insertInventoryTransactionSchema.parse(req.body);
+      const transaction = await storage.createInventoryTransaction(data);
+      res.json(transaction);
+    } catch (error: any) {
+      console.error("Error creating inventory transaction:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Inventory Balances
+  app.get("/api/inventory-balances", requireAuth, async (req, res) => {
+    try {
+      const balances = await storage.getInventoryBalances();
+      res.json(balances);
+    } catch (error) {
+      console.error("Error fetching inventory balances:", error);
+      res.status(500).json({ error: "Failed to fetch inventory balances" });
+    }
+  });
+
+  app.get("/api/inventory-balances/:itemId", requireAuth, async (req, res) => {
+    try {
+      const itemId = parseInt(req.params.itemId);
+      const location = req.query.location as string;
+      const balance = await storage.getInventoryBalance(itemId, location);
+      if (!balance) {
+        return res.status(404).json({ error: "Inventory balance not found" });
+      }
+      res.json(balance);
+    } catch (error) {
+      console.error("Error fetching inventory balance:", error);
+      res.status(500).json({ error: "Failed to fetch inventory balance" });
+    }
+  });
+
+  app.put("/api/inventory-balances/:itemId", requireAuth, async (req, res) => {
+    try {
+      const itemId = parseInt(req.params.itemId);
+      const location = req.query.location as string || '';
+      const data = insertInventoryBalanceSchema.partial().parse(req.body);
+      const balance = await storage.updateInventoryBalance(itemId, location, data);
+      if (!balance) {
+        return res.status(404).json({ error: "Inventory balance not found" });
+      }
+      res.json(balance);
+    } catch (error: any) {
+      console.error("Error updating inventory balance:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Demand Forecasting Routes
+  app.get("/api/demand-forecasts", requireAuth, async (req, res) => {
+    try {
+      const itemId = req.query.itemId ? parseInt(req.query.itemId as string) : undefined;
+      const forecasts = await storage.getDemandForecasts(itemId);
+      res.json(forecasts);
+    } catch (error) {
+      console.error("Error fetching demand forecasts:", error);
+      res.status(500).json({ error: "Failed to fetch demand forecasts" });
+    }
+  });
+
+  app.post("/api/demand-forecasts", requireAuth, async (req, res) => {
+    try {
+      const data = insertDemandForecastSchema.parse(req.body);
+      const forecast = await storage.createDemandForecast(data);
+      res.json(forecast);
+    } catch (error: any) {
+      console.error("Error creating demand forecast:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/demand-forecasts/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const data = insertDemandForecastSchema.partial().parse(req.body);
+      const forecast = await storage.updateDemandForecast(id, data);
+      if (!forecast) {
+        return res.status(404).json({ error: "Demand forecast not found" });
+      }
+      res.json(forecast);
+    } catch (error: any) {
+      console.error("Error updating demand forecast:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/demand-forecasts/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteDemandForecast(id);
+      if (!success) {
+        return res.status(404).json({ error: "Demand forecast not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting demand forecast:", error);
+      res.status(500).json({ error: "Failed to delete demand forecast" });
+    }
+  });
+
+  // Demand Drivers
+  app.get("/api/demand-drivers", requireAuth, async (req, res) => {
+    try {
+      const drivers = await storage.getDemandDrivers();
+      res.json(drivers);
+    } catch (error) {
+      console.error("Error fetching demand drivers:", error);
+      res.status(500).json({ error: "Failed to fetch demand drivers" });
+    }
+  });
+
+  app.post("/api/demand-drivers", requireAuth, async (req, res) => {
+    try {
+      const data = insertDemandDriverSchema.parse(req.body);
+      const driver = await storage.createDemandDriver(data);
+      res.json(driver);
+    } catch (error: any) {
+      console.error("Error creating demand driver:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/demand-drivers/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const data = insertDemandDriverSchema.partial().parse(req.body);
+      const driver = await storage.updateDemandDriver(id, data);
+      if (!driver) {
+        return res.status(404).json({ error: "Demand driver not found" });
+      }
+      res.json(driver);
+    } catch (error: any) {
+      console.error("Error updating demand driver:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/demand-drivers/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteDemandDriver(id);
+      if (!success) {
+        return res.status(404).json({ error: "Demand driver not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting demand driver:", error);
+      res.status(500).json({ error: "Failed to delete demand driver" });
+    }
+  });
+
+  // Demand History
+  app.get("/api/demand-history", requireAuth, async (req, res) => {
+    try {
+      const itemId = req.query.itemId ? parseInt(req.query.itemId as string) : undefined;
+      const history = await storage.getDemandHistory(itemId);
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching demand history:", error);
+      res.status(500).json({ error: "Failed to fetch demand history" });
+    }
+  });
+
+  app.post("/api/demand-history", requireAuth, async (req, res) => {
+    try {
+      const data = insertDemandHistorySchema.parse(req.body);
+      const history = await storage.createDemandHistory(data);
+      res.json(history);
+    } catch (error: any) {
+      console.error("Error creating demand history:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Inventory Optimization Routes
+  app.get("/api/inventory-optimization-scenarios", requireAuth, async (req, res) => {
+    try {
+      const scenarios = await storage.getInventoryOptimizationScenarios();
+      res.json(scenarios);
+    } catch (error) {
+      console.error("Error fetching inventory optimization scenarios:", error);
+      res.status(500).json({ error: "Failed to fetch inventory optimization scenarios" });
+    }
+  });
+
+  app.get("/api/inventory-optimization-scenarios/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const scenario = await storage.getInventoryOptimizationScenario(id);
+      if (!scenario) {
+        return res.status(404).json({ error: "Inventory optimization scenario not found" });
+      }
+      res.json(scenario);
+    } catch (error) {
+      console.error("Error fetching inventory optimization scenario:", error);
+      res.status(500).json({ error: "Failed to fetch inventory optimization scenario" });
+    }
+  });
+
+  app.post("/api/inventory-optimization-scenarios", requireAuth, async (req, res) => {
+    try {
+      const data = insertInventoryOptimizationScenarioSchema.parse(req.body);
+      const scenario = await storage.createInventoryOptimizationScenario(data);
+      res.json(scenario);
+    } catch (error: any) {
+      console.error("Error creating inventory optimization scenario:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/inventory-optimization-scenarios/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const data = insertInventoryOptimizationScenarioSchema.partial().parse(req.body);
+      const scenario = await storage.updateInventoryOptimizationScenario(id, data);
+      if (!scenario) {
+        return res.status(404).json({ error: "Inventory optimization scenario not found" });
+      }
+      res.json(scenario);
+    } catch (error: any) {
+      console.error("Error updating inventory optimization scenario:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/inventory-optimization-scenarios/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteInventoryOptimizationScenario(id);
+      if (!success) {
+        return res.status(404).json({ error: "Inventory optimization scenario not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting inventory optimization scenario:", error);
+      res.status(500).json({ error: "Failed to delete inventory optimization scenario" });
+    }
+  });
+
+  // Optimization Recommendations
+  app.get("/api/optimization-recommendations", requireAuth, async (req, res) => {
+    try {
+      const scenarioId = req.query.scenarioId ? parseInt(req.query.scenarioId as string) : undefined;
+      const recommendations = await storage.getOptimizationRecommendations(scenarioId);
+      res.json(recommendations);
+    } catch (error) {
+      console.error("Error fetching optimization recommendations:", error);
+      res.status(500).json({ error: "Failed to fetch optimization recommendations" });
+    }
+  });
+
+  app.post("/api/optimization-recommendations", requireAuth, async (req, res) => {
+    try {
+      const data = insertOptimizationRecommendationSchema.parse(req.body);
+      const recommendation = await storage.createOptimizationRecommendation(data);
+      res.json(recommendation);
+    } catch (error: any) {
+      console.error("Error creating optimization recommendation:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/optimization-recommendations/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const data = insertOptimizationRecommendationSchema.partial().parse(req.body);
+      const recommendation = await storage.updateOptimizationRecommendation(id, data);
+      if (!recommendation) {
+        return res.status(404).json({ error: "Optimization recommendation not found" });
+      }
+      res.json(recommendation);
+    } catch (error: any) {
+      console.error("Error updating optimization recommendation:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/optimization-recommendations/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteOptimizationRecommendation(id);
+      if (!success) {
+        return res.status(404).json({ error: "Optimization recommendation not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting optimization recommendation:", error);
+      res.status(500).json({ error: "Failed to delete optimization recommendation" });
     }
   });
 

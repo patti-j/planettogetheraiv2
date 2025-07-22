@@ -822,6 +822,174 @@ export const insertStaffingPlanSchema = createInsertSchema(staffingPlans).omit({
   updatedAt: true,
 });
 
+// Inventory Management Tables
+export const inventoryItems = pgTable("inventory_items", {
+  id: serial("id").primaryKey(),
+  sku: text("sku").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category").notNull(),
+  type: text("type").notNull().default("raw_material"), // raw_material, work_in_progress, finished_goods, consumables
+  unitOfMeasure: text("unit_of_measure").notNull().default("units"),
+  standardCost: integer("standard_cost").notNull().default(0), // in cents
+  averageCost: integer("average_cost").notNull().default(0), // in cents
+  supplier: text("supplier"),
+  leadTimeDays: integer("lead_time_days").notNull().default(7),
+  minStockLevel: integer("min_stock_level").notNull().default(0),
+  maxStockLevel: integer("max_stock_level").notNull().default(1000),
+  reorderPoint: integer("reorder_point").notNull().default(0),
+  economicOrderQuantity: integer("economic_order_quantity").notNull().default(100),
+  safetyStock: integer("safety_stock").notNull().default(0),
+  abcClassification: text("abc_classification").default("B"), // A, B, C classification
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const inventoryTransactions = pgTable("inventory_transactions", {
+  id: serial("id").primaryKey(),
+  itemId: integer("item_id").references(() => inventoryItems.id).notNull(),
+  transactionType: text("transaction_type").notNull(), // receipt, issue, adjustment, transfer, scrap, return
+  quantity: integer("quantity").notNull(),
+  unitCost: integer("unit_cost").default(0), // in cents
+  totalValue: integer("total_value").default(0), // in cents
+  referenceNumber: text("reference_number"), // PO number, work order, etc.
+  reason: text("reason"),
+  location: text("location").notNull().default("main_warehouse"),
+  userId: integer("user_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const inventoryBalances = pgTable("inventory_balances", {
+  id: serial("id").primaryKey(),
+  itemId: integer("item_id").references(() => inventoryItems.id).notNull(),
+  location: text("location").notNull().default("main_warehouse"),
+  quantityOnHand: integer("quantity_on_hand").notNull().default(0),
+  quantityAllocated: integer("quantity_allocated").notNull().default(0),
+  quantityOnOrder: integer("quantity_on_order").notNull().default(0),
+  quantityAvailable: integer("quantity_available").notNull().default(0),
+  lastTransactionDate: timestamp("last_transaction_date"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  itemLocationIdx: unique().on(table.itemId, table.location),
+}));
+
+// Demand Forecasting Tables
+export const demandForecasts = pgTable("demand_forecasts", {
+  id: serial("id").primaryKey(),
+  itemId: integer("item_id").references(() => inventoryItems.id).notNull(),
+  forecastPeriod: text("forecast_period").notNull(), // daily, weekly, monthly, quarterly
+  forecastDate: timestamp("forecast_date").notNull(),
+  forecastQuantity: integer("forecast_quantity").notNull(),
+  actualQuantity: integer("actual_quantity"), // filled when actual data is available
+  forecastMethod: text("forecast_method").notNull(), // moving_average, exponential_smoothing, linear_regression, seasonal_decomposition
+  confidence_interval: jsonb("confidence_interval").$type<{
+    lower_bound: number;
+    upper_bound: number;
+    confidence_level: number;
+  }>(),
+  seasonality_factor: integer("seasonality_factor").default(100), // percentage multiplier
+  trend_factor: integer("trend_factor").default(100), // percentage multiplier
+  accuracy_metrics: jsonb("accuracy_metrics").$type<{
+    mean_absolute_error: number;
+    mean_squared_error: number;
+    mean_absolute_percentage_error: number;
+    forecast_bias: number;
+  }>(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const demandDrivers = pgTable("demand_drivers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: text("type").notNull(), // seasonal, promotional, economic, competitive, internal
+  impact_factor: integer("impact_factor").notNull().default(100), // percentage impact
+  isActive: boolean("is_active").default(true),
+  applicableItems: jsonb("applicable_items").$type<number[]>().default([]), // item IDs affected
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const demandHistory = pgTable("demand_history", {
+  id: serial("id").primaryKey(),
+  itemId: integer("item_id").references(() => inventoryItems.id).notNull(),
+  period: timestamp("period").notNull(),
+  actualDemand: integer("actual_demand").notNull(),
+  salesQuantity: integer("sales_quantity").default(0),
+  returnQuantity: integer("return_quantity").default(0),
+  promotionalImpact: integer("promotional_impact").default(0),
+  seasonalAdjustment: integer("seasonal_adjustment").default(100), // percentage
+  baselineDemand: integer("baseline_demand"),
+  drivingFactors: jsonb("driving_factors").$type<Array<{
+    driver_id: number;
+    impact_percentage: number;
+    notes?: string;
+  }>>().default([]),
+  dataSource: text("data_source").notNull().default("manual"), // manual, erp, sales_system, pos
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  itemPeriodIdx: unique().on(table.itemId, table.period),
+}));
+
+export const inventoryOptimizationScenarios = pgTable("inventory_optimization_scenarios", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: text("type").notNull().default("reorder_optimization"), // reorder_optimization, safety_stock_optimization, abc_analysis
+  status: text("status").notNull().default("draft"), // draft, running, completed, failed
+  parameters: jsonb("parameters").$type<{
+    service_level_target?: number; // percentage
+    carrying_cost_rate?: number; // annual percentage
+    ordering_cost?: number; // cost per order
+    stockout_cost_rate?: number; // percentage of item value
+    forecast_horizon_days?: number;
+    include_seasonality?: boolean;
+    optimization_method?: string;
+  }>().default({}),
+  results: jsonb("results").$type<{
+    total_inventory_value_before?: number;
+    total_inventory_value_after?: number;
+    total_carrying_cost_savings?: number;
+    service_level_improvement?: number;
+    items_analyzed?: number;
+    items_modified?: number;
+    recommendations_count?: number;
+  }>(),
+  createdBy: integer("created_by"),
+  runStartTime: timestamp("run_start_time"),
+  runEndTime: timestamp("run_end_time"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const optimizationRecommendations = pgTable("optimization_recommendations", {
+  id: serial("id").primaryKey(),
+  scenarioId: integer("scenario_id").references(() => inventoryOptimizationScenarios.id).notNull(),
+  itemId: integer("item_id").references(() => inventoryItems.id).notNull(),
+  recommendationType: text("recommendation_type").notNull(), // reorder_point, safety_stock, order_quantity, abc_classification
+  currentValue: integer("current_value").notNull(),
+  recommendedValue: integer("recommended_value").notNull(),
+  potentialSavings: integer("potential_savings"), // in cents annually
+  impactAnalysis: jsonb("impact_analysis").$type<{
+    inventory_reduction?: number;
+    service_level_impact?: number;
+    carrying_cost_change?: number;
+    ordering_frequency_change?: number;
+    risk_assessment?: string;
+  }>(),
+  confidence_score: integer("confidence_score").default(50), // 0-100
+  implementation_priority: text("implementation_priority").default("medium"), // low, medium, high
+  status: text("status").default("pending"), // pending, approved, implemented, rejected
+  reasoning: text("reasoning"),
+  approvedBy: integer("approved_by"),
+  implementedBy: integer("implemented_by"),
+  approvedAt: timestamp("approved_at"),
+  implementedAt: timestamp("implemented_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertShiftPlanSchema = createInsertSchema(shiftPlans).omit({
   id: true,
   createdAt: true,
@@ -1508,3 +1676,76 @@ export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type ChatReaction = typeof chatReactions.$inferSelect;
 export type InsertChatReaction = z.infer<typeof insertChatReactionSchema>;
+
+// Inventory and Demand Forecasting Insert Schemas
+export const insertInventoryItemSchema = createInsertSchema(inventoryItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertInventoryTransactionSchema = createInsertSchema(inventoryTransactions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertInventoryBalanceSchema = createInsertSchema(inventoryBalances).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export const insertDemandForecastSchema = createInsertSchema(demandForecasts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  forecastDate: z.union([z.string().datetime(), z.date()]),
+});
+
+export const insertDemandDriverSchema = createInsertSchema(demandDrivers).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDemandHistorySchema = createInsertSchema(demandHistory).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  period: z.union([z.string().datetime(), z.date()]),
+});
+
+export const insertInventoryOptimizationScenarioSchema = createInsertSchema(inventoryOptimizationScenarios).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertOptimizationRecommendationSchema = createInsertSchema(optimizationRecommendations).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Inventory and Demand Forecasting Types
+export type InventoryItem = typeof inventoryItems.$inferSelect;
+export type InsertInventoryItem = z.infer<typeof insertInventoryItemSchema>;
+
+export type InventoryTransaction = typeof inventoryTransactions.$inferSelect;
+export type InsertInventoryTransaction = z.infer<typeof insertInventoryTransactionSchema>;
+
+export type InventoryBalance = typeof inventoryBalances.$inferSelect;
+export type InsertInventoryBalance = z.infer<typeof insertInventoryBalanceSchema>;
+
+export type DemandForecast = typeof demandForecasts.$inferSelect;
+export type InsertDemandForecast = z.infer<typeof insertDemandForecastSchema>;
+
+export type DemandDriver = typeof demandDrivers.$inferSelect;
+export type InsertDemandDriver = z.infer<typeof insertDemandDriverSchema>;
+
+export type DemandHistory = typeof demandHistory.$inferSelect;
+export type InsertDemandHistory = z.infer<typeof insertDemandHistorySchema>;
+
+export type InventoryOptimizationScenario = typeof inventoryOptimizationScenarios.$inferSelect;
+export type InsertInventoryOptimizationScenario = z.infer<typeof insertInventoryOptimizationScenarioSchema>;
+
+export type OptimizationRecommendation = typeof optimizationRecommendations.$inferSelect;
+export type InsertOptimizationRecommendation = z.infer<typeof insertOptimizationRecommendationSchema>;
