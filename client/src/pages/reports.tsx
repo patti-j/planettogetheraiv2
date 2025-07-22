@@ -446,21 +446,21 @@ export default function Reports() {
             {reports.map((report) => (
               <Card key={report.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start space-x-3 flex-1 min-w-0">
                       <div className="flex-shrink-0">
                         {getReportIcon(report.type)}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-white truncate">
+                      <div className="flex-1 min-w-0 pr-2">
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white leading-tight break-words">
                           {report.title}
                         </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 break-words">
                           {report.description}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-start space-x-2 flex-shrink-0">
                       <Badge className={getTypeColor(report.type)}>
                         {report.type}
                       </Badge>
