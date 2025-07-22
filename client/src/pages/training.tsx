@@ -1970,6 +1970,32 @@ function TourManagementSection() {
                   </div>
                 ))}
               </div>
+              
+              {/* Dialog Actions */}
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowTourPreviewDialog(false)}
+                >
+                  Close Preview
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (previewTourData) {
+                      // Find the role by display name to get the role ID
+                      const role = systemRoles.find((r: any) => r.name === previewTourData.roleDisplayName);
+                      if (role) {
+                        // Start the live tour by redirecting with tour parameters
+                        window.location.href = `/demo-tour?role=${encodeURIComponent(role.name)}&startTour=true`;
+                      }
+                    }
+                  }}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                >
+                  <Play className="h-4 w-4 mr-2" />
+                  Start Live Tour
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
