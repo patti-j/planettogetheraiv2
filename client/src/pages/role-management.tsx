@@ -54,9 +54,11 @@ export default function RoleManagementPage() {
   const [isMaximized, setIsMaximized] = useState(false);
   const [newRoleDialog, setNewRoleDialog] = useState(false);
   const [editRoleDialog, setEditRoleDialog] = useState(false);
+  const [deleteRoleDialog, setDeleteRoleDialog] = useState(false);
   const [aiPermissionDialog, setAiPermissionDialog] = useState(false);
   const [aiRoleDialog, setAiRoleDialog] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<number[]>([]);
   const [aiPermissionPreviewDialog, setAiPermissionPreviewDialog] = useState(false);
   const [aiPreviewData, setAiPreviewData] = useState<any>(null);
@@ -300,7 +302,17 @@ export default function RoleManagementPage() {
       return;
     }
 
-    deleteRoleMutation.mutate(role.id);
+    // Show confirmation dialog
+    setRoleToDelete(role);
+    setDeleteRoleDialog(true);
+  };
+
+  const confirmDeleteRole = () => {
+    if (roleToDelete) {
+      deleteRoleMutation.mutate(roleToDelete.id);
+      setDeleteRoleDialog(false);
+      setRoleToDelete(null);
+    }
   };
 
   const togglePermission = (permissionId: number) => {
@@ -1008,6 +1020,55 @@ export default function RoleManagementPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Role Confirmation Dialog */}
+      <Dialog open={deleteRoleDialog} onOpenChange={setDeleteRoleDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-red-600" />
+              Confirm Delete Role
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete the role "{roleToDelete?.name}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {roleToDelete && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-red-800">Role:</span>
+                    <span className="text-red-700">{roleToDelete.name}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-red-800">Permissions:</span>
+                    <span className="text-red-700">{roleToDelete.permissions.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-red-800">Users Assigned:</span>
+                    <span className="text-red-700">{roleToDelete.userCount || 0}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setDeleteRoleDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={confirmDeleteRole}
+                disabled={deleteRoleMutation.isPending}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {deleteRoleMutation.isPending ? "Deleting..." : "Delete Role"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
