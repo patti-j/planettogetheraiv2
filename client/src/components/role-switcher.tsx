@@ -69,9 +69,9 @@ export function RoleSwitcher({ userId, currentRole }: RoleSwitcherProps) {
 
   // Switch role mutation
   const switchRoleMutation = useMutation({
-    mutationFn: (roleId: number) => 
+    mutationFn: ({ roleId, targetRole }: { roleId: number; targetRole?: string }) => 
       apiRequest('POST', `/api/users/${userId}/switch-role`, { roleId }),
-    onSuccess: async () => {
+    onSuccess: async (_, variables) => {
       toast({
         title: "Role Switched Successfully!",
         description: "You have switched to the new role. The interface will update to reflect your new permissions.",
@@ -83,9 +83,12 @@ export function RoleSwitcher({ userId, currentRole }: RoleSwitcherProps) {
       // Clear all cached queries and refetch auth data immediately
       queryClient.clear();
       
+      // Determine redirect path based on target role
+      const redirectPath = variables.targetRole === 'Trainer' ? '/training' : '/';
+      
       // Immediately redirect to force a full page refresh with new permissions
       setTimeout(() => {
-        window.location.href = '/';
+        window.location.href = redirectPath;
       }, 500);
     },
     onError: (error: any) => {
@@ -104,7 +107,11 @@ export function RoleSwitcher({ userId, currentRole }: RoleSwitcherProps) {
 
   const handleSwitchRole = () => {
     if (selectedRoleId) {
-      switchRoleMutation.mutate(parseInt(selectedRoleId));
+      const selectedRole = availableRoles.find((role: Role) => role.id === parseInt(selectedRoleId));
+      switchRoleMutation.mutate({ 
+        roleId: parseInt(selectedRoleId), 
+        targetRole: selectedRole?.name 
+      });
     }
   };
 
@@ -187,7 +194,10 @@ export function RoleSwitcher({ userId, currentRole }: RoleSwitcherProps) {
               // Find the Trainer role ID and switch back to it
               const trainerRole = availableRoles.find((role: Role) => role.name === 'Trainer');
               if (trainerRole) {
-                switchRoleMutation.mutate(trainerRole.id);
+                switchRoleMutation.mutate({ 
+                  roleId: trainerRole.id, 
+                  targetRole: 'Trainer' 
+                });
               }
             }}
             disabled={switchRoleMutation.isPending || displayCurrentRole?.name === 'Trainer'}
