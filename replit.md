@@ -133,6 +133,7 @@ The application uses a modern full-stack architecture with strong typing through
 - Fixed plant-manager.tsx page header format - applied standard responsive typography (text-xl md:text-2xl), added Factory icon, proper mobile spacing (md:ml-0 ml-12), and consistent padding (p-3 sm:p-6)
 - Fixed systems-management.tsx page header format - moved maximize button from inline controls to absolute top-right corner, repositioned environment selector below header, applied consistent padding (p-3 sm:p-6)
 - Fixed user-role-assignments.tsx page header format - applied standard responsive typography (text-xl md:text-2xl), added Users icon, proper mobile spacing (md:ml-0 ml-12), and consistent padding (p-3 sm:p-6)
+- Fixed industry-templates.tsx page header format - applied standard responsive typography (text-xl md:text-2xl), added Building2 icon, proper mobile spacing (md:ml-0 ml-12), consistent padding (p-3 sm:p-6), and maximized view support
 - Applied standard positioning pattern: maximize buttons always in absolute top-right corner, live indicators positioned right below when both exist
 - Control buttons repositioned below page headers following consistent "relative > absolute top-0 right-0 > mt-4 controls" pattern
 - All pages now follow unified positioning hierarchy ensuring consistent user experience across the application

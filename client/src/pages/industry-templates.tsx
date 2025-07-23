@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, Building2, Settings, Check, Plus, Globe, Palette, BarChart, Factory } from "lucide-react";
+import { Sparkles, Building2, Settings, Check, Plus, Globe, Palette, BarChart, Factory, Maximize2, Minimize2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const categories = [
@@ -37,6 +37,7 @@ export default function IndustryTemplates() {
   const [customIndustry, setCustomIndustry] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [sourcePrompt, setSourcePrompt] = useState("");
+  const [isMaximized, setIsMaximized] = useState(false);
 
   // Fetch industry templates
   const { data: templates = [], isLoading } = useQuery({
@@ -144,18 +145,31 @@ export default function IndustryTemplates() {
     });
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Industry Templates</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Configure your manufacturing management system for your specific industry with AI-powered templates
-          </p>
+  const PageContent = () => (
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+      {/* Header */}
+      <div className="relative">
+        <div className="md:ml-0 ml-12">
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+            <Building2 className="w-6 h-6 mr-2" />
+            Industry Templates
+          </h1>
+          <p className="text-sm md:text-base text-gray-600">Configure your manufacturing management system for your specific industry with AI-powered templates</p>
         </div>
+        
+        {/* Maximize button always in top right corner */}
+        <div className="absolute top-0 right-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsMaximized(!isMaximized)}
+          >
+            {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </Button>
+        </div>
+      </div>
 
-        {/* Current Active Template */}
+      {/* Current Active Template */}
         {activeTemplate && (
           <Card className="mb-8 border-2 border-green-200 bg-green-50">
             <CardHeader>
@@ -185,7 +199,7 @@ export default function IndustryTemplates() {
           </Card>
         )}
 
-        <div className="grid lg:grid-cols-4 gap-6">
+      <div className="grid lg:grid-cols-4 gap-6">
           {/* Sidebar - Category Filter & Create Custom */}
           <div className="lg:col-span-1 space-y-6">
             {/* Category Filter */}
@@ -593,6 +607,22 @@ export default function IndustryTemplates() {
           </DialogContent>
         </Dialog>
       </div>
+    </div>
+  );
+
+  if (isMaximized) {
+    return (
+      <div className="fixed inset-0 z-50 bg-white">
+        <div className="h-full overflow-y-auto">
+          <PageContent />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <PageContent />
     </div>
   );
 }
