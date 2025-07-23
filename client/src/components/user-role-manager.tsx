@@ -109,12 +109,12 @@ export function UserRoleManager() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <Users className="h-5 w-5" />
             User Role Management
           </CardTitle>
           <CardDescription>
-            Manage multiple role assignments for each user. Users can have multiple roles simultaneously.
+            Assign and manage roles for individual users. Each user can have multiple roles.
           </CardDescription>
         </CardHeader>
         <CardContent>
