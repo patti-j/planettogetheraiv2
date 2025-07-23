@@ -5,7 +5,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Book, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain, CreditCard } from "lucide-react";
+import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Book, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain, CreditCard, User, LogOut } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { RoleSwitcher } from "./role-switcher";
+import { TrainingModeExit } from "./training-mode-exit";
+import { UserProfileDialog } from "./user-profile";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, usePermissions } from "@/hooks/useAuth";
@@ -236,18 +240,97 @@ export default function Sidebar() {
     return tooltips[href] || "Navigate to this page";
   };
 
+  // User Avatar Section - displays avatar, name, and action icons
+  const SidebarUserAvatarSection = () => {
+    const [userProfileOpen, setUserProfileOpen] = useState(false);
+    const { user, logout } = useAuth();
+
+    if (!user) return null;
+
+    return (
+      <TooltipProvider>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Avatar className="w-8 h-8 mr-3">
+              <AvatarImage src={undefined} alt="User avatar" />
+              <AvatarFallback className="text-xs">
+                {user.firstName && user.lastName 
+                  ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
+                  : <User className="w-4 h-4" />
+                }
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <span className="text-sm font-medium text-gray-800 truncate">
+                {user.firstName} {user.lastName}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setUserProfileOpen(true)}
+                  className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
+                >
+                  <Settings className="w-3 h-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p>Profile & Settings</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => window.location.href = '/account'}
+                  className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
+                >
+                  <CreditCard className="w-3 h-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p>Account & Billing</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+        <UserProfileDialog 
+          open={userProfileOpen} 
+          onOpenChange={setUserProfileOpen}
+        />
+      </TooltipProvider>
+    );
+  };
+
+  // User Controls Section - role switching and training mode
+  const SidebarUserControlsSection = () => {
+    return (
+      <div className="space-y-3">
+        <TrainingModeExit />
+        <RoleSwitcher />
+      </div>
+    );
+  };
+
   const SidebarContent = ({ onNavigate = () => {} }: { onNavigate?: () => void }) => (
     <div className="flex flex-col h-full">
       <div className="p-4 md:p-6 border-b border-gray-200">
-        <h1 className="text-lg md:text-xl font-semibold text-gray-800 flex items-center">
+        <h1 className="text-lg md:text-xl font-semibold text-gray-800 flex items-center mb-3">
           <Factory className="text-primary mr-2" size={20} />
           PlanetTogether
         </h1>
+        {/* User Avatar and Name */}
+        <SidebarUserAvatarSection />
       </div>
 
-      {/* User Profile Panel - Between logo and navigation */}
+      {/* User Profile Panel - Role switching and settings only */}
       <div className="p-4 border-b border-gray-200 bg-gray-50">
-        <TopUserProfile />
+        <SidebarUserControlsSection />
       </div>
 
       <div className="flex-1 relative min-h-0">
