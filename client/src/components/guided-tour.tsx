@@ -111,9 +111,58 @@ const createEngagingNarration = (step: TourStep, roleName: string): string => {
 };
 
 // Get tour steps from database based on role
-const getTourStepsFromDatabase = (roleId: number): TourStep[] => {
-  // For now, return default steps - this should be replaced with actual database query
-  const commonSteps: TourStep[] = [
+const getTourStepsFromDatabase = (roleId: number, toursFromAPI: any[]): TourStep[] => {
+  console.log("Getting tour steps for roleId:", roleId, "available tours:", toursFromAPI.map(t => ({id: t.id, roleId: t.roleId, roleDisplayName: t.roleDisplayName, stepsCount: t.steps?.length || 0})));
+  
+  // First try to find exact role match
+  let roleSpecificTour = toursFromAPI.find(tour => tour.roleId === roleId);
+  
+  // If no exact match, try to find by role name mapping
+  if (!roleSpecificTour) {
+    // Map common role names to find tours
+    const roleNameMappings: Record<number, string[]> = {
+      14: ["Support Engineer", "Systems Manager", "Administrator"], // Role 14 might need different mapping
+      1: ["Director"],
+      3: ["Production Scheduler"],
+      4: ["Plant Manager"],
+      5: ["Systems Manager"]
+    };
+    
+    const possibleNames = roleNameMappings[roleId] || [];
+    roleSpecificTour = toursFromAPI.find(tour => 
+      possibleNames.some(name => 
+        tour.roleDisplayName?.toLowerCase().includes(name.toLowerCase()) ||
+        tour.roleName?.toLowerCase().includes(name.toLowerCase())
+      )
+    );
+  }
+  
+  // If still no match, use the first available tour as fallback
+  if (!roleSpecificTour && toursFromAPI.length > 0) {
+    console.log("No role-specific tour found, using first available tour");
+    roleSpecificTour = toursFromAPI[0];
+  }
+  
+  if (roleSpecificTour && roleSpecificTour.steps && roleSpecificTour.steps.length > 0) {
+    console.log("Found tour with", roleSpecificTour.steps.length, "steps for role:", roleSpecificTour.roleDisplayName);
+    
+    // Convert database tour steps to TourStep format
+    return roleSpecificTour.steps.map((step: any, index: number) => ({
+      id: step.stepId || `step-${index}`,
+      title: step.stepName || step.title || `Tour Step ${index + 1}`,
+      description: step.description || step.stepDescription || "Explore this feature.",
+      page: step.page || step.targetPage || "current",
+      icon: getIconForPage(step.page || step.targetPage || "current"),
+      benefits: step.benefits || step.keyBenefits || [],
+      actionText: step.actionText || "Continue",
+      duration: step.duration || "2-3 min",
+      voiceScript: step.voiceScript
+    }));
+  }
+  
+  // Final fallback to default welcome step if no tour found
+  console.log("No tours available, using default welcome step");
+  return [
     {
       id: "welcome",
       title: "Welcome to Your Demo",
@@ -125,8 +174,30 @@ const getTourStepsFromDatabase = (roleId: number): TourStep[] => {
       duration: "25-35 min tour"
     }
   ];
-  
-  return commonSteps;
+};
+
+// Helper function to get appropriate icon for each page
+const getIconForPage = (page: string): React.ElementType => {
+  const pageIcons: Record<string, React.ElementType> = {
+    '/business-goals': TrendingUp,
+    '/analytics': BarChart3,
+    '/reports': Settings,
+    '/production-schedule': BarChart3,
+    '/boards': Kanban,
+    '/optimize-orders': Target,
+    '/plant-manager-dashboard': Users,
+    '/capacity-planning': BarChart3,
+    '/shop-floor': Settings,
+    '/systems-management-dashboard': Settings,
+    '/role-management': Users,
+    '/user-role-assignments-page': Users,
+    '/training': Lightbulb,
+    '/max-ai-assistant': Settings,
+    '/operator-dashboard': Settings,
+    '/forklift-driver': Settings,
+    'current': Settings
+  };
+  return pageIcons[page] || Settings;
 };
 
 export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = false, onComplete, onSkip, onSwitchRole }: GuidedTourProps) {
@@ -167,7 +238,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   });
 
   // Get tour steps
-  const tourSteps = toursLoading ? [] : getTourStepsFromDatabase(roleId);
+  const tourSteps = toursLoading ? [] : getTourStepsFromDatabase(roleId, toursFromAPI);
   const progress = tourSteps.length > 0 ? ((currentStep + 1) / tourSteps.length) * 100 : 0;
 
   // Initialize position
