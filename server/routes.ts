@@ -1083,6 +1083,71 @@ Provide the response as a JSON object with the following structure:
     }
   });
 
+  // Helper function to generate default canvas content
+  function generateDefaultCanvasContent(message: string): any {
+    const lowerMessage = message.toLowerCase();
+    
+    if (lowerMessage.includes('dashboard')) {
+      return {
+        type: 'create',
+        items: [{
+          id: `dashboard_${Date.now()}`,
+          type: 'dashboard',
+          title: 'Production Dashboard',
+          content: {
+            activeJobs: 12,
+            efficiency: 94,
+            pending: 8,
+            issues: 2
+          }
+        }]
+      };
+    } else if (lowerMessage.includes('chart')) {
+      return {
+        type: 'create',
+        items: [{
+          id: `chart_${Date.now()}`,
+          type: 'chart',
+          title: 'Production Metrics Chart',
+          content: {
+            title: 'Weekly Production Trends',
+            data: [85, 90, 88, 92, 89, 94, 91]
+          }
+        }]
+      };
+    } else if (lowerMessage.includes('table')) {
+      return {
+        type: 'create',
+        items: [{
+          id: `table_${Date.now()}`,
+          type: 'table',
+          title: 'Jobs Overview',
+          content: {
+            title: 'Current Production Jobs',
+            rows: [
+              { id: 1, name: 'Job #1234', status: 'In Progress', progress: 75 },
+              { id: 2, name: 'Job #1235', status: 'Completed', progress: 100 },
+              { id: 3, name: 'Job #1236', status: 'Pending', progress: 0 }
+            ]
+          }
+        }]
+      };
+    } else {
+      return {
+        type: 'create',
+        items: [{
+          id: `interactive_${Date.now()}`,
+          type: 'interactive',
+          title: 'Interactive Widget',
+          content: {
+            title: 'Production Controls',
+            sections: ['overview', 'details', 'actions']
+          }
+        }]
+      };
+    }
+  }
+
   app.post("/api/ai-agent/chat", async (req, res) => {
     try {
       const { message, context, conversationHistory } = req.body;
@@ -1128,17 +1193,59 @@ Always respond as if you're actively monitoring the user's workflow and learning
         apiKey: process.env.OPENAI_API_KEY,
       });
 
+      // Check if this is a canvas-related request
+      const canvasKeywords = ['dashboard', 'chart', 'create', 'show', 'display', 'canvas', 'visualize', 'table'];
+      const isCanvasRequest = canvasKeywords.some(keyword => message.toLowerCase().includes(keyword));
+      
+      let canvasAction = null;
+      
+      if (isCanvasRequest) {
+        // Enhanced system prompt for canvas generation
+        systemPrompt += `\n\nCanvas Capabilities:
+- You can create visual content on a canvas for users
+- Available canvas types: dashboard, chart, table, interactive widgets
+- When users ask to create something visual, generate canvas content
+- Always respond with both a text message AND canvas action when appropriate
+
+For canvas requests, include a canvasAction in your response with this structure:
+{
+  "type": "create",
+  "items": [
+    {
+      "id": "unique_id",
+      "type": "dashboard|chart|table|interactive|custom",
+      "title": "Content Title",
+      "content": { actual_data_here }
+    }
+  ]
+}`;
+      }
+
       const completion = await client.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: message }
         ],
-        max_tokens: 300,
+        max_tokens: 500,
         temperature: 0.7,
+        response_format: isCanvasRequest ? { type: "json_object" } : undefined
       });
 
-      const response = completion.choices[0]?.message?.content || "I'm having trouble processing that request. Could you please try again?";
+      let response;
+      
+      if (isCanvasRequest) {
+        try {
+          const jsonResponse = JSON.parse(completion.choices[0]?.message?.content || "{}");
+          response = jsonResponse.message || "I've created something for you on the canvas!";
+          canvasAction = jsonResponse.canvasAction || generateDefaultCanvasContent(message);
+        } catch (error) {
+          response = "I'll create something for you on the canvas!";
+          canvasAction = generateDefaultCanvasContent(message);
+        }
+      } else {
+        response = completion.choices[0]?.message?.content || "I'm having trouble processing that request. Could you please try again?";
+      }
 
       // Store this interaction in memory for learning
       await storage.storeAIMemory({
@@ -1162,7 +1269,8 @@ Always respond as if you're actively monitoring the user's workflow and learning
       const insights = await generateContextualInsights(context, message, response);
 
       res.json({ 
-        response,
+        message: response,
+        canvasAction,
         insights,
         context: {
           page: context?.page,

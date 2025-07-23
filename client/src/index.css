@@ -592,3 +592,12 @@ div[data-radix-tooltip-content] {
     transform: scale(1);
   }
 }
+
+/* Canvas grid layout utilities */
+.auto-fit-minmax-400 {
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+}
+
+.auto-fit-minmax-300 {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}

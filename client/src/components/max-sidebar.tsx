@@ -28,9 +28,11 @@ import {
   Maximize,
   Minimize2,
   SplitSquareHorizontal,
+  Monitor,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AI_THEME_OPTIONS, AIThemeColor } from "@/lib/ai-theme";
+import MaxCanvas from "@/components/max-canvas";
 
 interface Message {
   id: string;
@@ -42,6 +44,20 @@ interface Message {
     action?: string;
     data?: any;
   };
+  canvasAction?: {
+    type: 'create' | 'update' | 'clear';
+    items?: CanvasItem[];
+  };
+}
+
+interface CanvasItem {
+  id: string;
+  type: 'dashboard' | 'chart' | 'table' | 'image' | 'interactive' | 'custom';
+  title: string;
+  content: any;
+  width?: string;
+  height?: string;
+  position?: { x: number; y: number };
 }
 
 interface AIInsight {
@@ -121,6 +137,10 @@ export function MaxSidebar() {
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
   const [selectedVoice, setSelectedVoice] = useState('alloy');
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
+  
+  // Canvas state
+  const [canvasVisible, setCanvasVisible] = useState(false);
+  const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognition = useRef<any>(null);
@@ -218,9 +238,15 @@ export function MaxSidebar() {
         timestamp: new Date(),
         context: {
           page: window.location.pathname
-        }
+        },
+        canvasAction: response.canvasAction
       };
       setMessages(prev => [...prev, assistantMessage]);
+
+      // Handle canvas actions
+      if (response.canvasAction) {
+        handleCanvasAction(response.canvasAction);
+      }
 
       // Play AI response if voice is enabled
       if (isVoiceEnabled && response.message) {
@@ -314,6 +340,30 @@ export function MaxSidebar() {
     setInputMessage(`Tell me more about: ${insight.title}`);
   };
 
+  const handleCanvasAction = (canvasAction: any) => {
+    switch (canvasAction.type) {
+      case 'create':
+        if (canvasAction.items) {
+          setCanvasItems(canvasAction.items);
+          setCanvasVisible(true);
+        }
+        break;
+      case 'update':
+        if (canvasAction.items) {
+          setCanvasItems(prev => [...prev, ...canvasAction.items]);
+          setCanvasVisible(true);
+        }
+        break;
+      case 'clear':
+        setCanvasItems([]);
+        break;
+    }
+  };
+
+  const toggleCanvas = () => {
+    setCanvasVisible(!canvasVisible);
+  };
+
   const testVoice = async () => {
     const testText = `Hello! This is the ${VOICE_OPTIONS.find(v => v.value === selectedVoice)?.name} voice.`;
     await playTTSResponse(testText);
@@ -375,6 +425,16 @@ export function MaxSidebar() {
             title="Voice Settings"
           >
             <Settings className="h-3 w-3" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleCanvas}
+            className="h-6 w-6 p-0 text-white hover:bg-white/20"
+            title="Canvas"
+          >
+            <Monitor className="h-3 w-3" />
           </Button>
           
           {/* Mobile Layout Switcher - Only show on mobile */}
@@ -564,6 +624,14 @@ export function MaxSidebar() {
           </Button>
         </div>
       </div>
+      
+      {/* Canvas Component */}
+      <MaxCanvas
+        isVisible={canvasVisible}
+        onClose={() => setCanvasVisible(false)}
+        items={canvasItems}
+        onUpdateItems={setCanvasItems}
+      />
     </div>
   );
 }
