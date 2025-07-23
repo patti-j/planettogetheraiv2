@@ -125,6 +125,13 @@ The application uses a modern full-stack architecture with strong typing through
 - Users receive helpful guidance instead of technical error screens, maintaining conversation flow
 - Error handling preserves Max's conversational personality while clearly explaining limitations
 
+✓ **Profile Settings Tooltip Positioning Fix (July 23, 2025)**:
+- Fixed annoying tooltip overlap issue where "Profile & Settings" tooltip appeared at top of hamburger menu
+- Changed tooltip positioning from side="top" to side="bottom" for profile and logout buttons
+- Tooltips now appear below buttons instead of floating over menu content
+- Enhanced user experience by preventing UI element interference when navigating the hamburger menu
+- Tooltip positioning now works properly in both mobile and desktop sheet-based navigation
+
 ## Recent Changes (July 23, 2025)
 
 ✓ **AI Theme Color System Implementation - COMPLETED (July 23, 2025)**:

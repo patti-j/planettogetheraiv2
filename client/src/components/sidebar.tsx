@@ -205,7 +205,7 @@ export default function Sidebar() {
                     <Settings className="w-3 h-3" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="top">
+                <TooltipContent side="bottom">
                   <p>Profile & Settings</p>
                 </TooltipContent>
               </Tooltip>
@@ -220,7 +220,7 @@ export default function Sidebar() {
                     <LogOut className="w-3 h-3" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="top">
+                <TooltipContent side="bottom">
                   <p>Sign Out</p>
                 </TooltipContent>
               </Tooltip>
