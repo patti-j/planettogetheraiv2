@@ -35,7 +35,11 @@ import {
   Mail,
   Building2,
   Briefcase,
-  Volume2
+  Volume2,
+  ShoppingCart,
+  Headphones,
+  HelpCircle,
+  Truck
 } from "lucide-react";
 
 const participantFormSchema = z.object({
@@ -201,11 +205,39 @@ export default function DemoTour() {
       primaryColor: "pink",
     },
     {
-      id: "maintenance-technician",
-      name: "Maintenance Technician",
-      description: "Equipment maintenance with work order and scheduling access",
-      icon: Wrench,
-      primaryColor: "gray",
+      id: "it-systems-administrator", 
+      name: "IT Systems Administrator",
+      description: "IT infrastructure management with user and system administration",
+      icon: Server,
+      primaryColor: "slate",
+    },
+    {
+      id: "sales-representative",
+      name: "Sales Representative", 
+      description: "Managing client relationships and driving sales growth with CRM and customer data access",
+      icon: ShoppingCart,
+      primaryColor: "emerald",
+    },
+    {
+      id: "customer-service-representative",
+      name: "Customer Service Representative",
+      description: "Customer inquiries, support, and service record management for customer satisfaction",
+      icon: Headphones,
+      primaryColor: "cyan",
+    },
+    {
+      id: "support-engineer",
+      name: "Support Engineer",
+      description: "Technical support, troubleshooting, and system functionality for all users",
+      icon: HelpCircle,
+      primaryColor: "violet",
+    },
+    {
+      id: "supply-chain-planner",
+      name: "Supply Chain Planner",
+      description: "Supply chain optimization including demand forecasting and inventory management",
+      icon: Truck,
+      primaryColor: "amber",
     }
   ];
 
