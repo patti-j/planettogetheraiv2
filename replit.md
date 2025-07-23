@@ -119,8 +119,23 @@ The application uses a modern full-stack architecture with strong typing through
 - Button now properly describes its function (showing AI insights) instead of generic "AI" label
 - Desktop view maintains full "AI Insights" text while mobile shows descriptive "Insights"
 
+✓ **Role Management Mobile Button Labeling Fix (July 23, 2025)**:
+- Fixed mobile UX issue where "Create" button in role management was unclear about its function
+- Changed AI role creation button mobile text from "Create" to "New Role" for better clarity
+- Changed regular role creation button mobile text from "New" to "Add Role" for descriptive labeling
+- Mobile users now see clear, descriptive button labels instead of vague single-word labels
+- Desktop view maintains full descriptive text while mobile provides concise but meaningful labels
+
+✓ **Plant Manager Dashboard Mobile Tab Fix (July 23, 2025)**:
+- Fixed critical mobile tab overflow issue where tab labels were colliding and overflowing
+- Added horizontal scrolling container with overflow-x-auto for mobile tab navigation
+- Shortened tab labels for mobile: "Production Goals" → "Goals", "Active Issues" → "Issues", etc.
+- Added responsive text sizing (text-xs on mobile, text-sm on larger screens)
+- Enhanced tab display with min-w-max to prevent content compression
+- Mobile users can now properly navigate all tabs without overlap or collision issues
+
 ✓ **Login Error Message Display Implementation (July 23, 2025)**:
-- Fixed critical UX issue where login failures showed no error feedback to users
+- Fixed critical UX issue where login failures showed no error feedback to users  
 - Enhanced login mutation error handling to properly extract and display server error messages
 - Added comprehensive error parsing to handle API response format and extract meaningful messages
 - Updated Login component to use mutateAsync for proper error catching in try-catch blocks

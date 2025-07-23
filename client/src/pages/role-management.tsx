@@ -425,7 +425,7 @@ export default function RoleManagementPage() {
               >
                 <Sparkles className="w-4 h-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">{createAiRoleMutation.isPending ? "Creating..." : "Create Role"}</span>
-                <span className="sm:hidden">{createAiRoleMutation.isPending ? "Creating" : "Create"}</span>
+                <span className="sm:hidden">{createAiRoleMutation.isPending ? "Creating" : "New Role"}</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
@@ -541,7 +541,7 @@ export default function RoleManagementPage() {
               >
                 <Plus className="w-4 h-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">New Role</span>
-                <span className="sm:hidden">New</span>
+                <span className="sm:hidden">Add Role</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
