@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth, usePermissions } from '@/hooks/useAuth';
 import { RoleSwitcher } from '@/components/role-switcher';
 import { apiRequest } from '@/lib/queryClient';
+import { useTour } from '@/contexts/TourContext';
 
 interface Role {
   id: number;
@@ -749,6 +750,7 @@ interface TourData {
 function TourManagementSection() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { startTour } = useTour();
   
   // Fetch tours from database
   const { data: toursFromAPI = [], isLoading: toursLoading } = useQuery({
@@ -1594,6 +1596,23 @@ function TourManagementSection() {
                       <Play className="h-3 w-3 mr-1" />
                       <span className="hidden sm:inline">Preview Tour</span>
                       <span className="sm:hidden">Preview</span>
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="default"
+                      className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto text-xs px-2 py-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startTour(tour.roleId, true); // Enable voice by default
+                        toast({
+                          title: "Tour Started",
+                          description: `Starting live tour for ${tour.roleDisplayName}`,
+                        });
+                      }}
+                    >
+                      <Monitor className="h-3 w-3 mr-1" />
+                      <span className="hidden sm:inline">Start Live Tour</span>
+                      <span className="sm:hidden">Live</span>
                     </Button>
                     <Button 
                       size="sm" 
