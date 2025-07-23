@@ -779,20 +779,20 @@ export default function Maintenance() {
     <div className={`bg-gray-50 ${isMaximized ? 'fixed inset-0 z-50' : 'h-screen'} flex flex-col`}>
       {/* Header */}
       <div className="bg-white shadow-sm border-b px-4 py-3 sm:px-6 flex-shrink-0">
-        <div className="flex items-center justify-between">
+        <div className="relative">
           <div className="ml-3 md:ml-0">
             <h1 className="text-2xl font-semibold text-gray-800">Maintenance Planning</h1>
             <p className="text-gray-600">Manage resource maintenance schedules and work orders</p>
           </div>
-          <div className="flex items-center gap-4">
+          
+          {/* Maximize button always in top right corner */}
+          <div className="absolute top-0 right-0">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setIsMaximized(!isMaximized)}
-              className="flex items-center gap-2"
             >
               {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-              {isMaximized ? "Minimize" : "Maximize"}
             </Button>
           </div>
         </div>

@@ -119,10 +119,16 @@ The application uses a modern full-stack architecture with strong typing through
 - Fixed analytics-new.tsx page - maximize button positioned in top right corner with control buttons moved below header
 - Fixed reports-old.tsx page - maximize button positioned in top right corner for both maximized and normal views, removed duplicate buttons
 - Fixed scheduling-optimizer.tsx (Optimize Orders) page - maximize button moved from inline controls to top right corner position
+- Fixed operator-dashboard.tsx page - removed text labels from maximize button and positioned in top right corner, moved operator info below header
+- Fixed sales.tsx page - maximize button moved to top right corner with icon-only format, removed text labels
+- Fixed customer-service.tsx page - maximize button moved to top right corner with icon-only format, removed text labels
+- Fixed maintenance.tsx page - maximize button moved to top right corner with icon-only format, removed text labels
+- Fixed feedback.tsx page - maximize button moved to top right corner with icon-only format, removed text labels
 - Applied standard positioning pattern: maximize buttons always in absolute top-right corner, live indicators positioned right below when both exist
 - Control buttons repositioned below page headers following consistent "relative > absolute top-0 right-0 > mt-4 controls" pattern
 - All pages now follow unified positioning hierarchy ensuring consistent user experience across the application
 - Positioning hierarchy established: maximize buttons (top priority, top-right corner) > live indicators (below maximize when both present) > other controls (below header)
+- Maximize buttons now use icon-only format without text labels for clean, consistent appearance
 
 ✓ **Complete Icon Standardization Across All Pages (July 23, 2025)**:
 - Successfully implemented comprehensive icon standardization across all 20+ pages in the application
