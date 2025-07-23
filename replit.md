@@ -114,6 +114,18 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 23, 2025)
 
+✓ **Capacity Planning Button Mobile Text Fix (July 23, 2025)**:
+- Fixed mobile button text from "AI" to "Insights" in capacity planning page for better user clarity
+- Button now properly describes its function (showing AI insights) instead of generic "AI" label
+- Desktop view maintains full "AI Insights" text while mobile shows descriptive "Insights"
+
+✓ **Login Error Message Display Implementation (July 23, 2025)**:
+- Fixed critical UX issue where login failures showed no error feedback to users
+- Enhanced login mutation error handling to properly extract and display server error messages
+- Added comprehensive error parsing to handle API response format and extract meaningful messages
+- Updated Login component to use mutateAsync for proper error catching in try-catch blocks
+- Users now see clear "Invalid credentials" message when authentication fails instead of silent failures
+
 ✓ **Max AI Assistant Graceful Error Handling Implementation (July 23, 2025)**:
 - Fixed critical UX issue where Max AI assistant showed red error screens when unable to handle requests
 - Replaced error toast notifications with helpful in-chat error messages that appear as assistant responses

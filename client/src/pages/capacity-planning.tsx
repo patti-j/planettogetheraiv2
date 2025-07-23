@@ -196,7 +196,7 @@ export default function CapacityPlanning() {
           >
             <Zap className="w-4 h-4 mr-1 sm:mr-2" />
             <span className="hidden sm:inline">AI Insights</span>
-            <span className="sm:hidden">AI</span>
+            <span className="sm:hidden">Insights</span>
           </Button>
           <Button 
             onClick={() => setShowCreateScenario(true)}
