@@ -155,12 +155,23 @@ The application uses a modern full-stack architecture with strong typing through
 - Voice preloading now provides instant audio playback when users navigate between tour steps
 - System architecture preserves complex audio management features while ensuring clean compilation and runtime stability
 
-✓ **Mobile Tour Window Optimization (July 23, 2025)**:
-- Hidden step subtitles/descriptions on mobile screens to save valuable space and improve readability
-- Reduced mobile tour window size from 300px to 280px width and 400px to 320px height for better mobile UX
-- Updated mobile positioning to use 50% viewport height instead of 60% for more compact display
-- Enhanced mobile experience by removing text content that takes up too much space while preserving all functional controls
-- Tour windows now optimized for mobile devices with compact layout and essential controls only
+✓ **Mobile Tour Window Ultra-Compact Optimization (July 23, 2025)**:
+- Achieved ultra-compact mobile design: 280px wide × 200px tall (35% viewport height)
+- Fixed title truncation by implementing 2-line text wrapping with smaller font (text-xs)
+- Added line-clamp-2 CSS utility for proper text overflow handling with webkit properties
+- Minimized all mobile padding from 1.5px to 1px throughout interface for maximum space efficiency
+- Eliminated unused white space in center content area while preserving all functionality
+- Enhanced header icon alignment for multi-line titles using flex-start positioning
+- Mobile tour windows now provide maximum screen real estate while maintaining full readability
+
+✓ **Auto-Scrolling Tour Enhancement (July 23, 2025)**:
+- Implemented intelligent auto-scrolling that detects content below the fold during tours
+- Added smooth 3-phase scrolling sequence: wait 1s → scroll down 3s → pause 1.5s → scroll up 2s
+- Uses requestAnimationFrame with ease-in-out animation curves for 60fps smooth scrolling motion
+- Auto-scroll triggers automatically after page navigation and when staying on current page
+- Only activates when page content extends more than 100px beyond viewport height
+- Ensures users see all available functionality during 25-35 minute guided tour experience
+- Performance optimized with proper timing and smooth animation transitions
 
 ✓ **Voice Pre-Generation Architecture Implementation (July 22, 2025)**:
 - Implemented pre-generation of voice recordings during tour creation to eliminate real-time generation delays

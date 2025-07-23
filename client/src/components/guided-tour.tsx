@@ -309,6 +309,86 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     setHasAutoStarted(false);
   }, [roleId]);
 
+  // Auto-scroll function to show content below the fold
+  const performAutoScroll = useCallback(async () => {
+    // Wait for page to fully load
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const pageHeight = document.documentElement.scrollHeight;
+    const viewportHeight = window.innerHeight;
+    
+    // Only scroll if there's content below the fold
+    if (pageHeight > viewportHeight + 100) {
+      console.log('Auto-scrolling to show below-fold content');
+      
+      // Scroll to bottom slowly
+      const scrollToBottom = () => {
+        return new Promise<void>((resolve) => {
+          const startTime = Date.now();
+          const duration = 3000; // 3 seconds
+          const startScrollTop = window.pageYOffset;
+          const targetScrollTop = pageHeight - viewportHeight;
+          
+          const animateScroll = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Ease-in-out function for smooth scrolling
+            const easeInOut = progress < 0.5 
+              ? 2 * progress * progress 
+              : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+            
+            const currentScrollTop = startScrollTop + (targetScrollTop - startScrollTop) * easeInOut;
+            window.scrollTo(0, currentScrollTop);
+            
+            if (progress < 1) {
+              requestAnimationFrame(animateScroll);
+            } else {
+              resolve();
+            }
+          };
+          
+          requestAnimationFrame(animateScroll);
+        });
+      };
+      
+      // Scroll to top slowly
+      const scrollToTop = () => {
+        return new Promise<void>((resolve) => {
+          const startTime = Date.now();
+          const duration = 2000; // 2 seconds
+          const startScrollTop = window.pageYOffset;
+          
+          const animateScroll = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            const easeInOut = progress < 0.5 
+              ? 2 * progress * progress 
+              : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+            
+            const currentScrollTop = startScrollTop * (1 - easeInOut);
+            window.scrollTo(0, currentScrollTop);
+            
+            if (progress < 1) {
+              requestAnimationFrame(animateScroll);
+            } else {
+              resolve();
+            }
+          };
+          
+          requestAnimationFrame(animateScroll);
+        });
+      };
+      
+      // Wait 1 second, scroll down, pause, then scroll back up
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await scrollToBottom();
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Pause at bottom
+      await scrollToTop();
+    }
+  }, []);
+
   // Navigate to step page when step changes
   useEffect(() => {
     if (tourSteps.length > 0 && currentStep < tourSteps.length) {
@@ -330,9 +410,16 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       if (targetPath && targetPath !== 'current' && targetPath !== location) {
         console.log(`Tour navigating from ${location} to ${targetPath} for step: ${currentStepData.title}`);
         setLocation(targetPath);
+        // Trigger auto-scroll after navigation
+        setTimeout(() => {
+          performAutoScroll();
+        }, 500);
+      } else {
+        // If no navigation needed, still do auto-scroll to show content
+        performAutoScroll();
       }
     }
-  }, [currentStep, tourSteps, location, setLocation]);
+  }, [currentStep, tourSteps, location, setLocation, performAutoScroll]);
 
   // Navigation handlers
   const handleNext = () => {
