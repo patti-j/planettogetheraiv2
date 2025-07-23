@@ -165,6 +165,7 @@ The application uses a modern full-stack architecture with strong typing through
 - TrainingModeExit and RoleSwitcher components now embedded beneath user profile information with proper spacing
 - Streamlined sidebar architecture: Logo + Avatar/Username + Role Controls (in same panel) > Navigation Menu
 - Improved visual integration by eliminating separate panels in favor of unified user profile section
+- Fixed persistent "Profile & Settings" tooltip issue by removing tooltip wrapper that was interfering with UI
 
 ✓ **Role Controls Integration into Avatar Panel (July 23, 2025)**:
 - Successfully moved role switching controls from separate gray panel into same panel as avatar and username
