@@ -25,7 +25,8 @@ import {
   Cpu,
   Database,
   Cloud,
-  ChevronRight
+  ChevronRight,
+  Bot
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -57,52 +58,60 @@ export default function Pricing() {
     {
       id: "starter",
       name: "Starter",
-      price: billingCycle === "monthly" ? 29 : 290,
+      price: billingCycle === "monthly" ? 35 : 350,
       billingPeriod: billingCycle,
-      description: "Perfect for small manufacturing teams - $29 per user per month",
+      description: "Essential manufacturing management for small teams - $35 per user per month",
       features: [
-        "Basic production scheduling",
-        "Gantt chart visualization",
-        "Resource management",
-        "Job tracking",
-        "Mobile access",
-        "Email support",
-        "Basic reporting",
-        "Standard integrations"
+        "Production scheduling with Gantt charts",
+        "Resource & job management",
+        "Basic shop floor controls",
+        "Mobile-responsive interface",
+        "Standard role-based access (5 roles)",
+        "Basic reporting & analytics",
+        "Email notifications",
+        "Community support",
+        "Kanban boards",
+        "Basic operator dashboard",
+        "Visual factory displays",
+        "Getting started guidance"
       ],
       limits: {
-        users: 5,
-        resources: 25,
-        jobs: 100,
-        storage: "5GB",
-        support: "Email"
+        users: 10,
+        resources: 50,
+        jobs: 200,
+        storage: "10GB",
+        support: "Email & Community"
       },
       icon: <Rocket className="w-6 h-6" />
     },
     {
       id: "professional",
       name: "Professional",
-      price: billingCycle === "monthly" ? 59 : 590,
+      price: billingCycle === "monthly" ? 75 : 750,
       billingPeriod: billingCycle,
-      description: "Advanced features for growing manufacturers - $59 per user per month",
+      description: "Advanced AI-powered manufacturing optimization - $75 per user per month",
       features: [
         "Everything in Starter",
-        "Advanced scheduling algorithms",
-        "Capacity planning",
-        "AI-powered optimization",
-        "Custom dashboards",
-        "Advanced reporting & analytics",
-        "API access",
-        "Priority support",
-        "Real-time collaboration",
-        "Inventory integration"
+        "Max AI Assistant with voice interaction",
+        "Advanced capacity planning & forecasting",
+        "Inventory optimization & demand planning",
+        "Scheduling optimizer with AI algorithms",
+        "Advanced analytics & custom dashboards",
+        "Multi-plant management",
+        "Systems integration hub (ERP, MES, SCADA)",
+        "Advanced role management (14 roles)",
+        "Disruption management & maintenance",
+        "Extension studio for customizations",
+        "Training system with guided tours",
+        "API access & webhook support",
+        "Priority phone & email support"
       ],
       limits: {
-        users: 25,
-        resources: 100,
-        jobs: 500,
-        storage: "50GB",
-        support: "Phone & Email"
+        users: 50,
+        resources: 250,
+        jobs: 1000,
+        storage: "100GB",
+        support: "Phone, Email & Chat"
       },
       popular: true,
       icon: <Zap className="w-6 h-6" />
@@ -110,27 +119,32 @@ export default function Pricing() {
     {
       id: "enterprise",
       name: "Enterprise",
-      price: billingCycle === "monthly" ? 89 : 890,
+      price: billingCycle === "monthly" ? 125 : 1250,
       billingPeriod: billingCycle,
-      description: "Complete manufacturing management solution - $89 per user per month",
+      description: "Complete enterprise manufacturing platform - $125 per user per month",
       features: [
         "Everything in Professional",
-        "Multi-site management",
-        "Advanced AI insights",
-        "Custom integrations",
-        "White-label options",
-        "Dedicated account manager",
-        "Custom training",
-        "SLA guarantees",
-        "Advanced security",
-        "Unlimited API calls"
+        "Unlimited multi-plant operations",
+        "Advanced Max AI with file analysis",
+        "Custom AI model training",
+        "White-label platform options",
+        "Advanced security & compliance",
+        "Custom workflow automation",
+        "Dedicated customer success manager",
+        "Custom training & onboarding",
+        "24/7 premium support with SLA",
+        "Custom integrations & development",
+        "Advanced audit logs & reporting",
+        "Disaster recovery & backup",
+        "Single sign-on (SSO) integration",
+        "Unlimited API calls & webhooks"
       ],
       limits: {
         users: "unlimited",
         resources: "unlimited",
         jobs: "unlimited",
         storage: "Unlimited",
-        support: "24/7 Dedicated"
+        support: "24/7 Dedicated with SLA"
       },
       enterprise: true,
       icon: <Crown className="w-6 h-6" />
@@ -163,47 +177,86 @@ export default function Pricing() {
 
   const featureComparison = [
     {
-      category: "Core Features",
+      category: "Core Production Management",
       features: [
-        { name: "Production Scheduling", starter: true, professional: true, enterprise: true },
-        { name: "Gantt Chart Visualization", starter: true, professional: true, enterprise: true },
-        { name: "Resource Management", starter: true, professional: true, enterprise: true },
-        { name: "Job Tracking", starter: true, professional: true, enterprise: true },
-        { name: "Mobile Access", starter: true, professional: true, enterprise: true },
-        { name: "Real-time Collaboration", starter: false, professional: true, enterprise: true },
-        { name: "Advanced Scheduling Algorithms", starter: false, professional: true, enterprise: true },
-        { name: "AI-Powered Optimization", starter: false, professional: true, enterprise: true }
+        { name: "Production Scheduling & Gantt Charts", starter: true, professional: true, enterprise: true },
+        { name: "Resource & Job Management", starter: true, professional: true, enterprise: true },
+        { name: "Kanban Boards & Visual Workflow", starter: true, professional: true, enterprise: true },
+        { name: "Shop Floor Controls & Mobile Access", starter: true, professional: true, enterprise: true },
+        { name: "Operator Dashboard & Visual Factory", starter: true, professional: true, enterprise: true },
+        { name: "Multi-Plant Management", starter: false, professional: true, enterprise: true },
+        { name: "Advanced Scheduling Optimizer", starter: false, professional: true, enterprise: true },
+        { name: "Unlimited Plant Operations", starter: false, professional: false, enterprise: true }
+      ]
+    },
+    {
+      category: "AI & Intelligence",
+      features: [
+        { name: "Max AI Assistant (Text)", starter: false, professional: true, enterprise: true },
+        { name: "Max AI with Voice Interaction", starter: false, professional: true, enterprise: true },
+        { name: "Max AI File Analysis & Vision", starter: false, professional: false, enterprise: true },
+        { name: "Custom AI Model Training", starter: false, professional: false, enterprise: true },
+        { name: "AI-Powered Capacity Planning", starter: false, professional: true, enterprise: true },
+        { name: "Inventory Optimization AI", starter: false, professional: true, enterprise: true },
+        { name: "Demand Forecasting AI", starter: false, professional: true, enterprise: true },
+        { name: "Disruption Management AI", starter: false, professional: true, enterprise: true }
       ]
     },
     {
       category: "Analytics & Reporting",
       features: [
-        { name: "Basic Reports", starter: true, professional: true, enterprise: true },
-        { name: "Advanced Analytics", starter: false, professional: true, enterprise: true },
-        { name: "Custom Dashboards", starter: false, professional: true, enterprise: true },
-        { name: "Predictive Insights", starter: false, professional: false, enterprise: true },
-        { name: "Executive Reporting", starter: false, professional: false, enterprise: true }
+        { name: "Basic Production Reports", starter: true, professional: true, enterprise: true },
+        { name: "Advanced Analytics Dashboard", starter: false, professional: true, enterprise: true },
+        { name: "Custom Dashboards & Widgets", starter: false, professional: true, enterprise: true },
+        { name: "Business Goals & KPI Tracking", starter: false, professional: true, enterprise: true },
+        { name: "Executive-Level Reporting", starter: false, professional: false, enterprise: true },
+        { name: "Predictive Analytics", starter: false, professional: false, enterprise: true },
+        { name: "Advanced Audit Logs", starter: false, professional: false, enterprise: true }
       ]
     },
     {
-      category: "Integrations",
+      category: "Role Management & Access",
       features: [
-        { name: "Standard Integrations", starter: true, professional: true, enterprise: true },
-        { name: "API Access", starter: false, professional: true, enterprise: true },
+        { name: "Basic Role-Based Access (5 roles)", starter: true, professional: false, enterprise: false },
+        { name: "Advanced Role Management (14 roles)", starter: false, professional: true, enterprise: true },
+        { name: "User Management & Assignments", starter: false, professional: true, enterprise: true },
+        { name: "Plant Manager Dashboard", starter: false, professional: true, enterprise: true },
+        { name: "Forklift Driver & Maintenance Roles", starter: false, professional: true, enterprise: true },
+        { name: "Sales & Customer Service Roles", starter: false, professional: true, enterprise: true },
+        { name: "Single Sign-On (SSO)", starter: false, professional: false, enterprise: true }
+      ]
+    },
+    {
+      category: "Systems Integration",
+      features: [
+        { name: "Email Notifications", starter: true, professional: true, enterprise: true },
+        { name: "Systems Integration Hub", starter: false, professional: true, enterprise: true },
+        { name: "ERP/MES/SCADA Integration", starter: false, professional: true, enterprise: true },
+        { name: "API Access & Webhooks", starter: false, professional: true, enterprise: true },
         { name: "Custom Integrations", starter: false, professional: false, enterprise: true },
-        { name: "ERP Integration", starter: false, professional: true, enterprise: true },
-        { name: "Inventory Management", starter: false, professional: true, enterprise: true }
+        { name: "Unlimited API Calls", starter: false, professional: false, enterprise: true }
       ]
     },
     {
-      category: "Support & Training",
+      category: "Training & Customization",
       features: [
-        { name: "Email Support", starter: true, professional: true, enterprise: true },
-        { name: "Phone Support", starter: false, professional: true, enterprise: true },
-        { name: "Priority Support", starter: false, professional: true, enterprise: true },
-        { name: "Dedicated Account Manager", starter: false, professional: false, enterprise: true },
-        { name: "Custom Training", starter: false, professional: false, enterprise: true },
-        { name: "24/7 Support", starter: false, professional: false, enterprise: true }
+        { name: "Getting Started Guidance", starter: true, professional: true, enterprise: true },
+        { name: "Interactive Guided Tours", starter: false, professional: true, enterprise: true },
+        { name: "Training System with Voice", starter: false, professional: true, enterprise: true },
+        { name: "Extension Studio & Customizations", starter: false, professional: true, enterprise: true },
+        { name: "White-Label Platform Options", starter: false, professional: false, enterprise: true },
+        { name: "Custom Training & Onboarding", starter: false, professional: false, enterprise: true }
+      ]
+    },
+    {
+      category: "Support & Enterprise",
+      features: [
+        { name: "Email & Community Support", starter: true, professional: false, enterprise: false },
+        { name: "Priority Phone, Email & Chat", starter: false, professional: true, enterprise: false },
+        { name: "24/7 Premium Support with SLA", starter: false, professional: false, enterprise: true },
+        { name: "Dedicated Customer Success Manager", starter: false, professional: false, enterprise: true },
+        { name: "Advanced Security & Compliance", starter: false, professional: false, enterprise: true },
+        { name: "Disaster Recovery & Backup", starter: false, professional: false, enterprise: true }
       ]
     }
   ];
@@ -222,7 +275,7 @@ export default function Pricing() {
               Choose the Perfect Plan for Your Manufacturing Operation
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-6">
-              From small teams to enterprise operations, we have the right solution to optimize your production scheduling and boost efficiency
+              From essential production scheduling to advanced AI-powered optimization, we deliver complete manufacturing management solutions with Max AI Assistant, multi-plant operations, and comprehensive role-based access control.
             </p>
             
             {/* Login and Demo Tour Buttons */}
@@ -380,6 +433,41 @@ export default function Pricing() {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Key Platform Capabilities */}
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-8 mb-12">
+          <h2 className="text-3xl font-bold text-center mb-8 text-gray-900">Complete Manufacturing Intelligence Platform</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Bot className="w-8 h-8 text-blue-600" />
+              </div>
+              <h3 className="font-semibold text-gray-900">Max AI Assistant</h3>
+              <p className="text-sm text-gray-600 mt-2">Voice-enabled AI that creates dashboards, analyzes files, and controls your entire interface</p>
+            </div>
+            <div className="text-center">
+              <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Building2 className="w-8 h-8 text-purple-600" />
+              </div>
+              <h3 className="font-semibold text-gray-900">Multi-Plant Operations</h3>
+              <p className="text-sm text-gray-600 mt-2">Manage unlimited manufacturing plants with unified scheduling and resource allocation</p>
+            </div>
+            <div className="text-center">
+              <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="w-8 h-8 text-green-600" />
+              </div>
+              <h3 className="font-semibold text-gray-900">14 Specialized Roles</h3>
+              <p className="text-sm text-gray-600 mt-2">From production schedulers to plant managers, each role gets tailored interfaces and permissions</p>
+            </div>
+            <div className="text-center">
+              <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Database className="w-8 h-8 text-orange-600" />
+              </div>
+              <h3 className="font-semibold text-gray-900">Universal Integration</h3>
+              <p className="text-sm text-gray-600 mt-2">Connect with any ERP, MES, SCADA, or custom system through our integration hub</p>
+            </div>
+          </div>
         </div>
 
         {/* Feature Comparison Table */}

@@ -114,6 +114,17 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 23, 2025)
 
+✓ **Comprehensive Pricing Page Update - System Feature Alignment (July 23, 2025)**:
+- Successfully updated pricing page to accurately reflect all major platform capabilities and system features
+- Enhanced pricing tiers to showcase comprehensive feature set: Max AI Assistant, multi-plant management, 14 specialized roles
+- Updated Starter plan ($35/user) to include essential features: Gantt charts, basic shop floor, visual factory, 5 roles
+- Enhanced Professional plan ($75/user) with advanced AI features: Max AI with voice, capacity planning, inventory optimization, systems integration hub
+- Upgraded Enterprise plan ($125/user) with premium capabilities: unlimited plants, AI file analysis, custom training, white-label options
+- Created comprehensive feature comparison table with 7 detailed categories covering all system functionality
+- Added "Complete Manufacturing Intelligence Platform" section highlighting key differentiators: Max AI, multi-plant ops, role specialization, universal integration
+- Updated hero section to emphasize AI-powered optimization and comprehensive manufacturing management solutions
+- Pricing now accurately represents the platform's extensive capabilities from basic production scheduling to advanced AI-driven enterprise operations
+
 ✓ **Multi-Plant Shop Floor Filtering Implementation (July 23, 2025)**:
 - Successfully implemented comprehensive multi-plant filtering system for shop floor management
 - Added plant selector dropdown to shop floor controls section alongside existing area filtering
