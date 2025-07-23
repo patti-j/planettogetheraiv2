@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Maximize2, Minimize2, ChevronDown, Plus, Settings, Users, Briefcase, Wrench, Sparkles } from "lucide-react";
+import { Maximize2, Minimize2, ChevronDown, Plus, Settings, Users, Briefcase, Wrench, Sparkles, Columns3 } from "lucide-react";
 
 import KanbanBoard from "@/components/kanban-board";
 import KanbanConfigManager from "@/components/kanban-config-manager";
@@ -119,7 +119,10 @@ export default function Boards() {
       <header className="bg-white shadow-sm border-b border-gray-200 p-3 sm:p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="md:ml-0 ml-12">
-            <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Boards</h1>
+            <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+              <Columns3 className="w-6 h-6 mr-2" />
+              Boards
+            </h1>
             <p className="text-sm md:text-base text-gray-600">Organize jobs, operations, and resources using customizable board views</p>
           </div>
         </div>

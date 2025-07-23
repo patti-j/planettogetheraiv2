@@ -513,7 +513,10 @@ export default function Analytics() {
         <div className="p-3 sm:p-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="md:ml-0 ml-12">
-              <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Analytics</h1>
+              <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+                <BarChart3 className="w-6 h-6 mr-2" />
+                Analytics
+              </h1>
               <p className="text-sm md:text-base text-gray-600">Manage and view dashboard configurations</p>
             </div>
             

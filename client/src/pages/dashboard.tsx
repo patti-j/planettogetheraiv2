@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, BarChart3, Wrench, Calendar, User, Smartphone, Monitor, ChevronDown, Play, Pause, PlayCircle, PauseCircle, Settings, GitCompare } from "lucide-react";
+import { Plus, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, BarChart3, Wrench, Calendar, User, Smartphone, Monitor, ChevronDown, Play, Pause, PlayCircle, PauseCircle, Settings, GitCompare, LayoutDashboard } from "lucide-react";
 
 import GanttChart from "@/components/ui/gantt-chart";
 import MobileSchedule from "@/components/mobile-schedule";
@@ -655,7 +655,10 @@ export default function Dashboard() {
             {/* Title and Live Button Row */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div className="md:ml-0 ml-12">
-                <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Production Schedule</h1>
+                <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+                  <LayoutDashboard className="w-6 h-6 mr-2" />
+                  Production Schedule
+                </h1>
                 <p className="text-sm md:text-base text-gray-600">Manage operations and resource allocation</p>
               </div>
               

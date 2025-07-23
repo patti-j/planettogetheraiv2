@@ -275,7 +275,10 @@ export default function EmailSettings() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
         <div className="md:ml-0 ml-12">
-          <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Email Settings</h1>
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+            <Mail className="w-6 h-6 mr-2" />
+            Email Settings
+          </h1>
           <p className="text-sm md:text-base text-gray-600">Configure AWS SES for email notifications</p>
         </div>
         <Button 

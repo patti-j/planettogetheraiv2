@@ -881,7 +881,10 @@ const SchedulingOptimizer: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="md:ml-0 ml-12">
-          <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Optimize Orders</h1>
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+            <Target className="w-6 h-6 mr-2" />
+            Optimize Orders
+          </h1>
           <p className="text-sm md:text-base text-gray-600">Optimize orders with intelligent scheduling and multi-operation planning</p>
         </div>
         <div className="lg:flex-shrink-0 flex items-center gap-1 md:gap-2">

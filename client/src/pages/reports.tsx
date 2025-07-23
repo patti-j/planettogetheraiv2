@@ -355,7 +355,10 @@ export default function Reports() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="md:ml-0 ml-12">
-          <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Reports</h1>
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+            <FileText className="w-6 h-6 mr-2" />
+            Reports
+          </h1>
           <p className="text-sm md:text-base text-gray-600">Create and manage production reports</p>
         </div>
         <div className="lg:flex-shrink-0 flex flex-wrap items-center gap-2 sm:gap-2 md:gap-2">

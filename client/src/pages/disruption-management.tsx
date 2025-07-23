@@ -423,7 +423,10 @@ export default function DisruptionManagement() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="md:ml-0 ml-12">
-          <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Disruption Management</h1>
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+            <AlertTriangle className="w-6 h-6 mr-2" />
+            Disruption Management
+          </h1>
           <p className="text-sm md:text-base text-gray-600">
             Track and manage production disruptions including machine breakdowns, material shortages, and personnel issues
           </p>

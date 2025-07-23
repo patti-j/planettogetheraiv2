@@ -432,10 +432,10 @@ export default function BusinessGoalsPage() {
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="md:ml-0 ml-12">
-            <div className="flex items-center gap-2">
-              <Target className="h-6 w-6 text-blue-600" />
-              <h1 className="text-xl md:text-2xl font-semibold text-gray-800 dark:text-white">Business Goals & Strategy</h1>
-            </div>
+            <h1 className="text-xl md:text-2xl font-semibold text-gray-800 dark:text-white flex items-center">
+              <TrendingUp className="w-6 h-6 mr-2" />
+              Business Goals & Strategy
+            </h1>
             <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 mt-1">
               Define strategic objectives, track progress, and monitor risks that impact business success
             </p>

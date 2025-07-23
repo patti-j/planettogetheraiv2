@@ -284,7 +284,10 @@ export default function OperatorDashboard() {
       <div className="bg-white shadow-sm border-b p-3 sm:p-6 flex-shrink-0">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="md:ml-0 ml-12">
-            <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Operator Dashboard</h1>
+            <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+              <Settings className="w-6 h-6 mr-2" />
+              Operator Dashboard
+            </h1>
             <p className="text-sm md:text-base text-gray-600">Review upcoming operations and report status</p>
           </div>
           <div className="flex items-center gap-4">

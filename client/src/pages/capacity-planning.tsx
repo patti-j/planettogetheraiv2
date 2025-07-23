@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
-import { Calendar, Users, Settings, Target, TrendingUp, AlertTriangle, Plus, BookOpen, Zap } from "lucide-react";
+import { Calendar, Users, Settings, Target, TrendingUp, AlertTriangle, Plus, BookOpen, Zap, Briefcase } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -179,7 +179,10 @@ export default function CapacityPlanning() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="md:ml-0 ml-12">
-          <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Capacity Planning</h1>
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+            <Briefcase className="w-6 h-6 mr-2" />
+            Capacity Planning
+          </h1>
           <p className="text-sm md:text-base text-gray-600">Plan staffing, shifts, and equipment investments for optimal production capacity</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 lg:flex-shrink-0">

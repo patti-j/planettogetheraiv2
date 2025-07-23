@@ -275,7 +275,10 @@ export default function Training() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
         <div className="md:ml-0 ml-12">
-          <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Training & Role Demonstration</h1>
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+            <GraduationCap className="w-6 h-6 mr-2" />
+            Training & Role Demonstration
+          </h1>
           <p className="text-sm md:text-base text-gray-600">
             Interactive training modules and role switching for comprehensive system demonstrations
           </p>
