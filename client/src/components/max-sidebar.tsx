@@ -141,11 +141,18 @@ export function MaxSidebar() {
 
       recognition.current.onerror = () => {
         setIsListening(false);
-        toast({
-          title: "Voice Recognition Error",
-          description: "Unable to process voice input. Please try again.",
-          variant: "destructive",
-        });
+        // Show a gentle message in chat instead of error toast
+        const voiceErrorMessage: Message = {
+          id: Date.now().toString() + '_voice_error',
+          type: 'assistant',
+          content: "I couldn't catch what you said. Please try speaking again or type your message instead.",
+          timestamp: new Date(),
+          context: {
+            page: window.location.pathname,
+            voiceError: true
+          }
+        };
+        setMessages(prev => [...prev, voiceErrorMessage]);
       };
     }
   }, []);
@@ -213,12 +220,24 @@ export function MaxSidebar() {
         playTTSResponse(response.message);
       }
     },
-    onError: (error) => {
-      toast({
-        title: "AI Assistant Error",
-        description: "Unable to process your request. Please try again.",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      // Instead of showing error toast, display helpful message in chat
+      const errorMessage: Message = {
+        id: Date.now().toString() + '_error',
+        type: 'assistant',
+        content: "I apologize, but I'm unable to help with that request right now. This might be because:\n\n• The request requires capabilities I don't currently have\n• There's a temporary connectivity issue\n• The request involves sensitive operations I cannot perform\n\nPlease try rephrasing your request or ask me about something else I can help with, like analyzing your production data, optimizing schedules, or explaining system features.",
+        timestamp: new Date(),
+        context: {
+          page: window.location.pathname,
+          error: true
+        }
+      };
+      setMessages(prev => [...prev, errorMessage]);
+
+      // Play error response if voice is enabled
+      if (isVoiceEnabled) {
+        playTTSResponse("I'm sorry, but I'm unable to help with that request right now. Please try asking me something else.");
+      }
     },
   });
 
