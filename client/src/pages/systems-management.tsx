@@ -783,26 +783,8 @@ export default function SystemsManagementPage() {
     </div>
   );
 
-  if (isMaximized) {
-    return (
-      <div className="fixed inset-0 bg-white z-50 p-6 overflow-y-auto">
-        {/* Maximize button in top right corner matching hamburger menu positioning */}
-        <div className="fixed top-2 right-2 z-50">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsMaximized(!isMaximized)}
-          >
-            {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-          </Button>
-        </div>
-        <PageContent />
-      </div>
-    );
-  }
-
   return (
-    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+    <>
       {/* Maximize button in top right corner matching hamburger menu positioning */}
       <div className="fixed top-2 right-2 z-50">
         <Button
@@ -813,7 +795,16 @@ export default function SystemsManagementPage() {
           {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
         </Button>
       </div>
-      <PageContent />
-    </div>
+
+      {isMaximized ? (
+        <div className="fixed inset-0 bg-white z-50 p-6 overflow-y-auto">
+          <PageContent />
+        </div>
+      ) : (
+        <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+          <PageContent />
+        </div>
+      )}
+    </>
   );
 }

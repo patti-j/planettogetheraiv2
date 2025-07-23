@@ -544,50 +544,8 @@ export default function Analytics() {
     </div>
   );
 
-  if (isMaximized) {
-    return (
-      <div className="fixed inset-0 bg-white z-50">
-        {/* Maximize button in top right corner matching hamburger menu positioning */}
-        <div className="fixed top-2 right-2 z-50">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsMaximized(!isMaximized)}
-          >
-            {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-          </Button>
-        </div>
-        
-        <PageContent />
-        
-        {/* AI Analytics Manager */}
-        <AIAnalyticsManager
-          open={aiAnalyticsOpen}
-          onOpenChange={setAiAnalyticsOpen}
-          onWidgetCreate={handleWidgetCreate}
-          currentWidgets={customWidgets}
-          onWidgetUpdate={handleWidgetUpdate}
-        />
-        
-        {/* Dashboard Manager */}
-        <DashboardManager
-          open={dashboardManagerOpen}
-          onOpenChange={setDashboardManagerOpen}
-          dashboards={dashboards}
-          currentDashboard={currentDashboard}
-          onDashboardSelect={handleDashboardSelect}
-          onDashboardCreate={handleDashboardCreate}
-          onDashboardUpdate={handleDashboardUpdate}
-          onDashboardDelete={handleDashboardDelete}
-          standardWidgets={standardWidgets}
-          customWidgets={customWidgets}
-        />
-      </div>
-    );
-  }
-
   return (
-    <div className="h-screen bg-gray-50">
+    <>
       {/* Maximize button in top right corner matching hamburger menu positioning */}
       <div className="fixed top-2 right-2 z-50">
         <Button
@@ -599,7 +557,38 @@ export default function Analytics() {
         </Button>
       </div>
 
-      <PageContent />
+      {isMaximized ? (
+        <div className="fixed inset-0 bg-white z-50">
+          <PageContent />
+          
+          {/* AI Analytics Manager */}
+          <AIAnalyticsManager
+            open={aiAnalyticsOpen}
+            onOpenChange={setAiAnalyticsOpen}
+            onWidgetCreate={handleWidgetCreate}
+            currentWidgets={customWidgets}
+            onWidgetUpdate={handleWidgetUpdate}
+          />
+          
+          {/* Dashboard Manager */}
+          <DashboardManager
+            open={dashboardManagerOpen}
+            onOpenChange={setDashboardManagerOpen}
+            dashboards={dashboards}
+            currentDashboard={currentDashboard}
+            onDashboardSelect={handleDashboardSelect}
+            onDashboardCreate={handleDashboardCreate}
+            onDashboardUpdate={handleDashboardUpdate}
+            onDashboardDelete={handleDashboardDelete}
+            standardWidgets={standardWidgets}
+            customWidgets={customWidgets}
+          />
+        </div>
+      ) : (
+        <div className="h-screen bg-gray-50">
+          <PageContent />
+        </div>
+      )}
       
       {/* AI Analytics Manager */}
       <AIAnalyticsManager
@@ -623,6 +612,6 @@ export default function Analytics() {
         standardWidgets={standardWidgets}
         customWidgets={customWidgets}
       />
-    </div>
+    </>
   );
 }
