@@ -123,6 +123,7 @@ export default function DemandForecastingPage() {
   const [forecastPeriod, setForecastPeriod] = useState("30");
   const [selectedModel, setSelectedModel] = useState("ml");
   const { toast } = useToast();
+  const { aiTheme } = useAITheme();
 
   // Data queries
   const { data: demandForecasts = [], isLoading: forecastsLoading } = useQuery<DemandForecast[]>({
