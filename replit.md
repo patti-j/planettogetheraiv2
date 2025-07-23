@@ -114,6 +114,17 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 23, 2025)
 
+✓ **Max AI Assistant Split-Pane Layout Implementation (July 23, 2025)**:
+- Successfully transformed Max from floating window to fixed split-pane layout system
+- Desktop layout: Max positioned on left side alongside main content with horizontal resizable splitter
+- Mobile layout: Max positioned at bottom under main content with vertical splitter
+- Completely replaced MaxDockContext docking system with split-pane width management
+- Integrated SplitPaneLayout component into App.tsx with proper routing and main content handling
+- Added Max toggle button to sidebar navigation with Bot icon and proper tooltip
+- Fixed all API functionality for chat and TTS integration with correct fetch API usage
+- Hidden smart insights panel on mobile (hidden md:block) to maximize chat space on smaller screens
+- Eliminated floating window system entirely for consistent, predictable layout behavior
+
 ✓ **User Profile Integration into Hamburger Menu (July 23, 2025)**:
 - Successfully moved user profile/avatar/role switching controls from standalone App.tsx position into hamburger menu
 - Positioned avatar, username, and user icons directly within PlanetTogether logo panel beneath company branding

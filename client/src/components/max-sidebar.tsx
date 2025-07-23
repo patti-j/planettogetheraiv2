@@ -224,9 +224,9 @@ export function MaxSidebar() {
       const response = await apiRequest(`/api/ai-agent/tts`, 'POST', { 
         text, 
         voice: selectedVoice 
-      });
+      }) as { audioUrl?: string };
 
-      if (response.audioUrl) {
+      if (response?.audioUrl) {
         if (currentAudio.current) {
           currentAudio.current.pause();
         }
@@ -323,9 +323,9 @@ export function MaxSidebar() {
         </div>
       )}
 
-      {/* Current Insights */}
+      {/* Current Insights - Hidden on mobile to save space */}
       {currentInsights.length > 0 && (
-        <div className="p-3 bg-gray-50 border-b">
+        <div className="p-3 bg-gray-50 border-b hidden md:block">
           <div className="text-xs font-medium text-gray-700 mb-2 flex items-center gap-1">
             <Brain className="h-3 w-3" />
             Smart Insights
