@@ -23,7 +23,9 @@ import {
   insertDemandForecastSchema, insertDemandDriverSchema, insertDemandHistorySchema,
   insertInventoryOptimizationScenarioSchema, insertOptimizationRecommendationSchema,
   insertFeedbackSchema, insertFeedbackCommentSchema, insertFeedbackVoteSchema,
-  insertAccountInfoSchema, insertBillingHistorySchema, insertUsageMetricsSchema
+  insertAccountInfoSchema, insertBillingHistorySchema, insertUsageMetricsSchema,
+  insertSystemIntegrationSchema, insertIntegrationDataFlowSchema, insertIntegrationExecutionLogSchema,
+  insertIntegrationDataMappingSchema, insertIntegrationWebhookSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -7395,6 +7397,392 @@ Create a natural, conversational voice script that explains this feature to some
     } catch (error) {
       console.error("Error generating invoice:", error);
       res.status(500).json({ error: "Failed to generate invoice" });
+    }
+  });
+
+  // System Integrations API Routes
+  app.get("/api/system-integrations", async (req, res) => {
+    try {
+      const integrations = await storage.getSystemIntegrations();
+      res.json(integrations);
+    } catch (error) {
+      console.error("Error fetching system integrations:", error);
+      res.status(500).json({ error: "Failed to fetch system integrations" });
+    }
+  });
+
+  app.get("/api/system-integrations/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid integration ID" });
+      }
+
+      const integration = await storage.getSystemIntegration(id);
+      if (!integration) {
+        return res.status(404).json({ error: "Integration not found" });
+      }
+      res.json(integration);
+    } catch (error) {
+      console.error("Error fetching system integration:", error);
+      res.status(500).json({ error: "Failed to fetch system integration" });
+    }
+  });
+
+  app.post("/api/system-integrations", async (req, res) => {
+    try {
+      const validation = insertSystemIntegrationSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid integration data", details: validation.error.errors });
+      }
+
+      const integration = await storage.createSystemIntegration(validation.data);
+      res.status(201).json(integration);
+    } catch (error) {
+      console.error("Error creating system integration:", error);
+      res.status(500).json({ error: "Failed to create system integration" });
+    }
+  });
+
+  app.put("/api/system-integrations/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid integration ID" });
+      }
+
+      const validation = insertSystemIntegrationSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid integration data", details: validation.error.errors });
+      }
+
+      const integration = await storage.updateSystemIntegration(id, validation.data);
+      if (!integration) {
+        return res.status(404).json({ error: "Integration not found" });
+      }
+      res.json(integration);
+    } catch (error) {
+      console.error("Error updating system integration:", error);
+      res.status(500).json({ error: "Failed to update system integration" });
+    }
+  });
+
+  app.delete("/api/system-integrations/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid integration ID" });
+      }
+
+      const success = await storage.deleteSystemIntegration(id);
+      if (!success) {
+        return res.status(404).json({ error: "Integration not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting system integration:", error);
+      res.status(500).json({ error: "Failed to delete system integration" });
+    }
+  });
+
+  app.post("/api/system-integrations/:id/test", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid integration ID" });
+      }
+
+      const result = await storage.testSystemIntegrationConnection(id);
+      res.json(result);
+    } catch (error) {
+      console.error("Error testing system integration:", error);
+      res.status(500).json({ error: "Failed to test system integration" });
+    }
+  });
+
+  // Integration Data Flows API Routes
+  app.get("/api/integration-data-flows", async (req, res) => {
+    try {
+      const integrationId = req.query.integrationId ? parseInt(req.query.integrationId as string) : undefined;
+      const dataFlows = await storage.getIntegrationDataFlows(integrationId);
+      res.json(dataFlows);
+    } catch (error) {
+      console.error("Error fetching integration data flows:", error);
+      res.status(500).json({ error: "Failed to fetch integration data flows" });
+    }
+  });
+
+  app.get("/api/integration-data-flows/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid data flow ID" });
+      }
+
+      const dataFlow = await storage.getIntegrationDataFlow(id);
+      if (!dataFlow) {
+        return res.status(404).json({ error: "Data flow not found" });
+      }
+      res.json(dataFlow);
+    } catch (error) {
+      console.error("Error fetching integration data flow:", error);
+      res.status(500).json({ error: "Failed to fetch integration data flow" });
+    }
+  });
+
+  app.post("/api/integration-data-flows", async (req, res) => {
+    try {
+      const validation = insertIntegrationDataFlowSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid data flow data", details: validation.error.errors });
+      }
+
+      const dataFlow = await storage.createIntegrationDataFlow(validation.data);
+      res.status(201).json(dataFlow);
+    } catch (error) {
+      console.error("Error creating integration data flow:", error);
+      res.status(500).json({ error: "Failed to create integration data flow" });
+    }
+  });
+
+  app.put("/api/integration-data-flows/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid data flow ID" });
+      }
+
+      const validation = insertIntegrationDataFlowSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid data flow data", details: validation.error.errors });
+      }
+
+      const dataFlow = await storage.updateIntegrationDataFlow(id, validation.data);
+      if (!dataFlow) {
+        return res.status(404).json({ error: "Data flow not found" });
+      }
+      res.json(dataFlow);
+    } catch (error) {
+      console.error("Error updating integration data flow:", error);
+      res.status(500).json({ error: "Failed to update integration data flow" });
+    }
+  });
+
+  app.delete("/api/integration-data-flows/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid data flow ID" });
+      }
+
+      const success = await storage.deleteIntegrationDataFlow(id);
+      if (!success) {
+        return res.status(404).json({ error: "Data flow not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting integration data flow:", error);
+      res.status(500).json({ error: "Failed to delete integration data flow" });
+    }
+  });
+
+  app.post("/api/integration-data-flows/:id/execute", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid data flow ID" });
+      }
+
+      const result = await storage.executeIntegrationDataFlow(id);
+      res.json(result);
+    } catch (error) {
+      console.error("Error executing integration data flow:", error);
+      res.status(500).json({ error: "Failed to execute integration data flow" });
+    }
+  });
+
+  // Integration Execution Logs API Routes
+  app.get("/api/integration-execution-logs", async (req, res) => {
+    try {
+      const dataFlowId = req.query.dataFlowId ? parseInt(req.query.dataFlowId as string) : undefined;
+      const logs = await storage.getIntegrationExecutionLogs(dataFlowId);
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching integration execution logs:", error);
+      res.status(500).json({ error: "Failed to fetch integration execution logs" });
+    }
+  });
+
+  app.get("/api/integration-execution-logs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid execution log ID" });
+      }
+
+      const log = await storage.getIntegrationExecutionLog(id);
+      if (!log) {
+        return res.status(404).json({ error: "Execution log not found" });
+      }
+      res.json(log);
+    } catch (error) {
+      console.error("Error fetching integration execution log:", error);
+      res.status(500).json({ error: "Failed to fetch integration execution log" });
+    }
+  });
+
+  // Integration Data Mappings API Routes
+  app.get("/api/integration-data-mappings", async (req, res) => {
+    try {
+      const dataFlowId = parseInt(req.query.dataFlowId as string);
+      if (isNaN(dataFlowId)) {
+        return res.status(400).json({ error: "dataFlowId is required" });
+      }
+
+      const mappings = await storage.getIntegrationDataMappings(dataFlowId);
+      res.json(mappings);
+    } catch (error) {
+      console.error("Error fetching integration data mappings:", error);
+      res.status(500).json({ error: "Failed to fetch integration data mappings" });
+    }
+  });
+
+  app.post("/api/integration-data-mappings", async (req, res) => {
+    try {
+      const validation = insertIntegrationDataMappingSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid data mapping data", details: validation.error.errors });
+      }
+
+      const mapping = await storage.createIntegrationDataMapping(validation.data);
+      res.status(201).json(mapping);
+    } catch (error) {
+      console.error("Error creating integration data mapping:", error);
+      res.status(500).json({ error: "Failed to create integration data mapping" });
+    }
+  });
+
+  app.put("/api/integration-data-mappings/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid data mapping ID" });
+      }
+
+      const validation = insertIntegrationDataMappingSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid data mapping data", details: validation.error.errors });
+      }
+
+      const mapping = await storage.updateIntegrationDataMapping(id, validation.data);
+      if (!mapping) {
+        return res.status(404).json({ error: "Data mapping not found" });
+      }
+      res.json(mapping);
+    } catch (error) {
+      console.error("Error updating integration data mapping:", error);
+      res.status(500).json({ error: "Failed to update integration data mapping" });
+    }
+  });
+
+  app.delete("/api/integration-data-mappings/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid data mapping ID" });
+      }
+
+      const success = await storage.deleteIntegrationDataMapping(id);
+      if (!success) {
+        return res.status(404).json({ error: "Data mapping not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting integration data mapping:", error);
+      res.status(500).json({ error: "Failed to delete integration data mapping" });
+    }
+  });
+
+  // Integration Webhooks API Routes
+  app.get("/api/integration-webhooks", async (req, res) => {
+    try {
+      const integrationId = req.query.integrationId ? parseInt(req.query.integrationId as string) : undefined;
+      const webhooks = await storage.getIntegrationWebhooks(integrationId);
+      res.json(webhooks);
+    } catch (error) {
+      console.error("Error fetching integration webhooks:", error);
+      res.status(500).json({ error: "Failed to fetch integration webhooks" });
+    }
+  });
+
+  app.post("/api/integration-webhooks", async (req, res) => {
+    try {
+      const validation = insertIntegrationWebhookSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid webhook data", details: validation.error.errors });
+      }
+
+      const webhook = await storage.createIntegrationWebhook(validation.data);
+      res.status(201).json(webhook);
+    } catch (error) {
+      console.error("Error creating integration webhook:", error);
+      res.status(500).json({ error: "Failed to create integration webhook" });
+    }
+  });
+
+  app.put("/api/integration-webhooks/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid webhook ID" });
+      }
+
+      const validation = insertIntegrationWebhookSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid webhook data", details: validation.error.errors });
+      }
+
+      const webhook = await storage.updateIntegrationWebhook(id, validation.data);
+      if (!webhook) {
+        return res.status(404).json({ error: "Webhook not found" });
+      }
+      res.json(webhook);
+    } catch (error) {
+      console.error("Error updating integration webhook:", error);
+      res.status(500).json({ error: "Failed to update integration webhook" });
+    }
+  });
+
+  app.delete("/api/integration-webhooks/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid webhook ID" });
+      }
+
+      const success = await storage.deleteIntegrationWebhook(id);
+      if (!success) {
+        return res.status(404).json({ error: "Webhook not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting integration webhook:", error);
+      res.status(500).json({ error: "Failed to delete integration webhook" });
+    }
+  });
+
+  app.post("/api/integration-webhooks/:id/trigger", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid webhook ID" });
+      }
+
+      const result = await storage.triggerIntegrationWebhook(id, req.body);
+      res.json(result);
+    } catch (error) {
+      console.error("Error triggering integration webhook:", error);
+      res.status(500).json({ error: "Failed to trigger integration webhook" });
     }
   });
 

@@ -30,6 +30,7 @@ import SchedulingOptimizer from "@/pages/scheduling-optimizer";
 import InventoryOptimization from "@/pages/inventory-optimization";
 import DemandForecasting from "@/pages/demand-forecasting";
 import ERPImport from "@/pages/erp-import";
+import SystemIntegrationsPage from "@/pages/system-integrations";
 import PlantManager from "@/pages/plant-manager";
 import SystemsManagement from "@/pages/systems-management";
 import CapacityPlanning from "@/pages/capacity-planning";
@@ -281,6 +282,11 @@ function Router() {
           <Route path="/help">
             <ProtectedRoute feature="getting-started" action="view">
               <HelpAndGuide />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/system-integrations">
+            <ProtectedRoute feature="system-integrations" action="view">
+              <SystemIntegrationsPage />
             </ProtectedRoute>
           </Route>
           <Route path="/account" component={Account} />

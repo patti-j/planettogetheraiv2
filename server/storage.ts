@@ -7,6 +7,7 @@ import {
   users, roles, permissions, userRoles, rolePermissions, visualFactoryDisplays,
   disruptions, disruptionActions, disruptionEscalations,
   inventoryItems, inventoryTransactions, inventoryBalances, demandForecasts, demandDrivers, demandHistory, inventoryOptimizationScenarios, optimizationRecommendations,
+  systemIntegrations, integrationDataFlows, integrationExecutionLogs, integrationDataMappings, integrationWebhooks,
   type Capability, type Resource, type Job, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
@@ -15,6 +16,7 @@ import {
   type User, type Role, type Permission, type UserRole, type RolePermission, type UserWithRoles,
   type Disruption, type DisruptionAction, type DisruptionEscalation,
   type InventoryItem, type InventoryTransaction, type InventoryBalance, type DemandForecast, type DemandDriver, type DemandHistory, type InventoryOptimizationScenario, type OptimizationRecommendation,
+  type SystemIntegration, type IntegrationDataFlow, type IntegrationExecutionLog, type IntegrationDataMapping, type IntegrationWebhook,
   type InsertCapability, type InsertResource, type InsertJob, 
   type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
@@ -25,6 +27,7 @@ import {
   type VisualFactoryDisplay, type InsertVisualFactoryDisplay,
   type InsertDisruption, type InsertDisruptionAction, type InsertDisruptionEscalation,
   type InsertInventoryItem, type InsertInventoryTransaction, type InsertInventoryBalance, type InsertDemandForecast, type InsertDemandDriver, type InsertDemandHistory, type InsertInventoryOptimizationScenario, type InsertOptimizationRecommendation,
+  type InsertSystemIntegration, type InsertIntegrationDataFlow, type InsertIntegrationExecutionLog, type InsertIntegrationDataMapping, type InsertIntegrationWebhook,
   demoTourParticipants, type DemoTourParticipant, type InsertDemoTourParticipant,
   voiceRecordingsCache, type VoiceRecordingsCache, type InsertVoiceRecordingsCache,
   tours, type Tour, type InsertTour,
@@ -500,6 +503,44 @@ export interface IStorage {
   getUsageMetrics(accountId: number, metricType?: string): Promise<UsageMetrics[]>;
   createUsageMetric(usage: InsertUsageMetrics): Promise<UsageMetrics>;
   updateUsageMetric(accountId: number, metricType: string, value: number): Promise<UsageMetrics | undefined>;
+
+  // System Integrations Management
+  getSystemIntegrations(): Promise<SystemIntegration[]>;
+  getSystemIntegration(id: number): Promise<SystemIntegration | undefined>;
+  createSystemIntegration(integration: InsertSystemIntegration): Promise<SystemIntegration>;
+  updateSystemIntegration(id: number, integration: Partial<InsertSystemIntegration>): Promise<SystemIntegration | undefined>;
+  deleteSystemIntegration(id: number): Promise<boolean>;
+  testSystemIntegrationConnection(id: number): Promise<{ success: boolean; error?: string }>;
+  updateSystemIntegrationHealth(id: number, health: string): Promise<SystemIntegration | undefined>;
+
+  // Integration Data Flows
+  getIntegrationDataFlows(integrationId?: number): Promise<IntegrationDataFlow[]>;
+  getIntegrationDataFlow(id: number): Promise<IntegrationDataFlow | undefined>;
+  createIntegrationDataFlow(dataFlow: InsertIntegrationDataFlow): Promise<IntegrationDataFlow>;
+  updateIntegrationDataFlow(id: number, dataFlow: Partial<InsertIntegrationDataFlow>): Promise<IntegrationDataFlow | undefined>;
+  deleteIntegrationDataFlow(id: number): Promise<boolean>;
+  executeIntegrationDataFlow(id: number): Promise<{ success: boolean; executionId: string; error?: string }>;
+
+  // Integration Execution Logs
+  getIntegrationExecutionLogs(dataFlowId?: number): Promise<IntegrationExecutionLog[]>;
+  getIntegrationExecutionLog(id: number): Promise<IntegrationExecutionLog | undefined>;
+  createIntegrationExecutionLog(log: InsertIntegrationExecutionLog): Promise<IntegrationExecutionLog>;
+  updateIntegrationExecutionLog(id: number, log: Partial<InsertIntegrationExecutionLog>): Promise<IntegrationExecutionLog | undefined>;
+
+  // Integration Data Mappings
+  getIntegrationDataMappings(dataFlowId: number): Promise<IntegrationDataMapping[]>;
+  getIntegrationDataMapping(id: number): Promise<IntegrationDataMapping | undefined>;
+  createIntegrationDataMapping(mapping: InsertIntegrationDataMapping): Promise<IntegrationDataMapping>;
+  updateIntegrationDataMapping(id: number, mapping: Partial<InsertIntegrationDataMapping>): Promise<IntegrationDataMapping | undefined>;
+  deleteIntegrationDataMapping(id: number): Promise<boolean>;
+
+  // Integration Webhooks
+  getIntegrationWebhooks(integrationId?: number): Promise<IntegrationWebhook[]>;
+  getIntegrationWebhook(id: number): Promise<IntegrationWebhook | undefined>;
+  createIntegrationWebhook(webhook: InsertIntegrationWebhook): Promise<IntegrationWebhook>;
+  updateIntegrationWebhook(id: number, webhook: Partial<InsertIntegrationWebhook>): Promise<IntegrationWebhook | undefined>;
+  deleteIntegrationWebhook(id: number): Promise<boolean>;
+  triggerIntegrationWebhook(id: number, payload: any): Promise<{ success: boolean; error?: string }>;
 }
 
 export class MemStorage implements IStorage {
@@ -3863,6 +3904,241 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return newMetric;
     }
+  }
+
+  // System Integrations Implementation
+  async getSystemIntegrations(): Promise<SystemIntegration[]> {
+    return await db.select().from(systemIntegrations)
+      .orderBy(desc(systemIntegrations.createdAt));
+  }
+
+  async getSystemIntegration(id: number): Promise<SystemIntegration | undefined> {
+    const [integration] = await db.select().from(systemIntegrations)
+      .where(eq(systemIntegrations.id, id));
+    return integration;
+  }
+
+  async createSystemIntegration(integration: InsertSystemIntegration): Promise<SystemIntegration> {
+    const [newIntegration] = await db.insert(systemIntegrations).values(integration).returning();
+    return newIntegration;
+  }
+
+  async updateSystemIntegration(id: number, integration: Partial<InsertSystemIntegration>): Promise<SystemIntegration | undefined> {
+    const [updated] = await db.update(systemIntegrations)
+      .set({ ...integration, updatedAt: new Date() })
+      .where(eq(systemIntegrations.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteSystemIntegration(id: number): Promise<boolean> {
+    const result = await db.delete(systemIntegrations)
+      .where(eq(systemIntegrations.id, id));
+    return result.rowCount! > 0;
+  }
+
+  async testSystemIntegrationConnection(id: number): Promise<{ success: boolean; error?: string }> {
+    // Implementation would depend on the integration type and configuration
+    // For now, return a mock response
+    const integration = await this.getSystemIntegration(id);
+    if (!integration) {
+      return { success: false, error: 'Integration not found' };
+    }
+    
+    // Update last tested timestamp
+    await this.updateSystemIntegration(id, { lastTested: new Date() });
+    
+    // Mock test result - in real implementation would actually test the connection
+    return { success: integration.status === 'active' };
+  }
+
+  async updateSystemIntegrationHealth(id: number, health: string): Promise<SystemIntegration | undefined> {
+    return await this.updateSystemIntegration(id, { healthStatus: health });
+  }
+
+  // Integration Data Flows Implementation
+  async getIntegrationDataFlows(integrationId?: number): Promise<IntegrationDataFlow[]> {
+    let query = db.select().from(integrationDataFlows);
+    if (integrationId) {
+      query = query.where(eq(integrationDataFlows.integrationId, integrationId));
+    }
+    return await query.orderBy(desc(integrationDataFlows.createdAt));
+  }
+
+  async getIntegrationDataFlow(id: number): Promise<IntegrationDataFlow | undefined> {
+    const [dataFlow] = await db.select().from(integrationDataFlows)
+      .where(eq(integrationDataFlows.id, id));
+    return dataFlow;
+  }
+
+  async createIntegrationDataFlow(dataFlow: InsertIntegrationDataFlow): Promise<IntegrationDataFlow> {
+    const [newDataFlow] = await db.insert(integrationDataFlows).values(dataFlow).returning();
+    return newDataFlow;
+  }
+
+  async updateIntegrationDataFlow(id: number, dataFlow: Partial<InsertIntegrationDataFlow>): Promise<IntegrationDataFlow | undefined> {
+    const [updated] = await db.update(integrationDataFlows)
+      .set({ ...dataFlow, updatedAt: new Date() })
+      .where(eq(integrationDataFlows.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteIntegrationDataFlow(id: number): Promise<boolean> {
+    const result = await db.delete(integrationDataFlows)
+      .where(eq(integrationDataFlows.id, id));
+    return result.rowCount! > 0;
+  }
+
+  async executeIntegrationDataFlow(id: number): Promise<{ success: boolean; executionId: string; error?: string }> {
+    const dataFlow = await this.getIntegrationDataFlow(id);
+    if (!dataFlow) {
+      return { success: false, executionId: '', error: 'Data flow not found' };
+    }
+
+    const executionId = `exec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Create execution log
+    await this.createIntegrationExecutionLog({
+      dataFlowId: id,
+      executionId,
+      status: 'started'
+    });
+
+    // Mock execution - in real implementation would actually execute the data flow
+    const success = Math.random() > 0.2; // 80% success rate for demo
+    
+    // Update execution log
+    await db.update(integrationExecutionLogs)
+      .set({
+        status: success ? 'completed' : 'failed',
+        completedAt: new Date(),
+        recordsProcessed: success ? Math.floor(Math.random() * 1000) : 0,
+        recordsSucceeded: success ? Math.floor(Math.random() * 1000) : 0,
+        errorMessage: success ? undefined : 'Mock execution error for demo'
+      })
+      .where(eq(integrationExecutionLogs.executionId, executionId));
+
+    return { success, executionId, error: success ? undefined : 'Execution failed' };
+  }
+
+  // Integration Execution Logs Implementation
+  async getIntegrationExecutionLogs(dataFlowId?: number): Promise<IntegrationExecutionLog[]> {
+    let query = db.select().from(integrationExecutionLogs);
+    if (dataFlowId) {
+      query = query.where(eq(integrationExecutionLogs.dataFlowId, dataFlowId));
+    }
+    return await query.orderBy(desc(integrationExecutionLogs.startedAt));
+  }
+
+  async getIntegrationExecutionLog(id: number): Promise<IntegrationExecutionLog | undefined> {
+    const [log] = await db.select().from(integrationExecutionLogs)
+      .where(eq(integrationExecutionLogs.id, id));
+    return log;
+  }
+
+  async createIntegrationExecutionLog(log: InsertIntegrationExecutionLog): Promise<IntegrationExecutionLog> {
+    const [newLog] = await db.insert(integrationExecutionLogs).values(log).returning();
+    return newLog;
+  }
+
+  async updateIntegrationExecutionLog(id: number, log: Partial<InsertIntegrationExecutionLog>): Promise<IntegrationExecutionLog | undefined> {
+    const [updated] = await db.update(integrationExecutionLogs)
+      .set(log)
+      .where(eq(integrationExecutionLogs.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Integration Data Mappings Implementation
+  async getIntegrationDataMappings(dataFlowId: number): Promise<IntegrationDataMapping[]> {
+    return await db.select().from(integrationDataMappings)
+      .where(eq(integrationDataMappings.dataFlowId, dataFlowId))
+      .orderBy(asc(integrationDataMappings.sourceField));
+  }
+
+  async getIntegrationDataMapping(id: number): Promise<IntegrationDataMapping | undefined> {
+    const [mapping] = await db.select().from(integrationDataMappings)
+      .where(eq(integrationDataMappings.id, id));
+    return mapping;
+  }
+
+  async createIntegrationDataMapping(mapping: InsertIntegrationDataMapping): Promise<IntegrationDataMapping> {
+    const [newMapping] = await db.insert(integrationDataMappings).values(mapping).returning();
+    return newMapping;
+  }
+
+  async updateIntegrationDataMapping(id: number, mapping: Partial<InsertIntegrationDataMapping>): Promise<IntegrationDataMapping | undefined> {
+    const [updated] = await db.update(integrationDataMappings)
+      .set({ ...mapping, updatedAt: new Date() })
+      .where(eq(integrationDataMappings.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteIntegrationDataMapping(id: number): Promise<boolean> {
+    const result = await db.delete(integrationDataMappings)
+      .where(eq(integrationDataMappings.id, id));
+    return result.rowCount! > 0;
+  }
+
+  // Integration Webhooks Implementation
+  async getIntegrationWebhooks(integrationId?: number): Promise<IntegrationWebhook[]> {
+    let query = db.select().from(integrationWebhooks);
+    if (integrationId) {
+      query = query.where(eq(integrationWebhooks.integrationId, integrationId));
+    }
+    return await query.orderBy(desc(integrationWebhooks.createdAt));
+  }
+
+  async getIntegrationWebhook(id: number): Promise<IntegrationWebhook | undefined> {
+    const [webhook] = await db.select().from(integrationWebhooks)
+      .where(eq(integrationWebhooks.id, id));
+    return webhook;
+  }
+
+  async createIntegrationWebhook(webhook: InsertIntegrationWebhook): Promise<IntegrationWebhook> {
+    const [newWebhook] = await db.insert(integrationWebhooks).values(webhook).returning();
+    return newWebhook;
+  }
+
+  async updateIntegrationWebhook(id: number, webhook: Partial<InsertIntegrationWebhook>): Promise<IntegrationWebhook | undefined> {
+    const [updated] = await db.update(integrationWebhooks)
+      .set({ ...webhook, updatedAt: new Date() })
+      .where(eq(integrationWebhooks.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteIntegrationWebhook(id: number): Promise<boolean> {
+    const result = await db.delete(integrationWebhooks)
+      .where(eq(integrationWebhooks.id, id));
+    return result.rowCount! > 0;
+  }
+
+  async triggerIntegrationWebhook(id: number, payload: any): Promise<{ success: boolean; error?: string }> {
+    const webhook = await this.getIntegrationWebhook(id);
+    if (!webhook || !webhook.isActive) {
+      return { success: false, error: 'Webhook not found or inactive' };
+    }
+
+    // Update last triggered timestamp
+    await this.updateIntegrationWebhook(id, { lastTriggered: new Date() });
+
+    // Mock webhook execution - in real implementation would make HTTP request
+    const success = Math.random() > 0.1; // 90% success rate for demo
+    
+    if (success) {
+      await this.updateIntegrationWebhook(id, { 
+        successCount: (webhook.successCount || 0) + 1 
+      });
+    } else {
+      await this.updateIntegrationWebhook(id, { 
+        failureCount: (webhook.failureCount || 0) + 1 
+      });
+    }
+
+    return { success, error: success ? undefined : 'Webhook execution failed' };
   }
 }
 
