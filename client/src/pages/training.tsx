@@ -1354,17 +1354,23 @@ function TourManagementSection() {
         // Extract the tour data from the response
         let tourData;
         const responseData = response as any;
+        console.log('Full server response:', JSON.stringify(responseData, null, 2));
+        
         if (responseData.tours && responseData.tours.length > 0) {
+          console.log('Using tours array - first tour:', responseData.tours[0]);
           tourData = responseData.tours[0];
         } else if (responseData.steps) {
+          console.log('Using direct steps:', responseData.steps.length);
           // Direct steps in response
           tourData = { steps: responseData.steps };
         } else {
+          console.log('Using fallback - entire response');
           // Fallback to the entire response
           tourData = responseData;
         }
         
         console.log('Processed tour data:', tourData);
+        console.log('Tour data steps:', tourData?.steps?.length || 'no steps found');
         
         setSingleTourPreviewData({
           role: selectedTourForRegeneration.roleDisplayName,
