@@ -88,29 +88,15 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
   return (
     <div className={`fixed inset-0 z-50 bg-black/50 backdrop-blur-sm ${isFullscreen ? '' : 'p-4'}`}>
       <div className={`bg-white rounded-lg shadow-xl overflow-hidden ${isFullscreen ? 'w-full h-full' : 'w-full h-full max-w-7xl max-h-[90vh] mx-auto'} relative`}>
-        {/* Desktop Maximize Button */}
+        {/* Maximize/Minimize Button - Fixed top right, consistent with other pages */}
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           onClick={() => setIsFullscreen(!isFullscreen)}
-          className="fixed top-2 right-2 z-50 bg-white/90 hover:bg-white text-gray-700 hover:text-gray-900 shadow-sm hidden sm:flex"
-          title={isFullscreen ? "Exit fullscreen" : "Maximize"}
+          className="fixed top-2 right-2 z-50"
         >
           {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
         </Button>
-
-        {/* Mobile Exit Button - Only shows on small screens when maximized */}
-        {isFullscreen && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsFullscreen(false)}
-            className="fixed top-2 right-2 z-50 bg-white/90 hover:bg-white text-gray-700 hover:text-gray-900 shadow-sm sm:hidden"
-            title="Minimize"
-          >
-            <Minimize2 className="w-4 h-4" />
-          </Button>
-        )}
 
         {/* Canvas Header - Ultra compact on mobile */}
         <div className={`${aiTheme.gradient} text-white p-2 sm:p-4`}>
