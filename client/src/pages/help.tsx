@@ -16,7 +16,7 @@ import {
   Circle,
   Clock,
   Play,
-  Book,
+  BookOpen,
   Video,
   FileText,
   Download,
@@ -355,7 +355,7 @@ export default function HelpAndGuide() {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="md:ml-0 ml-12">
           <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
-            <Book className="w-6 h-6 mr-2" />
+            <BookOpen className="w-6 h-6 mr-2" />
             Getting Started
           </h1>
           <p className="text-sm md:text-base text-gray-600">
