@@ -689,6 +689,16 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                 >
                   {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => playPreloadedAudio(tourSteps[currentStep]?.id)}
+                  disabled={isLoadingVoice || !tourSteps[currentStep]}
+                  className="h-8 w-8 p-0"
+                  title="Replay voice narration"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           )}
@@ -717,6 +727,32 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                 <>
                   Next
                   <ChevronRight className="h-4 w-4 ml-1" />
+                </>
+              )}
+            </Button>
+
+            <Button
+              variant={autoAdvance ? "default" : "outline"}
+              onClick={() => {
+                const newAutoAdvance = !autoAdvance;
+                setAutoAdvance(newAutoAdvance);
+                // If turning on auto-advance and audio has completed, advance immediately
+                if (newAutoAdvance && audioCompleted && currentStep < tourSteps.length - 1) {
+                  setTimeout(() => handleNext(), 500);
+                }
+              }}
+              className={`h-10 px-3 ${autoAdvance ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
+              title={autoAdvance ? "Auto-advance enabled" : "Auto-advance disabled"}
+            >
+              {autoAdvance ? (
+                <>
+                  <Timer className="h-4 w-4 mr-1" />
+                  <span className="hidden sm:inline">Auto</span>
+                </>
+              ) : (
+                <>
+                  <TimerOff className="h-4 w-4 mr-1" />
+                  <span className="hidden sm:inline">Manual</span>
                 </>
               )}
             </Button>
