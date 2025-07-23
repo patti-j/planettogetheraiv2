@@ -1347,13 +1347,15 @@ function TourManagementSection() {
           contentOnly: true // Flag to skip voice generation
         });
         
+        // Parse the JSON response
+        const responseData = await response.json();
+        
         // Store the generated tour data for preview
-        console.log('AI Response:', response);
-        console.log('Response tours:', (response as any).tours);
+        console.log('AI Response:', responseData);
+        console.log('Response tours:', responseData.tours);
         
         // Extract the tour data from the response
         let tourData;
-        const responseData = response as any;
         console.log('Full server response:', JSON.stringify(responseData, null, 2));
         
         if (responseData.tours && responseData.tours.length > 0) {
