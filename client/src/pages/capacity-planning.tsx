@@ -19,6 +19,7 @@ import type { CapacityPlanningScenario, StaffingPlan, ShiftPlan, EquipmentPlan, 
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAITheme } from "@/hooks/use-ai-theme";
 
 export default function CapacityPlanning() {
   const [activeTab, setActiveTab] = useState("scenarios");
@@ -26,6 +27,7 @@ export default function CapacityPlanning() {
   const [showCreateScenario, setShowCreateScenario] = useState(false);
   const [showAIRecommendations, setShowAIRecommendations] = useState(false);
   const { toast } = useToast();
+  const { aiTheme } = useAITheme();
 
   // Queries
   const { data: scenarios = [], isLoading: loadingScenarios } = useQuery<CapacityPlanningScenario[]>({
@@ -189,7 +191,7 @@ export default function CapacityPlanning() {
           <Button 
             variant="outline" 
             onClick={() => setShowAIRecommendations(!showAIRecommendations)}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 text-sm"
+            className={`${aiTheme.gradient} text-white text-sm`}
             size="sm"
           >
             <Zap className="w-4 h-4 mr-1 sm:mr-2" />

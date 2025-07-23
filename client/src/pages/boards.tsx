@@ -10,6 +10,7 @@ import JobForm from "@/components/job-form";
 import ResourceForm from "@/components/resource-form";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAITheme } from "@/hooks/use-ai-theme";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
@@ -48,6 +49,7 @@ export default function Boards() {
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const { toast } = useToast();
+  const { aiTheme } = useAITheme();
 
   const { data: jobs = [] } = useQuery<Job[]>({
     queryKey: ['/api/jobs'],
@@ -211,7 +213,7 @@ export default function Boards() {
                     Cancel
                   </Button>
                   <Button 
-                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                    className={`${aiTheme.gradient} text-white`}
                     onClick={handleAICreate}
                     disabled={aiMutation.isPending || !aiPrompt.trim()}
                   >
@@ -304,7 +306,7 @@ export default function Boards() {
                   Cancel
                 </Button>
                 <Button 
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                  className={`${aiTheme.gradient} text-white`}
                   onClick={handleAICreate}
                   disabled={aiMutation.isPending || !aiPrompt.trim()}
                 >

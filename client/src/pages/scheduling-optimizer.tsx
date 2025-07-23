@@ -44,6 +44,7 @@ import { format, addDays, differenceInDays } from 'date-fns';
 import { apiRequest } from '@/lib/queryClient';
 import type { Job, Operation, Resource, Capability } from '@shared/schema';
 import { ScheduleEvaluationSystem } from '@/components/schedule-evaluation-system';
+import { useAITheme } from '@/hooks/use-ai-theme';
 
 interface SchedulingOption {
   id: string;
@@ -368,6 +369,7 @@ const NewJobForm: React.FC<{
 const SchedulingOptimizer: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { aiTheme } = useAITheme();
   const [isMaximized, setIsMaximized] = useState(false);
   const [selectedOption, setSelectedOption] = useState<SchedulingOption | null>(null);
 
@@ -919,7 +921,7 @@ const SchedulingOptimizer: React.FC = () => {
               setShowEvaluationSystem(!showEvaluationSystem);
               console.log('Setting showEvaluationSystem to:', !showEvaluationSystem);
             }}
-            className="flex items-center gap-1 md:gap-2 text-xs md:text-sm bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
+            className={`flex items-center gap-1 md:gap-2 text-xs md:text-sm ${aiTheme.gradient} text-white border-0`}
           >
             <GitCompare className="w-3 h-3 md:w-4 md:h-4" />
             <span className="hidden sm:inline">Evaluate Schedules</span>

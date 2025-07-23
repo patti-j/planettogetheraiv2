@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { useAITheme } from '@/hooks/use-ai-theme';
 import { 
   Monitor, 
   Settings, 
@@ -117,6 +118,7 @@ export default function VisualFactory() {
   const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { aiTheme } = useAITheme();
 
   // Fetch data
   const { data: displays = [] } = useQuery<VisualFactoryDisplay[]>({
@@ -546,7 +548,7 @@ export default function VisualFactory() {
                 <div className="flex flex-col sm:flex-row gap-2 lg:flex-shrink-0">
                   <Dialog open={aiConfigDialogOpen} onOpenChange={setAiConfigDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 text-sm" size="sm">
+                      <Button className={`${aiTheme.gradient} text-white text-sm`} size="sm">
                         <Sparkles className="w-4 h-4 mr-1 sm:mr-2" />
                         <span className="hidden sm:inline">Configure</span>
                         <span className="sm:hidden">AI</span>
@@ -607,7 +609,7 @@ export default function VisualFactory() {
                         <Button
                           onClick={handleGenerateAIContent}
                           disabled={!aiPrompt.trim() || generateAIContentMutation.isPending}
-                          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+                          className={`w-full ${aiTheme.gradient} text-white`}
                         >
                           {generateAIContentMutation.isPending ? 'Generating...' : 'Generate Display'}
                         </Button>
