@@ -88,22 +88,35 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
   return (
     <div className={`fixed inset-0 z-50 bg-black/50 backdrop-blur-sm ${isFullscreen ? '' : 'p-4'}`}>
       <div className={`bg-white rounded-lg shadow-xl overflow-hidden ${isFullscreen ? 'w-full h-full' : 'w-full h-full max-w-7xl max-h-[90vh] mx-auto'} relative`}>
-        {/* Standard Maximize Button - Fixed Position */}
+        {/* Desktop Maximize Button */}
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setIsFullscreen(!isFullscreen)}
-          className="fixed top-2 right-2 z-50 bg-white/90 hover:bg-white text-gray-700 hover:text-gray-900 shadow-sm"
+          className="fixed top-2 right-2 z-50 bg-white/90 hover:bg-white text-gray-700 hover:text-gray-900 shadow-sm hidden sm:flex"
           title={isFullscreen ? "Exit fullscreen" : "Maximize"}
         >
           {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
         </Button>
 
-        {/* Canvas Header - More compact on mobile */}
+        {/* Mobile Exit Button - Only shows on small screens when maximized */}
+        {isFullscreen && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsFullscreen(false)}
+            className="fixed top-2 right-2 z-50 bg-white/90 hover:bg-white text-gray-700 hover:text-gray-900 shadow-sm sm:hidden"
+            title="Minimize"
+          >
+            <Minimize2 className="w-4 h-4" />
+          </Button>
+        )}
+
+        {/* Canvas Header - Ultra compact on mobile */}
         <div className={`${aiTheme.gradient} text-white p-2 sm:p-4`}>
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1 sm:gap-3">
             <div className="w-6 h-6 sm:w-8 sm:h-8 bg-white/20 rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
+              <BarChart3 className="w-4 h-4 sm:w-4 sm:h-4" />
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="text-sm sm:text-lg font-semibold">Max Canvas</h2>
