@@ -4652,6 +4652,10 @@ Return JSON format with each role as a top-level key containing tourSteps array.
         prompt += `\n\nAdditional instructions: ${guidance.trim()}`;
       }
 
+      console.log("Sending prompt to AI (first 1000 chars):", prompt.substring(0, 1000));
+      console.log("Roles being generated for:", roles);
+      console.log("User guidance:", guidance || 'None');
+
       const completion = await openai.chat.completions.create({
         model: "gpt-4o", // Using latest model
         messages: [
@@ -4669,11 +4673,13 @@ Return JSON format with each role as a top-level key containing tourSteps array.
       });
 
       let generatedContent = completion.choices[0].message.content || '';
+      console.log("AI Raw Response Content:", generatedContent);
       
       // Extract JSON content from markdown code blocks if present
       const jsonMatch = generatedContent.match(/```json\s*([\s\S]*?)\s*```/);
       if (jsonMatch) {
         generatedContent = jsonMatch[1];
+        console.log("Extracted JSON from markdown blocks:", generatedContent);
       }
       
       // Try to parse as JSON, fallback to text response if needed
@@ -4681,9 +4687,12 @@ Return JSON format with each role as a top-level key containing tourSteps array.
       try {
         tourData = JSON.parse(generatedContent);
         console.log("Successfully parsed AI tour data:", Object.keys(tourData));
+        console.log("Tour data structure:", JSON.stringify(tourData, null, 2));
       } catch (parseError) {
         console.error("Failed to parse AI response as JSON:", parseError.message);
         console.error("Content to parse:", generatedContent);
+        console.error("Content length:", generatedContent.length);
+        console.error("First 500 chars:", generatedContent.substring(0, 500));
         tourData = { content: generatedContent, roles: roles };
       }
 
