@@ -879,7 +879,7 @@ const SchedulingOptimizer: React.FC = () => {
   const PageContent = () => (
     <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="relative">
         <div className="md:ml-0 ml-12">
           <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
             <Target className="w-6 h-6 mr-2" />
@@ -887,7 +887,20 @@ const SchedulingOptimizer: React.FC = () => {
           </h1>
           <p className="text-sm md:text-base text-gray-600">Optimize orders with intelligent scheduling and multi-operation planning</p>
         </div>
-        <div className="lg:flex-shrink-0 flex items-center gap-1 md:gap-2">
+        
+        {/* Maximize button always in top right corner */}
+        <div className="absolute top-0 right-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsMaximized(!isMaximized)}
+          >
+            {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </Button>
+        </div>
+        
+        {/* Control buttons below header */}
+        <div className="lg:flex-shrink-0 flex items-center gap-1 md:gap-2 mt-4">
           <Button
             variant="outline"
             size="sm"
@@ -911,14 +924,6 @@ const SchedulingOptimizer: React.FC = () => {
             <GitCompare className="w-3 h-3 md:w-4 md:h-4" />
             <span className="hidden sm:inline">Evaluate Schedules</span>
             <span className="sm:hidden">Evaluate</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsMaximized(!isMaximized)}
-            className="flex items-center gap-1 md:gap-2"
-          >
-            {isMaximized ? <Minimize2 className="w-3 h-3 md:w-4 md:h-4" /> : <Maximize2 className="w-3 h-3 md:w-4 md:h-4" />}
           </Button>
         </div>
       </div>
