@@ -39,9 +39,11 @@ import {
   Star,
   ExternalLink,
   ChevronRight,
-  Maximize2
+  Maximize2,
+  Workflow
 } from "lucide-react";
 import type { Extension, ExtensionFile, InsertExtension } from "@shared/schema";
+import { WorkflowStudio } from "@/components/workflow-studio";
 
 const ExtensionStudioPage = () => {
   const { user } = useAuth();
@@ -174,11 +176,19 @@ const ExtensionStudioPage = () => {
       {/* Main Content */}
       <div className="flex-1 p-3 sm:p-6 space-y-4 sm:space-y-6 overflow-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="my-extensions">My Extensions</TabsTrigger>
+            <TabsTrigger value="workflows">
+              <Workflow className="w-4 h-4 mr-2" />
+              Workflows
+            </TabsTrigger>
             <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
             <TabsTrigger value="installed">Installed</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="workflows" className="flex-1 mt-4">
+            <WorkflowStudio />
+          </TabsContent>
 
           <TabsContent value="my-extensions" className="flex-1 mt-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">

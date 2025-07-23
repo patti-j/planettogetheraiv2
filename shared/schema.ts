@@ -1045,6 +1045,212 @@ export type EquipmentPlan = typeof equipmentPlans.$inferSelect;
 export type InsertCapacityProjection = z.infer<typeof insertCapacityProjectionSchema>;
 export type CapacityProjection = typeof capacityProjections.$inferSelect;
 
+// Workflow Automation System - Integrates with Extension Studio
+
+// Workflow automation triggers that can activate when certain conditions are met
+export const workflowTriggers = pgTable("workflow_triggers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  triggerType: text("trigger_type").notNull(), // event, schedule, webhook, manual, condition
+  eventType: text("event_type"), // machine_breakdown, schedule_change, quality_issue, inventory_low, job_late, etc.
+  conditions: jsonb("conditions").$type<{
+    entity?: string; // resource, job, operation, inventory, etc.
+    field?: string; // status, progress, quantity, etc.
+    operator?: string; // equals, greater_than, less_than, contains, etc.
+    value?: any;
+    multiple_conditions?: Array<{
+      field: string;
+      operator: string;
+      value: any;
+      logic?: "AND" | "OR";
+    }>;
+  }>().default({}),
+  scheduleConfig: jsonb("schedule_config").$type<{
+    frequency?: string; // once, daily, weekly, monthly, yearly
+    interval?: number; // every N units
+    days_of_week?: number[]; // 0=Sunday, 1=Monday, etc.
+    time?: string; // HH:MM format
+    timezone?: string;
+    start_date?: string;
+    end_date?: string;
+  }>(),
+  isActive: boolean("is_active").default(true),
+  priority: integer("priority").default(5), // 1=highest, 10=lowest
+  extensionId: integer("extension_id").references(() => extensions.id), // Optional link to extension
+  plantId: integer("plant_id").references(() => plants.id), // Trigger applies to specific plant
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  lastTriggered: timestamp("last_triggered"),
+  triggerCount: integer("trigger_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Workflow actions that can be executed when triggers fire
+export const workflowActions = pgTable("workflow_actions", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  actionType: text("action_type").notNull(), // notification, schedule_adjustment, create_job, update_status, webhook, email, sms, api_call, custom_script
+  configuration: jsonb("configuration").$type<{
+    // Notification actions
+    recipients?: string[]; // email addresses or user IDs
+    subject?: string;
+    message?: string;
+    channels?: string[]; // email, sms, slack, teams, in_app
+    
+    // Schedule adjustment actions
+    reschedule_operations?: boolean;
+    priority_boost?: number;
+    resource_reallocation?: boolean;
+    
+    // Job/Operation actions
+    job_template_id?: number;
+    operation_changes?: Array<{
+      operation_id: number;
+      field: string;
+      new_value: any;
+    }>;
+    
+    // External API actions
+    webhook_url?: string;
+    http_method?: string;
+    headers?: Record<string, string>;
+    body_template?: string;
+    
+    // Custom script actions
+    script_content?: string;
+    script_language?: string; // javascript, python, sql
+    timeout_seconds?: number;
+  }>().default({}),
+  isActive: boolean("is_active").default(true),
+  retryConfig: jsonb("retry_config").$type<{
+    max_retries?: number;
+    retry_delay_seconds?: number;
+    exponential_backoff?: boolean;
+  }>().default({ max_retries: 3, retry_delay_seconds: 30, exponential_backoff: true }),
+  extensionId: integer("extension_id").references(() => extensions.id), // Optional link to extension
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  executionCount: integer("execution_count").default(0),
+  lastExecuted: timestamp("last_executed"),
+  averageExecutionTime: integer("average_execution_time").default(0), // milliseconds
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Complete workflows that link triggers to actions
+export const workflows = pgTable("workflows", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category").notNull().default("automation"), // automation, scheduling, maintenance, quality, inventory, notifications
+  status: text("status").notNull().default("draft"), // draft, active, paused, error, disabled
+  triggerId: integer("trigger_id").references(() => workflowTriggers.id).notNull(),
+  priority: integer("priority").default(5), // 1=highest, 10=lowest
+  timeout: integer("timeout").default(300), // seconds before workflow times out
+  plantId: integer("plant_id").references(() => plants.id), // Workflow applies to specific plant
+  extensionId: integer("extension_id").references(() => extensions.id), // Links to Extension Studio extension
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  approvedBy: integer("approved_by").references(() => users.id), // Required approval for certain workflows
+  version: text("version").notNull().default("1.0.0"),
+  tags: jsonb("tags").$type<string[]>().default([]),
+  executionCount: integer("execution_count").default(0),
+  successCount: integer("success_count").default(0),
+  errorCount: integer("error_count").default(0),
+  lastExecuted: timestamp("last_executed"),
+  averageExecutionTime: integer("average_execution_time").default(0), // milliseconds
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Link workflows to their actions (many-to-many with execution order)
+export const workflowActionMappings = pgTable("workflow_action_mappings", {
+  id: serial("id").primaryKey(),
+  workflowId: integer("workflow_id").references(() => workflows.id).notNull(),
+  actionId: integer("action_id").references(() => workflowActions.id).notNull(),
+  executionOrder: integer("execution_order").notNull().default(1),
+  isConditional: boolean("is_conditional").default(false),
+  conditions: jsonb("conditions").$type<{
+    previous_action_result?: string;
+    field_checks?: Array<{
+      field: string;
+      operator: string;
+      value: any;
+    }>;
+  }>(),
+  delaySeconds: integer("delay_seconds").default(0), // Delay before executing this action
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  workflowActionIdx: unique().on(table.workflowId, table.actionId, table.executionOrder),
+}));
+
+// Execution history and monitoring
+export const workflowExecutions = pgTable("workflow_executions", {
+  id: serial("id").primaryKey(),
+  workflowId: integer("workflow_id").references(() => workflows.id).notNull(),
+  triggerId: integer("trigger_id").references(() => workflowTriggers.id).notNull(),
+  status: text("status").notNull(), // running, completed, failed, timeout, cancelled
+  triggerData: jsonb("trigger_data").$type<Record<string, any>>().default({}), // Context that caused trigger
+  startTime: timestamp("start_time").defaultNow(),
+  endTime: timestamp("end_time"),
+  duration: integer("duration"), // milliseconds
+  errorMessage: text("error_message"),
+  executionContext: jsonb("execution_context").$type<{
+    user_id?: number;
+    plant_id?: number;
+    resource_id?: number;
+    job_id?: number;
+    operation_id?: number;
+    triggered_by?: string; // manual, scheduled, event
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Individual action execution results within workflow executions
+export const workflowActionExecutions = pgTable("workflow_action_executions", {
+  id: serial("id").primaryKey(),
+  executionId: integer("execution_id").references(() => workflowExecutions.id).notNull(),
+  actionId: integer("action_id").references(() => workflowActions.id).notNull(),
+  status: text("status").notNull(), // running, completed, failed, skipped, retry
+  startTime: timestamp("start_time").defaultNow(),
+  endTime: timestamp("end_time"),
+  duration: integer("duration"), // milliseconds
+  result: jsonb("result").$type<Record<string, any>>(),
+  errorMessage: text("error_message"),
+  retryCount: integer("retry_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Workflow monitoring and alerts
+export const workflowMonitoring = pgTable("workflow_monitoring", {
+  id: serial("id").primaryKey(),
+  workflowId: integer("workflow_id").references(() => workflows.id).notNull(),
+  monitoringType: text("monitoring_type").notNull(), // performance, errors, frequency, resource_usage
+  thresholds: jsonb("thresholds").$type<{
+    max_execution_time?: number; // milliseconds
+    max_error_rate?: number; // percentage
+    min_success_rate?: number; // percentage
+    max_executions_per_hour?: number;
+    max_memory_usage?: number; // MB
+  }>(),
+  alertConfig: jsonb("alert_config").$type<{
+    notification_channels?: string[];
+    escalation_rules?: Array<{
+      condition: string;
+      delay_minutes: number;
+      recipients: string[];
+    }>;
+    alert_frequency?: string; // immediate, hourly, daily, weekly
+  }>(),
+  isActive: boolean("is_active").default(true),
+  lastAlert: timestamp("last_alert"),
+  alertCount: integer("alert_count").default(0),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Business Goals and Directorial Oversight Tables
 
 // Strategic business goals set by directors
@@ -2082,6 +2288,80 @@ export type InsertIntegrationTemplate = z.infer<typeof insertIntegrationTemplate
 
 export type FeedbackVote = typeof feedbackVotes.$inferSelect;
 export type InsertFeedbackVote = z.infer<typeof insertFeedbackVoteSchema>;
+
+// Workflow Automation Insert Schemas
+export const insertWorkflowTriggerSchema = createInsertSchema(workflowTriggers).omit({
+  id: true,
+  lastTriggered: true,
+  triggerCount: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWorkflowActionSchema = createInsertSchema(workflowActions).omit({
+  id: true,
+  executionCount: true,
+  lastExecuted: true,
+  averageExecutionTime: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWorkflowSchema = createInsertSchema(workflows).omit({
+  id: true,
+  executionCount: true,
+  successCount: true,
+  errorCount: true,
+  lastExecuted: true,
+  averageExecutionTime: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWorkflowActionMappingSchema = createInsertSchema(workflowActionMappings).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertWorkflowExecutionSchema = createInsertSchema(workflowExecutions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertWorkflowActionExecutionSchema = createInsertSchema(workflowActionExecutions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertWorkflowMonitoringSchema = createInsertSchema(workflowMonitoring).omit({
+  id: true,
+  lastAlert: true,
+  alertCount: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Workflow Automation Types
+export type WorkflowTrigger = typeof workflowTriggers.$inferSelect;
+export type InsertWorkflowTrigger = z.infer<typeof insertWorkflowTriggerSchema>;
+
+export type WorkflowAction = typeof workflowActions.$inferSelect;
+export type InsertWorkflowAction = z.infer<typeof insertWorkflowActionSchema>;
+
+export type Workflow = typeof workflows.$inferSelect;
+export type InsertWorkflow = z.infer<typeof insertWorkflowSchema>;
+
+export type WorkflowActionMapping = typeof workflowActionMappings.$inferSelect;
+export type InsertWorkflowActionMapping = z.infer<typeof insertWorkflowActionMappingSchema>;
+
+export type WorkflowExecution = typeof workflowExecutions.$inferSelect;
+export type InsertWorkflowExecution = z.infer<typeof insertWorkflowExecutionSchema>;
+
+export type WorkflowActionExecution = typeof workflowActionExecutions.$inferSelect;
+export type InsertWorkflowActionExecution = z.infer<typeof insertWorkflowActionExecutionSchema>;
+
+export type WorkflowMonitoring = typeof workflowMonitoring.$inferSelect;
+export type InsertWorkflowMonitoring = z.infer<typeof insertWorkflowMonitoringSchema>;
 
 // Plant Management Schemas
 export const insertPlantSchema = createInsertSchema(plants).omit({

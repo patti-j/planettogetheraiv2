@@ -24,7 +24,10 @@ import {
   insertInventoryOptimizationScenarioSchema, insertOptimizationRecommendationSchema,
   insertFeedbackSchema, insertFeedbackCommentSchema, insertFeedbackVoteSchema,
   insertSystemIntegrationSchema, insertIntegrationJobSchema, insertIntegrationEventSchema,
-  insertIntegrationMappingSchema, insertIntegrationTemplateSchema
+  insertIntegrationMappingSchema, insertIntegrationTemplateSchema,
+  insertWorkflowSchema, insertWorkflowTriggerSchema, insertWorkflowActionSchema,
+  insertWorkflowActionMappingSchema, insertWorkflowExecutionSchema, insertWorkflowActionExecutionSchema,
+  insertWorkflowMonitoringSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -8731,6 +8734,504 @@ Create a natural, conversational voice script that explains this feature to some
     } catch (error) {
       console.error("Error installing extension:", error);
       res.status(500).json({ error: "Failed to install extension" });
+    }
+  });
+
+  // Workflow Automation API Routes
+  app.get("/api/workflows", async (req, res) => {
+    try {
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
+      const workflows = await storage.getWorkflows(userId);
+      res.json(workflows);
+    } catch (error) {
+      console.error("Error fetching workflows:", error);
+      res.status(500).json({ error: "Failed to fetch workflows" });
+    }
+  });
+
+  app.get("/api/workflows/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid workflow ID" });
+      }
+
+      const workflow = await storage.getWorkflow(id);
+      if (!workflow) {
+        return res.status(404).json({ error: "Workflow not found" });
+      }
+      res.json(workflow);
+    } catch (error) {
+      console.error("Error fetching workflow:", error);
+      res.status(500).json({ error: "Failed to fetch workflow" });
+    }
+  });
+
+  app.post("/api/workflows", async (req, res) => {
+    try {
+      const validation = insertWorkflowSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid workflow data", details: validation.error.errors });
+      }
+
+      const workflow = await storage.createWorkflow(validation.data);
+      res.status(201).json(workflow);
+    } catch (error) {
+      console.error("Error creating workflow:", error);
+      res.status(500).json({ error: "Failed to create workflow" });
+    }
+  });
+
+  app.put("/api/workflows/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid workflow ID" });
+      }
+
+      const validation = insertWorkflowSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid workflow data", details: validation.error.errors });
+      }
+
+      const workflow = await storage.updateWorkflow(id, validation.data);
+      if (!workflow) {
+        return res.status(404).json({ error: "Workflow not found" });
+      }
+      res.json(workflow);
+    } catch (error) {
+      console.error("Error updating workflow:", error);
+      res.status(500).json({ error: "Failed to update workflow" });
+    }
+  });
+
+  app.delete("/api/workflows/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid workflow ID" });
+      }
+
+      const success = await storage.deleteWorkflow(id);
+      if (!success) {
+        return res.status(404).json({ error: "Workflow not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting workflow:", error);
+      res.status(500).json({ error: "Failed to delete workflow" });
+    }
+  });
+
+  app.post("/api/workflows/:id/execute", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid workflow ID" });
+      }
+
+      const { context } = req.body;
+      const execution = await storage.executeWorkflow(id, context);
+      res.status(201).json(execution);
+    } catch (error) {
+      console.error("Error executing workflow:", error);
+      res.status(500).json({ error: "Failed to execute workflow" });
+    }
+  });
+
+  // Workflow Triggers
+  app.get("/api/workflow-triggers", async (req, res) => {
+    try {
+      const workflowId = req.query.workflowId ? parseInt(req.query.workflowId as string) : undefined;
+      const triggers = await storage.getWorkflowTriggers(workflowId);
+      res.json(triggers);
+    } catch (error) {
+      console.error("Error fetching workflow triggers:", error);
+      res.status(500).json({ error: "Failed to fetch workflow triggers" });
+    }
+  });
+
+  app.get("/api/workflow-triggers/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid trigger ID" });
+      }
+
+      const trigger = await storage.getWorkflowTrigger(id);
+      if (!trigger) {
+        return res.status(404).json({ error: "Workflow trigger not found" });
+      }
+      res.json(trigger);
+    } catch (error) {
+      console.error("Error fetching workflow trigger:", error);
+      res.status(500).json({ error: "Failed to fetch workflow trigger" });
+    }
+  });
+
+  app.post("/api/workflow-triggers", async (req, res) => {
+    try {
+      const validation = insertWorkflowTriggerSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid trigger data", details: validation.error.errors });
+      }
+
+      const trigger = await storage.createWorkflowTrigger(validation.data);
+      res.status(201).json(trigger);
+    } catch (error) {
+      console.error("Error creating workflow trigger:", error);
+      res.status(500).json({ error: "Failed to create workflow trigger" });
+    }
+  });
+
+  app.put("/api/workflow-triggers/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid trigger ID" });
+      }
+
+      const validation = insertWorkflowTriggerSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid trigger data", details: validation.error.errors });
+      }
+
+      const trigger = await storage.updateWorkflowTrigger(id, validation.data);
+      if (!trigger) {
+        return res.status(404).json({ error: "Workflow trigger not found" });
+      }
+      res.json(trigger);
+    } catch (error) {
+      console.error("Error updating workflow trigger:", error);
+      res.status(500).json({ error: "Failed to update workflow trigger" });
+    }
+  });
+
+  app.delete("/api/workflow-triggers/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid trigger ID" });
+      }
+
+      const success = await storage.deleteWorkflowTrigger(id);
+      if (!success) {
+        return res.status(404).json({ error: "Workflow trigger not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting workflow trigger:", error);
+      res.status(500).json({ error: "Failed to delete workflow trigger" });
+    }
+  });
+
+  // Workflow Actions
+  app.get("/api/workflow-actions", async (req, res) => {
+    try {
+      const workflowId = req.query.workflowId ? parseInt(req.query.workflowId as string) : undefined;
+      const actions = await storage.getWorkflowActions(workflowId);
+      res.json(actions);
+    } catch (error) {
+      console.error("Error fetching workflow actions:", error);
+      res.status(500).json({ error: "Failed to fetch workflow actions" });
+    }
+  });
+
+  app.get("/api/workflow-actions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid action ID" });
+      }
+
+      const action = await storage.getWorkflowAction(id);
+      if (!action) {
+        return res.status(404).json({ error: "Workflow action not found" });
+      }
+      res.json(action);
+    } catch (error) {
+      console.error("Error fetching workflow action:", error);
+      res.status(500).json({ error: "Failed to fetch workflow action" });
+    }
+  });
+
+  app.post("/api/workflow-actions", async (req, res) => {
+    try {
+      const validation = insertWorkflowActionSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid action data", details: validation.error.errors });
+      }
+
+      const action = await storage.createWorkflowAction(validation.data);
+      res.status(201).json(action);
+    } catch (error) {
+      console.error("Error creating workflow action:", error);
+      res.status(500).json({ error: "Failed to create workflow action" });
+    }
+  });
+
+  app.put("/api/workflow-actions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid action ID" });
+      }
+
+      const validation = insertWorkflowActionSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid action data", details: validation.error.errors });
+      }
+
+      const action = await storage.updateWorkflowAction(id, validation.data);
+      if (!action) {
+        return res.status(404).json({ error: "Workflow action not found" });
+      }
+      res.json(action);
+    } catch (error) {
+      console.error("Error updating workflow action:", error);
+      res.status(500).json({ error: "Failed to update workflow action" });
+    }
+  });
+
+  app.delete("/api/workflow-actions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid action ID" });
+      }
+
+      const success = await storage.deleteWorkflowAction(id);
+      if (!success) {
+        return res.status(404).json({ error: "Workflow action not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting workflow action:", error);
+      res.status(500).json({ error: "Failed to delete workflow action" });
+    }
+  });
+
+  // Workflow Action Mappings
+  app.get("/api/workflows/:workflowId/action-mappings", async (req, res) => {
+    try {
+      const workflowId = parseInt(req.params.workflowId);
+      if (isNaN(workflowId)) {
+        return res.status(400).json({ error: "Invalid workflow ID" });
+      }
+
+      const mappings = await storage.getWorkflowActionMappings(workflowId);
+      res.json(mappings);
+    } catch (error) {
+      console.error("Error fetching workflow action mappings:", error);
+      res.status(500).json({ error: "Failed to fetch workflow action mappings" });
+    }
+  });
+
+  app.post("/api/workflow-action-mappings", async (req, res) => {
+    try {
+      const validation = insertWorkflowActionMappingSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid mapping data", details: validation.error.errors });
+      }
+
+      const mapping = await storage.createWorkflowActionMapping(validation.data);
+      res.status(201).json(mapping);
+    } catch (error) {
+      console.error("Error creating workflow action mapping:", error);
+      res.status(500).json({ error: "Failed to create workflow action mapping" });
+    }
+  });
+
+  app.delete("/api/workflow-action-mappings/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid mapping ID" });
+      }
+
+      const success = await storage.deleteWorkflowActionMapping(id);
+      if (!success) {
+        return res.status(404).json({ error: "Workflow action mapping not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting workflow action mapping:", error);
+      res.status(500).json({ error: "Failed to delete workflow action mapping" });
+    }
+  });
+
+  // Workflow Executions
+  app.get("/api/workflow-executions", async (req, res) => {
+    try {
+      const workflowId = req.query.workflowId ? parseInt(req.query.workflowId as string) : undefined;
+      const executions = await storage.getWorkflowExecutions(workflowId);
+      res.json(executions);
+    } catch (error) {
+      console.error("Error fetching workflow executions:", error);
+      res.status(500).json({ error: "Failed to fetch workflow executions" });
+    }
+  });
+
+  app.get("/api/workflow-executions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid execution ID" });
+      }
+
+      const execution = await storage.getWorkflowExecution(id);
+      if (!execution) {
+        return res.status(404).json({ error: "Workflow execution not found" });
+      }
+      res.json(execution);
+    } catch (error) {
+      console.error("Error fetching workflow execution:", error);
+      res.status(500).json({ error: "Failed to fetch workflow execution" });
+    }
+  });
+
+  app.put("/api/workflow-executions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid execution ID" });
+      }
+
+      const validation = insertWorkflowExecutionSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid execution data", details: validation.error.errors });
+      }
+
+      const execution = await storage.updateWorkflowExecution(id, validation.data);
+      if (!execution) {
+        return res.status(404).json({ error: "Workflow execution not found" });
+      }
+      res.json(execution);
+    } catch (error) {
+      console.error("Error updating workflow execution:", error);
+      res.status(500).json({ error: "Failed to update workflow execution" });
+    }
+  });
+
+  // Workflow Action Executions
+  app.get("/api/workflow-executions/:executionId/actions", async (req, res) => {
+    try {
+      const executionId = parseInt(req.params.executionId);
+      if (isNaN(executionId)) {
+        return res.status(400).json({ error: "Invalid execution ID" });
+      }
+
+      const actionExecutions = await storage.getWorkflowActionExecutions(executionId);
+      res.json(actionExecutions);
+    } catch (error) {
+      console.error("Error fetching workflow action executions:", error);
+      res.status(500).json({ error: "Failed to fetch workflow action executions" });
+    }
+  });
+
+  app.post("/api/workflow-action-executions", async (req, res) => {
+    try {
+      const validation = insertWorkflowActionExecutionSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid action execution data", details: validation.error.errors });
+      }
+
+      const actionExecution = await storage.createWorkflowActionExecution(validation.data);
+      res.status(201).json(actionExecution);
+    } catch (error) {
+      console.error("Error creating workflow action execution:", error);
+      res.status(500).json({ error: "Failed to create workflow action execution" });
+    }
+  });
+
+  app.put("/api/workflow-action-executions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid action execution ID" });
+      }
+
+      const validation = insertWorkflowActionExecutionSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid action execution data", details: validation.error.errors });
+      }
+
+      const actionExecution = await storage.updateWorkflowActionExecution(id, validation.data);
+      if (!actionExecution) {
+        return res.status(404).json({ error: "Workflow action execution not found" });
+      }
+      res.json(actionExecution);
+    } catch (error) {
+      console.error("Error updating workflow action execution:", error);
+      res.status(500).json({ error: "Failed to update workflow action execution" });
+    }
+  });
+
+  // Workflow Monitoring
+  app.get("/api/workflow-monitoring", async (req, res) => {
+    try {
+      const workflowId = req.query.workflowId ? parseInt(req.query.workflowId as string) : undefined;
+      const monitoring = await storage.getWorkflowMonitoring(workflowId);
+      res.json(monitoring);
+    } catch (error) {
+      console.error("Error fetching workflow monitoring:", error);
+      res.status(500).json({ error: "Failed to fetch workflow monitoring" });
+    }
+  });
+
+  app.post("/api/workflow-monitoring", async (req, res) => {
+    try {
+      const validation = insertWorkflowMonitoringSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid monitoring data", details: validation.error.errors });
+      }
+
+      const monitoring = await storage.createWorkflowMonitoring(validation.data);
+      res.status(201).json(monitoring);
+    } catch (error) {
+      console.error("Error creating workflow monitoring:", error);
+      res.status(500).json({ error: "Failed to create workflow monitoring" });
+    }
+  });
+
+  app.put("/api/workflow-monitoring/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid monitoring ID" });
+      }
+
+      const validation = insertWorkflowMonitoringSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid monitoring data", details: validation.error.errors });
+      }
+
+      const monitoring = await storage.updateWorkflowMonitoring(id, validation.data);
+      if (!monitoring) {
+        return res.status(404).json({ error: "Workflow monitoring not found" });
+      }
+      res.json(monitoring);
+    } catch (error) {
+      console.error("Error updating workflow monitoring:", error);
+      res.status(500).json({ error: "Failed to update workflow monitoring" });
+    }
+  });
+
+  app.delete("/api/workflow-monitoring/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid monitoring ID" });
+      }
+
+      const success = await storage.deleteWorkflowMonitoring(id);
+      if (!success) {
+        return res.status(404).json({ error: "Workflow monitoring not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting workflow monitoring:", error);
+      res.status(500).json({ error: "Failed to delete workflow monitoring" });
     }
   });
 

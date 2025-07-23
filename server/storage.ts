@@ -38,6 +38,9 @@ import {
   feedback, feedbackComments, feedbackVotes,
   type Feedback, type FeedbackComment, type FeedbackVote,
   type InsertFeedback, type InsertFeedbackComment, type InsertFeedbackVote,
+  workflows, workflowTriggers, workflowActions, workflowActionMappings, workflowExecutions, workflowActionExecutions, workflowMonitoring,
+  type Workflow, type WorkflowTrigger, type WorkflowAction, type WorkflowActionMapping, type WorkflowExecution, type WorkflowActionExecution, type WorkflowMonitoring,
+  type InsertWorkflow, type InsertWorkflowTrigger, type InsertWorkflowAction, type InsertWorkflowActionMapping, type InsertWorkflowExecution, type InsertWorkflowActionExecution, type InsertWorkflowMonitoring,
   // industryTemplates, userIndustryTemplates, templateConfigurations,
   // type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
   // type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration,
@@ -587,6 +590,43 @@ export interface IStorage {
   
   createExtensionReview(review: InsertExtensionReview): Promise<ExtensionReview>;
   getExtensionReviews(extensionId: number): Promise<ExtensionReview[]>;
+
+  // Workflow Automation
+  getWorkflows(userId?: number): Promise<Workflow[]>;
+  getWorkflow(id: number): Promise<Workflow | undefined>;
+  createWorkflow(workflow: InsertWorkflow): Promise<Workflow>;
+  updateWorkflow(id: number, workflow: Partial<InsertWorkflow>): Promise<Workflow | undefined>;
+  deleteWorkflow(id: number): Promise<boolean>;
+  executeWorkflow(id: number, context?: any): Promise<WorkflowExecution>;
+
+  getWorkflowTriggers(workflowId?: number): Promise<WorkflowTrigger[]>;
+  getWorkflowTrigger(id: number): Promise<WorkflowTrigger | undefined>;
+  createWorkflowTrigger(trigger: InsertWorkflowTrigger): Promise<WorkflowTrigger>;
+  updateWorkflowTrigger(id: number, trigger: Partial<InsertWorkflowTrigger>): Promise<WorkflowTrigger | undefined>;
+  deleteWorkflowTrigger(id: number): Promise<boolean>;
+
+  getWorkflowActions(workflowId?: number): Promise<WorkflowAction[]>;
+  getWorkflowAction(id: number): Promise<WorkflowAction | undefined>;
+  createWorkflowAction(action: InsertWorkflowAction): Promise<WorkflowAction>;
+  updateWorkflowAction(id: number, action: Partial<InsertWorkflowAction>): Promise<WorkflowAction | undefined>;
+  deleteWorkflowAction(id: number): Promise<boolean>;
+
+  getWorkflowActionMappings(workflowId: number): Promise<WorkflowActionMapping[]>;
+  createWorkflowActionMapping(mapping: InsertWorkflowActionMapping): Promise<WorkflowActionMapping>;
+  deleteWorkflowActionMapping(id: number): Promise<boolean>;
+
+  getWorkflowExecutions(workflowId?: number): Promise<WorkflowExecution[]>;
+  getWorkflowExecution(id: number): Promise<WorkflowExecution | undefined>;
+  updateWorkflowExecution(id: number, execution: Partial<InsertWorkflowExecution>): Promise<WorkflowExecution | undefined>;
+
+  getWorkflowActionExecutions(executionId: number): Promise<WorkflowActionExecution[]>;
+  createWorkflowActionExecution(execution: InsertWorkflowActionExecution): Promise<WorkflowActionExecution>;
+  updateWorkflowActionExecution(id: number, execution: Partial<InsertWorkflowActionExecution>): Promise<WorkflowActionExecution | undefined>;
+
+  getWorkflowMonitoring(workflowId?: number): Promise<WorkflowMonitoring[]>;
+  createWorkflowMonitoring(monitoring: InsertWorkflowMonitoring): Promise<WorkflowMonitoring>;
+  updateWorkflowMonitoring(id: number, monitoring: Partial<InsertWorkflowMonitoring>): Promise<WorkflowMonitoring | undefined>;
+  deleteWorkflowMonitoring(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -4478,6 +4518,230 @@ export class DatabaseStorage implements IStorage {
       .from(extensionReviews)
       .where(eq(extensionReviews.extensionId, extensionId))
       .orderBy(desc(extensionReviews.createdAt));
+  }
+
+  // Workflow Automation Implementation
+  async getWorkflows(userId?: number): Promise<Workflow[]> {
+    let query = db.select().from(workflows);
+    if (userId) {
+      query = query.where(eq(workflows.createdBy, userId));
+    }
+    return await query.orderBy(desc(workflows.createdAt));
+  }
+
+  async getWorkflow(id: number): Promise<Workflow | undefined> {
+    const [workflow] = await db.select().from(workflows).where(eq(workflows.id, id));
+    return workflow;
+  }
+
+  async createWorkflow(workflow: InsertWorkflow): Promise<Workflow> {
+    const [newWorkflow] = await db.insert(workflows).values(workflow).returning();
+    return newWorkflow;
+  }
+
+  async updateWorkflow(id: number, workflow: Partial<InsertWorkflow>): Promise<Workflow | undefined> {
+    const [updatedWorkflow] = await db
+      .update(workflows)
+      .set({ ...workflow, updatedAt: new Date() })
+      .where(eq(workflows.id, id))
+      .returning();
+    return updatedWorkflow;
+  }
+
+  async deleteWorkflow(id: number): Promise<boolean> {
+    const result = await db.delete(workflows).where(eq(workflows.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async executeWorkflow(id: number, context?: any): Promise<WorkflowExecution> {
+    const workflow = await this.getWorkflow(id);
+    if (!workflow) {
+      throw new Error(`Workflow ${id} not found`);
+    }
+
+    // Create execution record
+    const execution = await db.insert(workflowExecutions).values({
+      workflowId: id,
+      status: 'running',
+      context: context || {},
+      startTime: new Date(),
+    }).returning();
+
+    // Update workflow stats
+    await db
+      .update(workflows)
+      .set({
+        executionCount: sql`${workflows.executionCount} + 1`,
+        lastExecuted: new Date(),
+      })
+      .where(eq(workflows.id, id));
+
+    return execution[0];
+  }
+
+  // Workflow Triggers
+  async getWorkflowTriggers(workflowId?: number): Promise<WorkflowTrigger[]> {
+    let query = db.select().from(workflowTriggers);
+    if (workflowId) {
+      query = query.where(eq(workflowTriggers.workflowId, workflowId));
+    }
+    return await query.orderBy(desc(workflowTriggers.createdAt));
+  }
+
+  async getWorkflowTrigger(id: number): Promise<WorkflowTrigger | undefined> {
+    const [trigger] = await db.select().from(workflowTriggers).where(eq(workflowTriggers.id, id));
+    return trigger;
+  }
+
+  async createWorkflowTrigger(trigger: InsertWorkflowTrigger): Promise<WorkflowTrigger> {
+    const [newTrigger] = await db.insert(workflowTriggers).values(trigger).returning();
+    return newTrigger;
+  }
+
+  async updateWorkflowTrigger(id: number, trigger: Partial<InsertWorkflowTrigger>): Promise<WorkflowTrigger | undefined> {
+    const [updatedTrigger] = await db
+      .update(workflowTriggers)
+      .set({ ...trigger, updatedAt: new Date() })
+      .where(eq(workflowTriggers.id, id))
+      .returning();
+    return updatedTrigger;
+  }
+
+  async deleteWorkflowTrigger(id: number): Promise<boolean> {
+    const result = await db.delete(workflowTriggers).where(eq(workflowTriggers.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Workflow Actions
+  async getWorkflowActions(workflowId?: number): Promise<WorkflowAction[]> {
+    let query = db.select().from(workflowActions);
+    if (workflowId) {
+      // Get actions for a specific workflow through the mapping table
+      return await db
+        .select()
+        .from(workflowActions)
+        .innerJoin(workflowActionMappings, eq(workflowActions.id, workflowActionMappings.actionId))
+        .where(eq(workflowActionMappings.workflowId, workflowId))
+        .orderBy(asc(workflowActionMappings.executionOrder));
+    }
+    return await query.orderBy(desc(workflowActions.createdAt));
+  }
+
+  async getWorkflowAction(id: number): Promise<WorkflowAction | undefined> {
+    const [action] = await db.select().from(workflowActions).where(eq(workflowActions.id, id));
+    return action;
+  }
+
+  async createWorkflowAction(action: InsertWorkflowAction): Promise<WorkflowAction> {
+    const [newAction] = await db.insert(workflowActions).values(action).returning();
+    return newAction;
+  }
+
+  async updateWorkflowAction(id: number, action: Partial<InsertWorkflowAction>): Promise<WorkflowAction | undefined> {
+    const [updatedAction] = await db
+      .update(workflowActions)
+      .set({ ...action, updatedAt: new Date() })
+      .where(eq(workflowActions.id, id))
+      .returning();
+    return updatedAction;
+  }
+
+  async deleteWorkflowAction(id: number): Promise<boolean> {
+    const result = await db.delete(workflowActions).where(eq(workflowActions.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Workflow Action Mappings
+  async getWorkflowActionMappings(workflowId: number): Promise<WorkflowActionMapping[]> {
+    return await db
+      .select()
+      .from(workflowActionMappings)
+      .where(eq(workflowActionMappings.workflowId, workflowId))
+      .orderBy(asc(workflowActionMappings.executionOrder));
+  }
+
+  async createWorkflowActionMapping(mapping: InsertWorkflowActionMapping): Promise<WorkflowActionMapping> {
+    const [newMapping] = await db.insert(workflowActionMappings).values(mapping).returning();
+    return newMapping;
+  }
+
+  async deleteWorkflowActionMapping(id: number): Promise<boolean> {
+    const result = await db.delete(workflowActionMappings).where(eq(workflowActionMappings.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Workflow Executions
+  async getWorkflowExecutions(workflowId?: number): Promise<WorkflowExecution[]> {
+    let query = db.select().from(workflowExecutions);
+    if (workflowId) {
+      query = query.where(eq(workflowExecutions.workflowId, workflowId));
+    }
+    return await query.orderBy(desc(workflowExecutions.startTime));
+  }
+
+  async getWorkflowExecution(id: number): Promise<WorkflowExecution | undefined> {
+    const [execution] = await db.select().from(workflowExecutions).where(eq(workflowExecutions.id, id));
+    return execution;
+  }
+
+  async updateWorkflowExecution(id: number, execution: Partial<InsertWorkflowExecution>): Promise<WorkflowExecution | undefined> {
+    const [updatedExecution] = await db
+      .update(workflowExecutions)
+      .set(execution)
+      .where(eq(workflowExecutions.id, id))
+      .returning();
+    return updatedExecution;
+  }
+
+  // Workflow Action Executions
+  async getWorkflowActionExecutions(executionId: number): Promise<WorkflowActionExecution[]> {
+    return await db
+      .select()
+      .from(workflowActionExecutions)
+      .where(eq(workflowActionExecutions.workflowExecutionId, executionId))
+      .orderBy(asc(workflowActionExecutions.executionOrder));
+  }
+
+  async createWorkflowActionExecution(execution: InsertWorkflowActionExecution): Promise<WorkflowActionExecution> {
+    const [newExecution] = await db.insert(workflowActionExecutions).values(execution).returning();
+    return newExecution;
+  }
+
+  async updateWorkflowActionExecution(id: number, execution: Partial<InsertWorkflowActionExecution>): Promise<WorkflowActionExecution | undefined> {
+    const [updatedExecution] = await db
+      .update(workflowActionExecutions)
+      .set(execution)
+      .where(eq(workflowActionExecutions.id, id))
+      .returning();
+    return updatedExecution;
+  }
+
+  // Workflow Monitoring
+  async getWorkflowMonitoring(workflowId?: number): Promise<WorkflowMonitoring[]> {
+    let query = db.select().from(workflowMonitoring);
+    if (workflowId) {
+      query = query.where(eq(workflowMonitoring.workflowId, workflowId));
+    }
+    return await query.orderBy(desc(workflowMonitoring.createdAt));
+  }
+
+  async createWorkflowMonitoring(monitoring: InsertWorkflowMonitoring): Promise<WorkflowMonitoring> {
+    const [newMonitoring] = await db.insert(workflowMonitoring).values(monitoring).returning();
+    return newMonitoring;
+  }
+
+  async updateWorkflowMonitoring(id: number, monitoring: Partial<InsertWorkflowMonitoring>): Promise<WorkflowMonitoring | undefined> {
+    const [updatedMonitoring] = await db
+      .update(workflowMonitoring)
+      .set({ ...monitoring, updatedAt: new Date() })
+      .where(eq(workflowMonitoring.id, id))
+      .returning();
+    return updatedMonitoring;
+  }
+
+  async deleteWorkflowMonitoring(id: number): Promise<boolean> {
+    const result = await db.delete(workflowMonitoring).where(eq(workflowMonitoring.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
   }
 }
 
