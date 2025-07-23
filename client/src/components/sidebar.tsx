@@ -5,13 +5,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Book, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain } from "lucide-react";
+import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Book, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain, CreditCard } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import JobForm from "./job-form";
 import ResourceForm from "./resource-form";
+import TopUserProfile from "./top-user-profile";
 import type { Capability } from "@shared/schema";
 
 export default function Sidebar() {
@@ -242,6 +243,11 @@ export default function Sidebar() {
           <Factory className="text-primary mr-2" size={20} />
           PlanetTogether
         </h1>
+      </div>
+
+      {/* User Profile Panel */}
+      <div className="p-4 border-b border-gray-200 bg-gray-50">
+        <TopUserProfile />
       </div>
       
       <div className="flex-1 relative min-h-0">

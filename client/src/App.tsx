@@ -49,7 +49,7 @@ import IndustryTemplates from "@/pages/industry-templates";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
-import TopUserProfile from "@/components/top-user-profile";
+
 
 function DashboardWithAutoTour() {
   const { startTour } = useTour();
@@ -141,7 +141,6 @@ function Router() {
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
-      <TopUserProfile />
       <main className="flex-1 overflow-y-auto w-full">
         <Switch>
           <Route path="/production-schedule">
