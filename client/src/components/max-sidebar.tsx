@@ -200,7 +200,7 @@ export function MaxSidebar() {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
-      const response = await apiRequest('/api/ai-agent/chat', 'POST', {
+      const response = await apiRequest('POST', '/api/ai-agent/chat', {
         message,
         context: {
           page: window.location.pathname,
@@ -208,7 +208,7 @@ export function MaxSidebar() {
           timestamp: new Date().toISOString()
         }
       });
-      return response;
+      return await response.json();
     },
     onSuccess: (response: any) => {
       const assistantMessage: Message = {
@@ -291,17 +291,18 @@ export function MaxSidebar() {
 
   const playTTSResponse = async (text: string) => {
     try {
-      const response = await apiRequest(`/api/ai-agent/tts`, 'POST', { 
+      const response = await apiRequest('POST', '/api/ai-agent/tts', { 
         text, 
         voice: selectedVoice 
-      }) as { audioUrl?: string };
+      });
+      const data = await response.json() as { audioUrl?: string };
 
-      if (response?.audioUrl) {
+      if (data?.audioUrl) {
         if (currentAudio.current) {
           currentAudio.current.pause();
         }
         
-        currentAudio.current = new Audio(response.audioUrl);
+        currentAudio.current = new Audio(data.audioUrl);
         await currentAudio.current.play();
       }
     } catch (error) {
