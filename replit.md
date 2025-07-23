@@ -127,10 +127,10 @@ The application uses a modern full-stack architecture with strong typing through
 
 ✓ **Profile Settings Tooltip Positioning Fix (July 23, 2025)**:
 - Fixed annoying tooltip overlap issue where "Profile & Settings" tooltip appeared at top of hamburger menu
-- Changed tooltip positioning from side="top" to side="bottom" for profile and logout buttons
-- Tooltips now appear below buttons instead of floating over menu content
+- Replaced Radix UI Tooltip components with simple HTML title attributes to eliminate overlay issues
+- Removed complex tooltip positioning logic that was causing interference with sheet-based navigation
 - Enhanced user experience by preventing UI element interference when navigating the hamburger menu
-- Tooltip positioning now works properly in both mobile and desktop sheet-based navigation
+- Tooltips now use native browser behavior instead of floating overlay components
 
 ✓ **Mobile Scrolling Fix with Max Split-Pane Layout (July 23, 2025)**:
 - Fixed critical mobile scrolling issue where main content area couldn't be scrolled when Max was at bottom

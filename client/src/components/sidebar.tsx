@@ -156,7 +156,7 @@ export default function Sidebar() {
   };
 
   // User Avatar Section - displays avatar, name, action icons, and role controls
-  const SidebarUserAvatarSection = () => {
+  const SidebarUserAvatarSection = ({ isMobileSheet = false }: { isMobileSheet?: boolean }) => {
     const [userProfileOpen, setUserProfileOpen] = useState(false);
     const { user, logout } = useAuth();
 
@@ -194,36 +194,24 @@ export default function Sidebar() {
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setUserProfileOpen(true)}
-                    className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
-                  >
-                    <Settings className="w-3 h-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>Profile & Settings</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={logout}
-                    className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
-                  >
-                    <LogOut className="w-3 h-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>Sign Out</p>
-                </TooltipContent>
-              </Tooltip>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setUserProfileOpen(true)}
+                className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
+                title="Profile & Settings"
+              >
+                <Settings className="w-3 h-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={logout}
+                className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
+                title="Sign Out"
+              >
+                <LogOut className="w-3 h-3" />
+              </Button>
             </div>
           </div>
 
@@ -246,7 +234,7 @@ export default function Sidebar() {
 
 
 
-  const SidebarContent = ({ onNavigate = () => {} }: { onNavigate?: () => void }) => (
+  const SidebarContent = ({ onNavigate = () => {}, isMobileSheet = false }: { onNavigate?: () => void; isMobileSheet?: boolean }) => (
     <div className="flex flex-col h-full">
       <div className="p-4 md:p-6 border-b border-gray-200">
         <h1 className="text-lg md:text-xl font-semibold text-gray-800 flex items-center mb-3">
@@ -254,7 +242,7 @@ export default function Sidebar() {
           PlanetTogether
         </h1>
         {/* User Avatar and Name */}
-        <SidebarUserAvatarSection />
+        <SidebarUserAvatarSection isMobileSheet={isMobileSheet} />
       </div>
 
       <div className="flex-1 relative min-h-0">
@@ -344,7 +332,7 @@ export default function Sidebar() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0">
-            <SidebarContent onNavigate={() => setMobileMenuOpen(false)} />
+            <SidebarContent onNavigate={() => setMobileMenuOpen(false)} isMobileSheet={true} />
           </SheetContent>
         </Sheet>
       </div>
@@ -358,7 +346,7 @@ export default function Sidebar() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0">
-            <SidebarContent onNavigate={() => setDesktopMenuOpen(false)} />
+            <SidebarContent onNavigate={() => setDesktopMenuOpen(false)} isMobileSheet={false} />
           </SheetContent>
         </Sheet>
       </div>
