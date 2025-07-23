@@ -310,8 +310,9 @@ export default function Training() {
       },
     });
 
-    const existingRoleIds = toursFromAPI.map((tour: any) => tour.roleId);
-    const rolesWithTours = toursFromAPI.map((tour: any) => tour.roleDisplayName || tour.roleName);
+    const toursArray = Array.isArray(toursFromAPI) ? toursFromAPI : [];
+    const existingRoleIds = toursArray.map((tour: any) => tour.roleId);
+    const rolesWithTours = toursArray.map((tour: any) => tour.roleDisplayName || tour.roleName);
     
     // Get all system roles for demonstration
     const { data: allRoles = [] } = useQuery<Role[]>({
@@ -361,6 +362,62 @@ export default function Training() {
       setSelectedMissingRoles([]);
     };
 
+    // Handle preview tour
+    const handlePreviewTour = (tour: any) => {
+      setPreviewTourData(tour);
+      setShowTourPreviewDialog(true);
+    };
+
+    // Handle start live tour
+    const handleStartLiveTour = (tour: any) => {
+      // Find the role by ID or name
+      const roleToSwitch = allRoles.find(role => 
+        role.id === tour.roleId || role.name === tour.roleDisplayName || role.name === tour.roleName
+      );
+      
+      if (roleToSwitch) {
+        // Start tour for the role
+        window.location.href = `/dashboard?startTour=true&roleId=${roleToSwitch.id}`;
+      } else {
+        toast({
+          title: "Role Not Found",
+          description: "Could not find the role associated with this tour.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    // Handle single tour regeneration
+    const handleSingleTourRegeneration = (tour: any) => {
+      setSelectedTourForRegeneration(tour);
+      setShowSingleTourGuidanceDialog(true);
+    };
+
+    // Single tour regeneration mutation
+    const regenerateSingleTourMutation = useMutation({
+      mutationFn: (data: { roleId: number, guidance?: string }) => 
+        apiRequest('POST', `/api/ai/generate-tour/single`, data),
+      onSuccess: () => {
+        toast({
+          title: "Tour Regenerated",
+          description: "The tour has been successfully regenerated with AI assistance.",
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/tours'] });
+        setShowSingleTourGuidanceDialog(false);
+        setSelectedTourForRegeneration(null);
+        setSingleTourGuidance("");
+      },
+    });
+
+    const executeSingleTourRegeneration = () => {
+      if (!selectedTourForRegeneration) return;
+      
+      regenerateSingleTourMutation.mutate({
+        roleId: selectedTourForRegeneration.roleId,
+        guidance: singleTourGuidance
+      });
+    };
+
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -384,11 +441,11 @@ export default function Training() {
         ) : (
           <>
             {/* Existing Tours Section */}
-            {toursFromAPI.length > 0 && (
+            {toursArray.length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <h4 className="text-md font-medium text-gray-800">Existing Tours ({toursFromAPI.length})</h4>
+                    <h4 className="text-md font-medium text-gray-800">Existing Tours ({toursArray.length})</h4>
                     <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
@@ -396,11 +453,11 @@ export default function Training() {
                         onClick={() => handleSelectAll('existing')}
                         className="text-xs"
                       >
-                        {selectedRoles.length === rolesWithTours.length ? 'None' : `All (${toursFromAPI.length})`}
+                        {selectedRoles.length === rolesWithTours.length ? 'None' : `All (${toursArray.length})`}
                       </Button>
                       {selectedRoles.length > 0 && (
                         <span className="text-xs text-gray-500">
-                          {selectedRoles.length} of {toursFromAPI.length} selected
+                          {selectedRoles.length} of {toursArray.length} selected
                         </span>
                       )}
                     </div>
@@ -421,7 +478,7 @@ export default function Training() {
                 </div>
 
                 <div className="grid gap-4">
-                  {toursFromAPI.map((tour: any) => (
+                  {toursArray.map((tour: any) => (
                     <Card key={tour.id} className="border">
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
@@ -445,6 +502,32 @@ export default function Training() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm" 
+                              onClick={() => handlePreviewTour(tour)}
+                              title="Preview Tour"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleStartLiveTour(tour)}
+                              className={`${aiTheme.gradient} text-white`}
+                              title="Start Live Tour"
+                            >
+                              <Play className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleSingleTourRegeneration(tour)}
+                              className={`${aiTheme.gradient} text-white`}
+                              title="Regenerate Tour"
+                            >
+                              <RefreshCw className="w-4 h-4" />
+                            </Button>
                             <Button
                               variant="outline"
                               size="sm"
@@ -618,6 +701,150 @@ export default function Training() {
                     </Button>
                   </div>
                 </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Single Tour Regeneration Dialog */}
+            <Dialog open={showSingleTourGuidanceDialog} onOpenChange={setShowSingleTourGuidanceDialog}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Regenerate Tour</DialogTitle>
+                  <DialogDescription>
+                    Regenerate the tour for {selectedTourForRegeneration?.roleDisplayName || selectedTourForRegeneration?.roleName} with custom AI guidance.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="single-tour-guidance">Custom Instructions (Optional)</Label>
+                    <Textarea
+                      id="single-tour-guidance"
+                      placeholder="E.g., Focus more on advanced features, emphasize efficiency benefits..."
+                      value={singleTourGuidance}
+                      onChange={(e) => setSingleTourGuidance(e.target.value)}
+                      rows={4}
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowSingleTourGuidanceDialog(false);
+                        setSelectedTourForRegeneration(null);
+                        setSingleTourGuidance("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={executeSingleTourRegeneration}
+                      disabled={regenerateSingleTourMutation.isPending}
+                      className={`${aiTheme.gradient} text-white`}
+                    >
+                      {regenerateSingleTourMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Regenerating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4 mr-2" />
+                          Regenerate Tour
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Tour Preview Dialog */}
+            <Dialog open={showTourPreviewDialog} onOpenChange={setShowTourPreviewDialog}>
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Tour Preview: {previewTourData?.roleDisplayName || previewTourData?.roleName}</DialogTitle>
+                  <DialogDescription>
+                    Preview the complete tour content and navigation flow
+                  </DialogDescription>
+                </DialogHeader>
+                {previewTourData && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-600">{previewTourData.steps?.length || 0}</div>
+                        <div className="text-sm text-gray-600">Steps</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-600">{previewTourData.estimatedDuration || 'Unknown'}</div>
+                        <div className="text-sm text-gray-600">Duration</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-purple-600">{previewTourData.voiceScripts ? Object.keys(previewTourData.voiceScripts).length : 0}</div>
+                        <div className="text-sm text-gray-600">Voice Scripts</div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-lg">Tour Steps</h4>
+                      {previewTourData.steps?.map((step: any, index: number) => (
+                        <div key={index} className="border rounded-lg p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h5 className="font-medium text-lg">
+                              {index + 1}. {step.stepName || `Step ${index + 1}`}
+                            </h5>
+                            <Badge variant="outline" className="text-xs">
+                              {step.navigationPath || step.page || step.route || 'No navigation'}
+                            </Badge>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div>
+                              <Label className="text-sm font-medium text-gray-700">Description</Label>
+                              <p className="text-sm text-gray-600 mt-1">{step.description}</p>
+                            </div>
+                            
+                            {step.benefits && (
+                              <div>
+                                <Label className="text-sm font-medium text-green-700">Key Benefits</Label>
+                                <p className="text-sm text-green-600 mt-1">{step.benefits}</p>
+                              </div>
+                            )}
+                            
+                            {step.voiceScript && (
+                              <div>
+                                <Label className="text-sm font-medium text-purple-700">Voice Script</Label>
+                                <p className="text-sm text-purple-600 mt-1 italic">"{step.voiceScript}"</p>
+                                <div className="mt-2">
+                                  <TestVoiceButton voiceSettings={{ voice: 'nova', gender: 'female', speed: 1.1 }} />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )) || (
+                        <p className="text-center text-gray-500 py-8">No steps available in this tour</p>
+                      )}
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-4 border-t">
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowTourPreviewDialog(false)}
+                      >
+                        Close Preview
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setShowTourPreviewDialog(false);
+                          handleStartLiveTour(previewTourData);
+                        }}
+                        className={`${aiTheme.gradient} text-white`}
+                      >
+                        <Play className="w-4 h-4 mr-2" />
+                        Start Live Tour
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </DialogContent>
             </Dialog>
 
