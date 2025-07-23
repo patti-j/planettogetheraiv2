@@ -129,6 +129,8 @@ The application uses a modern full-stack architecture with strong typing through
 - Mobile users now see hidden content below the screen during voice narration tours
 - Voice now provides seamless narration experience during tour navigation with proper playback continuity
 - Auto-scrolling demonstrates all page content during voice playback, especially on mobile where space is limited
+- **Fixed voice generation duration bug** - removed automatic addition of "This takes approximately X minutes" from voice narration
+- Voice now only speaks the written script content without adding unwanted duration information
 
 ✓ **Complete Systems Integration Dashboard Transformation (July 23, 2025)**:
 - Successfully completed comprehensive transformation of ERP import page into modern Systems Integration dashboard

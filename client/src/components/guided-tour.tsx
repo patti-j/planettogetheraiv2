@@ -110,7 +110,7 @@ const createEngagingNarration = (step: TourStep, roleName: string): string => {
   const intro = introTexts[Math.floor(Math.random() * introTexts.length)];
   const benefits = step.benefits.length > 0 ? ` Key benefits include: ${step.benefits.join(', ')}.` : '';
   
-  return `${intro}. ${step.description}${benefits} This takes approximately ${step.duration}.`;
+  return `${intro}. ${step.description}${benefits}`;
 };
 
 // Get tour steps from database based on role
