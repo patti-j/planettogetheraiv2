@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Factory, Briefcase, BarChart3, FileText, Bot, Columns3, Menu, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain, User, LogOut, Code } from "lucide-react";
+import { Factory, Briefcase, BarChart3, FileText, Bot, Columns3, Menu, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain, User, LogOut, Code, Layers } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleSwitcher } from "./role-switcher";
 import { TrainingModeExit } from "./training-mode-exit";
@@ -102,6 +102,7 @@ export default function Sidebar() {
     { icon: Server, label: "Systems Management", href: "/systems-management-dashboard", active: location === "/systems-management-dashboard", feature: "systems-management", action: "view" },
     { icon: Building, label: "Plants Management", href: "/plants-management", active: location === "/plants-management", feature: "systems-management", action: "view" },
     { icon: Code, label: "Extension Studio", href: "/extension-studio", active: location === "/extension-studio", feature: "systems-management", action: "view" },
+    { icon: Layers, label: "Canvas", href: "/canvas", active: location === "/canvas", feature: "", action: "" },
     { icon: Shield, label: "Role Management", href: "/role-management", active: location === "/role-management", feature: "user-management", action: "view" },
     { icon: UserCheck, label: "User Role Assignments", href: "/user-role-assignments-page", active: location === "/user-role-assignments-page", feature: "user-management", action: "view" },
     { icon: GraduationCap, label: "Training", href: "/training", active: location === "/training", feature: "training", action: "view" },
@@ -116,9 +117,10 @@ export default function Sidebar() {
     { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback", feature: "feedback", action: "view" },
 
   ].filter(item => 
-    // Always show Getting Started, Production Schedule, and Max AI Assistant (when closed) for authenticated users
+    // Always show Getting Started, Production Schedule, Canvas, and Max AI Assistant (when closed) for authenticated users
     item.href === "#" || 
     item.href === "/production-schedule" || 
+    item.href === "/canvas" ||
     item.href === "#max" ||
     // Show item if user has permission
     hasPermission(item.feature || "", item.action || "")
@@ -145,6 +147,7 @@ export default function Sidebar() {
       "/systems-management-dashboard": "Monitor system health, manage users, and oversee IT infrastructure",
       "/plants-management": "Manage manufacturing plant locations, configurations, and multi-plant operations",
       "/extension-studio": "Create and manage custom software extensions to extend platform capabilities",
+      "/canvas": "Dynamic content space for AI-generated visualizations, dashboards, and interactive reports",
       "/role-management": "Define user roles and specify feature permissions for different user types",
       "/user-role-assignments-page": "Assign multiple roles to users and manage user role relationships",
       "/training": "Interactive training modules and role demonstrations for comprehensive system training",

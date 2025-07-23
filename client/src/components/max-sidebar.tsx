@@ -10,6 +10,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useMaxDock } from "@/contexts/MaxDockContext";
 import { useAITheme } from "@/hooks/use-ai-theme";
+import { useLocation } from "wouter";
 import { 
   Bot, 
   Send, 
@@ -119,6 +120,7 @@ function AIThemeSelector() {
 export function MaxSidebar() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [location, setLocation] = useLocation();
   const { 
     setMaxOpen, 
     isMobile, 
@@ -361,7 +363,7 @@ export function MaxSidebar() {
   };
 
   const toggleCanvas = () => {
-    setCanvasVisible(!canvasVisible);
+    setLocation('/canvas');
   };
 
   const testVoice = async () => {

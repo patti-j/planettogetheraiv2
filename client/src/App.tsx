@@ -51,6 +51,7 @@ import Account from "@/pages/account";
 import IndustryTemplates from "@/pages/industry-templates";
 import PlantsManagementPage from "@/pages/plants-management";
 import ExtensionStudioPage from "@/pages/extension-studio";
+import CanvasPage from "@/pages/canvas";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
@@ -303,6 +304,9 @@ function Router() {
             <ProtectedRoute feature="systems-management" action="view">
               <ExtensionStudioPage />
             </ProtectedRoute>
+          </Route>
+          <Route path="/canvas">
+            <CanvasPage />
           </Route>
           <Route path="/account" component={Account} />
           <Route path="/pricing" component={Pricing} />
