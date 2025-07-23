@@ -3590,11 +3590,43 @@ Provide the response as a JSON object with the following structure:
 
   app.get("/api/users/:userId/permissions/check", async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userIdParam = req.params.userId;
       const { feature, action } = req.query;
       
-      if (isNaN(userId) || !feature || !action) {
-        return res.status(400).json({ error: "User ID, feature, and action are required" });
+      if (!feature || !action) {
+        return res.status(400).json({ error: "Feature and action are required" });
+      }
+
+      // Handle demo users
+      if (typeof userIdParam === 'string' && userIdParam.startsWith('demo_')) {
+        const demoPermissions = {
+          'demo_support': ['help-view', 'systems-management-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+          'demo_director': ['business-goals-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+          'demo_plant': ['plant-manager-view', 'capacity-planning-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+          'demo_scheduler': ['schedule-view', 'boards-view', 'shop-floor-view', 'analytics-view', 'scheduling-optimizer-view', 'capacity-planning-view', 'business-goals-view', 'ai-assistant-view', 'feedback-view'],
+          'demo_it_admin': ['systems-management-view', 'role-management-view', 'user-management-view', 'ai-assistant-view', 'feedback-view'],
+          'demo_systems': ['systems-management-view', 'role-management-view', 'user-management-view', 'training-view', 'ai-assistant-view', 'feedback-view'],
+          'demo_admin': ['role-management-view', 'user-management-view', 'systems-management-view', 'ai-assistant-view', 'feedback-view'],
+          'demo_shop_floor': ['shop-floor-view', 'operator-dashboard-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+          'demo_analyst': ['analytics-view', 'reports-view', 'business-goals-view', 'ai-assistant-view', 'feedback-view'],
+          'demo_trainer': ['training-view', 'role-switching-permissions', 'analytics-view', 'reports-view', 'schedule-view', 'business-goals-view', 'visual-factory-view', 'ai-assistant-view', 'feedback-view'],
+          'demo_it_systems': ['systems-management-view', 'role-management-view', 'user-management-view', 'ai-assistant-view', 'feedback-view'],
+          'demo_sales': ['sales-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+          'demo_customer_service': ['customer-service-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+          'demo_supply_chain': ['inventory-optimization-view', 'demand-forecasting-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view']
+        };
+        
+        const permissions = demoPermissions[userIdParam as keyof typeof demoPermissions];
+        if (permissions) {
+          const permissionKey = `${feature}-${action}`;
+          const hasPermission = permissions.includes(permissionKey);
+          return res.json({ hasPermission });
+        }
+      }
+
+      const userId = parseInt(userIdParam);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
       }
 
       const hasPermission = await storage.hasPermission(userId, feature as string, action as string);
@@ -3718,7 +3750,34 @@ Provide the response as a JSON object with the following structure:
   // Get assigned roles (all roles assigned to user - used for training mode detection)
   app.get("/api/users/:userId/assigned-roles", async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userIdParam = req.params.userId;
+      
+      // Handle demo users
+      if (typeof userIdParam === 'string' && userIdParam.startsWith('demo_')) {
+        const demoRoles = {
+          'demo_support': [{ id: 'demo_support_role', name: 'Support Engineer' }],
+          'demo_director': [{ id: 'demo_director_role', name: 'Director' }],
+          'demo_plant': [{ id: 'demo_plant_role', name: 'Plant Manager' }],
+          'demo_scheduler': [{ id: 'demo_scheduler_role', name: 'Production Scheduler' }],
+          'demo_it_admin': [{ id: 'demo_it_admin_role', name: 'IT Administrator' }],
+          'demo_systems': [{ id: 'demo_systems_role', name: 'Systems Manager' }],
+          'demo_admin': [{ id: 'demo_admin_role', name: 'Administrator' }],
+          'demo_shop_floor': [{ id: 'demo_shop_floor_role', name: 'Shop Floor Operations' }],
+          'demo_analyst': [{ id: 'demo_analyst_role', name: 'Data Analyst' }],
+          'demo_trainer': [{ id: 'demo_trainer_role', name: 'Trainer' }],
+          'demo_it_systems': [{ id: 'demo_it_systems_role', name: 'IT Systems Administrator' }],
+          'demo_sales': [{ id: 'demo_sales_role', name: 'Sales Representative' }],
+          'demo_customer_service': [{ id: 'demo_customer_service_role', name: 'Customer Service Representative' }],
+          'demo_supply_chain': [{ id: 'demo_supply_chain_role', name: 'Supply Chain Planner' }]
+        };
+        
+        const roles = demoRoles[userIdParam as keyof typeof demoRoles];
+        if (roles) {
+          return res.json(roles);
+        }
+      }
+
+      const userId = parseInt(userIdParam);
       if (isNaN(userId)) {
         return res.status(400).json({ error: "Invalid user ID" });
       }
@@ -3817,7 +3876,34 @@ Provide the response as a JSON object with the following structure:
 
   app.get("/api/users/:userId/current-role", async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userIdParam = req.params.userId;
+      
+      // Handle demo users
+      if (typeof userIdParam === 'string' && userIdParam.startsWith('demo_')) {
+        const demoUsers = {
+          'demo_support': { id: 'demo_support_role', name: 'Support Engineer' },
+          'demo_director': { id: 'demo_director_role', name: 'Director' },
+          'demo_plant': { id: 'demo_plant_role', name: 'Plant Manager' },
+          'demo_scheduler': { id: 'demo_scheduler_role', name: 'Production Scheduler' },
+          'demo_it_admin': { id: 'demo_it_admin_role', name: 'IT Administrator' },
+          'demo_systems': { id: 'demo_systems_role', name: 'Systems Manager' },
+          'demo_admin': { id: 'demo_admin_role', name: 'Administrator' },
+          'demo_shop_floor': { id: 'demo_shop_floor_role', name: 'Shop Floor Operations' },
+          'demo_analyst': { id: 'demo_analyst_role', name: 'Data Analyst' },
+          'demo_trainer': { id: 'demo_trainer_role', name: 'Trainer' },
+          'demo_it_systems': { id: 'demo_it_systems_role', name: 'IT Systems Administrator' },
+          'demo_sales': { id: 'demo_sales_role', name: 'Sales Representative' },
+          'demo_customer_service': { id: 'demo_customer_service_role', name: 'Customer Service Representative' },
+          'demo_supply_chain': { id: 'demo_supply_chain_role', name: 'Supply Chain Planner' }
+        };
+        
+        const demoRole = demoUsers[userIdParam as keyof typeof demoUsers];
+        if (demoRole) {
+          return res.json(demoRole);
+        }
+      }
+
+      const userId = parseInt(userIdParam);
       if (isNaN(userId)) {
         return res.status(400).json({ error: "Invalid user ID" });
       }

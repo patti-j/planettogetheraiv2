@@ -114,6 +114,14 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 23, 2025)
 
+✓ **Demo Registration Authentication System Fix (July 23, 2025)**:
+- Fixed critical demo authentication error by adding all missing demo user mappings to server routes
+- Added complete demo user authentication for all 14 roles (IT Systems Administrator, Sales Representative, Customer Service Representative, Support Engineer, Supply Chain Planner)
+- Enhanced demo user handling in API endpoints: current-role, assigned-roles, and permissions/check
+- Fixed database query errors with demo users by adding proper string ID handling instead of integer parsing
+- Demo authentication now works seamlessly for all roles with proper permission validation
+- Voice narration defaults to enabled for simplified mobile experience while maintaining tour controls
+
 ✓ **Demo Registration Mobile Voice Optimization (July 23, 2025)**:
 - Hidden voice narration option from demo registration form to simplify mobile experience
 - Voice narration now defaults to enabled (true) for all demo participants
