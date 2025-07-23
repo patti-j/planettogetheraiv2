@@ -669,7 +669,7 @@ export default function HelpAndGuide() {
               <h4 className="font-medium mb-2">Quick Links</h4>
               <div className="space-y-2">
                 <Button variant="ghost" size="sm" className="w-full justify-start p-2">
-                  <Book className="h-4 w-4 mr-2" />
+                  <BookOpen className="h-4 w-4 mr-2" />
                   User Manual
                 </Button>
                 <Button variant="ghost" size="sm" className="w-full justify-start p-2">
