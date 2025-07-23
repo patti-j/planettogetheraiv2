@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { useMaxDock } from "@/contexts/MaxDockContext";
 
 interface Message {
   id: string;
@@ -121,8 +122,7 @@ export default function IntegratedAIAssistant() {
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
   
   // Docking state
-  const [isDocked, setIsDocked] = useState(false);
-  const [dockPosition, setDockPosition] = useState<'left' | 'right' | 'top' | 'bottom' | null>(null);
+  const { isDocked, dockPosition, setDockState } = useMaxDock();
   const [showDockZones, setShowDockZones] = useState(false);
   
   const { toast } = useToast();
@@ -154,39 +154,40 @@ export default function IntegratedAIAssistant() {
   };
 
   const dockToPosition = (dock: 'left' | 'right' | 'top' | 'bottom') => {
-    setIsDocked(true);
-    setDockPosition(dock);
     setShowDockZones(false);
     
-    // Calculate dock position immediately
+    // Calculate dock position and size for full edge coverage
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     const dockWidth = 400;
-    const dockHeight = Math.min(600, viewportHeight - 100);
+    const dockHeight = 300;
 
     switch (dock) {
       case 'left':
-        setPosition({ x: 0, y: 50 });
-        setSize({ width: dockWidth, height: dockHeight });
+        setPosition({ x: 0, y: 0 });
+        setSize({ width: dockWidth, height: viewportHeight });
+        setDockState(true, 'left', dockWidth, viewportHeight);
         break;
       case 'right':
-        setPosition({ x: viewportWidth - dockWidth, y: 50 });
-        setSize({ width: dockWidth, height: dockHeight });
+        setPosition({ x: viewportWidth - dockWidth, y: 0 });
+        setSize({ width: dockWidth, height: viewportHeight });
+        setDockState(true, 'right', dockWidth, viewportHeight);
         break;
       case 'top':
-        setPosition({ x: Math.max(0, (viewportWidth - dockWidth) / 2), y: 0 });
-        setSize({ width: dockWidth, height: 350 });
+        setPosition({ x: 0, y: 0 });
+        setSize({ width: viewportWidth, height: dockHeight });
+        setDockState(true, 'top', viewportWidth, dockHeight);
         break;
       case 'bottom':
-        setPosition({ x: Math.max(0, (viewportWidth - dockWidth) / 2), y: viewportHeight - 400 });
-        setSize({ width: dockWidth, height: 350 });
+        setPosition({ x: 0, y: viewportHeight - dockHeight });
+        setSize({ width: viewportWidth, height: dockHeight });
+        setDockState(true, 'bottom', viewportWidth, dockHeight);
         break;
     }
   };
 
   const undockWindow = () => {
-    setIsDocked(false);
-    setDockPosition(null);
+    setDockState(false, null, 0, 0);
     // Move to center of screen when undocking
     const centerX = Math.max(0, (window.innerWidth - 400) / 2);
     const centerY = Math.max(0, (window.innerHeight - 500) / 2);
@@ -219,8 +220,7 @@ export default function IntegratedAIAssistant() {
     if (isDragging) {
       // If currently docked, first undock the window
       if (isDocked) {
-        setIsDocked(false);
-        setDockPosition(null);
+        setDockState(false, null, 0, 0);
       }
       
       const newX = Math.max(0, Math.min(window.innerWidth - size.width, e.clientX - dragOffset.x));
@@ -306,7 +306,7 @@ export default function IntegratedAIAssistant() {
     
     window.addEventListener('resize', handleWindowResize);
     return () => window.removeEventListener('resize', handleWindowResize);
-  }, [size, isDocked, dockPosition]);
+  }, [size, isDocked, dockPosition, dockToPosition]);
 
   // Initialize speech recognition and synthesis
   useEffect(() => {
@@ -628,21 +628,21 @@ export default function IntegratedAIAssistant() {
   // Full assistant interface - draggable and resizable
   return (
     <div 
-      className="fixed z-50"
+      className={`fixed z-50 ${isDocked ? 'z-40' : 'z-50'}`}
       style={{
-        left: position.x,
-        top: position.y,
-        width: size.width,
-        height: isMinimized ? 'auto' : size.height
+        left: isDocked ? (dockPosition === 'left' ? 0 : dockPosition === 'right' ? window.innerWidth - size.width : position.x) : position.x,
+        top: isDocked ? (dockPosition === 'top' ? 0 : dockPosition === 'bottom' ? window.innerHeight - size.height : 0) : position.y,
+        width: isDocked ? (dockPosition === 'left' || dockPosition === 'right' ? size.width : window.innerWidth) : size.width,
+        height: isDocked ? (dockPosition === 'top' || dockPosition === 'bottom' ? size.height : window.innerHeight) : (isMinimized ? 'auto' : size.height)
       }}
     >
       <Card 
-        className={`bg-white shadow-2xl transition-all duration-300 relative ${isDragging ? 'cursor-grabbing' : ''} ${isResizing ? 'select-none' : ''} ${isDocked ? 'border-2 border-blue-400' : ''}`} 
+        className={`bg-white shadow-2xl transition-all duration-300 relative ${isDragging ? 'cursor-grabbing' : ''} ${isResizing ? 'select-none' : ''} ${isDocked ? 'border-2 border-blue-400 shadow-none' : ''}`} 
         style={{ width: '100%', height: '100%' }}
       >
         <CardHeader 
-          className="p-4 bg-gradient-to-r from-blue-500 to-indigo-600 cursor-grab active:cursor-grabbing"
-          onMouseDown={(e) => handleMouseDown(e, 'drag')}
+          className={`p-4 bg-gradient-to-r from-blue-500 to-indigo-600 ${isDocked ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'}`}
+          onMouseDown={!isDocked ? (e) => handleMouseDown(e, 'drag') : undefined}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
