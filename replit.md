@@ -137,6 +137,14 @@ The application uses a modern full-stack architecture with strong typing through
 - Account & billing access now integrated within user settings for better organization and reduced UI clutter
 - Users can access all account-related functions through Profile & Settings dialog instead of main screen
 
+✓ **Role Switching Controls Integration Fix (July 23, 2025)**:
+- Fixed role switching controls display issue in sidebar user controls panel
+- Added proper authentication hooks and current role data fetching to SidebarUserControlsSection
+- Role switcher now receives required userId and currentRole props for proper functionality
+- Role switching controls properly positioned between logo panel and main navigation menu
+- Training mode exit and role switching controls now display correctly in the gray panel area
+- Enhanced user controls panel with proper data flow and authentication integration
+
 ✓ **Desktop Sidebar Collapsible Hamburger Menu Implementation (July 23, 2025)**:
 - Successfully transformed desktop sidebar from fixed sidebar to collapsible hamburger menu matching mobile behavior
 - Implemented separate desktop menu state (desktopMenuOpen) alongside existing mobile menu state for proper control

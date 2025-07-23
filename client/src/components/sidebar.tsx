@@ -295,10 +295,26 @@ export default function Sidebar() {
 
   // User Controls Section - role switching and training mode
   const SidebarUserControlsSection = () => {
+    const { user } = useAuth();
+
+    // Get current role for role switcher
+    const { data: currentRole } = useQuery({
+      queryKey: [`/api/users/${user?.id}/current-role`],
+      enabled: !!user?.id,
+      queryFn: async () => {
+        const response = await apiRequest('GET', `/api/users/${user?.id}/current-role`);
+        return await response.json();
+      },
+    });
+
+    if (!user?.id) {
+      return null;
+    }
+
     return (
       <div className="space-y-3">
         <TrainingModeExit />
-        <RoleSwitcher />
+        <RoleSwitcher userId={user.id} currentRole={currentRole} />
       </div>
     );
   };
