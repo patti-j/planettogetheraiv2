@@ -134,6 +134,8 @@ The application uses a modern full-stack architecture with strong typing through
 - Max panel header now acts as draggable area for resizing split-pane layout
 - Header drag events communicate with SplitPaneLayout via custom events for seamless resize functionality
 - Buttons in header remain clickable while header background serves as resize handle
+- **Max window defaults to visible**: Changed initial state from closed to open on application startup
+- Users now see Max AI Assistant immediately when they access the platform unless they manually close it
 - Eliminated floating window system entirely for consistent, predictable layout behavior
 
 ✓ **User Profile Integration into Hamburger Menu (July 23, 2025)**:

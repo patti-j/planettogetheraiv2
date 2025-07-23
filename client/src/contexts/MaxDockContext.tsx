@@ -11,7 +11,7 @@ interface MaxDockContextType {
 const MaxDockContext = createContext<MaxDockContextType | undefined>(undefined);
 
 export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [isMaxOpen, setIsMaxOpen] = useState(false);
+  const [isMaxOpen, setIsMaxOpen] = useState(true); // Default to visible
   const [maxWidth, setMaxWidth] = useState(400); // Default width for desktop sidebar
   const [isMobile, setIsMobile] = useState(false);
 
