@@ -72,16 +72,23 @@ function AIThemeSelector() {
       disabled={isUpdating}
     >
       <SelectTrigger className="h-7 text-xs">
-        <SelectValue />
+        <SelectValue>
+          <div className="flex items-center space-x-2">
+            <div 
+              className={`w-3 h-3 rounded-full flex-shrink-0 ${AI_THEME_OPTIONS[currentTheme]?.preview || 'bg-gray-300'}`}
+            />
+            <span className="truncate">{AI_THEME_OPTIONS[currentTheme]?.name || 'Select Theme'}</span>
+          </div>
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {Object.entries(AI_THEME_OPTIONS).map(([key, config]) => (
           <SelectItem key={key} value={key}>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3 py-1">
               <div 
-                className={`w-3 h-3 rounded-full ${config.preview}`}
+                className={`w-4 h-4 rounded-full flex-shrink-0 ${config.preview}`}
               />
-              <div className="flex flex-col">
+              <div className="flex flex-col min-w-0">
                 <span className="font-medium">{config.name}</span>
                 <span className="text-xs text-gray-500">{config.description}</span>
               </div>
