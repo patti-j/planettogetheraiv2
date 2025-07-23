@@ -777,6 +777,7 @@ function TourManagementSection() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { startTour } = useTour();
+  const { aiTheme } = useAITheme();
   
   // Fetch tours from database
   const { data: toursFromAPI = [], isLoading: toursLoading } = useQuery({
