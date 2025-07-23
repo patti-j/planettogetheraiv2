@@ -45,6 +45,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useAITheme } from '@/hooks/use-ai-theme';
 import { format, parseISO } from 'date-fns';
 
 interface SystemIntegration {
@@ -90,6 +91,7 @@ interface AIIntegrationRequest {
 
 const SystemsIntegrationPage: React.FC = () => {
   const { toast } = useToast();
+  const { getThemeClasses } = useAITheme();
   const queryClient = useQueryClient();
   const [isMaximized, setIsMaximized] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState<SystemIntegration | null>(null);
@@ -363,7 +365,7 @@ const SystemsIntegrationPage: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={() => setAiSetupDialog(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none hover:from-purple-600 hover:to-pink-600"
+            className={`flex items-center gap-2 ${getThemeClasses()} border-none`}
           >
             <Sparkles className="w-4 h-4" />
             AI Setup
@@ -821,7 +823,7 @@ const SystemsIntegrationPage: React.FC = () => {
               <Button 
                 onClick={handleAiIntegrationSetup}
                 disabled={!aiRequest.description || !aiRequest.systemType || createAiIntegrationMutation.isPending}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none hover:from-purple-600 hover:to-pink-600"
+                className={`${getThemeClasses()} border-none`}
               >
                 {createAiIntegrationMutation.isPending ? (
                   <>

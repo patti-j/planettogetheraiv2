@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play, UserCheck, Settings, Shield, Edit3, Eye, Volume2, MessageSquare, Sparkles, RefreshCw, ChevronDown, ChevronRight, FileText, Clock, Plus, AlertCircle, Trash2, CheckCircle, AlertTriangle, Mic, VolumeX, Info, ArrowLeft, Loader2, X, Hourglass } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, usePermissions } from '@/hooks/useAuth';
+import { useAITheme } from '@/hooks/use-ai-theme';
 import { RoleSwitcher } from '@/components/role-switcher';
 import { apiRequest } from '@/lib/queryClient';
 import { useTour } from '@/contexts/TourContext';
@@ -222,6 +223,7 @@ export default function Training() {
   const { user } = useAuth();
   const { hasPermission } = usePermissions();
   const { toast } = useToast();
+  const { getThemeClasses } = useAITheme();
   const queryClient = useQueryClient();
 
   // Check if user has training permissions
@@ -1516,7 +1518,7 @@ function TourManagementSection() {
           <Button
             onClick={handleGenerateSelectedTours}
             disabled={regenerateTourWithAI.isPending || selectedRoles.length === 0}
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white w-full sm:w-auto text-xs sm:text-sm"
+            className={`${getThemeClasses()} w-full sm:w-auto text-xs sm:text-sm`}
             size="sm"
           >
             <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -1785,7 +1787,7 @@ function TourManagementSection() {
               <Button
                 onClick={handleGenerateMissingTours}
                 disabled={generateNewToursWithAI.isPending || selectedMissingRoles.length === 0}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white w-full sm:w-auto text-xs sm:text-sm"
+                className={`${getThemeClasses()} w-full sm:w-auto text-xs sm:text-sm`}
                 size="sm"
               >
                 {generateNewToursWithAI.isPending ? (

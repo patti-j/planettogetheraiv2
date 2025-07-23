@@ -22,6 +22,7 @@ import AnalyticsWidget from "@/components/analytics-widget";
 import ScheduleEvaluationSystem from "@/components/schedule-evaluation-system";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAITheme } from "@/hooks/use-ai-theme";
 import { apiRequest } from "@/lib/queryClient";
 import type { Job, Operation, Resource, Capability } from "@shared/schema";
 
@@ -69,6 +70,7 @@ export default function Dashboard() {
   const showCustomWidgets = true;
   const [showEvaluationSystem, setShowEvaluationSystem] = useState(false);
   const { toast } = useToast();
+  const { getThemeClasses } = useAITheme();
   const queryClient = useQueryClient();
 
   const { data: jobs = [] } = useQuery<Job[]>({
@@ -749,7 +751,7 @@ export default function Dashboard() {
                       variant="outline"
                       size="sm"
                       onClick={() => setShowEvaluationSystem(true)}
-                      className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border-0"
+                      className={`${getThemeClasses()} border-0`}
                     >
                       <GitCompare className="w-4 h-4 mr-1" />
                       Evaluate Schedules
