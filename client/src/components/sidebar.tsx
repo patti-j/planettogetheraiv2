@@ -245,13 +245,12 @@ export default function Sidebar() {
         </h1>
       </div>
 
-      {/* User Profile Panel */}
-      <div className="p-4 border-b border-gray-200 bg-gray-50">
-        <TopUserProfile />
-      </div>
-      
       <div className="flex-1 relative min-h-0">
         <nav ref={navRef} className="h-full p-3 md:p-4 space-y-1 md:space-y-2 overflow-y-auto overflow-x-hidden">
+          {/* User Profile Panel - Embedded in navigation */}
+          <div className="mb-4 p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
+            <TopUserProfile />
+          </div>
           {navigationItems.map((item) => (
             <Tooltip key={item.href}>
               <TooltipTrigger asChild>
