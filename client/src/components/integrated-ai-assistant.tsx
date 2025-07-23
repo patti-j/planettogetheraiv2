@@ -31,7 +31,9 @@ import {
   Database,
   Trash2,
   Edit,
-  Eye
+  Eye,
+  Dock,
+  Move
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
@@ -118,6 +120,11 @@ export default function IntegratedAIAssistant() {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
   
+  // Docking state
+  const [isDocked, setIsDocked] = useState(false);
+  const [dockPosition, setDockPosition] = useState<'left' | 'right' | 'top' | 'bottom' | null>(null);
+  const [showDockZones, setShowDockZones] = useState(false);
+  
   const { toast } = useToast();
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -125,11 +132,74 @@ export default function IntegratedAIAssistant() {
   const synthesis = useRef<SpeechSynthesis | null>(null);
   const currentAudio = useRef<HTMLAudioElement | null>(null);
 
+  // Docking helper functions
+  const getDockPosition = (): { x: number; y: number; width: number; height: number } => {
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const dockWidth = 400; // Fixed width when docked
+    const dockHeight = Math.min(600, viewportHeight - 100); // Responsive height
+
+    switch (dockPosition) {
+      case 'left':
+        return { x: 0, y: 50, width: dockWidth, height: dockHeight };
+      case 'right':
+        return { x: viewportWidth - dockWidth, y: 50, width: dockWidth, height: dockHeight };
+      case 'top':
+        return { x: Math.max(0, (viewportWidth - dockWidth) / 2), y: 0, width: dockWidth, height: 350 };
+      case 'bottom':
+        return { x: Math.max(0, (viewportWidth - dockWidth) / 2), y: viewportHeight - 400, width: dockWidth, height: 350 };
+      default:
+        return { x: position.x, y: position.y, width: size.width, height: size.height };
+    }
+  };
+
+  const dockToPosition = (dock: 'left' | 'right' | 'top' | 'bottom') => {
+    setIsDocked(true);
+    setDockPosition(dock);
+    setShowDockZones(false);
+    
+    // Calculate dock position immediately
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const dockWidth = 400;
+    const dockHeight = Math.min(600, viewportHeight - 100);
+
+    switch (dock) {
+      case 'left':
+        setPosition({ x: 0, y: 50 });
+        setSize({ width: dockWidth, height: dockHeight });
+        break;
+      case 'right':
+        setPosition({ x: viewportWidth - dockWidth, y: 50 });
+        setSize({ width: dockWidth, height: dockHeight });
+        break;
+      case 'top':
+        setPosition({ x: Math.max(0, (viewportWidth - dockWidth) / 2), y: 0 });
+        setSize({ width: dockWidth, height: 350 });
+        break;
+      case 'bottom':
+        setPosition({ x: Math.max(0, (viewportWidth - dockWidth) / 2), y: viewportHeight - 400 });
+        setSize({ width: dockWidth, height: 350 });
+        break;
+    }
+  };
+
+  const undockWindow = () => {
+    setIsDocked(false);
+    setDockPosition(null);
+    // Move to center of screen when undocking
+    const centerX = Math.max(0, (window.innerWidth - 400) / 2);
+    const centerY = Math.max(0, (window.innerHeight - 500) / 2);
+    setPosition({ x: centerX, y: centerY });
+    setSize({ width: 400, height: 500 });
+  };
+
   // Mouse event handlers for dragging and resizing
   const handleMouseDown = (e: React.MouseEvent, action: 'drag' | 'resize') => {
     e.preventDefault();
     if (action === 'drag') {
       setIsDragging(true);
+      setShowDockZones(true);
       setDragOffset({
         x: e.clientX - position.x,
         y: e.clientY - position.y
@@ -147,9 +217,11 @@ export default function IntegratedAIAssistant() {
 
   const handleMouseMove = (e: MouseEvent) => {
     if (isDragging) {
-      const newX = Math.max(0, Math.min(window.innerWidth - size.width, e.clientX - dragOffset.x));
-      const newY = Math.max(0, Math.min(window.innerHeight - size.height, e.clientY - dragOffset.y));
-      setPosition({ x: newX, y: newY });
+      if (!isDocked) {
+        const newX = Math.max(0, Math.min(window.innerWidth - size.width, e.clientX - dragOffset.x));
+        const newY = Math.max(0, Math.min(window.innerHeight - size.height, e.clientY - dragOffset.y));
+        setPosition({ x: newX, y: newY });
+      }
     } else if (isResizing) {
       const deltaX = e.clientX - resizeStart.x;
       const deltaY = e.clientY - resizeStart.y;
@@ -159,7 +231,26 @@ export default function IntegratedAIAssistant() {
     }
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e: MouseEvent) => {
+    if (isDragging) {
+      // Check if mouse is in a dock zone
+      const threshold = 50; // pixels from edge to trigger docking
+      const { clientX, clientY } = e;
+      const { innerWidth, innerHeight } = window;
+
+      if (clientX <= threshold) {
+        dockToPosition('left');
+      } else if (clientX >= innerWidth - threshold) {
+        dockToPosition('right');
+      } else if (clientY <= threshold) {
+        dockToPosition('top');
+      } else if (clientY >= innerHeight - threshold) {
+        dockToPosition('bottom');
+      } else {
+        setShowDockZones(false);
+      }
+    }
+    
     setIsDragging(false);
     setIsResizing(false);
   };
@@ -179,26 +270,31 @@ export default function IntegratedAIAssistant() {
   // Update position and size when window resizes
   useEffect(() => {
     const handleWindowResize = () => {
-      const newDimensions = getInitialDimensions();
-      
-      // Adjust position to stay within bounds
-      setPosition(prev => ({
-        x: Math.min(prev.x, window.innerWidth - size.width),
-        y: Math.min(prev.y, window.innerHeight - size.height)
-      }));
-      
-      // On mobile, reset to appropriate size
-      if (window.innerWidth < 768) {
-        setSize({
-          width: newDimensions.width,
-          height: newDimensions.height
-        });
+      if (isDocked && dockPosition) {
+        // Recalculate docked position when window resizes
+        dockToPosition(dockPosition);
+      } else {
+        const newDimensions = getInitialDimensions();
+        
+        // Adjust position to stay within bounds
+        setPosition(prev => ({
+          x: Math.min(prev.x, window.innerWidth - size.width),
+          y: Math.min(prev.y, window.innerHeight - size.height)
+        }));
+        
+        // On mobile, reset to appropriate size
+        if (window.innerWidth < 768) {
+          setSize({
+            width: newDimensions.width,
+            height: newDimensions.height
+          });
+        }
       }
     };
     
     window.addEventListener('resize', handleWindowResize);
     return () => window.removeEventListener('resize', handleWindowResize);
-  }, [size]);
+  }, [size, isDocked, dockPosition]);
 
   // Initialize speech recognition and synthesis
   useEffect(() => {
@@ -528,10 +624,13 @@ export default function IntegratedAIAssistant() {
         height: isMinimized ? 'auto' : size.height
       }}
     >
-      <Card className={`bg-white shadow-2xl transition-all duration-300 relative ${isDragging ? 'cursor-grabbing' : ''} ${isResizing ? 'select-none' : ''}`} style={{ width: '100%', height: '100%' }}>
+      <Card 
+        className={`bg-white shadow-2xl transition-all duration-300 relative ${isDragging ? 'cursor-grabbing' : ''} ${isResizing ? 'select-none' : ''} ${isDocked ? 'border-2 border-blue-400' : ''}`} 
+        style={{ width: '100%', height: '100%' }}
+      >
         <CardHeader 
-          className="p-4 bg-gradient-to-r from-blue-500 to-indigo-600 cursor-grab active:cursor-grabbing"
-          onMouseDown={(e) => handleMouseDown(e, 'drag')}
+          className={`p-4 bg-gradient-to-r from-blue-500 to-indigo-600 ${isDocked ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'}`}
+          onMouseDown={isDocked ? undefined : (e) => handleMouseDown(e, 'drag')}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -575,6 +674,17 @@ export default function IntegratedAIAssistant() {
               >
                 <Database className="h-3 w-3" />
               </Button>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={isDocked ? undockWindow : () => setShowDockZones(!showDockZones)}
+                className="h-6 w-6 p-0 text-white hover:bg-white/20"
+                title={isDocked ? "Undock Window" : "Dock Window"}
+              >
+                {isDocked ? <Move className="h-3 w-3" /> : <Dock className="h-3 w-3" />}
+              </Button>
+              
               <Button
                 variant="ghost"
                 size="sm"
@@ -851,8 +961,8 @@ export default function IntegratedAIAssistant() {
           </CardContent>
         )}
         
-        {/* Resize Handle */}
-        {!isMinimized && (
+        {/* Resize Handle - Only show when not docked and not minimized */}
+        {!isMinimized && !isDocked && (
           <div
             className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-gradient-to-br from-blue-400 to-indigo-500 hover:from-blue-500 hover:to-indigo-600 transition-colors opacity-70 hover:opacity-100"
             onMouseDown={(e) => handleMouseDown(e, 'resize')}
@@ -863,6 +973,43 @@ export default function IntegratedAIAssistant() {
           />
         )}
       </Card>
+
+      {/* Dock Zones - Visual indicators when dragging */}
+      {showDockZones && (
+        <>
+          {/* Left dock zone */}
+          <div 
+            className="fixed left-0 top-0 w-12 h-full bg-blue-500/20 border-r-2 border-blue-500 z-40 flex items-center justify-center pointer-events-none"
+            style={{ opacity: isDragging ? 1 : 0, transition: 'opacity 0.2s' }}
+          >
+            <div className="text-blue-600 font-semibold text-sm rotate-90">LEFT</div>
+          </div>
+          
+          {/* Right dock zone */}
+          <div 
+            className="fixed right-0 top-0 w-12 h-full bg-blue-500/20 border-l-2 border-blue-500 z-40 flex items-center justify-center pointer-events-none"
+            style={{ opacity: isDragging ? 1 : 0, transition: 'opacity 0.2s' }}
+          >
+            <div className="text-blue-600 font-semibold text-sm rotate-90">RIGHT</div>
+          </div>
+          
+          {/* Top dock zone */}
+          <div 
+            className="fixed top-0 left-0 w-full h-12 bg-blue-500/20 border-b-2 border-blue-500 z-40 flex items-center justify-center pointer-events-none"
+            style={{ opacity: isDragging ? 1 : 0, transition: 'opacity 0.2s' }}
+          >
+            <div className="text-blue-600 font-semibold text-sm">TOP</div>
+          </div>
+          
+          {/* Bottom dock zone */}
+          <div 
+            className="fixed bottom-0 left-0 w-full h-12 bg-blue-500/20 border-t-2 border-blue-500 z-40 flex items-center justify-center pointer-events-none"
+            style={{ opacity: isDragging ? 1 : 0, transition: 'opacity 0.2s' }}
+          >
+            <div className="text-blue-600 font-semibold text-sm">BOTTOM</div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
