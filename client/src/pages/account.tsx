@@ -87,7 +87,7 @@ const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     id: 'starter',
     name: 'starter',
     displayName: 'Starter',
-    price: 29,
+    price: 29, // $29 per user per month
     maxUsers: 5,
     features: ['Basic scheduling', 'Standard reports', 'Email support', 'Mobile app access'],
     apiLimit: 10000,
@@ -97,7 +97,7 @@ const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     id: 'professional',
     name: 'professional',
     displayName: 'Professional',
-    price: 89,
+    price: 59, // $59 per user per month
     maxUsers: 25,
     features: ['Advanced scheduling', 'Custom reports', 'Priority support', 'API access', 'Integration tools'],
     apiLimit: 50000,
@@ -108,7 +108,7 @@ const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     id: 'enterprise',
     name: 'enterprise',
     displayName: 'Enterprise',
-    price: 249,
+    price: 89, // $89 per user per month
     maxUsers: 100,
     features: ['All features', 'Custom integrations', 'Dedicated support', 'Advanced analytics', 'White-label options'],
     apiLimit: 200000,
@@ -311,7 +311,7 @@ export default function AccountPage() {
                   <h3 className="text-lg font-semibold capitalize">
                     {SUBSCRIPTION_PLANS.find(p => p.name === accountInfo.subscriptionPlan)?.displayName || accountInfo.subscriptionPlan}
                   </h3>
-                  <p className="text-gray-600">{formatCurrency(accountInfo.totalAmount)}/{accountInfo.billingCycle}</p>
+                  <p className="text-gray-600">{formatCurrency(accountInfo.totalAmount/accountInfo.currentUsers)}/user/{accountInfo.billingCycle === 'monthly' ? 'month' : 'year'}</p>
                 </div>
                 <div className="text-right">
                   {getStatusBadge(accountInfo.subscriptionStatus)}
@@ -363,7 +363,7 @@ export default function AccountPage() {
                             </div>
                             <div className="text-2xl font-bold">
                               {plan.price === 0 ? 'Contact us' : formatCurrency(plan.price)}
-                              {plan.price > 0 && <span className="text-sm font-normal">/month</span>}
+                              {plan.price > 0 && <span className="text-sm font-normal">/user/month</span>}
                             </div>
                           </CardHeader>
                           <CardContent>

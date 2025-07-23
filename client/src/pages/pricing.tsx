@@ -309,7 +309,7 @@ export default function Pricing() {
                 <div className="text-4xl font-bold mt-4">
                   ${tier.price}
                   <span className="text-lg font-normal text-gray-500">
-                    /{billingCycle === "monthly" ? "mo" : "yr"}
+                    /user/{billingCycle === "monthly" ? "mo" : "yr"}
                   </span>
                 </div>
                 <p className="text-gray-600 mt-2">{tier.description}</p>
