@@ -217,11 +217,15 @@ export default function IntegratedAIAssistant() {
 
   const handleMouseMove = (e: MouseEvent) => {
     if (isDragging) {
-      if (!isDocked) {
-        const newX = Math.max(0, Math.min(window.innerWidth - size.width, e.clientX - dragOffset.x));
-        const newY = Math.max(0, Math.min(window.innerHeight - size.height, e.clientY - dragOffset.y));
-        setPosition({ x: newX, y: newY });
+      // If currently docked, first undock the window
+      if (isDocked) {
+        setIsDocked(false);
+        setDockPosition(null);
       }
+      
+      const newX = Math.max(0, Math.min(window.innerWidth - size.width, e.clientX - dragOffset.x));
+      const newY = Math.max(0, Math.min(window.innerHeight - size.height, e.clientY - dragOffset.y));
+      setPosition({ x: newX, y: newY });
     } else if (isResizing) {
       const deltaX = e.clientX - resizeStart.x;
       const deltaY = e.clientY - resizeStart.y;
@@ -234,19 +238,27 @@ export default function IntegratedAIAssistant() {
   const handleMouseUp = (e: MouseEvent) => {
     if (isDragging) {
       // Check if mouse is in a dock zone
-      const threshold = 50; // pixels from edge to trigger docking
+      const threshold = 80; // pixels from edge to trigger docking (increased for easier targeting)
       const { clientX, clientY } = e;
       const { innerWidth, innerHeight } = window;
 
+      console.log('Mouse up at:', clientX, clientY, 'Window size:', innerWidth, innerHeight);
+      console.log('Dock thresholds - Left:', threshold, 'Right:', innerWidth - threshold, 'Top:', threshold, 'Bottom:', innerHeight - threshold);
+
       if (clientX <= threshold) {
+        console.log('Docking left');
         dockToPosition('left');
       } else if (clientX >= innerWidth - threshold) {
+        console.log('Docking right');
         dockToPosition('right');
       } else if (clientY <= threshold) {
+        console.log('Docking top');
         dockToPosition('top');
       } else if (clientY >= innerHeight - threshold) {
+        console.log('Docking bottom');
         dockToPosition('bottom');
       } else {
+        console.log('No docking, hiding dock zones');
         setShowDockZones(false);
       }
     }
@@ -629,8 +641,8 @@ export default function IntegratedAIAssistant() {
         style={{ width: '100%', height: '100%' }}
       >
         <CardHeader 
-          className={`p-4 bg-gradient-to-r from-blue-500 to-indigo-600 ${isDocked ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'}`}
-          onMouseDown={isDocked ? undefined : (e) => handleMouseDown(e, 'drag')}
+          className="p-4 bg-gradient-to-r from-blue-500 to-indigo-600 cursor-grab active:cursor-grabbing"
+          onMouseDown={(e) => handleMouseDown(e, 'drag')}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -979,34 +991,34 @@ export default function IntegratedAIAssistant() {
         <>
           {/* Left dock zone */}
           <div 
-            className="fixed left-0 top-0 w-12 h-full bg-blue-500/20 border-r-2 border-blue-500 z-40 flex items-center justify-center pointer-events-none"
+            className="fixed left-0 top-0 w-20 h-full bg-blue-500/30 border-r-4 border-blue-500 z-40 flex items-center justify-center pointer-events-none"
             style={{ opacity: isDragging ? 1 : 0, transition: 'opacity 0.2s' }}
           >
-            <div className="text-blue-600 font-semibold text-sm rotate-90">LEFT</div>
+            <div className="text-blue-600 font-bold text-lg rotate-90">DOCK LEFT</div>
           </div>
           
           {/* Right dock zone */}
           <div 
-            className="fixed right-0 top-0 w-12 h-full bg-blue-500/20 border-l-2 border-blue-500 z-40 flex items-center justify-center pointer-events-none"
+            className="fixed right-0 top-0 w-20 h-full bg-blue-500/30 border-l-4 border-blue-500 z-40 flex items-center justify-center pointer-events-none"
             style={{ opacity: isDragging ? 1 : 0, transition: 'opacity 0.2s' }}
           >
-            <div className="text-blue-600 font-semibold text-sm rotate-90">RIGHT</div>
+            <div className="text-blue-600 font-bold text-lg rotate-90">DOCK RIGHT</div>
           </div>
           
           {/* Top dock zone */}
           <div 
-            className="fixed top-0 left-0 w-full h-12 bg-blue-500/20 border-b-2 border-blue-500 z-40 flex items-center justify-center pointer-events-none"
+            className="fixed top-0 left-0 w-full h-20 bg-blue-500/30 border-b-4 border-blue-500 z-40 flex items-center justify-center pointer-events-none"
             style={{ opacity: isDragging ? 1 : 0, transition: 'opacity 0.2s' }}
           >
-            <div className="text-blue-600 font-semibold text-sm">TOP</div>
+            <div className="text-blue-600 font-bold text-lg">DOCK TOP</div>
           </div>
           
           {/* Bottom dock zone */}
           <div 
-            className="fixed bottom-0 left-0 w-full h-12 bg-blue-500/20 border-t-2 border-blue-500 z-40 flex items-center justify-center pointer-events-none"
+            className="fixed bottom-0 left-0 w-full h-20 bg-blue-500/30 border-t-4 border-blue-500 z-40 flex items-center justify-center pointer-events-none"
             style={{ opacity: isDragging ? 1 : 0, transition: 'opacity 0.2s' }}
           >
-            <div className="text-blue-600 font-semibold text-sm">BOTTOM</div>
+            <div className="text-blue-600 font-bold text-lg">DOCK BOTTOM</div>
           </div>
         </>
       )}
