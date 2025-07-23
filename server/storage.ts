@@ -7,7 +7,7 @@ import {
   users, roles, permissions, userRoles, rolePermissions, visualFactoryDisplays,
   disruptions, disruptionActions, disruptionEscalations,
   inventoryItems, inventoryTransactions, inventoryBalances, demandForecasts, demandDrivers, demandHistory, inventoryOptimizationScenarios, optimizationRecommendations,
-  systemIntegrations, integrationDataFlows, integrationExecutionLogs, integrationDataMappings, integrationWebhooks,
+  systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
   type Capability, type Resource, type Job, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
@@ -16,7 +16,7 @@ import {
   type User, type Role, type Permission, type UserRole, type RolePermission, type UserWithRoles,
   type Disruption, type DisruptionAction, type DisruptionEscalation,
   type InventoryItem, type InventoryTransaction, type InventoryBalance, type DemandForecast, type DemandDriver, type DemandHistory, type InventoryOptimizationScenario, type OptimizationRecommendation,
-  type SystemIntegration, type IntegrationDataFlow, type IntegrationExecutionLog, type IntegrationDataMapping, type IntegrationWebhook,
+  type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
   type InsertCapability, type InsertResource, type InsertJob, 
   type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
@@ -27,7 +27,7 @@ import {
   type VisualFactoryDisplay, type InsertVisualFactoryDisplay,
   type InsertDisruption, type InsertDisruptionAction, type InsertDisruptionEscalation,
   type InsertInventoryItem, type InsertInventoryTransaction, type InsertInventoryBalance, type InsertDemandForecast, type InsertDemandDriver, type InsertDemandHistory, type InsertInventoryOptimizationScenario, type InsertOptimizationRecommendation,
-  type InsertSystemIntegration, type InsertIntegrationDataFlow, type InsertIntegrationExecutionLog, type InsertIntegrationDataMapping, type InsertIntegrationWebhook,
+  type InsertSystemIntegration, type InsertIntegrationJob, type InsertIntegrationEvent, type InsertIntegrationMapping, type InsertIntegrationTemplate,
   demoTourParticipants, type DemoTourParticipant, type InsertDemoTourParticipant,
   voiceRecordingsCache, type VoiceRecordingsCache, type InsertVoiceRecordingsCache,
   tours, type Tour, type InsertTour,
@@ -38,12 +38,12 @@ import {
   feedback, feedbackComments, feedbackVotes,
   type Feedback, type FeedbackComment, type FeedbackVote,
   type InsertFeedback, type InsertFeedbackComment, type InsertFeedbackVote,
-  industryTemplates, userIndustryTemplates, templateConfigurations,
-  type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
-  type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration,
-  accountInfo, billingHistory, usageMetrics,
-  type AccountInfo, type BillingHistory, type UsageMetrics,
-  type InsertAccountInfo, type InsertBillingHistory, type InsertUsageMetrics
+  // industryTemplates, userIndustryTemplates, templateConfigurations,
+  // type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
+  // type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration,
+  // accountInfo, billingHistory, usageMetrics,
+  // type AccountInfo, type BillingHistory, type UsageMetrics,
+  // type InsertAccountInfo, type InsertBillingHistory, type InsertUsageMetrics
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, like, ilike, ne, inArray } from "drizzle-orm";

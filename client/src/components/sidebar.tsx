@@ -175,7 +175,7 @@ export default function Sidebar() {
     { icon: Package, label: "Inventory Optimization", href: "/inventory-optimization", active: location === "/inventory-optimization", feature: "inventory-optimization", action: "view" },
     { icon: Brain, label: "Demand Forecasting", href: "/demand-forecasting", active: location === "/demand-forecasting", feature: "demand-forecasting", action: "view" },
     { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", active: location === "/capacity-planning", feature: "capacity-planning", action: "view" },
-    { icon: Database, label: "ERP Import", href: "/erp-import", active: location === "/erp-import", feature: "erp-import", action: "view" },
+    { icon: Database, label: "System Integration", href: "/systems-integration", active: location === "/systems-integration", feature: "systems-integration", action: "view" },
     { icon: Factory, label: "Visual Factory", href: "/visual-factory", active: location === "/visual-factory", feature: "visual-factory", action: "view" },
     { icon: Smartphone, label: "Shop Floor", href: "/shop-floor", active: location === "/shop-floor", feature: "shop-floor", action: "view" },
     { icon: Settings, label: "Operator", href: "/operator-dashboard", active: location === "/operator-dashboard", feature: "operator-dashboard", action: "view" },
@@ -190,7 +190,7 @@ export default function Sidebar() {
     { icon: Building, label: "Industry Templates", href: "/industry-templates", active: location === "/industry-templates", feature: "industry-templates", action: "view" },
     { icon: MessageCircle, label: "Chat", href: "/chat", active: location === "/chat", feature: "chat", action: "view" },
     { icon: Columns3, label: "Boards", href: "/boards", active: location === "/boards", feature: "boards", action: "view" },
-    { icon: Database, label: "System Integrations", href: "/system-integrations", active: location === "/system-integrations", feature: "system-integrations", action: "view" },
+
     { icon: DollarSign, label: "Sales", href: "/sales", active: location === "/sales", feature: "sales", action: "view" },
     { icon: Headphones, label: "Customer Service", href: "/customer-service", active: location === "/customer-service", feature: "customer-service", action: "view" },
     { icon: BarChart3, label: "Analytics", href: "/analytics", active: location === "/analytics", feature: "analytics", action: "view" },

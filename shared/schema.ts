@@ -1872,611 +1872,199 @@ export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type FeedbackComment = typeof feedbackComments.$inferSelect;
 export type InsertFeedbackComment = z.infer<typeof insertFeedbackCommentSchema>;
 
-export type FeedbackVote = typeof feedbackVotes.$inferSelect;
-export type InsertFeedbackVote = z.infer<typeof insertFeedbackVoteSchema>;
-
-// System Integrations Tables
+// Systems Integration Tables
 export const systemIntegrations = pgTable("system_integrations", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
-  type: text("type").notNull(), // erp, crm, api, database, file_transfer, webhook, custom
-  system: text("system"), // SAP, NetSuite, Salesforce, QuickBooks, Oracle, Custom, etc.
-  status: text("status").notNull().default("inactive"), // active, inactive, error, testing, pending
-  configuration: jsonb("configuration").$type<{
-    // API Configuration
-    baseUrl?: string;
-    apiKey?: string;
-    authentication?: {
-      type: 'oauth' | 'api_key' | 'basic' | 'bearer' | 'custom';
-      username?: string;
-      password?: string;
-      token?: string;
-      refreshToken?: string;
-      clientId?: string;
-      clientSecret?: string;
-      scope?: string[];
-      customHeaders?: Record<string, string>;
-    };
-    // Database Configuration
+  systemType: text("system_type").notNull(), // erp, crm, wms, mes, api, database, file_system, cloud_service
+  provider: text("provider"), // SAP, Oracle, Microsoft, Salesforce, etc.
+  version: text("version"),
+  status: text("status").notNull().default("inactive"), // active, inactive, error, testing, configuring
+  connectionType: text("connection_type").notNull(), // rest_api, soap, database, file_transfer, webhook, message_queue
+  authType: text("auth_type").notNull(), // oauth2, api_key, basic_auth, certificate, token
+  config: jsonb("config").$type<{
+    endpoint?: string;
     host?: string;
     port?: number;
     database?: string;
-    schema?: string;
-    ssl?: boolean;
-    // File Transfer Configuration
-    protocol?: 'ftp' | 'sftp' | 'http' | 'https' | 's3' | 'azure' | 'gcs';
-    bucket?: string;
-    region?: string;
-    path?: string;
-    // Webhook Configuration
-    webhookUrl?: string;
-    secretKey?: string;
-    events?: string[];
-    // Rate Limiting
-    rateLimitPerSecond?: number;
-    rateLimitPerHour?: number;
-    // Timeout Settings
-    connectionTimeout?: number;
-    requestTimeout?: number;
-    // Custom Settings
-    customSettings?: Record<string, any>;
-  }>().default({}),
-  connectionString: text("connection_string"), // Encrypted connection string for databases
-  lastTested: timestamp("last_tested"),
+    username?: string;
+    apiKey?: string;
+    clientId?: string;
+    scopes?: string[];
+    headers?: Record<string, string>;
+    parameters?: Record<string, any>;
+    retryConfig?: {
+      maxRetries: number;
+      backoffMs: number;
+    };
+    timeout?: number;
+  }>().notNull(),
   lastSync: timestamp("last_sync"),
-  healthStatus: text("health_status").default("unknown"), // healthy, degraded, unhealthy, unknown
-  errorCount: integer("error_count").default(0),
-  successCount: integer("success_count").default(0),
-  isAiGenerated: boolean("is_ai_generated").default(false),
-  aiGenerationContext: text("ai_generation_context"), // Store the AI prompt/context used
-  createdBy: integer("created_by").references(() => users.id),
+  lastError: text("last_error"),
+  syncFrequency: text("sync_frequency").default("manual"), // manual, hourly, daily, weekly, real_time
+  dataMapping: jsonb("data_mapping").$type<{
+    inbound: Array<{
+      sourceField: string;
+      targetField: string;
+      transformation?: string;
+      validation?: string;
+    }>;
+    outbound: Array<{
+      sourceField: string;
+      targetField: string;
+      transformation?: string;
+      validation?: string;
+    }>;
+  }>().default(sql`'{"inbound": [], "outbound": []}'::jsonb`),
+  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const integrationDataFlows = pgTable("integration_data_flows", {
+export const integrationJobs = pgTable("integration_jobs", {
+  id: serial("id").primaryKey(),
+  integrationId: integer("integration_id").references(() => systemIntegrations.id).notNull(),
+  name: text("name").notNull(),
+  jobType: text("job_type").notNull(), // import, export, sync, test, validate
+  status: text("status").notNull().default("pending"), // pending, running, completed, failed, cancelled
+  direction: text("direction").notNull(), // inbound, outbound, bidirectional
+  dataType: text("data_type").notNull(), // orders, inventory, customers, schedules, reports
+  totalRecords: integer("total_records").default(0),
+  processedRecords: integer("processed_records").default(0),
+  successfulRecords: integer("successful_records").default(0),
+  failedRecords: integer("failed_records").default(0),
+  startTime: timestamp("start_time"),
+  endTime: timestamp("end_time"),
+  duration: integer("duration"), // seconds
+  summary: jsonb("summary").$type<{
+    newRecords: number;
+    updatedRecords: number;
+    skippedRecords: number;
+    deletedRecords: number;
+    dataQualityScore: number;
+    validationErrors: number;
+    transformationErrors: number;
+  }>(),
+  errorLog: text("error_log"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const integrationEvents = pgTable("integration_events", {
+  id: serial("id").primaryKey(),
+  integrationId: integer("integration_id").references(() => systemIntegrations.id).notNull(),
+  jobId: integer("job_id").references(() => integrationJobs.id),
+  eventType: text("event_type").notNull(), // connection_test, sync_start, sync_end, error, warning, info
+  severity: text("severity").notNull().default("info"), // critical, error, warning, info, debug
+  message: text("message").notNull(),
+  details: jsonb("details").$type<Record<string, any>>(),
+  recordsAffected: integer("records_affected").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const integrationMappings = pgTable("integration_mappings", {
   id: serial("id").primaryKey(),
   integrationId: integer("integration_id").references(() => systemIntegrations.id).notNull(),
   name: text("name").notNull(),
   description: text("description"),
-  direction: text("direction").notNull(), // inbound, outbound, bidirectional
   sourceSystem: text("source_system").notNull(),
   targetSystem: text("target_system").notNull(),
-  dataType: text("data_type").notNull(), // jobs, operations, resources, inventory, customers, orders, products, financials, custom
-  isActive: boolean("is_active").default(true),
-  schedule: text("schedule"), // cron expression for scheduled syncs
-  mappingRules: jsonb("mapping_rules").$type<{
-    fieldMappings: Array<{
-      sourceField: string;
-      targetField: string;
-      transformation?: {
-        type: 'direct' | 'function' | 'lookup' | 'calculation' | 'conditional';
-        expression?: string;
-        lookupTable?: Record<string, any>;
-        defaultValue?: any;
-        required?: boolean;
-        validation?: {
-          type: 'regex' | 'range' | 'enum' | 'length';
-          rule: string | number | string[];
-        };
-      };
-    }>;
-    filterRules?: Array<{
-      field: string;
-      operator: 'equals' | 'not_equals' | 'contains' | 'greater_than' | 'less_than' | 'in' | 'not_in';
-      value: any;
-    }>;
-    businessRules?: Array<{
-      name: string;
-      description: string;
-      condition: string;
-      action: string;
-    }>;
-  }>().default({ fieldMappings: [] }),
-  lastExecution: timestamp("last_execution"),
-  nextExecution: timestamp("next_execution"),
-  executionCount: integer("execution_count").default(0),
-  successCount: integer("success_count").default(0),
-  errorCount: integer("error_count").default(0),
-  avgExecutionTime: integer("avg_execution_time").default(0), // milliseconds
-  createdBy: integer("created_by").references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-export const integrationExecutionLogs = pgTable("integration_execution_logs", {
-  id: serial("id").primaryKey(),
-  dataFlowId: integer("data_flow_id").references(() => integrationDataFlows.id).notNull(),
-  executionId: text("execution_id").notNull().unique(),
-  status: text("status").notNull(), // started, in_progress, completed, failed, cancelled
-  recordsProcessed: integer("records_processed").default(0),
-  recordsSucceeded: integer("records_succeeded").default(0),
-  recordsFailed: integer("records_failed").default(0),
-  recordsSkipped: integer("records_skipped").default(0),
-  executionTime: integer("execution_time").default(0), // milliseconds
-  startedAt: timestamp("started_at").notNull().defaultNow(),
-  completedAt: timestamp("completed_at"),
-  errorMessage: text("error_message"),
-  errorDetails: jsonb("error_details"),
-  metadata: jsonb("metadata").$type<{
-    triggeredBy?: 'schedule' | 'manual' | 'webhook' | 'api';
-    batchSize?: number;
-    dataSize?: number;
-    systemResources?: {
-      cpu?: number;
-      memory?: number;
-      network?: number;
+  entityType: text("entity_type").notNull(), // job, operation, resource, customer, product
+  mappingRules: jsonb("mapping_rules").$type<Array<{
+    sourceField: string;
+    targetField: string;
+    dataType: string;
+    transformation?: {
+      type: string; // format, calculate, lookup, conditional
+      config: any;
     };
-    sourceRecordCount?: number;
-    targetRecordCount?: number;
-    duplicatesFound?: number;
-    validationErrors?: Array<{
-      field: string;
-      value: any;
-      error: string;
-      recordId?: string;
-    }>;
-  }>(),
-}, (table) => ({
-  dataFlowExecutionIdx: index("integration_execution_logs_dataflow_execution_idx").on(table.dataFlowId, table.startedAt),
-}));
-
-export const integrationDataMappings = pgTable("integration_data_mappings", {
-  id: serial("id").primaryKey(),
-  dataFlowId: integer("data_flow_id").references(() => integrationDataFlows.id).notNull(),
-  sourceField: text("source_field").notNull(),
-  sourceDataType: text("source_data_type"), // string, integer, decimal, boolean, date, datetime, json, etc.
-  targetField: text("target_field").notNull(),
-  targetDataType: text("target_data_type"),
-  mappingType: text("mapping_type").notNull().default("direct"), // direct, transformation, calculation, lookup, conditional, constant
-  transformationConfig: jsonb("transformation_config").$type<{
-    function?: string; // custom transformation function
-    expression?: string; // calculation expression
-    lookupTable?: Record<string, any>; // value lookup mappings
-    defaultValue?: any; // default value if source is null/empty
-    conditions?: Array<{
-      condition: string;
-      value: any;
-      operator: 'equals' | 'not_equals' | 'contains' | 'greater_than' | 'less_than';
-    }>;
     validation?: {
-      required?: boolean;
-      pattern?: string; // regex pattern
+      required: boolean;
+      pattern?: string;
       minLength?: number;
       maxLength?: number;
       minValue?: number;
       maxValue?: number;
-      allowedValues?: any[];
     };
-    formatting?: {
-      dateFormat?: string;
-      numberFormat?: string;
-      stringCase?: 'upper' | 'lower' | 'title';
-      trim?: boolean;
-    };
-  }>(),
-  isRequired: boolean("is_required").default(false),
-  testValue: text("test_value"), // test value for mapping validation
-  testResult: text("test_result"), // result of test transformation
-  notes: text("notes"),
+    defaultValue?: any;
+  }>>().notNull(),
+  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const integrationWebhooks = pgTable("integration_webhooks", {
+export const integrationTemplates = pgTable("integration_templates", {
   id: serial("id").primaryKey(),
-  integrationId: integer("integration_id").references(() => systemIntegrations.id).notNull(),
   name: text("name").notNull(),
   description: text("description"),
-  webhookUrl: text("webhook_url").notNull().unique(),
-  secretKey: text("secret_key").notNull(),
-  events: jsonb("events").$type<string[]>().default([]), // job_created, operation_completed, resource_updated, etc.
-  isActive: boolean("is_active").default(true),
-  httpMethod: text("http_method").default("POST"), // GET, POST, PUT, PATCH, DELETE
-  headers: jsonb("headers").$type<Record<string, string>>().default({}),
-  payloadTemplate: text("payload_template"), // Custom JSON template for webhook payload
-  retryConfig: jsonb("retry_config").$type<{
-    maxRetries?: number;
-    retryDelayMs?: number;
-    backoffMultiplier?: number;
-    maxRetryDelayMs?: number;
-  }>().default({ maxRetries: 3, retryDelayMs: 1000, backoffMultiplier: 2, maxRetryDelayMs: 30000 }),
-  lastTriggered: timestamp("last_triggered"),
-  successCount: integer("success_count").default(0),
-  failureCount: integer("failure_count").default(0),
-  createdBy: integer("created_by").references(() => users.id),
+  systemType: text("system_type").notNull(),
+  provider: text("provider").notNull(),
+  version: text("version"),
+  category: text("category").notNull(), // manufacturing, finance, hr, logistics, quality
+  templateConfig: jsonb("template_config").$type<{
+    connectionSettings: Record<string, any>;
+    defaultMappings: Array<{
+      sourceField: string;
+      targetField: string;
+      dataType: string;
+    }>;
+    requiredFields: string[];
+    optionalFields: string[];
+    testData: Record<string, any>;
+  }>().notNull(),
+  aiPrompt: text("ai_prompt"), // Prompt for AI-assisted setup
+  isPublic: boolean("is_public").default(true),
+  usageCount: integer("usage_count").default(0),
+  rating: integer("rating").default(5), // 1-5 stars
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// System Integrations Relations
-export const systemIntegrationsRelations = relations(systemIntegrations, ({ many, one }) => ({
-  dataFlows: many(integrationDataFlows),
-  webhooks: many(integrationWebhooks),
-  creator: one(users, {
-    fields: [systemIntegrations.createdBy],
-    references: [users.id],
-  }),
-}));
-
-export const integrationDataFlowsRelations = relations(integrationDataFlows, ({ one, many }) => ({
-  integration: one(systemIntegrations, {
-    fields: [integrationDataFlows.integrationId],
-    references: [systemIntegrations.id],
-  }),
-  executionLogs: many(integrationExecutionLogs),
-  dataMappings: many(integrationDataMappings),
-  creator: one(users, {
-    fields: [integrationDataFlows.createdBy],
-    references: [users.id],
-  }),
-}));
-
-export const integrationExecutionLogsRelations = relations(integrationExecutionLogs, ({ one }) => ({
-  dataFlow: one(integrationDataFlows, {
-    fields: [integrationExecutionLogs.dataFlowId],
-    references: [integrationDataFlows.id],
-  }),
-}));
-
-export const integrationDataMappingsRelations = relations(integrationDataMappings, ({ one }) => ({
-  dataFlow: one(integrationDataFlows, {
-    fields: [integrationDataMappings.dataFlowId],
-    references: [integrationDataFlows.id],
-  }),
-}));
-
-export const integrationWebhooksRelations = relations(integrationWebhooks, ({ one }) => ({
-  integration: one(systemIntegrations, {
-    fields: [integrationWebhooks.integrationId],
-    references: [systemIntegrations.id],
-  }),
-  creator: one(users, {
-    fields: [integrationWebhooks.createdBy],
-    references: [users.id],
-  }),
-}));
-
-// System Integrations Insert Schemas
+// Systems Integration Insert Schemas
 export const insertSystemIntegrationSchema = createInsertSchema(systemIntegrations).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  lastTested: true,
-  lastSync: true,
-  errorCount: true,
-  successCount: true,
 });
 
-export const insertIntegrationDataFlowSchema = createInsertSchema(integrationDataFlows).omit({
+export const insertIntegrationJobSchema = createInsertSchema(integrationJobs).omit({
   id: true,
   createdAt: true,
-  updatedAt: true,
-  lastExecution: true,
-  nextExecution: true,
-  executionCount: true,
-  successCount: true,
-  errorCount: true,
-  avgExecutionTime: true,
 });
 
-export const insertIntegrationExecutionLogSchema = createInsertSchema(integrationExecutionLogs).omit({
+export const insertIntegrationEventSchema = createInsertSchema(integrationEvents).omit({
   id: true,
-  startedAt: true,
-  completedAt: true,
+  createdAt: true,
 });
 
-export const insertIntegrationDataMappingSchema = createInsertSchema(integrationDataMappings).omit({
+export const insertIntegrationMappingSchema = createInsertSchema(integrationMappings).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
 
-export const insertIntegrationWebhookSchema = createInsertSchema(integrationWebhooks).omit({
+export const insertIntegrationTemplateSchema = createInsertSchema(integrationTemplates).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  lastTriggered: true,
-  successCount: true,
-  failureCount: true,
 });
 
-// System Integrations Types
+// Systems Integration Types
 export type SystemIntegration = typeof systemIntegrations.$inferSelect;
 export type InsertSystemIntegration = z.infer<typeof insertSystemIntegrationSchema>;
 
-export type IntegrationDataFlow = typeof integrationDataFlows.$inferSelect;
-export type InsertIntegrationDataFlow = z.infer<typeof insertIntegrationDataFlowSchema>;
+export type IntegrationJob = typeof integrationJobs.$inferSelect;
+export type InsertIntegrationJob = z.infer<typeof insertIntegrationJobSchema>;
 
-export type IntegrationExecutionLog = typeof integrationExecutionLogs.$inferSelect;
-export type InsertIntegrationExecutionLog = z.infer<typeof insertIntegrationExecutionLogSchema>;
+export type IntegrationEvent = typeof integrationEvents.$inferSelect;
+export type InsertIntegrationEvent = z.infer<typeof insertIntegrationEventSchema>;
 
-export type IntegrationDataMapping = typeof integrationDataMappings.$inferSelect;
-export type InsertIntegrationDataMapping = z.infer<typeof insertIntegrationDataMappingSchema>;
+export type IntegrationMapping = typeof integrationMappings.$inferSelect;
+export type InsertIntegrationMapping = z.infer<typeof insertIntegrationMappingSchema>;
 
-export type IntegrationWebhook = typeof integrationWebhooks.$inferSelect;
-export type InsertIntegrationWebhook = z.infer<typeof insertIntegrationWebhookSchema>;
+export type IntegrationTemplate = typeof integrationTemplates.$inferSelect;
+export type InsertIntegrationTemplate = z.infer<typeof insertIntegrationTemplateSchema>;
 
-// Industry Templates System
-export const industryTemplates = pgTable("industry_templates", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description").notNull(),
-  category: text("category").notNull(), // manufacturing, automotive, electronics, food_beverage, pharmaceutical, aerospace, textiles, chemicals, metals, custom
-  keywords: jsonb("keywords").$type<string[]>().default([]),
-  isActive: boolean("is_active").default(true),
-  isAiGenerated: boolean("is_ai_generated").default(false),
-  sourceUrl: text("source_url"), // Website URL used for AI generation
-  sourcePrompt: text("source_prompt"), // AI prompt used for custom industries
-  brandingImages: jsonb("branding_images").$type<{
-    logo: string; // base64 image data
-    banner: string; // base64 image data
-    background: string; // base64 image data
-    icon: string; // base64 image data
-  }>(),
-  colorScheme: jsonb("color_scheme").$type<{
-    primary: string;
-    secondary: string;
-    accent: string;
-    background: string;
-    text: string;
-  }>().default({ primary: "#3b82f6", secondary: "#64748b", accent: "#10b981", background: "#ffffff", text: "#1f2937" }),
-  configurations: jsonb("configurations").$type<{
-    analytics: {
-      kpis: Array<{
-        name: string;
-        description: string;
-        formula: string;
-        target: number;
-        unit: string;
-      }>;
-      dashboards: Array<{
-        name: string;
-        widgets: Array<{
-          type: string;
-          title: string;
-          config: any;
-        }>;
-      }>;
-    };
-    reports: Array<{
-      name: string;
-      description: string;
-      type: string;
-      schedule: string;
-      recipients: string[];
-      template: any;
-    }>;
-    visualFactory: {
-      displays: Array<{
-        name: string;
-        type: string;
-        content: any;
-        position: string;
-        settings: any;
-      }>;
-      layouts: Array<{
-        name: string;
-        displays: string[];
-        rotation: number;
-      }>;
-    };
-    shopFloor: {
-      workstations: Array<{
-        name: string;
-        type: string;
-        capabilities: string[];
-        layout: any;
-      }>;
-      workflows: Array<{
-        name: string;
-        steps: Array<{
-          name: string;
-          description: string;
-          requirements: string[];
-        }>;
-      }>;
-    };
-  }>().notNull(),
-  usageCount: integer("usage_count").default(0),
-  createdBy: text("created_by").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-export const userIndustryTemplates = pgTable("user_industry_templates", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  templateId: integer("template_id").references(() => industryTemplates.id).notNull(),
-  isActive: boolean("is_active").default(true),
-  customizations: jsonb("customizations").$type<any>().default({}),
-  appliedAt: timestamp("applied_at").defaultNow(),
-}, (table) => ({
-  userTemplateIdx: unique().on(table.userId, table.templateId),
-}));
-
-// Account Management System
-export const accountInfo = pgTable("account_info", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull().unique(),
-  companyName: text("company_name").notNull(),
-  subscriptionPlan: text("subscription_plan").notNull().default("starter"), // starter, professional, enterprise, custom
-  subscriptionStatus: text("subscription_status").notNull().default("trial"), // active, past_due, canceled, trial
-  currentUsers: integer("current_users").notNull().default(1),
-  maxUsers: integer("max_users").notNull().default(5),
-  billingCycle: text("billing_cycle").notNull().default("monthly"), // monthly, annual
-  nextBillingDate: timestamp("next_billing_date"),
-  totalAmount: integer("total_amount").notNull().default(2900), // in cents
-  paymentMethod: jsonb("payment_method").$type<{
-    type: 'card' | 'bank';
-    last4: string;
-    brand?: string;
-    expiryMonth?: number;
-    expiryYear?: number;
-  }>(),
-  features: jsonb("features").$type<string[]>().default([]),
-  usage: jsonb("usage").$type<{
-    apiCalls: number;
-    apiLimit: number;
-    storage: number;
-    storageLimit: number;
-  }>().default({ apiCalls: 0, apiLimit: 10000, storage: 0, storageLimit: 5 }),
-  billingAddress: jsonb("billing_address").$type<{
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-  }>(),
-  contactInfo: jsonb("contact_info").$type<{
-    primaryEmail: string;
-    billingEmail: string;
-    phone?: string;
-  }>(),
-  trialEndsAt: timestamp("trial_ends_at"),
-  stripeCustomerId: text("stripe_customer_id"),
-  stripeSubscriptionId: text("stripe_subscription_id"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-export const billingHistory = pgTable("billing_history", {
-  id: serial("id").primaryKey(),
-  accountId: integer("account_id").references(() => accountInfo.id).notNull(),
-  invoiceId: text("invoice_id").notNull().unique(),
-  amount: integer("amount").notNull(), // in cents
-  currency: text("currency").notNull().default("USD"),
-  status: text("status").notNull(), // paid, pending, failed, refunded
-  billingPeriodStart: timestamp("billing_period_start").notNull(),
-  billingPeriodEnd: timestamp("billing_period_end").notNull(),
-  paidAt: timestamp("paid_at"),
-  dueDate: timestamp("due_date").notNull(),
-  description: text("description"),
-  invoiceUrl: text("invoice_url"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const usageMetrics = pgTable("usage_metrics", {
-  id: serial("id").primaryKey(),
-  accountId: integer("account_id").references(() => accountInfo.id).notNull(),
-  metricType: text("metric_type").notNull(), // api_calls, storage, users, reports_generated, etc.
-  value: integer("value").notNull(),
-  period: text("period").notNull(), // daily, monthly, yearly
-  recordedAt: timestamp("recorded_at").notNull(),
-  metadata: jsonb("metadata").$type<Record<string, any>>().default({}),
-}, (table) => ({
-  accountMetricIdx: index().on(table.accountId, table.metricType, table.recordedAt),
-}));
-
-export const templateConfigurations = pgTable("template_configurations", {
-  id: serial("id").primaryKey(),
-  templateId: integer("template_id").references(() => industryTemplates.id).notNull(),
-  configurationType: text("configuration_type").notNull(), // analytics, reports, visual_factory, shop_floor
-  configurationName: text("configuration_name").notNull(),
-  configurationData: jsonb("configuration_data").$type<any>().notNull(),
-  isDefault: boolean("is_default").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Industry Templates relations
-export const industryTemplatesRelations = relations(industryTemplates, ({ many }) => ({
-  userTemplates: many(userIndustryTemplates),
-  configurations: many(templateConfigurations),
-}));
-
-export const userIndustryTemplatesRelations = relations(userIndustryTemplates, ({ one }) => ({
-  user: one(users, {
-    fields: [userIndustryTemplates.userId],
-    references: [users.id],
-  }),
-  template: one(industryTemplates, {
-    fields: [userIndustryTemplates.templateId],
-    references: [industryTemplates.id],
-  }),
-}));
-
-export const templateConfigurationsRelations = relations(templateConfigurations, ({ one }) => ({
-  template: one(industryTemplates, {
-    fields: [templateConfigurations.templateId],
-    references: [industryTemplates.id],
-  }),
-}));
-
-// Industry Templates insert schemas
-export const insertIndustryTemplateSchema = createInsertSchema(industryTemplates).omit({
-  id: true,
-  usageCount: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertUserIndustryTemplateSchema = createInsertSchema(userIndustryTemplates).omit({
-  id: true,
-  appliedAt: true,
-});
-
-export const insertTemplateConfigurationSchema = createInsertSchema(templateConfigurations).omit({
-  id: true,
-  createdAt: true,
-});
-
-// Industry Templates types
-export type IndustryTemplate = typeof industryTemplates.$inferSelect;
-export type InsertIndustryTemplate = z.infer<typeof insertIndustryTemplateSchema>;
-
-export type UserIndustryTemplate = typeof userIndustryTemplates.$inferSelect;
-export type InsertUserIndustryTemplate = z.infer<typeof insertUserIndustryTemplateSchema>;
-
-export type TemplateConfiguration = typeof templateConfigurations.$inferSelect;
-export type InsertTemplateConfiguration = z.infer<typeof insertTemplateConfigurationSchema>;
-
-// Account Management relations
-export const accountInfoRelations = relations(accountInfo, ({ one, many }) => ({
-  user: one(users, {
-    fields: [accountInfo.userId],
-    references: [users.id],
-  }),
-  billingHistory: many(billingHistory),
-  usageMetrics: many(usageMetrics),
-}));
-
-export const billingHistoryRelations = relations(billingHistory, ({ one }) => ({
-  account: one(accountInfo, {
-    fields: [billingHistory.accountId],
-    references: [accountInfo.id],
-  }),
-}));
-
-export const usageMetricsRelations = relations(usageMetrics, ({ one }) => ({
-  account: one(accountInfo, {
-    fields: [usageMetrics.accountId],
-    references: [accountInfo.id],
-  }),
-}));
-
-// Account Management insert schemas
-export const insertAccountInfoSchema = createInsertSchema(accountInfo).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertBillingHistorySchema = createInsertSchema(billingHistory).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertUsageMetricsSchema = createInsertSchema(usageMetrics).omit({
-  id: true,
-});
-
-// Account Management types
-export type AccountInfo = typeof accountInfo.$inferSelect;
-export type InsertAccountInfo = z.infer<typeof insertAccountInfoSchema>;
-
-export type BillingHistory = typeof billingHistory.$inferSelect;
-export type InsertBillingHistory = z.infer<typeof insertBillingHistorySchema>;
-
-export type UsageMetrics = typeof usageMetrics.$inferSelect;
-export type InsertUsageMetrics = z.infer<typeof insertUsageMetricsSchema>;
+export type FeedbackVote = typeof feedbackVotes.$inferSelect;
+export type InsertFeedbackVote = z.infer<typeof insertFeedbackVoteSchema>;

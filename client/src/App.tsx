@@ -219,8 +219,8 @@ function Router() {
               <DemandForecasting />
             </ProtectedRoute>
           </Route>
-          <Route path="/erp-import">
-            <ProtectedRoute feature="erp-import" action="view">
+          <Route path="/systems-integration">
+            <ProtectedRoute feature="systems-integration" action="view">
               <ERPImport />
             </ProtectedRoute>
           </Route>

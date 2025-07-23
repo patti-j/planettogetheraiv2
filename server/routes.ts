@@ -23,9 +23,8 @@ import {
   insertDemandForecastSchema, insertDemandDriverSchema, insertDemandHistorySchema,
   insertInventoryOptimizationScenarioSchema, insertOptimizationRecommendationSchema,
   insertFeedbackSchema, insertFeedbackCommentSchema, insertFeedbackVoteSchema,
-  insertAccountInfoSchema, insertBillingHistorySchema, insertUsageMetricsSchema,
-  insertSystemIntegrationSchema, insertIntegrationDataFlowSchema, insertIntegrationExecutionLogSchema,
-  insertIntegrationDataMappingSchema, insertIntegrationWebhookSchema
+  insertSystemIntegrationSchema, insertIntegrationJobSchema, insertIntegrationEventSchema,
+  insertIntegrationMappingSchema, insertIntegrationTemplateSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
