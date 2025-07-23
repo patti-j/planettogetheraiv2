@@ -236,12 +236,15 @@ export default function PlantManagerPage() {
   };
 
   const PageContent = () => (
-    <div className="space-y-6">
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="relative">
         <div className="md:ml-0 ml-12">
-          <h1 className="text-2xl font-semibold text-gray-800">Plant Manager Dashboard</h1>
-          <p className="text-gray-600">Comprehensive plant operations oversight and strategic decision-making</p>
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+            <Factory className="w-6 h-6 mr-2" />
+            Plant Manager Dashboard
+          </h1>
+          <p className="text-sm md:text-base text-gray-600">Comprehensive plant operations oversight and strategic decision-making</p>
         </div>
         
         {/* Maximize button always in top right corner */}
