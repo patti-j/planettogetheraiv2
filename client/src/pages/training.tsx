@@ -282,7 +282,85 @@ export default function Training() {
     const [isGeneratingSingleTour, setIsGeneratingSingleTour] = useState(false);
     const [isApprovingTour, setIsApprovingTour] = useState(false);
 
-    // Return basic tour management UI
+    // Generate Tours for Selected Roles mutation
+    const generateSelectedToursMutation = useMutation({
+      mutationFn: (data: { roles: string[], guidance?: string }) => 
+        apiRequest('POST', '/api/ai/generate-tour', data),
+      onSuccess: () => {
+        toast({
+          title: "Tours Generated Successfully",
+          description: "The selected tours have been generated with AI assistance.",
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/tours'] });
+      },
+    });
+
+    // Delete Tour mutation
+    const deleteTourMutation = useMutation({
+      mutationFn: (tourId: number) => 
+        apiRequest('DELETE', `/api/tours/${tourId}`),
+      onSuccess: () => {
+        toast({
+          title: "Tour Deleted",
+          description: "Tour has been successfully deleted.",
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/tours'] });
+        setShowDeleteDialog(false);
+        setTourToDelete(null);
+      },
+    });
+
+    const existingRoleIds = toursFromAPI.map((tour: any) => tour.roleId);
+    const rolesWithTours = toursFromAPI.map((tour: any) => tour.roleDisplayName || tour.roleName);
+    
+    // Get all system roles for demonstration
+    const { data: allRoles = [] } = useQuery<Role[]>({
+      queryKey: ['/api/roles'],
+      staleTime: 300000, // 5 minutes
+    });
+
+    const missingRoles = allRoles.filter(role => 
+      !existingRoleIds.includes(role.id)
+    );
+
+    const handleSelectAll = (type: 'existing' | 'missing') => {
+      if (type === 'existing') {
+        const allRoleNames = rolesWithTours;
+        setSelectedRoles(selectedRoles.length === allRoleNames.length ? [] : allRoleNames);
+      } else {
+        const allMissingRoleNames = missingRoles.map(r => r.name);
+        setSelectedMissingRoles(selectedMissingRoles.length === allMissingRoleNames.length ? [] : allMissingRoleNames);
+      }
+    };
+
+    const handleGenerateSelectedTours = () => {
+      if (selectedRoles.length === 0 && selectedMissingRoles.length === 0) {
+        toast({
+          title: "No Selection",
+          description: "Please select at least one role to generate tours for.",
+          variant: "destructive",
+        });
+        return;
+      }
+      setShowAIGuidanceDialog(true);
+      setPendingAction({ 
+        type: 'selected', 
+        roles: [...selectedRoles, ...selectedMissingRoles] 
+      });
+    };
+
+    const executeGenerateTours = (guidance: string) => {
+      if (!pendingAction) return;
+      
+      const roles = pendingAction.roles || [];
+      generateSelectedToursMutation.mutate({ roles, guidance });
+      setShowAIGuidanceDialog(false);
+      setPendingAction(null);
+      setAiGuidance("");
+      setSelectedRoles([]);
+      setSelectedMissingRoles([]);
+    };
+
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -297,9 +375,279 @@ export default function Training() {
             </Button>
           </div>
         </div>
-        <div className="text-center py-8 text-gray-500">
-          Tour management interface is being loaded...
-        </div>
+
+        {toursLoading ? (
+          <div className="text-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-gray-400" />
+            <p className="text-gray-500">Loading tours...</p>
+          </div>
+        ) : (
+          <>
+            {/* Existing Tours Section */}
+            {toursFromAPI.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <h4 className="text-md font-medium text-gray-800">Existing Tours ({toursFromAPI.length})</h4>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSelectAll('existing')}
+                        className="text-xs"
+                      >
+                        {selectedRoles.length === rolesWithTours.length ? 'None' : `All (${toursFromAPI.length})`}
+                      </Button>
+                      {selectedRoles.length > 0 && (
+                        <span className="text-xs text-gray-500">
+                          {selectedRoles.length} of {toursFromAPI.length} selected
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {selectedRoles.length > 0 && (
+                      <Button
+                        onClick={handleGenerateSelectedTours}
+                        disabled={generateSelectedToursMutation.isPending}
+                        className={`${aiTheme.gradient} text-white text-xs`}
+                        size="sm"
+                      >
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        Regenerate Selected
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid gap-4">
+                  {toursFromAPI.map((tour: any) => (
+                    <Card key={tour.id} className="border">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Checkbox
+                              checked={selectedRoles.includes(tour.roleDisplayName || tour.roleName)}
+                              onCheckedChange={(checked) => {
+                                const roleName = tour.roleDisplayName || tour.roleName;
+                                if (checked) {
+                                  setSelectedRoles([...selectedRoles, roleName]);
+                                } else {
+                                  setSelectedRoles(selectedRoles.filter(r => r !== roleName));
+                                }
+                              }}
+                            />
+                            <div>
+                              <CardTitle className="text-lg">{tour.roleDisplayName || tour.roleName}</CardTitle>
+                              <CardDescription>
+                                {tour.steps?.length || 0} steps • {tour.estimatedDuration || 'Unknown duration'}
+                              </CardDescription>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setExpandedTours(prev => 
+                                  prev.includes(tour.id) 
+                                    ? prev.filter(id => id !== tour.id)
+                                    : [...prev, tour.id]
+                                );
+                              }}
+                            >
+                              {expandedTours.includes(tour.id) ? (
+                                <ChevronDown className="w-4 h-4" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => {
+                                setTourToDelete(tour);
+                                setShowDeleteDialog(true);
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      
+                      {expandedTours.includes(tour.id) && (
+                        <CardContent className="pt-0">
+                          <div className="space-y-4">
+                            {tour.steps?.map((step: any, index: number) => (
+                              <div key={index} className="border rounded-lg p-4 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="font-medium">{step.stepName || `Step ${index + 1}`}</h4>
+                                  <Badge variant="outline">{step.navigationPath || step.page || step.route || 'No navigation'}</Badge>
+                                </div>
+                                <p className="text-sm text-gray-600">{step.description}</p>
+                                {step.benefits && (
+                                  <div className="text-xs text-green-600">
+                                    Benefits: {step.benefits}
+                                  </div>
+                                )}
+                              </div>
+                            )) || (
+                              <p className="text-sm text-gray-500">No steps available</p>
+                            )}
+                          </div>
+                        </CardContent>
+                      )}
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Generate Tours for Missing Roles */}
+            {missingRoles.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <h4 className="text-md font-medium text-gray-800">Generate Tours for Additional Roles ({missingRoles.length})</h4>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSelectAll('missing')}
+                        className="text-xs"
+                      >
+                        {selectedMissingRoles.length === missingRoles.length ? 'None' : `All (${missingRoles.length})`}
+                      </Button>
+                      {selectedMissingRoles.length > 0 && (
+                        <span className="text-xs text-gray-500">
+                          {selectedMissingRoles.length} of {missingRoles.length} selected
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {selectedMissingRoles.length > 0 && (
+                      <Button
+                        onClick={handleGenerateSelectedTours}
+                        disabled={generateSelectedToursMutation.isPending}
+                        className={`${aiTheme.gradient} text-white text-xs`}
+                        size="sm"
+                      >
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        Generate Tours
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {missingRoles.map((role) => (
+                    <Card key={role.id} className="border-dashed border-2">
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            checked={selectedMissingRoles.includes(role.name)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedMissingRoles([...selectedMissingRoles, role.name]);
+                              } else {
+                                setSelectedMissingRoles(selectedMissingRoles.filter(r => r !== role.name));
+                              }
+                            }}
+                          />
+                          <div>
+                            <h4 className="font-medium">{role.name}</h4>
+                            <p className="text-sm text-gray-500">{role.description}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* AI Guidance Dialog */}
+            <Dialog open={showAIGuidanceDialog} onOpenChange={setShowAIGuidanceDialog}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>AI Tour Generation</DialogTitle>
+                  <DialogDescription>
+                    Provide guidance for the AI to create role-specific tours that highlight relevant features and benefits.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="ai-guidance">Custom Instructions (Optional)</Label>
+                    <Textarea
+                      id="ai-guidance"
+                      placeholder="E.g., Focus on scheduling and optimization features, emphasize time-saving benefits..."
+                      value={aiGuidance}
+                      onChange={(e) => setAiGuidance(e.target.value)}
+                      rows={4}
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowAIGuidanceDialog(false);
+                        setPendingAction(null);
+                        setAiGuidance("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => executeGenerateTours(aiGuidance)}
+                      disabled={generateSelectedToursMutation.isPending}
+                      className={`${aiTheme.gradient} text-white`}
+                    >
+                      {generateSelectedToursMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4 mr-2" />
+                          Generate Tours
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Tour</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete the tour for {tourToDelete?.roleDisplayName || tourToDelete?.roleName}? 
+                    This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      if (tourToDelete) {
+                        deleteTourMutation.mutate(tourToDelete.id);
+                      }
+                    }}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Delete Tour
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </>
+        )}
       </div>
     );
   }
