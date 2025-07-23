@@ -5,17 +5,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Book, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, LogOut, User, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain, CreditCard } from "lucide-react";
+import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Book, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import JobForm from "./job-form";
 import ResourceForm from "./resource-form";
-import { RoleSwitcher } from "./role-switcher";
-import { TrainingModeExit } from "./training-mode-exit";
-import { UserProfileDialog } from "./user-profile";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Capability } from "@shared/schema";
 
 export default function Sidebar() {
@@ -29,12 +25,10 @@ export default function Sidebar() {
   const [quickActionsExpanded, setQuickActionsExpanded] = useState(false);
   const [desktopQuickActionsExpanded, setDesktopQuickActionsExpanded] = useState(false);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
-  const [userProfileOpen, setUserProfileOpen] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
   // Authentication hooks
-  const { user, logout } = useAuth();
   const { hasPermission } = usePermissions();
 
   const { data: capabilities = [] } = useQuery<Capability[]>({
@@ -308,87 +302,6 @@ export default function Sidebar() {
       </div>
 
       <div className="p-3 md:p-4 border-t border-gray-200 flex-shrink-0">
-        {/* Training Mode Exit - shows when in training mode */}
-        {user && (
-          <div className="mb-3">
-            <TrainingModeExit />
-          </div>
-        )}
-        
-        {/* User Info Section */}
-        {user && (
-          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center">
-                <Avatar className="w-8 h-8 mr-2">
-                  <AvatarImage src={undefined} alt="User avatar" />
-                  <AvatarFallback className="text-xs">
-                    {user.firstName && user.lastName 
-                      ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
-                      : <User className="w-3 h-3" />
-                    }
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1">
-                    <span className="text-sm font-medium text-gray-800 truncate">
-                      {user.firstName} {user.lastName}
-                    </span>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setUserProfileOpen(true)}
-                          className="h-5 w-5 p-0 text-gray-500 hover:text-gray-700"
-                        >
-                          <Settings className="w-3 h-3" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top">
-                        <p>Profile & Settings</p>
-                      </TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => window.location.href = '/account'}
-                          className="h-5 w-5 p-0 text-gray-500 hover:text-gray-700"
-                        >
-                          <CreditCard className="w-3 h-3" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top">
-                        <p>Account & Billing</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                </div>
-              </div>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => logout()}
-                    className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
-                  >
-                    <LogOut className="w-3 h-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>Sign out</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <div className="text-xs text-gray-600 mb-2">
-              Roles: {user.roles?.map(role => role.name).join(", ") || "No roles"}
-            </div>
-            <RoleSwitcher userId={user.id} />
-          </div>
-        )}
         
         {/* Mobile: Compact Quick Actions */}
         <div className="md:hidden">
@@ -653,11 +566,7 @@ export default function Sidebar() {
         </DialogContent>
       </Dialog>
 
-      {/* User Profile Dialog */}
-      <UserProfileDialog
-        open={userProfileOpen}
-        onOpenChange={setUserProfileOpen}
-      />
+
     </TooltipProvider>
   );
 }
