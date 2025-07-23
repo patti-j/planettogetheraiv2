@@ -1,5 +1,5 @@
 import { 
-  capabilities, resources, jobs, operations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
+  plants, capabilities, resources, jobs, operations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
   capacityPlanningScenarios, staffingPlans, shiftPlans, equipmentPlans, capacityProjections,
@@ -8,7 +8,7 @@ import {
   disruptions, disruptionActions, disruptionEscalations,
   inventoryItems, inventoryTransactions, inventoryBalances, demandForecasts, demandDrivers, demandHistory, inventoryOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
-  type Capability, type Resource, type Job, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
+  type Plant, type Capability, type Resource, type Job, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
   type CapacityPlanningScenario, type StaffingPlan, type ShiftPlan, type EquipmentPlan, type CapacityProjection,
@@ -17,7 +17,7 @@ import {
   type Disruption, type DisruptionAction, type DisruptionEscalation,
   type InventoryItem, type InventoryTransaction, type InventoryBalance, type DemandForecast, type DemandDriver, type DemandHistory, type InventoryOptimizationScenario, type OptimizationRecommendation,
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
-  type InsertCapability, type InsertResource, type InsertJob, 
+  type InsertPlant, type InsertCapability, type InsertResource, type InsertJob, 
   type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
@@ -50,6 +50,13 @@ import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, like, 
 import bcrypt from "bcryptjs";
 
 export interface IStorage {
+  // Plants
+  getPlants(): Promise<Plant[]>;
+  getPlant(id: number): Promise<Plant | undefined>;
+  createPlant(plant: InsertPlant): Promise<Plant>;
+  updatePlant(id: number, plant: Partial<InsertPlant>): Promise<Plant | undefined>;
+  deletePlant(id: number): Promise<boolean>;
+
   // Capabilities
   getCapabilities(): Promise<Capability[]>;
   createCapability(capability: InsertCapability): Promise<Capability>;
@@ -938,6 +945,31 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Plants
+  async getPlants(): Promise<Plant[]> {
+    return await db.select().from(plants).orderBy(asc(plants.name));
+  }
+
+  async getPlant(id: number): Promise<Plant | undefined> {
+    const result = await db.select().from(plants).where(eq(plants.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createPlant(plant: InsertPlant): Promise<Plant> {
+    const result = await db.insert(plants).values(plant).returning();
+    return result[0];
+  }
+
+  async updatePlant(id: number, plant: Partial<InsertPlant>): Promise<Plant | undefined> {
+    const result = await db.update(plants).set(plant).where(eq(plants.id, id)).returning();
+    return result[0];
+  }
+
+  async deletePlant(id: number): Promise<boolean> {
+    const result = await db.delete(plants).where(eq(plants.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
   async getCapabilities(): Promise<Capability[]> {
     return await db.select().from(capabilities);
   }

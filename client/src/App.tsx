@@ -49,6 +49,7 @@ import Chat from "@/pages/chat";
 import Pricing from "@/pages/pricing";
 import Account from "@/pages/account";
 import IndustryTemplates from "@/pages/industry-templates";
+import PlantsManagementPage from "@/pages/plants-management";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
@@ -290,6 +291,11 @@ function Router() {
           <Route path="/system-integrations">
             <ProtectedRoute feature="system-integrations" action="view">
               <SystemIntegrationsPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/plants-management">
+            <ProtectedRoute feature="systems-management" action="view">
+              <PlantsManagementPage />
             </ProtectedRoute>
           </Route>
           <Route path="/account" component={Account} />

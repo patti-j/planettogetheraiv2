@@ -4,6 +4,15 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
+export const plants = pgTable("plants", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  address: text("address"),
+  timezone: text("timezone").notNull().default("UTC"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const capabilities = pgTable("capabilities", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
@@ -17,6 +26,9 @@ export const resources = pgTable("resources", {
   status: text("status").notNull().default("active"),
   capabilities: jsonb("capabilities").$type<number[]>().default([]),
   photo: text("photo"), // Base64 encoded photo data
+  plantId: integer("plant_id").references(() => plants.id),
+  isShared: boolean("is_shared").default(false), // Can be used across multiple plants
+  sharedPlants: jsonb("shared_plants").$type<number[]>().default([]), // Array of plant IDs if shared
 });
 
 export const jobs = pgTable("jobs", {
@@ -28,6 +40,7 @@ export const jobs = pgTable("jobs", {
   status: text("status").notNull().default("planned"),
   dueDate: timestamp("due_date"),
   createdAt: timestamp("created_at").defaultNow(),
+  plantId: integer("plant_id").references(() => plants.id).notNull(), // Jobs are assigned to specific plants
 });
 
 export const operations = pgTable("operations", {
@@ -2069,3 +2082,13 @@ export type InsertIntegrationTemplate = z.infer<typeof insertIntegrationTemplate
 
 export type FeedbackVote = typeof feedbackVotes.$inferSelect;
 export type InsertFeedbackVote = z.infer<typeof insertFeedbackVoteSchema>;
+
+// Plant Management Schemas
+export const insertPlantSchema = createInsertSchema(plants).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Plant Management Types
+export type Plant = typeof plants.$inferSelect;
+export type InsertPlant = z.infer<typeof insertPlantSchema>;

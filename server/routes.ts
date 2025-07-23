@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
-  insertCapabilitySchema, insertResourceSchema, insertJobSchema, 
+  insertPlantSchema, insertCapabilitySchema, insertResourceSchema, insertJobSchema, 
   insertOperationSchema, insertDependencySchema, insertResourceViewSchema,
   insertCustomTextLabelSchema, insertKanbanConfigSchema, insertReportConfigSchema,
   insertDashboardConfigSchema, insertScheduleScenarioSchema, insertScenarioOperationSchema,
@@ -503,7 +503,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Capabilities
+  // Plants
+  app.get("/api/plants", requireAuth, async (req, res) => {
+    try {
+      const plants = await storage.getPlants();
+      res.json(plants);
+    } catch (error) {
+      console.error("Error fetching plants:", error);
+      res.status(500).json({ message: "Failed to fetch plants" });
+    }
+  });
+
+  app.get("/api/plants/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid plant ID" });
+      }
+      const plant = await storage.getPlant(id);
+      if (!plant) {
+        return res.status(404).json({ error: "Plant not found" });
+      }
+      res.json(plant);
+    } catch (error) {
+      console.error("Error fetching plant:", error);
+      res.status(500).json({ error: "Failed to fetch plant" });
+    }
+  });
+
+  app.post("/api/plants", requireAuth, async (req, res) => {
+    try {
+      const data = insertPlantSchema.parse(req.body);
+      const plant = await storage.createPlant(data);
+      res.status(201).json(plant);
+    } catch (error: any) {
+      console.error("Error creating plant:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/plants/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid plant ID" });
+      }
+      const data = insertPlantSchema.partial().parse(req.body);
+      const plant = await storage.updatePlant(id, data);
+      if (!plant) {
+        return res.status(404).json({ error: "Plant not found" });
+      }
+      res.json(plant);
+    } catch (error: any) {
+      console.error("Error updating plant:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/plants/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid plant ID" });
+      }
+      const success = await storage.deletePlant(id);
+      if (!success) {
+        return res.status(404).json({ error: "Plant not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting plant:", error);
+      res.status(500).json({ error: "Failed to delete plant" });
+    }
+  });
+
   app.get("/api/capabilities", async (req, res) => {
     try {
       const capabilities = await storage.getCapabilities();
