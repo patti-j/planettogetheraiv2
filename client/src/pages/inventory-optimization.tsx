@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ComposedChart, Area } from "recharts";
+import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ComposedChart, Area, AreaChart } from "recharts";
 
 interface InventoryItem {
   id: number;
@@ -167,10 +167,7 @@ export default function InventoryOptimizationPage() {
   // Mutations
   const createScenarioMutation = useMutation({
     mutationFn: async (data: typeof scenarioForm) => {
-      return apiRequest(`/api/inventory/optimization-scenarios`, {
-        method: "POST",
-        body: JSON.stringify(data)
-      });
+      return apiRequest("POST", `/api/inventory/optimization-scenarios`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/inventory/optimization-scenarios"] });
@@ -183,9 +180,7 @@ export default function InventoryOptimizationPage() {
 
   const runOptimizationMutation = useMutation({
     mutationFn: async (scenarioId: number) => {
-      return apiRequest(`/api/inventory/optimization-scenarios/${scenarioId}/run`, {
-        method: "POST"
-      });
+      return apiRequest("POST", `/api/inventory/optimization-scenarios/${scenarioId}/run`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/inventory/optimization-scenarios"] });
