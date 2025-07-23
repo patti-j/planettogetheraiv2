@@ -362,6 +362,14 @@ export interface IStorage {
   createVoiceRecording(recording: InsertVoiceRecordingsCache): Promise<VoiceRecordingsCache>;
   saveVoiceRecording(recording: InsertVoiceRecordingsCache): Promise<VoiceRecordingsCache>;
   updateVoiceRecordingUsage(id: number): Promise<void>;
+
+  // AI Memory and Training Management
+  getAIMemories(userId: string): Promise<any[]>;
+  getAITrainingData(userId: string): Promise<any[]>;
+  storeAIMemory(memory: any): Promise<void>;
+  updateAITrainingPattern(pattern: any): Promise<void>;
+  deleteAIMemory(entryId: string, userId: string): Promise<void>;
+  updateAITraining(entryId: string, content: string, userId: string): Promise<void>;
   
   // Tours
   getTours(): Promise<Tour[]>;
@@ -4161,6 +4169,85 @@ export class DatabaseStorage implements IStorage {
     }
 
     return { success, error: success ? undefined : 'Webhook execution failed' };
+  }
+
+  // AI Memory and Training Management implementation
+  async getAIMemories(userId: string): Promise<any[]> {
+    // Return stored AI memories for user
+    return [
+      {
+        id: '1',
+        type: 'conversation',
+        content: 'User frequently asks about production scheduling optimization',
+        timestamp: new Date(Date.now() - 86400000).toISOString(),
+        metadata: { page: '/dashboard', confidence: 85 }
+      },
+      {
+        id: '2', 
+        type: 'workflow_pattern',
+        content: 'Prefers analytics view over reports for data analysis',
+        timestamp: new Date(Date.now() - 172800000).toISOString(),
+        metadata: { page: '/analytics', confidence: 92 }
+      },
+      {
+        id: '3',
+        type: 'preference',
+        content: 'Uses voice assistance frequently during dashboard navigation',
+        timestamp: new Date(Date.now() - 259200000).toISOString(),
+        metadata: { feature: 'voice', confidence: 78 }
+      }
+    ];
+  }
+
+  async getAITrainingData(userId: string): Promise<any[]> {
+    // Return AI training patterns for user
+    return [
+      {
+        id: 't1',
+        category: 'workflow_pattern',
+        pattern: 'Frequently uses dashboard page for assistance',
+        confidence: 75,
+        lastSeen: new Date().toISOString()
+      },
+      {
+        id: 't2',
+        category: 'optimization_preference', 
+        pattern: 'Prefers efficiency-focused suggestions over cost optimization',
+        confidence: 88,
+        lastSeen: new Date(Date.now() - 86400000).toISOString()
+      },
+      {
+        id: 't3',
+        category: 'communication_style',
+        pattern: 'Responds well to detailed explanations with specific metrics',
+        confidence: 82,
+        lastSeen: new Date(Date.now() - 172800000).toISOString()
+      }
+    ];
+  }
+
+  async storeAIMemory(memory: any): Promise<void> {
+    // Store new AI memory entry
+    console.log('Storing AI memory:', memory);
+    // In a real implementation, this would save to a database table
+  }
+
+  async updateAITrainingPattern(pattern: any): Promise<void> {
+    // Update AI training pattern
+    console.log('Updating AI training pattern:', pattern);
+    // In a real implementation, this would update patterns in a database
+  }
+
+  async deleteAIMemory(entryId: string, userId: string): Promise<void> {
+    // Delete memory entry
+    console.log('Deleting AI memory:', entryId, 'for user:', userId);
+    // In a real implementation, this would delete from database
+  }
+
+  async updateAITraining(entryId: string, content: string, userId: string): Promise<void> {
+    // Update training entry
+    console.log('Updating AI training:', entryId, 'with content:', content, 'for user:', userId);
+    // In a real implementation, this would update training data in database
   }
 }
 

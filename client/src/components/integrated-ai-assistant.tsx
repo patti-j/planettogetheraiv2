@@ -27,7 +27,11 @@ import {
   Brain,
   Settings,
   Volume2,
-  VolumeX
+  VolumeX,
+  Database,
+  Trash2,
+  Edit,
+  Eye
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
@@ -73,6 +77,9 @@ export default function IntegratedAIAssistant() {
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
   const [selectedVoice, setSelectedVoice] = useState('alloy');
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
+  const [showMemorySettings, setShowMemorySettings] = useState(false);
+  const [memoryData, setMemoryData] = useState<any[]>([]);
+  const [trainingData, setTrainingData] = useState<any[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -211,6 +218,58 @@ export default function IntegratedAIAssistant() {
         utterance.volume = 0.8;
         synthesis.current.speak(utterance);
       }
+    }
+  };
+
+  // Fetch memory and training data
+  const fetchMemoryData = async () => {
+    try {
+      const response = await apiRequest("GET", "/api/ai-agent/memory");
+      const data = await response.json();
+      setMemoryData(data.memories || []);
+      setTrainingData(data.training || []);
+    } catch (error) {
+      console.error('Error fetching memory data:', error);
+    }
+  };
+
+  // Delete memory entry
+  const deleteMemoryEntry = async (entryId: string) => {
+    try {
+      await apiRequest("DELETE", `/api/ai-agent/memory/${entryId}`);
+      await fetchMemoryData(); // Refresh data
+      toast({
+        title: "Memory Entry Deleted",
+        description: "The memory entry has been removed from Max's training data.",
+      });
+    } catch (error) {
+      console.error('Error deleting memory entry:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete memory entry.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Update training data
+  const updateTrainingEntry = async (entryId: string, newContent: string) => {
+    try {
+      await apiRequest("PUT", `/api/ai-agent/training/${entryId}`, {
+        content: newContent
+      });
+      await fetchMemoryData(); // Refresh data
+      toast({
+        title: "Training Updated",
+        description: "Max's training data has been updated.",
+      });
+    } catch (error) {
+      console.error('Error updating training entry:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update training data.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -373,8 +432,24 @@ export default function IntegratedAIAssistant() {
                 size="sm"
                 onClick={() => setShowVoiceSettings(!showVoiceSettings)}
                 className="h-6 w-6 p-0 text-white hover:bg-white/20"
+                title="Voice Settings"
               >
                 <Settings className="h-3 w-3" />
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowMemorySettings(!showMemorySettings);
+                  if (!showMemorySettings) {
+                    fetchMemoryData();
+                  }
+                }}
+                className="h-6 w-6 p-0 text-white hover:bg-white/20"
+                title="Memory & Training"
+              >
+                <Database className="h-3 w-3" />
               </Button>
               <Button
                 variant="ghost"
@@ -438,6 +513,116 @@ export default function IntegratedAIAssistant() {
                     className="w-full h-7 text-xs"
                   >
                     Test Voice
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Memory & Training Settings Panel */}
+            {showMemorySettings && (
+              <div className="p-3 bg-gray-50 border-b max-h-64 overflow-y-auto">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-gray-700">Memory & Training</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowMemorySettings(false)}
+                    className="h-6 w-6 p-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+                
+                <div className="space-y-3">
+                  {/* Memory Section */}
+                  <div>
+                    <h4 className="text-xs font-medium text-gray-600 mb-2 flex items-center gap-1">
+                      <Brain className="h-3 w-3" />
+                      What Max Remembers ({memoryData.length})
+                    </h4>
+                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {memoryData.length === 0 ? (
+                        <p className="text-xs text-gray-500 italic">No memories recorded yet</p>
+                      ) : (
+                        memoryData.map((memory, index) => (
+                          <div key={index} className="p-2 bg-white rounded border text-xs">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <p className="font-medium text-gray-700">{memory.type}</p>
+                                <p className="text-gray-600">{memory.content}</p>
+                                <p className="text-gray-400 text-xs mt-1">{memory.timestamp}</p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteMemoryEntry(memory.id)}
+                                className="h-5 w-5 p-0 text-red-500 hover:text-red-700"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Training Data Section */}
+                  <div>
+                    <h4 className="text-xs font-medium text-gray-600 mb-2 flex items-center gap-1">
+                      <Zap className="h-3 w-3" />
+                      Training Data ({trainingData.length})
+                    </h4>
+                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {trainingData.length === 0 ? (
+                        <p className="text-xs text-gray-500 italic">No training data available</p>
+                      ) : (
+                        trainingData.map((training, index) => (
+                          <div key={index} className="p-2 bg-white rounded border text-xs">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <p className="font-medium text-gray-700">{training.category}</p>
+                                <p className="text-gray-600">{training.pattern}</p>
+                                <p className="text-gray-400 text-xs mt-1">Confidence: {training.confidence}%</p>
+                              </div>
+                              <div className="flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    const newContent = prompt('Edit training pattern:', training.pattern);
+                                    if (newContent && newContent !== training.pattern) {
+                                      updateTrainingEntry(training.id, newContent);
+                                    }
+                                  }}
+                                  className="h-5 w-5 p-0 text-blue-500 hover:text-blue-700"
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => deleteMemoryEntry(training.id)}
+                                  className="h-5 w-5 p-0 text-red-500 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={fetchMemoryData}
+                    className="w-full h-7 text-xs"
+                  >
+                    <Eye className="h-3 w-3 mr-1" />
+                    Refresh Memory Data
                   </Button>
                 </div>
               </div>

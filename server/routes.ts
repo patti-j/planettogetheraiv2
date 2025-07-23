@@ -1046,6 +1046,43 @@ Provide the response as a JSON object with the following structure:
     }
   });
 
+  // AI Agent Memory Management endpoints
+  app.get("/api/ai-agent/memory", async (req, res) => {
+    try {
+      // Get stored memory and training data for the current user
+      const memories = await storage.getAIMemories(req.user?.id || 'demo');
+      const training = await storage.getAITrainingData(req.user?.id || 'demo');
+      
+      res.json({ memories, training });
+    } catch (error) {
+      console.error('Memory fetch error:', error);
+      res.status(500).json({ error: 'Failed to fetch memory data' });
+    }
+  });
+
+  app.delete("/api/ai-agent/memory/:entryId", async (req, res) => {
+    try {
+      const { entryId } = req.params;
+      await storage.deleteAIMemory(entryId, req.user?.id || 'demo');
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Memory delete error:', error);
+      res.status(500).json({ error: 'Failed to delete memory entry' });
+    }
+  });
+
+  app.put("/api/ai-agent/training/:entryId", async (req, res) => {
+    try {
+      const { entryId } = req.params;
+      const { content } = req.body;
+      await storage.updateAITraining(entryId, content, req.user?.id || 'demo');
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Training update error:', error);
+      res.status(500).json({ error: 'Failed to update training data' });
+    }
+  });
+
   app.post("/api/ai-agent/chat", async (req, res) => {
     try {
       const { message, context, conversationHistory } = req.body;
@@ -1102,6 +1139,24 @@ Always respond as if you're actively monitoring the user's workflow and learning
       });
 
       const response = completion.choices[0]?.message?.content || "I'm having trouble processing that request. Could you please try again?";
+
+      // Store this interaction in memory for learning
+      await storage.storeAIMemory({
+        userId: req.user?.id || 'demo',
+        type: 'conversation',
+        content: `User asked: "${message}" - Context: ${context?.page || 'unknown page'}`,
+        timestamp: new Date().toISOString(),
+        metadata: { page: context?.page, userRole: context?.user }
+      });
+
+      // Update training data based on user patterns
+      await storage.updateAITrainingPattern({
+        userId: req.user?.id || 'demo',
+        category: 'workflow_pattern',
+        pattern: `Frequently uses ${context?.page || 'unknown'} page for ${message.toLowerCase().includes('help') ? 'assistance' : 'operations'}`,
+        confidence: 75,
+        lastSeen: new Date().toISOString()
+      });
 
       // Generate contextual insights based on the conversation
       const insights = await generateContextualInsights(context, message, response);
