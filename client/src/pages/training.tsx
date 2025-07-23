@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play, UserCheck, Settings, Shield, Edit3, Eye, Volume2, MessageSquare, Sparkles, RefreshCw, ChevronDown, ChevronRight, FileText, Clock, Plus, AlertCircle, Trash2, CheckCircle, AlertTriangle, Mic, VolumeX, Info, ArrowLeft, Loader2, X } from 'lucide-react';
+import { BookOpen, Users, Target, Monitor, RotateCcw, GraduationCap, Play, UserCheck, Settings, Shield, Edit3, Eye, Volume2, MessageSquare, Sparkles, RefreshCw, ChevronDown, ChevronRight, FileText, Clock, Plus, AlertCircle, Trash2, CheckCircle, AlertTriangle, Mic, VolumeX, Info, ArrowLeft, Loader2, X, Hourglass } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, usePermissions } from '@/hooks/useAuth';
 import { RoleSwitcher } from '@/components/role-switcher';
@@ -1808,8 +1808,16 @@ function TourManagementSection() {
               <Button variant="outline" onClick={() => setShowAIGuidanceDialog(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleConfirmAIGeneration} disabled={regenerateTourWithAI.isPending}>
-                {regenerateTourWithAI.isPending && <RefreshCw className="h-4 w-4 mr-2 animate-spin" />}
+              <Button 
+                onClick={handleConfirmAIGeneration} 
+                disabled={regenerateTourWithAI.isPending}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
+              >
+                {regenerateTourWithAI.isPending ? (
+                  <Hourglass className="h-4 w-4 mr-2 animate-pulse" />
+                ) : (
+                  <Sparkles className="h-4 w-4 mr-2" />
+                )}
                 Generate Tours
               </Button>
             </div>
