@@ -2092,3 +2092,144 @@ export const insertPlantSchema = createInsertSchema(plants).omit({
 // Plant Management Types
 export type Plant = typeof plants.$inferSelect;
 export type InsertPlant = z.infer<typeof insertPlantSchema>;
+
+// Extension Studio Tables
+export const extensions = pgTable("extensions", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  displayName: text("display_name").notNull(),
+  description: text("description"),
+  version: text("version").notNull().default("1.0.0"),
+  type: text("type").notNull(), // component, workflow, integration, dashboard, report
+  category: text("category").notNull(), // ui, automation, analytics, integration
+  status: text("status").notNull().default("draft"), // draft, published, active, deprecated
+  visibility: text("visibility").notNull().default("private"), // private, public, company
+  configuration: jsonb("configuration").$type<{
+    entryPoint?: string;
+    dependencies?: string[];
+    permissions?: string[];
+    settings?: Record<string, any>;
+    triggers?: Array<{
+      event: string;
+      conditions?: Record<string, any>;
+    }>;
+  }>().default({}),
+  sourceCode: text("source_code"), // Main extension code
+  manifest: jsonb("manifest").$type<{
+    name: string;
+    version: string;
+    author: string;
+    description: string;
+    main: string;
+    permissions: string[];
+    api_version: string;
+    min_app_version: string;
+  }>(),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  installCount: integer("install_count").default(0),
+  rating: integer("rating").default(0), // Average rating * 10 (for decimal precision)
+  lastUpdated: timestamp("last_updated").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const extensionFiles = pgTable("extension_files", {
+  id: serial("id").primaryKey(),
+  extensionId: integer("extension_id").references(() => extensions.id).notNull(),
+  filename: text("filename").notNull(),
+  filepath: text("filepath").notNull(),
+  content: text("content").notNull(),
+  fileType: text("file_type").notNull(), // js, tsx, css, json, md
+  size: integer("size").notNull(), // in bytes
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const extensionInstallations = pgTable("extension_installations", {
+  id: serial("id").primaryKey(),
+  extensionId: integer("extension_id").references(() => extensions.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  version: text("version").notNull(),
+  status: text("status").notNull().default("active"), // active, disabled, error
+  configuration: jsonb("configuration").$type<Record<string, any>>().default({}),
+  installedAt: timestamp("installed_at").defaultNow(),
+  lastUsed: timestamp("last_used"),
+});
+
+export const extensionMarketplace = pgTable("extension_marketplace", {
+  id: serial("id").primaryKey(),
+  extensionId: integer("extension_id").references(() => extensions.id).notNull(),
+  featured: boolean("featured").default(false),
+  tags: jsonb("tags").$type<string[]>().default([]),
+  screenshots: jsonb("screenshots").$type<string[]>().default([]), // Base64 images
+  documentation: text("documentation"),
+  changelog: text("changelog"),
+  supportUrl: text("support_url"),
+  pricing: jsonb("pricing").$type<{
+    type: "free" | "paid" | "subscription";
+    price?: number;
+    currency?: string;
+    billingPeriod?: "monthly" | "yearly" | "one-time";
+  }>().default({ type: "free" }),
+  publishedAt: timestamp("published_at"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const extensionReviews = pgTable("extension_reviews", {
+  id: serial("id").primaryKey(),
+  extensionId: integer("extension_id").references(() => extensions.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  rating: integer("rating").notNull(), // 1-5 stars
+  title: text("title"),
+  review: text("review"),
+  helpful: integer("helpful").default(0), // Number of helpful votes
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Extension Studio Insert Schemas
+export const insertExtensionSchema = createInsertSchema(extensions).omit({
+  id: true,
+  installCount: true,
+  rating: true,
+  lastUpdated: true,
+  createdAt: true,
+});
+
+export const insertExtensionFileSchema = createInsertSchema(extensionFiles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertExtensionInstallationSchema = createInsertSchema(extensionInstallations).omit({
+  id: true,
+  installedAt: true,
+  lastUsed: true,
+});
+
+export const insertExtensionMarketplaceSchema = createInsertSchema(extensionMarketplace).omit({
+  id: true,
+  publishedAt: true,
+  updatedAt: true,
+});
+
+export const insertExtensionReviewSchema = createInsertSchema(extensionReviews).omit({
+  id: true,
+  helpful: true,
+  createdAt: true,
+});
+
+// Extension Studio Types
+export type Extension = typeof extensions.$inferSelect;
+export type InsertExtension = z.infer<typeof insertExtensionSchema>;
+
+export type ExtensionFile = typeof extensionFiles.$inferSelect;
+export type InsertExtensionFile = z.infer<typeof insertExtensionFileSchema>;
+
+export type ExtensionInstallation = typeof extensionInstallations.$inferSelect;
+export type InsertExtensionInstallation = z.infer<typeof insertExtensionInstallationSchema>;
+
+export type ExtensionMarketplace = typeof extensionMarketplace.$inferSelect;
+export type InsertExtensionMarketplace = z.infer<typeof insertExtensionMarketplaceSchema>;
+
+export type ExtensionReview = typeof extensionReviews.$inferSelect;
+export type InsertExtensionReview = z.infer<typeof insertExtensionReviewSchema>;

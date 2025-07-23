@@ -556,6 +556,37 @@ export interface IStorage {
   updateIntegrationWebhook(id: number, webhook: Partial<InsertIntegrationWebhook>): Promise<IntegrationWebhook | undefined>;
   deleteIntegrationWebhook(id: number): Promise<boolean>;
   triggerIntegrationWebhook(id: number, payload: any): Promise<{ success: boolean; error?: string }>;
+
+  // Plant Management
+  createPlant(plant: InsertPlant): Promise<Plant>;
+  getPlants(): Promise<Plant[]>;
+  getPlantById(id: number): Promise<Plant | null>;
+  updatePlant(id: number, updates: Partial<InsertPlant>): Promise<Plant | null>;
+  deletePlant(id: number): Promise<boolean>;
+
+  // Extension Studio
+  createExtension(extension: InsertExtension): Promise<Extension>;
+  getExtensions(userId?: number): Promise<Extension[]>;
+  getExtensionById(id: number): Promise<Extension | null>;
+  updateExtension(id: number, updates: Partial<InsertExtension>): Promise<Extension | null>;
+  deleteExtension(id: number): Promise<boolean>;
+  
+  createExtensionFile(file: InsertExtensionFile): Promise<ExtensionFile>;
+  getExtensionFiles(extensionId: number): Promise<ExtensionFile[]>;
+  updateExtensionFile(id: number, updates: Partial<InsertExtensionFile>): Promise<ExtensionFile | null>;
+  deleteExtensionFile(id: number): Promise<boolean>;
+  
+  createExtensionInstallation(installation: InsertExtensionInstallation): Promise<ExtensionInstallation>;
+  getUserExtensions(userId: number): Promise<ExtensionInstallation[]>;
+  updateExtensionInstallation(id: number, updates: Partial<InsertExtensionInstallation>): Promise<ExtensionInstallation | null>;
+  deleteExtensionInstallation(id: number): Promise<boolean>;
+  
+  getMarketplaceExtensions(): Promise<(Extension & ExtensionMarketplace)[]>;
+  createExtensionMarketplace(marketplace: InsertExtensionMarketplace): Promise<ExtensionMarketplace>;
+  updateExtensionMarketplace(extensionId: number, updates: Partial<InsertExtensionMarketplace>): Promise<ExtensionMarketplace | null>;
+  
+  createExtensionReview(review: InsertExtensionReview): Promise<ExtensionReview>;
+  getExtensionReviews(extensionId: number): Promise<ExtensionReview[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -4291,6 +4322,162 @@ export class DatabaseStorage implements IStorage {
     // Update training entry
     console.log('Updating AI training:', entryId, 'with content:', content, 'for user:', userId);
     // In a real implementation, this would update training data in database
+  }
+
+  // Plant Management Implementation
+  async createPlant(plant: InsertPlant): Promise<Plant> {
+    const [newPlant] = await db.insert(plants).values(plant).returning();
+    return newPlant;
+  }
+
+  async getPlants(): Promise<Plant[]> {
+    return await db.select().from(plants).orderBy(asc(plants.name));
+  }
+
+  async getPlantById(id: number): Promise<Plant | null> {
+    const [plant] = await db.select().from(plants).where(eq(plants.id, id));
+    return plant || null;
+  }
+
+  async updatePlant(id: number, updates: Partial<InsertPlant>): Promise<Plant | null> {
+    const [updatedPlant] = await db
+      .update(plants)
+      .set(updates)
+      .where(eq(plants.id, id))
+      .returning();
+    return updatedPlant || null;
+  }
+
+  async deletePlant(id: number): Promise<boolean> {
+    const result = await db.delete(plants).where(eq(plants.id, id));
+    return result.rowCount! > 0;
+  }
+
+  // Extension Studio Implementation
+  async createExtension(extension: InsertExtension): Promise<Extension> {
+    const [newExtension] = await db.insert(extensions).values(extension).returning();
+    return newExtension;
+  }
+
+  async getExtensions(userId?: number): Promise<Extension[]> {
+    let query = db.select().from(extensions);
+    if (userId) {
+      query = query.where(eq(extensions.createdBy, userId));
+    }
+    return await query.orderBy(desc(extensions.lastUpdated));
+  }
+
+  async getExtensionById(id: number): Promise<Extension | null> {
+    const [extension] = await db.select().from(extensions).where(eq(extensions.id, id));
+    return extension || null;
+  }
+
+  async updateExtension(id: number, updates: Partial<InsertExtension>): Promise<Extension | null> {
+    const [updatedExtension] = await db
+      .update(extensions)
+      .set({ ...updates, lastUpdated: new Date() })
+      .where(eq(extensions.id, id))
+      .returning();
+    return updatedExtension || null;
+  }
+
+  async deleteExtension(id: number): Promise<boolean> {
+    const result = await db.delete(extensions).where(eq(extensions.id, id));
+    return result.rowCount! > 0;
+  }
+
+  // Extension Files
+  async createExtensionFile(file: InsertExtensionFile): Promise<ExtensionFile> {
+    const [newFile] = await db.insert(extensionFiles).values(file).returning();
+    return newFile;
+  }
+
+  async getExtensionFiles(extensionId: number): Promise<ExtensionFile[]> {
+    return await db
+      .select()
+      .from(extensionFiles)
+      .where(eq(extensionFiles.extensionId, extensionId))
+      .orderBy(asc(extensionFiles.filepath));
+  }
+
+  async updateExtensionFile(id: number, updates: Partial<InsertExtensionFile>): Promise<ExtensionFile | null> {
+    const [updatedFile] = await db
+      .update(extensionFiles)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(extensionFiles.id, id))
+      .returning();
+    return updatedFile || null;
+  }
+
+  async deleteExtensionFile(id: number): Promise<boolean> {
+    const result = await db.delete(extensionFiles).where(eq(extensionFiles.id, id));
+    return result.rowCount! > 0;
+  }
+
+  // Extension Installations
+  async createExtensionInstallation(installation: InsertExtensionInstallation): Promise<ExtensionInstallation> {
+    const [newInstallation] = await db.insert(extensionInstallations).values(installation).returning();
+    return newInstallation;
+  }
+
+  async getUserExtensions(userId: number): Promise<ExtensionInstallation[]> {
+    return await db
+      .select()
+      .from(extensionInstallations)
+      .where(eq(extensionInstallations.userId, userId))
+      .orderBy(desc(extensionInstallations.installedAt));
+  }
+
+  async updateExtensionInstallation(id: number, updates: Partial<InsertExtensionInstallation>): Promise<ExtensionInstallation | null> {
+    const [updatedInstallation] = await db
+      .update(extensionInstallations)
+      .set(updates)
+      .where(eq(extensionInstallations.id, id))
+      .returning();
+    return updatedInstallation || null;
+  }
+
+  async deleteExtensionInstallation(id: number): Promise<boolean> {
+    const result = await db.delete(extensionInstallations).where(eq(extensionInstallations.id, id));
+    return result.rowCount! > 0;
+  }
+
+  // Extension Marketplace
+  async getMarketplaceExtensions(): Promise<(Extension & ExtensionMarketplace)[]> {
+    return await db
+      .select()
+      .from(extensions)
+      .innerJoin(extensionMarketplace, eq(extensions.id, extensionMarketplace.extensionId))
+      .where(eq(extensions.status, 'published'))
+      .orderBy(desc(extensionMarketplace.featured), desc(extensions.rating));
+  }
+
+  async createExtensionMarketplace(marketplace: InsertExtensionMarketplace): Promise<ExtensionMarketplace> {
+    const [newMarketplace] = await db.insert(extensionMarketplace).values(marketplace).returning();
+    return newMarketplace;
+  }
+
+  async updateExtensionMarketplace(extensionId: number, updates: Partial<InsertExtensionMarketplace>): Promise<ExtensionMarketplace | null> {
+    const [updatedMarketplace] = await db
+      .update(extensionMarketplace)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(extensionMarketplace.extensionId, extensionId))
+      .returning();
+    return updatedMarketplace || null;
+  }
+
+  // Extension Reviews
+  async createExtensionReview(review: InsertExtensionReview): Promise<ExtensionReview> {
+    const [newReview] = await db.insert(extensionReviews).values(review).returning();
+    return newReview;
+  }
+
+  async getExtensionReviews(extensionId: number): Promise<ExtensionReview[]> {
+    return await db
+      .select()
+      .from(extensionReviews)
+      .where(eq(extensionReviews.extensionId, extensionId))
+      .orderBy(desc(extensionReviews.createdAt));
   }
 }
 

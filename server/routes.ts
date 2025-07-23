@@ -8518,6 +8518,222 @@ Create a natural, conversational voice script that explains this feature to some
     }
   });
 
+  // Extension Studio API Routes
+  app.get("/api/extensions", async (req, res) => {
+    try {
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
+      const extensions = await storage.getExtensions(userId);
+      res.json(extensions);
+    } catch (error) {
+      console.error("Error fetching extensions:", error);
+      res.status(500).json({ error: "Failed to fetch extensions" });
+    }
+  });
+
+  app.get("/api/extensions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid extension ID" });
+      }
+
+      const extension = await storage.getExtensionById(id);
+      if (!extension) {
+        return res.status(404).json({ error: "Extension not found" });
+      }
+      res.json(extension);
+    } catch (error) {
+      console.error("Error fetching extension:", error);
+      res.status(500).json({ error: "Failed to fetch extension" });
+    }
+  });
+
+  app.post("/api/extensions", async (req, res) => {
+    try {
+      const validation = insertExtensionSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid extension data", details: validation.error.errors });
+      }
+
+      const extension = await storage.createExtension(validation.data);
+      res.status(201).json(extension);
+    } catch (error) {
+      console.error("Error creating extension:", error);
+      res.status(500).json({ error: "Failed to create extension" });
+    }
+  });
+
+  app.put("/api/extensions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid extension ID" });
+      }
+
+      const validation = insertExtensionSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid extension data", details: validation.error.errors });
+      }
+
+      const extension = await storage.updateExtension(id, validation.data);
+      if (!extension) {
+        return res.status(404).json({ error: "Extension not found" });
+      }
+      res.json(extension);
+    } catch (error) {
+      console.error("Error updating extension:", error);
+      res.status(500).json({ error: "Failed to update extension" });
+    }
+  });
+
+  app.delete("/api/extensions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid extension ID" });
+      }
+
+      const success = await storage.deleteExtension(id);
+      if (!success) {
+        return res.status(404).json({ error: "Extension not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting extension:", error);
+      res.status(500).json({ error: "Failed to delete extension" });
+    }
+  });
+
+  // Extension Files
+  app.get("/api/extensions/:id/files", async (req, res) => {
+    try {
+      const extensionId = parseInt(req.params.id);
+      if (isNaN(extensionId)) {
+        return res.status(400).json({ error: "Invalid extension ID" });
+      }
+
+      const files = await storage.getExtensionFiles(extensionId);
+      res.json(files);
+    } catch (error) {
+      console.error("Error fetching extension files:", error);
+      res.status(500).json({ error: "Failed to fetch extension files" });
+    }
+  });
+
+  app.post("/api/extensions/:id/files", async (req, res) => {
+    try {
+      const extensionId = parseInt(req.params.id);
+      if (isNaN(extensionId)) {
+        return res.status(400).json({ error: "Invalid extension ID" });
+      }
+
+      const validation = insertExtensionFileSchema.safeParse({
+        ...req.body,
+        extensionId
+      });
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid file data", details: validation.error.errors });
+      }
+
+      const file = await storage.createExtensionFile(validation.data);
+      res.status(201).json(file);
+    } catch (error) {
+      console.error("Error creating extension file:", error);
+      res.status(500).json({ error: "Failed to create extension file" });
+    }
+  });
+
+  app.put("/api/extension-files/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid file ID" });
+      }
+
+      const validation = insertExtensionFileSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid file data", details: validation.error.errors });
+      }
+
+      const file = await storage.updateExtensionFile(id, validation.data);
+      if (!file) {
+        return res.status(404).json({ error: "Extension file not found" });
+      }
+      res.json(file);
+    } catch (error) {
+      console.error("Error updating extension file:", error);
+      res.status(500).json({ error: "Failed to update extension file" });
+    }
+  });
+
+  app.delete("/api/extension-files/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid file ID" });
+      }
+
+      const success = await storage.deleteExtensionFile(id);
+      if (!success) {
+        return res.status(404).json({ error: "Extension file not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting extension file:", error);
+      res.status(500).json({ error: "Failed to delete extension file" });
+    }
+  });
+
+  // Extension Marketplace
+  app.get("/api/marketplace/extensions", async (req, res) => {
+    try {
+      const extensions = await storage.getMarketplaceExtensions();
+      res.json(extensions);
+    } catch (error) {
+      console.error("Error fetching marketplace extensions:", error);
+      res.status(500).json({ error: "Failed to fetch marketplace extensions" });
+    }
+  });
+
+  // User Extensions (Installations)
+  app.get("/api/users/:userId/extensions", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const extensions = await storage.getUserExtensions(userId);
+      res.json(extensions);
+    } catch (error) {
+      console.error("Error fetching user extensions:", error);
+      res.status(500).json({ error: "Failed to fetch user extensions" });
+    }
+  });
+
+  app.post("/api/extensions/:id/install", async (req, res) => {
+    try {
+      const extensionId = parseInt(req.params.id);
+      if (isNaN(extensionId)) {
+        return res.status(400).json({ error: "Invalid extension ID" });
+      }
+
+      const validation = insertExtensionInstallationSchema.safeParse({
+        ...req.body,
+        extensionId
+      });
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid installation data", details: validation.error.errors });
+      }
+
+      const installation = await storage.createExtensionInstallation(validation.data);
+      res.status(201).json(installation);
+    } catch (error) {
+      console.error("Error installing extension:", error);
+      res.status(500).json({ error: "Failed to install extension" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
