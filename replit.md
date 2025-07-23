@@ -114,14 +114,18 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 23, 2025)
 
-✓ **Tour Validation & Auto-Scrolling Enhancement (July 23, 2025)**:
+✓ **Voice Auto-Replay Bug Fix & Tour Validation Enhancement (July 23, 2025)**:
+- Fixed critical voice auto-replay issue where narration would restart after completion instead of waiting for manual replay
+- Implemented sessionStorage tracking to prevent voice from auto-replaying when audio ends
+- Enhanced audio completion handler with explicit "will not auto-replay" logging and behavior
+- Added session cleanup when switching roles to prevent voice conflicts between different role tours
 - Fixed tour validation dialog to display detailed information about invalid tours with specific error messages and suggestions
 - Updated validation response structure to match actual API format showing critical errors, invalid tours, and valid tours
 - Enhanced auto-scrolling functionality to work on all pages, even those that fit within viewport
 - Implemented gentle demo scroll that shows page features by scrolling down 30% of viewport and back up
 - Added comprehensive debugging and visual feedback for auto-scroll behavior during guided tours
 - Resolved all TypeScript compilation errors in tour validation and voice generation systems
-- Tour validation now shows which specific tours are invalid, why they're invalid, and provides actionable suggestions
+- Voice now plays once per step and only replays when user manually clicks the replay button
 - Auto-scrolling provides smooth demonstration of page content even when pages fit within current viewport size
 
 ✓ **Complete Systems Integration Dashboard Transformation (July 23, 2025)**:

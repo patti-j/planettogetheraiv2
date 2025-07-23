@@ -303,10 +303,16 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Reset step when role changes
+  // Reset step when role changes and prevent auto-voice restart
   useEffect(() => {
     setCurrentStep(0);
     setHasAutoStarted(false);
+    setAudioCompleted(false);
+    stopSpeech(); // Stop any playing audio when switching roles
+    
+    // Clear session storage for old role to prevent conflicts
+    const oldKeys = Object.keys(sessionStorage).filter(key => key.startsWith('tour-') && key.includes('-auto-played'));
+    oldKeys.forEach(key => sessionStorage.removeItem(key));
   }, [roleId]);
 
   // Auto-scroll function to demonstrate page features and content
@@ -582,8 +588,9 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           setAudioCompleted(true);
           speechRef.current = null;
           URL.revokeObjectURL(audioUrl);
-          console.log("Audio playback completed");
+          console.log("Audio playback completed - voice will not auto-replay");
           
+          // Only auto-advance if enabled, but never auto-replay voice
           if (autoAdvance && currentStep < tourSteps.length - 1) {
             autoAdvanceTimeoutRef.current = setTimeout(() => {
               handleNext();
@@ -646,17 +653,23 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     }
   };
 
-  // Auto-start voice if enabled
+  // Auto-start voice only once for initial step if enabled
   useEffect(() => {
-    if (initialVoiceEnabled && currentStep === 0 && tourSteps.length > 0 && !hasAutoStarted) {
+    // Create a unique session key for this specific tour session
+    const sessionKey = `tour-${roleId}-step-${currentStep}-auto-played`;
+    const hasAlreadyPlayed = sessionStorage.getItem(sessionKey);
+    
+    if (initialVoiceEnabled && currentStep === 0 && tourSteps.length > 0 && !hasAutoStarted && !hasAlreadyPlayed) {
       const timer = setTimeout(() => {
         console.log("Auto-starting voice for welcome step");
         setHasAutoStarted(true);
+        setVoiceEnabled(true);
+        sessionStorage.setItem(sessionKey, 'true');
         playPreloadedAudio(tourSteps[0].id);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [initialVoiceEnabled, tourSteps, currentStep, hasAutoStarted]);
+  }, [initialVoiceEnabled, tourSteps, currentStep, hasAutoStarted, roleId]);
 
   // Dragging functionality
   const [isDragging, setIsDragging] = useState(false);
