@@ -670,7 +670,7 @@ export default function Reports() {
                 Cancel
               </Button>
               <Button onClick={handleCreateAIReport} disabled={createAIReportMutation.isPending}>
-                {createAIReportMutation.isPending ? "Creating..." : "Create with AI"}
+                {createAIReportMutation.isPending ? "Creating..." : "New Report"}
               </Button>
             </div>
           </div>

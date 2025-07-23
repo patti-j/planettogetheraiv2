@@ -170,6 +170,20 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 23, 2025)
 
+✓ **AI Report Button Label Update (July 23, 2025)**:
+- Updated AI report creation button text from "Create with AI" to "New Report" for clearer, more descriptive labeling
+- Maintains AI functionality with Sparkles icon while providing concise button text that clearly describes the action
+- Follows established pattern of descriptive button labeling instead of generic "Create" text
+- Button retains full AI functionality for generating reports from natural language descriptions
+
+✓ **AI Dashboard & Widget Creation Restoration (July 23, 2025)**:
+- Successfully restored missing AI dashboard and widget creation functionality in EnhancedDashboardManager
+- Integrated AI theme system for dynamic color styling matching user's selected theme (blue-indigo)
+- Updated "Create with AI" button and "AI Edit" toggle to use dynamic AI theme colors
+- Both AI dashboard creation and AI widget creation buttons now visible and functional
+- AI buttons change colors instantly when user changes theme in Max's settings
+- Enhanced dashboard manager provides AI-powered dashboard and widget generation from natural language descriptions
+
 ✓ **AI Theme Color System Implementation - COMPLETED (July 23, 2025)**:
 - Successfully implemented comprehensive AI theme color customization system allowing users to change AI-branded components across the platform
 - Added aiThemeColor field to userPreferences database schema with enum options: purple-pink, blue-indigo, emerald-teal, orange-red, rose-purple
