@@ -301,16 +301,7 @@ export default function OperatorDashboard() {
             <p className="text-sm md:text-base text-gray-600">Review upcoming operations and report status</p>
           </div>
           
-          {/* Maximize button always in top right corner */}
-          <div className="absolute top-0 right-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsMaximized(!isMaximized)}
-            >
-              {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </Button>
-          </div>
+
           
           {/* Operator info below header */}
           <div className="flex items-center gap-2 text-sm text-gray-600 mt-4">
