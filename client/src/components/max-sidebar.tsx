@@ -248,10 +248,40 @@ export function MaxSidebar() {
     await playTTSResponse(testText);
   };
 
+  const handleHeaderMouseDown = (e: React.MouseEvent) => {
+    // Only trigger drag on the header area, not on buttons
+    if ((e.target as HTMLElement).closest('button')) return;
+    
+    // Dispatch custom event to parent SplitPaneLayout to start dragging
+    const dragStartEvent = new CustomEvent('max-header-drag-start', {
+      detail: { clientX: e.clientX, clientY: e.clientY }
+    });
+    window.dispatchEvent(dragStartEvent);
+  };
+
+  const handleHeaderTouchStart = (e: React.TouchEvent) => {
+    // Only trigger drag on the header area, not on buttons
+    if ((e.target as HTMLElement).closest('button')) return;
+    
+    const touch = e.touches[0];
+    if (touch) {
+      // Dispatch custom event to parent SplitPaneLayout to start dragging
+      const dragStartEvent = new CustomEvent('max-header-drag-start', {
+        detail: { clientX: touch.clientX, clientY: touch.clientY }
+      });
+      window.dispatchEvent(dragStartEvent);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col bg-white">
-      {/* Header */}
-      <div className="p-4 bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-between">
+      {/* Header - Draggable for resizing */}
+      <div 
+        className="p-4 bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-between cursor-move"
+        onMouseDown={handleHeaderMouseDown}
+        onTouchStart={handleHeaderTouchStart}
+        style={{ touchAction: 'none' }}
+      >
         <div className="flex items-center gap-2">
           <Bot className="h-5 w-5 text-white" />
           <h2 className="text-white text-sm font-medium">Max AI Assistant</h2>

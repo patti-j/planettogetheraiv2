@@ -130,6 +130,10 @@ The application uses a modern full-stack architecture with strong typing through
 - Added purple/pink gradient styling and "AI" badge for clear AI identification
 - Menu item now hides when Max window is visible to prevent redundant controls
 - Enhanced tooltip describes Max as "AI-powered assistant for intelligent production planning"
+- **Splitter thickness reverted and header drag functionality**: Reverted mobile splitter back to original 4px thickness
+- Max panel header now acts as draggable area for resizing split-pane layout
+- Header drag events communicate with SplitPaneLayout via custom events for seamless resize functionality
+- Buttons in header remain clickable while header background serves as resize handle
 - Eliminated floating window system entirely for consistent, predictable layout behavior
 
 ✓ **User Profile Integration into Hamburger Menu (July 23, 2025)**:
