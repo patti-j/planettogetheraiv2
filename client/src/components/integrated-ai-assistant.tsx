@@ -287,10 +287,10 @@ export default function IntegratedAIAssistant() {
     );
   }
 
-  // Full assistant interface
+  // Full assistant interface - simplified positioning to stay on screen
   return (
-    <div className="fixed bottom-6 right-6 z-50">
-      <Card className={`w-96 bg-white shadow-2xl transition-all duration-300 ${isMinimized ? 'h-16' : 'h-[32rem]'}`}>
+    <div className="fixed bottom-6 right-6 z-50 max-h-[calc(100vh-3rem)]">
+      <Card className={`w-96 bg-white shadow-2xl transition-all duration-300 ${isMinimized ? 'h-16' : 'h-[min(28rem,calc(100vh-6rem))]'}`}>
         <CardHeader className="p-4 bg-gradient-to-r from-blue-500 to-indigo-600">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -330,7 +330,7 @@ export default function IntegratedAIAssistant() {
         </CardHeader>
 
         {!isMinimized && (
-          <CardContent className="p-0 flex flex-col h-full">
+          <CardContent className="p-0 flex flex-col" style={{ height: 'calc(min(28rem, 100vh - 6rem) - 4rem)' }}>
             {/* Current Insights */}
             {currentInsights.length > 0 && (
               <div className="p-3 bg-gray-50 border-b">
@@ -360,7 +360,7 @@ export default function IntegratedAIAssistant() {
             )}
 
             {/* Messages */}
-            <ScrollArea className="flex-1 p-3">
+            <ScrollArea className="flex-1 p-3 min-h-0">
               <div className="space-y-3">
                 {messages.length === 0 && (
                   <div className="text-center text-gray-500 text-sm py-8">
@@ -394,7 +394,7 @@ export default function IntegratedAIAssistant() {
             </ScrollArea>
 
             {/* Input */}
-            <div className="p-3 border-t bg-gray-50">
+            <div className="p-3 border-t bg-gray-50 flex-shrink-0">
               <div className="flex gap-2">
                 <div className="flex-1 flex gap-1">
                   <Input
