@@ -114,7 +114,7 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 23, 2025)
 
-✓ **Voice Continuity & Tour Navigation Enhancement (July 23, 2025)**:
+✓ **Voice Continuity & Enhanced Mobile Auto-Scrolling (July 23, 2025)**:
 - Fixed voice continuation during tour navigation - voice now keeps playing when advancing to next steps
 - Enhanced handleNext and handlePrevious functions to preserve voice playback state during navigation
 - Voice automatically starts for new step if it was playing before navigation with 600ms delay for smooth transition
@@ -123,12 +123,12 @@ The application uses a modern full-stack architecture with strong typing through
 - Enhanced audio completion handler with explicit "will not auto-replay" logging and behavior
 - Added session cleanup when switching roles to prevent voice conflicts between different role tours
 - Enhanced auto-advance functionality to properly continue voice playback when automatically progressing
-- Fixed tour validation dialog to display detailed information about invalid tours with specific error messages and suggestions
-- Updated validation response structure to match actual API format showing critical errors, invalid tours, and valid tours
-- Enhanced auto-scrolling functionality to work on all pages, even those that fit within viewport
-- Implemented gentle demo scroll that shows page features by scrolling down 30% of viewport and back up
+- **Enhanced mobile auto-scrolling** to specifically detect and show content below the fold on mobile devices
+- Improved scroll calculation to scroll down meaningful distances (viewport * 0.8 or remaining content) instead of fixed percentages
+- Enhanced auto-scroll to work on all pages with better detection of available scrollable content
+- Mobile users now see hidden content below the screen during voice narration tours
 - Voice now provides seamless narration experience during tour navigation with proper playback continuity
-- Auto-scrolling provides smooth demonstration of page content even when pages fit within current viewport size
+- Auto-scrolling demonstrates all page content during voice playback, especially on mobile where space is limited
 
 ✓ **Complete Systems Integration Dashboard Transformation (July 23, 2025)**:
 - Successfully completed comprehensive transformation of ERP import page into modern Systems Integration dashboard

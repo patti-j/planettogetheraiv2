@@ -315,147 +315,125 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     oldKeys.forEach(key => sessionStorage.removeItem(key));
   }, [roleId]);
 
-  // Auto-scroll function to demonstrate page features and content
+  // Enhanced auto-scroll function for mobile to show hidden content
   const performAutoScroll = useCallback(async () => {
     console.log('performAutoScroll called - checking page dimensions...');
     
     // Wait for page to fully load
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    const pageHeight = document.documentElement.scrollHeight;
+    const pageHeight = Math.max(
+      document.body.scrollHeight,
+      document.body.offsetHeight,
+      document.documentElement.clientHeight,
+      document.documentElement.scrollHeight,
+      document.documentElement.offsetHeight
+    );
+    
     const viewportHeight = window.innerHeight;
+    const currentScrollTop = window.pageYOffset;
+    const maxScrollableDistance = pageHeight - viewportHeight;
     
-    console.log(`Page dimensions: height=${pageHeight}, viewport=${viewportHeight}, difference=${pageHeight - viewportHeight}`);
+    console.log(`Mobile scroll check: pageHeight=${pageHeight}, viewport=${viewportHeight}, currentScroll=${currentScrollTop}, maxScroll=${maxScrollableDistance}`);
     
-    // Always perform demo scroll to show page features (even if content fits)
-    const shouldScroll = pageHeight > viewportHeight * 1.1; // More lenient threshold
-    
-    if (shouldScroll || pageHeight > viewportHeight + 20) {
-      console.log('Auto-scrolling to demonstrate page features - starting scroll sequence');
+    // Always perform scroll demo on mobile to show content below the fold
+    const performMobileScrollDemo = async () => {
+      console.log('Starting mobile auto-scroll to show hidden content...');
       
-      // Scroll to bottom slowly
-      const scrollToBottom = () => {
-        return new Promise<void>((resolve) => {
-          const startTime = Date.now();
-          const duration = 3000; // 3 seconds
-          const startScrollTop = window.pageYOffset;
-          const targetScrollTop = pageHeight - viewportHeight;
-          
-          const animateScroll = () => {
-            const elapsed = Date.now() - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            
-            // Ease-in-out function for smooth scrolling
-            const easeInOut = progress < 0.5 
-              ? 2 * progress * progress 
-              : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-            
-            const currentScrollTop = startScrollTop + (targetScrollTop - startScrollTop) * easeInOut;
-            window.scrollTo(0, currentScrollTop);
-            
-            if (progress < 1) {
-              requestAnimationFrame(animateScroll);
-            } else {
-              resolve();
-            }
-          };
-          
-          requestAnimationFrame(animateScroll);
-        });
-      };
+      // Calculate how far we can scroll down to show more content
+      const scrollDownDistance = Math.max(maxScrollableDistance - currentScrollTop, viewportHeight * 0.8);
       
-      // Scroll to top slowly
-      const scrollToTop = () => {
-        return new Promise<void>((resolve) => {
-          const startTime = Date.now();
-          const duration = 2000; // 2 seconds
-          const startScrollTop = window.pageYOffset;
-          
-          const animateScroll = () => {
-            const elapsed = Date.now() - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            
-            const easeInOut = progress < 0.5 
-              ? 2 * progress * progress 
-              : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-            
-            const currentScrollTop = startScrollTop * (1 - easeInOut);
-            window.scrollTo(0, currentScrollTop);
-            
-            if (progress < 1) {
-              requestAnimationFrame(animateScroll);
-            } else {
-              resolve();
-            }
-          };
-          
-          requestAnimationFrame(animateScroll);
-        });
-      };
-      
-      // Wait 1 second, scroll down, pause, then scroll back up
-      console.log('Starting scroll sequence: wait -> scroll down -> pause -> scroll up');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Scrolling down...');
-      await scrollToBottom();
-      console.log('Pausing at bottom...');
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Pause at bottom
-      console.log('Scrolling back to top...');
-      await scrollToTop();
-      console.log('Auto-scroll sequence completed');
-    } else {
-      console.log('Page fits within viewport - performing demo scroll anyway to show features');
-      
-      // Even if page fits, do a gentle scroll demo to show users there's content to explore
-      const gentleScrollDemo = async () => {
-        console.log('Starting gentle demo scroll...');
+      if (scrollDownDistance > 50) { // Only scroll if there's meaningful content to show
+        console.log(`Scrolling down ${scrollDownDistance}px to reveal hidden content...`);
         
-        // Scroll down about 30% of viewport
-        const scrollDistance = viewportHeight * 0.3;
-        const duration = 2000; // 2 seconds
-        const startTime = Date.now();
-        const startScrollTop = window.pageYOffset;
-        
-        const animateDown = () => {
-          const elapsed = Date.now() - startTime;
-          const progress = Math.min(elapsed / duration, 1);
-          const easeInOut = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-          
-          window.scrollTo(0, startScrollTop + scrollDistance * easeInOut);
-          
-          if (progress < 1) {
-            requestAnimationFrame(animateDown);
-          } else {
-            // Pause then scroll back
-            setTimeout(async () => {
-              console.log('Scrolling back to top...');
-              const backStartTime = Date.now();
-              const backDuration = 1500;
+        // Scroll down to show hidden content
+        const scrollDown = () => {
+          return new Promise<void>((resolve) => {
+            const targetScrollTop = Math.min(currentScrollTop + scrollDownDistance, maxScrollableDistance);
+            const distance = targetScrollTop - currentScrollTop;
+            
+            if (distance <= 10) {
+              resolve();
+              return;
+            }
+            
+            const duration = 3000; // 3 seconds to scroll down
+            const startTime = Date.now();
+            const startScrollTop = currentScrollTop;
+            
+            const animateScroll = () => {
+              const elapsed = Date.now() - startTime;
+              const progress = Math.min(elapsed / duration, 1);
               
-              const animateUp = () => {
-                const elapsed = Date.now() - backStartTime;
-                const progress = Math.min(elapsed / backDuration, 1);
-                const easeInOut = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-                
-                window.scrollTo(0, startScrollTop + scrollDistance * (1 - easeInOut));
-                
-                if (progress < 1) {
-                  requestAnimationFrame(animateUp);
-                } else {
-                  console.log('Demo scroll completed');
-                }
-              };
+              const easeInOut = progress < 0.5 
+                ? 2 * progress * progress 
+                : 1 - Math.pow(-2 * progress + 2, 2) / 2;
               
-              requestAnimationFrame(animateUp);
-            }, 1000);
-          }
+              const newScrollTop = startScrollTop + distance * easeInOut;
+              window.scrollTo(0, newScrollTop);
+              
+              if (progress < 1) {
+                requestAnimationFrame(animateScroll);
+              } else {
+                console.log(`Scroll complete - now at position: ${window.pageYOffset}`);
+                resolve();
+              }
+            };
+            
+            requestAnimationFrame(animateScroll);
+          });
         };
         
-        requestAnimationFrame(animateDown);
-      };
-      
-      await gentleScrollDemo();
-    }
+        // Scroll back to top
+        const scrollToTop = () => {
+          return new Promise<void>((resolve) => {
+            const startingPosition = window.pageYOffset;
+            const distance = startingPosition;
+            
+            if (distance <= 10) {
+              resolve();
+              return;
+            }
+            
+            console.log(`Scrolling back to top from position: ${startingPosition}`);
+            const duration = 2000; // 2 seconds to scroll back up
+            const startTime = Date.now();
+            
+            const animateScroll = () => {
+              const elapsed = Date.now() - startTime;
+              const progress = Math.min(elapsed / duration, 1);
+              
+              const easeInOut = progress < 0.5 
+                ? 2 * progress * progress 
+                : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+              
+              const newScrollTop = startingPosition * (1 - easeInOut);
+              window.scrollTo(0, newScrollTop);
+              
+              if (progress < 1) {
+                requestAnimationFrame(animateScroll);
+              } else {
+                console.log('Returned to top position');
+                resolve();
+              }
+            };
+            
+            requestAnimationFrame(animateScroll);
+          });
+        };
+        
+        // Execute scroll sequence
+        await scrollDown();
+        console.log('Pausing to show content...');
+        await new Promise(resolve => setTimeout(resolve, 1500)); // Pause to let user see content
+        await scrollToTop();
+        console.log('Mobile auto-scroll sequence completed');
+      } else {
+        console.log('No significant content below viewport - skipping scroll demo');
+      }
+    };
+    
+    await performMobileScrollDemo();
   }, []);
 
   // Navigate to step page when step changes
