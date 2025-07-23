@@ -4328,28 +4328,31 @@ Return a JSON response with this structure:
           // Check if already cached
           const existingCache = await storage.getVoiceRecording(textHash);
           if (existingCache) {
-            console.log(`Voice already cached for step ${step.id}`);
+            const stepId = step.id || step.stepId || 'unknown';
+            console.log(`Voice already cached for step ${stepId}`);
             continue;
           }
           
           // Generate new voice recording
-          console.log(`Generating voice for step: ${step.id}`);
+          const stepId = step.id || step.stepId || `step-${Math.random().toString(36).substr(2, 9)}`;
+          console.log(`Generating voice for step: ${stepId}`);
           const audioBuffer = await generateTTSAudio(enhancedText, 'nova', 1.15);
           
           // Save to cache
           await storage.saveVoiceRecording({
             textHash,
             role,
-            stepId: step.id,
+            stepId: stepId,
             voice: 'nova',
             audioData: audioBuffer.toString('base64'),
             fileSize: audioBuffer.length,
             duration: Math.ceil(enhancedText.length * 50), // Estimate duration
           });
           
-          console.log(`Successfully cached voice for step ${step.id}`);
+          console.log(`Successfully cached voice for step ${stepId}`);
         } catch (error) {
-          console.error(`Failed to pre-generate voice for step ${step.id}:`, error);
+          const stepId = step.id || step.stepId || 'unknown';
+          console.error(`Failed to pre-generate voice for step ${stepId}:`, error);
         }
       }
     }

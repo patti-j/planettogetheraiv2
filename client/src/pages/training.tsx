@@ -785,6 +785,7 @@ function TourManagementSection() {
   const [showSingleTourPreviewDialog, setShowSingleTourPreviewDialog] = useState(false);
   const [singleTourPreviewData, setSingleTourPreviewData] = useState<any>(null);
   const [isGeneratingSingleTour, setIsGeneratingSingleTour] = useState(false);
+  const [isApprovingTour, setIsApprovingTour] = useState(false);
 
   // Preview handlers
   const handlePreviewStep = (step: any, role: string) => {
@@ -1400,6 +1401,7 @@ function TourManagementSection() {
   // Preview dialog handlers
   const handleApproveTourContent = async () => {
     if (singleTourPreviewData) {
+      setIsApprovingTour(true);
       try {
         // Save the tour content to database and generate voice
         const response = await apiRequest("POST", "/api/tours", {
@@ -1426,6 +1428,8 @@ function TourManagementSection() {
           description: error.message || "Failed to save tour content",
           variant: "destructive",
         });
+      } finally {
+        setIsApprovingTour(false);
       }
     }
   };
@@ -2305,10 +2309,20 @@ function TourManagementSection() {
             </div>
             <Button
               onClick={handleApproveTourContent}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+              disabled={isApprovingTour}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white disabled:opacity-70"
             >
-              <Sparkles className="h-4 w-4 mr-2" />
-              Approve & Generate Voice
+              {isApprovingTour ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating Voice...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Approve & Generate Voice
+                </>
+              )}
             </Button>
           </div>
         </DialogContent>
