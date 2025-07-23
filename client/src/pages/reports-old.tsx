@@ -338,14 +338,27 @@ export default function Reports() {
       <div className="fixed inset-0 bg-white z-50 flex flex-col">
         {/* Header */}
         <div className="flex-none px-4 py-3 sm:px-6 bg-white border-b border-gray-200">
-          <div className="flex items-center justify-between">
+          <div className="relative">
             <div className="md:ml-0 ml-12">
               <h1 className="text-2xl font-semibold text-gray-800">Reports</h1>
               <p className="text-gray-600 mt-1">
                 Create and manage production reports
               </p>
             </div>
-            <div className="flex flex-col items-end space-y-2">
+            
+            {/* Maximize button always in top right corner */}
+            <div className="absolute top-0 right-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsMaximized(!isMaximized)}
+              >
+                {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </Button>
+            </div>
+            
+            {/* Control buttons below header */}
+            <div className="flex flex-col items-start space-y-2 mt-4">
               <div className="flex items-center space-x-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -375,14 +388,6 @@ export default function Reports() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsMaximized(!isMaximized)} className="hidden sm:flex"
-                >
-                  {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                </Button>
               </div>
               
               <div className="flex items-center space-x-2">
@@ -651,14 +656,27 @@ export default function Reports() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex-none px-4 py-3 sm:px-6 bg-white border-b border-gray-200">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="relative">
             <div className="md:ml-0 ml-12">
               <h1 className="text-2xl font-semibold text-gray-800">Reports</h1>
               <p className="text-gray-600 mt-1">
                 Create and manage production reports
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-2 md:gap-2">
+            
+            {/* Maximize button always in top right corner */}
+            <div className="absolute top-0 right-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsMaximized(!isMaximized)}
+              >
+                {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </Button>
+            </div>
+            
+            {/* Control buttons below header */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-2 md:gap-2 mt-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="min-w-[280px] justify-between">
@@ -733,14 +751,7 @@ export default function Reports() {
                   New Report
                 </Button>
                 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsMaximized(!isMaximized)} 
-                  className="hidden sm:flex"
-                >
-                  {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                </Button>
+
               </div>
             </div>
           </div>
