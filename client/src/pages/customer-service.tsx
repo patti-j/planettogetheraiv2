@@ -708,11 +708,14 @@ export default function CustomerService() {
   return (
     <div className={`bg-gray-50 ${isMaximized ? 'fixed inset-0 z-50' : 'h-screen'} flex flex-col`}>
       {/* Header */}
-      <div className="bg-white shadow-sm border-b px-4 py-3 sm:px-6 flex-shrink-0">
+      <div className="bg-white shadow-sm border-b p-3 sm:p-6 flex-shrink-0">
         <div className="relative">
-          <div className="ml-3 md:ml-0">
-            <h1 className="text-2xl font-semibold text-gray-800">Customer Service</h1>
-            <p className="text-gray-600">Manage customer orders, issues, and relationships</p>
+          <div className="md:ml-0 ml-12">
+            <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+              <Headphones className="w-6 h-6 mr-2" />
+              Customer Service
+            </h1>
+            <p className="text-sm md:text-base text-gray-600">Manage customer orders, issues, and relationships</p>
           </div>
           
           {/* Maximize button always in top right corner */}

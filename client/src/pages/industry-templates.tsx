@@ -610,6 +610,7 @@ export default function IndustryTemplates() {
     </div>
   );
 
+export default function IndustryTemplates() {
   if (isMaximized) {
     return (
       <div className="fixed inset-0 z-50 bg-white">
