@@ -196,7 +196,7 @@ export default function Sidebar() {
     { icon: BarChart3, label: "Analytics", href: "/analytics", active: location === "/analytics", feature: "analytics", action: "view" },
     { icon: FileText, label: "Reports", href: "/reports", active: location === "/reports", feature: "reports", action: "view" },
     { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback", feature: "feedback", action: "view" },
-    { icon: Bot, label: "Max", href: "/max-ai-assistant", active: location === "/max-ai-assistant", feature: "ai-assistant", action: "view" },
+
   ].filter(item => 
     // Always show Getting Started and Production Schedule dashboard for authenticated users
     item.href === "#" || 

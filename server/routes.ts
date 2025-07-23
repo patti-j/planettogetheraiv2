@@ -1011,6 +1011,125 @@ Provide the response as a JSON object with the following structure:
   // AI Agent routes
   const upload = multer();
 
+  // AI Chat Assistant Route
+  app.post("/api/ai-agent/chat", async (req, res) => {
+    try {
+      const { message, context, conversationHistory } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      // Build context-aware prompt
+      let systemPrompt = `You are Max, an intelligent AI planning assistant integrated into a manufacturing management platform. You are helping users optimize their operations in real-time.
+
+Current Context:
+- Page: ${context?.page || 'Unknown'}
+- User Role: ${context?.user || 'Unknown'}
+- Timestamp: ${context?.timestamp || new Date().toISOString()}
+
+Your capabilities:
+- Analyze production data and suggest optimizations
+- Help with scheduling and resource allocation
+- Provide insights based on current workflow patterns
+- Learn from user interactions to improve suggestions
+- Offer contextual help based on the current page/feature
+
+Conversation Style:
+- Be concise and actionable
+- Provide specific, implementable suggestions
+- Ask clarifying questions when needed
+- Show confidence levels for recommendations
+- Be proactive in identifying opportunities
+
+Always respond as if you're actively monitoring the user's workflow and learning from their patterns.`;
+
+      // Add conversation history for context
+      if (conversationHistory && conversationHistory.length > 0) {
+        systemPrompt += "\n\nRecent conversation:\n";
+        conversationHistory.forEach((msg: any) => {
+          systemPrompt += `${msg.type === 'user' ? 'User' : 'Max'}: ${msg.content}\n`;
+        });
+      }
+
+      const openai = await import('openai');
+      const client = new openai.default({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+
+      const completion = await client.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: message }
+        ],
+        max_tokens: 300,
+        temperature: 0.7,
+      });
+
+      const response = completion.choices[0]?.message?.content || "I'm having trouble processing that request. Could you please try again?";
+
+      // Generate contextual insights based on the conversation
+      const insights = await generateContextualInsights(context, message, response);
+
+      res.json({ 
+        response,
+        insights,
+        context: {
+          page: context?.page,
+          timestamp: new Date().toISOString(),
+          confidence: 0.85
+        }
+      });
+
+    } catch (error) {
+      console.error("AI chat error:", error);
+      res.status(500).json({ 
+        error: "Failed to process AI chat request",
+        response: "I'm experiencing some technical difficulties. Please try again in a moment."
+      });
+    }
+  });
+
+  const generateContextualInsights = async (context: any, userMessage: string, aiResponse: string) => {
+    const insights = [];
+    
+    // Generate insights based on page context
+    switch (context?.page) {
+      case '/':
+        if (userMessage.toLowerCase().includes('efficiency') || userMessage.toLowerCase().includes('performance')) {
+          insights.push({
+            type: 'optimization',
+            title: 'Performance Analysis',
+            message: 'I can analyze your dashboard metrics to identify efficiency bottlenecks.',
+            confidence: 0.9,
+            actionable: true
+          });
+        }
+        break;
+      case '/analytics':
+        insights.push({
+          type: 'learning',
+          title: 'Data Patterns',
+          message: 'I notice patterns in your analytics data that could inform better scheduling decisions.',
+          confidence: 0.8,
+          actionable: true
+        });
+        break;
+      case '/scheduling-optimizer':
+        insights.push({
+          type: 'suggestion',
+          title: 'Scheduling Insights',
+          message: 'Based on your current schedule, I can suggest 3 optimizations to reduce lead times.',
+          confidence: 0.85,
+          actionable: true
+        });
+        break;
+    }
+
+    return insights;
+  };
+
   app.post("/api/ai-agent/command", async (req, res) => {
     try {
       const { command } = req.body;

@@ -48,6 +48,7 @@ import Account from "@/pages/account";
 import IndustryTemplates from "@/pages/industry-templates";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
+import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
 
 function DashboardWithAutoTour() {
   const { startTour } = useTour();
@@ -154,11 +155,7 @@ function Router() {
               <Reports />
             </ProtectedRoute>
           </Route>
-          <Route path="/max-ai-assistant">
-            <ProtectedRoute feature="ai-assistant" action="view">
-              <AIAssistant />
-            </ProtectedRoute>
-          </Route>
+
           <Route path="/boards">
             <ProtectedRoute feature="boards" action="view">
               <Boards />
@@ -296,6 +293,8 @@ function Router() {
           <Route component={NotFound} />
         </Switch>
       </main>
+      {/* Integrated AI Assistant - available on all pages */}
+      <IntegratedAIAssistant />
     </div>
   );
 }
