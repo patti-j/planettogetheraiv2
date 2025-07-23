@@ -535,19 +535,19 @@ export default function VisualFactory() {
         {!isFullscreen && (
           <div className="border-b border-gray-200 bg-white">
             <div className="px-6 py-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div className="md:ml-0 ml-12">
-                  <h1 className="text-2xl font-semibold text-gray-800 flex items-center">
+                  <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
                     <Monitor className="w-6 h-6 mr-2" />
                     Visual Factory
                   </h1>
-                  <p className="text-gray-600">Automated large screen displays for manufacturing facilities</p>
+                  <p className="text-sm md:text-base text-gray-600">Automated large screen displays for manufacturing facilities</p>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex flex-col sm:flex-row gap-2 lg:flex-shrink-0">
                   <Dialog open={aiConfigDialogOpen} onOpenChange={setAiConfigDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 text-xs sm:text-sm">
-                        <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                      <Button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 text-sm" size="sm">
+                        <Sparkles className="w-4 h-4 mr-1 sm:mr-2" />
                         <span className="hidden sm:inline">Configure</span>
                         <span className="sm:hidden">AI</span>
                       </Button>
