@@ -155,6 +155,13 @@ The application uses a modern full-stack architecture with strong typing through
 - Voice preloading now provides instant audio playback when users navigate between tour steps
 - System architecture preserves complex audio management features while ensuring clean compilation and runtime stability
 
+✓ **Mobile Tour Window Optimization (July 23, 2025)**:
+- Hidden step subtitles/descriptions on mobile screens to save valuable space and improve readability
+- Reduced mobile tour window size from 300px to 280px width and 400px to 320px height for better mobile UX
+- Updated mobile positioning to use 50% viewport height instead of 60% for more compact display
+- Enhanced mobile experience by removing text content that takes up too much space while preserving all functional controls
+- Tour windows now optimized for mobile devices with compact layout and essential controls only
+
 ✓ **Voice Pre-Generation Architecture Implementation (July 22, 2025)**:
 - Implemented pre-generation of voice recordings during tour creation to eliminate real-time generation delays
 - Added preGenerateVoiceRecordings function that runs automatically after tours are saved to database

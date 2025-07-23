@@ -260,8 +260,9 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       const isMobile = windowWidth < 768;
       
       if (isMobile) {
-        const cardWidth = Math.min(300, windowWidth - 20);
-        const maxCardHeight = Math.min(400, windowHeight * 0.6);
+        // Make mobile window smaller to save space
+        const cardWidth = Math.min(280, windowWidth - 20);
+        const maxCardHeight = Math.min(320, windowHeight * 0.5);
         const padding = 10;
         
         return {
@@ -601,11 +602,11 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         style={{
           left: position.x,
           top: position.y,
-          width: windowSize.width < 768 ? `${Math.min(300, windowSize.width - 20)}px` : '384px',
+          width: windowSize.width < 768 ? `${Math.min(280, windowSize.width - 20)}px` : '384px',
           height: windowSize.width < 768 ? 
-            `${Math.min(400, windowSize.height * 0.6)}px` : 
+            `${Math.min(320, windowSize.height * 0.5)}px` : 
             `${Math.min(600, windowSize.height - 100)}px`,
-          maxHeight: windowSize.width < 768 ? '60vh' : '90vh'
+          maxHeight: windowSize.width < 768 ? '50vh' : '90vh'
         }}
       >
         <CardHeader 
@@ -654,7 +655,8 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
 
         <CardContent className="flex-1 overflow-y-auto p-2 sm:p-6 pt-0">
           <div className="space-y-4">
-            <p className="text-sm text-gray-700 leading-relaxed">{currentStepData.description}</p>
+            {/* Hide description on mobile to save space */}
+            <p className="hidden sm:block text-sm text-gray-700 leading-relaxed">{currentStepData.description}</p>
             
             {currentStepData.benefits && currentStepData.benefits.length > 0 && (
               <div className="space-y-2">
