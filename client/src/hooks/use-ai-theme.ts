@@ -6,6 +6,8 @@ import { useAuth } from './useAuth';
 
 // Function to update CSS variables immediately
 const updateAIThemeCSSVariables = (theme: AIThemeColor) => {
+  if (typeof window === 'undefined') return;
+  
   const root = document.documentElement;
   
   // Define HSL values for each theme
@@ -24,6 +26,14 @@ const updateAIThemeCSSVariables = (theme: AIThemeColor) => {
   }
 };
 
+// Initialize theme immediately on module load for demo users
+if (typeof window !== 'undefined') {
+  const demoTheme = localStorage.getItem('demo-ai-theme') as AIThemeColor;
+  if (demoTheme) {
+    updateAIThemeCSSVariables(demoTheme);
+  }
+}
+
 export function useAITheme() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -32,12 +42,12 @@ export function useAITheme() {
   const [localTheme, setLocalTheme] = useState<AIThemeColor>(() => {
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('demo-ai-theme') as AIThemeColor;
-      const theme = savedTheme || 'purple-pink';
+      const theme = savedTheme || 'blue-indigo';
       // Update CSS variables immediately during initialization
       updateAIThemeCSSVariables(theme);
       return theme;
     }
-    return 'purple-pink';
+    return 'blue-indigo';
   });
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -68,7 +78,7 @@ export function useAITheme() {
   // Get current theme
   const currentTheme: AIThemeColor = user?.id?.toString().startsWith('demo') 
     ? localTheme 
-    : (preferences?.aiThemeColor || 'purple-pink');
+    : (preferences?.aiThemeColor || 'blue-indigo');
 
   // Update CSS variables whenever theme changes
   useEffect(() => {
@@ -81,13 +91,15 @@ export function useAITheme() {
       // Theme already initialized from localStorage in useState
       setIsInitialized(true);
     } else if (user?.id && !preferencesLoading) {
-      // For authenticated users, mark as initialized when preferences are loaded (or failed to load)
+      // For authenticated users, update CSS variables immediately when preferences load
+      const theme = preferences?.aiThemeColor || 'blue-indigo';
+      updateAIThemeCSSVariables(theme);
       setIsInitialized(true);
     } else if (!user?.id) {
       // For unauthenticated users, mark as initialized immediately
       setIsInitialized(true);
     }
-  }, [user?.id, preferencesLoading]);
+  }, [user?.id, preferencesLoading, preferences?.aiThemeColor]);
 
   return {
     currentTheme,

@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 :root {
-  /* AI Theme CSS Variables - Default to purple-pink */
-  --ai-gradient-from: 168 85% 52%; /* purple-500 */
-  --ai-gradient-to: 330 81% 60%; /* pink-600 */
+  /* AI Theme CSS Variables - Default to blue-indigo for better UX */
+  --ai-gradient-from: 213 94% 68%; /* blue-400 */
+  --ai-gradient-to: 239 84% 67%; /* indigo-500 */
 }
 
 /* AI Theme Utility Classes */

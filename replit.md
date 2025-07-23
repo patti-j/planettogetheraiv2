@@ -131,6 +131,12 @@ The application uses a modern full-stack architecture with strong typing through
 - Demo users use localStorage for theme preferences while authenticated users store preferences in database
 - Theme changes apply instantly across all AI components without requiring page refresh
 - **IMPLEMENTATION PATTERN**: All components use `const { aiTheme } = useAITheme()` and `aiTheme.gradient` class for dynamic theming
+- **FLASH PREVENTION SYSTEM**: Added CSS variables (--ai-gradient-from, --ai-gradient-to) that update immediately on theme changes
+- Created .ai-gradient-bg, .ai-gradient-text, .ai-gradient-border CSS utility classes for consistent theming
+- Implemented synchronous theme initialization from localStorage for demo users during app startup
+- Added loading state management to prevent components from rendering with incorrect colors
+- Default CSS theme changed to blue-indigo to match common user preference and eliminate color flashing
+- Theme system now provides seamless, instant color application without any visual flashing on page load or theme changes
 
 ## Recent Changes (July 23, 2025)
 
