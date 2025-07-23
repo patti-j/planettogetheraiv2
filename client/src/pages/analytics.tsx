@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Settings, Plus, Maximize2, Minimize2, FolderOpen, Sparkles, Eye, EyeOff, ChevronDown, PlayCircle, PauseCircle, GripVertical } from "lucide-react";
+import { Settings, Plus, Maximize2, Minimize2, FolderOpen, Sparkles, Eye, EyeOff, ChevronDown, PlayCircle, PauseCircle, GripVertical, BarChart3 } from "lucide-react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 
@@ -452,7 +452,7 @@ export default function Analytics() {
     operations,
     resources,
     metrics,
-    overdueJobs: jobs.filter(job => new Date(job.dueDate) < new Date() && job.status !== 'completed'),
+    overdueJobs: jobs.filter(job => job.dueDate && new Date(job.dueDate) < new Date() && job.status !== 'completed'),
     resourceUtilization: operations.length > 0 ? (operations.filter(op => op.assignedResourceId).length / operations.length * 100) : 0,
     jobsByStatus: jobs.reduce((acc, job) => {
       acc[job.status] = (acc[job.status] || 0) + 1;
@@ -735,6 +735,10 @@ export default function Analytics() {
       <AIAnalyticsManager
         open={aiAnalyticsOpen}
         onOpenChange={setAiAnalyticsOpen}
+        widgets={[]}
+        onWidgetCreate={() => {}}
+        onWidgetUpdate={() => {}}
+        onWidgetDelete={() => {}}
       />
     </>
   );
