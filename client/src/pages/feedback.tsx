@@ -109,6 +109,22 @@ export default function Feedback() {
     queryKey: ["/api/feedback"],
   });
 
+  // Mock stats - to be replaced when API is ready
+  const mockStats: FeedbackStats = {
+    totalSubmissions: 47,
+    openItems: 23,
+    completedItems: 18,
+    averageResponseTime: 2.3,
+    topCategories: [
+      { category: "scheduling", count: 12 },
+      { category: "ui_ux", count: 8 },
+      { category: "reporting", count: 7 },
+      { category: "mobile", count: 6 },
+      { category: "performance", count: 5 }
+    ],
+    recentActivity: 8
+  };
+
   // Fetch feedback stats from API  
   const { data: feedbackStats = mockStats, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/feedback/stats"],
@@ -236,21 +252,6 @@ export default function Feedback() {
     }
   ];
 
-  const mockStats: FeedbackStats = {
-    totalSubmissions: 47,
-    openItems: 23,
-    completedItems: 18,
-    averageResponseTime: 2.3,
-    topCategories: [
-      { category: "scheduling", count: 12 },
-      { category: "ui_ux", count: 8 },
-      { category: "reporting", count: 7 },
-      { category: "mobile", count: 6 },
-      { category: "performance", count: 5 }
-    ],
-    recentActivity: 8
-  };
-
   // Submit feedback mutation
   const submitFeedbackMutation = useMutation({
     mutationFn: async (feedback: Partial<FeedbackItem>) => {
@@ -350,9 +351,9 @@ export default function Feedback() {
   };
 
   // Filter feedback
-  const currentFeedback = feedbackLoading ? [] : feedbackData;
+  const currentFeedback: FeedbackItem[] = feedbackLoading ? [] : (feedbackData as FeedbackItem[]);
   
-  const filteredFeedback = currentFeedback.filter((item: any) => {
+  const filteredFeedback = currentFeedback.filter((item: FeedbackItem) => {
     const matchesSearch = searchTerm === "" || 
       item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -366,7 +367,7 @@ export default function Feedback() {
   });
 
   // Sort feedback
-  const sortedFeedback = [...filteredFeedback].sort((a: any, b: any) => {
+  const sortedFeedback = [...filteredFeedback].sort((a: FeedbackItem, b: FeedbackItem) => {
     switch (sortBy) {
       case "newest":
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
