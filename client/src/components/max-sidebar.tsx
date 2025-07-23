@@ -487,7 +487,7 @@ export function MaxSidebar() {
             onClick={handleSendMessage}
             disabled={!inputMessage.trim() || sendMessageMutation.isPending}
             size="sm"
-            className="px-3 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white"
+            className="px-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
           >
             {sendMessageMutation.isPending ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
