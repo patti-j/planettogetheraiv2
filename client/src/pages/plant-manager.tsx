@@ -354,12 +354,14 @@ export default function PlantManagerPage() {
       </div>
 
       <Tabs defaultValue="goals" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="goals">Production Goals</TabsTrigger>
-          <TabsTrigger value="issues">Active Issues</TabsTrigger>
-          <TabsTrigger value="decisions">Pending Decisions</TabsTrigger>
-          <TabsTrigger value="analytics">Plant Analytics</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto">
+          <TabsList className="grid w-full grid-cols-4 min-w-max">
+            <TabsTrigger value="goals" className="text-xs sm:text-sm">Goals</TabsTrigger>
+            <TabsTrigger value="issues" className="text-xs sm:text-sm">Issues</TabsTrigger>
+            <TabsTrigger value="decisions" className="text-xs sm:text-sm">Decisions</TabsTrigger>
+            <TabsTrigger value="analytics" className="text-xs sm:text-sm">Analytics</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="goals" className="space-y-4">
           <div className="grid gap-4">
