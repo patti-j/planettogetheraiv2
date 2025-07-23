@@ -1,45 +1,31 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Factory, Briefcase, ServerCog, BarChart3, FileText, Bot, Send, Columns3, Sparkles, Menu, X, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Book, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain, CreditCard, User, LogOut } from "lucide-react";
+import { Factory, Briefcase, BarChart3, FileText, Bot, Columns3, Menu, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain, User, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleSwitcher } from "./role-switcher";
 import { TrainingModeExit } from "./training-mode-exit";
 import { UserProfileDialog } from "./user-profile";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
-import JobForm from "./job-form";
-import ResourceForm from "./resource-form";
+
 import TopUserProfile from "./top-user-profile";
-import type { Capability } from "@shared/schema";
 
 export default function Sidebar() {
   const [location] = useLocation();
-  const [jobDialogOpen, setJobDialogOpen] = useState(false);
-  const [resourceDialogOpen, setResourceDialogOpen] = useState(false);
-  const [aiActionsDialogOpen, setAiActionsDialogOpen] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState("");
-  const [aiActionsPrompt, setAiActionsPrompt] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [desktopMenuOpen, setDesktopMenuOpen] = useState(false);
-  const [quickActionsExpanded, setQuickActionsExpanded] = useState(false);
-  const [desktopQuickActionsExpanded, setDesktopQuickActionsExpanded] = useState(false);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
   
   // Authentication hooks
   const { hasPermission } = usePermissions();
 
-  const { data: capabilities = [] } = useQuery<Capability[]>({
-    queryKey: ["/api/capabilities"],
-  });
+
 
   // Check for scroll indicator on mount and resize
   useEffect(() => {
@@ -68,90 +54,6 @@ export default function Sidebar() {
       }
     };
   }, []);
-
-  const aiMutation = useMutation({
-    mutationFn: async (prompt: string) => {
-      const response = await apiRequest("POST", "/api/ai-agent/command", { command: prompt });
-      return response.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Max",
-        description: data.message,
-      });
-      
-      // Handle special frontend actions - same as AI Agent component
-      if (data.actions?.includes("SET_GANTT_ZOOM")) {
-        const event = new CustomEvent('aiGanttZoom', { detail: { zoomLevel: data.data.zoomLevel } });
-        window.dispatchEvent(event);
-      }
-      if (data.actions?.includes("SET_GANTT_SCROLL")) {
-        const event = new CustomEvent('aiGanttScroll', { detail: { scrollPosition: data.data.scrollPosition } });
-        window.dispatchEvent(event);
-      }
-      if (data.actions?.includes("SCROLL_TO_TODAY")) {
-        const event = new CustomEvent('aiScrollToToday', { detail: {} });
-        window.dispatchEvent(event);
-      }
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to process AI command",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const aiActionsMutation = useMutation({
-    mutationFn: async (prompt: string) => {
-      const response = await apiRequest("POST", "/api/ai-agent/command", { 
-        command: `Configure quick actions: ${prompt}`,
-        action: "CONFIGURE_QUICK_ACTIONS"
-      });
-      return response.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "AI Actions Configuration",
-        description: data.message || "Quick actions configured successfully",
-      });
-      setAiActionsDialogOpen(false);
-      setAiActionsPrompt("");
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to configure quick actions with AI",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleAiPrompt = () => {
-    if (aiPrompt.trim()) {
-      aiMutation.mutate(aiPrompt);
-      setAiPrompt("");
-    }
-  };
-
-  const handleAiActionsPrompt = () => {
-    if (aiActionsPrompt.trim()) {
-      aiActionsMutation.mutate(aiActionsPrompt);
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleAiPrompt();
-    }
-  };
-
-  const handleAiActionsKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleAiActionsPrompt();
-    }
-  };
 
   // Function to open onboarding wizard
   const openOnboardingWizard = () => {
@@ -393,186 +295,7 @@ export default function Sidebar() {
         )}
       </div>
 
-      <div className="p-3 md:p-4 border-t border-gray-200 flex-shrink-0">
-        
-        {/* Mobile: Compact Quick Actions */}
-        <div className="md:hidden">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setQuickActionsExpanded(!quickActionsExpanded)}
-            className="w-full justify-between text-xs font-medium text-gray-500 mb-2 hover:bg-gray-50"
-          >
-            <span>Quick Actions</span>
-            <ChevronDown className={`w-3 h-3 transition-transform ${quickActionsExpanded ? 'rotate-180' : ''}`} />
-          </Button>
-          {quickActionsExpanded && (
-            <div className="space-y-1 mb-3">
-              <div className="grid grid-cols-2 gap-1">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => { setJobDialogOpen(true); onNavigate(); }}
-                  className="text-xs h-8"
-                >
-                  <Plus className="w-3 h-3 mr-1" />
-                  Job
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => { setResourceDialogOpen(true); onNavigate(); }}
-                  className="text-xs h-8"
-                >
-                  <Plus className="w-3 h-3 mr-1" />
-                  Resource
-                </Button>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => { setAiActionsDialogOpen(true); onNavigate(); }}
-                className="w-full text-xs h-8 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-purple-500 hover:from-purple-600 hover:to-pink-600"
-              >
-                <Sparkles className="w-3 h-3 mr-1" />
-                AI Actions
-              </Button>
-              <Link href="/email-settings">
-                <a
-                  className="flex items-center px-2 py-1.5 rounded text-xs w-full text-gray-600 hover:bg-gray-100 transition-colors"
-                  onClick={onNavigate}
-                >
-                  <Send className="w-3 h-3 mr-1" />
-                  Email Settings
-                </a>
-              </Link>
-            </div>
-          )}
-        </div>
 
-        {/* Desktop: Collapsible Quick Actions */}
-        <div className="hidden md:block">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setDesktopQuickActionsExpanded(!desktopQuickActionsExpanded)}
-            className="w-full justify-between text-sm font-medium text-gray-500 mb-3 hover:bg-gray-50 px-0"
-          >
-            <span>Quick Actions</span>
-            <ChevronDown className={`w-4 h-4 transition-transform ${desktopQuickActionsExpanded ? 'rotate-180' : ''}`} />
-          </Button>
-          {desktopQuickActionsExpanded && (
-            <div className="space-y-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setJobDialogOpen(true)}
-                    className="w-full justify-start text-sm"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    New Job
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>Create a new production job</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setResourceDialogOpen(true)}
-                    className="w-full justify-start text-sm"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    New Resource
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>Add a new manufacturing resource</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setAiActionsDialogOpen(true)}
-                    className="w-full justify-start text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white border-purple-500 hover:from-purple-600 hover:to-pink-600"
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    AI Actions
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>Configure AI-powered quick actions</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => window.location.href = '/account'}
-                    className="w-full justify-start text-sm"
-                  >
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Account & Billing
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>Manage subscription, billing, and account settings</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Link href="/email-settings">
-                    <a
-                      className="flex items-center px-3 py-2 rounded-lg transition-colors text-base w-full text-gray-600 hover:bg-gray-100"
-                      onClick={onNavigate}
-                    >
-                      <Send className="w-4 h-4 mr-2" />
-                      Email Settings
-                    </a>
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>Configure AWS SES for email notifications</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          )}
-        </div>
-
-        {/* AI Assistant Section */}
-        <div className="mt-4">
-          <div className="flex items-center space-x-2">
-            <Input
-              placeholder="Ask Max..."
-              value={aiPrompt}
-              onChange={(e) => setAiPrompt(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="flex-1 text-xs md:text-sm"
-              disabled={aiMutation.isPending}
-            />
-            <Button
-              onClick={handleAiPrompt}
-              disabled={aiMutation.isPending || !aiPrompt.trim()}
-              size="sm"
-              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-purple-500 hover:from-purple-600 hover:to-pink-600"
-            >
-              {aiMutation.isPending ? (
-                <div className="w-3 h-3 md:w-4 md:h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Send className="w-3 h-3 md:w-4 md:h-4" />
-              )}
-            </Button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 
@@ -605,68 +328,6 @@ export default function Sidebar() {
           </SheetContent>
         </Sheet>
       </div>
-
-      {/* Job Dialog */}
-      <Dialog open={jobDialogOpen} onOpenChange={setJobDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>New Job</DialogTitle>
-          </DialogHeader>
-          <JobForm onSuccess={() => setJobDialogOpen(false)} />
-        </DialogContent>
-      </Dialog>
-
-      {/* Resource Dialog */}
-      <Dialog open={resourceDialogOpen} onOpenChange={setResourceDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>New Resource</DialogTitle>
-          </DialogHeader>
-          <ResourceForm 
-            capabilities={capabilities} 
-            onSuccess={() => setResourceDialogOpen(false)} 
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* AI Actions Dialog */}
-      <Dialog open={aiActionsDialogOpen} onOpenChange={setAiActionsDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-purple-500" />
-              Configure AI Actions
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Describe the quick actions you want to configure:
-              </label>
-              <Input
-                value={aiActionsPrompt}
-                onChange={(e) => setAiActionsPrompt(e.target.value)}
-                onKeyPress={handleAiActionsKeyPress}
-                placeholder="e.g., New buttons for common maintenance tasks and priority job creation..."
-                className="w-full"
-              />
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setAiActionsDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleAiActionsPrompt}
-                disabled={!aiActionsPrompt.trim() || aiActionsMutation.isPending}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-              >
-                {aiActionsMutation.isPending ? "Configuring..." : "Configure with AI"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
 
     </TooltipProvider>
   );

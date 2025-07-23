@@ -145,6 +145,16 @@ The application uses a modern full-stack architecture with strong typing through
 - Training mode exit and role switching controls now display correctly in the gray panel area
 - Enhanced user controls panel with proper data flow and authentication integration
 
+✓ **Quick Actions and Ask Max Controls Removal (July 23, 2025)**:
+- Successfully removed entire quick actions panel from bottom of sidebar per user request
+- Removed "Ask Max" AI assistant input controls from sidebar bottom panel
+- Cleaned up all related state variables: jobDialogOpen, resourceDialogOpen, aiActionsDialogOpen, aiPrompt, aiActionsPrompt
+- Removed unused AI mutation functions and dialog components (Job, Resource, AI Actions dialogs)
+- Simplified sidebar interface by removing quickActionsExpanded and desktopQuickActionsExpanded controls
+- Removed unused imports: Dialog components, Input component, JobForm, ResourceForm, useMutation, useToast
+- Streamlined sidebar to focus on core navigation: Logo + User Info > Role Controls > Navigation Menu only
+- Enhanced clean visual hierarchy without bottom panel clutter or quick action functionality
+
 ✓ **Desktop Sidebar Collapsible Hamburger Menu Implementation (July 23, 2025)**:
 - Successfully transformed desktop sidebar from fixed sidebar to collapsible hamburger menu matching mobile behavior
 - Implemented separate desktop menu state (desktopMenuOpen) alongside existing mobile menu state for proper control
