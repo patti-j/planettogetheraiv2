@@ -2239,7 +2239,12 @@ function TourManagementSection() {
                       <Badge variant="outline">{step.duration || '2 min'}</Badge>
                     </div>
                     
-                    <p className="text-sm text-gray-700 mb-3">{step.description || step.stepDescription}</p>
+                    <p className="text-sm text-gray-700 mb-3">{step.description || step.stepDescription || 'No description available'}</p>
+                    
+                    {/* Debug step data */}
+                    <div className="text-xs text-gray-500 mb-2">
+                      Navigation: {step.navigationPath || 'No navigation path'}
+                    </div>
                     
                     {step.benefits && step.benefits.length > 0 && (
                       <div className="mb-3">
@@ -2263,7 +2268,7 @@ function TourManagementSection() {
                     
                     <div className="flex flex-wrap gap-2">
                       <Badge variant="outline" className="text-xs">
-                        Page: {step.page || step.route || '/'}
+                        Page: {step.navigationPath || step.page || step.route || '/'}
                       </Badge>
                       {step.actionText && (
                         <Badge variant="outline" className="text-xs">
