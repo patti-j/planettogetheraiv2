@@ -734,6 +734,7 @@ function CreateDisplayForm({
   onSubmit: (display: Omit<VisualFactoryDisplay, 'id' | 'createdAt'>) => void;
   isLoading: boolean;
 }) {
+  const { aiTheme } = useAITheme();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -843,7 +844,11 @@ function CreateDisplayForm({
         </div>
       </div>
 
-      <Button type="submit" disabled={isLoading || !formData.name || !formData.location} className="w-full">
+      <Button 
+        type="submit" 
+        disabled={isLoading || !formData.name || !formData.location} 
+        className={`w-full ${formData.useAiMode ? `${aiTheme.gradient} hover:opacity-90 text-white` : ''}`}
+      >
         {isLoading ? 'Creating...' : 'Create Display'}
       </Button>
     </form>
