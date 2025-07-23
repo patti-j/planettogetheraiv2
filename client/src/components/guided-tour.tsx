@@ -322,17 +322,34 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     // Wait for page to fully load
     await new Promise(resolve => setTimeout(resolve, 1000));
     
+    // More comprehensive page height detection for mobile
+    const bodyHeight = document.body.scrollHeight;
+    const docElementHeight = document.documentElement.scrollHeight;
+    const bodyOffsetHeight = document.body.offsetHeight;
+    const docOffsetHeight = document.documentElement.offsetHeight;
+    const bodyClientHeight = document.body.clientHeight;
+    const docClientHeight = document.documentElement.clientHeight;
+    
     const pageHeight = Math.max(
-      document.body.scrollHeight,
-      document.body.offsetHeight,
-      document.documentElement.clientHeight,
-      document.documentElement.scrollHeight,
-      document.documentElement.offsetHeight
+      bodyHeight,
+      docElementHeight,
+      bodyOffsetHeight,
+      docOffsetHeight,
+      bodyClientHeight,
+      docClientHeight
     );
     
     const viewportHeight = window.innerHeight;
     const currentScrollTop = window.pageYOffset;
     const maxScrollableDistance = pageHeight - viewportHeight;
+    
+    console.log(`Detailed height analysis:
+      - body.scrollHeight: ${bodyHeight}
+      - documentElement.scrollHeight: ${docElementHeight}
+      - body.offsetHeight: ${bodyOffsetHeight}
+      - documentElement.offsetHeight: ${docOffsetHeight}
+      - viewport height: ${viewportHeight}
+      - calculated maxScrollable: ${maxScrollableDistance}`);
     
     console.log(`Mobile scroll check: pageHeight=${pageHeight}, viewport=${viewportHeight}, currentScroll=${currentScrollTop}, maxScroll=${maxScrollableDistance}`);
     
@@ -340,8 +357,29 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     const performMobileScrollDemo = async () => {
       console.log('Starting mobile auto-scroll to show hidden content...');
       
+      // Check if there's actually content that extends beyond the viewport
+      // Force scroll demo if on mobile even if calculations show no scroll, since mobile layouts can be tricky
+      const isMobile = window.innerWidth < 768;
+      if (maxScrollableDistance <= 0 && !isMobile) {
+        console.log('No scrollable content detected - page fits within viewport');
+        return;
+      } else if (maxScrollableDistance <= 0 && isMobile) {
+        console.log('Mobile device detected - forcing demo scroll even with no calculated scrollable content');
+        // On mobile, force a scroll demo by using viewport height as scroll distance
+        const forcedScrollDistance = viewportHeight * 0.5;
+        console.log(`Forcing mobile scroll demo with ${forcedScrollDistance}px scroll distance`);
+        
+        // Simple forced scroll for mobile
+        window.scrollTo({ top: forcedScrollDistance, behavior: 'smooth' });
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        console.log('Forced mobile scroll demo completed');
+        return;
+      }
+      
       // Calculate how far we can scroll down to show more content
-      const scrollDownDistance = Math.max(maxScrollableDistance - currentScrollTop, viewportHeight * 0.8);
+      const scrollDownDistance = Math.min(maxScrollableDistance, viewportHeight * 0.8);
       
       if (scrollDownDistance > 50) { // Only scroll if there's meaningful content to show
         console.log(`Scrolling down ${scrollDownDistance}px to reveal hidden content...`);
@@ -429,7 +467,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         await scrollToTop();
         console.log('Mobile auto-scroll sequence completed');
       } else {
-        console.log('No significant content below viewport - skipping scroll demo');
+        console.log(`Insufficient content to scroll - only ${scrollDownDistance}px available`);
       }
     };
     
