@@ -2481,11 +2481,22 @@ export class DatabaseStorage implements IStorage {
 
         // Get user count for this role
         const userCountResult = await db
-          .select({ count: sql<number>`count(*)` })
+          .select({ count: sql<number>`count(*)::int` })
           .from(userRoles)
           .where(eq(userRoles.roleId, role.id));
         
-        const userCount = userCountResult[0]?.count || 0;
+        const rawCount = userCountResult[0]?.count;
+        const userCount = parseInt(String(rawCount)) || 0;
+        
+        // Debug logging for large user counts
+        if (userCount > 100) {
+          console.log(`DEBUG: Role ${role.name} has suspiciously high user count:`, {
+            roleId: role.id,
+            rawCount,
+            userCount,
+            userCountResult
+          });
+        }
 
         return {
           ...role,
