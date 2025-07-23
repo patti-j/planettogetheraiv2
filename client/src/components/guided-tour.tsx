@@ -36,6 +36,9 @@ interface TourStep {
   title: string;
   description: string;
   page: string;
+  navigationPath?: string;
+  targetPage?: string;
+  route?: string;
   icon: React.ElementType;
   benefits: string[];
   actionText: string;
@@ -162,8 +165,11 @@ const getTourStepsFromDatabase = (roleId: number, toursFromAPI: any[]): TourStep
       id: step.id || step.stepId || `step-${index}`,
       title: step.title || step.stepName || `Tour Step ${index + 1}`,
       description: step.description || step.stepDescription || "Explore this feature.",
-      page: step.page || step.targetPage || "current",
-      icon: getIconForPage(step.page || step.targetPage || "current"),
+      page: step.page || step.targetPage || step.navigationPath || "current",
+      navigationPath: step.navigationPath || step.page || step.targetPage,
+      targetPage: step.targetPage,
+      route: step.route,
+      icon: getIconForPage(step.navigationPath || step.page || step.targetPage || "current"),
       benefits: step.benefits || step.keyBenefits || [],
       actionText: step.actionText || "Continue",
       duration: step.duration || "2-3 min",
@@ -224,6 +230,9 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   const [autoAdvance, setAutoAdvance] = useState(false);
   const [showRoleSelection, setShowRoleSelection] = useState(false);
   const [hasAutoStarted, setHasAutoStarted] = useState(false);
+  
+  // Navigation hook
+  const [location, setLocation] = useLocation();
   
   // Refs
   const speechRef = useRef<HTMLAudioElement | null>(null);
@@ -299,6 +308,31 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     setCurrentStep(0);
     setHasAutoStarted(false);
   }, [roleId]);
+
+  // Navigate to step page when step changes
+  useEffect(() => {
+    if (tourSteps.length > 0 && currentStep < tourSteps.length) {
+      const currentStepData = tourSteps[currentStep];
+      let targetPath = null;
+
+      // Check for different navigation path properties
+      if (currentStepData.navigationPath) {
+        targetPath = currentStepData.navigationPath;
+      } else if (currentStepData.page && currentStepData.page !== 'current') {
+        targetPath = currentStepData.page;
+      } else if (currentStepData.targetPage) {
+        targetPath = currentStepData.targetPage;
+      } else if (currentStepData.route) {
+        targetPath = currentStepData.route;
+      }
+
+      // Navigate if we have a valid path and it's different from current location
+      if (targetPath && targetPath !== 'current' && targetPath !== location) {
+        console.log(`Tour navigating from ${location} to ${targetPath} for step: ${currentStepData.title}`);
+        setLocation(targetPath);
+      }
+    }
+  }, [currentStep, tourSteps, location, setLocation]);
 
   // Navigation handlers
   const handleNext = () => {
