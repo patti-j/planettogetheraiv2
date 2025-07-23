@@ -36,7 +36,6 @@ export default function PlantsManagementPage() {
 
   const { data: plants = [], isLoading } = useQuery<Plant[]>({
     queryKey: ["/api/plants"],
-    queryFn: () => apiRequest("GET", "/api/plants"),
   });
 
   const deleteMutation = useMutation({
