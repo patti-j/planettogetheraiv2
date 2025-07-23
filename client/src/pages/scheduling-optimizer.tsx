@@ -888,8 +888,8 @@ const SchedulingOptimizer: React.FC = () => {
           <p className="text-sm md:text-base text-gray-600">Optimize orders with intelligent scheduling and multi-operation planning</p>
         </div>
         
-        {/* Maximize button always in top right corner */}
-        <div className="absolute top-0 right-0">
+        {/* Maximize button in top right corner matching hamburger menu positioning */}
+        <div className="fixed top-2 right-2 z-50">
           <Button
             variant="outline"
             size="sm"
