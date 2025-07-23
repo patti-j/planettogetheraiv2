@@ -1325,14 +1325,29 @@ export default function ShopFloor() {
   const [forceUpdate, setForceUpdate] = useState(0);
   const [globalImageSize, setGlobalImageSize] = useState(100); // Global image size percentage
   const [individualImageSizes, setIndividualImageSizes] = useState<{ [key: number]: number }>({}); // Individual resource image sizes
+  const [selectedPlantId, setSelectedPlantId] = useState<number | 'all'>('all'); // Multi-plant filtering
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Fetch data
-  const { data: resources = [], isLoading: resourcesLoading } = useQuery<Resource[]>({
+  // Fetch plants for filtering
+  const { data: plants = [] } = useQuery({
+    queryKey: ["/api/plants"],
+    refetchInterval: isLivePaused ? false : 60000,
+  });
+
+  // Fetch data with plant filtering
+  const { data: allResources = [], isLoading: resourcesLoading } = useQuery<Resource[]>({
     queryKey: ["/api/resources"],
     refetchInterval: isLivePaused ? false : 30000,
   });
+
+  // Filter resources by selected plant
+  const resources = selectedPlantId === 'all' 
+    ? allResources 
+    : allResources.filter(resource => 
+        resource.plantId === selectedPlantId || 
+        (resource.isShared && resource.sharedPlants?.includes(selectedPlantId as number))
+      );
 
   const { data: operations = [] } = useQuery<Operation[]>({
     queryKey: ["/api/operations"],
@@ -1887,6 +1902,21 @@ export default function ShopFloor() {
             
             {/* Controls row */}
             <div className="flex items-center gap-2 flex-wrap">
+              {/* Plant selector */}
+              <Select value={selectedPlantId.toString()} onValueChange={(value) => setSelectedPlantId(value === 'all' ? 'all' : parseInt(value))}>
+                <SelectTrigger className="w-[120px] sm:w-[140px] text-xs sm:text-sm h-8 sm:h-9">
+                  <SelectValue placeholder="Plant" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Plants</SelectItem>
+                  {plants.map((plant: any) => (
+                    <SelectItem key={plant.id} value={plant.id.toString()}>
+                      {plant.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
               {/* Area selector */}
               <Select value={currentArea} onValueChange={setCurrentArea}>
                 <SelectTrigger className="w-[120px] sm:w-[140px] text-xs sm:text-sm h-8 sm:h-9">
@@ -2659,8 +2689,8 @@ const LayoutManagerDialog: React.FC<LayoutManagerDialogProps> = ({
             <AreaManagerDialog 
               areas={areas}
               resources={resources}
-              onCreateArea={onCreateArea}
-              onDeleteArea={onDeleteArea}
+              onCreateArea={createArea}
+              onDeleteArea={deleteArea}
               onClose={() => setShowAreaManager(false)}
             />
           </DialogContent>

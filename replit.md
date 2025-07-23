@@ -114,6 +114,18 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 23, 2025)
 
+✓ **Multi-Plant Shop Floor Filtering Implementation (July 23, 2025)**:
+- Successfully implemented comprehensive multi-plant filtering system for shop floor management
+- Added plant selector dropdown to shop floor controls section alongside existing area filtering
+- Enhanced shop floor to support dual filtering by both plant and area for comprehensive resource organization
+- Resources now filtered by selectedPlantId state with support for 'all' plants or specific plant selection
+- Plant filtering works with both directly assigned resources (plantId) and shared resources (sharedPlants array)
+- Created MultiPlantAreaManager component with advanced plant-aware area management capabilities
+- Area manager now groups resources by plant within areas, showing plant-specific resource distribution
+- Enhanced area creation to work seamlessly across multiple plants with visual plant indicators
+- Shop floor displays plant context in area management dialogs with resource counts per plant
+- Multi-plant architecture enables companies to manage multiple manufacturing facilities from unified interface
+
 ✓ **Capacity Planning Button Mobile Text Fix (July 23, 2025)**:
 - Fixed mobile button text from "AI" to "Insights" in capacity planning page for better user clarity
 - Button now properly describes its function (showing AI insights) instead of generic "AI" label
