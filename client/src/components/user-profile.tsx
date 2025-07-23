@@ -153,15 +153,15 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
   const handlePreferencesUpdate = (field: string, value: any) => {
     if (!preferences) return;
     
-    const updatedPreferences = { ...preferences };
+    const updatedPreferences = { ...preferences } as any;
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
-      updatedPreferences[parent as keyof UserPreferences] = {
-        ...(updatedPreferences[parent as keyof UserPreferences] as any),
+      updatedPreferences[parent] = {
+        ...(updatedPreferences[parent] || {}),
         [child]: value
       };
     } else {
-      updatedPreferences[field as keyof UserPreferences] = value;
+      updatedPreferences[field] = value;
     }
 
     updatePreferencesMutation.mutate(updatedPreferences);
@@ -347,8 +347,11 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
                         type="button"
                         variant="outline"
                         onClick={() => {
+                          // Reset form state
                           setSelectedFile(null);
                           setPreviewUrl(null);
+                          // Close the dialog
+                          onOpenChange(false);
                         }}
                         disabled={updateProfileMutation.isPending}
                       >
