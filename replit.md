@@ -126,6 +126,10 @@ The application uses a modern full-stack architecture with strong typing through
 - **Enhanced mobile resizer**: Increased from 4px to 24px height with larger touch area and touch-manipulation CSS
 - Added touchAction: 'none' and proper event handling to prevent window dragging conflicts on mobile
 - Improved visual indicator with wider, more prominent resize handle for better mobile usability
+- **Max AI Assistant menu positioning**: Moved to top of main navigation menu with AI branding
+- Added purple/pink gradient styling and "AI" badge for clear AI identification
+- Menu item now hides when Max window is visible to prevent redundant controls
+- Enhanced tooltip describes Max as "AI-powered assistant for intelligent production planning"
 - Eliminated floating window system entirely for consistent, predictable layout behavior
 
 ✓ **User Profile Integration into Hamburger Menu (July 23, 2025)**:

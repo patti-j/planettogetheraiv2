@@ -78,7 +78,10 @@ export default function Sidebar() {
     feature: string;
     action: string;
     onClick?: () => void;
+    isAI?: boolean;
   }> = [
+    // Max AI Assistant at the top with AI branding - only show when closed
+    ...(isMaxOpen ? [] : [{ icon: Bot, label: "Max AI Assistant", href: "#max", active: false, feature: "", action: "", onClick: toggleMaxAI, isAI: true }]),
     { icon: BookOpen, label: "Getting Started", href: "/help", active: location === "/help", feature: "getting-started", action: "view" },
     { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals", feature: "business-goals", action: "view" },
     { icon: BarChart3, label: "Production Schedule", href: "/production-schedule", active: location === "/production-schedule", feature: "production-scheduling", action: "view" },
@@ -107,10 +110,9 @@ export default function Sidebar() {
     { icon: BarChart3, label: "Analytics", href: "/analytics", active: location === "/analytics", feature: "analytics", action: "view" },
     { icon: FileText, label: "Reports", href: "/reports", active: location === "/reports", feature: "reports", action: "view" },
     { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback", feature: "feedback", action: "view" },
-    { icon: Bot, label: "Max AI Assistant", href: "#max", active: isMaxOpen, feature: "", action: "", onClick: toggleMaxAI },
 
   ].filter(item => 
-    // Always show Getting Started, Production Schedule, and Max AI Assistant for authenticated users
+    // Always show Getting Started, Production Schedule, and Max AI Assistant (when closed) for authenticated users
     item.href === "#" || 
     item.href === "/production-schedule" || 
     item.href === "#max" ||
@@ -121,6 +123,7 @@ export default function Sidebar() {
   const getNavigationTooltip = (href: string) => {
     const tooltips: Record<string, string> = {
       "#": "Track your implementation progress and complete setup tasks with guided help",
+      "#max": "AI-powered assistant for intelligent production planning, optimization, and contextual guidance",
       "/business-goals": "Define strategic objectives, track progress, and monitor risks that impact business success",
       "/production-schedule": "View production schedule with interactive Gantt charts and scheduling tools",
       "/optimize-orders": "Optimize orders with intelligent scheduling and multi-operation planning",
@@ -147,9 +150,7 @@ export default function Sidebar() {
       "/customer-service": "Handle customer orders, issues, and support requests",
       "/analytics": "View production metrics and performance analytics",
       "/reports": "Generate detailed production reports and insights",
-      "/feedback": "Submit feedback and suggestions to help improve the system",
-      "/max-ai-assistant": "Chat with Max for schedule optimization and analysis",
-      "#max": "Open Max AI Assistant for intelligent production planning and schedule optimization"
+      "/feedback": "Submit feedback and suggestions to help improve the system"
     };
     return tooltips[href] || "Navigate to this page";
   };
@@ -242,7 +243,7 @@ export default function Sidebar() {
                 {item.onClick ? (
                   <button
                     className={`w-full flex items-center px-3 py-2 rounded-lg transition-colors text-sm md:text-base whitespace-nowrap ${
-                      item.href === "/ai-assistant"
+                      item.isAI
                         ? item.active
                           ? "text-white bg-gradient-to-r from-purple-500 to-pink-500 border-l-4 border-purple-600"
                           : "text-gray-600 hover:text-white hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500"
@@ -254,12 +255,19 @@ export default function Sidebar() {
                   >
                     <item.icon className="w-4 h-4 md:w-5 md:h-5 mr-3 flex-shrink-0" />
                     <span className="truncate">{item.label}</span>
+                    {item.isAI && (
+                      <div className="ml-auto">
+                        <div className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border border-purple-200">
+                          AI
+                        </div>
+                      </div>
+                    )}
                   </button>
                 ) : (
                   <Link href={item.href}>
                     <a
                       className={`flex items-center px-3 py-2 rounded-lg transition-colors text-sm md:text-base whitespace-nowrap ${
-                        item.href === "/ai-assistant"
+                        item.isAI
                           ? item.active
                             ? "text-white bg-gradient-to-r from-purple-500 to-pink-500 border-l-4 border-purple-600"
                             : "text-gray-600 hover:text-white hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500"
@@ -271,6 +279,13 @@ export default function Sidebar() {
                     >
                       <item.icon className="w-4 h-4 md:w-5 md:h-5 mr-3 flex-shrink-0" />
                       <span className="truncate">{item.label}</span>
+                      {item.isAI && (
+                        <div className="ml-auto">
+                          <div className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border border-purple-200">
+                            AI
+                          </div>
+                        </div>
+                      )}
                     </a>
                   </Link>
                 )}
