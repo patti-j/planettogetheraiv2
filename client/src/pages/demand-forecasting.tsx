@@ -71,6 +71,42 @@ const DRIVER_COLORS = {
   event: 'bg-red-100 text-red-800'
 };
 
+// Sample chart data
+const sampleForecastData = [
+  { month: 'Jan', actual: 2400, forecasted: 2200, confidence: 85 },
+  { month: 'Feb', actual: 1398, forecasted: 1600, confidence: 78 },
+  { month: 'Mar', actual: 9800, forecasted: 9200, confidence: 92 },
+  { month: 'Apr', actual: 3908, forecasted: 4100, confidence: 88 },
+  { month: 'May', actual: 4800, forecasted: 4900, confidence: 90 },
+  { month: 'Jun', actual: 3800, forecasted: 3600, confidence: 85 },
+  { month: 'Jul', actual: null, forecasted: 4200, confidence: 82 },
+  { month: 'Aug', actual: null, forecasted: 4800, confidence: 79 },
+  { month: 'Sep', actual: null, forecasted: 5100, confidence: 76 }
+];
+
+const sampleAccuracyData = [
+  { model: 'Linear', accuracy: 72, mae: 450 },
+  { model: 'Seasonal', accuracy: 89, mae: 280 },
+  { model: 'Exponential', accuracy: 85, mae: 320 },
+  { model: 'ARIMA', accuracy: 91, mae: 250 },
+  { model: 'ML Ensemble', accuracy: 94, mae: 180 }
+];
+
+const sampleSeasonalTrends = [
+  { period: 'Q1', demand: 4200, growth: 12 },
+  { period: 'Q2', demand: 5800, growth: 25 },
+  { period: 'Q3', demand: 6900, growth: 35 },
+  { period: 'Q4', demand: 8100, growth: 18 }
+];
+
+const sampleDriverImpact = [
+  { name: 'Holiday Season', impact: 35, type: 'seasonal' },
+  { name: 'Marketing Campaign', impact: 22, type: 'promotional' },
+  { name: 'Economic Growth', impact: 18, type: 'economic' },
+  { name: 'Weather Pattern', impact: 15, type: 'weather' },
+  { name: 'Industry Events', impact: 10, type: 'event' }
+];
+
 export default function DemandForecastingPage() {
   const [selectedTab, setSelectedTab] = useState("overview");
   const [selectedForecast, setSelectedForecast] = useState<DemandForecast | null>(null);
@@ -427,14 +463,14 @@ export default function DemandForecastingPage() {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={forecastTrendData}>
+                    <LineChart data={sampleForecastData}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
+                      <XAxis dataKey="month" />
                       <YAxis />
                       <Tooltip />
                       <Legend />
                       <Line type="monotone" dataKey="actual" stroke="#3b82f6" strokeWidth={2} name="Actual Demand" />
-                      <Line type="monotone" dataKey="forecast" stroke="#ef4444" strokeWidth={2} strokeDasharray="5 5" name="Forecasted Demand" />
+                      <Line type="monotone" dataKey="forecasted" stroke="#ef4444" strokeWidth={2} strokeDasharray="5 5" name="Forecasted Demand" />
                     </LineChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -447,12 +483,56 @@ export default function DemandForecastingPage() {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={modelPerformanceData}>
+                    <BarChart data={sampleAccuracyData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="model" />
                       <YAxis />
                       <Tooltip formatter={(value) => [`${Number(value).toFixed(1)}%`, 'Accuracy']} />
                       <Bar dataKey="accuracy" fill="#10b981" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Additional Charts Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Seasonal Trends */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Seasonal Demand Trends</CardTitle>
+                  <CardDescription>Quarterly demand patterns and growth rates</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <ComposedChart data={sampleSeasonalTrends}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="period" />
+                      <YAxis yAxisId="left" />
+                      <YAxis yAxisId="right" orientation="right" />
+                      <Tooltip />
+                      <Legend />
+                      <Bar yAxisId="left" dataKey="demand" fill="#3b82f6" name="Demand Volume" />
+                      <Line yAxisId="right" type="monotone" dataKey="growth" stroke="#ef4444" strokeWidth={2} name="Growth %" />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Demand Driver Impact */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Demand Driver Impact</CardTitle>
+                  <CardDescription>Key factors influencing demand patterns</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={sampleDriverImpact} layout="horizontal">
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" />
+                      <YAxis dataKey="name" type="category" width={120} />
+                      <Tooltip formatter={(value) => [`${value}%`, 'Impact']} />
+                      <Bar dataKey="impact" fill="#8b5cf6" />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>

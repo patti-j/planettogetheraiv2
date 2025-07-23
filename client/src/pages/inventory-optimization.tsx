@@ -74,6 +74,47 @@ interface OptimizationScenario {
 
 const COLORS = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#f97316'];
 
+// Sample chart data for inventory optimization
+const sampleInventoryDistribution = [
+  { name: 'In Stock', value: 65, count: 1850 },
+  { name: 'Low Stock', value: 20, count: 570 },
+  { name: 'Out of Stock', value: 10, count: 285 },
+  { name: 'Excess Stock', value: 5, count: 142 }
+];
+
+const sampleTurnoverData = [
+  { category: 'Electronics', current: 8.2, optimized: 12.1, savings: 280000 },
+  { category: 'Raw Materials', current: 4.5, optimized: 6.8, savings: 145000 },
+  { category: 'Components', current: 6.1, optimized: 9.2, savings: 195000 },
+  { category: 'Finished Goods', current: 12.3, optimized: 15.7, savings: 320000 },
+  { category: 'Tools & Equipment', current: 2.8, optimized: 4.1, savings: 85000 }
+];
+
+const sampleCarryingCosts = [
+  { month: 'Jan', storage: 45000, insurance: 12000, depreciation: 18000, total: 75000 },
+  { month: 'Feb', storage: 48000, insurance: 13000, depreciation: 19000, total: 80000 },
+  { month: 'Mar', storage: 52000, insurance: 14000, depreciation: 20000, total: 86000 },
+  { month: 'Apr', storage: 46000, insurance: 12500, depreciation: 18500, total: 77000 },
+  { month: 'May', storage: 44000, insurance: 12000, depreciation: 17000, total: 73000 },
+  { month: 'Jun', storage: 50000, insurance: 13500, depreciation: 19500, total: 83000 }
+];
+
+const sampleStockLevels = [
+  { week: 'W1', onHand: 15000, safetyStock: 8000, reorderPoint: 10000, maxStock: 25000 },
+  { week: 'W2', onHand: 18000, safetyStock: 8000, reorderPoint: 10000, maxStock: 25000 },
+  { week: 'W3', onHand: 12000, safetyStock: 8000, reorderPoint: 10000, maxStock: 25000 },
+  { week: 'W4', onHand: 22000, safetyStock: 8000, reorderPoint: 10000, maxStock: 25000 },
+  { week: 'W5', onHand: 16000, safetyStock: 8000, reorderPoint: 10000, maxStock: 25000 },
+  { week: 'W6', onHand: 14000, safetyStock: 8000, reorderPoint: 10000, maxStock: 25000 }
+];
+
+const sampleRecommendationTypes = [
+  { type: 'Reorder', count: 45, savings: 120000 },
+  { type: 'Reduce', count: 23, savings: 85000 },
+  { type: 'Transfer', count: 18, savings: 45000 },
+  { type: 'Dispose', count: 12, savings: 25000 }
+];
+
 const STATUS_COLORS = {
   'in-stock': 'bg-green-100 text-green-800',
   'low-stock': 'bg-yellow-100 text-yellow-800',
@@ -368,42 +409,97 @@ export default function InventoryOptimizationPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Stock Status Distribution</CardTitle>
+                  <CardDescription>Current inventory status across all items</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie
-                        data={stockStatusData}
+                        data={sampleInventoryDistribution}
                         cx="50%"
                         cy="50%"
                         outerRadius={100}
                         dataKey="value"
-                        label={({ name, value }) => `${name}: ${value}`}
+                        label={({ name, value }) => `${name}: ${value}%`}
                       >
-                        {stockStatusData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        {sampleInventoryDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index]} />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      <Tooltip formatter={(value, name) => [`${value}% (${sampleInventoryDistribution.find(item => item.name === name)?.count} items)`, name]} />
+                      <Legend />
                     </PieChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
 
-              {/* Category Value Breakdown */}
+              {/* Inventory Turnover Optimization */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Inventory Value by Category</CardTitle>
+                  <CardTitle className="text-lg">Inventory Turnover Analysis</CardTitle>
+                  <CardDescription>Current vs optimized turnover rates by category</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={categoryChartData}>
+                    <ComposedChart data={sampleTurnoverData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="category" />
+                      <YAxis yAxisId="left" />
+                      <YAxis yAxisId="right" orientation="right" />
+                      <Tooltip />
+                      <Legend />
+                      <Bar yAxisId="left" dataKey="current" fill="#3b82f6" name="Current Turnover" />
+                      <Bar yAxisId="left" dataKey="optimized" fill="#10b981" name="Optimized Turnover" />
+                      <Line yAxisId="right" type="monotone" dataKey="savings" stroke="#ef4444" strokeWidth={2} name="Potential Savings ($)" />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Additional Analytics Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Carrying Costs Analysis */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Monthly Carrying Costs</CardTitle>
+                  <CardDescription>Breakdown of inventory holding costs</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={sampleCarryingCosts}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
                       <YAxis />
-                      <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Value']} />
-                      <Bar dataKey="value" fill="#3b82f6" />
-                    </BarChart>
+                      <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Cost']} />
+                      <Legend />
+                      <Area type="monotone" dataKey="storage" stackId="1" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} name="Storage" />
+                      <Area type="monotone" dataKey="insurance" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.6} name="Insurance" />
+                      <Area type="monotone" dataKey="depreciation" stackId="1" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.6} name="Depreciation" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Stock Level Trends */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Stock Level Analysis</CardTitle>
+                  <CardDescription>Weekly inventory levels vs thresholds</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={sampleStockLevels}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="week" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Line type="monotone" dataKey="onHand" stroke="#3b82f6" strokeWidth={3} name="On Hand" />
+                      <Line type="monotone" dataKey="safetyStock" stroke="#10b981" strokeDasharray="5 5" name="Safety Stock" />
+                      <Line type="monotone" dataKey="reorderPoint" stroke="#ef4444" strokeDasharray="3 3" name="Reorder Point" />
+                      <Line type="monotone" dataKey="maxStock" stroke="#8b5cf6" strokeDasharray="2 2" name="Max Stock" />
+                    </LineChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
@@ -413,18 +509,21 @@ export default function InventoryOptimizationPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Optimization Recommendations</CardTitle>
+                <CardDescription>AI-generated recommendations by type and impact</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  {recommendationTypeData.map((item) => (
-                    <div key={item.type} className="text-center p-4 border rounded-lg">
-                      <div className="text-2xl font-semibold" style={{ color: item.color }}>
-                        {item.count}
-                      </div>
-                      <div className="text-sm text-gray-600">{item.type}</div>
-                    </div>
-                  ))}
-                </div>
+                <ResponsiveContainer width="100%" height={300}>
+                  <ComposedChart data={sampleRecommendationTypes}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="type" />
+                    <YAxis yAxisId="left" />
+                    <YAxis yAxisId="right" orientation="right" />
+                    <Tooltip />
+                    <Legend />
+                    <Bar yAxisId="left" dataKey="count" fill="#3b82f6" name="Recommendation Count" />
+                    <Line yAxisId="right" type="monotone" dataKey="savings" stroke="#10b981" strokeWidth={3} name="Potential Savings ($)" />
+                  </ComposedChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
           </TabsContent>
