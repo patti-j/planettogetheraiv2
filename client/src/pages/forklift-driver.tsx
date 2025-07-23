@@ -347,7 +347,7 @@ export default function ForkliftDriver() {
   const PageContent = () => (
     <div className="space-y-6 pb-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="relative">
         <div className="md:ml-0 ml-12">
           <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
             <Truck className="w-6 h-6 mr-2" />
@@ -355,7 +355,22 @@ export default function ForkliftDriver() {
           </h1>
           <p className="text-sm md:text-base text-gray-600">Material movement tracking for production floor</p>
         </div>
-        <div className="flex items-center gap-2">
+        
+        {/* Maximize button always in top right corner */}
+        {!isMobile && (
+          <div className="absolute top-0 right-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsMaximized(!isMaximized)}
+            >
+              {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </Button>
+          </div>
+        )}
+        
+        {/* Live indicator positioned below maximize button */}
+        <div className="absolute top-0 right-0 mt-12">
           <Button
             variant="outline"
             size="sm"
@@ -365,15 +380,6 @@ export default function ForkliftDriver() {
             <div className={`w-2 h-2 rounded-full mr-2 ${autoRefresh ? "bg-green-500" : "bg-gray-400"}`} />
             {autoRefresh ? "Live" : "Paused"}
           </Button>
-          {!isMobile && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsMaximized(!isMaximized)}
-            >
-              {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </Button>
-          )}
         </div>
       </div>
 

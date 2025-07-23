@@ -124,6 +124,7 @@ The application uses a modern full-stack architecture with strong typing through
 - Fixed customer-service.tsx page - maximize button moved to top right corner with icon-only format, removed text labels
 - Fixed maintenance.tsx page - maximize button moved to top right corner with icon-only format, removed text labels
 - Fixed feedback.tsx page - maximize button moved to top right corner with icon-only format, removed text labels
+- Fixed forklift-driver.tsx page - maximize button moved from inline controls to top right corner, live indicator positioned below
 - Applied standard positioning pattern: maximize buttons always in absolute top-right corner, live indicators positioned right below when both exist
 - Control buttons repositioned below page headers following consistent "relative > absolute top-0 right-0 > mt-4 controls" pattern
 - All pages now follow unified positioning hierarchy ensuring consistent user experience across the application
