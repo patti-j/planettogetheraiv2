@@ -112,7 +112,14 @@ const createEngagingNarration = (step: TourStep, roleName: string): string => {
 
 // Get tour steps from database based on role
 const getTourStepsFromDatabase = (roleId: number, toursFromAPI: any[]): TourStep[] => {
-  console.log("Getting tour steps for roleId:", roleId, "available tours:", toursFromAPI.map(t => ({id: t.id, roleId: t.roleId, roleDisplayName: t.roleDisplayName, stepsCount: t.steps?.length || 0})));
+  console.log("Getting tour steps for roleId:", roleId, "available tours:", toursFromAPI.map(t => ({
+    id: t.id, 
+    roleId: t.roleId, 
+    roleDisplayName: t.roleDisplayName, 
+    tourDataStepsCount: t.tourData?.steps?.length || 0,
+    tourDataKeys: Object.keys(t.tourData || {}),
+    hasStepsField: !!t.tourData?.steps
+  })));
   
   // First try to find exact role match
   let roleSpecificTour = toursFromAPI.find(tour => tour.roleId === roleId);
@@ -143,13 +150,17 @@ const getTourStepsFromDatabase = (roleId: number, toursFromAPI: any[]): TourStep
     roleSpecificTour = toursFromAPI[0];
   }
   
-  if (roleSpecificTour && roleSpecificTour.steps && roleSpecificTour.steps.length > 0) {
-    console.log("Found tour with", roleSpecificTour.steps.length, "steps for role:", roleSpecificTour.roleDisplayName);
+  // Check if tour has steps in tourData
+  const tourSteps = roleSpecificTour?.tourData?.steps || [];
+  
+  if (roleSpecificTour && tourSteps.length > 0) {
+    console.log("Found tour with", tourSteps.length, "steps for role:", roleSpecificTour.roleDisplayName);
+    console.log("Sample step structure:", tourSteps[0]);
     
     // Convert database tour steps to TourStep format
-    return roleSpecificTour.steps.map((step: any, index: number) => ({
-      id: step.stepId || `step-${index}`,
-      title: step.stepName || step.title || `Tour Step ${index + 1}`,
+    return tourSteps.map((step: any, index: number) => ({
+      id: step.id || step.stepId || `step-${index}`,
+      title: step.title || step.stepName || `Tour Step ${index + 1}`,
       description: step.description || step.stepDescription || "Explore this feature.",
       page: step.page || step.targetPage || "current",
       icon: getIconForPage(step.page || step.targetPage || "current"),
@@ -161,7 +172,7 @@ const getTourStepsFromDatabase = (roleId: number, toursFromAPI: any[]): TourStep
   }
   
   // Final fallback to default welcome step if no tour found
-  console.log("No tours available, using default welcome step");
+  console.log("No tours available or no steps in tourData, using default welcome step");
   return [
     {
       id: "welcome",
