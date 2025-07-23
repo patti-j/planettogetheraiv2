@@ -1012,6 +1012,40 @@ Provide the response as a JSON object with the following structure:
   const upload = multer();
 
   // AI Chat Assistant Route
+  // AI Agent Text-to-Speech endpoint
+  app.post("/api/ai-agent/tts", async (req, res) => {
+    try {
+      const { text, voice = 'alloy' } = req.body;
+      
+      if (!text) {
+        return res.status(400).json({ error: 'Text is required' });
+      }
+
+      const openai = await import('openai');
+      const client = new openai.default({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+
+      const response = await client.audio.speech.create({
+        model: 'tts-1',
+        voice: voice as 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer',
+        input: text,
+        speed: 1.0
+      });
+
+      const buffer = Buffer.from(await response.arrayBuffer());
+      
+      // Return audio as base64 data URL for immediate playback
+      const audioBase64 = buffer.toString('base64');
+      const audioUrl = `data:audio/mpeg;base64,${audioBase64}`;
+      
+      res.json({ audioUrl });
+    } catch (error) {
+      console.error('TTS Error:', error);
+      res.status(500).json({ error: 'Failed to generate speech' });
+    }
+  });
+
   app.post("/api/ai-agent/chat", async (req, res) => {
     try {
       const { message, context, conversationHistory } = req.body;

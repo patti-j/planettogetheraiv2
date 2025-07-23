@@ -29,6 +29,8 @@ import {
   Volume2,
   VolumeX
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 
 interface Message {
   id: string;
@@ -50,6 +52,16 @@ interface AIInsight {
   actionable: boolean;
 }
 
+// Available AI voice options for OpenAI TTS
+const VOICE_OPTIONS = [
+  { value: 'alloy', name: 'Alloy', description: 'Balanced and versatile' },
+  { value: 'echo', name: 'Echo', description: 'Clear and articulate' },
+  { value: 'fable', name: 'Fable', description: 'Warm and engaging' },
+  { value: 'onyx', name: 'Onyx', description: 'Deep and authoritative' },
+  { value: 'nova', name: 'Nova', description: 'Bright and energetic' },
+  { value: 'shimmer', name: 'Shimmer', description: 'Gentle and soothing' }
+];
+
 export default function IntegratedAIAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -59,11 +71,14 @@ export default function IntegratedAIAssistant() {
   const [currentInsights, setCurrentInsights] = useState<AIInsight[]>([]);
   const [contextData, setContextData] = useState<any>({});
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
+  const [selectedVoice, setSelectedVoice] = useState('alloy');
+  const [showVoiceSettings, setShowVoiceSettings] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognition = useRef<any>(null);
   const synthesis = useRef<SpeechSynthesis | null>(null);
+  const currentAudio = useRef<HTMLAudioElement | null>(null);
 
   // Initialize speech recognition and synthesis
   useEffect(() => {
@@ -158,6 +173,56 @@ export default function IntegratedAIAssistant() {
     setCurrentInsights(insights);
   };
 
+  // AI Text-to-Speech function
+  const speakWithAI = async (text: string) => {
+    if (!text) return;
+    
+    try {
+      // Stop any currently playing audio
+      if (currentAudio.current) {
+        currentAudio.current.pause();
+        currentAudio.current = null;
+      }
+      
+      const response = await apiRequest("POST", "/api/ai-agent/tts", {
+        text: text,
+        voice: selectedVoice
+      });
+      
+      const data = await response.json();
+      
+      if (data.audioUrl) {
+        const audio = new Audio(data.audioUrl);
+        currentAudio.current = audio;
+        
+        audio.onended = () => {
+          currentAudio.current = null;
+        };
+        
+        await audio.play();
+      }
+    } catch (error) {
+      console.error('AI TTS Error:', error);
+      // Fallback to browser TTS
+      if (synthesis.current) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+        utterance.volume = 0.8;
+        synthesis.current.speak(utterance);
+      }
+    }
+  };
+
+  // Toggle voice functionality
+  const toggleVoice = () => {
+    setIsVoiceEnabled(!isVoiceEnabled);
+    if (currentAudio.current) {
+      currentAudio.current.pause();
+      currentAudio.current = null;
+    }
+  };
+
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
       const response = await apiRequest("POST", "/api/ai-agent/chat", {
@@ -179,11 +244,9 @@ export default function IntegratedAIAssistant() {
       setMessages(prev => [...prev, assistantMessage]);
       
       // Speak the response if voice is enabled
-      if (isVoiceEnabled && synthesis.current) {
-        const utterance = new SpeechSynthesisUtterance(data.response);
-        utterance.rate = 0.9;
-        utterance.pitch = 1;
-        synthesis.current.speak(utterance);
+      if (isVoiceEnabled) {
+        // Use OpenAI TTS with selected voice
+        speakWithAI(data.response);
       }
       
       // Generate follow-up insights based on conversation
@@ -230,12 +293,7 @@ export default function IntegratedAIAssistant() {
     }
   };
 
-  const toggleVoice = () => {
-    setIsVoiceEnabled(!isVoiceEnabled);
-    if (!isVoiceEnabled && synthesis.current) {
-      synthesis.current.cancel();
-    }
-  };
+
 
   const handleInsightAction = (insight: AIInsight) => {
     const contextMessage = `I'd like help with: ${insight.title} - ${insight.message}`;
@@ -309,6 +367,15 @@ export default function IntegratedAIAssistant() {
               >
                 {isVoiceEnabled ? <Volume2 className="h-3 w-3" /> : <VolumeX className="h-3 w-3" />}
               </Button>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowVoiceSettings(!showVoiceSettings)}
+                className="h-6 w-6 p-0 text-white hover:bg-white/20"
+              >
+                <Settings className="h-3 w-3" />
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
@@ -331,6 +398,51 @@ export default function IntegratedAIAssistant() {
 
         {!isMinimized && (
           <CardContent className="p-0 flex flex-col" style={{ height: 'calc(min(28rem, 100vh - 6rem) - 4rem)' }}>
+            {/* Voice Settings Panel */}
+            {showVoiceSettings && (
+              <div className="p-3 bg-gray-50 border-b">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Voice Settings</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowVoiceSettings(false)}
+                    className="h-6 w-6 p-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  <div>
+                    <label className="text-xs text-gray-600 mb-1 block">AI Voice</label>
+                    <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {VOICE_OPTIONS.map((voice) => (
+                          <SelectItem key={voice.value} value={voice.value}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{voice.name}</span>
+                              <span className="text-xs text-gray-500">{voice.description}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => speakWithAI("Hello! This is how I sound with the " + VOICE_OPTIONS.find(v => v.value === selectedVoice)?.name + " voice.")}
+                    className="w-full h-7 text-xs"
+                  >
+                    Test Voice
+                  </Button>
+                </div>
+              </div>
+            )}
+            
             {/* Current Insights */}
             {currentInsights.length > 0 && (
               <div className="p-3 bg-gray-50 border-b">
