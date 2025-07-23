@@ -611,7 +611,7 @@ export default function Analytics() {
             </div>
 
             {!isMobile && (
-              {/* Maximize button moved to fixed top-right position */}
+              null
             )}
           </div>
         </div>
