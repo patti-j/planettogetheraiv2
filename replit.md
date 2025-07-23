@@ -121,7 +121,7 @@ The application uses a modern full-stack architecture with strong typing through
 - Implemented consistent mobile spacing: md:ml-0 ml-12 for proper hamburger menu clearance
 - Headers now use flex layout with lg breakpoint switching: flex-col lg:flex-row with lg:flex-shrink-0 for buttons
 - Fixed "Optimize Orders" page excessive top margin (pt-12 md:pt-0) to match standard layout
-- Applied standardization to: dashboard, analytics, reports, business goals, help, scheduling-optimizer, and all other pages
+- Applied standardization to: dashboard, analytics, reports, business goals, help, scheduling-optimizer, getting-started, systems-management, plant-manager, disruption-management, demand-forecasting, inventory-optimization, and all other pages
 - All page headers now provide consistent user experience with proper responsive behavior and mobile compatibility
 
 ✓ **Voice Continuity & Enhanced Mobile Auto-Scrolling (July 23, 2025)**:
