@@ -1194,7 +1194,7 @@ function TourManagementSection() {
           : stepData.description;
         
         // Use hash of step title to consistently select the same transition phrase for each step
-        const stepHash = stepData.title.split('').reduce((hash, char) => hash + char.charCodeAt(0), 0);
+        const stepHash = stepData.title.split('').reduce((hash: number, char: string) => hash + char.charCodeAt(0), 0);
         const selectedTransition = transitionPhrases[stepHash % transitionPhrases.length];
         
         return `${selectedTransition} ${stepData.title}. ${stepData.description} ${benefit}`;

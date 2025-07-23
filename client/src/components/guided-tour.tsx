@@ -309,7 +309,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     setHasAutoStarted(false);
   }, [roleId]);
 
-  // Auto-scroll function to show content below the fold
+  // Auto-scroll function to demonstrate page features and content
   const performAutoScroll = useCallback(async () => {
     console.log('performAutoScroll called - checking page dimensions...');
     
@@ -321,9 +321,11 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     
     console.log(`Page dimensions: height=${pageHeight}, viewport=${viewportHeight}, difference=${pageHeight - viewportHeight}`);
     
-    // Only scroll if there's content below the fold (reduced threshold for testing)
-    if (pageHeight > viewportHeight + 50) {
-      console.log('Auto-scrolling to show below-fold content - starting scroll sequence');
+    // Always perform demo scroll to show page features (even if content fits)
+    const shouldScroll = pageHeight > viewportHeight * 1.1; // More lenient threshold
+    
+    if (shouldScroll || pageHeight > viewportHeight + 20) {
+      console.log('Auto-scrolling to demonstrate page features - starting scroll sequence');
       
       // Scroll to bottom slowly
       const scrollToBottom = () => {
@@ -396,8 +398,57 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       await scrollToTop();
       console.log('Auto-scroll sequence completed');
     } else {
-      console.log('No auto-scroll needed - content fits within viewport');
-      console.log('To force auto-scroll for demo: either make page longer or wait for pages with more content');
+      console.log('Page fits within viewport - performing demo scroll anyway to show features');
+      
+      // Even if page fits, do a gentle scroll demo to show users there's content to explore
+      const gentleScrollDemo = async () => {
+        console.log('Starting gentle demo scroll...');
+        
+        // Scroll down about 30% of viewport
+        const scrollDistance = viewportHeight * 0.3;
+        const duration = 2000; // 2 seconds
+        const startTime = Date.now();
+        const startScrollTop = window.pageYOffset;
+        
+        const animateDown = () => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const easeInOut = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+          
+          window.scrollTo(0, startScrollTop + scrollDistance * easeInOut);
+          
+          if (progress < 1) {
+            requestAnimationFrame(animateDown);
+          } else {
+            // Pause then scroll back
+            setTimeout(async () => {
+              console.log('Scrolling back to top...');
+              const backStartTime = Date.now();
+              const backDuration = 1500;
+              
+              const animateUp = () => {
+                const elapsed = Date.now() - backStartTime;
+                const progress = Math.min(elapsed / backDuration, 1);
+                const easeInOut = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+                
+                window.scrollTo(0, startScrollTop + scrollDistance * (1 - easeInOut));
+                
+                if (progress < 1) {
+                  requestAnimationFrame(animateUp);
+                } else {
+                  console.log('Demo scroll completed');
+                }
+              };
+              
+              requestAnimationFrame(animateUp);
+            }, 1000);
+          }
+        };
+        
+        requestAnimationFrame(animateDown);
+      };
+      
+      await gentleScrollDemo();
     }
   }, []);
 
