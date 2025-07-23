@@ -3105,12 +3105,26 @@ export class DatabaseStorage implements IStorage {
 
   // Chat Channels
   async getChatChannels(userId: number): Promise<ChatChannel[]> {
-    return await db
-      .select()
+    const results = await db
+      .select({
+        id: chatChannels.id,
+        name: chatChannels.name,
+        type: chatChannels.type,
+        description: chatChannels.description,
+        contextType: chatChannels.contextType,
+        contextId: chatChannels.contextId,
+        isPrivate: chatChannels.isPrivate,
+        createdBy: chatChannels.createdBy,
+        createdAt: chatChannels.createdAt,
+        updatedAt: chatChannels.updatedAt,
+        lastMessageAt: chatChannels.lastMessageAt,
+      })
       .from(chatChannels)
       .innerJoin(chatMembers, eq(chatChannels.id, chatMembers.channelId))
       .where(eq(chatMembers.userId, userId))
-      .orderBy(desc(chatChannels.lastMessageAt));
+      .orderBy(desc(chatChannels.createdAt));
+    
+    return results;
   }
 
   async getChatChannel(id: number): Promise<ChatChannel | undefined> {
@@ -3120,6 +3134,14 @@ export class DatabaseStorage implements IStorage {
 
   async createChatChannel(channel: InsertChatChannel): Promise<ChatChannel> {
     const [newChannel] = await db.insert(chatChannels).values(channel).returning();
+    
+    // Automatically add the creator as an owner member
+    await db.insert(chatMembers).values({
+      channelId: newChannel.id,
+      userId: channel.createdBy,
+      role: 'owner',
+    });
+    
     return newChannel;
   }
 
