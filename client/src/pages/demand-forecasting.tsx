@@ -344,7 +344,7 @@ export default function DemandForecastingPage() {
                 </div>
               </DialogContent>
             </Dialog>
-            <Button className="bg-primary hover:bg-blue-700 text-white"
+            <Button className={`${aiTheme.gradient} hover:opacity-90 text-white`}
                     onClick={() => generateForecastMutation.mutate({ period: forecastPeriod, model: selectedModel })}
                     disabled={generateForecastMutation.isPending}>
               {generateForecastMutation.isPending ? (
