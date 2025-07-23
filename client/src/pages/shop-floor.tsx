@@ -2039,7 +2039,7 @@ export default function ShopFloor() {
           >
             {/* Instructions */}
             {showHelp && (
-              <div className="absolute top-4 left-4 right-4 sm:right-auto bg-white p-4 rounded-lg shadow-lg sm:max-w-md z-10">
+              <div className="absolute bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg max-w-md z-10">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold text-gray-800">Shop Floor Controls</h3>
                   <Button
