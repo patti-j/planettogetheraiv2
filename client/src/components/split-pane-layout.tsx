@@ -57,6 +57,9 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
 
   const handleTouchMove = (e: TouchEvent) => {
     if (!isDragging || !containerRef.current || !e.touches[0]) return;
+    
+    // Prevent scrolling only when actively dragging the splitter
+    e.preventDefault();
 
     const rect = containerRef.current.getBoundingClientRect();
     const touch = e.touches[0];
@@ -96,7 +99,7 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
-      document.addEventListener('touchmove', handleTouchMove);
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
       document.addEventListener('touchend', handleMouseUp);
       
       return () => {
@@ -150,8 +153,11 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
       <div ref={containerRef} className="w-full h-full flex flex-col">
         {/* Main content area */}
         <div 
-          className="flex-1 overflow-hidden" 
-          style={{ height: `calc(100% - ${maxHeight}px - 4px)` }}
+          className="flex-1 overflow-auto" 
+          style={{ 
+            height: `calc(100% - ${maxHeight}px - 4px)`,
+            touchAction: 'pan-y pan-x' // Allow normal scrolling
+          }}
         >
           {children}
         </div>
@@ -159,6 +165,7 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
         {/* Resizer - Reverted to original thickness */}
         <div
           className="h-1 bg-gray-300 hover:bg-blue-400 cursor-row-resize transition-colors relative group"
+          style={{ touchAction: 'none' }} // Prevent scrolling only on the resizer
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
         >

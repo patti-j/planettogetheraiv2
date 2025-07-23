@@ -132,6 +132,15 @@ The application uses a modern full-stack architecture with strong typing through
 - Enhanced user experience by preventing UI element interference when navigating the hamburger menu
 - Tooltip positioning now works properly in both mobile and desktop sheet-based navigation
 
+✓ **Mobile Scrolling Fix with Max Split-Pane Layout (July 23, 2025)**:
+- Fixed critical mobile scrolling issue where main content area couldn't be scrolled when Max was at bottom
+- Updated main content container from overflow-hidden to overflow-auto for proper scrolling behavior
+- Added touchAction: 'pan-y pan-x' to main content area to explicitly allow normal scrolling gestures
+- Applied touchAction: 'none' specifically to the resizer element to prevent accidental scrolling during resize
+- Enhanced touch event handling with passive: false option only when actively dragging the splitter
+- Mobile users can now scroll main content normally while Max is visible at the bottom in split-pane mode
+- Touch scrolling works independently from splitter resize functionality
+
 ## Recent Changes (July 23, 2025)
 
 ✓ **AI Theme Color System Implementation - COMPLETED (July 23, 2025)**:
