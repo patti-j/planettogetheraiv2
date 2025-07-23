@@ -413,6 +413,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
             activeRole: { id: 'demo_it_admin_role', name: 'IT Administrator' },
             permissions: ['systems-management-view', 'role-management-view', 'user-management-view', 'ai-assistant-view', 'feedback-view'],
             roles: [{ id: 'demo_it_admin_role', name: 'IT Administrator' }]
+          },
+          'demo_it_systems': { 
+            id: 'demo_it_systems', 
+            username: 'demo_it_systems_admin', 
+            email: 'demo@planettogether.com', 
+            firstName: 'Demo',
+            lastName: 'IT Systems Admin',
+            isActive: true,
+            isDemo: true,
+            role: 'IT Systems Administrator',
+            activeRole: { id: 'demo_it_systems_role', name: 'IT Systems Administrator' },
+            permissions: ['systems-management-view', 'role-management-view', 'user-management-view', 'ai-assistant-view', 'feedback-view'],
+            roles: [{ id: 'demo_it_systems_role', name: 'IT Systems Administrator' }]
+          },
+          'demo_sales': { 
+            id: 'demo_sales', 
+            username: 'demo_sales_rep', 
+            email: 'demo@planettogether.com', 
+            firstName: 'Demo',
+            lastName: 'Sales Rep',
+            isActive: true,
+            isDemo: true,
+            role: 'Sales Representative',
+            activeRole: { id: 'demo_sales_role', name: 'Sales Representative' },
+            permissions: ['sales-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+            roles: [{ id: 'demo_sales_role', name: 'Sales Representative' }]
+          },
+          'demo_customer_service': { 
+            id: 'demo_customer_service', 
+            username: 'demo_customer_service', 
+            email: 'demo@planettogether.com', 
+            firstName: 'Demo',
+            lastName: 'Customer Service',
+            isActive: true,
+            isDemo: true,
+            role: 'Customer Service Representative',
+            activeRole: { id: 'demo_customer_service_role', name: 'Customer Service Representative' },
+            permissions: ['customer-service-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+            roles: [{ id: 'demo_customer_service_role', name: 'Customer Service Representative' }]
+          },
+          'demo_support': { 
+            id: 'demo_support', 
+            username: 'demo_support_engineer', 
+            email: 'demo@planettogether.com', 
+            firstName: 'Demo',
+            lastName: 'Support Engineer',
+            isActive: true,
+            isDemo: true,
+            role: 'Support Engineer',
+            activeRole: { id: 'demo_support_role', name: 'Support Engineer' },
+            permissions: ['help-view', 'systems-management-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+            roles: [{ id: 'demo_support_role', name: 'Support Engineer' }]
+          },
+          'demo_supply_chain': { 
+            id: 'demo_supply_chain', 
+            username: 'demo_supply_chain', 
+            email: 'demo@planettogether.com', 
+            firstName: 'Demo',
+            lastName: 'Supply Chain Planner',
+            isActive: true,
+            isDemo: true,
+            role: 'Supply Chain Planner',
+            activeRole: { id: 'demo_supply_chain_role', name: 'Supply Chain Planner' },
+            permissions: ['inventory-optimization-view', 'demand-forecasting-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+            roles: [{ id: 'demo_supply_chain_role', name: 'Supply Chain Planner' }]
           }
         };
         
