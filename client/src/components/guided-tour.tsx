@@ -458,11 +458,41 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     retry: false, // Don't retry if tour doesn't exist
   });
 
+  // Helper function to calculate tour duration based on number of steps
+  const calculateTourDuration = (totalSteps: number): string => {
+    if (totalSteps <= 3) return "5-7 min tour";
+    if (totalSteps <= 6) return "8-12 min tour";
+    if (totalSteps <= 10) return "13-18 min tour";
+    if (totalSteps <= 15) return "19-25 min tour";
+    return "25-35 min tour"; // For tours with 16+ steps
+  };
+
   // Convert database tour data to TourStep format
   const getTourStepsFromDatabase = (roleId: number): TourStep[] => {
     // Use specific tour data if available, otherwise fall back to searching all tours
     const tourData = specificTourData || toursFromAPI.find((tour: any) => tour.roleId === roleId);
     
+    if (!tourData?.tourData?.steps) {
+      // Fallback to original hardcoded steps if no database data  
+      return getTourSteps(roleId);
+    }
+
+    // Convert database steps to TourStep format first to calculate total
+    const databaseSteps: TourStep[] = tourData.tourData.steps.map((step: any) => ({
+      id: (step.stepName || step.stepTitle)?.toLowerCase().replace(/\s+/g, '-') || step.id || 'step',
+      title: step.stepName || step.stepTitle || step.title || 'Tour Step',
+      description: step.description || step.voiceScript || 'Explore this feature',
+      page: translateNavPath(step.navigationPath || step.page) || "current",
+      icon: getIconForPage(translateNavPath(step.navigationPath || step.page)),
+      benefits: Array.isArray(step.benefits) ? step.benefits : [step.benefits || "Learn about this feature"],
+      actionText: step.stepName || step.stepTitle || "Continue",
+      duration: "2 min"
+    }));
+
+    // Calculate total tour duration based on number of steps (including welcome + completion)
+    const totalSteps = databaseSteps.length + 2;
+    const tourDuration = calculateTourDuration(totalSteps);
+
     const commonSteps: TourStep[] = [
       {
         id: "welcome",
@@ -476,7 +506,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           "Understand role-based workflows"
         ],
         actionText: "Start Tour",
-        duration: "2 min tour"
+        duration: tourDuration
       },
       {
         id: "demo-complete",
@@ -493,23 +523,6 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         duration: "Complete"
       }
     ];
-
-    if (!tourData?.tourData?.steps) {
-      // Fallback to original hardcoded steps if no database data  
-      return getTourSteps(roleId);
-    }
-
-    // Convert database steps to TourStep format
-    const databaseSteps: TourStep[] = tourData.tourData.steps.map((step: any) => ({
-      id: (step.stepName || step.stepTitle)?.toLowerCase().replace(/\s+/g, '-') || step.id || 'step',
-      title: step.stepName || step.stepTitle || step.title || 'Tour Step',
-      description: step.description || step.voiceScript || 'Explore this feature',
-      page: translateNavPath(step.navigationPath || step.page) || "current",
-      icon: getIconForPage(translateNavPath(step.navigationPath || step.page)),
-      benefits: Array.isArray(step.benefits) ? step.benefits : [step.benefits || "Learn about this feature"],
-      actionText: step.stepName || step.stepTitle || "Continue",
-      duration: "2 min"
-    }));
 
     return [commonSteps[0], ...databaseSteps, commonSteps[1]];
   };
