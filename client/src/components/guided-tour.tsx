@@ -41,27 +41,24 @@ interface TourStep {
   actionText: string;
   duration: string;
   voiceScript?: string;
-  // Enhanced navigation controls
   target?: {
     type: 'page' | 'tab' | 'section' | 'element' | 'button' | 'dialog';
-    selector?: string; // CSS selector or data attribute
-    tabId?: string; // For tab navigation (e.g., "tour-management", "role-demonstrations")
+    selector?: string;
+    tabId?: string;
     action?: 'click' | 'hover' | 'focus' | 'scroll' | 'highlight';
-    waitFor?: string; // Element to wait for after navigation
-    description?: string; // Description of what to show/highlight
+    waitFor?: string;
+    description?: string;
   };
-  // Pre-actions to set up the step (optional)
   preActions?: Array<{
     type: 'click' | 'navigate' | 'scroll' | 'wait';
     selector?: string;
     value?: string | number;
     description?: string;
   }>;
-  // Visual highlighting and focus
   spotlight?: {
     enabled: boolean;
-    selector?: string; // What to highlight
-    overlay?: boolean; // Show dark overlay on rest of screen
+    selector?: string;
+    overlay?: boolean;
     position?: 'top' | 'bottom' | 'left' | 'right' | 'center';
   };
 }
@@ -81,35 +78,7 @@ interface GuidedTourProps {
   onSwitchRole?: (newRoleId: number) => void;
 }
 
-// Available roles for tour selection
-const getAvailableRoles = () => [
-  {
-    id: "director",
-    name: "Director",
-    description: "Strategic oversight, business goals, and executive reporting",
-    icon: TrendingUp
-  },
-  {
-    id: "production-scheduler",
-    name: "Production Scheduler",
-    description: "Resource planning, job scheduling, and capacity optimization", 
-    icon: BarChart3
-  },
-  {
-    id: "plant-manager",
-    name: "Plant Manager",
-    description: "Overall operations management and department coordination",
-    icon: Users
-  },
-  {
-    id: "systems-manager",
-    name: "Systems Manager", 
-    description: "Technical administration, user management, and system configuration",
-    icon: Settings
-  }
-];
-
-// Helper function to get role icon based on role name
+// Helper function to get role icon
 const getRoleIcon = (roleName: string): React.ElementType => {
   const roleIconMapping: Record<string, React.ElementType> = {
     "Director": TrendingUp,
@@ -124,742 +93,190 @@ const getRoleIcon = (roleName: string): React.ElementType => {
     "Trainer": Users,
     "Shop Floor Operations": Settings
   };
-  
   return roleIconMapping[roleName] || Settings;
 };
 
-// Helper function to convert role display name to role key for mapping
-const getRoleKey = (roleName: string): string => {
-  const roleKeyMapping: Record<string, string> = {
-    "Director": "director",
-    "Production Scheduler": "production-scheduler", 
-    "Plant Manager": "plant-manager",
-    "Systems Manager": "systems-manager",
-    "Administrator": "administrator",
-    "IT Administrator": "it-administrator",
-    "IT Systems Administrator": "it-administrator",
-    "Maintenance Technician": "maintenance-technician",
-    "Data Analyst": "data-analyst",
-    "Trainer": "trainer",
-    "Shop Floor Operations": "shop-floor-operations"
-  };
+// Helper function to create engaging narration
+const createEngagingNarration = (step: TourStep, roleName: string): string => {
+  const introTexts = [
+    `Welcome to ${step.title}`,
+    `Let's explore ${step.title}`,
+    `Now we'll look at ${step.title}`
+  ];
   
-  return roleKeyMapping[roleName] || roleName.toLowerCase().replace(/\s+/g, '-');
+  const intro = introTexts[Math.floor(Math.random() * introTexts.length)];
+  const benefits = step.benefits.length > 0 ? ` Key benefits include: ${step.benefits.join(', ')}.` : '';
+  
+  return `${intro}. ${step.description}${benefits} This takes approximately ${step.duration}.`;
 };
 
-// Define role-specific tour steps - now fetched from database via roleId
-const getTourSteps = (roleId: number): TourStep[] => {
+// Get tour steps from database based on role
+const getTourStepsFromDatabase = (roleId: number): TourStep[] => {
+  // For now, return default steps - this should be replaced with actual database query
   const commonSteps: TourStep[] = [
     {
       id: "welcome",
       title: "Welcome to Your Demo",
       description: "Let's explore the key features that will transform your manufacturing operations.",
       page: "current",
-      icon: Play,
-      benefits: [
-        "See real-time production insights",
-        "Experience intelligent scheduling",
-        "Understand role-based workflows"
-      ],
+      icon: Settings,
+      benefits: ["See real-time production insights", "Experience intelligent scheduling", "Understand role-based workflows"],
       actionText: "Start Tour",
-      duration: "2 min tour"
-    },
-    {
-      id: "demo-complete",
-      title: "Demo Experience Complete",
-      description: "You now have access to explore all PlanetTogether features using the sidebar navigation.",
-      page: "current",
-      icon: CheckCircle,
-      benefits: [
-        "Use the sidebar to navigate between features",
-        "All demo data is available for exploration",
-        "Contact us to learn about implementation"
-      ],
-      actionText: "Finish Tour",
-      duration: "Complete"
+      duration: "25-35 min tour"
     }
   ];
-
-  const roleSteps: Record<string, TourStep[]> = {
-    'director': [
-      {
-        id: "business-goals",
-        title: "Strategic Business Goals",
-        description: "Define and track strategic objectives with KPI monitoring and risk management.",
-        page: "/business-goals",
-        icon: TrendingUp,
-        benefits: [
-          "Align production with business objectives",
-          "Monitor KPIs in real-time",
-          "Identify and mitigate risks early"
-        ],
-        actionText: "Explore Goals",
-        duration: "2 min"
-      },
-      {
-        id: "analytics",
-        title: "Executive Analytics",
-        description: "Access comprehensive dashboards with production metrics and performance insights.",
-        page: "/analytics",
-        icon: BarChart3,
-        benefits: [
-          "Make data-driven decisions",
-          "Identify optimization opportunities",
-          "Track performance trends"
-        ],
-        actionText: "View Analytics",
-        duration: "2 min"
-      },
-      {
-        id: "reports",
-        title: "Executive Reports",
-        description: "Generate detailed reports for stakeholders and board presentations.",
-        page: "/reports",
-        icon: Settings,
-        benefits: [
-          "Professional reporting for stakeholders",
-          "Automated report generation",
-          "Custom metrics and visualizations"
-        ],
-        actionText: "See Reports",
-        duration: "1 min"
-      }
-    ],
-    'production-scheduler': [
-      {
-        id: "schedule",
-        title: "Production Schedule",
-        description: "Interactive Gantt charts for visual production planning and resource allocation.",
-        page: "/",
-        icon: BarChart3,
-        benefits: [
-          "Drag-and-drop operation scheduling",
-          "Real-time capacity visualization",
-          "Optimize resource utilization"
-        ],
-        actionText: "See Schedule",
-        duration: "3 min"
-      },
-      {
-        id: "boards",
-        title: "Production Boards",
-        description: "Organize jobs, operations, and resources using customizable board views.",
-        page: "/boards",
-        icon: Kanban,
-        benefits: [
-          "Kanban-style job management",
-          "Visual workflow organization",
-          "Customizable board layouts"
-        ],
-        actionText: "View Boards",
-        duration: "2 min"
-      },
-      {
-        id: "scheduling-optimizer",
-        title: "Scheduling Optimizer",
-        description: "AI-powered optimization for multi-operation order planning and resource allocation.",
-        page: "/optimize-orders",
-        icon: Target,
-        benefits: [
-          "Intelligent scheduling recommendations",
-          "Optimize delivery timelines",
-          "Balance efficiency and customer satisfaction"
-        ],
-        actionText: "Optimize Orders",
-        duration: "2 min"
-      }
-    ],
-    'plant-manager': [
-      {
-        id: "plant-overview",
-        title: "Plant Management",
-        description: "Comprehensive oversight of plant operations and strategic decision-making.",
-        page: "/plant-manager",
-        icon: Users,
-        benefits: [
-          "Complete plant visibility",
-          "Strategic planning tools",
-          "Performance optimization"
-        ],
-        actionText: "Manage Plant",
-        duration: "3 min"
-      },
-      {
-        id: "capacity-planning",
-        title: "Capacity Planning",
-        description: "Plan and optimize production capacity including staffing and equipment.",
-        page: "/capacity-planning",
-        icon: Target,
-        benefits: [
-          "Optimize resource allocation",
-          "Plan future capacity needs",
-          "Balance workloads effectively"
-        ],
-        actionText: "Plan Capacity",
-        duration: "2 min"
-      },
-      {
-        id: "schedule",
-        title: "Production Schedule",
-        description: "Monitor and oversee production scheduling from a management perspective.",
-        page: "/",
-        icon: BarChart3,
-        benefits: [
-          "Track production progress",
-          "Monitor resource utilization",
-          "Identify operational bottlenecks"
-        ],
-        actionText: "View Schedule",
-        duration: "2 min"
-      }
-    ],
-    'systems-manager': [
-      {
-        id: "systems-management",
-        title: "Systems Management",
-        description: "Configure system settings, manage integrations, and oversee technical operations.",
-        page: "/systems-management",
-        icon: Settings,
-        benefits: [
-          "System configuration and monitoring",
-          "Integration management",
-          "Technical oversight"
-        ],
-        actionText: "Manage Systems",
-        duration: "3 min"
-      },
-      {
-        id: "user-management",
-        title: "User & Role Management",
-        description: "Manage user accounts, role assignments, and access permissions.",
-        page: "/user-role-assignments",
-        icon: Users,
-        benefits: [
-          "Control user access",
-          "Manage role permissions",
-          "Ensure security compliance"
-        ],
-        actionText: "Manage Users",
-        duration: "2 min"
-      }
-    ]
-  };
-
-  // Map roleId to role key for fallback steps
-  const roleIdToKey: Record<number, string> = {
-    1: 'director',
-    3: 'production-scheduler', 
-    4: 'plant-manager',
-    5: 'systems-manager'
-  };
-
-  // Return role-specific steps plus common steps
-  const roleKey = roleIdToKey[roleId];
-  const roleSpecificSteps = roleKey ? roleSteps[roleKey] || [] : [];
-  return [commonSteps[0], ...roleSpecificSteps, commonSteps[1]];
+  
+  return commonSteps;
 };
 
 export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = false, onComplete, onSkip, onSwitchRole }: GuidedTourProps) {
   console.log("GuidedTour component mounted with roleId:", roleId, "initialVoiceEnabled:", initialVoiceEnabled);
   
-  // Fetch role data to get role name for compatibility
-  const { data: roleData } = useQuery<RoleData>({
-    queryKey: [`/api/roles/${roleId}`],
-    enabled: !!roleId,
-  });
-  
+  // State management
   const [currentStep, setCurrentStep] = useState(initialStep);
-  
-  // Create session key for tour tracking
-  const tourSessionKey = `tour-${roleId}-welcome-auto-played`;
-  const [hasAutoStarted, setHasAutoStarted] = useState(false);
-  
-  // Reset to first step when role changes and clear auto-start tracking
-  useEffect(() => {
-    setCurrentStep(0);
-    setHasAutoStarted(false); // Allow auto-start for new role
-    // Clear previous tour auto-start tracking to allow fresh start
-    sessionStorage.removeItem(tourSessionKey);
-  }, [roleId, tourSessionKey]);
-  // Initialize position to bottom-right corner immediately
-  const getInitialPosition = () => {
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-    const isMobile = windowWidth < 768;
-    
-    if (isMobile) {
-      // On mobile, position the tour window at the bottom-right with minimal margins
-      const cardWidth = Math.min(300, windowWidth - 20); // Use more width on mobile, small margins
-      const maxCardHeight = Math.min(400, windowHeight * 0.6); // Taller on mobile
-      const padding = 10; // Smaller padding on mobile
-      
-      const position = {
-        x: windowWidth - cardWidth - padding, // Right edge with small padding
-        y: windowHeight - maxCardHeight - padding // Bottom edge with small padding
-      };
-      
-      console.log("MOBILE tour position calculated:", position, "windowSize:", { width: windowWidth, height: windowHeight }, "cardWidth:", cardWidth, "maxCardHeight:", maxCardHeight);
-      
-      // Log the exact calculation for debugging
-      console.log("Mobile calculation details:", {
-        windowWidth,
-        windowHeight,
-        cardWidth,
-        padding: 10,
-        targetX: windowWidth - cardWidth - 10,
-        targetY: windowHeight - maxCardHeight - 10,
-        finalPosition: position
-      });
-      
-      return position;
-    } else {
-      // Desktop positioning
-      const cardWidth = 384;
-      const maxCardHeight = Math.min(600, windowHeight - 100);
-      const padding = 20;
-      
-      const position = {
-        x: windowWidth - cardWidth - padding,
-        y: windowHeight - maxCardHeight - padding
-      };
-      
-      console.log("DESKTOP tour position calculated:", position, "windowSize:", { width: windowWidth, height: windowHeight });
-      return position;
-    }
-  };
-
   const [isVisible, setIsVisible] = useState(true);
-  const [position, setPosition] = useState(getInitialPosition);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [voiceEnabled, setVoiceEnabled] = useState(initialVoiceEnabled);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoadingVoice, setIsLoadingVoice] = useState(false);
   const [audioCompleted, setAudioCompleted] = useState(false);
-  const [showRoleSelection, setShowRoleSelection] = useState(false);
-  
-  // Auto-advance state
   const [autoAdvance, setAutoAdvance] = useState(false);
-  const autoAdvanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [, setLocation] = useLocation();
-  const { toast } = useToast();
+  const [showRoleSelection, setShowRoleSelection] = useState(false);
+  const [hasAutoStarted, setHasAutoStarted] = useState(false);
+  
+  // Refs
+  const speechRef = useRef<HTMLAudioElement | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
-  const speechRef = useRef<HTMLAudioElement | SpeechSynthesisUtterance | null>(null);
+  const autoAdvanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const audioCache = useRef<Map<string, string>>(new Map());
+  const preloadingSteps = useRef<Set<string>>(new Set());
   
-  // Voice preloading system
-  const audioCache = useRef<Map<string, string>>(new Map()); // stepId -> audioUrl
-  const preloadingSteps = useRef<Set<string>>(new Set()); // Track which steps are being preloaded
-
-  // Fetch tours from database (all tours for fallback)
-  const { data: toursFromAPI = [], isLoading: toursLoading } = useQuery<any[]>({
-    queryKey: ["/api/tours"],
-  });
-
-  // Fetch specific tour by role ID for better performance
-  const { data: specificTourData, isLoading: specificTourLoading } = useQuery<any>({
-    queryKey: [`/api/tours/role-id/${roleId}`],
+  // Position state for draggable window
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+  
+  // Fetch role data
+  const { data: roleData } = useQuery<RoleData>({
+    queryKey: [`/api/roles/${roleId}`],
     enabled: !!roleId,
-    retry: false, // Don't retry if tour doesn't exist
   });
 
-  // Helper function to calculate tour duration based on number of steps
-  const calculateTourDuration = (totalSteps: number): string => {
-    if (totalSteps <= 3) return "5-7 min tour";
-    if (totalSteps <= 6) return "8-12 min tour";
-    if (totalSteps <= 10) return "13-18 min tour";
-    if (totalSteps <= 15) return "19-25 min tour";
-    return "25-35 min tour"; // For tours with 16+ steps
-  };
+  // Fetch tours from database
+  const { data: toursFromAPI = [], isLoading: toursLoading } = useQuery<any[]>({
+    queryKey: ['/api/tours'],
+    staleTime: 0,
+  });
 
-  // Convert database tour data to TourStep format
-  const getTourStepsFromDatabase = (roleId: number): TourStep[] => {
-    // Use specific tour data if available, otherwise fall back to searching all tours
-    const tourData = specificTourData || toursFromAPI.find((tour: any) => tour.roleId === roleId);
-    
-    if (!tourData?.tourData?.steps) {
-      // Fallback to original hardcoded steps if no database data  
-      return getTourSteps(roleId);
-    }
-
-    // Convert database steps to TourStep format first to calculate total
-    const databaseSteps: TourStep[] = tourData.tourData.steps.map((step: any) => ({
-      id: (step.stepName || step.stepTitle)?.toLowerCase().replace(/\s+/g, '-') || step.id || 'step',
-      title: step.stepName || step.stepTitle || step.title || 'Tour Step',
-      description: step.description || step.voiceScript || 'Explore this feature',
-      page: translateNavPath(step.navigationPath || step.page) || "current",
-      icon: getIconForPage(translateNavPath(step.navigationPath || step.page)),
-      benefits: Array.isArray(step.benefits) ? step.benefits : [step.benefits || "Learn about this feature"],
-      actionText: step.stepName || step.stepTitle || "Continue",
-      duration: "2 min"
-    }));
-
-    // Calculate total tour duration based on number of steps (including welcome + completion)
-    const totalSteps = databaseSteps.length + 2;
-    const tourDuration = calculateTourDuration(totalSteps);
-
-    const commonSteps: TourStep[] = [
-      {
-        id: "welcome",
-        title: "Welcome to Your Demo",
-        description: "Let's explore the key features that will transform your manufacturing operations.",
-        page: "current",
-        icon: Play,
-        benefits: [
-          "See real-time production insights",
-          "Experience intelligent scheduling",
-          "Understand role-based workflows"
-        ],
-        actionText: "Start Tour",
-        duration: tourDuration
-      },
-      {
-        id: "demo-complete",
-        title: "Demo Experience Complete",
-        description: "You now have access to explore all PlanetTogether features using the sidebar navigation.",
-        page: "current",
-        icon: CheckCircle,
-        benefits: [
-          "Use the sidebar to navigate between features",
-          "All demo data is available for exploration",
-          "Contact us to learn about implementation"
-        ],
-        actionText: "Finish Tour",
-        duration: "Complete"
-      }
-    ];
-
-    return [commonSteps[0], ...databaseSteps, commonSteps[1]];
-  };
-
-  // Helper function to translate descriptive navigation paths to actual URL routes
-  const translateNavPath = (navPath: string): string => {
-    if (!navPath || navPath === "current") return "current";
-    
-    // Handle descriptive navigation paths from database
-    const routeMapping: Record<string, string> = {
-      "Dashboard > Scheduling > Gantt Chart": "/production-schedule",
-      "Dashboard > Scheduling > Boards": "/boards",
-      "Dashboard > Scheduling > Optimization": "/optimize-orders",
-      "Dashboard": "/production-schedule",
-      "Boards": "/boards",
-      "Scheduling": "/production-schedule",
-      "Schedule": "/production-schedule",
-      "Production Schedule": "/production-schedule",
-      "Gantt Chart": "/production-schedule",
-      "Optimization": "/optimize-orders",
-      "Analytics": "/analytics",
-      "Reports": "/reports",
-      "Business Goals": "/business-goals",
-      "Capacity Planning": "/capacity-planning",
-      "Shop Floor": "/shop-floor",
-      "Plant Manager": "/plant-manager-dashboard",
-      "Systems Management": "/systems-management-dashboard",
-      "Role Management": "/role-management",
-      "Training": "/training",
-      "Scheduling Optimizer": "/optimize-orders",
-      "Visual Factory": "/visual-factory",
-      "ERP Import": "/erp-import",
-      "AI Assistant": "/max-ai-assistant",
-      "Max AI": "/max-ai-assistant",
-      "Operator": "/operator-dashboard",
-      "Operator Dashboard": "/operator-dashboard",
-      "Forklift Driver": "/forklift-driver"
-    };
-    
-    // Check if it's already a valid URL path
-    if (navPath.startsWith('/')) {
-      return navPath;
-    }
-    
-    // Look up the mapping
-    return routeMapping[navPath] || "current";
-  };
-
-  // Helper function to get appropriate icon for each page
-  const getIconForPage = (page: string): React.ElementType => {
-    const pageIcons: Record<string, React.ElementType> = {
-      '/business-goals': TrendingUp,
-      '/analytics': BarChart3,
-      '/reports': Settings,
-      '/production-schedule': BarChart3,
-      '/boards': Kanban,
-      '/optimize-orders': Target,
-      '/plant-manager-dashboard': Users,
-      '/capacity-planning': BarChart3,
-      '/shop-floor': Settings,
-      '/systems-management-dashboard': Settings,
-      '/role-management': Users,
-      '/user-role-assignments-page': Users,
-      '/training': Lightbulb,
-      '/max-ai-assistant': Settings,
-      '/operator-dashboard': Settings,
-      '/forklift-driver': Settings,
-    };
-    return pageIcons[page] || Settings;
-  };
-
-  // Calculate tour steps safely after data is loaded
-  const tourSteps = (toursLoading || specificTourLoading) ? [] : getTourStepsFromDatabase(roleId);
+  // Get tour steps
+  const tourSteps = toursLoading ? [] : getTourStepsFromDatabase(roleId);
   const progress = tourSteps.length > 0 ? ((currentStep + 1) / tourSteps.length) * 100 : 0;
-  
-  console.log("GuidedTour initialized - tourSteps:", tourSteps, "currentStep:", currentStep, "loading:", toursLoading);
 
-  // Use a unique tour session key to track auto-start behavior
-  // (Already defined above, so we'll use the one from line 376)
-  
-  // Voice preloading function
-  const preloadVoiceForStep = async (stepId: string): Promise<string | null> => {
-    if (preloadingSteps.current.has(stepId) || audioCache.current.has(stepId)) {
-      return audioCache.current.get(stepId) || null;
-    }
-    
-    preloadingSteps.current.add(stepId);
-    
-    try {
-      const stepData = tourSteps.find(step => step.id === stepId);
-      if (!stepData) return null;
+  // Initialize position
+  useEffect(() => {
+    const getInitialPosition = () => {
+      const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
+      const isMobile = windowWidth < 768;
       
-      const enhancedText = createEngagingNarration(stepData, (roleData as any)?.name || 'unknown');
-      console.log(`Preloading voice for step: ${stepId}`);
-      
-      const response = await fetch("/api/ai/text-to-speech", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("authToken")}`
-        },
-        body: JSON.stringify({
-          text: enhancedText,
-          gender: "female",
-          voice: "alloy",
-          speed: 1.15,
-          role: roleData?.name || 'unknown',
-          stepId: stepId
-        })
-      });
-
-      if (response.ok) {
-        const audioBlob = await response.blob();
-        const audioUrl = URL.createObjectURL(audioBlob);
-        audioCache.current.set(stepId, audioUrl);
-        console.log(`Voice preloaded successfully for step: ${stepId}`);
-        return audioUrl;
+      if (isMobile) {
+        const cardWidth = Math.min(300, windowWidth - 20);
+        const maxCardHeight = Math.min(400, windowHeight * 0.6);
+        const padding = 10;
+        
+        return {
+          x: windowWidth - cardWidth - padding,
+          y: windowHeight - maxCardHeight - padding
+        };
+      } else {
+        const cardWidth = 384;
+        const maxCardHeight = Math.min(600, windowHeight - 100);
+        const padding = 20;
+        
+        return {
+          x: windowWidth - cardWidth - padding,
+          y: windowHeight - maxCardHeight - padding
+        };
       }
-    } catch (error) {
-      console.warn(`Failed to preload voice for step ${stepId}:`, error);
-    } finally {
-      preloadingSteps.current.delete(stepId);
+    };
+
+    setPosition(getInitialPosition());
+  }, []);
+
+  // Window resize handler
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Reset step when role changes
+  useEffect(() => {
+    setCurrentStep(0);
+    setHasAutoStarted(false);
+  }, [roleId]);
+
+  // Navigation handlers
+  const handleNext = () => {
+    if (currentStep < tourSteps.length - 1) {
+      setCurrentStep(currentStep + 1);
+      setAudioCompleted(false);
+      stopSpeech();
+    } else {
+      onComplete();
     }
-    
-    return null;
   };
 
-  // Auto-start voice narration and preload next steps
-  useEffect(() => {
-    console.log("Auto-start voice effect triggered:", { initialVoiceEnabled, currentStep, hasSteps: tourSteps.length > 0, hasAutoStarted });
-    if (initialVoiceEnabled && currentStep === 0 && tourSteps.length > 0 && !hasAutoStarted) {
-      // Check if we've already auto-played the welcome step for this tour session
-      const welcomeAlreadyPlayed = sessionStorage.getItem(tourSessionKey) === 'true';
-      
-      if (!welcomeAlreadyPlayed) {
-        // Small delay to ensure component is ready
-        const timer = setTimeout(() => {
-          console.log("Auto-starting voice for welcome step since user enabled voice narration");
-          setHasAutoStarted(true);
-          sessionStorage.setItem(tourSessionKey, 'true');
-          playPreloadedAudio(tourSteps[0].id);
-          
-          // Preload next 2-3 steps in the background
-          if (tourSteps.length > 1) preloadVoiceForStep(tourSteps[1].id);
-          if (tourSteps.length > 2) preloadVoiceForStep(tourSteps[2].id);
-          if (tourSteps.length > 3) preloadVoiceForStep(tourSteps[3].id);
-        }, 500);
-        return () => clearTimeout(timer);
-      }
+  const handlePrevious = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+      setAudioCompleted(false);
+      stopSpeech();
     }
-  }, [initialVoiceEnabled, tourSteps, currentStep, hasAutoStarted, tourSessionKey]);
+  };
 
-  // Preload next steps when current step changes
-  useEffect(() => {
-    if (tourSteps.length > 0 && currentStep < tourSteps.length - 1) {
-      // Preload next 2-3 steps
-      const nextStep = currentStep + 1;
-      const stepAfter = currentStep + 2;
-      const stepAfterThat = currentStep + 3;
-      
-      if (nextStep < tourSteps.length) preloadVoiceForStep(tourSteps[nextStep].id);
-      if (stepAfter < tourSteps.length) preloadVoiceForStep(tourSteps[stepAfter].id);
-      if (stepAfterThat < tourSteps.length) preloadVoiceForStep(tourSteps[stepAfterThat].id);
-    }
-  }, [currentStep, tourSteps]);
+  const handleComplete = () => {
+    stopSpeech();
+    setShowRoleSelection(true);
+  };
 
+  const handleSkip = () => {
+    stopSpeech();
+    onSkip();
+  };
+
+  // Audio control functions
   const stopSpeech = () => {
     console.log("Stopping all speech and audio");
     
-    // Stop HTML5 Audio if it exists
     if (speechRef.current) {
       try {
         speechRef.current.pause();
         speechRef.current.currentTime = 0;
-        
-        // Clean up event listeners
         speechRef.current.onended = null;
         speechRef.current.onerror = null;
-        
-        // Clean up audio object
         speechRef.current = null;
       } catch (error) {
         console.error("Error stopping HTML5 audio:", error);
       }
     }
     
-    // Reset all audio-related states
     setIsPlaying(false);
     setIsLoadingVoice(false);
   };
 
-  const toggleVoice = () => {
-    // Prevent toggling while audio is playing
-    if (isPlaying) return;
-    
-    const newVoiceEnabled = !voiceEnabled;
-    setVoiceEnabled(newVoiceEnabled);
-    
-    if (!newVoiceEnabled) {
-      stopSpeech();
-    } else if (newVoiceEnabled && tourSteps[currentStep]) {
-      // Immediately start playing when voice is enabled
-      // Set voice as enabled first, then play audio
-      setTimeout(() => {
-        if (tourSteps[currentStep]) {
-          playPreloadedAudioForToggle(tourSteps[currentStep].id);
-        }
-      }, 100); // Small delay to ensure state is updated
-    }
-  };
-  
-  // Play preloaded or cached audio for a specific step  
   const playPreloadedAudio = async (stepId: string) => {
-    if (!voiceEnabled || isLoadingVoice || isPlaying) {
-      console.log("Audio already loading or playing, skipping:", { voiceEnabled, isLoadingVoice, isPlaying });
-      return;
-    }
-
-    // Double-check and stop any currently playing audio first
-    if (speechRef.current) {
-      console.log("Stopping existing audio before starting new playback");
-    }
+    if (!voiceEnabled || isPlaying || isLoadingVoice) return;
+    
     stopSpeech();
     
-    setIsLoadingVoice(true);
-    setIsPlaying(false);
-    
-    try {
-      // Check if audio is already preloaded in cache
-      let audioUrl = audioCache.current.get(stepId);
-      
-      if (audioUrl) {
-        console.log(`Using preloaded audio for step: ${stepId}`);
-      } else {
-        // Fallback to server request if not preloaded
-        const currentStepData = tourSteps.find(step => step.id === stepId);
-        if (!currentStepData) return;
-        
-        const enhancedText = createEngagingNarration(currentStepData, (roleData as any)?.name || 'unknown');
-        console.log(`Loading audio from server for step: ${stepId}`);
-        
-        const response = await fetch("/api/ai/text-to-speech", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("authToken")}`
-          },
-          body: JSON.stringify({
-            text: enhancedText,
-            gender: "female",
-            voice: "alloy",
-            speed: 1.15,
-            role: roleData?.name || 'unknown',
-            stepId: stepId
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error(`No cached audio available: ${response.status}`);
-        }
-        
-        const audioBlob = await response.blob();
-        audioUrl = URL.createObjectURL(audioBlob);
-        // Cache it for potential replay
-        audioCache.current.set(stepId, audioUrl);
-      }
-      
-      const audio = new Audio(audioUrl);
-      audio.preload = "auto";
-        
-      audio.onended = () => {
-        setIsPlaying(false);
-        setIsLoadingVoice(false);
-        setAudioCompleted(true);
-        speechRef.current = null;
-        console.log("Audio playback completed - user can click Next");
-        
-        // Auto-advance to next step if enabled and not on last step
-        if (autoAdvance && currentStep < tourSteps.length - 1) {
-          autoAdvanceTimeoutRef.current = setTimeout(() => {
-            handleNext();
-          }, 2000); // Wait 2 seconds after audio ends before advancing
-        } else if (autoAdvance && currentStep === tourSteps.length - 1) {
-          // Auto-complete tour if on last step
-          autoAdvanceTimeoutRef.current = setTimeout(() => {
-            handleComplete();
-          }, 2000); // Wait 2 seconds after audio ends before showing completion dialog
-        }
-      };
-      
-      audio.onerror = (e) => {
-        console.error("Audio playback error:", e);
-        setIsPlaying(false);
-        setIsLoadingVoice(false);
-        speechRef.current = null;
-      };
-        
-        speechRef.current = audio;
-        
-        try {
-          await audio.play();
-          setIsLoadingVoice(false);
-          setIsPlaying(true);
-          console.log("Cached audio started playing");
-        } catch (playError) {
-          console.error("Auto-play failed:", playError);
-          setIsPlaying(false);
-          setIsLoadingVoice(false);
-        }
-        
-      } catch (error) {
-        console.error(`Failed to load cached audio for step ${stepId}:`, error);
-        setIsPlaying(false);
-        setIsLoadingVoice(false);
-      }
-    }
-  };
-
-  // Separate function for voice toggle that bypasses voice enabled check
-  const playPreloadedAudioForToggle = async (stepId: string) => {
-    if (isPlaying || isLoadingVoice) return;
-    
-    // Stop any currently playing audio first
-    stopSpeech();
-    
-    // Always use server-side cached audio for instant playback
     const currentStepData = tourSteps.find(step => step.id === stepId);
     if (currentStepData) {
       const enhancedText = createEngagingNarration(currentStepData, roleData?.name || 'unknown');
-      console.log(`Playing cached audio for voice toggle on step: ${stepId}`);
+      console.log(`Starting new audio for step: ${stepId}`);
       
       try {
-        // Show loading indicator while generating/loading voice
         setIsLoadingVoice(true);
         setIsPlaying(false);
         
@@ -880,7 +297,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         });
 
         if (!response.ok) {
-          throw new Error(`No cached audio available: ${response.status}`);
+          throw new Error(`Audio generation failed: ${response.status}`);
         }
         
         const audioBlob = await response.blob();
@@ -892,42 +309,64 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         audio.onended = () => {
           setIsPlaying(false);
           setIsLoadingVoice(false);
-          URL.revokeObjectURL(audioUrl);
+          setAudioCompleted(true);
           speechRef.current = null;
-          console.log("Voice toggle audio playback completed");
+          URL.revokeObjectURL(audioUrl);
+          console.log("Audio playback completed");
+          
+          if (autoAdvance && currentStep < tourSteps.length - 1) {
+            autoAdvanceTimeoutRef.current = setTimeout(() => {
+              handleNext();
+            }, 2000);
+          } else if (autoAdvance && currentStep === tourSteps.length - 1) {
+            autoAdvanceTimeoutRef.current = setTimeout(() => {
+              handleComplete();
+            }, 2000);
+          }
         };
         
         audio.onerror = (e) => {
-          console.error("Voice toggle audio playback error:", e);
+          console.error("Audio playback error:", e);
           setIsPlaying(false);
           setIsLoadingVoice(false);
-          URL.revokeObjectURL(audioUrl);
           speechRef.current = null;
+          URL.revokeObjectURL(audioUrl);
         };
-        
+          
         speechRef.current = audio;
         
         try {
           await audio.play();
           setIsLoadingVoice(false);
           setIsPlaying(true);
-          console.log("Voice toggle audio started playing");
+          console.log("Audio started playing");
         } catch (playError) {
-          console.error("Voice toggle auto-play failed:", playError);
+          console.error("Auto-play failed:", playError);
           setIsPlaying(false);
           setIsLoadingVoice(false);
+          URL.revokeObjectURL(audioUrl);
         }
         
       } catch (error) {
-        console.error(`Failed to load cached audio for voice toggle on step ${stepId}:`, error);
+        console.error(`Failed to load audio for step ${stepId}:`, error);
         setIsPlaying(false);
         setIsLoadingVoice(false);
       }
     }
   };
 
+  const toggleVoice = () => {
+    if (isPlaying) return;
+    
+    const newVoiceEnabled = !voiceEnabled;
+    setVoiceEnabled(newVoiceEnabled);
+    
+    if (newVoiceEnabled && tourSteps[currentStep]) {
+      playPreloadedAudio(tourSteps[currentStep].id);
+    }
+  };
+
   const togglePlayPause = () => {
-    // Prevent multiple clicks if voice is disabled
     if (!voiceEnabled) return;
     
     if (isPlaying) {
@@ -937,17 +376,140 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     }
   };
 
-  // Handle loading and visibility states
-  if (toursLoading || !isVisible || !tourSteps[currentStep]) return null;
+  // Auto-start voice if enabled
+  useEffect(() => {
+    if (initialVoiceEnabled && currentStep === 0 && tourSteps.length > 0 && !hasAutoStarted) {
+      const timer = setTimeout(() => {
+        console.log("Auto-starting voice for welcome step");
+        setHasAutoStarted(true);
+        playPreloadedAudio(tourSteps[0].id);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [initialVoiceEnabled, tourSteps, currentStep, hasAutoStarted]);
+
+  // Dragging functionality
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setDragOffset({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    });
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setIsDragging(true);
+    setDragOffset({
+      x: touch.clientX - position.x,
+      y: touch.clientY - position.y
+    });
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        setPosition({
+          x: e.clientX - dragOffset.x,
+          y: e.clientY - dragOffset.y
+        });
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isDragging) {
+        const touch = e.touches[0];
+        setPosition({
+          x: touch.clientX - dragOffset.x,
+          y: touch.clientY - dragOffset.y
+        });
+      }
+    };
+
+    const handleEnd = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleEnd);
+      document.addEventListener('touchmove', handleTouchMove);
+      document.addEventListener('touchend', handleEnd);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleEnd);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleEnd);
+    };
+  }, [isDragging, dragOffset]);
+
+  // Role selection handlers
+  const getAvailableRoles = () => [
+    {
+      id: "director",
+      name: "Director",
+      description: "Strategic oversight, business goals, and executive reporting",
+      icon: TrendingUp
+    },
+    {
+      id: "production-scheduler",
+      name: "Production Scheduler",
+      description: "Resource planning, job scheduling, and capacity optimization", 
+      icon: BarChart3
+    },
+    {
+      id: "plant-manager",
+      name: "Plant Manager",
+      description: "Overall operations management and department coordination",
+      icon: Users
+    },
+    {
+      id: "systems-manager",
+      name: "Systems Manager", 
+      description: "Technical administration, user management, and system configuration",
+      icon: Settings
+    }
+  ];
+
+  const handleSwitchToRole = (newRoleId: number) => {
+    console.log("Switching to role:", newRoleId);
+    setShowRoleSelection(false);
+    if (onSwitchRole) {
+      onSwitchRole(newRoleId);
+    }
+  };
+
+  const handleExitApplication = () => {
+    window.location.href = '/';
+  };
+
+  const handleFinishAllTours = () => {
+    setShowRoleSelection(false);
+    onComplete();
+  };
+
+  // Component rendering
+  if (toursLoading) {
+    return <div className="fixed bottom-4 right-4 z-50 p-4 bg-white rounded shadow">Loading...</div>;
+  }
+  
+  if (!isVisible) {
+    return null;
+  }
 
   const currentStepData = tourSteps[currentStep];
   const StepIcon = currentStepData?.icon || Settings;
 
-  if (!isVisible || !currentStepData) return null;
+  if (!currentStepData) return null;
 
   return (
     <>
-      {/* Light backdrop that allows interaction with background */}
+      {/* Light backdrop */}
       <div className="fixed inset-0 bg-black bg-opacity-20 z-40 pointer-events-none"></div>
       
       {/* Draggable tour window */}
@@ -977,348 +539,173 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
               </Badge>
             </div>
             <div className="flex items-center gap-1">
-              {/* Voice Toggle Button */}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={toggleVoice}
-                className={`text-gray-500 hover:text-gray-700 ${voiceEnabled ? 'bg-blue-50 text-blue-600' : ''}`}
-                title={voiceEnabled ? "Turn off voice narration" : "Turn on voice narration"}
+                className="h-8 w-8 p-0"
               >
                 {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
               </Button>
-              
-              {/* Voice Controls (only shown when voice is enabled) */}
-              {voiceEnabled && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={togglePlayPause}
-                    className="text-gray-500 hover:text-gray-700"
-                    title={isPlaying ? "Pause narration" : "Play narration"}
-                  >
-                    {isPlaying ? (
-                      <Pause className="h-4 w-4" />
-                    ) : (
-                      <Play className="h-4 w-4" />
-                    )}
-                  </Button>
-                  
-                  {/* Replay Button */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      console.log("Replay button clicked for step:", tourSteps[currentStep]?.id);
-                      stopSpeech();
-                      // Small delay to ensure audio stops before starting new playback
-                      setTimeout(() => {
-                        playPreloadedAudio(tourSteps[currentStep]?.id);
-                      }, 100);
-                    }}
-                    className="text-gray-500 hover:text-gray-700"
-                    title="Replay current step narration"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-              
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleSkipTour}
-                className="text-gray-500 hover:text-gray-700"
+                onClick={handleSkip}
+                className="h-8 w-8 p-0"
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
-            
-            <div className="flex items-center gap-2 sm:gap-4 mb-2 sm:mb-4">
-              <div className="p-2 sm:p-3 rounded-full bg-blue-100">
-                <StepIcon className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <CardTitle className="text-lg sm:text-xl text-gray-900 leading-tight">
-                  {currentStepData.title}
-                </CardTitle>
-                {/* Hide description on mobile to save space */}
-                <p className="text-gray-600 mt-1 text-sm sm:text-base line-clamp-2 hidden sm:block">
-                  {currentStepData.description}
-                </p>
-              </div>
+          
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <StepIcon className="h-5 w-5 text-blue-600" />
+              <CardTitle className="text-base sm:text-lg font-semibold">{currentStepData.title}</CardTitle>
             </div>
+            <Progress value={progress} className="w-full h-2" />
+            <p className="text-xs text-gray-500">
+              Step {currentStep + 1} of {tourSteps.length} • {currentStepData.duration}
+            </p>
+          </div>
+        </CardHeader>
 
-            <div className="space-y-1 sm:space-y-2">
-              <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500">
-                <span>Step {currentStep + 1} of {tourSteps.length}</span>
-                <span className="hidden sm:inline">{currentStepData.duration}</span>
-              </div>
-              <Progress value={progress} className="h-1 sm:h-2" />
-            </div>
+        <CardContent className="flex-1 overflow-y-auto p-2 sm:p-6 pt-0">
+          <div className="space-y-4">
+            <p className="text-sm text-gray-700 leading-relaxed">{currentStepData.description}</p>
             
-            {/* Voice Status Indicator - positioned as floating overlay on mobile */}
-            {voiceEnabled && (isLoadingVoice || isPlaying) && (
-              <div className="absolute top-20 right-2 sm:static sm:top-auto sm:right-auto text-xs sm:text-sm text-blue-600 bg-blue-50 px-2 py-1 sm:px-3 sm:py-2 rounded-md shadow-sm sm:shadow-none z-10">
-                <div className="flex items-center gap-2">
-                  {isLoadingVoice ? (
-                    <>
-                      <div className="h-2 w-2 sm:h-3 sm:w-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                      <span className="hidden sm:inline">Loading voice narration...</span>
-                      <span className="sm:hidden">Loading...</span>
-                    </>
-                  ) : (
-                    <>
-                      <div className="h-2 w-2 sm:h-3 sm:w-3 bg-blue-500 rounded-full animate-pulse" />
-                      <span className="hidden sm:inline">Playing voice narration</span>
-                      <span className="sm:hidden">Playing</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-          </CardHeader>
-
-          <CardContent className="pointer-events-auto flex-1 flex flex-col min-h-0 p-2 sm:p-6 pt-0 pb-1 sm:pb-6" onMouseDown={(e) => e.stopPropagation()}>
-            {/* Scrollable content area */}
-            <div className="flex-1 overflow-y-auto min-h-0 space-y-2 sm:space-y-4">
-              {/* Benefits - hidden on mobile to save space */}
-              <div className="hidden sm:block">
-                <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2 text-sm sm:text-base">
-                  <Lightbulb className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-500" />
-                  Key Benefits
-                </h4>
+            {currentStepData.benefits && currentStepData.benefits.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-gray-900">Key Benefits:</h4>
                 <ul className="space-y-1">
-                  {(Array.isArray(currentStepData.benefits) 
-                    ? currentStepData.benefits.slice(0, 3) 
-                    : [currentStepData.benefits].slice(0, 3)
-                  ).map((benefit, index) => (
-                    <li key={index} className="flex items-start gap-2 text-xs sm:text-sm text-gray-600">
-                      <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span className="line-clamp-2">{benefit}</span>
+                  {currentStepData.benefits.map((benefit, index) => (
+                    <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span>{benefit}</span>
                     </li>
                   ))}
                 </ul>
               </div>
+            )}
+          </div>
+        </CardContent>
 
-              {/* Visit Page Button for steps with specific pages */}
-              {currentStepData.page && currentStepData.page !== "current" && (
-                <div className="flex justify-center">
-                  <Button
-                    onClick={() => {
-                      console.log("Visiting page:", currentStepData.page);
-                      setLocation(currentStepData.page);
-                    }}
-                    variant="outline"
-                    className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                  >
-                    <Target className="h-4 w-4 mr-2" />
-                    {currentStepData.actionText}
-                  </Button>
-                </div>
-              )}
-            </div>
-            
-            {/* Fixed Action Buttons at bottom */}
-            <div className="flex items-center justify-between pt-1 sm:pt-3 border-t bg-white flex-shrink-0">
-              <div className="flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleSkipTour}
-                  className="text-gray-500 px-1 sm:px-2 text-xs sm:text-sm h-6 sm:h-8"
-                >
-                  Skip
-                </Button>
-                {currentStep > 0 && (
-                  <Button variant="outline" size="sm" onClick={handlePrevious} className="px-1 sm:px-2 text-xs sm:text-sm h-6 sm:h-8">
-                    <ChevronLeft className="h-3 w-3 mr-0 sm:mr-1" />
-                    <span className="hidden sm:inline">Back</span>
-                  </Button>
+        <div className="flex-shrink-0 p-2 sm:p-6 pt-2 border-t space-y-3">
+          {voiceEnabled && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Voice Guide</span>
+              <div className="flex items-center gap-2">
+                {isLoadingVoice && (
+                  <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
                 )}
-
-              </div>
-              
-              <div className="flex gap-1">
-                {/* Auto-advance toggle button */}
                 <Button
-                  variant={autoAdvance ? "default" : "outline"}
+                  variant="outline"
                   size="sm"
-                  onClick={() => {
-                    const newAutoAdvance = !autoAdvance;
-                    setAutoAdvance(newAutoAdvance);
-                    
-                    // If turning on auto-advance and audio has completed, immediately advance
-                    if (newAutoAdvance && audioCompleted && currentStep < tourSteps.length - 1) {
-                      autoAdvanceTimeoutRef.current = setTimeout(() => {
-                        handleNext();
-                      }, 100); // Very quick advance when toggling on
-                    } else if (newAutoAdvance && audioCompleted && currentStep === tourSteps.length - 1) {
-                      // Auto-complete tour if on last step
-                      autoAdvanceTimeoutRef.current = setTimeout(() => {
-                        handleComplete();
-                      }, 100); // Very quick completion when toggling on
-                    }
-                  }}
-                  className={`px-1 sm:px-2 text-xs sm:text-sm h-6 sm:h-8 ${autoAdvance ? 'bg-green-600 hover:bg-green-700 text-white' : 'text-gray-600 border-gray-200 hover:bg-gray-50'}`}
-                  title={autoAdvance ? "Turn off auto-advance" : "Turn on auto-advance"}
+                  onClick={togglePlayPause}
+                  disabled={isLoadingVoice}
+                  className="h-8 w-8 p-0"
                 >
-                  {autoAdvance ? <Timer className="h-3 w-3 mr-0 sm:mr-1" /> : <TimerOff className="h-3 w-3 mr-0 sm:mr-1" />}
-                  <span className="hidden sm:inline">{autoAdvance ? "Auto" : "Manual"}</span>
-                </Button>
-                
-                <Button 
-                  onClick={handleNext} 
-                  size="sm" 
-                  className={`bg-blue-600 hover:bg-blue-700 px-2 sm:px-3 text-xs sm:text-sm h-6 sm:h-8 transition-all duration-300 ${
-                    audioCompleted && voiceEnabled && !autoAdvance ? 'animate-pulse shadow-lg ring-2 ring-blue-300' : ''
-                  }`}
-                >
-                  {currentStep === tourSteps.length - 1 ? (
-                    <>
-                      <span className="hidden sm:inline">Complete</span>
-                      <span className="sm:hidden">Done</span>
-                      <CheckCircle className="h-3 w-3 ml-0 sm:ml-1" />
-                    </>
-                  ) : (
-                    <>
-                      {audioCompleted && voiceEnabled && !autoAdvance ? <span className="hidden sm:inline">👉 </span> : ''}<span className="hidden sm:inline">Next</span><span className="sm:hidden">→</span>
-                      <ArrowRight className="h-3 w-3 ml-0 sm:ml-1" />
-                    </>
-                  )}
+                  {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          )}
 
-        {/* Role Selection Dialog - Mobile Optimized */}
-        <Dialog 
-          open={showRoleSelection} 
-          onOpenChange={(open) => {
-            if (open) {
-              // Ensure audio is stopped when dialog opens
-              console.log("Role selection dialog opening - ensuring audio is stopped");
-              stopSpeech();
-            }
-            setShowRoleSelection(open);
-          }}
-        >
-          <DialogContent className="max-w-2xl max-h-[85vh] sm:max-h-[90vh] flex flex-col">
-            <DialogHeader className="flex-shrink-0">
-              <DialogTitle className="text-xl font-semibold text-center mb-4">
-                🎉 Tour Complete! Continue Exploring?
-              </DialogTitle>
-            </DialogHeader>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handlePrevious}
+              disabled={currentStep === 0}
+              className="flex-1"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
+            </Button>
             
-            {/* Scrollable content area */}
-            <div className="flex-1 overflow-y-auto min-h-0 space-y-4 sm:space-y-6">
-              <div className="text-center">
-                <p className="text-gray-600 mb-4">
-                  Great job completing the <strong>{roleData?.name || 'Demo'}</strong> tour! 
-                  Would you like to explore PlanetTogether from another role's perspective?
-                </p>
-                <p className="text-sm text-gray-500 mb-4 sm:mb-6">
-                  Each role shows different features and capabilities tailored to specific responsibilities.
-                </p>
-              </div>
+            <Button
+              onClick={handleNext}
+              className="flex-1 bg-blue-600 hover:bg-blue-700"
+            >
+              {currentStep === tourSteps.length - 1 ? (
+                <>
+                  Complete
+                  <CheckCircle className="h-4 w-4 ml-1" />
+                </>
+              ) : (
+                <>
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </Card>
 
-              {/* Available Tours Grid - Show All Tours from Database */}
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
-                {toursFromAPI
-                  .filter((tour: any) => tour.roleId !== roleId) // Exclude current role
-                  .map((tour: any) => {
-                    const tourRole = tour.roleDisplayName || tour.roleName || `Role ${tour.roleId}`;
-                    const tourDescription = tour.tourData?.description || tour.description || "Explore features and capabilities for this role";
-                    const roleIcon = getRoleIcon(tourRole);
-                    
-                    return (
-                      <Button
-                        key={tour.id}
-                        onClick={() => handleContinueWithNewRole(getRoleKey(tourRole))}
-                        variant="outline"
-                        className="h-auto p-3 sm:p-4 text-left hover:bg-blue-50 hover:border-blue-300 min-h-[70px] sm:min-h-[80px] flex items-start"
-                      >
-                        <div className="flex items-start gap-2 sm:gap-3 w-full">
-                          {React.createElement(roleIcon, { className: "h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0 mt-0.5" })}
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-gray-900 mb-1 text-sm sm:text-base">{tourRole}</div>
-                            <div className="text-xs text-gray-500 leading-relaxed overflow-hidden">
-                              {tourDescription.length > 50 
-                                ? `${tourDescription.substring(0, 50)}...` 
-                                : tourDescription
-                              }
-                            </div>
-                          </div>
-                        </div>
-                      </Button>
-                    );
-                  })}
-                
-                {/* Fallback to hardcoded roles if no tours from database */}
-                {toursFromAPI.length === 0 && getAvailableRoles()
-                  .filter(availableRole => parseInt(availableRole.id) !== roleId)
-                  .map((availableRole) => (
-                    <Button
-                      key={availableRole.id}
-                      onClick={() => handleContinueWithNewRole(availableRole.id)}
-                      variant="outline"
-                      className="h-auto p-3 sm:p-4 text-left hover:bg-blue-50 hover:border-blue-300 min-h-[70px] sm:min-h-[80px] flex items-start"
-                    >
-                      <div className="flex items-start gap-2 sm:gap-3 w-full">
-                        <availableRole.icon className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-gray-900 mb-1 text-sm sm:text-base">{availableRole.name}</div>
-                          <div className="text-xs text-gray-500 leading-relaxed overflow-hidden">
-                            {availableRole.description.length > 50 
-                              ? `${availableRole.description.substring(0, 50)}...` 
-                              : availableRole.description
-                            }
-                          </div>
-                        </div>
-                      </div>
-                    </Button>
-                  ))}
-              </div>
-
+      {/* Role Selection Dialog */}
+      <Dialog open={showRoleSelection} onOpenChange={setShowRoleSelection}>
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-center">Tour Complete!</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <p className="text-center text-gray-600">
+              Great job! You've completed the {roleData?.name} demo tour.
+            </p>
+            
+            <div className="space-y-2">
+              <h4 className="font-medium">Try Another Role:</h4>
+              {getAvailableRoles().map((availableRole) => (
+                <Button
+                  key={availableRole.id}
+                  variant="outline"
+                  className="w-full justify-start text-left"
+                  onClick={() => handleSwitchToRole(1)} // Default to role ID 1 for demo
+                >
+                  <availableRole.icon className="h-4 w-4 mr-2" />
+                  <div>
+                    <div className="font-medium">{availableRole.name}</div>
+                    <div className="text-xs text-gray-500">
+                      {availableRole.description.length > 50 
+                        ? `${availableRole.description.substring(0, 50)}...` 
+                        : availableRole.description
+                      }
+                    </div>
+                  </div>
+                </Button>
+              ))}
             </div>
 
-            {/* Fixed Action Buttons at bottom */}
-            <div className="flex-shrink-0 space-y-3 pt-4 border-t bg-white">
-              {/* Primary CTA for prospects */}
+            <div className="space-y-3 pt-4 border-t">
               <Button 
-                onClick={() => {
-                  setShowRoleSelection(false);
-                  window.location.href = '/pricing';
-                }}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-sm sm:text-base py-2 sm:py-3"
+                onClick={() => window.location.href = '/pricing'}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
               >
                 <Star className="h-4 w-4 mr-2" />
                 View Pricing & Plans
               </Button>
               
-              {/* Secondary actions */}
-              <div className="flex gap-2 sm:gap-3">
+              <div className="flex gap-2">
                 <Button 
                   onClick={handleExitApplication}
                   variant="outline" 
-                  className="flex-1 text-sm sm:text-base py-2 sm:py-3"
+                  className="flex-1"
                 >
                   Exit Demo
                 </Button>
                 <Button 
                   onClick={handleFinishAllTours}
                   variant="outline"
-                  className="flex-1 text-sm sm:text-base py-2 sm:py-3"
+                  className="flex-1"
                 >
                   Explore More
                 </Button>
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
