@@ -352,14 +352,14 @@ export default function HelpAndGuide() {
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Getting Started</h1>
-          <p className="text-gray-600 mt-1">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+        <div className="md:ml-0 ml-12">
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Getting Started</h1>
+          <p className="text-sm md:text-base text-gray-600">
             Complete setup tasks, learn features, and track your implementation progress
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="lg:flex-shrink-0 flex items-center gap-3">
           <Badge variant="outline" className="px-3 py-1">
             {completedSteps}/{totalSteps} Complete
           </Badge>
