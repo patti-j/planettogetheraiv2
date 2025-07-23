@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Factory, Info, Eye, EyeOff, PlayCircle } from "lucide-react";
+import { Factory, Info, Eye, EyeOff, PlayCircle, DollarSign } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function Login() {
@@ -226,25 +226,46 @@ export default function Login() {
           </CardContent>
         </Card>
 
-        {/* Demo Tour Button */}
-        <Card className="mt-4">
-          <CardContent className="p-4">
-            <div className="text-center">
-              <h3 className="font-semibold text-gray-800 mb-2">New to PlanetTogether?</h3>
-              <p className="text-sm text-gray-600 mb-3">
-                Take a guided tour and see how our AI-powered platform can transform your manufacturing operations
-              </p>
-              <Button 
-                variant="outline" 
-                className="w-full flex items-center gap-2"
-                onClick={() => setLocation("/demo-tour")}
-              >
-                <PlayCircle className="h-4 w-4" />
-                Start Demo Tour
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Demo Tour and Pricing */}
+        <div className="space-y-3">
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-center">
+                <h3 className="font-semibold text-gray-800 mb-2">New to PlanetTogether?</h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  Take a guided tour and see how our AI-powered platform can transform your manufacturing operations
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="w-full flex items-center gap-2"
+                  onClick={() => setLocation("/demo-tour")}
+                >
+                  <PlayCircle className="h-4 w-4" />
+                  Start Demo Tour
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-center">
+                <h3 className="font-semibold text-gray-800 mb-2">Explore Our Plans</h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  See our pricing options and find the right plan for your manufacturing operations
+                </p>
+                <Button 
+                  variant="ghost" 
+                  className="w-full flex items-center gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                  onClick={() => setLocation("/pricing")}
+                >
+                  <DollarSign className="h-4 w-4" />
+                  View Pricing Plans
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
