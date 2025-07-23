@@ -114,18 +114,20 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 23, 2025)
 
-✓ **Voice Auto-Replay Bug Fix & Tour Validation Enhancement (July 23, 2025)**:
+✓ **Voice Continuity & Tour Navigation Enhancement (July 23, 2025)**:
+- Fixed voice continuation during tour navigation - voice now keeps playing when advancing to next steps
+- Enhanced handleNext and handlePrevious functions to preserve voice playback state during navigation
+- Voice automatically starts for new step if it was playing before navigation with 600ms delay for smooth transition
 - Fixed critical voice auto-replay issue where narration would restart after completion instead of waiting for manual replay
 - Implemented sessionStorage tracking to prevent voice from auto-replaying when audio ends
 - Enhanced audio completion handler with explicit "will not auto-replay" logging and behavior
 - Added session cleanup when switching roles to prevent voice conflicts between different role tours
+- Enhanced auto-advance functionality to properly continue voice playback when automatically progressing
 - Fixed tour validation dialog to display detailed information about invalid tours with specific error messages and suggestions
 - Updated validation response structure to match actual API format showing critical errors, invalid tours, and valid tours
 - Enhanced auto-scrolling functionality to work on all pages, even those that fit within viewport
 - Implemented gentle demo scroll that shows page features by scrolling down 30% of viewport and back up
-- Added comprehensive debugging and visual feedback for auto-scroll behavior during guided tours
-- Resolved all TypeScript compilation errors in tour validation and voice generation systems
-- Voice now plays once per step and only replays when user manually clicks the replay button
+- Voice now provides seamless narration experience during tour navigation with proper playback continuity
 - Auto-scrolling provides smooth demonstration of page content even when pages fit within current viewport size
 
 ✓ **Complete Systems Integration Dashboard Transformation (July 23, 2025)**:

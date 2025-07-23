@@ -496,9 +496,19 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   // Navigation handlers
   const handleNext = () => {
     if (currentStep < tourSteps.length - 1) {
+      // Remember if voice was playing before navigation
+      const wasVoicePlaying = isPlaying || voiceEnabled;
+      
       setCurrentStep(currentStep + 1);
       setAudioCompleted(false);
       stopSpeech();
+      
+      // If voice was playing, start it for the new step after a brief delay
+      if (wasVoicePlaying && tourSteps[currentStep + 1]) {
+        setTimeout(() => {
+          playPreloadedAudio(tourSteps[currentStep + 1].id);
+        }, 600); // Small delay to allow navigation to complete
+      }
     } else {
       onComplete();
     }
@@ -506,9 +516,19 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
 
   const handlePrevious = () => {
     if (currentStep > 0) {
+      // Remember if voice was playing before navigation
+      const wasVoicePlaying = isPlaying || voiceEnabled;
+      
       setCurrentStep(currentStep - 1);
       setAudioCompleted(false);
       stopSpeech();
+      
+      // If voice was playing, start it for the new step after a brief delay
+      if (wasVoicePlaying && tourSteps[currentStep - 1]) {
+        setTimeout(() => {
+          playPreloadedAudio(tourSteps[currentStep - 1].id);
+        }, 600); // Small delay to allow navigation to complete
+      }
     }
   };
 
@@ -590,9 +610,11 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           URL.revokeObjectURL(audioUrl);
           console.log("Audio playback completed - voice will not auto-replay");
           
-          // Only auto-advance if enabled, but never auto-replay voice
+          // Auto-advance if enabled and continue voice on next step
           if (autoAdvance && currentStep < tourSteps.length - 1) {
             autoAdvanceTimeoutRef.current = setTimeout(() => {
+              // Set voice as enabled so handleNext will continue voice playback
+              setVoiceEnabled(true);
               handleNext();
             }, 2000);
           } else if (autoAdvance && currentStep === tourSteps.length - 1) {
