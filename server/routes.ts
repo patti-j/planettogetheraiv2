@@ -4700,23 +4700,33 @@ Return JSON format with each role as a top-level key containing tourSteps array.
       if (contentOnly) {
         // Process and structure the tour data for preview
         const processedTours = [];
+        console.log("Available tour data keys:", Object.keys(tourData));
         for (const role of roles) {
+          console.log(`Processing role: ${role}`);
           const roleKey = role.toLowerCase().replace(/\s+/g, '-');
           const roleKeyPascal = role.replace(/\s+/g, '');
           
           let roleTourData = null;
           if (tourData.roles && tourData.roles[role]) {
+            console.log(`Found tour data via roles.${role}`);
             roleTourData = tourData.roles[role];
           } else if (tourData[roleKeyPascal]) {
+            console.log(`Found tour data via ${roleKeyPascal}`);
             roleTourData = tourData[roleKeyPascal];
           } else if (tourData[roleKeyPascal + 'Tour']) {
+            console.log(`Found tour data via ${roleKeyPascal}Tour`);
             roleTourData = tourData[roleKeyPascal + 'Tour'];
           } else if (tourData[role]) {
+            console.log(`Found tour data via ${role}`);
             roleTourData = tourData[role];
           } else if (tourData[roleKey]) {
+            console.log(`Found tour data via ${roleKey}`);
             roleTourData = tourData[roleKey];
           } else if (tourData.steps || tourData.tourSteps) {
+            console.log(`Found tour data via direct steps`);
             roleTourData = tourData;
+          } else {
+            console.log(`No tour data found for role: ${role}. Tried keys: ${role}, ${roleKeyPascal}, ${roleKeyPascal}Tour, ${roleKey}, direct steps`);
           }
           
           const steps = roleTourData?.steps || roleTourData?.tourSteps || [];
