@@ -20,6 +20,7 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
 
   const handleTouchStart = (e: React.TouchEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent parent elements from handling this
     setIsDragging(true);
   };
 
@@ -93,20 +94,28 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
         {/* Main content area */}
         <div 
           className="flex-1 overflow-hidden" 
-          style={{ height: `calc(100% - ${maxHeight}px - 4px)` }}
+          style={{ height: `calc(100% - ${maxHeight}px - 24px)` }}
         >
           {children}
         </div>
         
-        {/* Resizer */}
+        {/* Resizer - Much larger touch area for mobile */}
         <div
-          className="h-1 bg-gray-300 hover:bg-blue-400 cursor-row-resize transition-colors relative group"
+          className="h-6 bg-gray-200 hover:bg-blue-300 cursor-row-resize transition-colors relative group touch-manipulation select-none"
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
+          style={{ 
+            touchAction: 'none', // Prevent scroll/zoom conflicts
+            userSelect: 'none',
+            WebkitUserSelect: 'none'
+          }}
         >
+          {/* Visual indicator */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-8 h-0.5 bg-gray-500 group-hover:bg-blue-600 transition-colors"></div>
+            <div className="w-12 h-1 bg-gray-400 group-hover:bg-blue-500 transition-colors rounded-full"></div>
           </div>
+          {/* Larger invisible touch area */}
+          <div className="absolute inset-x-0 -inset-y-2 cursor-row-resize"></div>
         </div>
         
         {/* Max panel */}

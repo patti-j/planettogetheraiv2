@@ -123,6 +123,9 @@ The application uses a modern full-stack architecture with strong typing through
 - Added Max toggle button to sidebar navigation with Bot icon and proper tooltip
 - Fixed all API functionality for chat and TTS integration with correct fetch API usage
 - Hidden smart insights panel on mobile (hidden md:block) to maximize chat space on smaller screens
+- **Enhanced mobile resizer**: Increased from 4px to 24px height with larger touch area and touch-manipulation CSS
+- Added touchAction: 'none' and proper event handling to prevent window dragging conflicts on mobile
+- Improved visual indicator with wider, more prominent resize handle for better mobile usability
 - Eliminated floating window system entirely for consistent, predictable layout behavior
 
 ✓ **User Profile Integration into Hamburger Menu (July 23, 2025)**:
