@@ -24,6 +24,9 @@ import {
   Volume2,
   VolumeX,
   Database,
+  Maximize,
+  Minimize2,
+  SplitSquareHorizontal,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -60,7 +63,14 @@ const VOICE_OPTIONS = [
 export function MaxSidebar() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { setMaxOpen, isMobile } = useMaxDock();
+  const { 
+    setMaxOpen, 
+    isMobile, 
+    mobileLayoutMode, 
+    currentFullscreenView, 
+    setMobileLayoutMode, 
+    setCurrentFullscreenView 
+  } = useMaxDock();
   
   // State management
   const [messages, setMessages] = useState<Message[]>([]);
@@ -308,6 +318,44 @@ export function MaxSidebar() {
           >
             <Settings className="h-3 w-3" />
           </Button>
+          
+          {/* Mobile Layout Switcher - Only show on mobile */}
+          {isMobile && (
+            <>
+              {mobileLayoutMode === 'split' ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setMobileLayoutMode('fullscreen')}
+                  className="h-6 w-6 p-0 text-white hover:bg-white/20"
+                  title="Switch to Fullscreen Mode"
+                >
+                  <Maximize className="h-3 w-3" />
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCurrentFullscreenView(currentFullscreenView === 'main' ? 'max' : 'main')}
+                    className="h-6 w-6 p-0 text-white hover:bg-white/20"
+                    title={`Switch to ${currentFullscreenView === 'main' ? 'Max' : 'Main Content'} View`}
+                  >
+                    {currentFullscreenView === 'main' ? <Bot className="h-3 w-3" /> : <MessageSquare className="h-3 w-3" />}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setMobileLayoutMode('split')}
+                    className="h-6 w-6 p-0 text-white hover:bg-white/20"
+                    title="Switch to Split Mode"
+                  >
+                    <SplitSquareHorizontal className="h-3 w-3" />
+                  </Button>
+                </>
+              )}
+            </>
+          )}
           
           <Button
             variant="ghost"

@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useMaxDock } from '@/contexts/MaxDockContext';
+import { Button } from '@/components/ui/button';
+import { Bot, MessageSquare, SplitSquareHorizontal } from 'lucide-react';
 
 interface SplitPaneLayoutProps {
   children: React.ReactNode;
@@ -7,7 +9,16 @@ interface SplitPaneLayoutProps {
 }
 
 export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
-  const { isMaxOpen, maxWidth, isMobile, setMaxWidth } = useMaxDock();
+  const { 
+    isMaxOpen, 
+    maxWidth, 
+    isMobile, 
+    mobileLayoutMode, 
+    currentFullscreenView, 
+    setMaxWidth, 
+    setCurrentFullscreenView, 
+    setMobileLayoutMode 
+  } = useMaxDock();
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [maxHeight, setMaxHeight] = useState(300); // For mobile vertical split
@@ -101,6 +112,37 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
   }
 
   if (isMobile) {
+    if (mobileLayoutMode === 'fullscreen') {
+      // Mobile: fullscreen mode - show either main content or Max
+      return (
+        <div className="w-full h-full relative">
+          {currentFullscreenView === 'main' ? children : maxPanel}
+          
+          {/* Floating controls for fullscreen mode */}
+          <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
+            {/* View switcher button */}
+            <Button
+              onClick={() => setCurrentFullscreenView(currentFullscreenView === 'main' ? 'max' : 'main')}
+              className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg border-2 border-white text-white"
+              title={`Switch to ${currentFullscreenView === 'main' ? 'Max AI' : 'Main Content'}`}
+            >
+              {currentFullscreenView === 'main' ? <Bot className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
+            </Button>
+            
+            {/* Back to split mode button */}
+            <Button
+              onClick={() => setMobileLayoutMode('split')}
+              variant="outline"
+              className="w-12 h-12 rounded-full bg-white hover:bg-gray-50 shadow-lg border-2 border-gray-200"
+              title="Switch to Split Mode"
+            >
+              <SplitSquareHorizontal className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+      );
+    }
+    
     // Mobile: vertical split with Max at bottom
     return (
       <div ref={containerRef} className="w-full h-full flex flex-col">

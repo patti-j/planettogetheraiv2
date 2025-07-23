@@ -140,6 +140,11 @@ The application uses a modern full-stack architecture with strong typing through
 - Users can now resize Max window down to almost header-only height, eliminating most visible white space
 - **Max title positioning fix**: Added left margin (ml-12 md:ml-0) to prevent hamburger menu from covering "Max AI Assistant" text
 - Text now properly clears hamburger menu on mobile while maintaining normal positioning on desktop
+- **Mobile Layout Switcher Implementation**: Added mobile fullscreen mode with easy switching between Max and main content
+- Users can switch between split-pane layout (Max at bottom with splitter) and fullscreen mode (toggles between Max and main views)
+- Mobile header includes layout switcher controls: Maximize button (split → fullscreen), view switcher (main ↔ Max), split mode button
+- Fullscreen mode includes floating action buttons (FABs) at bottom-right for easy view switching and returning to split mode
+- Enhanced mobile UX with dedicated fullscreen experience while maintaining split-pane option for power users
 - Eliminated floating window system entirely for consistent, predictable layout behavior
 
 ✓ **User Profile Integration into Hamburger Menu (July 23, 2025)**:

@@ -4,8 +4,12 @@ interface MaxDockContextType {
   isMaxOpen: boolean;
   maxWidth: number;
   isMobile: boolean;
+  mobileLayoutMode: 'split' | 'fullscreen';
+  currentFullscreenView: 'main' | 'max';
   setMaxOpen: (open: boolean) => void;
   setMaxWidth: (width: number) => void;
+  setMobileLayoutMode: (mode: 'split' | 'fullscreen') => void;
+  setCurrentFullscreenView: (view: 'main' | 'max') => void;
 }
 
 const MaxDockContext = createContext<MaxDockContextType | undefined>(undefined);
@@ -14,6 +18,8 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [isMaxOpen, setIsMaxOpen] = useState(true); // Default to visible
   const [maxWidth, setMaxWidth] = useState(400); // Default width for desktop sidebar
   const [isMobile, setIsMobile] = useState(false);
+  const [mobileLayoutMode, setMobileLayoutMode] = useState<'split' | 'fullscreen'>('split');
+  const [currentFullscreenView, setCurrentFullscreenView] = useState<'main' | 'max'>('main');
 
   // Detect mobile on mount and window resize
   useEffect(() => {
@@ -40,8 +46,12 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
         isMaxOpen,
         maxWidth,
         isMobile,
+        mobileLayoutMode,
+        currentFullscreenView,
         setMaxOpen,
         setMaxWidth: setMaxWidthValue,
+        setMobileLayoutMode,
+        setCurrentFullscreenView,
       }}
     >
       {children}
