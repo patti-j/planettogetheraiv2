@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Mic, MicOff, Send, Bot, User, Volume2, Settings, Paperclip, X, FileText, Image, File } from "lucide-react";
+import { Mic, MicOff, Send, Bot, User, Volume2, Settings, Paperclip, X, FileText, Image, File, Edit2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { apiRequest } from "@/lib/queryClient";
@@ -40,6 +40,15 @@ interface AIAgentResponse {
   actions?: string[];
 }
 
+interface QueuedMessage {
+  id: string;
+  content: string;
+  attachments: AttachmentFile[];
+  timestamp: Date;
+  status: "queued" | "processing" | "completed" | "failed";
+  isEditing?: boolean;
+}
+
 export default function AIAgent() {
   const [messages, setMessages] = useState<AIMessage[]>([
     {
@@ -54,6 +63,11 @@ export default function AIAgent() {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [isListening, setIsListening] = useState(false);
   const audioChunks = useRef<Blob[]>([]);
+  
+  // Message queue state
+  const [messageQueue, setMessageQueue] = useState<QueuedMessage[]>([]);
+  const [isProcessingQueue, setIsProcessingQueue] = useState(false);
+  const [currentlyProcessing, setCurrentlyProcessing] = useState<string | null>(null);
   
   // Attachment state
   const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
@@ -310,6 +324,135 @@ export default function AIAgent() {
     toast({ title: "Scrolled to today's date" });
   };
 
+  // Queue management functions
+  const addToQueue = (content: string, attachments: AttachmentFile[] = []) => {
+    const queuedMessage: QueuedMessage = {
+      id: `queue_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      content,
+      attachments,
+      timestamp: new Date(),
+      status: "queued"
+    };
+    
+    setMessageQueue(prev => [...prev, queuedMessage]);
+    
+    // Add user message to chat
+    const userMessage: AIMessage = {
+      id: Date.now().toString(),
+      type: "user",
+      content,
+      timestamp: new Date(),
+      attachments
+    };
+    setMessages(prev => [...prev, userMessage]);
+    
+    // Process queue if not already processing
+    if (!isProcessingQueue) {
+      processQueue();
+    }
+    
+    return queuedMessage.id;
+  };
+
+  const removeFromQueue = (messageId: string) => {
+    setMessageQueue(prev => prev.filter(msg => msg.id !== messageId));
+    toast({
+      title: "Message Removed",
+      description: "Message removed from queue"
+    });
+  };
+
+  const editQueuedMessage = (messageId: string, newContent: string) => {
+    setMessageQueue(prev => prev.map(msg => 
+      msg.id === messageId 
+        ? { ...msg, content: newContent, isEditing: false }
+        : msg
+    ));
+    toast({
+      title: "Message Updated",
+      description: "Queued message has been updated"
+    });
+  };
+
+  const toggleEditMode = (messageId: string) => {
+    setMessageQueue(prev => prev.map(msg => 
+      msg.id === messageId 
+        ? { ...msg, isEditing: !msg.isEditing }
+        : msg
+    ));
+  };
+
+  const processQueue = async () => {
+    if (isProcessingQueue || messageQueue.length === 0) return;
+    
+    setIsProcessingQueue(true);
+    
+    // Find next queued message
+    const nextMessage = messageQueue.find(msg => msg.status === "queued");
+    if (!nextMessage) {
+      setIsProcessingQueue(false);
+      return;
+    }
+    
+    // Mark as processing
+    setMessageQueue(prev => prev.map(msg => 
+      msg.id === nextMessage.id 
+        ? { ...msg, status: "processing" }
+        : msg
+    ));
+    setCurrentlyProcessing(nextMessage.id);
+    
+    try {
+      // Process the message
+      const payload = nextMessage.attachments.length > 0 
+        ? { text: nextMessage.content, attachments: nextMessage.attachments }
+        : nextMessage.content;
+        
+      const data = await textCommandMutation.mutateAsync(payload);
+      
+      // Mark as completed
+      setMessageQueue(prev => prev.map(msg => 
+        msg.id === nextMessage.id 
+          ? { ...msg, status: "completed" }
+          : msg
+      ));
+      
+    } catch (error) {
+      console.error("Queue processing error:", error);
+      
+      // Mark as failed
+      setMessageQueue(prev => prev.map(msg => 
+        msg.id === nextMessage.id 
+          ? { ...msg, status: "failed" }
+          : msg
+      ));
+      
+      // Add error message to chat
+      const errorMessage: AIMessage = {
+        id: Date.now().toString(),
+        type: "agent",
+        content: "I encountered an error processing your message. Please try again or rephrase your request.",
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    }
+    
+    setCurrentlyProcessing(null);
+    
+    // Continue processing queue after a brief delay
+    setTimeout(() => {
+      setIsProcessingQueue(false);
+      processQueue();
+    }, 500);
+  };
+
+  // Process queue when new messages are added
+  useEffect(() => {
+    if (!isProcessingQueue && messageQueue.some(msg => msg.status === "queued")) {
+      processQueue();
+    }
+  }, [messageQueue, isProcessingQueue]);
+
   // Text command mutation
   const textCommandMutation = useMutation({
     mutationFn: async (payload: string | { text: string; attachments: AttachmentFile[] }) => {
@@ -483,8 +626,8 @@ export default function AIAgent() {
       };
       setMessages(prev => [...prev, userMessage]);
       
-      // Process the transcribed command
-      textCommandMutation.mutate(transcribedText);
+      // Add voice command to queue
+      addToQueue(transcribedText);
     },
     onError: (error) => {
       toast({
@@ -530,18 +673,8 @@ export default function AIAgent() {
     e.preventDefault();
     if (!input.trim() && attachments.length === 0) return;
     
-    // Add user message with attachments
-    const userMessage: AIMessage = {
-      id: Date.now().toString(),
-      type: "user",
-      content: input || "Attached files for analysis",
-      timestamp: new Date(),
-      attachments: [...attachments]
-    };
-    setMessages(prev => [...prev, userMessage]);
-    
-    // Process command with attachments
-    textCommandMutation.mutate({ text: input, attachments });
+    // Add to queue instead of direct processing
+    addToQueue(input || "Attached files for analysis", [...attachments]);
     setInput("");
     setAttachments([]);
   };
@@ -675,6 +808,162 @@ export default function AIAgent() {
             )}
           </div>
         </ScrollArea>
+        
+        {/* Message Queue Display */}
+        {messageQueue.length > 0 && (
+          <div className="border-t border-gray-200 pt-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-gray-700">Message Queue ({messageQueue.length})</h3>
+              <div className="flex items-center gap-2">
+                {isProcessingQueue && (
+                  <div className="flex items-center gap-1 text-xs text-blue-600">
+                    <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    Processing...
+                  </div>
+                )}
+                {messageQueue.some(msg => msg.status === "completed" || msg.status === "failed") && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setMessageQueue(prev => prev.filter(msg => msg.status === "queued" || msg.status === "processing"));
+                      toast({
+                        title: "Queue Cleaned",
+                        description: "Completed and failed messages removed"
+                      });
+                    }}
+                    className="h-6 px-2 text-xs"
+                  >
+                    Clear Completed
+                  </Button>
+                )}
+              </div>
+            </div>
+            <div className="max-h-32 overflow-y-auto space-y-2">
+              {messageQueue.map((queuedMsg, index) => (
+                <div
+                  key={queuedMsg.id}
+                  className={`flex items-center gap-3 p-2 rounded-lg text-sm ${
+                    queuedMsg.status === "processing" ? "bg-blue-50 border border-blue-200" :
+                    queuedMsg.status === "completed" ? "bg-green-50 border border-green-200" :
+                    queuedMsg.status === "failed" ? "bg-red-50 border border-red-200" :
+                    "bg-gray-50 border border-gray-200"
+                  }`}
+                >
+                  <div className="flex-shrink-0">
+                    {queuedMsg.status === "processing" && (
+                      <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    )}
+                    {queuedMsg.status === "completed" && (
+                      <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
+                    {queuedMsg.status === "failed" && (
+                      <div className="w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                        <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
+                    {queuedMsg.status === "queued" && (
+                      <div className={`w-4 h-4 rounded-full ${aiTheme.gradient} flex items-center justify-center text-white text-xs font-bold`}>
+                        {index + 1}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    {queuedMsg.isEditing ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={queuedMsg.content}
+                          onChange={(e) => {
+                            const newContent = e.target.value;
+                            setMessageQueue(prev => prev.map(msg => 
+                              msg.id === queuedMsg.id 
+                                ? { ...msg, content: newContent }
+                                : msg
+                            ));
+                          }}
+                          className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+                          autoFocus
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => editQueuedMessage(queuedMsg.id, queuedMsg.content)}
+                          className="h-6 px-2"
+                        >
+                          Save
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => toggleEditMode(queuedMsg.id)}
+                          className="h-6 px-2"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="truncate text-gray-900">{queuedMsg.content}</p>
+                    )}
+                    
+                    {queuedMsg.attachments.length > 0 && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <Paperclip className="w-3 h-3 text-gray-400" />
+                        <span className="text-xs text-gray-500">
+                          {queuedMsg.attachments.length} file{queuedMsg.attachments.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-1">
+                    {queuedMsg.status === "queued" && !queuedMsg.isEditing && (
+                      <>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => toggleEditMode(queuedMsg.id)}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Edit2 className="w-3 h-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Edit message</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => removeFromQueue(queuedMsg.id)}
+                              className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Remove from queue</TooltipContent>
+                        </Tooltip>
+                      </>
+                    )}
+                    
+                    <span className="text-xs text-gray-400">
+                      {formatTimestamp(queuedMsg.timestamp)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         
         <Separator />
         
