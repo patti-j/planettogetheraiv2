@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Camera, User, Settings, Bell, Palette, Clock, Save, Upload, X } from "lucide-react";
+import { Camera, User, Settings, Bell, Palette, Clock, Save, Upload, X, CreditCard, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
@@ -184,7 +184,7 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
         </DialogHeader>
 
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Profile
@@ -196,6 +196,10 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
               Notifications
+            </TabsTrigger>
+            <TabsTrigger value="account" className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              Account & Billing
             </TabsTrigger>
           </TabsList>
 
@@ -580,6 +584,105 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
                     </div>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Account & Billing Tab */}
+          <TabsContent value="account" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5" />
+                  Account & Billing
+                </CardTitle>
+                <CardDescription>
+                  Manage your account information and billing settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card className="border border-gray-200">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-lg">Account Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Account Status</Label>
+                        <Badge variant="default" className="bg-green-100 text-green-800">
+                          Active
+                        </Badge>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Plan Type</Label>
+                        <p className="text-sm text-gray-600">Professional</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Account Created</Label>
+                        <p className="text-sm text-gray-600">
+                          {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : 'N/A'}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border border-gray-200">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-lg">Billing Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Next Billing Date</Label>
+                        <p className="text-sm text-gray-600">January 15, 2025</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Payment Method</Label>
+                        <p className="text-sm text-gray-600">•••• •••• •••• 4242</p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => window.location.href = '/account'}
+                        className="w-full"
+                      >
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Manage Billing
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Quick Actions</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => window.location.href = '/account?section=subscription'}
+                      className="h-auto p-4 flex flex-col items-center gap-2"
+                    >
+                      <Settings className="h-6 w-6" />
+                      <span className="text-sm">Manage Subscription</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => window.location.href = '/account?section=billing'}
+                      className="h-auto p-4 flex flex-col items-center gap-2"
+                    >
+                      <CreditCard className="h-6 w-6" />
+                      <span className="text-sm">Payment Methods</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => window.location.href = '/account?section=invoices'}
+                      className="h-auto p-4 flex flex-col items-center gap-2"
+                    >
+                      <FileText className="h-6 w-6" />
+                      <span className="text-sm">Billing History</span>
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

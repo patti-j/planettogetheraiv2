@@ -127,6 +127,16 @@ The application uses a modern full-stack architecture with strong typing through
 - Provides consistent access to profile settings across all device sizes through unified menu interface
 - Profile elements positioned logically within branding area for intuitive user experience
 
+✓ **Credit Card Icon Relocation to User Settings (July 23, 2025)**:
+- Successfully moved credit card icon from main sidebar into user profile settings window
+- Removed credit card button from SidebarUserAvatarSection to clean up main navigation interface
+- Added new "Account & Billing" tab to UserProfileDialog with comprehensive billing management
+- Created complete account information section with status, plan type, and creation date
+- Added billing information panel with next billing date, payment method, and manage billing button
+- Implemented quick actions section with subscription management, payment methods, and billing history access
+- Account & billing access now integrated within user settings for better organization and reduced UI clutter
+- Users can access all account-related functions through Profile & Settings dialog instead of main screen
+
 ✓ **Desktop Sidebar Collapsible Hamburger Menu Implementation (July 23, 2025)**:
 - Successfully transformed desktop sidebar from fixed sidebar to collapsible hamburger menu matching mobile behavior
 - Implemented separate desktop menu state (desktopMenuOpen) alongside existing mobile menu state for proper control
