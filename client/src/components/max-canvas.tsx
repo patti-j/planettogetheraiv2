@@ -89,47 +89,83 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
     <div className={`fixed inset-0 z-50 bg-black/50 backdrop-blur-sm ${isFullscreen ? '' : 'p-4'}`}>
       <div className={`bg-white rounded-lg shadow-xl overflow-hidden ${isFullscreen ? 'w-full h-full' : 'w-full h-full max-w-7xl max-h-[90vh] mx-auto'}`}>
         {/* Canvas Header */}
-        <div className={`${aiTheme.gradient} text-white p-4 flex items-center justify-between`}>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-4 h-4" />
+        <div className={`${aiTheme.gradient} text-white p-2 sm:p-4 flex items-center justify-between`}>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-white/20 rounded-lg flex items-center justify-center">
+              <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold">Max Canvas</h2>
-              <p className="text-white/80 text-sm">Dynamic content space</p>
+              <h2 className="text-sm sm:text-lg font-semibold">Max Canvas</h2>
+              <p className="text-white/80 text-xs sm:text-sm hidden sm:block">Dynamic content space</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
+            {/* Mobile Exit Button - Always visible on small screens when fullscreen */}
+            {isFullscreen && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsFullscreen(false)}
+                className="text-white hover:bg-white/20 sm:hidden"
+                title="Exit fullscreen"
+              >
+                <Minimize2 className="w-4 h-4" />
+              </Button>
+            )}
+            
             {items.length > 0 && (
               <>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleExport}
-                  className="text-white hover:bg-white/20"
+                  className="text-white hover:bg-white/20 hidden sm:flex"
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  Export
+                  <span className="hidden md:inline">Export</span>
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleClearCanvas}
-                  className="text-white hover:bg-white/20"
+                  className="text-white hover:bg-white/20 hidden sm:flex"
                 >
-                  Clear
+                  <span className="hidden md:inline">Clear</span>
+                </Button>
+                {/* Mobile export/clear buttons - icon only */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleExport}
+                  className="text-white hover:bg-white/20 sm:hidden"
+                  title="Export"
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearCanvas}
+                  className="text-white hover:bg-white/20 sm:hidden"
+                  title="Clear"
+                >
+                  <X className="w-4 h-4" />
                 </Button>
               </>
             )}
+            
+            {/* Desktop maximize/minimize button */}
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setIsFullscreen(!isFullscreen)}
-              className="text-white hover:bg-white/20"
+              className="text-white hover:bg-white/20 hidden sm:flex"
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </Button>
+            
+            {/* Close button - always visible */}
             <Button
               variant="ghost"
               size="sm"
