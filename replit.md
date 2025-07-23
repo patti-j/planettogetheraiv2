@@ -123,7 +123,8 @@ The application uses a modern full-stack architecture with strong typing through
 - Fixed "Optimize Orders" page excessive top margin (pt-12 md:pt-0) to match standard layout
 - Fixed "Getting Started" page wider top margin to match standard spacing
 - Fixed "Visual Factory" page command buttons repositioned beneath subtitle following capacity planning pattern
-- Applied standardization to: dashboard, analytics, reports, business goals, help, scheduling-optimizer, getting-started, systems-management, plant-manager, disruption-management, demand-forecasting, inventory-optimization, visual-factory, and all other pages
+- Fixed "Shop Floor" page header reorganized to standard layout with proper button sizes, colors, and positioning
+- Applied standardization to: dashboard, analytics, reports, business goals, help, scheduling-optimizer, getting-started, systems-management, plant-manager, disruption-management, demand-forecasting, inventory-optimization, visual-factory, shop-floor, and all other pages
 - All page headers now provide consistent user experience with proper responsive behavior and mobile compatibility
 
 ✓ **Voice Continuity & Enhanced Mobile Auto-Scrolling (July 23, 2025)**:

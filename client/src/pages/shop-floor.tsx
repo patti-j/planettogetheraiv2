@@ -1829,173 +1829,164 @@ export default function ShopFloor() {
     <>
     <div className="h-screen bg-gray-50 flex flex-col shop-floor-container">
         {/* Header */}
-        <div className="bg-white shadow-sm border-b px-4 py-2 sm:py-3 sm:px-6 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            {/* Left side: Title and controls */}
-            <div className="flex-1 min-w-0">
-              <div className="ml-12 md:ml-0 flex items-center gap-4">
-                <div>
-                  <h1 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-800">Shop Floor</h1>
-                  <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Production oversight and equipment monitoring</p>
-                </div>
+        <div className="bg-white shadow-sm border-b px-3 sm:px-6 py-4 flex-shrink-0">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div className="md:ml-0 ml-12">
+                <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+                  <Building2 className="w-6 h-6 mr-2" />
+                  Shop Floor
+                </h1>
+                <p className="text-sm md:text-base text-gray-600">Production oversight and equipment monitoring</p>
               </div>
-              
-              {/* Mobile controls row */}
-              <div className="flex items-center gap-2 mt-2 sm:mt-1 flex-wrap ml-12 md:ml-0">
-                {/* Area selector */}
-                <Select value={currentArea} onValueChange={setCurrentArea}>
-                  <SelectTrigger className="w-[120px] sm:w-[140px] text-xs sm:text-sm h-8 sm:h-9">
-                    <SelectValue placeholder="Area" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(areas).map(([key, area]) => (
-                      <SelectItem key={key} value={key}>
-                        {area.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                {/* Layout Manager button */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowLayoutManager(true)}
-                      className="h-8 px-2 sm:px-3"
-                    >
-                      <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="hidden sm:inline ml-1">Layout Manager</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Manage shop floor layout and controls</p>
-                  </TooltipContent>
-                </Tooltip>
-                
-                {/* Zoom controls */}
-                <div className="flex items-center gap-1 border rounded-lg p-1">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleZoomOut}
-                        disabled={zoomLevel <= 0.5}
-                        className="p-1 h-6 w-6"
-                      >
-                        <ZoomOut className="w-3 h-3" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Zoom out</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  
-                  <span className="text-xs font-medium px-1 min-w-[35px] text-center">
-                    {Math.round(zoomLevel * 100)}%
-                  </span>
-                  
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleZoomIn}
-                        disabled={zoomLevel >= 3}
-                        className="p-1 h-6 w-6"
-                      >
-                        <ZoomIn className="w-3 h-3" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Zoom in</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={resetZoom}
-                        className="p-1 h-6 w-6"
-                      >
-                        <Grid className="w-3 h-3" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Reset zoom</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-
-                {/* Image Size Controls */}
-                <div className="flex items-center gap-1 ml-2 px-2 py-1 bg-gray-50 rounded-lg">
-                  <span className="text-xs font-medium text-gray-600">Size:</span>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setGlobalImageSize(prev => Math.max(50, prev - 10));
-                          setShopFloorLayout(prev => [...prev]); // Force re-render for area calculations
-                        }}
-                        className="h-6 w-6 p-0 hover:bg-gray-200"
-                      >
-                        <Minus className="w-3 h-3" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Decrease all image sizes</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  <span className="text-xs font-mono min-w-[3rem] text-center">{globalImageSize}%</span>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setGlobalImageSize(prev => Math.min(200, prev + 10));
-                          setShopFloorLayout(prev => [...prev]); // Force re-render for area calculations
-                        }}
-                        className="h-6 w-6 p-0 hover:bg-gray-200"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Increase all image sizes</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setGlobalImageSize(100);
-                          setIndividualImageSizes({});
-                          setShopFloorLayout(prev => [...prev]); // Force re-render for area calculations
-                        }}
-                        className="h-6 w-6 p-0 hover:bg-gray-200 ml-1"
-                      >
-                        <RefreshCw className="w-3 h-3" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Reset all image sizes to default</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
+              <div className="flex flex-col sm:flex-row gap-2 lg:flex-shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowLayoutManager(true)}
+                  className="text-sm"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Layout Manager
+                </Button>
               </div>
             </div>
             
-            {/* Right side: Live indicator */}
-            <div className="flex items-center gap-2 ml-4">
+            {/* Controls row */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Area selector */}
+              <Select value={currentArea} onValueChange={setCurrentArea}>
+                <SelectTrigger className="w-[120px] sm:w-[140px] text-xs sm:text-sm h-8 sm:h-9">
+                  <SelectValue placeholder="Area" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(areas).map(([key, area]) => (
+                    <SelectItem key={key} value={key}>
+                      {area.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {/* Zoom controls */}
+              <div className="flex items-center gap-1 border rounded-lg p-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleZoomOut}
+                      disabled={zoomLevel <= 0.5}
+                      className="p-1 h-6 w-6"
+                    >
+                      <ZoomOut className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Zoom out</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <span className="text-xs font-medium px-1 min-w-[35px] text-center">
+                  {Math.round(zoomLevel * 100)}%
+                </span>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleZoomIn}
+                      disabled={zoomLevel >= 3}
+                      className="p-1 h-6 w-6"
+                    >
+                      <ZoomIn className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Zoom in</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={resetZoom}
+                      className="p-1 h-6 w-6"
+                    >
+                      <Grid className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Reset zoom</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+
+              {/* Image Size Controls */}
+              <div className="flex items-center gap-1 ml-2 px-2 py-1 bg-gray-50 rounded-lg">
+                <span className="text-xs font-medium text-gray-600">Size:</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setGlobalImageSize(prev => Math.max(50, prev - 10));
+                        setShopFloorLayout(prev => [...prev]); // Force re-render for area calculations
+                      }}
+                      className="h-6 w-6 p-0 hover:bg-gray-200"
+                    >
+                      <Minus className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Decrease all image sizes</p>
+                  </TooltipContent>
+                </Tooltip>
+                <span className="text-xs font-mono min-w-[3rem] text-center">{globalImageSize}%</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setGlobalImageSize(prev => Math.min(200, prev + 10));
+                        setShopFloorLayout(prev => [...prev]); // Force re-render for area calculations
+                      }}
+                      className="h-6 w-6 p-0 hover:bg-gray-200"
+                    >
+                      <Plus className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Increase all image sizes</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setGlobalImageSize(100);
+                        setIndividualImageSizes({});
+                        setShopFloorLayout(prev => [...prev]); // Force re-render for area calculations
+                      }}
+                      className="h-6 w-6 p-0 hover:bg-gray-200 ml-1"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Reset all image sizes to default</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              
+              {/* Live indicator */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
