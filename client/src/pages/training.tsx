@@ -794,8 +794,14 @@ function TourManagementSection() {
   };
 
   const handlePreviewTour = (tour: any) => {
-    setPreviewTourData(tour);
-    setShowTourPreviewDialog(true);
+    // Set up the preview data to match the expected structure
+    setSingleTourPreviewData({
+      role: tour.roleDisplayName,
+      originalGuidance: "",
+      generatedTour: tour.tourData,
+      tourId: tour.id
+    });
+    setShowSingleTourPreviewDialog(true);
   };
 
   // Fetch all system roles
@@ -2248,6 +2254,8 @@ function TourManagementSection() {
                     {/* Debug step data */}
                     <div className="text-xs text-gray-500 mb-2">
                       Navigation: {step.navigationPath || step.page || step.route || '/'}
+                      <br />
+                      Debug: {JSON.stringify({nav: step.navigationPath, page: step.page, route: step.route}, null, 2)}
                     </div>
                     
                     {step.benefits && step.benefits.length > 0 && (
