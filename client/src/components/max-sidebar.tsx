@@ -287,7 +287,7 @@ export function MaxSidebar() {
     <div className="h-full flex flex-col bg-white">
       {/* Header - Draggable for resizing */}
       <div 
-        className="p-4 bg-gradient-to-r from-blue-500 to-pink-600 flex items-center justify-between cursor-move"
+        className="p-4 bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-between cursor-move"
         onMouseDown={handleHeaderMouseDown}
         onTouchStart={handleHeaderTouchStart}
         style={{ touchAction: 'none' }}
