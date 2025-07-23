@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -486,8 +486,8 @@ export default function Pricing() {
               </thead>
               <tbody>
                 {featureComparison.map((category) => (
-                  <>
-                    <tr key={category.category} className="bg-gray-50">
+                  <React.Fragment key={category.category}>
+                    <tr className="bg-gray-50">
                       <td colSpan={4} className="py-3 px-6 font-semibold text-gray-700">
                         {category.category}
                       </td>
@@ -518,7 +518,7 @@ export default function Pricing() {
                         </td>
                       </tr>
                     ))}
-                  </>
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
