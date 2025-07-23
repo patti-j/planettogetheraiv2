@@ -269,10 +269,10 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       const isMobile = windowWidth < 768;
       
       if (isMobile) {
-        // Make mobile window even smaller without benefits section
-        const cardWidth = Math.min(260, windowWidth - 20);
-        const maxCardHeight = Math.min(280, windowHeight * 0.45);
-        const padding = 10;
+        // Make mobile window ultra-compact
+        const cardWidth = Math.min(240, windowWidth - 16);
+        const maxCardHeight = Math.min(240, windowHeight * 0.4);
+        const padding = 8;
         
         return {
           x: windowWidth - cardWidth - padding,
@@ -636,58 +636,58 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         style={{
           left: position.x,
           top: position.y,
-          width: windowSize.width < 768 ? `${Math.min(260, windowSize.width - 20)}px` : '384px',
+          width: windowSize.width < 768 ? `${Math.min(240, windowSize.width - 16)}px` : '384px',
           height: windowSize.width < 768 ? 
-            `${Math.min(280, windowSize.height * 0.45)}px` : 
+            `${Math.min(240, windowSize.height * 0.4)}px` : 
             `${Math.min(600, windowSize.height - 100)}px`,
-          maxHeight: windowSize.width < 768 ? '45vh' : '90vh'
+          maxHeight: windowSize.width < 768 ? '40vh' : '90vh'
         }}
       >
         <CardHeader 
-          className="relative cursor-move flex-shrink-0 p-2 sm:p-6 pb-1 sm:pb-6"
+          className="relative cursor-move flex-shrink-0 p-1.5 sm:p-6 pb-1 sm:pb-6"
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
         >
-          <div className="flex items-center justify-between mb-2 sm:mb-4">
-            <div className="flex items-center gap-2">
-              <Move className="h-4 w-4 text-gray-400" />
-              <Badge variant="secondary" className="text-sm">
+          <div className="flex items-center justify-between mb-1 sm:mb-4">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Move className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
+              <Badge variant="secondary" className="text-xs sm:text-sm px-1 sm:px-2">
                 {roleData?.name || 'Demo'} Demo
               </Badge>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5 sm:gap-1">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={toggleVoice}
-                className="h-8 w-8 p-0"
+                className="h-6 w-6 sm:h-8 sm:w-8 p-0"
               >
-                {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                {voiceEnabled ? <Volume2 className="h-3 w-3 sm:h-4 sm:w-4" /> : <VolumeX className="h-3 w-3 sm:h-4 sm:w-4" />}
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleSkip}
-                className="h-8 w-8 p-0"
+                className="h-6 w-6 sm:h-8 sm:w-8 p-0"
               >
-                <X className="h-4 w-4" />
+                <X className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </div>
           </div>
           
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <StepIcon className="h-5 w-5 text-blue-600" />
-              <CardTitle className="text-base sm:text-lg font-semibold">{currentStepData.title}</CardTitle>
+          <div className="space-y-1 sm:space-y-2">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <StepIcon className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+              <CardTitle className="text-sm sm:text-lg font-semibold truncate">{currentStepData.title}</CardTitle>
             </div>
-            <Progress value={progress} className="w-full h-2" />
+            <Progress value={progress} className="w-full h-1.5 sm:h-2" />
             <p className="text-xs text-gray-500">
-              Step {currentStep + 1} of {tourSteps.length} • {currentStepData.duration}
+              {currentStep + 1}/{tourSteps.length} <span className="hidden sm:inline">• {currentStepData.duration}</span>
             </p>
           </div>
         </CardHeader>
 
-        <CardContent className="flex-1 overflow-y-auto p-2 sm:p-6 pt-0">
+        <CardContent className="flex-1 overflow-y-auto p-1.5 sm:p-6 pt-0">
           <div className="space-y-4">
             {/* Hide description on mobile to save space */}
             <p className="hidden sm:block text-sm text-gray-700 leading-relaxed">{currentStepData.description}</p>
