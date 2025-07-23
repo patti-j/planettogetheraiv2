@@ -25,10 +25,8 @@ export function useAITheme() {
         return newTheme;
       }
       
-      return apiRequest(`/api/user-preferences`, {
-        method: 'PUT',
-        body: JSON.stringify({ aiThemeColor: newTheme }),
-      });
+      const response = await apiRequest('PUT', `/api/user-preferences`, { aiThemeColor: newTheme });
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/user-preferences'] });
@@ -56,5 +54,8 @@ export function useAITheme() {
     isUpdating: updateThemeMutation.isPending,
     getThemeClasses: (includeHover: boolean = true) => 
       getAIThemeClassString(currentTheme, includeHover),
+    aiTheme: {
+      gradient: getAIThemeClassString(currentTheme, true)
+    }
   };
 }
