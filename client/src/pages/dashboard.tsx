@@ -749,7 +749,7 @@ export default function Dashboard() {
                       variant="outline"
                       size="sm"
                       onClick={() => setShowEvaluationSystem(true)}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
+                      className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border-0"
                     >
                       <GitCompare className="w-4 h-4 mr-1" />
                       Evaluate Schedules

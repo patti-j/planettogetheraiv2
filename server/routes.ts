@@ -6609,6 +6609,43 @@ Create a natural, conversational voice script that explains this feature to some
     }
   });
 
+  // Simplified user preferences endpoints for AI theme system
+  app.get("/api/user-preferences/:userId", requireAuth, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      let preferences = await storage.getUserPreferences(userId);
+      if (!preferences) {
+        // Create default preferences if they don't exist
+        preferences = await storage.upsertUserPreferences({ userId });
+      }
+
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error fetching user preferences:", error);
+      res.status(500).json({ error: "Failed to fetch user preferences" });
+    }
+  });
+
+  app.put("/api/user-preferences", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      
+      const preferences = await storage.upsertUserPreferences({
+        userId,
+        ...req.body
+      });
+
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error updating user preferences:", error);
+      res.status(500).json({ error: "Failed to update user preferences" });
+    }
+  });
+
   // Chat API routes
   // Get all channels for a user
   app.get("/api/chat/channels", requireAuth, async (req, res) => {

@@ -9,6 +9,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useMaxDock } from "@/contexts/MaxDockContext";
+import { useAITheme } from "@/hooks/use-ai-theme";
 import { 
   Bot, 
   Send, 
@@ -29,6 +30,7 @@ import {
   SplitSquareHorizontal,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AI_THEME_OPTIONS, AIThemeColor } from "@/lib/ai-theme";
 
 interface Message {
   id: string;
@@ -60,6 +62,37 @@ const VOICE_OPTIONS = [
   { value: 'shimmer', name: 'Shimmer', description: 'Gentle and soothing' }
 ];
 
+function AIThemeSelector() {
+  const { currentTheme, updateTheme, isUpdating } = useAITheme();
+
+  return (
+    <Select 
+      value={currentTheme} 
+      onValueChange={(value: AIThemeColor) => updateTheme(value)}
+      disabled={isUpdating}
+    >
+      <SelectTrigger className="h-7 text-xs">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {Object.entries(AI_THEME_OPTIONS).map(([key, config]) => (
+          <SelectItem key={key} value={key}>
+            <div className="flex items-center space-x-2">
+              <div 
+                className={`w-3 h-3 rounded-full ${config.preview}`}
+              />
+              <div className="flex flex-col">
+                <span className="font-medium">{config.name}</span>
+                <span className="text-xs text-gray-500">{config.description}</span>
+              </div>
+            </div>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 export function MaxSidebar() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -71,6 +104,7 @@ export function MaxSidebar() {
     setMobileLayoutMode, 
     setCurrentFullscreenView 
   } = useMaxDock();
+  const { getThemeClasses } = useAITheme();
   
   // State management
   const [messages, setMessages] = useState<Message[]>([]);
@@ -287,7 +321,7 @@ export function MaxSidebar() {
     <div className="h-full flex flex-col bg-white">
       {/* Header - Draggable for resizing */}
       <div 
-        className="p-4 bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-between cursor-move"
+        className={`p-4 ${getThemeClasses(false)} flex items-center justify-between cursor-move`}
         onMouseDown={handleHeaderMouseDown}
         onTouchStart={handleHeaderTouchStart}
         style={{ touchAction: 'none' }}
@@ -372,31 +406,40 @@ export function MaxSidebar() {
       {/* Voice Settings */}
       {showVoiceSettings && (
         <div className="p-3 bg-gray-50 border-b">
-          <div className="space-y-2">
-            <div className="text-xs font-medium text-gray-700">Voice Selection</div>
-            <Select value={selectedVoice} onValueChange={setSelectedVoice}>
-              <SelectTrigger className="h-7 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {VOICE_OPTIONS.map(voice => (
-                  <SelectItem key={voice.value} value={voice.value}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{voice.name}</span>
-                      <span className="text-xs text-gray-500">{voice.description}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={testVoice}
-              className="w-full h-7 text-xs"
-            >
-              Test Voice
-            </Button>
+          <div className="space-y-3">
+            {/* Voice Selection */}
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-gray-700">Voice Selection</div>
+              <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+                <SelectTrigger className="h-7 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {VOICE_OPTIONS.map(voice => (
+                    <SelectItem key={voice.value} value={voice.value}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{voice.name}</span>
+                        <span className="text-xs text-gray-500">{voice.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={testVoice}
+                className="w-full h-7 text-xs"
+              >
+                Test Voice
+              </Button>
+            </div>
+
+            {/* AI Theme Selection */}
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-gray-700">AI Theme</div>
+              <AIThemeSelector />
+            </div>
           </div>
         </div>
       )}
@@ -487,7 +530,7 @@ export function MaxSidebar() {
             onClick={handleSendMessage}
             disabled={!inputMessage.trim() || sendMessageMutation.isPending}
             size="sm"
-            className="px-3 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white"
+            className={`px-3 ${getThemeClasses()}`}
           >
             {sendMessageMutation.isPending ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
