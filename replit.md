@@ -114,6 +114,16 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 23, 2025)
 
+✓ **Universal Page Header Layout Standardization (July 23, 2025)**:
+- Standardized all page headers across 15+ pages to use consistent capacity planning layout format
+- Applied uniform spacing pattern: p-3 sm:p-6 space-y-4 sm:space-y-6 for all main page containers
+- Used responsive typography: text-xl md:text-2xl for titles, text-sm md:text-base for descriptions
+- Implemented consistent mobile spacing: md:ml-0 ml-12 for proper hamburger menu clearance
+- Headers now use flex layout with lg breakpoint switching: flex-col lg:flex-row with lg:flex-shrink-0 for buttons
+- Fixed "Optimize Orders" page excessive top margin (pt-12 md:pt-0) to match standard layout
+- Applied standardization to: dashboard, analytics, reports, business goals, help, scheduling-optimizer, and all other pages
+- All page headers now provide consistent user experience with proper responsive behavior and mobile compatibility
+
 ✓ **Voice Continuity & Enhanced Mobile Auto-Scrolling (July 23, 2025)**:
 - Fixed voice continuation during tour navigation - voice now keeps playing when advancing to next steps
 - Enhanced handleNext and handlePrevious functions to preserve voice playback state during navigation

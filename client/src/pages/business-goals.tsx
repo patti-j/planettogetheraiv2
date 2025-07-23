@@ -428,8 +428,8 @@ export default function BusinessGoalsPage() {
 
   return (
     <div className={containerClass}>
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-3 sm:p-6">
+      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+        {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="md:ml-0 ml-12">
             <div className="flex items-center gap-2">
@@ -461,10 +461,8 @@ export default function BusinessGoalsPage() {
             </Button>
           </div>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="p-4 sm:p-6 space-y-6">
+        {/* Content */}
         {/* Overview Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>

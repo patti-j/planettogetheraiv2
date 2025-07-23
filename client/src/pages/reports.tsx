@@ -351,14 +351,14 @@ export default function Reports() {
   const selectedConfigName = selectedConfig?.name || reportConfigs.find(c => c.isDefault)?.name || "Default Reports";
 
   const PageContent = () => (
-    <div className="flex-1 flex flex-col">
-      <header className="bg-white shadow-sm border-b border-gray-200 p-3 sm:p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="md:ml-0 ml-12">
-            <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Reports</h1>
-            <p className="text-sm md:text-base text-gray-600">Create and manage production reports</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-2 md:gap-2">
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="md:ml-0 ml-12">
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Reports</h1>
+          <p className="text-sm md:text-base text-gray-600">Create and manage production reports</p>
+        </div>
+        <div className="lg:flex-shrink-0 flex flex-wrap items-center gap-2 sm:gap-2 md:gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="min-w-[280px] justify-between">
@@ -443,9 +443,8 @@ export default function Reports() {
             </Button>
           </div>
         </div>
-      </header>
 
-      <main className="flex-1 overflow-y-auto p-8">
+        {/* Content */}
         {reports.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
@@ -533,7 +532,6 @@ export default function Reports() {
             ))}
           </div>
         )}
-      </main>
 
       {/* Dialogs */}
       <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
