@@ -335,20 +335,40 @@ export default function Training() {
       </div>
 
       <Tabs defaultValue="modules" className="space-y-4 sm:space-y-6">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-          <TabsTrigger value="modules" className="text-xs sm:text-sm" data-tab="training-modules" data-tour-target="training-modules-tab">
+        <TabsList className="flex flex-wrap justify-center sm:justify-start gap-1 sm:gap-2 h-auto p-1 sm:p-1 bg-gray-100 rounded-lg">
+          <TabsTrigger 
+            value="modules" 
+            className="flex-1 min-w-0 sm:flex-none text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 whitespace-nowrap" 
+            data-tab="training-modules" 
+            data-tour-target="training-modules-tab"
+          >
             <span className="hidden sm:inline">Training Modules</span>
             <span className="sm:hidden">Modules</span>
           </TabsTrigger>
-          <TabsTrigger value="roles" className="text-xs sm:text-sm" data-tab="role-demonstrations" data-tour-target="role-demonstrations-tab">
+          <TabsTrigger 
+            value="roles" 
+            className="flex-1 min-w-0 sm:flex-none text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 whitespace-nowrap" 
+            data-tab="role-demonstrations" 
+            data-tour-target="role-demonstrations-tab"
+          >
             <span className="hidden sm:inline">Role Demonstrations</span>
             <span className="sm:hidden">Roles</span>
           </TabsTrigger>
-          <TabsTrigger value="tours" className="text-xs sm:text-sm" data-tab="tour-management" data-tour-target="tour-management-tab">
+          <TabsTrigger 
+            value="tours" 
+            className="flex-1 min-w-0 sm:flex-none text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 whitespace-nowrap" 
+            data-tab="tour-management" 
+            data-tour-target="tour-management-tab"
+          >
             <span className="hidden sm:inline">Tour Management</span>
             <span className="sm:hidden">Tours</span>
           </TabsTrigger>
-          <TabsTrigger value="resources" className="text-xs sm:text-sm" data-tab="training-resources" data-tour-target="training-resources-tab">
+          <TabsTrigger 
+            value="resources" 
+            className="flex-1 min-w-0 sm:flex-none text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2 whitespace-nowrap" 
+            data-tab="training-resources" 
+            data-tour-target="training-resources-tab"
+          >
             <span className="hidden sm:inline">Training Resources</span>
             <span className="sm:hidden">Resources</span>
           </TabsTrigger>
