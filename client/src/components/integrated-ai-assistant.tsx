@@ -59,7 +59,8 @@ const VOICE_OPTIONS = [
   { value: 'fable', name: 'Fable', description: 'Warm and engaging' },
   { value: 'onyx', name: 'Onyx', description: 'Deep and authoritative' },
   { value: 'nova', name: 'Nova', description: 'Bright and energetic' },
-  { value: 'shimmer', name: 'Shimmer', description: 'Gentle and soothing' }
+  { value: 'shimmer', name: 'Shimmer', description: 'Gentle and soothing' },
+  { value: 'data', name: 'Data', description: 'Synthetic and precise (Star Trek inspired)' }
 ];
 
 export default function IntegratedAIAssistant() {
@@ -186,7 +187,8 @@ export default function IntegratedAIAssistant() {
       
       const response = await apiRequest("POST", "/api/ai-agent/tts", {
         text: text,
-        voice: selectedVoice
+        voice: selectedVoice,
+        characterStyle: selectedVoice === 'data' ? 'data' : null
       });
       
       const data = await response.json();
@@ -227,7 +229,10 @@ export default function IntegratedAIAssistant() {
     mutationFn: async (message: string) => {
       const response = await apiRequest("POST", "/api/ai-agent/chat", {
         message,
-        context: contextData,
+        context: { 
+          ...contextData, 
+          voiceStyle: selectedVoice === 'data' ? 'data' : null 
+        },
         conversationHistory: messages.slice(-5) // Send last 5 messages for context
       });
       return await response.json();
@@ -434,7 +439,13 @@ export default function IntegratedAIAssistant() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => speakWithAI("Hello! This is how I sound with the " + VOICE_OPTIONS.find(v => v.value === selectedVoice)?.name + " voice.")}
+                    onClick={() => {
+                      const voiceName = VOICE_OPTIONS.find(v => v.value === selectedVoice)?.name;
+                      const testMessage = selectedVoice === 'data' 
+                        ? "Greetings. I am an artificial intelligence. This is how I communicate with precise articulation and logical clarity."
+                        : `Hello! This is how I sound with the ${voiceName} voice.`;
+                      speakWithAI(testMessage);
+                    }}
                     className="w-full h-7 text-xs"
                   >
                     Test Voice
