@@ -311,15 +311,19 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
 
   // Auto-scroll function to show content below the fold
   const performAutoScroll = useCallback(async () => {
+    console.log('performAutoScroll called - checking page dimensions...');
+    
     // Wait for page to fully load
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     const pageHeight = document.documentElement.scrollHeight;
     const viewportHeight = window.innerHeight;
     
+    console.log(`Page dimensions: height=${pageHeight}, viewport=${viewportHeight}, difference=${pageHeight - viewportHeight}`);
+    
     // Only scroll if there's content below the fold
     if (pageHeight > viewportHeight + 100) {
-      console.log('Auto-scrolling to show below-fold content');
+      console.log('Auto-scrolling to show below-fold content - starting scroll sequence');
       
       // Scroll to bottom slowly
       const scrollToBottom = () => {
@@ -382,10 +386,17 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       };
       
       // Wait 1 second, scroll down, pause, then scroll back up
+      console.log('Starting scroll sequence: wait -> scroll down -> pause -> scroll up');
       await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Scrolling down...');
       await scrollToBottom();
+      console.log('Pausing at bottom...');
       await new Promise(resolve => setTimeout(resolve, 1500)); // Pause at bottom
+      console.log('Scrolling back to top...');
       await scrollToTop();
+      console.log('Auto-scroll sequence completed');
+    } else {
+      console.log('No auto-scroll needed - content fits within viewport');
     }
   }, []);
 
@@ -411,11 +422,14 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         console.log(`Tour navigating from ${location} to ${targetPath} for step: ${currentStepData.title}`);
         setLocation(targetPath);
         // Trigger auto-scroll after navigation
+        console.log('Setting auto-scroll timeout after navigation...');
         setTimeout(() => {
+          console.log('Auto-scroll timeout triggered after navigation');
           performAutoScroll();
         }, 500);
       } else {
         // If no navigation needed, still do auto-scroll to show content
+        console.log('No navigation needed, triggering auto-scroll directly');
         performAutoScroll();
       }
     }
