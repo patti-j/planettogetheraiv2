@@ -8,7 +8,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { TourProvider, useTour } from "@/contexts/TourContext";
-import { MaxDockProvider, useMaxDock } from "@/contexts/MaxDockContext";
+import { MaxDockProvider } from "@/contexts/MaxDockContext";
+import { SplitPaneLayout } from "@/components/split-pane-layout";
+import { MaxSidebar } from "@/components/max-sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import Sidebar from "@/components/sidebar";
 import OnboardingWizard from "@/components/onboarding-wizard";
@@ -112,52 +114,7 @@ function DashboardWithAutoTour() {
   return <Dashboard />;
 }
 
-function MainContentArea({ children }: { children: React.ReactNode }) {
-  const { isDocked, dockPosition, dockWidth, dockHeight } = useMaxDock();
-
-  // Calculate main content styles based on dock state
-  const getMainContentStyle = () => {
-    if (!isDocked || !dockPosition) {
-      return { width: '100%', height: '100%' };
-    }
-
-    switch (dockPosition) {
-      case 'left':
-        return { 
-          width: `calc(100% - ${dockWidth}px)`, 
-          height: '100%',
-          marginLeft: `${dockWidth}px`
-        };
-      case 'right':
-        return { 
-          width: `calc(100% - ${dockWidth}px)`, 
-          height: '100%'
-        };
-      case 'top':
-        return { 
-          width: '100%', 
-          height: `calc(100% - ${dockHeight}px)`,
-          marginTop: `${dockHeight}px`
-        };
-      case 'bottom':
-        return { 
-          width: '100%', 
-          height: `calc(100% - ${dockHeight}px)`
-        };
-      default:
-        return { width: '100%', height: '100%' };
-    }
-  };
-
-  return (
-    <main 
-      className="flex-1 overflow-y-auto transition-all duration-300" 
-      style={getMainContentStyle()}
-    >
-      {children}
-    </main>
-  );
-}
+// MainContentArea is now replaced by SplitPaneLayout
 
 function Router() {
   const { isAuthenticated, isLoading, user, loginError } = useAuth();
@@ -189,7 +146,7 @@ function Router() {
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
-      <MainContentArea>
+      <SplitPaneLayout maxPanel={<MaxSidebar />}>
         <Switch>
           <Route path="/production-schedule">
             <DashboardWithAutoTour />
@@ -341,9 +298,8 @@ function Router() {
           <Route path="/" component={DashboardWithAutoTour} />
           <Route component={NotFound} />
         </Switch>
-      </MainContentArea>
-      {/* Integrated AI Assistant - available on all pages */}
-      <IntegratedAIAssistant />
+      </SplitPaneLayout>
+      {/* Integrated AI Assistant - now integrated in SplitPaneLayout */}
     </div>
   );
 }

@@ -1,41 +1,47 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 interface MaxDockContextType {
-  isDocked: boolean;
-  dockPosition: 'left' | 'right' | 'top' | 'bottom' | null;
-  dockWidth: number;
-  dockHeight: number;
-  setDockState: (isDocked: boolean, position: 'left' | 'right' | 'top' | 'bottom' | null, width?: number, height?: number) => void;
+  isMaxOpen: boolean;
+  maxWidth: number;
+  isMobile: boolean;
+  setMaxOpen: (open: boolean) => void;
+  setMaxWidth: (width: number) => void;
 }
 
 const MaxDockContext = createContext<MaxDockContextType | undefined>(undefined);
 
 export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [isDocked, setIsDocked] = useState(false);
-  const [dockPosition, setDockPosition] = useState<'left' | 'right' | 'top' | 'bottom' | null>(null);
-  const [dockWidth, setDockWidth] = useState(400);
-  const [dockHeight, setDockHeight] = useState(300);
+  const [isMaxOpen, setIsMaxOpen] = useState(false);
+  const [maxWidth, setMaxWidth] = useState(400); // Default width for desktop sidebar
+  const [isMobile, setIsMobile] = useState(false);
 
-  const setDockState = (
-    docked: boolean,
-    position: 'left' | 'right' | 'top' | 'bottom' | null,
-    width: number = 400,
-    height: number = 300
-  ) => {
-    setIsDocked(docked);
-    setDockPosition(position);
-    setDockWidth(width);
-    setDockHeight(height);
+  // Detect mobile on mount and window resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const setMaxOpen = (open: boolean) => {
+    setIsMaxOpen(open);
+  };
+
+  const setMaxWidthValue = (width: number) => {
+    setMaxWidth(Math.max(200, Math.min(width, window.innerWidth * 0.8)));
   };
 
   return (
     <MaxDockContext.Provider
       value={{
-        isDocked,
-        dockPosition,
-        dockWidth,
-        dockHeight,
-        setDockState,
+        isMaxOpen,
+        maxWidth,
+        isMobile,
+        setMaxOpen,
+        setMaxWidth: setMaxWidthValue,
       }}
     >
       {children}

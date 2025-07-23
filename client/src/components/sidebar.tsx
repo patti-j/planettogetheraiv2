@@ -12,6 +12,7 @@ import { UserProfileDialog } from "./user-profile";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
+import { useMaxDock } from "@/contexts/MaxDockContext";
 
 import TopUserProfile from "./top-user-profile";
 
@@ -24,6 +25,7 @@ export default function Sidebar() {
   
   // Authentication hooks
   const { hasPermission } = usePermissions();
+  const { isMaxOpen, setMaxOpen } = useMaxDock();
 
 
 
@@ -59,6 +61,13 @@ export default function Sidebar() {
   const openOnboardingWizard = () => {
     window.dispatchEvent(new CustomEvent('openOnboarding'));
     setMobileMenuOpen(false);
+  };
+
+  // Function to toggle Max AI Assistant
+  const toggleMaxAI = () => {
+    setMaxOpen(!isMaxOpen);
+    setMobileMenuOpen(false);
+    setDesktopMenuOpen(false);
   };
 
   const navigationItems: Array<{
@@ -98,11 +107,13 @@ export default function Sidebar() {
     { icon: BarChart3, label: "Analytics", href: "/analytics", active: location === "/analytics", feature: "analytics", action: "view" },
     { icon: FileText, label: "Reports", href: "/reports", active: location === "/reports", feature: "reports", action: "view" },
     { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback", feature: "feedback", action: "view" },
+    { icon: Bot, label: "Max AI Assistant", href: "#max", active: isMaxOpen, feature: "", action: "", onClick: toggleMaxAI },
 
   ].filter(item => 
-    // Always show Getting Started and Production Schedule dashboard for authenticated users
+    // Always show Getting Started, Production Schedule, and Max AI Assistant for authenticated users
     item.href === "#" || 
     item.href === "/production-schedule" || 
+    item.href === "#max" ||
     // Show item if user has permission
     hasPermission(item.feature || "", item.action || "")
   );
@@ -137,7 +148,8 @@ export default function Sidebar() {
       "/analytics": "View production metrics and performance analytics",
       "/reports": "Generate detailed production reports and insights",
       "/feedback": "Submit feedback and suggestions to help improve the system",
-      "/max-ai-assistant": "Chat with Max for schedule optimization and analysis"
+      "/max-ai-assistant": "Chat with Max for schedule optimization and analysis",
+      "#max": "Open Max AI Assistant for intelligent production planning and schedule optimization"
     };
     return tooltips[href] || "Navigate to this page";
   };
