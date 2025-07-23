@@ -327,7 +327,12 @@ export default function DemoTour() {
         "shop-floor-operations": 10,
         "data-analyst": 8,
         "trainer": 9,
-        "maintenance-technician": 7
+        "maintenance-technician": 7,
+        "it-systems-administrator": 11,
+        "sales-representative": 12,
+        "customer-service-representative": 13,
+        "support-engineer": 14,
+        "supply-chain-planner": 15
       };
       
       const roleId = roleMapping[primaryRole];
