@@ -2247,7 +2247,7 @@ function TourManagementSection() {
                     
                     {/* Debug step data */}
                     <div className="text-xs text-gray-500 mb-2">
-                      Navigation: {step.page || step.route || step.navigationPath || '/'}
+                      Navigation: {step.navigationPath || step.page || step.route || '/'}
                     </div>
                     
                     {step.benefits && step.benefits.length > 0 && (
@@ -2272,7 +2272,7 @@ function TourManagementSection() {
                     
                     <div className="flex flex-wrap gap-2">
                       <Badge variant="outline" className="text-xs">
-                        Page: {step.page || step.route || step.navigationPath || '/'}
+                        Page: {step.navigationPath || step.page || step.route || '/'}
                       </Badge>
                       {step.actionText && (
                         <Badge variant="outline" className="text-xs">
