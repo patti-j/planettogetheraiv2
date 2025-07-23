@@ -8,6 +8,7 @@ import {
   Download, 
   Share2, 
   Maximize2,
+  Minimize2,
   BarChart3,
   PieChart,
   TrendingUp,
@@ -89,6 +90,16 @@ export default function CanvasPage() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
+      {/* Maximize/Minimize Button - Fixed top right, consistent with other pages */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setIsFullscreen(!isFullscreen)}
+        className="fixed top-2 right-2 z-50"
+      >
+        {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+      </Button>
+      
       {/* Canvas Header */}
       <div className={`${aiTheme.gradient} text-white p-3 sm:p-6 space-y-4 sm:space-y-6`}>
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -124,15 +135,6 @@ export default function CanvasPage() {
                 </Button>
               </>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsFullscreen(!isFullscreen)}
-              className="text-white hover:bg-white/20"
-            >
-              <Maximize2 className="w-4 h-4" />
-              {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
-            </Button>
           </div>
         </div>
       </div>
