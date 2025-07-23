@@ -106,6 +106,8 @@ export function useAuth() {
     },
     onError: (error) => {
       console.error("Login error:", error);
+      // Clear any stored auth token on login failure
+      localStorage.removeItem('authToken');
     }
   });
 
@@ -134,9 +136,9 @@ export function useAuth() {
     user: user as User | null,
     isLoading,
     isAuthenticated: !!user && !error,
-    login: loginMutation.mutate,
+    login: loginMutation.mutateAsync,
     logout: logoutMutation.mutate,
-    loginError: error,
+    loginError: loginMutation.error,
     isLoginPending: loginMutation.isPending,
   };
 }

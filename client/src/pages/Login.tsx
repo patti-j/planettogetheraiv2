@@ -25,8 +25,28 @@ export default function Login() {
     try {
       await login({ username, password });
       setLocation("/");
-    } catch (error) {
-      setError("Invalid username or password");
+    } catch (error: any) {
+      console.error("Login form error:", error);
+      // Extract error message from the API response
+      let errorMessage = "Invalid username or password";
+      
+      if (error?.message) {
+        // Parse error message if it contains status code and JSON
+        const match = error.message.match(/\d+:\s*(.+)/);
+        if (match) {
+          try {
+            const errorData = JSON.parse(match[1]);
+            errorMessage = errorData.message || errorMessage;
+          } catch {
+            // If parsing fails, extract the text after the status code
+            errorMessage = match[1] || errorMessage;
+          }
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
