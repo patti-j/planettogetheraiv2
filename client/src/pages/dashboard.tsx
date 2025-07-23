@@ -127,6 +127,85 @@ export default function Dashboard() {
     }
   }, [visibleDashboardConfigs]);
 
+  // AI Event Listeners for UI interactions
+  useEffect(() => {
+    const handleAIOpenGanttChart = () => {
+      setCurrentView("resources");
+      toast({
+        title: "Gantt Chart Opened",
+        description: "Switched to production schedule view"
+      });
+    };
+
+    const handleAIOpenJobForm = (event: CustomEvent) => {
+      setJobDialogOpen(true);
+      toast({
+        title: "Job Form Opened",
+        description: "Ready to create a new job"
+      });
+    };
+
+    const handleAIOpenResourceForm = (event: CustomEvent) => {
+      setResourceDialogOpen(true);
+      toast({
+        title: "Resource Form Opened", 
+        description: "Ready to create a new resource"
+      });
+    };
+
+    const handleAICreateDashboard = (event: CustomEvent) => {
+      const dashboard = event.detail?.dashboard;
+      if (dashboard) {
+        setAnalyticsManagerOpen(true);
+        toast({
+          title: "Dashboard Created",
+          description: `Created new dashboard: ${dashboard.name}`
+        });
+      }
+    };
+
+    const handleAITriggerUIAction = (event: CustomEvent) => {
+      const { action, target, params } = event.detail;
+      
+      switch (action) {
+        case 'open_analytics':
+          setAnalyticsManagerOpen(true);
+          break;
+        case 'show_evaluation_system':
+          setShowEvaluationSystem(true);
+          break;
+        case 'maximize_view':
+          setIsMaximized(true);
+          break;
+        case 'minimize_view':
+          setIsMaximized(false);
+          break;
+        case 'switch_view':
+          if (params.view && ['operations', 'resources', 'customers'].includes(params.view)) {
+            setCurrentView(params.view);
+          }
+          break;
+        default:
+          console.log('Unknown AI UI action:', action);
+      }
+    };
+
+    // Add event listeners
+    window.addEventListener('aiOpenGanttChart', handleAIOpenGanttChart);
+    window.addEventListener('aiOpenJobForm', handleAIOpenJobForm as EventListener);
+    window.addEventListener('aiOpenResourceForm', handleAIOpenResourceForm as EventListener);
+    window.addEventListener('aiCreateDashboard', handleAICreateDashboard as EventListener);
+    window.addEventListener('aiTriggerUIAction', handleAITriggerUIAction as EventListener);
+
+    return () => {
+      window.removeEventListener('aiOpenGanttChart', handleAIOpenGanttChart);
+      window.removeEventListener('aiOpenJobForm', handleAIOpenJobForm as EventListener);  
+      window.removeEventListener('aiOpenResourceForm', handleAIOpenResourceForm as EventListener);
+      window.removeEventListener('aiCreateDashboard', handleAICreateDashboard as EventListener);
+      window.removeEventListener('aiTriggerUIAction', handleAITriggerUIAction as EventListener);
+    };
+  }, [toast]);
+
   const aiMutation = useMutation({
     mutationFn: async (prompt: string) => {
       const response = await apiRequest("POST", "/api/ai-agent/command", { command: prompt });

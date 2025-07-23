@@ -263,6 +263,47 @@ export default function Analytics() {
   const queryClient = useQueryClient();
   const isMobile = useMobile();
 
+  // AI Event Listeners for analytics actions
+  useEffect(() => {
+    const handleAICreateDashboard = (event: CustomEvent) => {
+      const dashboard = event.detail?.dashboard;
+      if (dashboard) {
+        setDashboardManagerOpen(true);
+        toast({
+          title: "Dashboard Manager Opened",
+          description: `Ready to create: ${dashboard.name}`
+        });
+      }
+    };
+
+    const handleAITriggerUIAction = (event: CustomEvent) => {
+      const { action } = event.detail;
+      
+      switch (action) {
+        case 'open_analytics_manager':
+          setAiAnalyticsOpen(true);
+          break;
+        case 'open_dashboard_manager':
+          setDashboardManagerOpen(true);
+          break;
+        case 'maximize_view':
+          setIsMaximized(true);
+          break;
+        case 'minimize_view':
+          setIsMaximized(false);
+          break;
+      }
+    };
+
+    window.addEventListener('aiCreateDashboard', handleAICreateDashboard as EventListener);
+    window.addEventListener('aiTriggerUIAction', handleAITriggerUIAction as EventListener);
+
+    return () => {
+      window.removeEventListener('aiCreateDashboard', handleAICreateDashboard as EventListener);
+      window.removeEventListener('aiTriggerUIAction', handleAITriggerUIAction as EventListener);
+    };
+  }, [toast]);
+
   const { data: dashboards = [] } = useQuery<DashboardConfig[]>({
     queryKey: ["/api/dashboard-configs"],
     refetchInterval: isLivePaused ? false : 30000, // Refresh every 30 seconds when not paused

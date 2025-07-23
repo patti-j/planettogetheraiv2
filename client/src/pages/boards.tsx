@@ -51,6 +51,44 @@ export default function Boards() {
   const { toast } = useToast();
   const { aiTheme } = useAITheme();
 
+  // AI Event Listeners for form opening
+  useEffect(() => {
+    const handleAIOpenJobForm = () => {
+      setJobDialogOpen(true);
+      toast({
+        title: "Job Form Opened",
+        description: "Ready to create a new job"
+      });
+    };
+
+    const handleAIOpenResourceForm = () => {
+      setResourceDialogOpen(true);
+      toast({
+        title: "Resource Form Opened",
+        description: "Ready to create a new resource"
+      });
+    };
+
+    const handleAIOpenOperationForm = () => {
+      // Operation forms are handled within job forms in this page
+      setJobDialogOpen(true);
+      toast({
+        title: "Job Form Opened",
+        description: "You can add operations within the job form"
+      });
+    };
+
+    window.addEventListener('aiOpenJobForm', handleAIOpenJobForm);
+    window.addEventListener('aiOpenResourceForm', handleAIOpenResourceForm);
+    window.addEventListener('aiOpenOperationForm', handleAIOpenOperationForm);
+
+    return () => {
+      window.removeEventListener('aiOpenJobForm', handleAIOpenJobForm);
+      window.removeEventListener('aiOpenResourceForm', handleAIOpenResourceForm);
+      window.removeEventListener('aiOpenOperationForm', handleAIOpenOperationForm);
+    };
+  }, [toast]);
+
   const { data: jobs = [] } = useQuery<Job[]>({
     queryKey: ['/api/jobs'],
   });

@@ -1,9 +1,22 @@
 import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
 import { storage } from "./storage";
 import { InsertJob, InsertOperation, InsertResource } from "@shared/schema";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Initialize Anthropic for better document analysis and vision capabilities
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+export interface AttachmentFile {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  content?: string; // base64 for images, text content for documents
+  url?: string; // for preview
+}
 
 export interface AIAgentResponse {
   success: boolean;
@@ -19,7 +32,7 @@ export interface SystemContext {
   capabilities: any[];
 }
 
-export async function processAICommand(command: string): Promise<AIAgentResponse> {
+export async function processAICommand(command: string, attachments?: AttachmentFile[]): Promise<AIAgentResponse> {
   try {
     // Get current system context
     const context = await getSystemContext();
@@ -34,33 +47,53 @@ export async function processAICommand(command: string): Promise<AIAgentResponse
       sampleResources: context.resources.slice(0, 3).map(r => ({ id: r.id, name: r.name, type: r.type })),
       sampleCapabilities: context.capabilities.slice(0, 5).map(c => ({ id: c.id, name: c.name }))
     };
-    
-    // Use GPT-4o to interpret the command and determine actions
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: `AI agent for manufacturing system. Current state: ${contextSummary.jobCount} jobs, ${contextSummary.operationCount} operations, ${contextSummary.resourceCount} resources.
 
-Available actions: CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, and others.
+    let aiResponse;
+
+    // If attachments are present, use Anthropic for better document/image analysis
+    if (attachments && attachments.length > 0) {
+      aiResponse = await processCommandWithAttachments(command, attachments, contextSummary);
+    } else {
+      // Use GPT-4o for text-only commands
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `AI agent for manufacturing system. Current state: ${contextSummary.jobCount} jobs, ${contextSummary.operationCount} operations, ${contextSummary.resourceCount} resources.
+
+Available actions: CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, and others.
+
+UI Navigation Actions:
+- NAVIGATE_TO_PAGE: Navigate to specific pages (dashboard, analytics, reports, scheduling-optimizer, etc.)
+- OPEN_DASHBOARD: Open dashboard page and optionally create new dashboard
+- OPEN_GANTT_CHART: Navigate to production schedule (Gantt chart) page
+- OPEN_ANALYTICS: Navigate to analytics page for data visualization
+- OPEN_BOARDS: Navigate to Kanban boards page
+- OPEN_REPORTS: Navigate to reports page
+- CREATE_ANALYTICS_WIDGET: Create analytics widgets on dashboard
+- TRIGGER_UI_ACTION: Trigger specific UI interactions (open dialogs, click buttons, etc.)
+- SHOW_SCHEDULE_EVALUATION: Show schedule evaluation system
+- MAXIMIZE_VIEW: Maximize current view
+- MINIMIZE_VIEW: Minimize current view
 
 For CREATE_KANBAN_BOARD: parameters need name, description, viewType (jobs/operations), swimLaneField (status/priority/customer), filters (optional).
 
 Respond with JSON: {"action": "ACTION_NAME", "parameters": {...}, "message": "response"}`
-        },
-        {
-          role: "user",
-          content: command
-        }
-      ],
-      response_format: { type: "json_object" }
-    });
+          },
+          {
+            role: "user",
+            content: command
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
 
-    const aiResponse = JSON.parse(response.choices[0].message.content || "{}");
+      aiResponse = JSON.parse(response.choices[0].message.content || "{}");
+    }
     
     // Execute the determined action
-    return await executeAction(aiResponse.action, aiResponse.parameters, aiResponse.message, context);
+    return await executeAction(aiResponse.action, aiResponse.parameters, aiResponse.message, context, attachments);
     
   } catch (error) {
     console.error("AI Agent Error:", error);
@@ -69,6 +102,99 @@ Respond with JSON: {"action": "ACTION_NAME", "parameters": {...}, "message": "re
       message: "I encountered an error processing your command. Please try again.",
       data: null
     };
+  }
+}
+
+async function processCommandWithAttachments(command: string, attachments: AttachmentFile[], contextSummary: any): Promise<any> {
+  try {
+    // Build message content for Anthropic with attachments
+    const content: any[] = [
+      {
+        type: "text",
+        text: `AI agent for manufacturing production system. Context: ${contextSummary.jobCount} jobs, ${contextSummary.operationCount} operations, ${contextSummary.resourceCount} resources.
+
+User command: ${command}
+
+Available actions: CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, and others.
+
+UI Navigation Actions:
+- NAVIGATE_TO_PAGE: Navigate to specific pages (dashboard, analytics, reports, scheduling-optimizer, etc.)
+- OPEN_DASHBOARD: Open dashboard page and optionally create new dashboard
+- OPEN_GANTT_CHART: Navigate to production schedule (Gantt chart) page
+- OPEN_ANALYTICS: Navigate to analytics page for data visualization
+- OPEN_BOARDS: Navigate to Kanban boards page
+- OPEN_REPORTS: Navigate to reports page
+- CREATE_ANALYTICS_WIDGET: Create analytics widgets on dashboard
+- TRIGGER_UI_ACTION: Trigger specific UI interactions (open dialogs, click buttons, etc.)
+- SHOW_SCHEDULE_EVALUATION: Show schedule evaluation system
+- MAXIMIZE_VIEW: Maximize current view
+- MINIMIZE_VIEW: Minimize current view
+
+Analyze any attached files to help fulfill the user's request. Extract relevant information from documents, images, or data files that could be used to create manufacturing jobs, operations, resources, or provide insights.
+
+Respond with JSON: {"action": "ACTION_NAME", "parameters": {...}, "message": "response"}`
+      }
+    ];
+
+    // Add attachments to the message content
+    attachments.forEach(attachment => {
+      if (attachment.type.startsWith("image/") && attachment.content) {
+        content.push({
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: attachment.type,
+            data: attachment.content
+          }
+        });
+      } else if (attachment.content && (attachment.type === "text/plain" || attachment.type === "application/json")) {
+        content.push({
+          type: "text",
+          text: `File: ${attachment.name}\nContent:\n${attachment.content}`
+        });
+      }
+    });
+
+    const response = await anthropic.messages.create({
+      model: "claude-3-5-sonnet-20241022",
+      max_tokens: 1024,
+      messages: [
+        {
+          role: "user",
+          content: content
+        }
+      ]
+    });
+
+    // Parse the response
+    const responseText = response.content[0].text;
+    let aiResponse;
+    try {
+      // Try to parse JSON from response
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        aiResponse = JSON.parse(jsonMatch[0]);
+      } else {
+        // Fallback response for non-JSON responses
+        aiResponse = {
+          action: "ANALYZE_ATTACHMENTS",
+          parameters: { attachments },
+          message: responseText
+        };
+      }
+    } catch (parseError) {
+      console.error("Failed to parse Anthropic response:", parseError);
+      aiResponse = {
+        action: "ANALYZE_ATTACHMENTS",
+        parameters: { attachments },
+        message: responseText || "I've analyzed your attachments and can help you work with this information."
+      };
+    }
+
+    return aiResponse;
+  } catch (error) {
+    console.error("Anthropic processing error:", error);
+    throw error;
   }
 }
 
@@ -85,7 +211,7 @@ async function getSystemContext(): Promise<SystemContext> {
   return { jobs, operations, resources, capabilities };
 }
 
-async function executeAction(action: string, parameters: any, message: string, context?: SystemContext): Promise<AIAgentResponse> {
+async function executeAction(action: string, parameters: any, message: string, context?: SystemContext, attachments?: AttachmentFile[]): Promise<AIAgentResponse> {
   try {
     switch (action) {
       case "CREATE_JOB":
@@ -514,10 +640,232 @@ async function executeAction(action: string, parameters: any, message: string, c
           actions: ["CREATE_ANALYTICS_WIDGETS"]
         };
 
+      case "ANALYZE_ATTACHMENTS":
+        // Return detailed analysis of attached files
+        const analysisResults = attachments?.map(attachment => ({
+          name: attachment.name,
+          type: attachment.type,
+          size: attachment.size,
+          analyzed: true,
+          insights: `Analyzed ${attachment.name} - ready to extract manufacturing data or create system entities based on the file content.`
+        })) || [];
+
+        return {
+          success: true,
+          message: message || `I've analyzed ${attachments?.length || 0} attachment(s). ${attachments?.length ? 'I can help you extract manufacturing data, create jobs/operations/resources, or provide insights based on the attached files.' : ''}`,
+          data: { attachments: analysisResults },
+          actions: ["ANALYZE_ATTACHMENTS"]
+        };
+
+      case "ANALYZE_DOCUMENT":
+        // Process text documents for manufacturing information
+        return {
+          success: true,
+          message: message || "I've analyzed the attached document and can help extract manufacturing requirements, schedules, or specifications.",
+          data: { documentAnalysis: parameters },
+          actions: ["ANALYZE_DOCUMENT"]
+        };
+
+      case "ANALYZE_IMAGE":
+        // Process images for manufacturing insights
+        return {
+          success: true,
+          message: message || "I've analyzed the attached image and can help identify manufacturing processes, equipment, or workflow diagrams.",
+          data: { imageAnalysis: parameters },
+          actions: ["ANALYZE_IMAGE"]
+        };
+
+      case "NAVIGATE_TO_PAGE":
+        // Navigate to a specific page in the application
+        return {
+          success: true,
+          message: message || `Navigating to ${parameters.page || parameters.route} page`,
+          data: { 
+            page: parameters.page || parameters.route,
+            path: parameters.path || `/${parameters.page || parameters.route}`
+          },
+          actions: ["NAVIGATE_TO_PAGE"]
+        };
+
+      case "OPEN_DASHBOARD":
+        // Navigate to dashboard page
+        return {
+          success: true,
+          message: message || "Opening the dashboard to view production metrics and analytics",
+          data: { 
+            page: "dashboard",
+            path: "/dashboard",
+            action: "open_dashboard"
+          },
+          actions: ["NAVIGATE_TO_PAGE", "OPEN_DASHBOARD"]
+        };
+
+      case "CREATE_DASHBOARD":
+        // Create a new dashboard with specified widgets
+        const dashboardConfig = {
+          id: Date.now().toString(),
+          name: parameters.name || "AI Generated Dashboard",
+          description: parameters.description || "Created by AI Assistant",
+          widgets: parameters.widgets || [],
+          layout: parameters.layout || "grid",
+          createdAt: new Date().toISOString()
+        };
+
+        return {
+          success: true,
+          message: message || `Created new dashboard "${dashboardConfig.name}" with ${dashboardConfig.widgets.length} widgets`,
+          data: { 
+            dashboard: dashboardConfig,
+            action: "create_dashboard"
+          },
+          actions: ["CREATE_DASHBOARD", "NAVIGATE_TO_PAGE"]
+        };
+
+      case "OPEN_GANTT_CHART":
+        // Navigate to production schedule (Gantt chart) page
+        return {
+          success: true,
+          message: message || "Opening the production schedule Gantt chart to view and manage operations",
+          data: { 
+            page: "dashboard", // Production schedule is on dashboard
+            path: "/dashboard",
+            action: "open_gantt_chart",
+            view: "gantt"
+          },
+          actions: ["NAVIGATE_TO_PAGE", "OPEN_GANTT_CHART"]
+        };
+
+      case "TRIGGER_UI_ACTION":
+        // Trigger specific UI interactions
+        return {
+          success: true,
+          message: message || `Triggering UI action: ${parameters.action}`,
+          data: {
+            uiAction: parameters.action,
+            target: parameters.target,
+            params: parameters.params || {}
+          },
+          actions: ["TRIGGER_UI_ACTION"]
+        };
+
+      case "OPEN_JOB_FORM":
+        // Open job creation form
+        return {
+          success: true,
+          message: message || "Opening job creation form",
+          data: {
+            action: "open_job_form",
+            formData: parameters.formData || {}
+          },
+          actions: ["TRIGGER_UI_ACTION", "OPEN_JOB_FORM"]
+        };
+
+      case "OPEN_OPERATION_FORM":
+        // Open operation creation form
+        return {
+          success: true,
+          message: message || "Opening operation creation form",
+          data: {
+            action: "open_operation_form",
+            formData: parameters.formData || {}
+          },
+          actions: ["TRIGGER_UI_ACTION", "OPEN_OPERATION_FORM"]
+        };
+
+      case "OPEN_RESOURCE_FORM":
+        // Open resource creation form
+        return {
+          success: true,
+          message: message || "Opening resource creation form",
+          data: {
+            action: "open_resource_form",
+            formData: parameters.formData || {}
+          },
+          actions: ["TRIGGER_UI_ACTION", "OPEN_RESOURCE_FORM"]
+        };
+
+      case "OPEN_ANALYTICS":
+        // Navigate to analytics page
+        return {
+          success: true,
+          message: message || "Opening analytics page for data visualization and dashboard management",
+          data: { 
+            page: "analytics",
+            path: "/analytics",
+            action: "open_analytics"
+          },
+          actions: ["NAVIGATE_TO_PAGE", "OPEN_ANALYTICS"]
+        };
+
+      case "OPEN_BOARDS":
+        // Navigate to Kanban boards page
+        return {
+          success: true,
+          message: message || "Opening Kanban boards page for visual project management",
+          data: { 
+            page: "boards",
+            path: "/boards",
+            action: "open_boards"
+          },
+          actions: ["NAVIGATE_TO_PAGE", "OPEN_BOARDS"]
+        };
+
+      case "OPEN_REPORTS":
+        // Navigate to reports page
+        return {
+          success: true,
+          message: message || "Opening reports page for production analytics and insights",
+          data: { 
+            page: "reports",
+            path: "/reports",
+            action: "open_reports"
+          },
+          actions: ["NAVIGATE_TO_PAGE", "OPEN_REPORTS"]
+        };
+
+      case "SHOW_SCHEDULE_EVALUATION":
+        // Show schedule evaluation system
+        return {
+          success: true,
+          message: message || "Opening schedule evaluation system to analyze production efficiency",
+          data: {
+            uiAction: "show_evaluation_system",
+            target: "dashboard",
+            params: {}
+          },
+          actions: ["TRIGGER_UI_ACTION", "SHOW_SCHEDULE_EVALUATION"]
+        };
+
+      case "MAXIMIZE_VIEW":
+        // Maximize current view
+        return {
+          success: true,
+          message: message || "Maximizing the current view for better visibility",
+          data: {
+            uiAction: "maximize_view",
+            target: "current_page",
+            params: {}
+          },
+          actions: ["TRIGGER_UI_ACTION", "MAXIMIZE_VIEW"]
+        };
+
+      case "MINIMIZE_VIEW":
+        // Minimize current view
+        return {
+          success: true,
+          message: message || "Minimizing the current view",
+          data: {
+            uiAction: "minimize_view",
+            target: "current_page",
+            params: {}
+          },
+          actions: ["TRIGGER_UI_ACTION", "MINIMIZE_VIEW"]
+        };
+
       default:
         return {
           success: false,
-          message: "I don't understand that command. Try asking me to create jobs, operations, or resources.",
+          message: "I don't understand that command. Try asking me to create jobs, operations, resources, open pages, navigate to analytics, or analyze attached files.",
           data: null
         };
     }

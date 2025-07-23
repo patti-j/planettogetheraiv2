@@ -9,10 +9,19 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Mic, MicOff, Send, Bot, User, Volume2, Settings } from "lucide-react";
+import { Mic, MicOff, Send, Bot, User, Volume2, Settings, Paperclip, X, FileText, Image, File } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { apiRequest } from "@/lib/queryClient";
+
+interface AttachmentFile {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  content?: string; // base64 for images, text content for documents
+  url?: string; // for preview
+}
 
 interface AIMessage {
   id: string;
@@ -21,6 +30,7 @@ interface AIMessage {
   timestamp: Date;
   actions?: string[];
   data?: any;
+  attachments?: AttachmentFile[];
 }
 
 interface AIAgentResponse {
@@ -35,7 +45,7 @@ export default function AIAgent() {
     {
       id: "1",
       type: "agent",
-      content: "Hello! I'm Max, your manufacturing AI assistant. I can help you create jobs, operations, resources, manage your production schedule, create Kanban boards, and control Gantt chart views. Try saying something like 'Create a Kanban board to show jobs by status' or 'Create a Gantt view showing CNC resources with job names'.",
+      content: "Hello! I'm Max, your manufacturing AI assistant. I can help you with everything you can do in the interface: create jobs, operations, and resources, open and create dashboards, navigate to different pages, open the Gantt chart, create Kanban boards, analyze attached files, and much more. Try saying 'Open the Gantt chart', 'Create a new job form', 'Show me the analytics dashboard', or attach files for me to analyze.",
       timestamp: new Date(),
     }
   ]);
@@ -44,6 +54,13 @@ export default function AIAgent() {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [isListening, setIsListening] = useState(false);
   const audioChunks = useRef<Blob[]>([]);
+  
+  // Attachment state
+  const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
+  const [isProcessingFiles, setIsProcessingFiles] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
   
   // Voice settings state
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
@@ -75,6 +92,132 @@ export default function AIAgent() {
   useEffect(() => {
     localStorage.setItem("voiceSettings", JSON.stringify(voiceSettings));
   }, [voiceSettings]);
+
+  // File processing functions
+  const processFile = async (file: File): Promise<AttachmentFile> => {
+    return new Promise((resolve, reject) => {
+      const fileId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        const result = e.target?.result;
+        if (!result) {
+          reject(new Error("Failed to read file"));
+          return;
+        }
+
+        let content = "";
+        let url = "";
+
+        if (file.type.startsWith("image/")) {
+          // For images, store as base64 and create preview URL
+          content = (result as string).split(",")[1]; // Remove data:image/...;base64, prefix
+          url = result as string;
+        } else if (file.type === "text/plain" || file.type === "application/json") {
+          // For text files, store content directly
+          content = result as string;
+        } else if (file.type === "application/pdf") {
+          // For PDFs, we'll process on the backend
+          content = (result as string).split(",")[1];
+        }
+
+        resolve({
+          id: fileId,
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          content,
+          url
+        });
+      };
+
+      reader.onerror = () => reject(new Error("Failed to read file"));
+
+      if (file.type.startsWith("image/") || file.type === "application/pdf") {
+        reader.readAsDataURL(file);
+      } else {
+        reader.readAsText(file);
+      }
+    });
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+
+    setIsProcessingFiles(true);
+    try {
+      const processedFiles = await Promise.all(files.map(processFile));
+      setAttachments(prev => [...prev, ...processedFiles]);
+      toast({
+        title: "Files Attached",
+        description: `${files.length} file(s) added to your message`
+      });
+    } catch (error) {
+      console.error("File processing error:", error);
+      toast({
+        title: "File Processing Failed",
+        description: "One or more files could not be processed",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessingFiles(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const removeAttachment = (attachmentId: string) => {
+    setAttachments(prev => prev.filter(att => att.id !== attachmentId));
+  };
+
+  // Drag and drop handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length === 0) return;
+    
+    setIsProcessingFiles(true);
+    try {
+      const processedFiles = await Promise.all(files.map(processFile));
+      setAttachments(prev => [...prev, ...processedFiles]);
+      toast({
+        title: "Files Attached",
+        description: `${files.length} file(s) added via drag and drop`
+      });
+    } catch (error) {
+      console.error("Drag and drop processing error:", error);
+      toast({
+        title: "File Processing Failed",
+        description: "One or more files could not be processed",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessingFiles(false);
+    }
+  };
+
+  const getFileIcon = (type: string) => {
+    if (type.startsWith("image/")) return Image;
+    if (type === "text/plain" || type === "application/json") return FileText;
+    return File;
+  };
 
   // Test voice function
   const testVoice = async () => {
@@ -169,9 +312,21 @@ export default function AIAgent() {
 
   // Text command mutation
   const textCommandMutation = useMutation({
-    mutationFn: async (command: string) => {
-      console.log("Sending command:", command);
-      const response = await apiRequest("POST", "/api/ai-agent/command", { command });
+    mutationFn: async (payload: string | { text: string; attachments: AttachmentFile[] }) => {
+      let requestData;
+      if (typeof payload === 'string') {
+        // Legacy format for voice commands
+        requestData = { command: payload };
+      } else {
+        // New format with attachments
+        requestData = { 
+          command: payload.text,
+          attachments: payload.attachments
+        };
+      }
+      
+      console.log("Sending command:", requestData);
+      const response = await apiRequest("POST", "/api/ai-agent/command", requestData);
       const data = await response.json();
       console.log("Received response:", data);
       return data;
@@ -207,6 +362,71 @@ export default function AIAgent() {
         queryClient.invalidateQueries({ queryKey: ["/api/resource-views"] });
       }
       
+      // Handle UI navigation actions
+      if (data.actions?.includes("NAVIGATE_TO_PAGE")) {
+        const path = data.data?.path || `/${data.data?.page}`;
+        window.location.href = path;
+      }
+      
+      if (data.actions?.includes("OPEN_DASHBOARD")) {
+        window.location.href = "/dashboard";
+      }
+      
+      if (data.actions?.includes("OPEN_GANTT_CHART")) {
+        window.location.href = "/dashboard";
+        // Send event to switch to Gantt view after navigation
+        setTimeout(() => {
+          const event = new CustomEvent('aiOpenGanttChart', { detail: {} });
+          window.dispatchEvent(event);
+        }, 1000);
+      }
+      
+      // Handle form opening actions
+      if (data.actions?.includes("OPEN_JOB_FORM")) {
+        const event = new CustomEvent('aiOpenJobForm', { 
+          detail: { formData: data.data?.formData || {} }
+        });
+        window.dispatchEvent(event);
+      }
+      
+      if (data.actions?.includes("OPEN_OPERATION_FORM")) {
+        const event = new CustomEvent('aiOpenOperationForm', { 
+          detail: { formData: data.data?.formData || {} }
+        });
+        window.dispatchEvent(event);
+      }
+      
+      if (data.actions?.includes("OPEN_RESOURCE_FORM")) {
+        const event = new CustomEvent('aiOpenResourceForm', { 
+          detail: { formData: data.data?.formData || {} }
+        });
+        window.dispatchEvent(event);
+      }
+      
+      // Handle dashboard creation
+      if (data.actions?.includes("CREATE_DASHBOARD")) {
+        const event = new CustomEvent('aiCreateDashboard', { 
+          detail: { dashboard: data.data?.dashboard }
+        });
+        window.dispatchEvent(event);
+        // Navigate to dashboard after creation
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 500);
+      }
+      
+      // Handle generic UI actions
+      if (data.actions?.includes("TRIGGER_UI_ACTION")) {
+        const event = new CustomEvent('aiTriggerUIAction', { 
+          detail: { 
+            action: data.data?.uiAction,
+            target: data.data?.target,
+            params: data.data?.params
+          }
+        });
+        window.dispatchEvent(event);
+      }
+
       // Handle special frontend actions
       if (data.actions?.includes("SET_GANTT_ZOOM")) {
         handleGanttZoom(data.data.zoomLevel);
@@ -308,20 +528,22 @@ export default function AIAgent() {
 
   const handleTextSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() && attachments.length === 0) return;
     
-    // Add user message
+    // Add user message with attachments
     const userMessage: AIMessage = {
       id: Date.now().toString(),
       type: "user",
-      content: input,
+      content: input || "Attached files for analysis",
       timestamp: new Date(),
+      attachments: [...attachments]
     };
     setMessages(prev => [...prev, userMessage]);
     
-    // Process command
-    textCommandMutation.mutate(input);
+    // Process command with attachments
+    textCommandMutation.mutate({ text: input, attachments });
     setInput("");
+    setAttachments([]);
   };
 
   const toggleRecording = async () => {
@@ -349,11 +571,24 @@ export default function AIAgent() {
 
   return (
     <TooltipProvider>
-      <Card className="w-full max-w-2xl mx-auto h-[600px] flex flex-col">
+      <Card 
+        ref={dropZoneRef}
+        className={`w-full max-w-2xl mx-auto h-[600px] flex flex-col transition-all ${
+          isDragOver ? 'border-2 border-dashed border-blue-500 bg-blue-50' : ''
+        }`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2">
             <Bot className="w-5 h-5" />
             AI Manufacturing Assistant
+            {isDragOver && (
+              <Badge variant="secondary" className="ml-auto">
+                Drop files here
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
       
@@ -382,6 +617,31 @@ export default function AIAgent() {
                       : "bg-gray-100 text-gray-900"
                   }`}>
                     <p className="text-sm">{message.content}</p>
+                    
+                    {/* Attachments Display */}
+                    {message.attachments && message.attachments.length > 0 && (
+                      <div className="mt-2 space-y-2">
+                        {message.attachments.map((attachment) => {
+                          const FileIcon = getFileIcon(attachment.type);
+                          return (
+                            <div key={attachment.id} className="flex items-center gap-2 p-2 bg-black bg-opacity-10 rounded text-xs">
+                              <FileIcon className="w-4 h-4" />
+                              <span className="flex-1 truncate">{attachment.name}</span>
+                              <span className="text-xs opacity-70">
+                                {(attachment.size / 1024).toFixed(1)}KB
+                              </span>
+                              {attachment.type.startsWith("image/") && attachment.url && (
+                                <img 
+                                  src={attachment.url} 
+                                  alt={attachment.name}
+                                  className="w-8 h-8 object-cover rounded"
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                     
                     {message.actions && (
                       <div className="mt-2 flex flex-wrap gap-1">
@@ -496,6 +756,54 @@ export default function AIAgent() {
           </div>
         )}
         
+        {/* Attachments Preview */}
+        {attachments.length > 0 && (
+          <div className="border rounded-lg p-3 bg-gray-50 space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-medium text-gray-700">Attachments ({attachments.length})</h4>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setAttachments([])}
+                className="text-gray-500 hover:text-red-500 h-6 px-2"
+              >
+                Clear All
+              </Button>
+            </div>
+            <div className="space-y-1">
+              {attachments.map((attachment) => {
+                const FileIcon = getFileIcon(attachment.type);
+                return (
+                  <div key={attachment.id} className="flex items-center gap-2 p-2 bg-white rounded border text-sm">
+                    <FileIcon className="w-4 h-4 text-gray-600" />
+                    <span className="flex-1 truncate">{attachment.name}</span>
+                    <span className="text-xs text-gray-500">
+                      {(attachment.size / 1024).toFixed(1)}KB
+                    </span>
+                    {attachment.type.startsWith("image/") && attachment.url && (
+                      <img 
+                        src={attachment.url} 
+                        alt={attachment.name}
+                        className="w-6 h-6 object-cover rounded"
+                      />
+                    )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeAttachment(attachment.id)}
+                      className="text-gray-400 hover:text-red-500 h-6 w-6 p-0"
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        
         {/* Input */}
         <div className="space-y-2">
           {isListening && (
@@ -505,14 +813,41 @@ export default function AIAgent() {
             </div>
           )}
           
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*,.txt,.json,.pdf,.doc,.docx"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+          
           <form onSubmit={handleTextSubmit} className="flex gap-2">
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your command or use voice..."
+              placeholder="Type your command, attach files, or use voice..."
               disabled={textCommandMutation.isPending || isRecording}
               className="flex-1"
             />
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isProcessingFiles || textCommandMutation.isPending}
+                >
+                  <Paperclip className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Attach files (images, documents, PDFs)</p>
+              </TooltipContent>
+            </Tooltip>
             
             <Tooltip>
               <TooltipTrigger asChild>
@@ -551,7 +886,7 @@ export default function AIAgent() {
               <TooltipTrigger asChild>
                 <Button
                   type="submit"
-                  disabled={!input.trim() || textCommandMutation.isPending || isRecording}
+                  disabled={(!input.trim() && attachments.length === 0) || textCommandMutation.isPending || isRecording}
                   size="icon"
                   className={`${aiTheme.gradient} text-white`}
                 >
@@ -559,7 +894,7 @@ export default function AIAgent() {
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Send text command to AI assistant</p>
+                <p>Send message with text and attachments to AI assistant</p>
               </TooltipContent>
             </Tooltip>
           </form>

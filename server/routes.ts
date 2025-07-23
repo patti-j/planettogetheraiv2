@@ -1405,12 +1405,12 @@ For canvas requests, include a canvasAction in your response with this structure
 
   app.post("/api/ai-agent/command", async (req, res) => {
     try {
-      const { command } = req.body;
+      const { command, attachments } = req.body;
       if (!command || typeof command !== "string") {
         return res.status(400).json({ message: "Command is required" });
       }
       
-      const response = await processAICommand(command);
+      const response = await processAICommand(command, attachments);
       res.json(response);
     } catch (error) {
       console.error("AI Agent command error:", error);
@@ -1433,6 +1433,29 @@ For canvas requests, include a canvasAction in your response with this structure
       console.error("Voice transcription error:", error);
       res.status(500).json({ 
         message: "Failed to transcribe audio" 
+      });
+    }
+  });
+
+  app.post("/api/ai-agent/upload-attachment", upload.single("attachment"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "Attachment file is required" });
+      }
+
+      const attachment = {
+        id: Date.now().toString(),
+        name: req.file.originalname,
+        type: req.file.mimetype,
+        size: req.file.size,
+        content: req.file.buffer.toString('base64')
+      };
+
+      res.json({ attachment });
+    } catch (error) {
+      console.error("Attachment upload error:", error);
+      res.status(500).json({ 
+        message: "Failed to upload attachment" 
       });
     }
   });
