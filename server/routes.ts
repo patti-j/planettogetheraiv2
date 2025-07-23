@@ -98,7 +98,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'shop-floor-operations': { id: 'demo_shop_floor', username: 'demo_shop_floor', role: 'Shop Floor Operations' },
         'data-analyst': { id: 'demo_analyst', username: 'demo_data_analyst', role: 'Data Analyst' },
         'trainer': { id: 'demo_trainer', username: 'demo_trainer', role: 'Trainer' },
-        'maintenance-technician': { id: 'demo_maintenance', username: 'demo_maintenance', role: 'Maintenance Technician' },
+        'it-systems-administrator': { id: 'demo_it_systems', username: 'demo_it_systems_admin', role: 'IT Systems Administrator' },
+        'sales-representative': { id: 'demo_sales', username: 'demo_sales_rep', role: 'Sales Representative' },
+        'customer-service-representative': { id: 'demo_customer_service', username: 'demo_customer_service', role: 'Customer Service Representative' },
+        'support-engineer': { id: 'demo_support', username: 'demo_support_engineer', role: 'Support Engineer' },
+        'supply-chain-planner': { id: 'demo_supply_chain', username: 'demo_supply_chain', role: 'Supply Chain Planner' },
         // Legacy mappings for backward compatibility
         'executive': { id: 'demo_director', username: 'demo_director', role: 'Director' },
         'production': { id: 'demo_scheduler', username: 'demo_scheduler', role: 'Production Scheduler' },
