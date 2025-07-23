@@ -565,7 +565,7 @@ function RoleDemonstrationSection({ userId, currentRole }: RoleDemonstrationSect
             <div className="text-sm text-blue-800">
               <p className="font-medium mb-2">How Role Switching Works:</p>
               <ol className="list-decimal ml-4 space-y-1">
-                <li>Click "Demonstrate Role" on any role card below</li>
+                <li>Click "Demonstrate Role" on any role card in the panel to the left</li>
                 <li>Your permissions temporarily change to that role's permissions</li>
                 <li>You'll be redirected to the appropriate page for that role</li>
                 <li>Use the sidebar navigation to explore features available to that role</li>
