@@ -102,6 +102,9 @@ export function useAITheme() {
     } else if (!user?.id) {
       // For unauthenticated users, mark as initialized immediately
       setIsInitialized(true);
+    } else if (user?.id && preferencesLoading) {
+      // While preferences are loading for authenticated users, ensure we have a default
+      updateAIThemeCSSVariables('blue-indigo');
     }
   }, [user?.id, preferencesLoading, preferences?.aiThemeColor]);
 

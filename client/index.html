@@ -4,6 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
     <title>PlanetTogether - Production Scheduling Software</title>
+    <script>
+      // Immediately set AI theme colors to prevent flash
+      (function() {
+        const colors = {
+          'purple-pink': { from: '280 83% 62%', to: '323 86% 66%' },
+          'blue-indigo': { from: '213 94% 68%', to: '239 84% 67%' },
+          'emerald-teal': { from: '160 84% 39%', to: '172 66% 50%' },
+          'orange-red': { from: '24 95% 53%', to: '0 84% 60%' },
+          'violet-purple': { from: '262 80% 60%', to: '280 83% 62%' },
+          'cyan-blue': { from: '189 95% 51%', to: '213 94% 68%' }
+        };
+        
+        // Get theme from localStorage (demo users) or default to blue-indigo
+        const demoTheme = localStorage.getItem('demo-ai-theme') || 'blue-indigo';
+        const theme = colors[demoTheme] || colors['blue-indigo'];
+        
+        // Set CSS variables immediately
+        document.documentElement.style.setProperty('--ai-gradient-from', theme.from);
+        document.documentElement.style.setProperty('--ai-gradient-to', theme.to);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

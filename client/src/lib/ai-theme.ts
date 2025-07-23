@@ -47,10 +47,10 @@ export const AI_THEME_OPTIONS = {
 export type AIThemeColor = keyof typeof AI_THEME_OPTIONS;
 
 export function getAIThemeClasses(themeColor: AIThemeColor = 'purple-pink') {
-  const theme = AI_THEME_OPTIONS[themeColor];
+  // Always return CSS variable classes to prevent color flashing
   return {
-    primary: `bg-gradient-to-r ${theme.primary}`,
-    primaryHover: `bg-gradient-to-r ${theme.primary} ${theme.primaryHover}`,
+    primary: 'ai-gradient-bg',
+    primaryHover: 'ai-gradient-bg',
     text: 'text-white'
   };
 }
