@@ -19,6 +19,7 @@ import {
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { UserRoleManager } from "@/components/user-role-manager";
+import { useAITheme } from "@/hooks/use-ai-theme";
 
 interface Role {
   id: number;
@@ -75,6 +76,7 @@ export default function RoleManagementPage() {
     permissions: [] as number[]
   });
   const { toast } = useToast();
+  const { aiTheme } = useAITheme();
 
   // Fetch roles with user counts
   const { data: roles = [], isLoading: rolesLoading } = useQuery<Role[]>({
@@ -417,7 +419,7 @@ export default function RoleManagementPage() {
           <Dialog open={aiRoleDialog} onOpenChange={setAiRoleDialog}>
             <DialogTrigger asChild>
               <Button 
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-sm sm:text-base"
+                className={`${aiTheme.gradient} text-white text-sm sm:text-base`}
                 disabled={createAiRoleMutation.isPending}
                 size="sm"
               >
@@ -455,7 +457,7 @@ export default function RoleManagementPage() {
                   <Button 
                     onClick={() => createAiRoleMutation.mutate(aiRoleForm.prompt)}
                     disabled={createAiRoleMutation.isPending || !aiRoleForm.prompt.trim()}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                    className={aiTheme.gradient}
                   >
                     <Sparkles className="w-4 h-4 mr-2" />
                     {createAiRoleMutation.isPending ? "Creating..." : "Create Role"}
@@ -467,7 +469,7 @@ export default function RoleManagementPage() {
           <Dialog open={aiPermissionDialog} onOpenChange={setAiPermissionDialog}>
             <DialogTrigger asChild>
               <Button 
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-sm sm:text-base"
+                className={`${aiTheme.gradient} text-white text-sm sm:text-base`}
                 disabled={generateAiPermissionsMutation.isPending}
                 size="sm"
               >
@@ -522,7 +524,7 @@ export default function RoleManagementPage() {
                   <Button 
                     onClick={handleAiPermissionGeneration}
                     disabled={generateAiPermissionsMutation.isPending || selectedRoles.length === 0}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                    className={aiTheme.gradient}
                   >
                     <Sparkles className="w-4 h-4 mr-2" />
                     {generateAiPermissionsMutation.isPending ? "Generating..." : "Generate Permissions"}
@@ -1069,7 +1071,7 @@ export default function RoleManagementPage() {
               <Button 
                 onClick={handleAiPermissionGeneration}
                 disabled={generateAiPermissionsMutation.isPending || selectedRoles.length === 0}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                className={aiTheme.gradient}
               >
                 <Sparkles className="w-4 h-4 mr-2" />
                 {generateAiPermissionsMutation.isPending ? "Generating..." : "Generate Permissions"}
@@ -1159,7 +1161,7 @@ export default function RoleManagementPage() {
                 <Button 
                   onClick={() => applyAiPermissionsMutation.mutate(aiPreviewData.changes)}
                   disabled={applyAiPermissionsMutation.isPending || !aiPreviewData.changes?.some((change: any) => change.newPermissions?.length > 0)}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                  className={aiTheme.gradient}
                 >
                   <Check className="w-4 h-4 mr-2" />
                   {applyAiPermissionsMutation.isPending ? "Applying Changes..." : "Apply Changes"}

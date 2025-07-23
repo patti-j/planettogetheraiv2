@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useMaxDock } from '@/contexts/MaxDockContext';
 import { Button } from '@/components/ui/button';
 import { Bot, MessageSquare, SplitSquareVertical } from 'lucide-react';
+import { useAITheme } from '@/hooks/use-ai-theme';
 
 interface SplitPaneLayoutProps {
   children: React.ReactNode;
@@ -19,6 +20,7 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
     setCurrentFullscreenView, 
     setMobileLayoutMode 
   } = useMaxDock();
+  const { aiTheme } = useAITheme();
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [maxHeight, setMaxHeight] = useState(300); // For mobile vertical split
@@ -123,7 +125,7 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
             {/* View switcher button */}
             <Button
               onClick={() => setCurrentFullscreenView(currentFullscreenView === 'main' ? 'max' : 'main')}
-              className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg border-2 border-white text-white"
+              className={`w-12 h-12 rounded-full ${aiTheme.gradient} shadow-lg border-2 border-white text-white`}
               title={`Switch to ${currentFullscreenView === 'main' ? 'Max AI' : 'Main Content'}`}
             >
               {currentFullscreenView === 'main' ? <Bot className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}

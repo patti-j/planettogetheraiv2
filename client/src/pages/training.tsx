@@ -223,7 +223,7 @@ export default function Training() {
   const { user } = useAuth();
   const { hasPermission } = usePermissions();
   const { toast } = useToast();
-  const { getThemeClasses } = useAITheme();
+  const { aiTheme } = useAITheme();
   const queryClient = useQueryClient();
 
   // Check if user has training permissions
@@ -1663,7 +1663,7 @@ function TourManagementSection() {
                     <Button 
                       size="sm" 
                       variant="outline"
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 w-full sm:w-auto text-xs px-2 py-1"
+                      className={`${aiTheme.gradient} text-white border-0 w-full sm:w-auto text-xs px-2 py-1`}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleSingleTourRegenerate(tour);
@@ -1896,7 +1896,7 @@ function TourManagementSection() {
               <Button 
                 onClick={handleConfirmAIGeneration} 
                 disabled={regenerateTourWithAI.isPending}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
+                className={`${aiTheme.gradient} text-white border-0`}
               >
                 {regenerateTourWithAI.isPending ? (
                   <Hourglass className="h-4 w-4 mr-2 animate-pulse" />
@@ -2306,7 +2306,7 @@ function TourManagementSection() {
               <Button 
                 onClick={handleConfirmSingleTourRegeneration} 
                 disabled={isGeneratingSingleTour}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                className={`${aiTheme.gradient} text-white`}
               >
                 {isGeneratingSingleTour ? (
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -2426,7 +2426,7 @@ function TourManagementSection() {
             <Button
               onClick={handleApproveTourContent}
               disabled={isApprovingTour}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white disabled:opacity-70"
+              className={`${aiTheme.gradient} text-white disabled:opacity-70`}
             >
               {isApprovingTour ? (
                 <>

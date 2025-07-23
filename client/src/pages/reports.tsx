@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useAITheme } from "@/hooks/use-ai-theme";
 
 import { 
   Plus, 
@@ -54,6 +55,7 @@ export default function Reports() {
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { aiTheme } = useAITheme();
 
   const { data: reportConfigs = [] } = useQuery({
     queryKey: ['/api/report-configs'],
@@ -426,7 +428,7 @@ export default function Reports() {
             <Button
               onClick={() => setShowAIDialog(true)}
               variant="outline"
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
+              className={`${aiTheme.gradient} text-white border-0`}
             >
               <Sparkles className="w-4 h-4 mr-2" />
               Create

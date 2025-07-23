@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Sparkles, Building2, Settings, Check, Plus, Globe, Palette, BarChart, Factory, Maximize2, Minimize2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useAITheme } from "@/hooks/use-ai-theme";
 
 const categories = [
   { value: "all", label: "All Industries" },
@@ -32,6 +33,7 @@ export default function IndustryTemplates() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { aiTheme } = useAITheme();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [customIndustry, setCustomIndustry] = useState("");

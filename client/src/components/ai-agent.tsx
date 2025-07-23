@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Mic, MicOff, Send, Bot, User, Volume2, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAITheme } from "@/hooks/use-ai-theme";
 import { apiRequest } from "@/lib/queryClient";
 
 interface AIMessage {
@@ -55,6 +56,7 @@ export default function AIAgent() {
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { aiTheme } = useAITheme();
 
   // Load voice settings from localStorage on component mount
   useEffect(() => {
@@ -366,7 +368,7 @@ export default function AIAgent() {
               >
                 <div className={`flex gap-2 max-w-[80%] ${message.type === "user" ? "flex-row-reverse" : "flex-row"}`}>
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    message.type === "user" ? "bg-blue-500" : "bg-gradient-to-r from-purple-500 to-pink-500"
+                    message.type === "user" ? "bg-blue-500" : aiTheme.gradient
                   }`}>
                     {message.type === "user" ? 
                       <User className="w-4 h-4 text-white" /> : 
@@ -402,7 +404,7 @@ export default function AIAgent() {
             {(textCommandMutation.isPending || voiceCommandMutation.isPending) && (
               <div className="flex gap-3 justify-start">
                 <div className="flex gap-2 max-w-[80%]">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-r from-purple-500 to-pink-500">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${aiTheme.gradient}`}>
                     <Bot className="w-4 h-4 text-white" />
                   </div>
                   <div className="rounded-lg p-3 bg-gray-100 text-gray-900">
@@ -426,7 +428,7 @@ export default function AIAgent() {
                 size="sm"
                 onClick={testVoice}
                 disabled={isTestingVoice}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
+                className={`${aiTheme.gradient} text-white border-0`}
               >
                 <Volume2 className="w-4 h-4 mr-2" />
                 {isTestingVoice ? "Testing..." : "Test Voice"}
@@ -551,7 +553,7 @@ export default function AIAgent() {
                   type="submit"
                   disabled={!input.trim() || textCommandMutation.isPending || isRecording}
                   size="icon"
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                  className={`${aiTheme.gradient} text-white`}
                 >
                   {textCommandMutation.isPending ? "..." : <Send className="w-4 h-4" />}
                 </Button>
