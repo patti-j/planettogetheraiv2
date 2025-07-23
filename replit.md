@@ -138,8 +138,8 @@ The application uses a modern full-stack architecture with strong typing through
 - Users now see Max AI Assistant immediately when they access the platform unless they manually close it
 - **Mobile Max window minimum height reduced**: Lowered minimum height from 200px to 60px for better minimization
 - Users can now resize Max window down to almost header-only height, eliminating most visible white space
-- **Max title positioning fix**: Added left margin (ml-12 md:ml-0) to prevent hamburger menu from covering "Max AI Assistant" text
-- Text now properly clears hamburger menu on mobile while maintaining normal positioning on desktop
+- **Max title positioning fix**: Added consistent left margin (ml-12) to prevent hamburger menu from covering "Max AI Assistant" text
+- Text now properly clears hamburger menu on both mobile and desktop with consistent positioning
 - **Mobile Layout Switcher Implementation**: Added mobile fullscreen mode with easy switching between Max and main content
 - Users can switch between split-pane layout (Max at bottom with splitter) and fullscreen mode (toggles between Max and main views)
 - Mobile header includes layout switcher controls: Maximize button (split → fullscreen), view switcher (main ↔ Max), split mode button
