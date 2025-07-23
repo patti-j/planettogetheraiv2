@@ -794,6 +794,10 @@ function TourManagementSection() {
   };
 
   const handlePreviewTour = (tour: any) => {
+    console.log('handlePreviewTour called with tour:', tour);
+    console.log('tour.tourData:', tour.tourData);
+    console.log('tour.tourData.steps:', tour.tourData?.steps);
+    
     // Set up the preview data to match the expected structure
     setSingleTourPreviewData({
       role: tour.roleDisplayName,
@@ -2221,6 +2225,9 @@ function TourManagementSection() {
             <div className="space-y-6">
               <div className="bg-blue-50 p-4 rounded-lg">
                 <h4 className="font-medium text-blue-800 mb-2">Tour Overview</h4>
+                <div className="text-xs text-red-600 mb-2">
+                  Debug Preview Data: {JSON.stringify(singleTourPreviewData, null, 2)}
+                </div>
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
                     <div className="text-lg font-bold text-blue-600">{singleTourPreviewData.generatedTour?.steps?.length || 0}</div>
