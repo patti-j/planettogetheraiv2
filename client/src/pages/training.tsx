@@ -1518,7 +1518,7 @@ function TourManagementSection() {
           <Button
             onClick={handleGenerateSelectedTours}
             disabled={regenerateTourWithAI.isPending || selectedRoles.length === 0}
-            className={`${getThemeClasses()} w-full sm:w-auto text-xs sm:text-sm`}
+            className={`${aiTheme.gradient} text-white w-full sm:w-auto text-xs sm:text-sm`}
             size="sm"
           >
             <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -1787,7 +1787,7 @@ function TourManagementSection() {
               <Button
                 onClick={handleGenerateMissingTours}
                 disabled={generateNewToursWithAI.isPending || selectedMissingRoles.length === 0}
-                className={`${getThemeClasses()} w-full sm:w-auto text-xs sm:text-sm`}
+                className={`${aiTheme.gradient} text-white w-full sm:w-auto text-xs sm:text-sm`}
                 size="sm"
               >
                 {generateNewToursWithAI.isPending ? (
