@@ -2292,9 +2292,9 @@ function TourManagementSection() {
             </div>
             <Button
               onClick={handleApproveTourContent}
-              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
             >
-              <CheckCircle className="h-4 w-4 mr-2" />
+              <Sparkles className="h-4 w-4 mr-2" />
               Approve & Generate Voice
             </Button>
           </div>
