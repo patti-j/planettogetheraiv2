@@ -541,7 +541,7 @@ export default function RoleManagementPage() {
               >
                 <Plus className="w-4 h-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">New Role</span>
-                <span className="sm:hidden">Add Role</span>
+                <span className="sm:hidden">New Role</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
