@@ -4729,8 +4729,11 @@ Return JSON format with each role as a top-level key containing tourSteps array.
             console.log(`No tour data found for role: ${role}. Tried keys: ${role}, ${roleKeyPascal}, ${roleKeyPascal}Tour, ${roleKey}, direct steps`);
           }
           
+          console.log(`Role tour data for ${role}:`, JSON.stringify(roleTourData, null, 2));
           const steps = roleTourData?.steps || roleTourData?.tourSteps || [];
+          console.log(`Steps found for ${role}:`, steps.length, "steps");
           if (steps && steps.length > 0) {
+            console.log(`Adding tour for ${role} with ${steps.length} steps`);
             processedTours.push({
               role: role,
               steps: steps,
@@ -4738,6 +4741,8 @@ Return JSON format with each role as a top-level key containing tourSteps array.
               estimatedDuration: roleTourData?.estimatedDuration || "5 min",
               voiceScriptCount: steps.filter((s: any) => s.voiceScript).length
             });
+          } else {
+            console.log(`No steps found for ${role}. roleTourData keys:`, roleTourData ? Object.keys(roleTourData) : 'null');
           }
         }
         
