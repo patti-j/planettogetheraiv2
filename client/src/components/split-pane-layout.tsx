@@ -32,7 +32,7 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
     if (isMobile) {
       // Mobile: vertical split (Max at bottom)
       const newHeight = rect.bottom - e.clientY;
-      const minHeight = 200;
+      const minHeight = 60; // Allow minimizing to just header height
       const maxHeightLimit = rect.height * 0.7;
       setMaxHeight(Math.max(minHeight, Math.min(newHeight, maxHeightLimit)));
     } else {
@@ -51,7 +51,7 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
     if (isMobile) {
       // Mobile: vertical split (Max at bottom)
       const newHeight = rect.bottom - touch.clientY;
-      const minHeight = 200;
+      const minHeight = 60; // Allow minimizing to just header height
       const maxHeightLimit = rect.height * 0.7;
       setMaxHeight(Math.max(minHeight, Math.min(newHeight, maxHeightLimit)));
     } else {

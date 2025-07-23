@@ -136,6 +136,8 @@ The application uses a modern full-stack architecture with strong typing through
 - Buttons in header remain clickable while header background serves as resize handle
 - **Max window defaults to visible**: Changed initial state from closed to open on application startup
 - Users now see Max AI Assistant immediately when they access the platform unless they manually close it
+- **Mobile Max window minimum height reduced**: Lowered minimum height from 200px to 60px for better minimization
+- Users can now resize Max window down to almost header-only height, eliminating most visible white space
 - Eliminated floating window system entirely for consistent, predictable layout behavior
 
 ✓ **User Profile Integration into Hamburger Menu (July 23, 2025)**:
