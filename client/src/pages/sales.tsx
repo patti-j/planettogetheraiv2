@@ -711,6 +711,16 @@ export default function Sales() {
 
   return (
     <div className={`bg-gray-50 ${isMaximized ? 'fixed inset-0 z-50' : 'h-screen'} flex flex-col`}>
+      {/* Maximize button in top right corner matching hamburger menu positioning */}
+      <div className="fixed top-2 right-2 z-50">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsMaximized(!isMaximized)}
+        >
+          {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+        </Button>
+      </div>
       {/* Header */}
       <div className="bg-white shadow-sm border-b p-3 sm:p-6 flex-shrink-0">
         <div className="relative">

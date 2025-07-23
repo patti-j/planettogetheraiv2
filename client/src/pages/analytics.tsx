@@ -508,6 +508,17 @@ export default function Analytics() {
 
   return (
     <>
+      {/* Maximize button in top right corner matching hamburger menu positioning */}
+      <div className="fixed top-2 right-2 z-50">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsMaximized(!isMaximized)}
+        >
+          {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+        </Button>
+      </div>
+
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="p-3 sm:p-6">
@@ -600,15 +611,7 @@ export default function Analytics() {
             </div>
 
             {!isMobile && (
-              <div className="flex items-center ml-auto">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsMaximized(!isMaximized)}
-                  className="flex items-center gap-2 text-sm"
-                >
-                  {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                </Button>
-              </div>
+              {/* Maximize button moved to fixed top-right position */}
             )}
           </div>
         </div>
@@ -692,12 +695,7 @@ export default function Analytics() {
                     )}
                   </Button>
                   
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsMaximized(false)}
-                  >
-                    <Minimize2 className="h-4 w-4" />
-                  </Button>
+                  {/* Minimize button handled by fixed maximize button */}
                 </div>
               </div>
             </div>

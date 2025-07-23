@@ -334,6 +334,17 @@ export default function Reports() {
 
   return (
     <>
+      {/* Maximize button in top right corner matching hamburger menu positioning */}
+      <div className="fixed top-2 right-2 z-50">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsMaximized(!isMaximized)}
+        >
+          {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+        </Button>
+      </div>
+
       {isMaximized ? (
       <div className="fixed inset-0 bg-white z-50 flex flex-col">
         {/* Header */}

@@ -362,17 +362,7 @@ export default function Reports() {
           <p className="text-sm md:text-base text-gray-600">Create and manage production reports</p>
         </div>
         
-        {/* Maximize button always in top right corner */}
-        <div className="absolute top-0 right-0">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsMaximized(!isMaximized)}
-            className="hidden sm:flex"
-          >
-            {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-          </Button>
-        </div>
+        {/* Maximize button moved to fixed top-right position */}
         
         {/* Controls positioned below header */}
         <div className="mt-4 flex flex-wrap items-center gap-2 sm:gap-2 md:gap-2">
@@ -635,6 +625,17 @@ export default function Reports() {
 
   return (
     <>
+      {/* Maximize button in top right corner matching hamburger menu positioning */}
+      <div className="fixed top-2 right-2 z-50">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsMaximized(!isMaximized)}
+        >
+          {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+        </Button>
+      </div>
+
       {isMaximized ? (
         <div className="fixed inset-0 bg-white z-50">
           <PageContent />

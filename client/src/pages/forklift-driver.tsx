@@ -508,6 +508,16 @@ export default function ForkliftDriver() {
   if (isMaximized) {
     return (
       <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
+        {/* Maximize button in top right corner matching hamburger menu positioning */}
+        <div className="fixed top-2 right-2 z-50">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsMaximized(!isMaximized)}
+          >
+            {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </Button>
+        </div>
         <div className="container mx-auto px-4 py-6 max-h-screen">
           <PageContent />
         </div>
@@ -517,6 +527,16 @@ export default function ForkliftDriver() {
 
   return (
     <div className="flex flex-col h-screen">
+      {/* Maximize button in top right corner matching hamburger menu positioning */}
+      <div className="fixed top-2 right-2 z-50">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsMaximized(!isMaximized)}
+        >
+          {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+        </Button>
+      </div>
       <div className="flex-1 overflow-y-auto">
         <div className="container mx-auto px-4 py-6">
           <PageContent />
