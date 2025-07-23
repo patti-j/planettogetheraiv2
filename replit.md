@@ -151,6 +151,7 @@ The application uses a modern full-stack architecture with strong typing through
 - Submit button styled with purple/pink gradient and hover effects for AI assistant visual identity
 - **Evaluate Schedule Button Color Update**: Changed from purple-to-pink gradient to blue-to-pink gradient matching Max AI styling
 - "Evaluate Schedules" button in Production Schedule page now uses `from-blue-500 to-pink-600` gradient for visual consistency
+- Fixed button styling conflict by removing `variant="outline"` that was overriding the custom gradient classes
 
 ✓ **User Profile Integration into Hamburger Menu (July 23, 2025)**:
 - Successfully moved user profile/avatar/role switching controls from standalone App.tsx position into hamburger menu

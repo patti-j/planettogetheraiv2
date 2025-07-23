@@ -345,7 +345,6 @@ export default function Dashboard() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          variant="outline"
                           size="sm"
                           onClick={() => {
                             console.log('Evaluate Schedules clicked, current state:', showEvaluationSystem);
