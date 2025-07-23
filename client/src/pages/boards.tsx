@@ -116,11 +116,11 @@ export default function Boards() {
   const PageContent = () => (
     <div className="flex-1 flex flex-col">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 px-4 py-3 sm:px-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div className="mb-2 sm:mb-0 md:ml-0 ml-12">
-            <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">Boards</h1>
-            <p className="text-gray-600 mt-1 text-xs sm:text-sm">Organize jobs, operations, and resources using customizable board views</p>
+      <header className="bg-white shadow-sm border-b border-gray-200 p-3 sm:p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="md:ml-0 ml-12">
+            <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Boards</h1>
+            <p className="text-sm md:text-base text-gray-600">Organize jobs, operations, and resources using customizable board views</p>
           </div>
         </div>
       </header>

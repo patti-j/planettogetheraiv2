@@ -347,10 +347,10 @@ export default function ForkliftDriver() {
   const PageContent = () => (
     <div className="space-y-6 pb-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-800 md:ml-0 ml-12">Forklift Operations</h1>
-          <p className="text-gray-600">Material movement tracking for production floor</p>
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="md:ml-0 ml-12">
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Forklift Operations</h1>
+          <p className="text-sm md:text-base text-gray-600">Material movement tracking for production floor</p>
         </div>
         <div className="flex items-center gap-2">
           <Button

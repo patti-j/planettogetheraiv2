@@ -281,11 +281,11 @@ export default function OperatorDashboard() {
   return (
     <div className={`bg-gray-50 ${isMaximized ? 'fixed inset-0 z-50' : 'h-screen'} flex flex-col`}>
       {/* Header */}
-      <div className="bg-white shadow-sm border-b px-4 py-3 sm:px-6 flex-shrink-0">
-        <div className="flex items-center justify-between">
+      <div className="bg-white shadow-sm border-b p-3 sm:p-6 flex-shrink-0">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="md:ml-0 ml-12">
-            <h1 className="text-2xl font-semibold text-gray-800">Operator Dashboard</h1>
-            <p className="text-gray-600">Review upcoming operations and report status</p>
+            <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Operator Dashboard</h1>
+            <p className="text-sm md:text-base text-gray-600">Review upcoming operations and report status</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-sm text-gray-600">

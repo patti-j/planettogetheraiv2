@@ -429,14 +429,14 @@ export default function BusinessGoalsPage() {
   return (
     <div className={containerClass}>
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 sm:px-6">
-        <div className="flex justify-between items-start">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 md:ml-0 ml-12">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-3 sm:p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="md:ml-0 ml-12">
+            <div className="flex items-center gap-2">
               <Target className="h-6 w-6 text-blue-600" />
-              <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">Business Goals & Strategy</h1>
+              <h1 className="text-xl md:text-2xl font-semibold text-gray-800 dark:text-white">Business Goals & Strategy</h1>
             </div>
-            <p className="text-gray-600 dark:text-gray-300 mt-1">
+            <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 mt-1">
               Define strategic objectives, track progress, and monitor risks that impact business success
             </p>
           </div>

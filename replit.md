@@ -134,6 +134,10 @@ The application uses a modern full-stack architecture with strong typing through
 - **Fixed hamburger menu overlap issue** - updated mobile spacing across all pages from ml-3 to ml-12 for proper title clearance
 - Page titles and headers now properly clear the hamburger menu on mobile devices across all 15+ pages
 - Enhanced mobile user experience with consistent navigation spacing throughout the application
+- **Standardized all page headers to capacity planning layout format** - applied consistent header structure across all pages
+- Used responsive typography (text-xl md:text-2xl for titles, text-sm md:text-base for descriptions) and proper mobile spacing
+- Headers now use flex layout with lg breakpoint column/row switching and lg:flex-shrink-0 for buttons
+- Applied changes to 15+ pages including dashboard, analytics, reports, business goals, systems management, training, and all others
 
 ✓ **Complete Systems Integration Dashboard Transformation (July 23, 2025)**:
 - Successfully completed comprehensive transformation of ERP import page into modern Systems Integration dashboard

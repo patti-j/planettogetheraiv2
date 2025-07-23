@@ -272,18 +272,20 @@ export default function Training() {
 
   return (
     <div className="p-6">
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div className="md:ml-0 ml-12">
-            <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">Training & Role Demonstration</h1>
-            <p className="text-sm sm:text-base text-gray-600">
-              Interactive training modules and role switching for comprehensive system demonstrations
-            </p>
-          </div>
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+        <div className="md:ml-0 ml-12">
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Training & Role Demonstration</h1>
+          <p className="text-sm md:text-base text-gray-600">
+            Interactive training modules and role switching for comprehensive system demonstrations
+          </p>
+        </div>
+        <div className="lg:flex-shrink-0">
           {user && <RoleSwitcher userId={user.id} currentRole={currentRole as Role} />}
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
           <Card>
             <CardContent className="p-3 sm:p-4">
               <div className="flex items-center">
@@ -332,7 +334,6 @@ export default function Training() {
             </CardContent>
           </Card>
         </div>
-      </div>
 
       <Tabs defaultValue="modules" className="space-y-4 sm:space-y-6">
         <TabsList className="flex flex-wrap justify-center sm:justify-start gap-1 sm:gap-2 h-auto p-1 sm:p-1 bg-gray-100 rounded-lg">

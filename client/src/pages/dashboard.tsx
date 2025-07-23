@@ -651,46 +651,48 @@ export default function Dashboard() {
       <div className="h-screen flex flex-col overflow-hidden">
         <main className="flex-1 overflow-y-auto">
           {/* Header */}
-          <header className="bg-white shadow-sm border-b border-gray-200 p-4 md:p-6">
+          <header className="bg-white shadow-sm border-b border-gray-200 p-3 sm:p-6">
             {/* Title and Live Button Row */}
-            <div className="flex items-center justify-between mb-4 md:mb-6">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div className="md:ml-0 ml-12">
-                <h2 className="text-xl md:text-2xl font-semibold text-gray-800">Production Schedule</h2>
+                <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Production Schedule</h1>
                 <p className="text-sm md:text-base text-gray-600">Manage operations and resource allocation</p>
               </div>
               
               {/* Live button in top right corner */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsLivePaused(!isLivePaused)}
-                    className="flex items-center gap-2 hover:bg-gray-100 text-sm"
-                  >
-                    {isLivePaused ? (
-                      <>
-                        <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                        <span className="text-sm text-gray-600 font-medium">Paused</span>
-                        <PlayCircle className="w-4 h-4 text-gray-600" />
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                        <span className="text-sm text-green-600 font-medium">Live</span>
-                        <PauseCircle className="w-4 h-4 text-green-600" />
-                      </>
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Toggle live data updates</p>
-                </TooltipContent>
-              </Tooltip>
+              <div className="flex items-center lg:flex-shrink-0">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsLivePaused(!isLivePaused)}
+                      className="flex items-center gap-2 hover:bg-gray-100 text-sm"
+                    >
+                      {isLivePaused ? (
+                        <>
+                          <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                          <span className="text-sm text-gray-600 font-medium">Paused</span>
+                          <PlayCircle className="w-4 h-4 text-gray-600" />
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                          <span className="text-sm text-green-600 font-medium">Live</span>
+                          <PauseCircle className="w-4 h-4 text-green-600" />
+                        </>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Toggle live data updates</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
 
           {/* Analytics Controls */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 space-y-2 md:space-y-0">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mt-6 space-y-2 md:space-y-0">
             <div className="flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-gray-500" />
               <span className="text-sm font-medium text-gray-700">Analytics Dashboard</span>

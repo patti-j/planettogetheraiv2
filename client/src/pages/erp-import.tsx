@@ -350,10 +350,10 @@ const SystemsIntegrationPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="md:ml-0 ml-12">
-          <h1 className="text-2xl font-semibold text-gray-800">Systems Integration</h1>
-          <p className="text-gray-600">Manage connections to external systems with AI-powered setup and monitoring</p>
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Systems Integration</h1>
+          <p className="text-sm md:text-base text-gray-600">Manage connections to external systems with AI-powered setup and monitoring</p>
         </div>
         <div className="flex items-center gap-2">
           <Button

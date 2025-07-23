@@ -510,15 +510,15 @@ export default function Analytics() {
     <>
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="border-b px-4 py-3 sm:px-6">
-          <div className="flex items-start justify-between gap-4">
+        <div className="p-3 sm:p-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="md:ml-0 ml-12">
-              <h1 className="text-2xl font-semibold text-gray-800">Analytics</h1>
-              <p className="text-gray-600">Manage and view dashboard configurations</p>
+              <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Analytics</h1>
+              <p className="text-sm md:text-base text-gray-600">Manage and view dashboard configurations</p>
             </div>
             
             {/* Live indicator in top right */}
-            <div className="flex items-center">
+            <div className="flex items-center lg:flex-shrink-0">
               <Button
                 variant="ghost"
                 size="sm"
@@ -543,7 +543,7 @@ export default function Analytics() {
           </div>
           
           {/* Controls row */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-6">
             <div className="flex items-center gap-2">
               <Popover>
                 <PopoverTrigger asChild>
