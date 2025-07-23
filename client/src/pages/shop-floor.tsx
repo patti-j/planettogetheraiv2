@@ -1831,7 +1831,7 @@ export default function ShopFloor() {
         {/* Header */}
         <div className="bg-white shadow-sm border-b px-3 sm:px-6 py-4 flex-shrink-0">
           <div className="space-y-4 sm:space-y-6">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="relative">
               <div className="md:ml-0 ml-12">
                 <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
                   <Building2 className="w-6 h-6 mr-2" />
@@ -1839,7 +1839,40 @@ export default function ShopFloor() {
                 </h1>
                 <p className="text-sm md:text-base text-gray-600">Production oversight and equipment monitoring</p>
               </div>
-              <div className="flex flex-col sm:flex-row gap-2 lg:flex-shrink-0">
+              
+              {/* Live indicator always in top right corner */}
+              <div className="absolute top-0 right-0">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsLivePaused(!isLivePaused)}
+                      className="flex items-center gap-1 px-2 sm:px-3 h-8"
+                    >
+                      {isLivePaused ? (
+                        <>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                          <PlayCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <span className="text-xs sm:text-sm hidden sm:inline">Paused</span>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                          <PauseCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <span className="text-xs sm:text-sm hidden sm:inline">Live</span>
+                        </>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isLivePaused ? "Resume live updates" : "Pause live updates"}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              
+              {/* Layout Manager button below header */}
+              <div className="mt-4">
                 <Button
                   variant="outline"
                   size="sm"
@@ -1986,34 +2019,7 @@ export default function ShopFloor() {
                 </Tooltip>
               </div>
               
-              {/* Live indicator */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsLivePaused(!isLivePaused)}
-                    className="flex items-center gap-1 px-2 sm:px-3 h-8"
-                  >
-                    {isLivePaused ? (
-                      <>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                        <PlayCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                        <span className="text-xs sm:text-sm hidden sm:inline">Paused</span>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <PauseCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                        <span className="text-xs sm:text-sm hidden sm:inline">Live</span>
-                      </>
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{isLivePaused ? "Resume live updates" : "Pause live updates"}</p>
-                </TooltipContent>
-              </Tooltip>
+
             </div>
           </div>
         </div>

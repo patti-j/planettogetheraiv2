@@ -652,8 +652,8 @@ export default function Dashboard() {
         <main className="flex-1 overflow-y-auto">
           {/* Header */}
           <header className="bg-white shadow-sm border-b border-gray-200 p-3 sm:p-6">
-            {/* Title and Live Button Row */}
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            {/* Header with live indicator in top right */}
+            <div className="relative">
               <div className="md:ml-0 ml-12">
                 <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
                   <BarChart3 className="w-6 h-6 mr-2" />
@@ -662,8 +662,8 @@ export default function Dashboard() {
                 <p className="text-sm md:text-base text-gray-600">Manage operations and resource allocation</p>
               </div>
               
-              {/* Live button in top right corner */}
-              <div className="flex items-center lg:flex-shrink-0">
+              {/* Live button always in top right corner */}
+              <div className="absolute top-0 right-0">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
