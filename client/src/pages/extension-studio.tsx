@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useAITheme } from "@/hooks/use-ai-theme";
 import { 
   Code, 
   Plus, 
@@ -49,6 +50,7 @@ const ExtensionStudioPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { aiTheme } = useAITheme();
   
   const [selectedExtension, setSelectedExtension] = useState<Extension | null>(null);
   const [activeTab, setActiveTab] = useState("my-extensions");
@@ -156,7 +158,7 @@ const ExtensionStudioPage = () => {
           <div className="flex gap-2 lg:flex-shrink-0">
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white">
+                <Button className={`${aiTheme.gradient} text-white border-0`}>
                   <Plus className="w-4 h-4 mr-2" />
                   New Extension
                 </Button>
@@ -216,7 +218,7 @@ const ExtensionStudioPage = () => {
                           <Button 
                             variant="link" 
                             onClick={() => setCreateDialogOpen(true)}
-                            className="text-purple-600 hover:text-purple-700"
+                            className="ai-gradient-text"
                           >
                             Create your first extension
                           </Button>
@@ -229,7 +231,7 @@ const ExtensionStudioPage = () => {
                               <Card
                                 key={extension.id}
                                 className={`cursor-pointer transition-all hover:shadow-md ${
-                                  selectedExtension?.id === extension.id ? 'ring-2 ring-purple-500' : ''
+                                  selectedExtension?.id === extension.id ? 'ring-2 ai-gradient-border' : ''
                                 }`}
                                 onClick={() => setSelectedExtension(extension)}
                               >
@@ -237,7 +239,7 @@ const ExtensionStudioPage = () => {
                                   <div className="flex items-start justify-between">
                                     <div className="flex-1">
                                       <div className="flex items-center gap-2 mb-2">
-                                        <TypeIcon className="w-4 h-4 text-purple-600" />
+                                        <TypeIcon className="w-4 h-4 ai-gradient-text" />
                                         <h3 className="font-medium text-sm">{extension.displayName}</h3>
                                       </div>
                                       <p className="text-xs text-gray-600 mb-2 line-clamp-2">
