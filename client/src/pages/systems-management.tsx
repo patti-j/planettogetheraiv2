@@ -334,9 +334,9 @@ export default function SystemsManagementPage() {
   });
 
   const PageContent = () => (
-    <div className="space-y-6">
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="relative">
         <div className="md:ml-0 ml-12">
           <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
             <Server className="w-6 h-6 mr-2" />
@@ -344,7 +344,20 @@ export default function SystemsManagementPage() {
           </h1>
           <p className="text-sm md:text-base text-gray-600">Monitor system health, manage users, and oversee IT infrastructure</p>
         </div>
-        <div className="flex items-center gap-4">
+        
+        {/* Maximize button always in top right corner */}
+        <div className="absolute top-0 right-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsMaximized(!isMaximized)}
+          >
+            {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </Button>
+        </div>
+        
+        {/* Controls positioned below header */}
+        <div className="mt-4 flex justify-end">
           <Select value={selectedEnvironment} onValueChange={setSelectedEnvironment}>
             <SelectTrigger className="w-40">
               <SelectValue />
@@ -357,13 +370,6 @@ export default function SystemsManagementPage() {
               <SelectItem value="test">Test</SelectItem>
             </SelectContent>
           </Select>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsMaximized(!isMaximized)}
-          >
-            {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-          </Button>
         </div>
       </div>
 
