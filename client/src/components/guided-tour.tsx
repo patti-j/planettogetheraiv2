@@ -269,9 +269,9 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       const isMobile = windowWidth < 768;
       
       if (isMobile) {
-        // Make mobile window ultra-compact
-        const cardWidth = Math.min(240, windowWidth - 16);
-        const maxCardHeight = Math.min(240, windowHeight * 0.4);
+        // Make mobile window ultra-compact with minimal white space
+        const cardWidth = Math.min(280, windowWidth - 16);
+        const maxCardHeight = Math.min(200, windowHeight * 0.35);
         const padding = 8;
         
         return {
@@ -636,11 +636,11 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         style={{
           left: position.x,
           top: position.y,
-          width: windowSize.width < 768 ? `${Math.min(240, windowSize.width - 16)}px` : '384px',
+          width: windowSize.width < 768 ? `${Math.min(280, windowSize.width - 16)}px` : '384px',
           height: windowSize.width < 768 ? 
-            `${Math.min(240, windowSize.height * 0.4)}px` : 
+            `${Math.min(200, windowSize.height * 0.35)}px` : 
             `${Math.min(600, windowSize.height - 100)}px`,
-          maxHeight: windowSize.width < 768 ? '40vh' : '90vh'
+          maxHeight: windowSize.width < 768 ? '35vh' : '90vh'
         }}
       >
         <CardHeader 
@@ -676,9 +676,9 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           </div>
           
           <div className="space-y-1 sm:space-y-2">
-            <div className="flex items-center gap-1 sm:gap-2">
-              <StepIcon className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
-              <CardTitle className="text-sm sm:text-lg font-semibold truncate">{currentStepData.title}</CardTitle>
+            <div className="flex items-start gap-1 sm:gap-2">
+              <StepIcon className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0 mt-0.5 sm:mt-0" />
+              <CardTitle className="text-xs sm:text-lg font-semibold leading-tight sm:leading-normal line-clamp-2">{currentStepData.title}</CardTitle>
             </div>
             <Progress value={progress} className="w-full h-1.5 sm:h-2" />
             <p className="text-xs text-gray-500">
@@ -687,8 +687,8 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           </div>
         </CardHeader>
 
-        <CardContent className="flex-1 overflow-y-auto p-1.5 sm:p-6 pt-0">
-          <div className="space-y-4">
+        <CardContent className="flex-1 overflow-y-auto p-1 sm:p-6 pt-0">
+          <div className="space-y-0 sm:space-y-4">
             {/* Hide description on mobile to save space */}
             <p className="hidden sm:block text-sm text-gray-700 leading-relaxed">{currentStepData.description}</p>
             
@@ -708,7 +708,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           </div>
         </CardContent>
 
-        <div className="flex-shrink-0 p-2 sm:p-6 pt-2 border-t space-y-3">
+        <div className="flex-shrink-0 p-1.5 sm:p-6 pt-1 sm:pt-2 border-t space-y-1 sm:space-y-3">
           {voiceEnabled && (
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">Voice Guide</span>
