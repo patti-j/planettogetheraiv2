@@ -695,10 +695,8 @@ export default function Analytics() {
                   <Button
                     variant="outline"
                     onClick={() => setIsMaximized(false)}
-                    className="flex items-center gap-2"
                   >
                     <Minimize2 className="h-4 w-4" />
-                    Minimize
                   </Button>
                 </div>
               </div>

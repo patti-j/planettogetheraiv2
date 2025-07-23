@@ -353,7 +353,7 @@ export default function Reports() {
   const PageContent = () => (
     <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="relative">
         <div className="md:ml-0 ml-12">
           <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
             <FileText className="w-6 h-6 mr-2" />
@@ -361,7 +361,21 @@ export default function Reports() {
           </h1>
           <p className="text-sm md:text-base text-gray-600">Create and manage production reports</p>
         </div>
-        <div className="lg:flex-shrink-0 flex flex-wrap items-center gap-2 sm:gap-2 md:gap-2">
+        
+        {/* Maximize button always in top right corner */}
+        <div className="absolute top-0 right-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsMaximized(!isMaximized)}
+            className="hidden sm:flex"
+          >
+            {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </Button>
+        </div>
+        
+        {/* Controls positioned below header */}
+        <div className="mt-4 flex flex-wrap items-center gap-2 sm:gap-2 md:gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="min-w-[280px] justify-between">
@@ -434,15 +448,6 @@ export default function Reports() {
             >
               <Plus className="w-4 h-4 mr-2" />
               New Report
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsMaximized(!isMaximized)}
-              className="whitespace-nowrap hidden sm:flex"
-            >
-              {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </Button>
           </div>
         </div>

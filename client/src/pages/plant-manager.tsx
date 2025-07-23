@@ -238,12 +238,25 @@ export default function PlantManagerPage() {
   const PageContent = () => (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="relative">
         <div className="md:ml-0 ml-12">
           <h1 className="text-2xl font-semibold text-gray-800">Plant Manager Dashboard</h1>
           <p className="text-gray-600">Comprehensive plant operations oversight and strategic decision-making</p>
         </div>
-        <div className="flex items-center gap-4">
+        
+        {/* Maximize button always in top right corner */}
+        <div className="absolute top-0 right-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsMaximized(!isMaximized)}
+          >
+            {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </Button>
+        </div>
+        
+        {/* Controls positioned below header */}
+        <div className="mt-4 flex justify-end">
           <Select value={selectedTimeframe} onValueChange={setSelectedTimeframe}>
             <SelectTrigger className="w-32">
               <SelectValue />
@@ -255,13 +268,6 @@ export default function PlantManagerPage() {
               <SelectItem value="quarter">This Quarter</SelectItem>
             </SelectContent>
           </Select>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsMaximized(!isMaximized)}
-          >
-            {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-          </Button>
         </div>
       </div>
 
