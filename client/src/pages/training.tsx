@@ -801,6 +801,8 @@ function TourManagementSection() {
       generatedTour: tour.tourData,
       tourId: tour.id
     });
+    // Set the selected tour for regeneration (needed for voice generation)
+    setSelectedTourForRegeneration(tour);
     setShowSingleTourPreviewDialog(true);
   };
 
