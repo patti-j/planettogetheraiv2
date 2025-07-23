@@ -1147,17 +1147,37 @@ function TourManagementSection() {
   // Test voice functionality for tour steps - plays pre-cached recordings
   const handleTestVoice = async (step: any, role: string) => {
     try {
-      // Create the same narration text that was used during tour generation
+      // Create the same narration text that was used during tour generation with varied openings
       const createEngagingNarration = (stepData: any, role: string) => {
         if (stepData.voiceScript) {
           return stepData.voiceScript;
         }
         
+        // Varied engaging transition phrases to keep scripts fresh
+        const transitionPhrases = [
+          'Let me introduce you to',
+          'Here\'s how you can use',
+          'Now, let\'s explore',
+          'Take a look at',
+          'I\'d like to highlight',
+          'Let\'s dive into',
+          'Check out',
+          'Here\'s a key feature:',
+          'Notice how',
+          'You\'ll find that',
+          'This is where you can',
+          'Pay attention to'
+        ];
+        
         const benefit = Array.isArray(stepData.benefits) && stepData.benefits.length > 0 
           ? stepData.benefits[0] 
           : stepData.description;
         
-        return `Let me show you ${stepData.title}. ${stepData.description} ${benefit}`;
+        // Use hash of step title to consistently select the same transition phrase for each step
+        const stepHash = stepData.title.split('').reduce((hash, char) => hash + char.charCodeAt(0), 0);
+        const selectedTransition = transitionPhrases[stepHash % transitionPhrases.length];
+        
+        return `${selectedTransition} ${stepData.title}. ${stepData.description} ${benefit}`;
       };
 
       const enhancedText = createEngagingNarration(step, role);

@@ -4359,7 +4359,7 @@ Return a JSON response with this structure:
     console.log(`Completed voice pre-generation for ${role}`);
   }
   
-  // Create engaging narration with role-specific focus
+  // Create engaging narration with role-specific focus and varied openings
   function createEngagingNarration(stepData: any, role: string): string {
     if (stepData.voiceScript) {
       return stepData.voiceScript;
@@ -4374,6 +4374,22 @@ Return a JSON response with this structure:
       'trainer': 'As a Trainer, comprehensive learning tools are essential.',
       'shop-floor-operations': 'As a Shop Floor operator, real-time information is crucial.'
     };
+
+    // Varied engaging transition phrases to keep scripts fresh
+    const transitionPhrases = [
+      'Let me introduce you to',
+      'Here\'s how you can use',
+      'Now, let\'s explore',
+      'Take a look at',
+      'I\'d like to highlight',
+      'Let\'s dive into',
+      'Check out',
+      'Here\'s a key feature:',
+      'Notice how',
+      'You\'ll find that',
+      'This is where you can',
+      'Pay attention to'
+    ];
     
     const benefit = Array.isArray(stepData.benefits) && stepData.benefits.length > 0 
       ? stepData.benefits[0] 
@@ -4382,7 +4398,11 @@ Return a JSON response with this structure:
     const roleKey = role?.toLowerCase().replace(/\s+/g, '-') || 'user';
     const opening = roleOpenings[roleKey] || `Here's a powerful feature for your role:`;
     
-    return `${opening} Let me show you ${stepData.title}. ${stepData.description} This feature helps you ${benefit?.toLowerCase() || 'achieve better results'}.`;
+    // Use hash of step title to consistently select the same transition phrase for each step
+    const stepHash = stepData.title.split('').reduce((hash, char) => hash + char.charCodeAt(0), 0);
+    const selectedTransition = transitionPhrases[stepHash % transitionPhrases.length];
+    
+    return `${opening} ${selectedTransition} ${stepData.title}. ${stepData.description} This feature helps you ${benefit?.toLowerCase() || 'achieve better results'}.`;
   }
   
   // Generate TTS audio using OpenAI
