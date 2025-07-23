@@ -156,10 +156,8 @@ export default function VisualFactory() {
       displayType: string;
       includeRealTime: boolean;
     }) => {
-      return await apiRequest('/api/visual-factory/ai/generate-content', {
-        method: 'POST',
-        body: params
-      });
+      const response = await apiRequest('POST', '/api/visual-factory/ai/generate-content', params);
+      return await response.json();
     },
     onSuccess: (data) => {
       toast({
@@ -194,10 +192,8 @@ export default function VisualFactory() {
       timeOfDay: string;
       audience: string;
     }) => {
-      return await apiRequest('/api/visual-factory/ai/adaptive-content', {
-        method: 'POST',
-        body: params
-      });
+      const response = await apiRequest('POST', '/api/visual-factory/ai/adaptive-content', params);
+      return await response.json();
     },
     onSuccess: (data) => {
       if (currentDisplay && data.adaptiveContent) {
@@ -227,10 +223,8 @@ export default function VisualFactory() {
   // Display Management Mutations
   const createDisplayMutation = useMutation({
     mutationFn: async (display: any) => {
-      return await apiRequest('/api/visual-factory/displays', {
-        method: 'POST',
-        body: display
-      });
+      const response = await apiRequest('POST', '/api/visual-factory/displays', display);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/visual-factory/displays'] });
@@ -240,10 +234,8 @@ export default function VisualFactory() {
 
   const updateDisplayMutation = useMutation({
     mutationFn: async ({ id, ...updates }: { id: number } & any) => {
-      return await apiRequest(`/api/visual-factory/displays/${id}`, {
-        method: 'PUT',
-        body: updates
-      });
+      const response = await apiRequest('PUT', `/api/visual-factory/displays/${id}`, updates);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/visual-factory/displays'] });
@@ -607,7 +599,7 @@ export default function VisualFactory() {
                           <Checkbox 
                             id="includeRealTime"
                             checked={includeRealTime}
-                            onCheckedChange={setIncludeRealTime}
+                            onCheckedChange={(checked) => setIncludeRealTime(checked === true)}
                           />
                           <Label htmlFor="includeRealTime">Include real-time data</Label>
                         </div>
