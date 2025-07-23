@@ -146,6 +146,9 @@ The application uses a modern full-stack architecture with strong typing through
 - Fullscreen mode includes floating action buttons (FABs) at bottom-right for easy view switching and returning to split mode
 - Enhanced mobile UX with dedicated fullscreen experience while maintaining split-pane option for power users
 - Eliminated floating window system entirely for consistent, predictable layout behavior
+- **Max AI Assistant Color Scheme Update**: Changed header and submit button from blue gradient to AI purple/pink gradient
+- Header now uses `from-purple-500 to-pink-600` gradient matching AI branding throughout the platform
+- Submit button styled with purple/pink gradient and hover effects for consistent AI assistant visual identity
 
 ✓ **User Profile Integration into Hamburger Menu (July 23, 2025)**:
 - Successfully moved user profile/avatar/role switching controls from standalone App.tsx position into hamburger menu
