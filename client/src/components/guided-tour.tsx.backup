@@ -937,8 +937,14 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     }
   };
 
-  // Handle loading and visibility states
-  if (toursLoading || !isVisible || !tourSteps[currentStep]) return null;
+  // Component rendering logic
+  if (toursLoading) {
+    return <div className="fixed bottom-4 right-4 z-50 p-4 bg-white rounded shadow">Loading...</div>;
+  }
+  
+  if (!isVisible) {
+    return null;
+  }
 
   const currentStepData = tourSteps[currentStep];
   const StepIcon = currentStepData?.icon || Settings;
