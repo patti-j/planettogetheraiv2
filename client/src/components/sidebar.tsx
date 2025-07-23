@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { useMaxDock } from "@/contexts/MaxDockContext";
+import { useAITheme } from "@/hooks/use-ai-theme";
 
 import TopUserProfile from "./top-user-profile";
 
@@ -26,6 +27,7 @@ export default function Sidebar() {
   // Authentication hooks
   const { hasPermission } = usePermissions();
   const { isMaxOpen, setMaxOpen } = useMaxDock();
+  const { getThemeClasses } = useAITheme();
 
 
 
@@ -255,8 +257,8 @@ export default function Sidebar() {
                     className={`w-full flex items-center px-3 py-2 rounded-lg transition-colors text-sm md:text-base whitespace-nowrap ${
                       item.isAI
                         ? item.active
-                          ? "text-white bg-gradient-to-r from-purple-500 to-pink-500 border-l-4 border-purple-600"
-                          : "text-gray-600 hover:text-white hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500"
+                          ? `text-white ${getThemeClasses(false)} border-l-4 border-purple-600`
+                          : `text-gray-600 hover:text-white ${getThemeClasses(true)}`
                         : item.active
                           ? "text-gray-700 bg-blue-50 border-l-4 border-primary"
                           : "text-gray-600 hover:bg-gray-100"
@@ -267,7 +269,7 @@ export default function Sidebar() {
                     <span className="truncate">{item.label}</span>
                     {item.isAI && (
                       <div className="ml-auto">
-                        <div className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border border-purple-200">
+                        <div className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white border border-white/30">
                           AI
                         </div>
                       </div>
@@ -279,8 +281,8 @@ export default function Sidebar() {
                       className={`flex items-center px-3 py-2 rounded-lg transition-colors text-sm md:text-base whitespace-nowrap ${
                         item.isAI
                           ? item.active
-                            ? "text-white bg-gradient-to-r from-purple-500 to-pink-500 border-l-4 border-purple-600"
-                            : "text-gray-600 hover:text-white hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500"
+                            ? `text-white ${getThemeClasses(false)} border-l-4 border-purple-600`
+                            : `text-gray-600 hover:text-white ${getThemeClasses(true)}`
                           : item.active
                             ? "text-gray-700 bg-blue-50 border-l-4 border-primary"
                             : "text-gray-600 hover:bg-gray-100"
@@ -291,7 +293,7 @@ export default function Sidebar() {
                       <span className="truncate">{item.label}</span>
                       {item.isAI && (
                         <div className="ml-auto">
-                          <div className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border border-purple-200">
+                          <div className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white border border-white/30">
                             AI
                           </div>
                         </div>
