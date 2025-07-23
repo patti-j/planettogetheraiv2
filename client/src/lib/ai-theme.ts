@@ -56,9 +56,6 @@ export function getAIThemeClasses(themeColor: AIThemeColor = 'purple-pink') {
 }
 
 export function getAIThemeClassString(themeColor: AIThemeColor = 'purple-pink', includeHover: boolean = true) {
-  const theme = AI_THEME_OPTIONS[themeColor];
-  if (includeHover) {
-    return `bg-gradient-to-r ${theme.primary} ${theme.primaryHover} text-white`;
-  }
-  return `bg-gradient-to-r ${theme.primary} text-white`;
+  // Always return CSS variable classes to prevent color flashing
+  return `ai-gradient-bg text-white`;
 }

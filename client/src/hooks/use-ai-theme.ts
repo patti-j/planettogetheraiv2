@@ -26,11 +26,15 @@ const updateAIThemeCSSVariables = (theme: AIThemeColor) => {
   }
 };
 
-// Initialize theme immediately on module load for demo users
+// Initialize theme immediately on module load for all users
 if (typeof window !== 'undefined') {
+  // First try demo theme from localStorage
   const demoTheme = localStorage.getItem('demo-ai-theme') as AIThemeColor;
   if (demoTheme) {
     updateAIThemeCSSVariables(demoTheme);
+  } else {
+    // Always ensure blue-indigo theme is set by default to prevent purple-pink flash
+    updateAIThemeCSSVariables('blue-indigo');
   }
 }
 

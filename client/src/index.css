@@ -11,6 +11,12 @@
 /* AI Theme Utility Classes */
 .ai-gradient-bg {
   background: linear-gradient(135deg, hsl(var(--ai-gradient-from)), hsl(var(--ai-gradient-to)));
+  transition: all 0.2s ease-in-out;
+}
+
+.ai-gradient-bg:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
 }
 
 .ai-gradient-text {
