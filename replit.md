@@ -146,9 +146,9 @@ The application uses a modern full-stack architecture with strong typing through
 - Fullscreen mode includes floating action buttons (FABs) at bottom-right for easy view switching and returning to split mode
 - Enhanced mobile UX with dedicated fullscreen experience while maintaining split-pane option for power users
 - Eliminated floating window system entirely for consistent, predictable layout behavior
-- **Max AI Assistant Color Scheme Update**: Header and submit button now use consistent blue-to-indigo gradient
-- Header uses `from-blue-500 to-indigo-600` gradient for consistent blue styling
-- Submit button updated from purple/pink to matching `from-blue-500 to-indigo-600` gradient for visual consistency
+- **Max AI Assistant Color Scheme Update**: Header and submit button use AI branded purple-to-pink gradient
+- Header uses `from-purple-500 to-pink-600` gradient for distinctive AI branding
+- Submit button uses matching `from-purple-500 to-pink-600` gradient for consistent AI visual identity
 - **Evaluate Schedule Button Color Update**: Updated to match Max AI blue-to-indigo gradient styling
 - "Evaluate Schedules" button in Production Schedule page now uses `from-blue-500 to-indigo-600` gradient for complete visual consistency
 - Fixed button styling conflict by removing `variant="outline"` that was overriding the custom gradient classes
