@@ -22,6 +22,7 @@ export default function Sidebar() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiActionsPrompt, setAiActionsPrompt] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [desktopMenuOpen, setDesktopMenuOpen] = useState(false);
   const [quickActionsExpanded, setQuickActionsExpanded] = useState(false);
   const [desktopQuickActionsExpanded, setDesktopQuickActionsExpanded] = useState(false);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
@@ -234,7 +235,7 @@ export default function Sidebar() {
     return tooltips[href] || "Navigate to this page";
   };
 
-  const SidebarContent = () => (
+  const SidebarContent = ({ onNavigate = () => {} }: { onNavigate?: () => void }) => (
     <div className="flex flex-col h-full">
       <div className="p-4 md:p-6 border-b border-gray-200">
         <h1 className="text-lg md:text-xl font-semibold text-gray-800 flex items-center">
@@ -276,7 +277,7 @@ export default function Sidebar() {
                             ? "text-gray-700 bg-blue-50 border-l-4 border-primary"
                             : "text-gray-600 hover:bg-gray-100"
                       }`}
-                      onClick={() => setMobileMenuOpen(false)}
+                      onClick={onNavigate}
                     >
                       <item.icon className="w-4 h-4 md:w-5 md:h-5 mr-3 flex-shrink-0" />
                       <span className="truncate">{item.label}</span>
@@ -320,7 +321,7 @@ export default function Sidebar() {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => { setJobDialogOpen(true); setMobileMenuOpen(false); }}
+                  onClick={() => { setJobDialogOpen(true); onNavigate(); }}
                   className="text-xs h-8"
                 >
                   <Plus className="w-3 h-3 mr-1" />
@@ -329,7 +330,7 @@ export default function Sidebar() {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => { setResourceDialogOpen(true); setMobileMenuOpen(false); }}
+                  onClick={() => { setResourceDialogOpen(true); onNavigate(); }}
                   className="text-xs h-8"
                 >
                   <Plus className="w-3 h-3 mr-1" />
@@ -339,7 +340,7 @@ export default function Sidebar() {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => { setAiActionsDialogOpen(true); setMobileMenuOpen(false); }}
+                onClick={() => { setAiActionsDialogOpen(true); onNavigate(); }}
                 className="w-full text-xs h-8 bg-gradient-to-r from-purple-500 to-pink-500 text-white border-purple-500 hover:from-purple-600 hover:to-pink-600"
               >
                 <Sparkles className="w-3 h-3 mr-1" />
@@ -348,7 +349,7 @@ export default function Sidebar() {
               <Link href="/email-settings">
                 <a
                   className="flex items-center px-2 py-1.5 rounded text-xs w-full text-gray-600 hover:bg-gray-100 transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={onNavigate}
                 >
                   <Send className="w-3 h-3 mr-1" />
                   Email Settings
@@ -440,7 +441,7 @@ export default function Sidebar() {
                   <Link href="/email-settings">
                     <a
                       className="flex items-center px-3 py-2 rounded-lg transition-colors text-base w-full text-gray-600 hover:bg-gray-100"
-                      onClick={() => setMobileMenuOpen(false)}
+                      onClick={onNavigate}
                     >
                       <Send className="w-4 h-4 mr-2" />
                       Email Settings
@@ -495,15 +496,24 @@ export default function Sidebar() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0">
-            <SidebarContent />
+            <SidebarContent onNavigate={() => setMobileMenuOpen(false)} />
           </SheetContent>
         </Sheet>
       </div>
 
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:block w-64 bg-white shadow-lg border-r border-gray-200">
-        <SidebarContent />
-      </aside>
+      {/* Desktop Menu Button */}
+      <div className="hidden md:block fixed top-2 left-2 z-50">
+        <Sheet open={desktopMenuOpen} onOpenChange={setDesktopMenuOpen}>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="sm" className="bg-white shadow-lg">
+              <Menu className="w-4 h-4" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-64 p-0">
+            <SidebarContent onNavigate={() => setDesktopMenuOpen(false)} />
+          </SheetContent>
+        </Sheet>
+      </div>
 
       {/* Job Dialog */}
       <Dialog open={jobDialogOpen} onOpenChange={setJobDialogOpen}>
