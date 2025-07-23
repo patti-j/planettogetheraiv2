@@ -192,9 +192,9 @@ export default function Sidebar() {
             </div>
           </div>
 
-          {/* Role Controls beneath user info - aligned with avatar spacing */}
+          {/* Role Controls beneath user info - horizontally centered */}
           {user?.id && (
-            <div className="space-y-3 ml-11">
+            <div className="space-y-3 flex flex-col items-center">
               <TrainingModeExit />
               <RoleSwitcher userId={user.id} currentRole={currentRole} />
             </div>

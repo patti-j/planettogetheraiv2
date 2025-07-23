@@ -159,7 +159,7 @@ The application uses a modern full-stack architecture with strong typing through
 - Successfully moved role switching controls from separate gray panel into same panel as avatar and username
 - Role switching controls now positioned directly beneath avatar and username within the main header panel
 - Added proper authentication hooks and API integration to SidebarUserAvatarSection for role data fetching
-- Role controls aligned with avatar spacing using ml-11 margin for consistent visual alignment
+- Role controls horizontally centered in the panel using flex layout with items-center alignment
 - Removed separate SidebarUserControlsSection component and its associated gray panel (p-4 border-b border-gray-200 bg-gray-50)
 - Enhanced SidebarUserAvatarSection to include both user information and role switching functionality in single cohesive panel
 - TrainingModeExit and RoleSwitcher components now embedded beneath user profile information with proper spacing
