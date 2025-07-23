@@ -4746,6 +4746,13 @@ Return JSON format with each role as a top-level key containing tourSteps array.
           }
         }
         
+        console.log('Sending response with processed tours:', JSON.stringify({
+          success: true,
+          tours: processedTours,
+          contentOnly: true,
+          message: `Tour content generated for ${roles.length} role(s) (preview only)`
+        }, null, 2));
+        
         return res.json({
           success: true,
           tours: processedTours,
