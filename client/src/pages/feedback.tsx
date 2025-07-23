@@ -810,16 +810,7 @@ export default function Feedback() {
             <p className="text-gray-600">Share your ideas and help us improve PlanetTogether</p>
           </div>
           
-          {/* Maximize button always in top right corner */}
-          <div className="absolute top-0 right-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsMaximized(!isMaximized)}
-            >
-              {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </Button>
-          </div>
+
         </div>
       </div>
 

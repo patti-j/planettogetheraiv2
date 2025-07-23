@@ -798,16 +798,7 @@ export default function Maintenance() {
             <p className="text-sm md:text-base text-gray-600">Manage resource maintenance schedules and work orders</p>
           </div>
           
-          {/* Maximize button always in top right corner */}
-          <div className="absolute top-0 right-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsMaximized(!isMaximized)}
-            >
-              {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </Button>
-          </div>
+
         </div>
       </div>
 

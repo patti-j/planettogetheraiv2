@@ -345,16 +345,7 @@ export default function SystemsManagementPage() {
           <p className="text-sm md:text-base text-gray-600">Monitor system health, manage users, and oversee IT infrastructure</p>
         </div>
         
-        {/* Maximize button always in top right corner */}
-        <div className="absolute top-0 right-0">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsMaximized(!isMaximized)}
-          >
-            {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-          </Button>
-        </div>
+
         
         {/* Controls positioned below header */}
         <div className="mt-4 flex justify-end">

@@ -357,16 +357,6 @@ export default function Reports() {
               </p>
             </div>
             
-            {/* Maximize button always in top right corner */}
-            <div className="absolute top-0 right-0">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsMaximized(!isMaximized)}
-              >
-                {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-              </Button>
-            </div>
             
             {/* Control buttons below header */}
             <div className="flex flex-col items-start space-y-2 mt-4">
@@ -675,16 +665,6 @@ export default function Reports() {
               </p>
             </div>
             
-            {/* Maximize button always in top right corner */}
-            <div className="absolute top-0 right-0">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsMaximized(!isMaximized)}
-              >
-                {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-              </Button>
-            </div>
             
             {/* Control buttons below header */}
             <div className="flex flex-wrap items-center gap-2 sm:gap-2 md:gap-2 mt-4">

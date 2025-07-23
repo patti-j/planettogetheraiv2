@@ -356,18 +356,7 @@ export default function ForkliftDriver() {
           <p className="text-sm md:text-base text-gray-600">Material movement tracking for production floor</p>
         </div>
         
-        {/* Maximize button always in top right corner */}
-        {!isMobile && (
-          <div className="absolute top-0 right-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsMaximized(!isMaximized)}
-            >
-              {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </Button>
-          </div>
-        )}
+
         
         {/* Live indicator positioned below maximize button */}
         <div className="absolute top-0 right-0 mt-12">

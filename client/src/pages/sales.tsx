@@ -732,16 +732,7 @@ export default function Sales() {
             <p className="text-sm md:text-base text-gray-600">Manage leads, orders, and customer relationships</p>
           </div>
           
-          {/* Maximize button always in top right corner */}
-          <div className="absolute top-0 right-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsMaximized(!isMaximized)}
-            >
-              {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </Button>
-          </div>
+
         </div>
       </div>
 

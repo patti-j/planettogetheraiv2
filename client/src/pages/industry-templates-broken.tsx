@@ -157,16 +157,7 @@ export default function IndustryTemplates() {
           <p className="text-sm md:text-base text-gray-600">Configure your manufacturing management system for your specific industry with AI-powered templates</p>
         </div>
         
-        {/* Maximize button always in top right corner */}
-        <div className="absolute top-0 right-0">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsMaximized(!isMaximized)}
-          >
-            {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-          </Button>
-        </div>
+
       </div>
 
       {/* Current Active Template */}
