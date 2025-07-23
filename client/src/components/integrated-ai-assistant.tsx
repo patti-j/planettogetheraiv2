@@ -80,12 +80,125 @@ export default function IntegratedAIAssistant() {
   const [showMemorySettings, setShowMemorySettings] = useState(false);
   const [memoryData, setMemoryData] = useState<any[]>([]);
   const [trainingData, setTrainingData] = useState<any[]>([]);
+  
+  // Calculate initial position and size based on screen size
+  const getInitialDimensions = () => {
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    
+    // Mobile-first responsive sizing
+    if (screenWidth < 768) {
+      return {
+        width: Math.min(320, screenWidth - 40),
+        height: Math.min(400, screenHeight - 100),
+        x: Math.max(20, screenWidth - Math.min(320, screenWidth - 40) - 20),
+        y: 80
+      };
+    } else {
+      return {
+        width: 384,
+        height: 500,
+        x: screenWidth - 420,
+        y: 50
+      };
+    }
+  };
+
+  // Dragging and resizing state
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [position, setPosition] = useState(() => {
+    const initial = getInitialDimensions();
+    return { x: initial.x, y: initial.y };
+  });
+  const [size, setSize] = useState(() => {
+    const initial = getInitialDimensions();
+    return { width: initial.width, height: initial.height };
+  });
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
+  
   const { toast } = useToast();
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognition = useRef<any>(null);
   const synthesis = useRef<SpeechSynthesis | null>(null);
   const currentAudio = useRef<HTMLAudioElement | null>(null);
+
+  // Mouse event handlers for dragging and resizing
+  const handleMouseDown = (e: React.MouseEvent, action: 'drag' | 'resize') => {
+    e.preventDefault();
+    if (action === 'drag') {
+      setIsDragging(true);
+      setDragOffset({
+        x: e.clientX - position.x,
+        y: e.clientY - position.y
+      });
+    } else if (action === 'resize') {
+      setIsResizing(true);
+      setResizeStart({
+        x: e.clientX,
+        y: e.clientY,
+        width: size.width,
+        height: size.height
+      });
+    }
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (isDragging) {
+      const newX = Math.max(0, Math.min(window.innerWidth - size.width, e.clientX - dragOffset.x));
+      const newY = Math.max(0, Math.min(window.innerHeight - size.height, e.clientY - dragOffset.y));
+      setPosition({ x: newX, y: newY });
+    } else if (isResizing) {
+      const deltaX = e.clientX - resizeStart.x;
+      const deltaY = e.clientY - resizeStart.y;
+      const newWidth = Math.max(320, Math.min(Math.min(800, window.innerWidth - position.x - 20), resizeStart.width + deltaX));
+      const newHeight = Math.max(300, Math.min(window.innerHeight - position.y - 20, resizeStart.height + deltaY));
+      setSize({ width: newWidth, height: newHeight });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    setIsResizing(false);
+  };
+
+  // Add global mouse event listeners for dragging and resizing
+  useEffect(() => {
+    if (isDragging || isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, isResizing, dragOffset, resizeStart, position, size]);
+
+  // Update position and size when window resizes
+  useEffect(() => {
+    const handleWindowResize = () => {
+      const newDimensions = getInitialDimensions();
+      
+      // Adjust position to stay within bounds
+      setPosition(prev => ({
+        x: Math.min(prev.x, window.innerWidth - size.width),
+        y: Math.min(prev.y, window.innerHeight - size.height)
+      }));
+      
+      // On mobile, reset to appropriate size
+      if (window.innerWidth < 768) {
+        setSize({
+          width: newDimensions.width,
+          height: newDimensions.height
+        });
+      }
+    };
+    
+    window.addEventListener('resize', handleWindowResize);
+    return () => window.removeEventListener('resize', handleWindowResize);
+  }, [size]);
 
   // Initialize speech recognition and synthesis
   useEffect(() => {
@@ -404,11 +517,22 @@ export default function IntegratedAIAssistant() {
     );
   }
 
-  // Full assistant interface - simplified positioning to stay on screen
+  // Full assistant interface - draggable and resizable
   return (
-    <div className="fixed bottom-6 right-6 z-50 max-h-[calc(100vh-3rem)]">
-      <Card className={`w-96 bg-white shadow-2xl transition-all duration-300 ${isMinimized ? 'h-16' : 'h-[min(28rem,calc(100vh-6rem))]'}`}>
-        <CardHeader className="p-4 bg-gradient-to-r from-blue-500 to-indigo-600">
+    <div 
+      className="fixed z-50"
+      style={{
+        left: position.x,
+        top: position.y,
+        width: size.width,
+        height: isMinimized ? 'auto' : size.height
+      }}
+    >
+      <Card className={`bg-white shadow-2xl transition-all duration-300 relative ${isDragging ? 'cursor-grabbing' : ''} ${isResizing ? 'select-none' : ''}`} style={{ width: '100%', height: '100%' }}>
+        <CardHeader 
+          className="p-4 bg-gradient-to-r from-blue-500 to-indigo-600 cursor-grab active:cursor-grabbing"
+          onMouseDown={(e) => handleMouseDown(e, 'drag')}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Bot className="h-5 w-5 text-white" />
@@ -472,7 +596,7 @@ export default function IntegratedAIAssistant() {
         </CardHeader>
 
         {!isMinimized && (
-          <CardContent className="p-0 flex flex-col" style={{ height: 'calc(min(28rem, 100vh - 6rem) - 4rem)' }}>
+          <CardContent className="p-0 flex flex-col relative" style={{ height: `${size.height - 80}px`, overflow: 'hidden' }}>
             {/* Voice Settings Panel */}
             {showVoiceSettings && (
               <div className="p-3 bg-gray-50 border-b">
@@ -657,7 +781,7 @@ export default function IntegratedAIAssistant() {
             )}
 
             {/* Messages */}
-            <ScrollArea className="flex-1 p-3 min-h-0">
+            <ScrollArea className="flex-1 p-3 min-h-0" style={{ maxHeight: `${size.height - 200}px` }}>
               <div className="space-y-3">
                 {messages.length === 0 && (
                   <div className="text-center text-gray-500 text-sm py-8">
@@ -725,6 +849,18 @@ export default function IntegratedAIAssistant() {
               </div>
             </div>
           </CardContent>
+        )}
+        
+        {/* Resize Handle */}
+        {!isMinimized && (
+          <div
+            className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-gradient-to-br from-blue-400 to-indigo-500 hover:from-blue-500 hover:to-indigo-600 transition-colors opacity-70 hover:opacity-100"
+            onMouseDown={(e) => handleMouseDown(e, 'resize')}
+            style={{
+              clipPath: 'polygon(100% 0%, 0% 100%, 100% 100%)'
+            }}
+            title="Drag to resize"
+          />
         )}
       </Card>
     </div>
