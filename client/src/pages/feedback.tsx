@@ -803,14 +803,15 @@ export default function Feedback() {
         </Button>
       </div>
       {/* Header */}
-      <div className="bg-white shadow-sm border-b px-4 py-3 sm:px-6 flex-shrink-0">
-        <div className="relative">
-          <div className="ml-3 md:ml-0">
-            <h1 className="text-2xl font-semibold text-gray-800">Feedback & Suggestions</h1>
-            <p className="text-gray-600">Share your ideas and help us improve PlanetTogether</p>
+      <div className="bg-white shadow-sm border-b p-3 sm:p-6 flex-shrink-0">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="md:ml-0 ml-12">
+            <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+              <MessageCircle className="w-6 h-6 mr-2" />
+              Feedback & Suggestions
+            </h1>
+            <p className="text-sm md:text-base text-gray-600">Share your ideas and help us improve PlanetTogether</p>
           </div>
-          
-
         </div>
       </div>
 
