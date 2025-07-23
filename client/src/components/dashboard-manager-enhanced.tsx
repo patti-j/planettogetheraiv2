@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAITheme } from "@/hooks/use-ai-theme";
 import { Plus, Settings, Star, Trash2, Edit3, Eye, Save, Move, Palette, BarChart3, TrendingUp, AlertTriangle, CheckCircle, Clock, Target, PieChart, Activity, Zap, Users, Package, Wrench, ArrowUp, ArrowDown, MoreHorizontal, Grid3x3, Maximize2, Minimize2, RotateCcw, Sparkles, Bot, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useDrag, useDrop, useDragLayer, DndProvider } from "react-dnd";
@@ -91,6 +92,7 @@ export function EnhancedDashboardManager({
   const [resizingWidget, setResizingWidget] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { aiTheme } = useAITheme();
 
   // Get all widgets from all dashboards
   const allWidgets = dashboards.flatMap(dashboard => [
@@ -591,7 +593,7 @@ export function EnhancedDashboardManager({
                   variant={editMode === "ai" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setEditMode("ai")}
-                  className="flex items-center gap-2"
+                  className={`flex items-center gap-2 ${editMode === "ai" ? aiTheme.gradient : ""}`}
                 >
                   <Sparkles className="w-4 h-4" />
                   AI Edit
@@ -1259,7 +1261,7 @@ export function EnhancedDashboardManager({
                     aiDashboardMutation.isPending ||
                     aiWidgetMutation.isPending
                   }
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  className={aiTheme.gradient}
                 >
                   {aiDashboardMutation.isPending || aiWidgetMutation.isPending ? (
                     <div className="flex items-center">
