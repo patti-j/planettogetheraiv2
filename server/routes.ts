@@ -1015,7 +1015,7 @@ Provide the response as a JSON object with the following structure:
   // AI Agent Text-to-Speech endpoint
   app.post("/api/ai-agent/tts", async (req, res) => {
     try {
-      const { text, voice = 'alloy', characterStyle } = req.body;
+      const { text, voice = 'alloy' } = req.body;
       
       if (!text) {
         return res.status(400).json({ error: 'Text is required' });
@@ -1026,44 +1026,11 @@ Provide the response as a JSON object with the following structure:
         apiKey: process.env.OPENAI_API_KEY,
       });
 
-      let processedText = text;
-      let selectedVoice = voice;
-      let speechSpeed = 1.0;
-
-      // Handle Data character style
-      if (characterStyle === 'data' || voice === 'data') {
-        // Use Echo voice for Data-like clarity and modify text for precise speech pattern
-        selectedVoice = 'echo';
-        speechSpeed = 0.85; // Slightly slower for precision
-        
-        // Add Data-like speech patterns and precise language
-        processedText = text
-          .replace(/I'm/g, 'I am')
-          .replace(/can't/g, 'cannot')
-          .replace(/won't/g, 'will not')
-          .replace(/don't/g, 'do not')
-          .replace(/isn't/g, 'is not')
-          .replace(/aren't/g, 'are not')
-          .replace(/hasn't/g, 'has not')
-          .replace(/haven't/g, 'have not')
-          .replace(/shouldn't/g, 'should not')
-          .replace(/wouldn't/g, 'would not')
-          .replace(/couldn't/g, 'could not');
-        
-        // Add Data-like precision phrases
-        if (!processedText.includes('Affirmative') && !processedText.includes('Negative')) {
-          if (Math.random() > 0.7) {
-            processedText = processedText.replace(/^Yes/, 'Affirmative');
-            processedText = processedText.replace(/^No/, 'Negative');
-          }
-        }
-      }
-
       const response = await client.audio.speech.create({
         model: 'tts-1',
-        voice: selectedVoice as 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer',
-        input: processedText,
-        speed: speechSpeed
+        voice: voice as 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer',
+        input: text,
+        speed: 1.0
       });
 
       const buffer = Buffer.from(await response.arrayBuffer());
@@ -1110,19 +1077,6 @@ Conversation Style:
 - Be proactive in identifying opportunities
 
 Always respond as if you're actively monitoring the user's workflow and learning from their patterns.`;
-
-      // Modify prompt for Data character style if selected
-      if (context?.voiceStyle === 'data') {
-        systemPrompt += `
-
-IMPORTANT: The user has selected Data voice style. Modify your language to be more like Data from Star Trek:
-- Use precise, formal language without contractions
-- Employ logical, analytical phrasing
-- Begin responses occasionally with "Affirmative" or "I have analyzed" or "My calculations indicate"
-- Use technical terminology appropriately
-- Maintain emotional neutrality while being helpful
-- Speak in complete, grammatically correct sentences`;
-      }
 
       // Add conversation history for context
       if (conversationHistory && conversationHistory.length > 0) {
