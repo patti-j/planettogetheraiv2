@@ -114,15 +114,24 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 23, 2025)
 
+✓ **Demo Registration Mobile Voice Optimization (July 23, 2025)**:
+- Hidden voice narration option from demo registration form to simplify mobile experience
+- Voice narration now defaults to enabled (true) for all demo participants
+- Users can still control voice settings during the actual tour with play/pause controls
+- Simplified registration process while maintaining full voice functionality during demos
+- Enhanced mobile user experience by removing unnecessary decision points during registration
+- Voice remains accessible through tour controls allowing users to disable if desired
+
 ✓ **Demo Registration Role Dropdown Enhancement (July 23, 2025)**:
 - Successfully added all missing system roles to the demo registration dropdown functionality
 - Added 4 missing roles: IT Systems Administrator, Sales Representative, Customer Service Representative, Support Engineer, Supply Chain Planner
+- Removed maintenance technician role that didn't exist in database for clean alignment
 - Updated role descriptions to match database definitions and provide clear user guidance
 - Added appropriate Lucide React icons for each new role (Server, ShoppingCart, Headphones, HelpCircle, Truck)
 - Assigned distinct color themes for visual differentiation (slate, emerald, cyan, violet, amber)
-- Demo registration now includes all 14 system roles ensuring comprehensive role demonstration coverage
+- Demo registration now includes exactly 14 system roles ensuring comprehensive role demonstration coverage
 - Enhanced role descriptions to clearly explain job functions and system access for each role type
-- Maintains consistency between database roles and demo registration options for seamless user experience
+- Maintains perfect consistency between database roles and demo registration options
 
 ✓ **Chat Page Mobile Responsiveness Complete (July 23, 2025)**:
 - Successfully transformed entire chat page into fully mobile-responsive interface

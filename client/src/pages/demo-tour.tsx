@@ -51,7 +51,7 @@ const participantFormSchema = z.object({
   primaryRole: z.string().min(1, "Primary role is required"),
   additionalRoles: z.array(z.string()).default([]),
   referralSource: z.string().optional(),
-  voiceNarrationEnabled: z.boolean().default(false),
+  voiceNarrationEnabled: z.boolean().default(true),
 });
 
 type ParticipantFormData = z.infer<typeof participantFormSchema>;
@@ -137,6 +137,7 @@ export default function DemoTour() {
       primaryRole: "",
       additionalRoles: [],
       referralSource: "",
+      voiceNarrationEnabled: true,
     },
   });
 
@@ -521,26 +522,19 @@ export default function DemoTour() {
               />
 
               {/* Voice Narration Preference */}
+              {/* Voice narration is now enabled by default for mobile users */}
+              {/* Users can still control voice during the tour */}
               <FormField
                 control={form.control}
                 name="voiceNarrationEnabled"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormItem className="hidden">
                     <FormControl>
                       <Checkbox
                         checked={field.value}
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel className="flex items-center gap-2 text-sm font-medium cursor-pointer">
-                        <Volume2 className="h-4 w-4 text-blue-600" />
-                        Enable voice narration during tour
-                      </FormLabel>
-                      <p className="text-xs text-muted-foreground">
-                        Get spoken guidance along with visual instructions for a more engaging experience
-                      </p>
-                    </div>
                   </FormItem>
                 )}
               />
