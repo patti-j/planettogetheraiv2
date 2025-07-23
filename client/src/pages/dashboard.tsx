@@ -352,7 +352,7 @@ export default function Dashboard() {
                             setShowEvaluationSystem(true);
                             console.log('Setting showEvaluationSystem to true');
                           }}
-                          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
+                          className="bg-gradient-to-r from-blue-500 to-pink-600 hover:from-blue-600 hover:to-pink-700 text-white border-0"
                         >
                           <GitCompare className="w-4 h-4 mr-1" />
                           Evaluate Schedules

@@ -149,6 +149,8 @@ The application uses a modern full-stack architecture with strong typing through
 - **Max AI Assistant Color Scheme Update**: Header restored to original blue gradient, submit button uses purple/pink gradient
 - Header now uses original `from-blue-500 to-indigo-600` gradient for consistent blue styling
 - Submit button styled with purple/pink gradient and hover effects for AI assistant visual identity
+- **Evaluate Schedule Button Color Update**: Changed from purple-to-pink gradient to blue-to-pink gradient matching Max AI styling
+- "Evaluate Schedules" button in Production Schedule page now uses `from-blue-500 to-pink-600` gradient for visual consistency
 
 ✓ **User Profile Integration into Hamburger Menu (July 23, 2025)**:
 - Successfully moved user profile/avatar/role switching controls from standalone App.tsx position into hamburger menu
