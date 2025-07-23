@@ -710,7 +710,7 @@ export default function CustomerService() {
       {/* Header */}
       <div className="bg-white shadow-sm border-b px-4 py-3 sm:px-6 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <div className="ml-12 md:ml-0">
+          <div className="ml-3 md:ml-0">
             <h1 className="text-2xl font-semibold text-gray-800">Customer Service</h1>
             <p className="text-gray-600">Manage customer orders, issues, and relationships</p>
           </div>

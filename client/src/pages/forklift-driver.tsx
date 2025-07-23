@@ -349,7 +349,7 @@ export default function ForkliftDriver() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-800 md:ml-0 ml-12">Forklift Operations</h1>
+          <h1 className="text-2xl font-semibold text-gray-800 md:ml-0 ml-3">Forklift Operations</h1>
           <p className="text-gray-600">Material movement tracking for production floor</p>
         </div>
         <div className="flex items-center gap-2">

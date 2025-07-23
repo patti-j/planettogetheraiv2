@@ -512,7 +512,7 @@ export default function Analytics() {
         {/* Header */}
         <div className="border-b px-4 py-3 sm:px-6">
           <div className="flex items-start justify-between gap-4">
-            <div className="md:ml-0 ml-12">
+            <div className="md:ml-0 ml-3">
               <h1 className="text-2xl font-semibold text-gray-800">Analytics</h1>
               <p className="text-gray-600">Manage and view dashboard configurations</p>
             </div>

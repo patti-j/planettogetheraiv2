@@ -841,6 +841,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Integration Setup
+  app.post("/api/ai/create-integration", async (req, res) => {
+    try {
+      const { description, systemType, requirements, dataMapping } = req.body;
+      
+      if (!description || !systemType) {
+        return res.status(400).json({ message: "Description and system type are required" });
+      }
+      
+      // Import OpenAI dynamically
+      const OpenAI = (await import("openai")).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      
+      const prompt = `Create a systems integration configuration for the following requirements:
+      
+System Type: ${systemType}
+Description: ${description}
+Requirements: ${requirements?.join(', ') || 'None specified'}
+
+Generate a realistic integration configuration including:
+1. Connection settings (endpoint, authentication method)
+2. Data mapping configuration
+3. Sync frequency and settings
+4. Error handling and retry policies
+5. Security settings
+
+Provide the response as a JSON object with the following structure:
+{
+  "name": "Integration Name",
+  "endpoint": "https://api.example.com/v1",
+  "authentication": "OAuth 2.0 / API Key / Basic Auth",
+  "syncFrequency": "Every X minutes/hours",
+  "dataTypes": ["Orders", "Inventory", "etc"],
+  "configuration": {
+    "retryPolicy": "Exponential backoff",
+    "timeout": "30 seconds",
+    "batchSize": 1000
+  },
+  "dataMapping": {
+    "sourceFields": ["field1", "field2"],
+    "targetFields": ["targetField1", "targetField2"]
+  }
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert systems integration engineer. Create realistic, production-ready integration configurations."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      const integrationConfig = JSON.parse(response.choices[0].message.content);
+      
+      // Add metadata
+      integrationConfig.systemType = systemType;
+      integrationConfig.status = 'configured';
+      integrationConfig.createdAt = new Date().toISOString();
+      
+      res.json({
+        success: true,
+        message: `Successfully configured ${systemType} integration`,
+        integration: integrationConfig,
+        systemType
+      });
+      
+    } catch (error) {
+      console.error("AI Integration setup error:", error);
+      
+      const errorMessage = error.message || "Unknown error";
+      const isQuotaError = errorMessage.includes('quota') || 
+                          errorMessage.includes('limit') || 
+                          errorMessage.includes('exceeded') ||
+                          errorMessage.includes('insufficient_quota') ||
+                          errorMessage.includes('rate_limit');
+      
+      if (isQuotaError) {
+        res.status(429).json({ 
+          message: "OpenAI quota exceeded",
+          error: errorMessage,
+          quotaExceeded: true
+        });
+      } else {
+        res.status(500).json({ 
+          message: "Failed to create AI integration",
+          error: errorMessage
+        });
+      }
+    }
+  });
+
   // AI Agent routes
   const upload = multer();
 

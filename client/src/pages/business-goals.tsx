@@ -432,7 +432,7 @@ export default function BusinessGoalsPage() {
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 sm:px-6">
         <div className="flex justify-between items-start">
           <div className="flex-1">
-            <div className="flex items-center gap-2 md:ml-0 ml-12">
+            <div className="flex items-center gap-2 md:ml-0 ml-3">
               <Target className="h-6 w-6 text-blue-600" />
               <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">Business Goals & Strategy</h1>
             </div>

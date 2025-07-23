@@ -354,7 +354,7 @@ export default function Reports() {
     <div className="flex-1 flex flex-col">
       <header className="bg-white shadow-sm border-b border-gray-200 px-4 py-3 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="md:ml-0 ml-12">
+          <div className="md:ml-0 ml-3">
             <h1 className="text-2xl font-semibold text-gray-800">Reports</h1>
             <p className="text-gray-600 mt-1">Create and manage production reports</p>
           </div>
