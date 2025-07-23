@@ -161,7 +161,7 @@ export default function Chat() {
       return apiRequest('POST', `/api/chat/messages/${messageId}/translate`, { targetLanguage });
     },
     onMutate: ({ messageId }) => {
-      setTranslatingMessages(prev => new Set([...prev, messageId]));
+      setTranslatingMessages(prev => new Set(Array.from(prev).concat([messageId])));
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ 
@@ -398,24 +398,24 @@ export default function Chat() {
                           <p className="text-sm">{message.content}</p>
                           
                           {/* Show translation if available */}
-                          {userPreferences?.language && 
-                           message.translations?.[userPreferences.language] && 
-                           message.originalLanguage !== userPreferences.language && (
+                          {(userPreferences as any)?.language && 
+                           message.translations?.[(userPreferences as any).language] && 
+                           message.originalLanguage !== (userPreferences as any).language && (
                             <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 rounded-r">
                               <div className="flex items-center gap-1 mb-1">
                                 <Languages className="h-3 w-3 text-blue-600" />
                                 <span className="text-xs text-blue-600 font-medium">Translated</span>
                               </div>
-                              <p className="text-sm">{message.translations[userPreferences.language]}</p>
+                              <p className="text-sm">{message.translations[(userPreferences as any).language]}</p>
                             </div>
                           )}
                           
                           <div className="flex items-center justify-between mt-2">
                             {/* Message actions */}
                             <div className="flex items-center gap-1">
-                              {userPreferences?.language && 
-                               message.originalLanguage !== userPreferences.language &&
-                               !message.translations?.[userPreferences.language] && (
+                              {(userPreferences as any)?.language && 
+                               message.originalLanguage !== (userPreferences as any).language &&
+                               !message.translations?.[(userPreferences as any).language] && (
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
@@ -425,7 +425,7 @@ export default function Chat() {
                                         className="h-6 px-2"
                                         onClick={() => translateMessageMutation.mutate({
                                           messageId: message.id,
-                                          targetLanguage: userPreferences.language
+                                          targetLanguage: (userPreferences as any).language
                                         })}
                                         disabled={translatingMessages.has(message.id)}
                                       >
@@ -437,7 +437,7 @@ export default function Chat() {
                                       </Button>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      <p>Translate to {availableLanguages.find(l => l.code === userPreferences.language)?.name || userPreferences.language}</p>
+                                      <p>Translate to {availableLanguages.find(l => l.code === (userPreferences as any).language)?.name || (userPreferences as any).language}</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
@@ -543,7 +543,7 @@ export default function Chat() {
               </p>
               
               <Select
-                value={userPreferences?.language || "en"}
+                value={(userPreferences as any)?.language || "en"}
                 onValueChange={(language) => updateLanguageMutation.mutate({ language })}
               >
                 <SelectTrigger>

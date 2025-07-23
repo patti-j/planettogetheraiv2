@@ -170,7 +170,7 @@ export default function IndustryTemplates() {
       </div>
 
       {/* Current Active Template */}
-        {activeTemplate && (
+      {activeTemplate && (
           <Card className="mb-8 border-2 border-green-200 bg-green-50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-green-800">
