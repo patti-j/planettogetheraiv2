@@ -405,7 +405,7 @@ export default function RoleManagementPage() {
   const mainContent = (
     <div className="flex flex-col h-full">
       {/* Fixed Header */}
-      <div className="flex-shrink-0 space-y-6 pb-6 bg-white">
+      <div className="flex-shrink-0 space-y-4 sm:space-y-6 pb-4 sm:pb-6 bg-white">
         {/* Page Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="md:ml-0 ml-12">
@@ -783,8 +783,8 @@ export default function RoleManagementPage() {
           </div>
 
           {/* Mobile Card View */}
-          <div className="md:hidden space-y-4">
-            <div className="flex items-center justify-between mb-4">
+          <div className="md:hidden space-y-3 sm:space-y-4 pb-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div className="flex items-center gap-2">
                 <Checkbox 
                   checked={selectedRoles.length === roles.length}
@@ -802,7 +802,7 @@ export default function RoleManagementPage() {
               const features = [...new Set(role.permissions.map(p => p.feature))];
               
               return (
-                <Card key={role.id} className="p-4">
+                <Card key={role.id} className="p-3 sm:p-4">
                   <div className="space-y-3">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3 flex-1">
@@ -917,7 +917,7 @@ export default function RoleManagementPage() {
           </div>
         </div>
       ) : (
-        <div className="max-w-7xl mx-auto p-6 h-screen flex flex-col">
+        <div className="max-w-7xl mx-auto p-3 sm:p-6 min-h-screen flex flex-col">
           <div className="flex-1 overflow-hidden">
             {mainContent}
           </div>
