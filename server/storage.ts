@@ -31,6 +31,7 @@ import {
   demoTourParticipants, type DemoTourParticipant, type InsertDemoTourParticipant,
   voiceRecordingsCache, type VoiceRecordingsCache, type InsertVoiceRecordingsCache,
   tours, type Tour, type InsertTour,
+  tourPromptTemplates, tourPromptTemplateUsage, type TourPromptTemplate, type TourPromptTemplateUsage, type InsertTourPromptTemplate, type InsertTourPromptTemplateUsage,
   userPreferences, type UserPreferences, type InsertUserPreferences,
   chatChannels, chatMembers, chatMessages, chatReactions,
   type ChatChannel, type ChatMember, type ChatMessage, type ChatReaction,
@@ -389,6 +390,28 @@ export interface IStorage {
   updateTour(id: number, tour: Partial<InsertTour>): Promise<Tour | undefined>;
   deleteTour(id: number): Promise<boolean>;
   upsertTour(tour: InsertTour): Promise<Tour>;
+
+  // Tour Prompt Templates
+  getTourPromptTemplates(category?: string, userId?: number): Promise<TourPromptTemplate[]>;
+  getTourPromptTemplate(id: number): Promise<TourPromptTemplate | undefined>;
+  getTourPromptTemplateByName(name: string): Promise<TourPromptTemplate | undefined>;
+  createTourPromptTemplate(template: InsertTourPromptTemplate): Promise<TourPromptTemplate>;
+  updateTourPromptTemplate(id: number, template: Partial<InsertTourPromptTemplate>): Promise<TourPromptTemplate | undefined>;
+  deleteTourPromptTemplate(id: number): Promise<boolean>;
+  getBuiltInTourPromptTemplates(): Promise<TourPromptTemplate[]>;
+  getPopularTourPromptTemplates(limit?: number): Promise<TourPromptTemplate[]>;
+  updateTourPromptTemplateUsage(id: number): Promise<void>;
+  rateTourPromptTemplate(id: number, rating: number): Promise<void>;
+
+  // Tour Prompt Template Usage
+  getTourPromptTemplateUsage(templateId?: number, userId?: number): Promise<TourPromptTemplateUsage[]>;
+  createTourPromptTemplateUsage(usage: InsertTourPromptTemplateUsage): Promise<TourPromptTemplateUsage>;
+  getTourPromptTemplateStats(templateId: number): Promise<{
+    totalUsage: number;
+    averageRating: number;
+    lastUsed: Date | null;
+    userCount: number;
+  }>;
 
   // Chat System
   // Chat Channels
@@ -3019,6 +3042,157 @@ export class DatabaseStorage implements IStorage {
       const [newTour] = await db.insert(tours).values(tour).returning();
       return newTour;
     }
+  }
+
+  // Tour Prompt Templates methods
+  async getTourPromptTemplates(category?: string, userId?: number): Promise<TourPromptTemplate[]> {
+    let query = db.select().from(tourPromptTemplates).where(eq(tourPromptTemplates.isActive, true));
+    
+    if (category) {
+      query = query.where(eq(tourPromptTemplates.category, category));
+    }
+    
+    if (userId) {
+      query = query.where(or(
+        eq(tourPromptTemplates.isBuiltIn, true),
+        eq(tourPromptTemplates.createdBy, userId)
+      ));
+    }
+    
+    return await query.orderBy(desc(tourPromptTemplates.usageCount), desc(tourPromptTemplates.rating));
+  }
+
+  async getTourPromptTemplate(id: number): Promise<TourPromptTemplate | undefined> {
+    const [template] = await db.select().from(tourPromptTemplates).where(
+      and(eq(tourPromptTemplates.id, id), eq(tourPromptTemplates.isActive, true))
+    );
+    return template;
+  }
+
+  async getTourPromptTemplateByName(name: string): Promise<TourPromptTemplate | undefined> {
+    const [template] = await db.select().from(tourPromptTemplates).where(
+      and(eq(tourPromptTemplates.name, name), eq(tourPromptTemplates.isActive, true))
+    );
+    return template;
+  }
+
+  async createTourPromptTemplate(template: InsertTourPromptTemplate): Promise<TourPromptTemplate> {
+    const [newTemplate] = await db.insert(tourPromptTemplates).values({
+      ...template,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning();
+    return newTemplate;
+  }
+
+  async updateTourPromptTemplate(id: number, template: Partial<InsertTourPromptTemplate>): Promise<TourPromptTemplate | undefined> {
+    const [updatedTemplate] = await db
+      .update(tourPromptTemplates)
+      .set({ 
+        ...template, 
+        updatedAt: new Date(),
+        updatedBy: template.updatedBy 
+      })
+      .where(eq(tourPromptTemplates.id, id))
+      .returning();
+    return updatedTemplate;
+  }
+
+  async deleteTourPromptTemplate(id: number): Promise<boolean> {
+    // Soft delete by setting isActive to false
+    const result = await db
+      .update(tourPromptTemplates)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(tourPromptTemplates.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async getBuiltInTourPromptTemplates(): Promise<TourPromptTemplate[]> {
+    return await db.select().from(tourPromptTemplates).where(
+      and(eq(tourPromptTemplates.isBuiltIn, true), eq(tourPromptTemplates.isActive, true))
+    ).orderBy(desc(tourPromptTemplates.usageCount));
+  }
+
+  async getPopularTourPromptTemplates(limit: number = 10): Promise<TourPromptTemplate[]> {
+    return await db.select().from(tourPromptTemplates).where(
+      eq(tourPromptTemplates.isActive, true)
+    ).orderBy(
+      desc(tourPromptTemplates.usageCount), 
+      desc(tourPromptTemplates.rating)
+    ).limit(limit);
+  }
+
+  async updateTourPromptTemplateUsage(id: number): Promise<void> {
+    await db
+      .update(tourPromptTemplates)
+      .set({ 
+        usageCount: sql`${tourPromptTemplates.usageCount} + 1`,
+        lastUsed: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(tourPromptTemplates.id, id));
+  }
+
+  async rateTourPromptTemplate(id: number, rating: number): Promise<void> {
+    await db
+      .update(tourPromptTemplates)
+      .set({ 
+        rating: Math.max(1, Math.min(5, rating)), // Ensure rating is 1-5
+        updatedAt: new Date()
+      })
+      .where(eq(tourPromptTemplates.id, id));
+  }
+
+  // Tour Prompt Template Usage methods
+  async getTourPromptTemplateUsage(templateId?: number, userId?: number): Promise<TourPromptTemplateUsage[]> {
+    let query = db.select().from(tourPromptTemplateUsage);
+    
+    if (templateId) {
+      query = query.where(eq(tourPromptTemplateUsage.templateId, templateId));
+    }
+    
+    if (userId) {
+      query = query.where(eq(tourPromptTemplateUsage.userId, userId));
+    }
+    
+    return await query.orderBy(desc(tourPromptTemplateUsage.createdAt));
+  }
+
+  async createTourPromptTemplateUsage(usage: InsertTourPromptTemplateUsage): Promise<TourPromptTemplateUsage> {
+    const [newUsage] = await db.insert(tourPromptTemplateUsage).values({
+      ...usage,
+      createdAt: new Date()
+    }).returning();
+    
+    // Update template usage count
+    await this.updateTourPromptTemplateUsage(usage.templateId);
+    
+    return newUsage;
+  }
+
+  async getTourPromptTemplateStats(templateId: number): Promise<{
+    totalUsage: number;
+    averageRating: number;
+    lastUsed: Date | null;
+    userCount: number;
+  }> {
+    const usageStats = await db
+      .select({
+        totalUsage: count(tourPromptTemplateUsage.id),
+        averageRating: sql`AVG(${tourPromptTemplateUsage.satisfactionRating})`,
+        userCount: sql`COUNT(DISTINCT ${tourPromptTemplateUsage.userId})`
+      })
+      .from(tourPromptTemplateUsage)
+      .where(eq(tourPromptTemplateUsage.templateId, templateId));
+
+    const template = await this.getTourPromptTemplate(templateId);
+    
+    return {
+      totalUsage: usageStats[0]?.totalUsage || 0,
+      averageRating: parseFloat(usageStats[0]?.averageRating as string) || 0,
+      lastUsed: template?.lastUsed || null,
+      userCount: usageStats[0]?.userCount || 0
+    };
   }
 
   // Disruption Management Implementation

@@ -2513,3 +2513,62 @@ export type InsertExtensionMarketplace = z.infer<typeof insertExtensionMarketpla
 
 export type ExtensionReview = typeof extensionReviews.$inferSelect;
 export type InsertExtensionReview = z.infer<typeof insertExtensionReviewSchema>;
+
+// Tour Prompt Templates System
+export const tourPromptTemplates = pgTable("tour_prompt_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category").notNull().default("general"), // general, role_specific, business_focused, technical, sales_demo
+  promptContent: text("prompt_content").notNull(),
+  variables: jsonb("variables").$type<Array<{
+    name: string;
+    description: string;
+    type: "text" | "select" | "number" | "boolean";
+    required: boolean;
+    defaultValue?: any;
+    options?: string[]; // for select types
+  }>>().default([]),
+  isBuiltIn: boolean("is_built_in").default(false),
+  isActive: boolean("is_active").default(true),
+  usageCount: integer("usage_count").default(0),
+  rating: integer("rating").default(0), // User rating 1-5
+  tags: jsonb("tags").$type<string[]>().default([]),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  updatedBy: integer("updated_by").references(() => users.id),
+  lastUsed: timestamp("last_used"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const tourPromptTemplateUsage = pgTable("tour_prompt_template_usage", {
+  id: serial("id").primaryKey(),
+  templateId: integer("template_id").references(() => tourPromptTemplates.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  tourCount: integer("tour_count").default(1), // Number of tours generated in this usage
+  variables: jsonb("variables").$type<Record<string, any>>().default({}), // Variable values used
+  generationDuration: integer("generation_duration"), // milliseconds
+  satisfactionRating: integer("satisfaction_rating"), // 1-5, how satisfied user was with results
+  feedback: text("feedback"), // User feedback on the generated tours
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertTourPromptTemplateSchema = createInsertSchema(tourPromptTemplates).omit({
+  id: true,
+  usageCount: true,
+  createdAt: true,
+  updatedAt: true,
+  lastUsed: true,
+});
+
+export const insertTourPromptTemplateUsageSchema = createInsertSchema(tourPromptTemplateUsage).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Tour Prompt Templates Types
+export type TourPromptTemplate = typeof tourPromptTemplates.$inferSelect;
+export type InsertTourPromptTemplate = z.infer<typeof insertTourPromptTemplateSchema>;
+
+export type TourPromptTemplateUsage = typeof tourPromptTemplateUsage.$inferSelect;
+export type InsertTourPromptTemplateUsage = z.infer<typeof insertTourPromptTemplateUsageSchema>;

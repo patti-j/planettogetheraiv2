@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth, usePermissions } from '@/hooks/useAuth';
 import { useAITheme } from '@/hooks/use-ai-theme';
 import { RoleSwitcher } from '@/components/role-switcher';
+import { TourManagementSettings } from '@/components/tour-management-settings';
 import { apiRequest } from '@/lib/queryClient';
 import { useTour } from '@/contexts/TourContext';
 
@@ -220,6 +221,7 @@ const trainingModules: TrainingModule[] = [
 
 export default function Training() {
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [showTourSettings, setShowTourSettings] = useState(false);
   const { user } = useAuth();
   const { hasPermission } = usePermissions();
   const { toast } = useToast();
@@ -285,7 +287,15 @@ export default function Training() {
             Interactive training modules and role switching for comprehensive system demonstrations
           </p>
         </div>
-        <div className="lg:flex-shrink-0">
+        <div className="lg:flex-shrink-0 flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setShowTourSettings(true)}
+            className="flex items-center gap-2"
+          >
+            <Settings className="w-4 h-4" />
+            <span className="hidden sm:inline">Tour Settings</span>
+          </Button>
           {user && <RoleSwitcher userId={user.id} currentRole={currentRole as Role} />}
         </div>
       </div>
@@ -2444,6 +2454,12 @@ function TourManagementSection() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Tour Management Settings Dialog */}
+      <TourManagementSettings 
+        open={showTourSettings}
+        onOpenChange={setShowTourSettings}
+      />
     </div>
   );
 }

@@ -27,7 +27,8 @@ import {
   insertIntegrationMappingSchema, insertIntegrationTemplateSchema,
   insertWorkflowSchema, insertWorkflowTriggerSchema, insertWorkflowActionSchema,
   insertWorkflowActionMappingSchema, insertWorkflowExecutionSchema, insertWorkflowActionExecutionSchema,
-  insertWorkflowMonitoringSchema
+  insertWorkflowMonitoringSchema,
+  insertTourPromptTemplateSchema, insertTourPromptTemplateUsageSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -6309,6 +6310,189 @@ Return a JSON object with this exact structure:
     } catch (error) {
       console.error("Error deleting tour:", error);
       res.status(500).json({ error: "Failed to delete tour" });
+    }
+  });
+
+  // Tour Prompt Templates API endpoints
+  app.get("/api/tour-prompt-templates", requireAuth, async (req, res) => {
+    try {
+      const { category, userId } = req.query;
+      const templates = await storage.getTourPromptTemplates(
+        category as string, 
+        userId ? parseInt(userId as string) : undefined
+      );
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching tour prompt templates:", error);
+      res.status(500).json({ error: "Failed to fetch tour prompt templates" });
+    }
+  });
+
+  app.get("/api/tour-prompt-templates/built-in", requireAuth, async (req, res) => {
+    try {
+      const templates = await storage.getBuiltInTourPromptTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching built-in templates:", error);
+      res.status(500).json({ error: "Failed to fetch built-in templates" });
+    }
+  });
+
+  app.get("/api/tour-prompt-templates/popular", requireAuth, async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+      const templates = await storage.getPopularTourPromptTemplates(limit);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching popular templates:", error);
+      res.status(500).json({ error: "Failed to fetch popular templates" });
+    }
+  });
+
+  app.get("/api/tour-prompt-templates/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid template ID" });
+      }
+      
+      const template = await storage.getTourPromptTemplate(id);
+      if (!template) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching template:", error);
+      res.status(500).json({ error: "Failed to fetch template" });
+    }
+  });
+
+  app.get("/api/tour-prompt-templates/:id/stats", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid template ID" });
+      }
+      
+      const stats = await storage.getTourPromptTemplateStats(id);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching template stats:", error);
+      res.status(500).json({ error: "Failed to fetch template stats" });
+    }
+  });
+
+  app.post("/api/tour-prompt-templates", requireAuth, async (req, res) => {
+    try {
+      const templateData = insertTourPromptTemplateSchema.parse({
+        ...req.body,
+        createdBy: req.user.id
+      });
+      
+      const template = await storage.createTourPromptTemplate(templateData);
+      res.json(template);
+    } catch (error) {
+      console.error("Error creating template:", error);
+      res.status(500).json({ error: "Failed to create template" });
+    }
+  });
+
+  app.put("/api/tour-prompt-templates/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid template ID" });
+      }
+      
+      const templateData = {
+        ...req.body,
+        updatedBy: req.user.id
+      };
+      
+      const template = await storage.updateTourPromptTemplate(id, templateData);
+      if (!template) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      
+      res.json(template);
+    } catch (error) {
+      console.error("Error updating template:", error);
+      res.status(500).json({ error: "Failed to update template" });
+    }
+  });
+
+  app.delete("/api/tour-prompt-templates/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid template ID" });
+      }
+      
+      const deleted = await storage.deleteTourPromptTemplate(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      
+      res.json({ message: "Template deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting template:", error);
+      res.status(500).json({ error: "Failed to delete template" });
+    }
+  });
+
+  app.post("/api/tour-prompt-templates/:id/use", requireAuth, async (req, res) => {
+    try {
+      const templateId = parseInt(req.params.id);
+      if (isNaN(templateId)) {
+        return res.status(400).json({ error: "Invalid template ID" });
+      }
+      
+      const usageData = insertTourPromptTemplateUsageSchema.parse({
+        ...req.body,
+        templateId,
+        userId: req.user.id
+      });
+      
+      const usage = await storage.createTourPromptTemplateUsage(usageData);
+      res.json(usage);
+    } catch (error) {
+      console.error("Error recording template usage:", error);
+      res.status(500).json({ error: "Failed to record template usage" });
+    }
+  });
+
+  app.post("/api/tour-prompt-templates/:id/rate", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid template ID" });
+      }
+      
+      const { rating } = req.body;
+      if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ error: "Rating must be between 1 and 5" });
+      }
+      
+      await storage.rateTourPromptTemplate(id, rating);
+      res.json({ message: "Template rated successfully" });
+    } catch (error) {
+      console.error("Error rating template:", error);
+      res.status(500).json({ error: "Failed to rate template" });
+    }
+  });
+
+  app.get("/api/tour-prompt-template-usage", requireAuth, async (req, res) => {
+    try {
+      const { templateId, userId } = req.query;
+      const usage = await storage.getTourPromptTemplateUsage(
+        templateId ? parseInt(templateId as string) : undefined,
+        userId ? parseInt(userId as string) : undefined
+      );
+      res.json(usage);
+    } catch (error) {
+      console.error("Error fetching template usage:", error);
+      res.status(500).json({ error: "Failed to fetch template usage" });
     }
   });
 
