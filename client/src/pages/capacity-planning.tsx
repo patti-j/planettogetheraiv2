@@ -178,7 +178,7 @@ export default function CapacityPlanning() {
     <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div className="md:ml-0 ml-3">
+        <div className="md:ml-0 ml-12">
           <h1 className="text-xl md:text-2xl font-semibold text-gray-800">Capacity Planning</h1>
           <p className="text-sm md:text-base text-gray-600">Plan staffing, shifts, and equipment investments for optimal production capacity</p>
         </div>

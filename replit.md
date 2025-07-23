@@ -131,6 +131,9 @@ The application uses a modern full-stack architecture with strong typing through
 - Auto-scrolling demonstrates all page content during voice playback, especially on mobile where space is limited
 - **Fixed voice generation duration bug** - removed automatic addition of "This takes approximately X minutes" from voice narration
 - Voice now only speaks the written script content without adding unwanted duration information
+- **Fixed hamburger menu overlap issue** - updated mobile spacing across all pages from ml-3 to ml-12 for proper title clearance
+- Page titles and headers now properly clear the hamburger menu on mobile devices across all 15+ pages
+- Enhanced mobile user experience with consistent navigation spacing throughout the application
 
 ✓ **Complete Systems Integration Dashboard Transformation (July 23, 2025)**:
 - Successfully completed comprehensive transformation of ERP import page into modern Systems Integration dashboard

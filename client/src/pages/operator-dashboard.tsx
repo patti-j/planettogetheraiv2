@@ -283,7 +283,7 @@ export default function OperatorDashboard() {
       {/* Header */}
       <div className="bg-white shadow-sm border-b px-4 py-3 sm:px-6 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <div className="ml-12 md:ml-0">
+          <div className="md:ml-0 ml-12">
             <h1 className="text-2xl font-semibold text-gray-800">Operator Dashboard</h1>
             <p className="text-gray-600">Review upcoming operations and report status</p>
           </div>

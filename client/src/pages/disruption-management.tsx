@@ -420,7 +420,7 @@ export default function DisruptionManagement() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 md:ml-0 ml-3">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 md:ml-0 ml-12">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Disruption Management</h1>
           <p className="text-sm sm:text-base text-muted-foreground">

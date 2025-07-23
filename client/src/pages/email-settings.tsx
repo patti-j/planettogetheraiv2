@@ -254,7 +254,7 @@ export default function EmailSettings() {
     return (
       <div className="fixed inset-0 bg-white z-50 flex flex-col">
         <div className="flex items-center justify-between p-4 border-b">
-          <h1 className="text-2xl font-semibold text-gray-800 md:ml-0 ml-3">Email Settings</h1>
+          <h1 className="text-2xl font-semibold text-gray-800 md:ml-0 ml-12">Email Settings</h1>
           <Button 
             variant="outline" 
             size="sm"
@@ -273,7 +273,7 @@ export default function EmailSettings() {
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <div className="md:ml-0 ml-3">
+        <div className="md:ml-0 ml-12">
           <h1 className="text-2xl font-semibold text-gray-800">Email Settings</h1>
           <p className="text-gray-600">Configure AWS SES for email notifications</p>
         </div>

@@ -351,7 +351,7 @@ const SystemsIntegrationPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="md:ml-0 ml-3">
+        <div className="md:ml-0 ml-12">
           <h1 className="text-2xl font-semibold text-gray-800">Systems Integration</h1>
           <p className="text-gray-600">Manage connections to external systems with AI-powered setup and monitoring</p>
         </div>
