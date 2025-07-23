@@ -355,9 +355,6 @@ export function MaxSidebar() {
         <div className="flex items-center gap-2 ml-12">
           <Bot className="h-5 w-5 text-white" />
           <h2 className="text-white text-sm font-medium">Max AI Assistant</h2>
-          <Badge variant="secondary" className="text-xs bg-white/20 text-white border-white/30">
-            {user?.roles?.[0]?.name || 'Online'}
-          </Badge>
         </div>
         <div className="flex gap-1">
           <Button
