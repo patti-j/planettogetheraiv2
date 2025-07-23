@@ -778,11 +778,14 @@ export default function Maintenance() {
   return (
     <div className={`bg-gray-50 ${isMaximized ? 'fixed inset-0 z-50' : 'h-screen'} flex flex-col`}>
       {/* Header */}
-      <div className="bg-white shadow-sm border-b px-4 py-3 sm:px-6 flex-shrink-0">
+      <div className="bg-white shadow-sm border-b px-3 sm:px-6 py-3 sm:py-6 flex-shrink-0">
         <div className="relative">
-          <div className="ml-3 md:ml-0">
-            <h1 className="text-2xl font-semibold text-gray-800">Maintenance Planning</h1>
-            <p className="text-gray-600">Manage resource maintenance schedules and work orders</p>
+          <div className="md:ml-0 ml-12">
+            <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+              <Wrench className="w-6 h-6 mr-2" />
+              Maintenance Planning
+            </h1>
+            <p className="text-sm md:text-base text-gray-600">Manage resource maintenance schedules and work orders</p>
           </div>
           
           {/* Maximize button always in top right corner */}
@@ -798,30 +801,28 @@ export default function Maintenance() {
         </div>
       </div>
 
-      {/* Key Metrics */}
-      <div className="bg-white border-b px-4 py-3 sm:px-6 flex-shrink-0">
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
+        
+        {/* Key Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center">
+          <div className="text-center bg-white p-4 rounded-lg shadow-sm">
             <div className="text-2xl font-bold text-blue-600">{totalScheduled}</div>
             <div className="text-sm text-gray-500">Scheduled</div>
           </div>
-          <div className="text-center">
+          <div className="text-center bg-white p-4 rounded-lg shadow-sm">
             <div className="text-2xl font-bold text-red-600">{overdueCount}</div>
             <div className="text-sm text-gray-500">Overdue</div>
           </div>
-          <div className="text-center">
+          <div className="text-center bg-white p-4 rounded-lg shadow-sm">
             <div className="text-2xl font-bold text-orange-600">{openWorkOrders}</div>
             <div className="text-sm text-gray-500">Open Work Orders</div>
           </div>
-          <div className="text-center">
+          <div className="text-center bg-white p-4 rounded-lg shadow-sm">
             <div className={`text-2xl font-bold ${getHealthColor(avgHealth)}`}>{avgHealth.toFixed(1)}%</div>
             <div className="text-sm text-gray-500">Avg Health</div>
           </div>
         </div>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="schedule">Schedule</TabsTrigger>
