@@ -2087,38 +2087,33 @@ function TourManagementSection() {
             <div className="space-y-6">
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{validationResults.summary?.valid || 0}</div>
+                  <div className="text-2xl font-bold text-green-600">{validationResults.summary?.validTours || 0}</div>
                   <div className="text-sm text-gray-600">Valid Tours</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-yellow-600">{validationResults.summary?.warnings || 0}</div>
-                  <div className="text-sm text-gray-600">Warnings</div>
+                  <div className="text-2xl font-bold text-yellow-600">{validationResults.summary?.invalidTours || 0}</div>
+                  <div className="text-sm text-gray-600">Invalid Tours</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600">{validationResults.summary?.errors || 0}</div>
-                  <div className="text-sm text-gray-600">Errors</div>
+                  <div className="text-2xl font-bold text-red-600">{validationResults.summary?.criticalErrors || 0}</div>
+                  <div className="text-sm text-gray-600">Critical Errors</div>
                 </div>
               </div>
               
               <div className="space-y-4">
-                {validationResults.results?.map((result: any, index: number) => (
-                  <div key={index} className="border rounded p-4">
+                {/* Display Critical Errors */}
+                {validationResults.criticalErrors?.map((result: any, index: number) => (
+                  <div key={`critical-${index}`} className="border rounded p-4 border-red-300 bg-red-50">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium">{result.roleName}</span>
-                      <Badge variant={result.isValid ? 'default' : 'destructive'}>
-                        {result.isValid ? 'Valid' : 'Invalid'}
-                      </Badge>
+                      <span className="font-medium">{result.role}</span>
+                      <Badge variant="destructive">Critical Error</Badge>
                     </div>
-                    {result.issues?.length > 0 && (
+                    {result.criticalErrors?.length > 0 && (
                       <div className="space-y-1">
-                        {result.issues.map((issue: any, issueIndex: number) => (
-                          <div key={issueIndex} className={`text-sm p-2 rounded ${
-                            issue.severity === 'ERROR' ? 'bg-red-50 text-red-700' : 
-                            issue.severity === 'WARNING' ? 'bg-yellow-50 text-yellow-700' : 
-                            'bg-blue-50 text-blue-700'
-                          }`}>
-                            <div className="font-medium">{issue.category}</div>
-                            <div>{issue.message}</div>
+                        {result.criticalErrors.map((issue: any, issueIndex: number) => (
+                          <div key={issueIndex} className="text-sm p-2 rounded bg-red-100 text-red-800">
+                            <div className="font-medium">{issue.type}</div>
+                            <div>{issue.issue}</div>
                             {issue.suggestion && (
                               <div className="text-xs mt-1 opacity-75">Suggestion: {issue.suggestion}</div>
                             )}
@@ -2126,6 +2121,56 @@ function TourManagementSection() {
                         ))}
                       </div>
                     )}
+                  </div>
+                ))}
+
+                {/* Display Invalid Tours with Issues */}
+                {validationResults.invalid?.map((result: any, index: number) => (
+                  <div key={`invalid-${index}`} className="border rounded p-4 border-yellow-300 bg-yellow-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium">{result.role}</span>
+                      <Badge variant="destructive">Invalid</Badge>
+                    </div>
+                    {result.issues?.length > 0 && (
+                      <div className="space-y-1">
+                        {result.issues.map((issue: any, issueIndex: number) => (
+                          <div key={issueIndex} className={`text-sm p-2 rounded ${
+                            issue.severity === 'ERROR' ? 'bg-red-100 text-red-800' : 
+                            issue.severity === 'WARNING' ? 'bg-yellow-100 text-yellow-800' : 
+                            'bg-blue-100 text-blue-800'
+                          }`}>
+                            <div className="font-medium">{issue.type}</div>
+                            <div>{issue.issue}</div>
+                            {issue.suggestion && (
+                              <div className="text-xs mt-1 opacity-75">Suggestion: {issue.suggestion}</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {result.invalidSteps?.length > 0 && (
+                      <div className="mt-2">
+                        <div className="text-sm font-medium text-yellow-800">Invalid Steps:</div>
+                        {result.invalidSteps.map((step: any, stepIndex: number) => (
+                          <div key={stepIndex} className="text-xs text-yellow-700 ml-2">
+                            • Step {step.stepIndex}: {step.stepName} - {step.issue}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {/* Display Valid Tours */}
+                {validationResults.valid?.map((result: any, index: number) => (
+                  <div key={`valid-${index}`} className="border rounded p-4 border-green-300 bg-green-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium">{result.role}</span>
+                      <Badge variant="default">Valid</Badge>
+                    </div>
+                    <div className="text-sm text-green-700">
+                      All {result.validSteps?.length || 0} steps validated successfully
+                    </div>
                   </div>
                 ))}
               </div>

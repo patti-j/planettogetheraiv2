@@ -321,8 +321,8 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     
     console.log(`Page dimensions: height=${pageHeight}, viewport=${viewportHeight}, difference=${pageHeight - viewportHeight}`);
     
-    // Only scroll if there's content below the fold
-    if (pageHeight > viewportHeight + 100) {
+    // Only scroll if there's content below the fold (reduced threshold for testing)
+    if (pageHeight > viewportHeight + 50) {
       console.log('Auto-scrolling to show below-fold content - starting scroll sequence');
       
       // Scroll to bottom slowly
@@ -397,6 +397,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       console.log('Auto-scroll sequence completed');
     } else {
       console.log('No auto-scroll needed - content fits within viewport');
+      console.log('To force auto-scroll for demo: either make page longer or wait for pages with more content');
     }
   }, []);
 
