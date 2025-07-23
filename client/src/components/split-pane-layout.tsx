@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useMaxDock } from '@/contexts/MaxDockContext';
 import { Button } from '@/components/ui/button';
-import { Bot, MessageSquare, SplitSquareHorizontal } from 'lucide-react';
+import { Bot, MessageSquare, SplitSquareVertical } from 'lucide-react';
 
 interface SplitPaneLayoutProps {
   children: React.ReactNode;
@@ -136,7 +136,7 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
               className="w-12 h-12 rounded-full bg-white hover:bg-gray-50 shadow-lg border-2 border-gray-200"
               title="Switch to Split Mode"
             >
-              <SplitSquareHorizontal className="h-5 w-5" />
+              <SplitSquareVertical className="h-5 w-5" />
             </Button>
           </div>
         </div>

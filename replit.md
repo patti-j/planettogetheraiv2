@@ -152,6 +152,8 @@ The application uses a modern full-stack architecture with strong typing through
 - **Evaluate Schedule Button Color Update**: Changed from purple-to-pink gradient to blue-to-pink gradient matching Max AI styling
 - "Evaluate Schedules" button in Production Schedule page now uses `from-blue-500 to-pink-600` gradient for visual consistency
 - Fixed button styling conflict by removing `variant="outline"` that was overriding the custom gradient classes
+- **Mobile Split Mode Icon Fix**: Changed split mode toggle icon from `SplitSquareHorizontal` to `SplitSquareVertical`
+- Icon now correctly represents horizontal layout where Max appears at bottom of screen on mobile devices
 
 ✓ **User Profile Integration into Hamburger Menu (July 23, 2025)**:
 - Successfully moved user profile/avatar/role switching controls from standalone App.tsx position into hamburger menu
