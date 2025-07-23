@@ -281,6 +281,14 @@ The application uses a modern full-stack architecture with strong typing through
 - Tour expansion now works correctly - only the clicked tour expands while others remain collapsed
 - Enhanced tour management interface with proper individual tour configuration access
 
+✓ **Tour Preview Page Indicators Bug Fix (July 23, 2025)**:
+- Fixed critical bug where tour preview dialogs showed blank page indicators for existing tours
+- Root cause: handlePreviewTour function used incorrect state variables (previewTourData/showTourPreviewDialog) instead of expected variables (singleTourPreviewData/showSingleTourPreviewDialog)
+- Updated function to properly map existing tour data to preview dialog's expected data structure
+- Fixed navigation property priority to use step.navigationPath (AI-generated tours) with fallbacks to step.page/step.route
+- Tour preview now correctly displays navigation paths like /production-schedule, /analytics, /reports for all tour steps
+- Enhanced tour management system reliability with consistent state variable usage across preview workflows
+
 ✓ **Schedule Menu and Page Rename to "Production Schedule" (July 22, 2025)**:
 - Renamed main navigation menu item from "Schedule" to "Production Schedule" for clearer terminology
 - Updated page title in dashboard component from "Schedule" to "Production Schedule"
