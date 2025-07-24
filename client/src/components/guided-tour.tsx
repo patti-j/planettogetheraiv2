@@ -354,117 +354,63 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     // Wait for page to fully load
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // More comprehensive page height detection for mobile
-    const bodyHeight = document.body.scrollHeight;
-    const docElementHeight = document.documentElement.scrollHeight;
-    const bodyOffsetHeight = document.body.offsetHeight;
-    const docOffsetHeight = document.documentElement.offsetHeight;
-    const bodyClientHeight = document.body.clientHeight;
-    const docClientHeight = document.documentElement.clientHeight;
+    // Find the specific page content container to scroll
+    const contentContainer = 
+      // Try common page content selectors
+      document.querySelector('[class*="space-y-4"], [class*="space-y-6"]') || // Page with spacing
+      document.querySelector('main > div') || // Main content div
+      document.querySelector('[class*="p-3"], [class*="p-6"]') || // Padded content
+      document.querySelector('main') || // Fallback to main
+      document.querySelector('#root > div:first-child'); // Last fallback
     
-    const pageHeight = Math.max(
-      bodyHeight,
-      docElementHeight,
-      bodyOffsetHeight,
-      docOffsetHeight,
-      bodyClientHeight,
-      docClientHeight
-    );
-    
-    const viewportHeight = window.innerHeight;
-    // Try to find the main content container first
-    const mainContent = document.querySelector('main') || document.querySelector('#root > div:first-child');
-    
-    let currentScrollTop, maxScrollableDistance;
-    if (mainContent && mainContent !== document.body) {
-      // Use main content container for scroll calculations
-      currentScrollTop = mainContent.scrollTop;
-      const mainContentHeight = mainContent.scrollHeight;
-      const mainContentClientHeight = mainContent.clientHeight;
-      maxScrollableDistance = mainContentHeight - mainContentClientHeight;
-      console.log(`Using main content for scroll: scrollTop=${currentScrollTop}, scrollHeight=${mainContentHeight}, clientHeight=${mainContentClientHeight}`);
-    } else {
-      // Fallback to window scrolling
-      currentScrollTop = window.pageYOffset;
-      maxScrollableDistance = pageHeight - viewportHeight;
-      console.log(`Using window for scroll: scrollTop=${currentScrollTop}, pageHeight=${pageHeight}, viewportHeight=${viewportHeight}`);
+    if (!contentContainer) {
+      console.log('No suitable content container found for auto-scroll');
+      return;
     }
     
-    console.log(`Detailed height analysis:
-      - body.scrollHeight: ${bodyHeight}
-      - documentElement.scrollHeight: ${docElementHeight}
-      - body.offsetHeight: ${bodyOffsetHeight}
-      - documentElement.offsetHeight: ${docOffsetHeight}
-      - viewport height: ${viewportHeight}
-      - calculated maxScrollable: ${maxScrollableDistance}`);
+    const viewportHeight = window.innerHeight;
+    const containerRect = contentContainer.getBoundingClientRect();
+    const containerHeight = contentContainer.scrollHeight;
+    const containerClientHeight = contentContainer.clientHeight;
+    const containerScrollTop = contentContainer.scrollTop;
+    const maxScrollableDistance = containerHeight - containerClientHeight;
     
-    console.log(`Mobile scroll check: pageHeight=${pageHeight}, viewport=${viewportHeight}, currentScroll=${currentScrollTop}, maxScroll=${maxScrollableDistance}`);
+    console.log(`Content container auto-scroll: 
+      - container: ${contentContainer.tagName}.${contentContainer.className}
+      - scrollTop: ${containerScrollTop}
+      - scrollHeight: ${containerHeight}
+      - clientHeight: ${containerClientHeight}
+      - maxScrollable: ${maxScrollableDistance}
+      - containerRect: top=${containerRect.top}, height=${containerRect.height}`);
     
-    // Gentle scroll demo to show content below the fold (much more conservative)
-    const performMobileScrollDemo = async () => {
-      console.log('Starting gentle auto-scroll to show hidden content...');
+    // Check if container has scrollable content
+    if (maxScrollableDistance <= 10) {
+      console.log('Content container has no scrollable content - skipping auto-scroll');
+      return;
+    }
+    
+    // Content container scroll demo - scroll only the page content, not the entire screen
+    const performContentScrollDemo = async () => {
+      console.log('Starting content container auto-scroll demo...');
       
-      // Check if auto-scroll would push tour window out of view
-      const tourWindow = document.querySelector('[class*="fixed bg-white shadow-2xl"]');
-      if (tourWindow) {
-        const tourRect = tourWindow.getBoundingClientRect();
-        const tourTopPosition = tourRect.top;
-        
-        // If tour window is already in lower portion of screen, don't auto-scroll
-        if (tourTopPosition > viewportHeight * 0.6) {
-          console.log('Tour window positioned low on screen - skipping auto-scroll to keep it visible');
-          return;
-        }
-      }
-      
-      // Check if there's actually content that extends beyond the viewport
-      const isMobile = window.innerWidth < 768;
-      if (maxScrollableDistance <= 0 && !isMobile) {
-        console.log('No scrollable content detected - page fits within viewport');
-        return;
-      } else if (maxScrollableDistance <= 0 && isMobile) {
-        console.log('Mobile device detected - forcing demo scroll even with no calculated scrollable content');
-        // On mobile, force a scroll demo by using viewport height as scroll distance
-        const forcedScrollDistance = viewportHeight * 0.5;
-        console.log(`Forcing mobile scroll demo with ${forcedScrollDistance}px scroll distance`);
-        
-        // Simple forced scroll for mobile - target main content only
-        const mainContent = document.querySelector('main') || document.querySelector('#root > div:first-child');
-        if (mainContent && mainContent !== document.body) {
-          mainContent.scrollTo({ top: forcedScrollDistance, behavior: 'smooth' });
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          mainContent.scrollTo({ top: 0, behavior: 'smooth' });
-          await new Promise(resolve => setTimeout(resolve, 1500));
-        }
-        console.log('Forced mobile scroll demo completed');
-        return;
-      }
-      
-      // Much more conservative scroll - only scroll enough to show a bit more content
-      // Never scroll more than 1/4 of viewport height to prevent page going out of view
-      const conservativeScrollDistance = Math.min(
-        maxScrollableDistance - currentScrollTop, // Don't scroll past the end
-        viewportHeight * 0.25, // Very conservative - only 25% of viewport height
-        200 // Never scroll more than 200px
+      // Calculate scroll distance for content container
+      const scrollableDistance = Math.min(
+        maxScrollableDistance - containerScrollTop, // Don't scroll past the end
+        containerClientHeight * 0.5, // Scroll half the container height
+        300 // Never scroll more than 300px in container
       );
       
-      if (conservativeScrollDistance > 30) { // Only scroll if there's meaningful content to show
-        console.log(`Conservative scroll: ${conservativeScrollDistance}px to reveal some hidden content (max possible: ${maxScrollableDistance - currentScrollTop}px)...`);
+      if (scrollableDistance > 50) { // Only scroll if there's meaningful content to show
+        console.log(`Content container scroll: ${scrollableDistance}px to reveal hidden content (max possible: ${maxScrollableDistance - containerScrollTop}px)...`);
         
-        // Scroll down to show hidden content
+        // Scroll down within content container to show hidden content
         const scrollDown = () => {
           return new Promise<void>((resolve) => {
-            const targetScrollTop = currentScrollTop + conservativeScrollDistance;
-            const distance = conservativeScrollDistance;
+            const targetScrollTop = containerScrollTop + scrollableDistance;
             
-            if (distance <= 10) {
-              resolve();
-              return;
-            }
-            
-            const duration = 2000; // 2 seconds to scroll down (shorter for gentler experience)
+            const duration = 2000; // 2 seconds to scroll down
             const startTime = Date.now();
-            const startScrollTop = currentScrollTop;
+            const startScrollTop = containerScrollTop;
             
             const animateScroll = () => {
               const elapsed = Date.now() - startTime;
@@ -474,22 +420,15 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                 ? 2 * progress * progress 
                 : 1 - Math.pow(-2 * progress + 2, 2) / 2;
               
-              const newScrollTop = Math.min(startScrollTop + distance * easeInOut, maxScrollableDistance);
+              const newScrollTop = Math.min(startScrollTop + scrollableDistance * easeInOut, maxScrollableDistance);
               
-              // Find main content container and scroll only that, not the tour window
-              const mainContent = document.querySelector('main') || document.querySelector('#root > div:first-child');
-              if (mainContent && mainContent !== document.body) {
-                // Ensure we don't scroll past the maximum scrollable distance
-                const maxScroll = mainContent.scrollHeight - mainContent.clientHeight;
-                mainContent.scrollTop = Math.min(newScrollTop, maxScroll);
-              } else {
-                window.scrollTo(0, Math.min(newScrollTop, maxScrollableDistance));
-              }
+              // Scroll only the content container, not the entire page
+              contentContainer.scrollTop = newScrollTop;
               
               if (progress < 1) {
                 requestAnimationFrame(animateScroll);
               } else {
-                console.log(`Scroll complete - now at position: ${window.pageYOffset}`);
+                console.log(`Content scroll complete - container now at position: ${contentContainer.scrollTop}`);
                 resolve();
               }
             };
@@ -498,22 +437,17 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           });
         };
         
-        // Scroll back to top
+        // Scroll back to top of content container
         const scrollToTop = () => {
           return new Promise<void>((resolve) => {
-            // Get current scroll position from the correct container
-            const mainContent = document.querySelector('main') || document.querySelector('#root > div:first-child');
-            const startingPosition = (mainContent && mainContent !== document.body) 
-              ? mainContent.scrollTop 
-              : window.pageYOffset;
-            const distance = startingPosition;
+            const startingPosition = contentContainer.scrollTop;
             
-            if (distance <= 10) {
+            if (startingPosition <= 10) {
               resolve();
               return;
             }
             
-            console.log(`Scrolling back to top from position: ${startingPosition}`);
+            console.log(`Scrolling content container back to top from position: ${startingPosition}`);
             const duration = 2000; // 2 seconds to scroll back up
             const startTime = Date.now();
             
@@ -527,18 +461,13 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
               
               const newScrollTop = startingPosition * (1 - easeInOut);
               
-              // Find main content container and scroll only that, not the tour window
-              const mainContent = document.querySelector('main') || document.querySelector('#root > div:first-child');
-              if (mainContent && mainContent !== document.body) {
-                mainContent.scrollTop = newScrollTop;
-              } else {
-                window.scrollTo(0, newScrollTop);
-              }
+              // Scroll only the content container
+              contentContainer.scrollTop = newScrollTop;
               
               if (progress < 1) {
                 requestAnimationFrame(animateScroll);
               } else {
-                console.log('Returned to top position');
+                console.log('Content container returned to top position');
                 resolve();
               }
             };
@@ -547,18 +476,18 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           });
         };
         
-        // Execute gentle scroll sequence
+        // Execute content container scroll sequence
         await scrollDown();
         console.log('Pausing to show content...');
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Shorter pause for gentler experience
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Brief pause
         await scrollToTop();
-        console.log('Gentle auto-scroll sequence completed');
+        console.log('Content container auto-scroll sequence completed');
       } else {
-        console.log(`Insufficient content to scroll - only ${scrollDownDistance}px available`);
+        console.log(`Insufficient content to scroll - only ${scrollableDistance}px available`);
       }
     };
     
-    await performMobileScrollDemo();
+    await performContentScrollDemo();
   }, [autoScrollEnabled]);
 
   // Navigate to step page when step changes

@@ -114,6 +114,17 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 24, 2025)
 
+✓ **Content-Specific Auto-Scroll System Implementation (July 24, 2025)**:
+- Successfully transformed auto-scroll to target only center page content containers instead of entire screen
+- Added intelligent content container detection using CSS selectors (space-y-4/6, main > div, padded content)
+- Auto-scroll now demonstrates page functionality without disrupting navigation or tour window visibility
+- Enhanced scroll logic to work within specific content areas (production schedule, analytics, etc.)
+- Added user-controllable auto-scroll toggle button in tour window header with scroll icon
+- Toggle button shows blue when enabled, gray when disabled with clear tooltips
+- Auto-scroll checks user preference before running and logs when disabled by user
+- Content-specific scrolling provides better user experience by keeping tour controls and navigation visible
+- System intelligently finds scrollable content containers and demonstrates hidden functionality
+
 ✓ **Streaming Voice Transcription & Auto-Scroll Boundary Fix (July 24, 2025)**:
 - Successfully implemented real-time voice streaming transcription for Max AI assistant providing instant user feedback
 - Added 3-second interval chunks for periodic transcription during voice input instead of waiting for microphone off
