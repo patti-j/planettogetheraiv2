@@ -306,6 +306,11 @@ export function MaxSidebar() {
         console.log('Recording stopped, transcribing with Whisper...');
         setIsListening(false);
         
+        // Re-enable input for typing (remove readonly)
+        if (inputRef.current) {
+          inputRef.current.removeAttribute('readonly');
+        }
+        
         // Create blob from recorded chunks
         const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
         
@@ -325,6 +330,13 @@ export function MaxSidebar() {
             // Add transcribed text to input
             const baseMessage = inputMessage.trim();
             setInputMessage(baseMessage ? `${baseMessage} ${result.text}` : result.text);
+            
+            // Focus input and position cursor at end after transcription
+            if (inputRef.current) {
+              inputRef.current.focus();
+              const newMessage = baseMessage ? `${baseMessage} ${result.text}` : result.text;
+              inputRef.current.setSelectionRange(newMessage.length, newMessage.length);
+            }
           } else {
             console.error('Transcription failed:', result);
             showVoiceError("Sorry, I couldn't understand what you said. Please try again.");
@@ -342,6 +354,13 @@ export function MaxSidebar() {
       mediaRecorder.current.start();
       setIsListening(true);
       console.log('Recording started with Whisper transcription');
+      
+      // Focus input without triggering keyboard on mobile
+      if (inputRef.current) {
+        inputRef.current.setAttribute('readonly', 'true');
+        inputRef.current.focus();
+        inputRef.current.setSelectionRange(inputMessage.length, inputMessage.length);
+      }
       
     } catch (error) {
       console.error('Microphone access error:', error);
@@ -378,6 +397,11 @@ export function MaxSidebar() {
     if (mediaRecorder.current && mediaRecorder.current.state === 'recording') {
       console.log('Stopping Whisper recording...');
       mediaRecorder.current.stop();
+    }
+    
+    // Ensure input is always re-enabled when stopping
+    if (inputRef.current) {
+      inputRef.current.removeAttribute('readonly');
     }
   };
 

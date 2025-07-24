@@ -124,6 +124,9 @@ The application uses a modern full-stack architecture with strong typing through
 - Whisper-based system provides consistent speech recognition across all browsers and devices
 - Audio recording sent to OpenAI Whisper API for professional-grade speech-to-text conversion
 - Improved voice input reliability for Max AI assistant with better accuracy and reduced errors
+- **Mobile-optimized voice input**: Cursor appears in message box during dictation without triggering mobile keyboard
+- **Prevents keyboard popup**: Uses readonly attribute during recording to preserve screen space on mobile devices
+- **Seamless focus management**: Input field shows cursor position while preventing keyboard interference
 
 ✓ **Canvas Clearing Confirmation Dialog & Permission Error Handling Enhancement (July 24, 2025)**:
 - Added confirmation dialog to prevent accidental canvas clearing with clear "Clear Canvas" vs "Cancel" options
