@@ -121,6 +121,15 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 24, 2025)
 
+✓ **Tour Window Resize Boundary Fix (July 24, 2025)**:
+- Fixed critical tour window resize issue where window would shrink and disappear during resize operations
+- Corrected resize boundary logic to prevent feedback loops that caused unpredictable window behavior
+- Added direction-specific boundary constraints for east/south vs west/north resize operations
+- Implemented safeguard reset system that restores default dimensions if window becomes invalid
+- Added comprehensive boundary checking for both drag and resize operations
+- Tour window now maintains stable positioning and dimensions during all resize interactions
+- Desktop positioning moved to bottom-right corner for improved user experience
+
 ✓ **Tour Window Scroll Prevention Fix (July 24, 2025)**:
 - Fixed critical issue where tour start caused entire window (including Max) to scroll out of view
 - Removed problematic scrollIntoView call that was forcing page-wide scrolling

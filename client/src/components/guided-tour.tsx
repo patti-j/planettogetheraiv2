@@ -1006,19 +1006,37 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         }
 
         // Ensure window stays within viewport bounds during resize
-        const maxWidth = windowSize.width - position.x;
-        const maxHeight = windowSize.height - position.y;
-        newWidth = Math.min(newWidth, maxWidth);
-        newHeight = Math.min(newHeight, maxHeight);
+        // For east/south resizing, limit based on current position
+        if (resizeDirection.includes('e')) {
+          const maxWidth = windowSize.width - position.x;
+          newWidth = Math.min(newWidth, maxWidth);
+        }
+        if (resizeDirection.includes('s')) {
+          const maxHeight = windowSize.height - position.y;
+          newHeight = Math.min(newHeight, maxHeight);
+        }
         
-        // Ensure position stays within bounds when resizing from north/west
+        // For west/north resizing, limit based on new position and ensure it stays in bounds
         if (resizeDirection.includes('w')) {
-          const minX = Math.max(0, windowSize.width - newWidth);
-          newX = Math.max(minX, newX);
+          const maxWidth = windowSize.width - Math.max(0, newX);
+          newWidth = Math.min(newWidth, maxWidth);
+          newX = Math.max(0, newX); // Don't let it go negative
         }
         if (resizeDirection.includes('n')) {
-          const minY = Math.max(0, windowSize.height - newHeight);
-          newY = Math.max(minY, newY);
+          const maxHeight = windowSize.height - Math.max(0, newY);
+          newHeight = Math.min(newHeight, maxHeight);
+          newY = Math.max(0, newY); // Don't let it go negative
+        }
+
+        // Safeguard: Reset to default if dimensions become invalid
+        if (newWidth < 200 || newHeight < 100) {
+          console.log('Invalid dimensions detected during resize, resetting to defaults');
+          setWindowDimensions({ width: 384, height: 600 });
+          setPosition({
+            x: windowSize.width - 384 - 20,
+            y: Math.max(20, windowSize.height - 600 - 40)
+          });
+          return;
         }
 
         // Update dimensions
