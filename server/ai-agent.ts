@@ -50,8 +50,8 @@ export async function processAICommand(command: string, attachments?: Attachment
       capabilityCount: context.capabilities.length,
       plantCount: context.plants.length,
       allJobs: context.jobs.map(j => ({ id: j.id, name: j.name, status: j.status, customer: j.customer, priority: j.priority, dueDate: j.dueDate })),
-      sampleResources: context.resources.slice(0, 5).map(r => ({ id: r.id, name: r.name, type: r.type })),
-      sampleCapabilities: context.capabilities.slice(0, 5).map(c => ({ id: c.id, name: c.name })),
+      allResources: context.resources.map(r => ({ id: r.id, name: r.name, type: r.type, status: r.status })),
+      allCapabilities: context.capabilities.map(c => ({ id: c.id, name: c.name, description: c.description })),
       allPlants: context.plants.map(p => ({ id: p.id, name: p.name, address: p.address, timezone: p.timezone, isActive: p.isActive }))
     };
 
@@ -74,9 +74,9 @@ LIVE DATA AVAILABLE:
 - All Jobs: ${JSON.stringify(contextSummary.allJobs)}
 - Total Operations: ${contextSummary.operationCount} 
 - Total Resources: ${contextSummary.resourceCount}
-- Sample Resources: ${JSON.stringify(contextSummary.sampleResources)}
+- All Resources: ${JSON.stringify(contextSummary.allResources)}
 - Total Capabilities: ${contextSummary.capabilityCount}
-- Sample Capabilities: ${JSON.stringify(contextSummary.sampleCapabilities)}
+- All Capabilities: ${JSON.stringify(contextSummary.allCapabilities)}
 - Total Plants: ${contextSummary.plantCount}
 - All Plants: ${JSON.stringify(contextSummary.allPlants)}
 

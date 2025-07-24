@@ -114,6 +114,16 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 24, 2025)
 
+✓ **Max AI Direct Resource Listing Capability Fix (July 24, 2025)**:
+- Fixed critical issue where Max AI was saying it "can help with listing resources" instead of directly listing them
+- Updated AI system prompt to include complete resource and capability data instead of limited samples
+- Changed contextSummary from "sampleResources" to "allResources" to provide Max with full system context
+- Enhanced system prompt to clearly indicate Max has access to "All Resources" and "All Capabilities" instead of samples
+- Max now understands it has complete access to system data and directly lists resources when requested
+- Eliminated confusion caused by incomplete data context that made Max think it only had partial information
+- System prompt now provides comprehensive manufacturing data: all jobs, resources, capabilities, and plants
+- Max can now respond to "show me our resources" with immediate resource listing instead of offering help
+
 ✓ **OpenAI Whisper Speech Recognition Implementation (July 24, 2025)**:
 - Successfully migrated from browser Web Speech API to OpenAI Whisper for more reliable speech recognition
 - Added `/api/ai-agent/transcribe` endpoint using OpenAI Whisper-1 model for server-side audio transcription
