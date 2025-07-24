@@ -54,6 +54,9 @@ import {
   presentations, presentationSlides, presentationTourIntegrations, presentationLibrary, presentationAnalytics, presentationAIContent,
   type Presentation, type PresentationSlide, type PresentationTourIntegration, type PresentationLibrary, type PresentationAnalytics, type PresentationAIContent,
   type InsertPresentation, type InsertPresentationSlide, type InsertPresentationTourIntegration, type InsertPresentationLibrary, type InsertPresentationAnalytics, type InsertPresentationAIContent,
+  customerJourneyStages, manufacturingSegments, buyerPersonas, marketingPages, contentBlocks, customerStories, leadCaptures, pageAnalytics, abTests, emailCampaigns,
+  type CustomerJourneyStage, type ManufacturingSegment, type BuyerPersona, type MarketingPage, type ContentBlock, type CustomerStory, type LeadCapture, type PageAnalytics, type ABTest, type EmailCampaign,
+  type InsertCustomerJourneyStage, type InsertManufacturingSegment, type InsertBuyerPersona, type InsertMarketingPage, type InsertContentBlock, type InsertCustomerStory, type InsertLeadCapture, type InsertPageAnalytics, type InsertABTest, type InsertEmailCampaign,
   // industryTemplates, userIndustryTemplates, templateConfigurations,
   // type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
   // type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration,
@@ -719,6 +722,85 @@ export interface IStorage {
   getPresentationLibrary(category?: string): Promise<PresentationLibrary[]>;
   createPresentationLibraryEntry(entry: InsertPresentationLibrary): Promise<PresentationLibrary>;
   updatePresentationLibraryEntry(id: number, updates: Partial<InsertPresentationLibrary>): Promise<PresentationLibrary | undefined>;
+
+  // Customer Journey Marketing System
+  // Customer Journey Stages
+  getCustomerJourneyStages(): Promise<CustomerJourneyStage[]>;
+  getCustomerJourneyStage(id: number): Promise<CustomerJourneyStage | undefined>;
+  createCustomerJourneyStage(stage: InsertCustomerJourneyStage): Promise<CustomerJourneyStage>;
+  updateCustomerJourneyStage(id: number, updates: Partial<InsertCustomerJourneyStage>): Promise<CustomerJourneyStage | undefined>;
+  deleteCustomerJourneyStage(id: number): Promise<boolean>;
+
+  // Manufacturing Segments
+  getManufacturingSegments(type?: string): Promise<ManufacturingSegment[]>;
+  getManufacturingSegment(id: number): Promise<ManufacturingSegment | undefined>;
+  createManufacturingSegment(segment: InsertManufacturingSegment): Promise<ManufacturingSegment>;
+  updateManufacturingSegment(id: number, updates: Partial<InsertManufacturingSegment>): Promise<ManufacturingSegment | undefined>;
+  deleteManufacturingSegment(id: number): Promise<boolean>;
+
+  // Buyer Personas
+  getBuyerPersonas(roleType?: string, department?: string): Promise<BuyerPersona[]>;
+  getBuyerPersona(id: number): Promise<BuyerPersona | undefined>;
+  createBuyerPersona(persona: InsertBuyerPersona): Promise<BuyerPersona>;
+  updateBuyerPersona(id: number, updates: Partial<InsertBuyerPersona>): Promise<BuyerPersona | undefined>;
+  deleteBuyerPersona(id: number): Promise<boolean>;
+
+  // Marketing Pages
+  getMarketingPages(language?: string, stageId?: number): Promise<MarketingPage[]>;
+  getMarketingPage(id: number): Promise<MarketingPage | undefined>;
+  getMarketingPageBySlug(slug: string, language?: string): Promise<MarketingPage | undefined>;
+  createMarketingPage(page: InsertMarketingPage): Promise<MarketingPage>;
+  updateMarketingPage(id: number, updates: Partial<InsertMarketingPage>): Promise<MarketingPage | undefined>;
+  deleteMarketingPage(id: number): Promise<boolean>;
+  publishMarketingPage(id: number): Promise<MarketingPage | undefined>;
+
+  // Content Blocks
+  getContentBlocks(type?: string, category?: string, language?: string): Promise<ContentBlock[]>;
+  getContentBlock(id: number): Promise<ContentBlock | undefined>;
+  createContentBlock(block: InsertContentBlock): Promise<ContentBlock>;
+  updateContentBlock(id: number, updates: Partial<InsertContentBlock>): Promise<ContentBlock | undefined>;
+  deleteContentBlock(id: number): Promise<boolean>;
+
+  // Customer Stories
+  getCustomerStories(industry?: string, storyType?: string, language?: string): Promise<CustomerStory[]>;
+  getCustomerStory(id: number): Promise<CustomerStory | undefined>;
+  createCustomerStory(story: InsertCustomerStory): Promise<CustomerStory>;
+  updateCustomerStory(id: number, updates: Partial<InsertCustomerStory>): Promise<CustomerStory | undefined>;
+  deleteCustomerStory(id: number): Promise<boolean>;
+  approveCustomerStory(id: number): Promise<CustomerStory | undefined>;
+
+  // Lead Captures
+  getLeadCaptures(pageId?: number, dateRange?: { from: Date; to: Date }): Promise<LeadCapture[]>;
+  getLeadCapture(id: number): Promise<LeadCapture | undefined>;
+  createLeadCapture(lead: InsertLeadCapture): Promise<LeadCapture>;
+  updateLeadCapture(id: number, updates: Partial<InsertLeadCapture>): Promise<LeadCapture | undefined>;
+  deleteLeadCapture(id: number): Promise<boolean>;
+  getLeadsByEmail(email: string): Promise<LeadCapture[]>;
+  updateLeadScore(id: number, score: number): Promise<LeadCapture | undefined>;
+
+  // Page Analytics
+  getPageAnalytics(pageId?: number, dateRange?: { from: Date; to: Date }): Promise<PageAnalytics[]>;
+  getPageAnalyticsByDate(pageId: number, date: Date): Promise<PageAnalytics | undefined>;
+  createPageAnalytics(analytics: InsertPageAnalytics): Promise<PageAnalytics>;
+  updatePageAnalytics(pageId: number, date: Date, updates: Partial<InsertPageAnalytics>): Promise<PageAnalytics | undefined>;
+  getTopPerformingPages(limit?: number): Promise<(PageAnalytics & { page: MarketingPage })[]>;
+
+  // A/B Tests
+  getABTests(pageId?: number, status?: string): Promise<ABTest[]>;
+  getABTest(id: number): Promise<ABTest | undefined>;
+  createABTest(test: InsertABTest): Promise<ABTest>;
+  updateABTest(id: number, updates: Partial<InsertABTest>): Promise<ABTest | undefined>;
+  deleteABTest(id: number): Promise<boolean>;
+  startABTest(id: number): Promise<ABTest | undefined>;
+  endABTest(id: number): Promise<ABTest | undefined>;
+
+  // Email Campaigns
+  getEmailCampaigns(type?: string, language?: string): Promise<EmailCampaign[]>;
+  getEmailCampaign(id: number): Promise<EmailCampaign | undefined>;
+  createEmailCampaign(campaign: InsertEmailCampaign): Promise<EmailCampaign>;
+  updateEmailCampaign(id: number, updates: Partial<InsertEmailCampaign>): Promise<EmailCampaign | undefined>;
+  deleteEmailCampaign(id: number): Promise<boolean>;
+  sendEmailCampaign(id: number): Promise<EmailCampaign | undefined>;
 
   getPresentationTourIntegrations(presentationId?: number): Promise<PresentationTourIntegration[]>;
   createPresentationTourIntegration(integration: InsertPresentationTourIntegration): Promise<PresentationTourIntegration>;
@@ -5498,6 +5580,349 @@ export class DatabaseStorage implements IStorage {
   async createPresentationAIContent(content: InsertPresentationAIContent): Promise<PresentationAIContent> {
     const [newContent] = await db.insert(presentationAIContent).values(content).returning();
     return newContent;
+  }
+  // Marketing System Implementation
+  
+  // Customer Journey Stages
+  async getCustomerJourneyStages(): Promise<CustomerJourneyStage[]> {
+    return await db.select().from(customerJourneyStages)
+      .where(eq(customerJourneyStages.isActive, true))
+      .orderBy(asc(customerJourneyStages.orderIndex));
+  }
+
+  async getCustomerJourneyStage(id: number): Promise<CustomerJourneyStage | undefined> {
+    const [stage] = await db.select().from(customerJourneyStages)
+      .where(eq(customerJourneyStages.id, id));
+    return stage;
+  }
+
+  async createCustomerJourneyStage(stage: InsertCustomerJourneyStage): Promise<CustomerJourneyStage> {
+    const [newStage] = await db.insert(customerJourneyStages).values(stage).returning();
+    return newStage;
+  }
+
+  async updateCustomerJourneyStage(id: number, stage: Partial<InsertCustomerJourneyStage>): Promise<CustomerJourneyStage | undefined> {
+    const [updated] = await db.update(customerJourneyStages)
+      .set(stage)
+      .where(eq(customerJourneyStages.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Manufacturing Segments
+  async getManufacturingSegments(): Promise<ManufacturingSegment[]> {
+    return await db.select().from(manufacturingSegments)
+      .where(eq(manufacturingSegments.isActive, true))
+      .orderBy(asc(manufacturingSegments.name));
+  }
+
+  async getManufacturingSegmentsByType(type: string): Promise<ManufacturingSegment[]> {
+    return await db.select().from(manufacturingSegments)
+      .where(and(eq(manufacturingSegments.type, type), eq(manufacturingSegments.isActive, true)))
+      .orderBy(asc(manufacturingSegments.name));
+  }
+
+  async createManufacturingSegment(segment: InsertManufacturingSegment): Promise<ManufacturingSegment> {
+    const [newSegment] = await db.insert(manufacturingSegments).values(segment).returning();
+    return newSegment;
+  }
+
+  async updateManufacturingSegment(id: number, segment: Partial<InsertManufacturingSegment>): Promise<ManufacturingSegment | undefined> {
+    const [updated] = await db.update(manufacturingSegments)
+      .set(segment)
+      .where(eq(manufacturingSegments.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Buyer Personas
+  async getBuyerPersonas(): Promise<BuyerPersona[]> {
+    return await db.select().from(buyerPersonas)
+      .where(eq(buyerPersonas.isActive, true))
+      .orderBy(asc(buyerPersonas.name));
+  }
+
+  async getBuyerPersonasByRole(roleType: string): Promise<BuyerPersona[]> {
+    return await db.select().from(buyerPersonas)
+      .where(and(eq(buyerPersonas.roleType, roleType), eq(buyerPersonas.isActive, true)))
+      .orderBy(asc(buyerPersonas.name));
+  }
+
+  async createBuyerPersona(persona: InsertBuyerPersona): Promise<BuyerPersona> {
+    const [newPersona] = await db.insert(buyerPersonas).values(persona).returning();
+    return newPersona;
+  }
+
+  async updateBuyerPersona(id: number, persona: Partial<InsertBuyerPersona>): Promise<BuyerPersona | undefined> {
+    const [updated] = await db.update(buyerPersonas)
+      .set(persona)
+      .where(eq(buyerPersonas.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Marketing Pages
+  async getMarketingPages(stageId?: number, language?: string): Promise<MarketingPage[]> {
+    let query = db.select().from(marketingPages);
+    
+    const conditions = [];
+    if (stageId) conditions.push(eq(marketingPages.stageId, stageId));
+    if (language) conditions.push(eq(marketingPages.language, language));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(marketingPages.createdAt));
+  }
+
+  async getMarketingPage(id: number): Promise<MarketingPage | undefined> {
+    const [page] = await db.select().from(marketingPages)
+      .where(eq(marketingPages.id, id));
+    return page;
+  }
+
+  async getMarketingPageBySlug(slug: string, language?: string): Promise<MarketingPage | undefined> {
+    const conditions = [eq(marketingPages.slug, slug)];
+    if (language) conditions.push(eq(marketingPages.language, language));
+    
+    const [page] = await db.select().from(marketingPages)
+      .where(and(...conditions));
+    return page;
+  }
+
+  async createMarketingPage(page: InsertMarketingPage): Promise<MarketingPage> {
+    const [newPage] = await db.insert(marketingPages).values(page).returning();
+    return newPage;
+  }
+
+  async updateMarketingPage(id: number, page: Partial<InsertMarketingPage>): Promise<MarketingPage | undefined> {
+    const [updated] = await db.update(marketingPages)
+      .set({ ...page, updatedAt: new Date() })
+      .where(eq(marketingPages.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteMarketingPage(id: number): Promise<boolean> {
+    const result = await db.delete(marketingPages)
+      .where(eq(marketingPages.id, id));
+    return result.rowCount! > 0;
+  }
+
+  // Content Blocks
+  async getContentBlocks(category?: string, language?: string): Promise<ContentBlock[]> {
+    let query = db.select().from(contentBlocks)
+      .where(eq(contentBlocks.isActive, true));
+    
+    const conditions = [eq(contentBlocks.isActive, true)];
+    if (category) conditions.push(eq(contentBlocks.category, category));
+    if (language) conditions.push(eq(contentBlocks.language, language));
+    
+    if (conditions.length > 1) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(contentBlocks.usageCount), desc(contentBlocks.createdAt));
+  }
+
+  async getContentBlock(id: number): Promise<ContentBlock | undefined> {
+    const [block] = await db.select().from(contentBlocks)
+      .where(eq(contentBlocks.id, id));
+    return block;
+  }
+
+  async createContentBlock(block: InsertContentBlock): Promise<ContentBlock> {
+    const [newBlock] = await db.insert(contentBlocks).values(block).returning();
+    return newBlock;
+  }
+
+  async updateContentBlock(id: number, block: Partial<InsertContentBlock>): Promise<ContentBlock | undefined> {
+    const [updated] = await db.update(contentBlocks)
+      .set({ ...block, updatedAt: new Date() })
+      .where(eq(contentBlocks.id, id))
+      .returning();
+    return updated;
+  }
+
+  async incrementContentBlockUsage(id: number): Promise<void> {
+    await db.update(contentBlocks)
+      .set({ usageCount: sql`${contentBlocks.usageCount} + 1` })
+      .where(eq(contentBlocks.id, id));
+  }
+
+  // Customer Stories
+  async getCustomerStories(industry?: string, language?: string): Promise<CustomerStory[]> {
+    let query = db.select().from(customerStories)
+      .where(eq(customerStories.isApproved, true));
+    
+    const conditions = [eq(customerStories.isApproved, true)];
+    if (industry) conditions.push(eq(customerStories.industry, industry));
+    if (language) conditions.push(eq(customerStories.language, language));
+    
+    if (conditions.length > 1) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(customerStories.isFeatured), desc(customerStories.effectivenessScore));
+  }
+
+  async getCustomerStory(id: number): Promise<CustomerStory | undefined> {
+    const [story] = await db.select().from(customerStories)
+      .where(eq(customerStories.id, id));
+    return story;
+  }
+
+  async createCustomerStory(story: InsertCustomerStory): Promise<CustomerStory> {
+    const [newStory] = await db.insert(customerStories).values(story).returning();
+    return newStory;
+  }
+
+  async updateCustomerStory(id: number, story: Partial<InsertCustomerStory>): Promise<CustomerStory | undefined> {
+    const [updated] = await db.update(customerStories)
+      .set({ ...story, updatedAt: new Date() })
+      .where(eq(customerStories.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Lead Captures
+  async createLeadCapture(lead: InsertLeadCapture): Promise<LeadCapture> {
+    const [newLead] = await db.insert(leadCaptures).values(lead).returning();
+    return newLead;
+  }
+
+  async getLeadCaptures(pageId?: number, stage?: string): Promise<LeadCapture[]> {
+    let query = db.select().from(leadCaptures);
+    
+    const conditions = [];
+    if (pageId) conditions.push(eq(leadCaptures.pageId, pageId));
+    if (stage) conditions.push(eq(leadCaptures.stage, stage));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(leadCaptures.createdAt));
+  }
+
+  async updateLeadCapture(id: number, lead: Partial<InsertLeadCapture>): Promise<LeadCapture | undefined> {
+    const [updated] = await db.update(leadCaptures)
+      .set({ ...lead, updatedAt: new Date() })
+      .where(eq(leadCaptures.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getLeadsByEmail(email: string): Promise<LeadCapture[]> {
+    return await db.select().from(leadCaptures)
+      .where(eq(leadCaptures.email, email))
+      .orderBy(desc(leadCaptures.createdAt));
+  }
+
+  // Page Analytics
+  async getPageAnalytics(pageId: number, startDate?: Date, endDate?: Date): Promise<PageAnalytics[]> {
+    let query = db.select().from(pageAnalytics)
+      .where(eq(pageAnalytics.pageId, pageId));
+    
+    if (startDate && endDate) {
+      query = query.where(and(
+        eq(pageAnalytics.pageId, pageId),
+        gte(pageAnalytics.date, startDate),
+        lte(pageAnalytics.date, endDate)
+      ));
+    }
+    
+    return await query.orderBy(desc(pageAnalytics.date));
+  }
+
+  async createPageAnalytics(analytics: InsertPageAnalytics): Promise<PageAnalytics> {
+    const [newAnalytics] = await db.insert(pageAnalytics).values(analytics).returning();
+    return newAnalytics;
+  }
+
+  async updatePageAnalytics(pageId: number, date: Date, analytics: Partial<InsertPageAnalytics>): Promise<PageAnalytics | undefined> {
+    const [updated] = await db.update(pageAnalytics)
+      .set(analytics)
+      .where(and(eq(pageAnalytics.pageId, pageId), eq(pageAnalytics.date, date)))
+      .returning();
+    return updated;
+  }
+
+  // A/B Tests
+  async getABTests(pageId?: number): Promise<ABTest[]> {
+    let query = db.select().from(abTests);
+    if (pageId) {
+      query = query.where(eq(abTests.pageId, pageId));
+    }
+    return await query.orderBy(desc(abTests.createdAt));
+  }
+
+  async getABTest(id: number): Promise<ABTest | undefined> {
+    const [test] = await db.select().from(abTests)
+      .where(eq(abTests.id, id));
+    return test;
+  }
+
+  async createABTest(test: InsertABTest): Promise<ABTest> {
+    const [newTest] = await db.insert(abTests).values(test).returning();
+    return newTest;
+  }
+
+  async updateABTest(id: number, test: Partial<InsertABTest>): Promise<ABTest | undefined> {
+    const [updated] = await db.update(abTests)
+      .set({ ...test, updatedAt: new Date() })
+      .where(eq(abTests.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Email Campaigns
+  async getEmailCampaigns(status?: string, language?: string): Promise<EmailCampaign[]> {
+    let query = db.select().from(emailCampaigns);
+    
+    const conditions = [];
+    if (status) conditions.push(eq(emailCampaigns.status, status));
+    if (language) conditions.push(eq(emailCampaigns.language, language));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(emailCampaigns.createdAt));
+  }
+
+  async getEmailCampaign(id: number): Promise<EmailCampaign | undefined> {
+    const [campaign] = await db.select().from(emailCampaigns)
+      .where(eq(emailCampaigns.id, id));
+    return campaign;
+  }
+
+  async createEmailCampaign(campaign: InsertEmailCampaign): Promise<EmailCampaign> {
+    const [newCampaign] = await db.insert(emailCampaigns).values(campaign).returning();
+    return newCampaign;
+  }
+
+  async updateEmailCampaign(id: number, campaign: Partial<InsertEmailCampaign>): Promise<EmailCampaign | undefined> {
+    const [updated] = await db.update(emailCampaigns)
+      .set({ ...campaign, updatedAt: new Date() })
+      .where(eq(emailCampaigns.id, id))
+      .returning();
+    return updated;
+  }
+
+  async updateEmailCampaignStats(id: number, stats: {
+    sentCount?: number;
+    openRate?: number;
+    clickRate?: number;
+    conversionRate?: number;
+    unsubscribeRate?: number;
+  }): Promise<EmailCampaign | undefined> {
+    const [updated] = await db.update(emailCampaigns)
+      .set({ ...stats, updatedAt: new Date() })
+      .where(eq(emailCampaigns.id, id))
+      .returning();
+    return updated;
   }
 }
 

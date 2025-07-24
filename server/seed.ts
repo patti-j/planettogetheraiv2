@@ -1,5 +1,8 @@
 import { db } from "./db";
-import { capabilities, resources, jobs, operations, users, roles, permissions, userRoles, rolePermissions } from "@shared/schema";
+import { 
+  capabilities, resources, jobs, operations, users, roles, permissions, userRoles, rolePermissions,
+  customerStories, contentBlocks, marketingPages, leadCaptures
+} from "@shared/schema";
 import { sql, eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
@@ -47,17 +50,21 @@ export async function seedDatabase() {
     const jobData = [
       { 
         name: "Widget Assembly - Batch A", 
+        plantId: 1,
         customer: "Tech Corp", 
         priority: "high", 
         dueDate: new Date("2024-12-31"), 
-        status: "active" 
+        status: "active",
+        quantity: 100
       },
       { 
         name: "Motor Housing Production", 
+        plantId: 1,
         customer: "AutoParts Inc", 
         priority: "medium", 
         dueDate: new Date("2024-12-25"), 
-        status: "active" 
+        status: "active",
+        quantity: 250
       }
     ];
 
@@ -339,6 +346,9 @@ export async function seedDatabase() {
     
     // Now create default roles for all features
     await seedDefaultRoles();
+    
+    // Seed marketing data
+    await seedMarketingData();
   }
 
   console.log("Database seeding completed!");
@@ -475,4 +485,200 @@ async function seedDefaultRoles() {
   }
   
   console.log("✓ Default roles seeded successfully");
+}
+
+async function seedMarketingData() {
+  console.log("Seeding marketing data...");
+  
+  try {
+    // Check if marketing data already exists
+    const existingStories = await db.select().from(customerStories).limit(1);
+    if (existingStories.length > 0) {
+      console.log("Marketing data already exists, skipping...");
+      return;
+    }
+
+    // Seed customer success stories
+    const customerStoryData = [
+      {
+        customerName: "Sarah Chen",
+        customerTitle: "VP of Operations",
+        company: "TechCorp Manufacturing",
+        industry: "Electronics",
+        companySize: "medium",
+        story: {
+          challenge: "Manual scheduling processes and lack of real-time visibility created production bottlenecks",
+          solution: "Implemented AI-powered scheduling with real-time optimization and predictive analytics",
+          results: [
+            { metric: "Production Efficiency", improvement: "+28%", description: "Streamlined workflow automation" },
+            { metric: "Cost Savings", improvement: "$450k annually", description: "Reduced waste and optimized resources" },
+            { metric: "Lead Time Reduction", improvement: "-35%", description: "Faster order fulfillment" },
+            { metric: "Quality Improvement", improvement: "+15%", description: "Better process control" }
+          ],
+          quote: "PlanetTogether's AI scheduling has revolutionized our production workflow. We've seen immediate improvements in efficiency and our customers are getting their orders faster than ever."
+        },
+        storyType: "testimonial",
+        language: "en",
+        isApproved: true,
+        isFeatured: true,
+        effectivenessScore: 95
+      },
+      {
+        customerName: "Marcus Rodriguez",
+        customerTitle: "Plant Manager",
+        company: "Alpine Automotive Parts",
+        industry: "Automotive",
+        companySize: "large",
+        story: {
+          challenge: "Multi-plant coordination difficulties and resource allocation inefficiencies",
+          solution: "Comprehensive production intelligence platform with multi-plant visibility",
+          results: [
+            { metric: "Resource Efficiency", improvement: "+22%", description: "Optimized allocation across plants" },
+            { metric: "Annual Savings", improvement: "$750k", description: "Reduced operational costs" },
+            { metric: "Coordination Time", improvement: "-18%", description: "Faster cross-plant communication" },
+            { metric: "Quality Standards", improvement: "+12%", description: "Consistent quality across facilities" }
+          ],
+          quote: "The real-time visibility into our entire supply chain has been game-changing. We can now proactively address bottlenecks before they impact delivery."
+        },
+        storyType: "case_study",
+        language: "en",
+        isApproved: true,
+        isFeatured: true,
+        effectivenessScore: 88
+      },
+      {
+        customerName: "Jennifer Walsh",
+        customerTitle: "Quality Director",
+        company: "Precision Aerospace Solutions",
+        industry: "Aerospace",
+        companySize: "medium",
+        story: {
+          challenge: "Complex quality control requirements with stringent aerospace standards",
+          solution: "AI-driven quality monitoring with predictive defect detection",
+          results: [
+            { metric: "Defect Detection Speed", improvement: "+40%", description: "Faster quality issue identification" },
+            { metric: "Process Efficiency", improvement: "+19%", description: "Streamlined quality workflows" },
+            { metric: "Cost Reduction", improvement: "$320k saved", description: "Prevented quality failures" },
+            { metric: "Compliance Rate", improvement: "99.8%", description: "Zero-defect production maintained" }
+          ],
+          quote: "In aerospace, quality is everything. PlanetTogether's predictive analytics help us maintain our zero-defect standards while increasing throughput."
+        },
+        storyType: "testimonial",
+        language: "en",
+        isApproved: true,
+        isFeatured: true,
+        effectivenessScore: 92
+      }
+    ];
+
+    await db.insert(customerStories).values(customerStoryData);
+
+    // Seed content blocks for dynamic marketing content
+    const contentBlockData = [
+      {
+        name: "Value Proposition - AI Intelligence",
+        type: "hero_content",
+        category: "value_proposition",
+        content: "Transform your production operations with intelligent scheduling, real-time optimization, and predictive analytics that adapt to your unique manufacturing requirements.",
+        language: "en",
+        usageCount: 0,
+        isActive: true,
+        conversionRate: 15.5
+      },
+      {
+        name: "Pain Point - Scheduling Challenges",
+        type: "problem_statement",
+        category: "pain_point",
+        content: "Manual scheduling processes, resource conflicts, and limited visibility create bottlenecks that cost manufacturers millions in lost productivity and delayed deliveries.",
+        language: "en",
+        usageCount: 0,
+        isActive: true,
+        conversionRate: 12.3
+      },
+      {
+        name: "Solution - Resource Optimization",
+        type: "solution_benefit",
+        category: "solution_benefit",
+        content: "Our AI engine automatically optimizes resource allocation, predicts potential conflicts, and suggests schedule adjustments to maximize throughput while meeting delivery commitments.",
+        language: "en",
+        usageCount: 0,
+        isActive: true,
+        conversionRate: 18.7
+      },
+      {
+        name: "Social Proof - Industry Leaders",
+        type: "testimonial_summary",
+        category: "social_proof",
+        content: "Join 1,000+ manufacturers across automotive, aerospace, electronics, and pharmaceutical industries who trust PlanetTogether to optimize their production operations.",
+        language: "en",
+        usageCount: 0,
+        isActive: true,
+        conversionRate: 14.2
+      },
+      {
+        name: "Primary CTA - Free Trial",
+        type: "call_to_action",
+        category: "cta_primary",
+        content: "Experience the power of AI-driven manufacturing intelligence with our 14-day free trial. No credit card required, full feature access, and dedicated onboarding support.",
+        language: "en",
+        usageCount: 0,
+        isActive: true,
+        conversionRate: 22.1
+      }
+    ];
+
+    await db.insert(contentBlocks).values(contentBlockData);
+
+    // Seed marketing pages configuration  
+    const marketingPageData = [
+      {
+        name: "Main Landing Page",
+        title: "AI-Powered Manufacturing Intelligence Platform",
+        content: {
+          hero: {
+            headline: "Transform Your Manufacturing Operations with AI-Powered Intelligence",
+            subheadline: "Join 1,000+ manufacturers achieving 25% efficiency gains through intelligent production scheduling, real-time optimization, and AI-driven insights.",
+            cta_primary: "Start Free Trial",
+            cta_secondary: "Schedule Demo",
+            background_image: "/assets/manufacturing-hero.jpg"
+          },
+          sections: [
+            {
+              type: "benefits",
+              title: "Measurable Results from Day One",
+              content: "Our customers consistently achieve significant improvements in key manufacturing metrics within the first 90 days."
+            },
+            {
+              type: "customer_stories",
+              title: "Success Stories from Leading Manufacturers", 
+              content: "Real results from real companies transforming their operations with our platform."
+            },
+            {
+              type: "pricing",
+              title: "Transparent Pricing for Every Scale",
+              content: "From small shops to enterprise facilities, we have a plan that scales with your manufacturing operations."
+            }
+          ]
+        },
+        stageId: 1,
+        pageType: "landing_page",
+        language: "en",
+        targetAudience: ["C-Suite", "Plant Manager", "Production Manager", "IT Director"],
+        conversionGoals: ["free_trial_signup", "demo_request", "contact_sales"],
+        isPublished: true,
+        seoTitle: "AI Manufacturing Intelligence Platform | PlanetTogether",
+        seoDescription: "Transform your manufacturing operations with AI-powered production scheduling, real-time optimization, and intelligent insights. 14-day free trial available."
+      }
+    ];
+
+    await db.insert(marketingPages).values(marketingPageData);
+
+    console.log("✓ Marketing data seeded successfully");
+    console.log("  - 3 customer success stories created");
+    console.log("  - 5 content blocks for dynamic marketing content");
+    console.log("  - 1 marketing page configuration");
+    
+  } catch (error) {
+    console.error("Error seeding marketing data:", error);
+  }
 }

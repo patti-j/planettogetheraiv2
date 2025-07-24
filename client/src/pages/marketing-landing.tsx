@@ -1,0 +1,646 @@
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  Factory, 
+  TrendingUp, 
+  Users, 
+  Zap, 
+  Target, 
+  BarChart3, 
+  Shield, 
+  Clock, 
+  CheckCircle,
+  ArrowRight,
+  Play,
+  Star,
+  Building2,
+  Cog,
+  Database,
+  Brain,
+  Smartphone,
+  Globe,
+  ChevronRight,
+  Mail,
+  Phone,
+  Calendar,
+  Download,
+  Award,
+  Lightbulb,
+  DollarSign,
+  Gauge,
+  Settings,
+  Package,
+  Truck
+} from 'lucide-react';
+// Using direct gradient classes for now
+
+interface MarketingPage {
+  id: number;
+  title: string;
+  slug: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  language: string;
+  targetAudience: string[];
+  conversionGoals: string[];
+  isPublished: boolean;
+  seoTitle?: string;
+  seoDescription?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface LeadCapture {
+  id: number;
+  pageId: number;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  company?: string;
+  jobTitle?: string;
+  phone?: string;
+  interests: string[];
+  stage: string;
+  source: string;
+  notes?: string;
+  createdAt: Date;
+}
+
+interface CustomerStory {
+  id: number;
+  companyName: string;
+  industry: string;
+  title: string;
+  summary: string;
+  results: {
+    efficiency?: number;
+    costSavings?: number;
+    timeReduction?: number;
+    qualityImprovement?: number;
+  };
+  testimonialQuote: string;
+  testimonialAuthor: string;
+  authorTitle: string;
+  companySize: string;
+  language: string;
+  isPublished: boolean;
+}
+
+interface ContentBlock {
+  id: number;
+  category: string;
+  title: string;
+  content: string;
+  language: string;
+  usageCount: number;
+  isActive: boolean;
+}
+
+const MANUFACTURING_SECTORS = [
+  { name: 'Automotive', icon: Factory, description: 'Complex assembly operations with stringent quality requirements' },
+  { name: 'Aerospace', icon: Settings, description: 'Precision manufacturing with regulatory compliance' },
+  { name: 'Electronics', icon: Zap, description: 'High-volume production with component traceability' },
+  { name: 'Food & Beverage', icon: Package, description: 'Batch processing with expiration tracking' },
+  { name: 'Pharmaceuticals', icon: Shield, description: 'GMP compliance with lot tracking' },
+  { name: 'Textiles', icon: Cog, description: 'Multi-stage production with seasonal demands' },
+  { name: 'Chemical', icon: Database, description: 'Process manufacturing with safety protocols' },
+  { name: 'Metal Fabrication', icon: Building2, description: 'Custom manufacturing with material optimization' }
+];
+
+const COMPANY_SIZES = [
+  { 
+    size: 'Small (1-50 employees)', 
+    benefits: ['Quick implementation', 'Immediate ROI', 'Simple workflows'],
+    pricing: '$35/user/month'
+  },
+  { 
+    size: 'Medium (51-500 employees)', 
+    benefits: ['Multi-department coordination', 'Advanced analytics', 'Workflow automation'],
+    pricing: '$75/user/month'
+  },
+  { 
+    size: 'Large (500+ employees)', 
+    benefits: ['Enterprise integration', 'Custom solutions', 'Dedicated support'],
+    pricing: '$125/user/month'
+  }
+];
+
+const BUYER_PERSONAS = [
+  {
+    role: 'C-Suite Executive',
+    pain_points: ['Visibility into operations', 'Cost optimization', 'Strategic planning'],
+    value_props: ['Real-time dashboards', 'ROI analytics', 'Strategic insights'],
+    icon: TrendingUp
+  },
+  {
+    role: 'Production Manager',
+    pain_points: ['Schedule optimization', 'Resource allocation', 'Quality control'],
+    value_props: ['Intelligent scheduling', 'Resource optimization', 'Quality tracking'],
+    icon: Target
+  },
+  {
+    role: 'Plant Manager',
+    pain_points: ['Multi-line coordination', 'Efficiency monitoring', 'Team management'],
+    value_props: ['Unified operations view', 'Performance metrics', 'Team coordination'],
+    icon: Factory
+  },
+  {
+    role: 'IT Director',
+    pain_points: ['System integration', 'Data security', 'Scalability'],
+    value_props: ['API connectivity', 'Enterprise security', 'Cloud architecture'],
+    icon: Database
+  }
+];
+
+const ROI_METRICS = [
+  { metric: 'Production Efficiency', improvement: '15-25%', icon: Gauge },
+  { metric: 'Cost Reduction', improvement: '10-20%', icon: DollarSign },
+  { metric: 'Schedule Adherence', improvement: '20-35%', icon: Clock },
+  { metric: 'Quality Improvement', improvement: '12-18%', icon: Award }
+];
+
+export default function MarketingLandingPage() {
+  const { toast } = useToast();
+  
+  // AI theme gradient classes
+  const aiTheme = {
+    gradient: 'bg-gradient-to-r from-blue-500 to-indigo-600'
+  };
+  const queryClient = useQueryClient();
+  
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [selectedIndustry, setSelectedIndustry] = useState('');
+  const [selectedCompanySize, setSelectedCompanySize] = useState('');
+  const [leadFormData, setLeadFormData] = useState({
+    email: '',
+    firstName: '',
+    lastName: '',
+    company: '',
+    jobTitle: '',
+    phone: '',
+    interests: [] as string[]
+  });
+
+  // Fetch customer stories for social proof
+  const { data: customerStories = [] } = useQuery<CustomerStory[]>({
+    queryKey: ['/api/marketing/customer-stories', { language: selectedLanguage, industry: selectedIndustry }]
+  });
+
+  // Fetch content blocks for dynamic content
+  const { data: contentBlocks = [] } = useQuery<ContentBlock[]>({
+    queryKey: ['/api/marketing/content-blocks', { language: selectedLanguage }]
+  });
+
+  // Lead capture mutation
+  const leadCaptureMutation = useMutation({
+    mutationFn: async (leadData: any) => {
+      const response = await fetch('/api/marketing/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...leadData,
+          pageId: 1, // Main landing page ID
+          stage: 'awareness',
+          source: 'website_landing'
+        })
+      });
+      if (!response.ok) throw new Error('Failed to capture lead');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Thank you for your interest!",
+        description: "We'll be in touch within 24 hours to schedule your personalized demo."
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/marketing/leads'] });
+      setLeadFormData({
+        email: '',
+        firstName: '',
+        lastName: '',
+        company: '',
+        jobTitle: '',
+        phone: '',
+        interests: []
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Submission Error",
+        description: "Please try again or contact us directly.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleLeadSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    leadCaptureMutation.mutate({
+      ...leadFormData,
+      interests: [selectedIndustry, selectedCompanySize, ...leadFormData.interests].filter(Boolean)
+    });
+  };
+
+  const handleInterestToggle = (interest: string) => {
+    setLeadFormData(prev => ({
+      ...prev,
+      interests: prev.interests.includes(interest)
+        ? prev.interests.filter(i => i !== interest)
+        : [...prev.interests, interest]
+    }));
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="text-white">
+              <h1 className="text-4xl lg:text-6xl font-bold mb-6">
+                Transform Your Manufacturing Operations with 
+                <span className={`block ${aiTheme.gradient} bg-clip-text text-transparent`}>
+                  AI-Powered Intelligence
+                </span>
+              </h1>
+              <p className="text-xl lg:text-2xl mb-8 text-blue-100">
+                Join 1,000+ manufacturers achieving 25% efficiency gains through intelligent production scheduling, 
+                real-time optimization, and AI-driven insights.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                <Button 
+                  size="lg" 
+                  className={`${aiTheme.gradient} hover:opacity-90 text-white px-8 py-4 text-lg`}
+                >
+                  <Play className="w-5 h-5 mr-2" />
+                  Watch Demo (2 min)
+                </Button>
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="border-white text-white hover:bg-white hover:text-slate-900 px-8 py-4 text-lg"
+                >
+                  <Calendar className="w-5 h-5 mr-2" />
+                  Schedule Free Consultation
+                </Button>
+              </div>
+              <div className="flex items-center gap-6 text-blue-100">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400" />
+                  <span>14-day free trial</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400" />
+                  <span>No credit card required</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-400" />
+                  <span>Setup in under 1 hour</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="lg:justify-self-end">
+              <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm shadow-2xl">
+                <CardHeader className="text-center">
+                  <CardTitle className="text-2xl">Start Your Free Trial</CardTitle>
+                  <CardDescription>
+                    Get instant access to all premium features
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleLeadSubmit} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <Input
+                        placeholder="First Name"
+                        value={leadFormData.firstName}
+                        onChange={(e) => setLeadFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                        required
+                      />
+                      <Input
+                        placeholder="Last Name"
+                        value={leadFormData.lastName}
+                        onChange={(e) => setLeadFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <Input
+                      type="email"
+                      placeholder="Work Email"
+                      value={leadFormData.email}
+                      onChange={(e) => setLeadFormData(prev => ({ ...prev, email: e.target.value }))}
+                      required
+                    />
+                    <Input
+                      placeholder="Company Name"
+                      value={leadFormData.company}
+                      onChange={(e) => setLeadFormData(prev => ({ ...prev, company: e.target.value }))}
+                      required
+                    />
+                    <Input
+                      placeholder="Job Title"
+                      value={leadFormData.jobTitle}
+                      onChange={(e) => setLeadFormData(prev => ({ ...prev, jobTitle: e.target.value }))}
+                    />
+                    <Button 
+                      type="submit" 
+                      className={`w-full ${aiTheme.gradient} hover:opacity-90 text-white`}
+                      disabled={leadCaptureMutation.isPending}
+                    >
+                      {leadCaptureMutation.isPending ? 'Starting Trial...' : 'Start Free Trial'}
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </form>
+                  <p className="text-xs text-gray-600 mt-4 text-center">
+                    By starting your trial, you agree to our Terms of Service and Privacy Policy
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Manufacturing Sectors Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-6">
+              Trusted by Leading Manufacturers Across Industries
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              From automotive assembly lines to pharmaceutical production, our platform adapts to your specific manufacturing requirements.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {MANUFACTURING_SECTORS.map((sector, index) => (
+              <Card 
+                key={index} 
+                className={`cursor-pointer transition-all duration-300 hover:shadow-lg ${
+                  selectedIndustry === sector.name ? `ring-2 ring-blue-500 ${aiTheme.gradient} bg-clip-border` : ''
+                }`}
+                onClick={() => setSelectedIndustry(sector.name)}
+              >
+                <CardContent className="p-6 text-center">
+                  <sector.icon className="w-12 h-12 mx-auto mb-4 text-blue-600" />
+                  <h3 className="text-lg font-semibold mb-2">{sector.name}</h3>
+                  <p className="text-sm text-gray-600">{sector.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ROI Metrics Section */}
+      <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-5xl font-bold mb-6">
+              Measurable Results from Day One
+            </h2>
+            <p className="text-xl text-blue-100 max-w-3xl mx-auto">
+              Our customers consistently achieve significant improvements in key manufacturing metrics within the first 90 days.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {ROI_METRICS.map((metric, index) => (
+              <Card key={index} className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
+                <CardContent className="p-8 text-center">
+                  <metric.icon className="w-12 h-12 mx-auto mb-4 text-yellow-400" />
+                  <h3 className="text-2xl font-bold mb-2">{metric.improvement}</h3>
+                  <p className="text-blue-100">{metric.metric}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Buyer Personas Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-6">
+              Solutions Tailored to Your Role
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Whether you're a C-suite executive or production manager, our platform provides role-specific insights and tools.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {BUYER_PERSONAS.map((persona, index) => (
+              <Card key={index} className="hover:shadow-lg transition-shadow duration-300">
+                <CardHeader className="text-center">
+                  <persona.icon className="w-12 h-12 mx-auto mb-4 text-blue-600" />
+                  <CardTitle className="text-xl">{persona.role}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-4">
+                    <h4 className="font-semibold text-red-600 mb-2">Pain Points:</h4>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      {persona.pain_points.map((point, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="w-1 h-1 bg-red-400 rounded-full mt-2 flex-shrink-0"></span>
+                          {point}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-green-600 mb-2">Our Solutions:</h4>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      {persona.value_props.map((prop, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <CheckCircle className="w-3 h-3 text-green-500 mt-1 flex-shrink-0" />
+                          {prop}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Customer Stories Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-6">
+              Success Stories from Leading Manufacturers
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Real results from real companies transforming their operations with our platform.
+            </p>
+          </div>
+          
+          {customerStories.length > 0 ? (
+            <div className="grid lg:grid-cols-3 gap-8">
+              {customerStories.slice(0, 3).map((story) => (
+                <Card key={story.id} className="hover:shadow-lg transition-shadow duration-300">
+                  <CardHeader>
+                    <div className="flex items-center justify-between mb-4">
+                      <Badge variant="outline">{story.industry}</Badge>
+                      <Badge variant="secondary">{story.companySize}</Badge>
+                    </div>
+                    <CardTitle className="text-xl">{story.companyName}</CardTitle>
+                    <CardDescription>{story.title}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600 mb-6 italic">"{story.testimonialQuote}"</p>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      {story.results.efficiency && (
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-green-600">+{story.results.efficiency}%</div>
+                          <div className="text-sm text-gray-600">Efficiency</div>
+                        </div>
+                      )}
+                      {story.results.costSavings && (
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-blue-600">${story.results.costSavings}k</div>
+                          <div className="text-sm text-gray-600">Annual Savings</div>
+                        </div>
+                      )}
+                      {story.results.timeReduction && (
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-purple-600">-{story.results.timeReduction}%</div>
+                          <div className="text-sm text-gray-600">Lead Time</div>
+                        </div>
+                      )}
+                      {story.results.qualityImprovement && (
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-orange-600">+{story.results.qualityImprovement}%</div>
+                          <div className="text-sm text-gray-600">Quality</div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="text-center">
+                      <div className="font-semibold">{story.testimonialAuthor}</div>
+                      <div className="text-sm text-gray-600">{story.authorTitle}</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-gray-500">
+              Loading customer success stories...
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-6">
+              Transparent Pricing for Every Scale
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              From small shops to enterprise facilities, we have a plan that scales with your manufacturing operations.
+            </p>
+          </div>
+          
+          <div className="grid lg:grid-cols-3 gap-8">
+            {COMPANY_SIZES.map((plan, index) => (
+              <Card 
+                key={index} 
+                className={`relative hover:shadow-xl transition-all duration-300 ${
+                  index === 1 ? `ring-2 ring-blue-500 scale-105 ${aiTheme.gradient} bg-clip-border` : ''
+                }`}
+              >
+                {index === 1 && (
+                  <div className={`absolute -top-4 left-1/2 transform -translate-x-1/2 ${aiTheme.gradient} text-white px-6 py-2 rounded-full text-sm font-semibold`}>
+                    Most Popular
+                  </div>
+                )}
+                <CardHeader className="text-center">
+                  <CardTitle className="text-2xl">{plan.size}</CardTitle>
+                  <div className="text-4xl font-bold text-blue-600 mt-4">{plan.pricing}</div>
+                  <CardDescription>per user per month</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-3 mb-8">
+                    {plan.benefits.map((benefit, i) => (
+                      <li key={i} className="flex items-center gap-3">
+                        <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                        <span>{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button 
+                    className={`w-full ${index === 1 ? aiTheme.gradient + ' text-white' : 'border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white'}`}
+                    variant={index === 1 ? 'default' : 'outline'}
+                    onClick={() => setSelectedCompanySize(plan.size)}
+                  >
+                    Start Free Trial
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className={`py-20 ${aiTheme.gradient} text-white`}>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl lg:text-5xl font-bold mb-6">
+            Ready to Transform Your Manufacturing Operations?
+          </h2>
+          <p className="text-xl mb-8 opacity-90">
+            Join 1,000+ manufacturers who've already revolutionized their production with our AI-powered platform.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+            <Button 
+              size="lg" 
+              className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg"
+            >
+              <Play className="w-5 h-5 mr-2" />
+              Start Free 14-Day Trial
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 text-lg"
+            >
+              <Calendar className="w-5 h-5 mr-2" />
+              Schedule Demo Call
+            </Button>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-8 justify-center text-center text-sm opacity-80">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4" />
+              <span>No credit card required</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4" />
+              <span>Free onboarding support</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4" />
+              <span>Cancel anytime</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}

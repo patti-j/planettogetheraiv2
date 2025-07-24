@@ -56,6 +56,7 @@ import CanvasPage from "@/pages/canvas";
 import ErrorLogsPage from "@/pages/error-logs";
 import PresentationPage from "@/pages/presentation";
 import PresentationSystemPage from "@/pages/presentation-system";
+import MarketingLandingPage from "@/pages/marketing-landing";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
@@ -149,6 +150,7 @@ function Router() {
         <Route path="/pricing" component={Pricing} />
         <Route path="/demo-tour" component={DemoTour} />
         <Route path="/presentation" component={PresentationPage} />
+        <Route path="/marketing" component={MarketingLandingPage} />
         <Route path="/" component={Login} />
         <Route component={Login} />
       </Switch>

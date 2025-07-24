@@ -32,7 +32,10 @@ import {
   insertCanvasContentSchema, insertCanvasSettingsSchema,
   insertErrorLogSchema, insertErrorReportSchema,
   insertPresentationSchema, insertPresentationSlideSchema, insertPresentationTourIntegrationSchema,
-  insertPresentationLibrarySchema, insertPresentationAnalyticsSchema, insertPresentationAIContentSchema
+  insertPresentationLibrarySchema, insertPresentationAnalyticsSchema, insertPresentationAIContentSchema,
+  insertCustomerJourneyStageSchema, insertManufacturingSegmentSchema, insertBuyerPersonaSchema,
+  insertMarketingPageSchema, insertContentBlockSchema, insertCustomerStorySchema,
+  insertLeadCaptureSchema, insertPageAnalyticsSchema, insertABTestSchema, insertEmailCampaignSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -9937,6 +9940,720 @@ Create a natural, conversational voice script that explains this feature to some
     } catch (error) {
       console.error("Error creating presentation AI content:", error);
       res.status(500).json({ error: "Failed to create presentation AI content" });
+    }
+  });
+
+  // Marketing System API Routes
+
+  // Customer Journey Stages
+  app.get("/api/marketing/customer-journey-stages", async (req, res) => {
+    try {
+      const stages = await storage.getCustomerJourneyStages();
+      res.json(stages);
+    } catch (error) {
+      console.error("Error fetching customer journey stages:", error);
+      res.status(500).json({ error: "Failed to fetch customer journey stages" });
+    }
+  });
+
+  app.get("/api/marketing/customer-journey-stages/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid stage ID" });
+      }
+
+      const stage = await storage.getCustomerJourneyStage(id);
+      if (!stage) {
+        return res.status(404).json({ error: "Customer journey stage not found" });
+      }
+      res.json(stage);
+    } catch (error) {
+      console.error("Error fetching customer journey stage:", error);
+      res.status(500).json({ error: "Failed to fetch customer journey stage" });
+    }
+  });
+
+  app.post("/api/marketing/customer-journey-stages", async (req, res) => {
+    try {
+      const validation = insertCustomerJourneyStageSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid stage data", details: validation.error.errors });
+      }
+
+      const stage = await storage.createCustomerJourneyStage(validation.data);
+      res.status(201).json(stage);
+    } catch (error) {
+      console.error("Error creating customer journey stage:", error);
+      res.status(500).json({ error: "Failed to create customer journey stage" });
+    }
+  });
+
+  app.put("/api/marketing/customer-journey-stages/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid stage ID" });
+      }
+
+      const validation = insertCustomerJourneyStageSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid stage data", details: validation.error.errors });
+      }
+
+      const stage = await storage.updateCustomerJourneyStage(id, validation.data);
+      if (!stage) {
+        return res.status(404).json({ error: "Customer journey stage not found" });
+      }
+      res.json(stage);
+    } catch (error) {
+      console.error("Error updating customer journey stage:", error);
+      res.status(500).json({ error: "Failed to update customer journey stage" });
+    }
+  });
+
+  // Manufacturing Segments
+  app.get("/api/marketing/manufacturing-segments", async (req, res) => {
+    try {
+      const type = req.query.type as string | undefined;
+      const segments = type ? 
+        await storage.getManufacturingSegmentsByType(type) : 
+        await storage.getManufacturingSegments();
+      res.json(segments);
+    } catch (error) {
+      console.error("Error fetching manufacturing segments:", error);
+      res.status(500).json({ error: "Failed to fetch manufacturing segments" });
+    }
+  });
+
+  app.post("/api/marketing/manufacturing-segments", async (req, res) => {
+    try {
+      const validation = insertManufacturingSegmentSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid segment data", details: validation.error.errors });
+      }
+
+      const segment = await storage.createManufacturingSegment(validation.data);
+      res.status(201).json(segment);
+    } catch (error) {
+      console.error("Error creating manufacturing segment:", error);
+      res.status(500).json({ error: "Failed to create manufacturing segment" });
+    }
+  });
+
+  app.put("/api/marketing/manufacturing-segments/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid segment ID" });
+      }
+
+      const validation = insertManufacturingSegmentSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid segment data", details: validation.error.errors });
+      }
+
+      const segment = await storage.updateManufacturingSegment(id, validation.data);
+      if (!segment) {
+        return res.status(404).json({ error: "Manufacturing segment not found" });
+      }
+      res.json(segment);
+    } catch (error) {
+      console.error("Error updating manufacturing segment:", error);
+      res.status(500).json({ error: "Failed to update manufacturing segment" });
+    }
+  });
+
+  // Buyer Personas
+  app.get("/api/marketing/buyer-personas", async (req, res) => {
+    try {
+      const roleType = req.query.roleType as string | undefined;
+      const personas = roleType ? 
+        await storage.getBuyerPersonasByRole(roleType) : 
+        await storage.getBuyerPersonas();
+      res.json(personas);
+    } catch (error) {
+      console.error("Error fetching buyer personas:", error);
+      res.status(500).json({ error: "Failed to fetch buyer personas" });
+    }
+  });
+
+  app.post("/api/marketing/buyer-personas", async (req, res) => {
+    try {
+      const validation = insertBuyerPersonaSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid persona data", details: validation.error.errors });
+      }
+
+      const persona = await storage.createBuyerPersona(validation.data);
+      res.status(201).json(persona);
+    } catch (error) {
+      console.error("Error creating buyer persona:", error);
+      res.status(500).json({ error: "Failed to create buyer persona" });
+    }
+  });
+
+  app.put("/api/marketing/buyer-personas/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid persona ID" });
+      }
+
+      const validation = insertBuyerPersonaSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid persona data", details: validation.error.errors });
+      }
+
+      const persona = await storage.updateBuyerPersona(id, validation.data);
+      if (!persona) {
+        return res.status(404).json({ error: "Buyer persona not found" });
+      }
+      res.json(persona);
+    } catch (error) {
+      console.error("Error updating buyer persona:", error);
+      res.status(500).json({ error: "Failed to update buyer persona" });
+    }
+  });
+
+  // Marketing Pages
+  app.get("/api/marketing/pages", async (req, res) => {
+    try {
+      const stageId = req.query.stageId ? parseInt(req.query.stageId as string) : undefined;
+      const language = req.query.language as string | undefined;
+      const pages = await storage.getMarketingPages(stageId, language);
+      res.json(pages);
+    } catch (error) {
+      console.error("Error fetching marketing pages:", error);
+      res.status(500).json({ error: "Failed to fetch marketing pages" });
+    }
+  });
+
+  app.get("/api/marketing/pages/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid page ID" });
+      }
+
+      const page = await storage.getMarketingPage(id);
+      if (!page) {
+        return res.status(404).json({ error: "Marketing page not found" });
+      }
+      res.json(page);
+    } catch (error) {
+      console.error("Error fetching marketing page:", error);
+      res.status(500).json({ error: "Failed to fetch marketing page" });
+    }
+  });
+
+  app.get("/api/marketing/pages/slug/:slug", async (req, res) => {
+    try {
+      const slug = req.params.slug;
+      const language = req.query.language as string | undefined;
+      
+      const page = await storage.getMarketingPageBySlug(slug, language);
+      if (!page) {
+        return res.status(404).json({ error: "Marketing page not found" });
+      }
+      res.json(page);
+    } catch (error) {
+      console.error("Error fetching marketing page by slug:", error);
+      res.status(500).json({ error: "Failed to fetch marketing page" });
+    }
+  });
+
+  app.post("/api/marketing/pages", async (req, res) => {
+    try {
+      const validation = insertMarketingPageSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid page data", details: validation.error.errors });
+      }
+
+      const page = await storage.createMarketingPage(validation.data);
+      res.status(201).json(page);
+    } catch (error) {
+      console.error("Error creating marketing page:", error);
+      res.status(500).json({ error: "Failed to create marketing page" });
+    }
+  });
+
+  app.put("/api/marketing/pages/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid page ID" });
+      }
+
+      const validation = insertMarketingPageSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid page data", details: validation.error.errors });
+      }
+
+      const page = await storage.updateMarketingPage(id, validation.data);
+      if (!page) {
+        return res.status(404).json({ error: "Marketing page not found" });
+      }
+      res.json(page);
+    } catch (error) {
+      console.error("Error updating marketing page:", error);
+      res.status(500).json({ error: "Failed to update marketing page" });
+    }
+  });
+
+  app.delete("/api/marketing/pages/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid page ID" });
+      }
+
+      const success = await storage.deleteMarketingPage(id);
+      if (!success) {
+        return res.status(404).json({ error: "Marketing page not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting marketing page:", error);
+      res.status(500).json({ error: "Failed to delete marketing page" });
+    }
+  });
+
+  // Content Blocks
+  app.get("/api/marketing/content-blocks", async (req, res) => {
+    try {
+      const category = req.query.category as string | undefined;
+      const language = req.query.language as string | undefined;
+      const blocks = await storage.getContentBlocks(category, language);
+      res.json(blocks);
+    } catch (error) {
+      console.error("Error fetching content blocks:", error);
+      res.status(500).json({ error: "Failed to fetch content blocks" });
+    }
+  });
+
+  app.get("/api/marketing/content-blocks/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid block ID" });
+      }
+
+      const block = await storage.getContentBlock(id);
+      if (!block) {
+        return res.status(404).json({ error: "Content block not found" });
+      }
+      res.json(block);
+    } catch (error) {
+      console.error("Error fetching content block:", error);
+      res.status(500).json({ error: "Failed to fetch content block" });
+    }
+  });
+
+  app.post("/api/marketing/content-blocks", async (req, res) => {
+    try {
+      const validation = insertContentBlockSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid block data", details: validation.error.errors });
+      }
+
+      const block = await storage.createContentBlock(validation.data);
+      res.status(201).json(block);
+    } catch (error) {
+      console.error("Error creating content block:", error);
+      res.status(500).json({ error: "Failed to create content block" });
+    }
+  });
+
+  app.put("/api/marketing/content-blocks/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid block ID" });
+      }
+
+      const validation = insertContentBlockSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid block data", details: validation.error.errors });
+      }
+
+      const block = await storage.updateContentBlock(id, validation.data);
+      if (!block) {
+        return res.status(404).json({ error: "Content block not found" });
+      }
+      res.json(block);
+    } catch (error) {
+      console.error("Error updating content block:", error);
+      res.status(500).json({ error: "Failed to update content block" });
+    }
+  });
+
+  app.post("/api/marketing/content-blocks/:id/increment-usage", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid block ID" });
+      }
+
+      await storage.incrementContentBlockUsage(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error incrementing content block usage:", error);
+      res.status(500).json({ error: "Failed to increment content block usage" });
+    }
+  });
+
+  // Customer Stories
+  app.get("/api/marketing/customer-stories", async (req, res) => {
+    try {
+      const industry = req.query.industry as string | undefined;
+      const language = req.query.language as string | undefined;
+      const stories = await storage.getCustomerStories(industry, language);
+      res.json(stories);
+    } catch (error) {
+      console.error("Error fetching customer stories:", error);
+      res.status(500).json({ error: "Failed to fetch customer stories" });
+    }
+  });
+
+  app.get("/api/marketing/customer-stories/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid story ID" });
+      }
+
+      const story = await storage.getCustomerStory(id);
+      if (!story) {
+        return res.status(404).json({ error: "Customer story not found" });
+      }
+      res.json(story);
+    } catch (error) {
+      console.error("Error fetching customer story:", error);
+      res.status(500).json({ error: "Failed to fetch customer story" });
+    }
+  });
+
+  app.post("/api/marketing/customer-stories", async (req, res) => {
+    try {
+      const validation = insertCustomerStorySchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid story data", details: validation.error.errors });
+      }
+
+      const story = await storage.createCustomerStory(validation.data);
+      res.status(201).json(story);
+    } catch (error) {
+      console.error("Error creating customer story:", error);
+      res.status(500).json({ error: "Failed to create customer story" });
+    }
+  });
+
+  app.put("/api/marketing/customer-stories/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid story ID" });
+      }
+
+      const validation = insertCustomerStorySchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid story data", details: validation.error.errors });
+      }
+
+      const story = await storage.updateCustomerStory(id, validation.data);
+      if (!story) {
+        return res.status(404).json({ error: "Customer story not found" });
+      }
+      res.json(story);
+    } catch (error) {
+      console.error("Error updating customer story:", error);
+      res.status(500).json({ error: "Failed to update customer story" });
+    }
+  });
+
+  // Lead Captures
+  app.get("/api/marketing/leads", async (req, res) => {
+    try {
+      const pageId = req.query.pageId ? parseInt(req.query.pageId as string) : undefined;
+      const stage = req.query.stage as string | undefined;
+      const leads = await storage.getLeadCaptures(pageId, stage);
+      res.json(leads);
+    } catch (error) {
+      console.error("Error fetching leads:", error);
+      res.status(500).json({ error: "Failed to fetch leads" });
+    }
+  });
+
+  app.get("/api/marketing/leads/email/:email", async (req, res) => {
+    try {
+      const email = req.params.email;
+      const leads = await storage.getLeadsByEmail(email);
+      res.json(leads);
+    } catch (error) {
+      console.error("Error fetching leads by email:", error);
+      res.status(500).json({ error: "Failed to fetch leads by email" });
+    }
+  });
+
+  app.post("/api/marketing/leads", async (req, res) => {
+    try {
+      const validation = insertLeadCaptureSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid lead data", details: validation.error.errors });
+      }
+
+      const lead = await storage.createLeadCapture(validation.data);
+      res.status(201).json(lead);
+    } catch (error) {
+      console.error("Error creating lead:", error);
+      res.status(500).json({ error: "Failed to create lead" });
+    }
+  });
+
+  app.put("/api/marketing/leads/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid lead ID" });
+      }
+
+      const validation = insertLeadCaptureSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid lead data", details: validation.error.errors });
+      }
+
+      const lead = await storage.updateLeadCapture(id, validation.data);
+      if (!lead) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+      res.json(lead);
+    } catch (error) {
+      console.error("Error updating lead:", error);
+      res.status(500).json({ error: "Failed to update lead" });
+    }
+  });
+
+  // Page Analytics
+  app.get("/api/marketing/analytics/:pageId", async (req, res) => {
+    try {
+      const pageId = parseInt(req.params.pageId);
+      if (isNaN(pageId)) {
+        return res.status(400).json({ error: "Invalid page ID" });
+      }
+
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      
+      const analytics = await storage.getPageAnalytics(pageId, startDate, endDate);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching page analytics:", error);
+      res.status(500).json({ error: "Failed to fetch page analytics" });
+    }
+  });
+
+  app.post("/api/marketing/analytics", async (req, res) => {
+    try {
+      const validation = insertPageAnalyticsSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid analytics data", details: validation.error.errors });
+      }
+
+      const analytics = await storage.createPageAnalytics(validation.data);
+      res.status(201).json(analytics);
+    } catch (error) {
+      console.error("Error creating page analytics:", error);
+      res.status(500).json({ error: "Failed to create page analytics" });
+    }
+  });
+
+  app.put("/api/marketing/analytics/:pageId/:date", async (req, res) => {
+    try {
+      const pageId = parseInt(req.params.pageId);
+      const date = new Date(req.params.date);
+      
+      if (isNaN(pageId) || isNaN(date.getTime())) {
+        return res.status(400).json({ error: "Invalid page ID or date" });
+      }
+
+      const validation = insertPageAnalyticsSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid analytics data", details: validation.error.errors });
+      }
+
+      const analytics = await storage.updatePageAnalytics(pageId, date, validation.data);
+      if (!analytics) {
+        return res.status(404).json({ error: "Page analytics not found" });
+      }
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error updating page analytics:", error);
+      res.status(500).json({ error: "Failed to update page analytics" });
+    }
+  });
+
+  // A/B Tests
+  app.get("/api/marketing/ab-tests", async (req, res) => {
+    try {
+      const pageId = req.query.pageId ? parseInt(req.query.pageId as string) : undefined;
+      const tests = await storage.getABTests(pageId);
+      res.json(tests);
+    } catch (error) {
+      console.error("Error fetching A/B tests:", error);
+      res.status(500).json({ error: "Failed to fetch A/B tests" });
+    }
+  });
+
+  app.get("/api/marketing/ab-tests/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid test ID" });
+      }
+
+      const test = await storage.getABTest(id);
+      if (!test) {
+        return res.status(404).json({ error: "A/B test not found" });
+      }
+      res.json(test);
+    } catch (error) {
+      console.error("Error fetching A/B test:", error);
+      res.status(500).json({ error: "Failed to fetch A/B test" });
+    }
+  });
+
+  app.post("/api/marketing/ab-tests", async (req, res) => {
+    try {
+      const validation = insertABTestSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid test data", details: validation.error.errors });
+      }
+
+      const test = await storage.createABTest(validation.data);
+      res.status(201).json(test);
+    } catch (error) {
+      console.error("Error creating A/B test:", error);
+      res.status(500).json({ error: "Failed to create A/B test" });
+    }
+  });
+
+  app.put("/api/marketing/ab-tests/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid test ID" });
+      }
+
+      const validation = insertABTestSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid test data", details: validation.error.errors });
+      }
+
+      const test = await storage.updateABTest(id, validation.data);
+      if (!test) {
+        return res.status(404).json({ error: "A/B test not found" });
+      }
+      res.json(test);
+    } catch (error) {
+      console.error("Error updating A/B test:", error);
+      res.status(500).json({ error: "Failed to update A/B test" });
+    }
+  });
+
+  // Email Campaigns
+  app.get("/api/marketing/email-campaigns", async (req, res) => {
+    try {
+      const status = req.query.status as string | undefined;
+      const language = req.query.language as string | undefined;
+      const campaigns = await storage.getEmailCampaigns(status, language);
+      res.json(campaigns);
+    } catch (error) {
+      console.error("Error fetching email campaigns:", error);
+      res.status(500).json({ error: "Failed to fetch email campaigns" });
+    }
+  });
+
+  app.get("/api/marketing/email-campaigns/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid campaign ID" });
+      }
+
+      const campaign = await storage.getEmailCampaign(id);
+      if (!campaign) {
+        return res.status(404).json({ error: "Email campaign not found" });
+      }
+      res.json(campaign);
+    } catch (error) {
+      console.error("Error fetching email campaign:", error);
+      res.status(500).json({ error: "Failed to fetch email campaign" });
+    }
+  });
+
+  app.post("/api/marketing/email-campaigns", async (req, res) => {
+    try {
+      const validation = insertEmailCampaignSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid campaign data", details: validation.error.errors });
+      }
+
+      const campaign = await storage.createEmailCampaign(validation.data);
+      res.status(201).json(campaign);
+    } catch (error) {
+      console.error("Error creating email campaign:", error);
+      res.status(500).json({ error: "Failed to create email campaign" });
+    }
+  });
+
+  app.put("/api/marketing/email-campaigns/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid campaign ID" });
+      }
+
+      const validation = insertEmailCampaignSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid campaign data", details: validation.error.errors });
+      }
+
+      const campaign = await storage.updateEmailCampaign(id, validation.data);
+      if (!campaign) {
+        return res.status(404).json({ error: "Email campaign not found" });
+      }
+      res.json(campaign);
+    } catch (error) {
+      console.error("Error updating email campaign:", error);
+      res.status(500).json({ error: "Failed to update email campaign" });
+    }
+  });
+
+  app.put("/api/marketing/email-campaigns/:id/stats", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid campaign ID" });
+      }
+
+      const { sentCount, openRate, clickRate, conversionRate, unsubscribeRate } = req.body;
+      
+      const campaign = await storage.updateEmailCampaignStats(id, {
+        sentCount,
+        openRate,
+        clickRate,
+        conversionRate,
+        unsubscribeRate
+      });
+      
+      if (!campaign) {
+        return res.status(404).json({ error: "Email campaign not found" });
+      }
+      res.json(campaign);
+    } catch (error) {
+      console.error("Error updating email campaign stats:", error);
+      res.status(500).json({ error: "Failed to update email campaign stats" });
     }
   });
 
