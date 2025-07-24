@@ -121,6 +121,8 @@ export default function PresentationSystemPage() {
   const [aiGenerateDialogOpen, setAiGenerateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [presentationToDelete, setPresentationToDelete] = useState<Presentation | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [presentationToEdit, setPresentationToEdit] = useState<Presentation | null>(null);
   
   // Studio-specific state
   const [activeProject, setActiveProject] = useState<number | null>(null);
@@ -318,6 +320,29 @@ export default function PresentationSystemPage() {
     },
   });
 
+  // Update presentation mutation
+  const updatePresentationMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      return apiRequest("PUT", "/api/presentations/" + id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/presentations"] });
+      setEditDialogOpen(false);
+      setPresentationToEdit(null);
+      toast({
+        title: "Presentation Updated",
+        description: "The presentation has been updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error", 
+        description: error.message || "Failed to update presentation",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreatePresentation = (formData: FormData) => {
     const data = {
       title: formData.get("title") as string,
@@ -337,6 +362,29 @@ export default function PresentationSystemPage() {
 
   const handleGenerateWithAI = (prompt: string) => {
     generatePresentationMutation.mutate(prompt);
+  };
+
+  const handleEditPresentation = (presentation: Presentation) => {
+    setPresentationToEdit(presentation);
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdatePresentation = (formData: FormData) => {
+    if (!presentationToEdit) return;
+    
+    const data = {
+      title: formData.get("title") as string,
+      description: formData.get("description") as string,
+      category: formData.get("category") as string,
+      audience: formData.get("audience") as string,
+      isTemplate: formData.get("isTemplate") === "on",
+      isPublic: formData.get("isPublic") === "on",
+      tags: (formData.get("tags") as string)?.split(",").map(tag => tag.trim()) || [],
+      targetRoles: (formData.get("targetRoles") as string)?.split(",").map(role => role.trim()) || [],
+      estimatedDuration: parseInt(formData.get("estimatedDuration") as string) || null,
+    };
+
+    updatePresentationMutation.mutate({ id: presentationToEdit.id, data });
   };
 
   // Handle presentation playback
@@ -768,7 +816,14 @@ Create presentations that users will find exciting and that effectively demonstr
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditPresentation(presentation);
+                              }}
+                            >
                               <Edit className="w-4 h-4" />
                             </Button>
                             <Button variant="ghost" size="sm" onClick={(e) => {
@@ -1419,6 +1474,142 @@ Create presentations that users will find exciting and that effectively demonstr
               {deletePresentationMutation.isPending ? "Deleting..." : "Delete"}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Presentation Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Presentation</DialogTitle>
+            <DialogDescription>
+              Update the details for "{presentationToEdit?.title}"
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            handleUpdatePresentation(formData);
+          }}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="edit-title">Title</Label>
+                <Input 
+                  id="edit-title" 
+                  name="title" 
+                  required 
+                  defaultValue={presentationToEdit?.title || ""} 
+                  placeholder="Presentation title" 
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-description">Description</Label>
+                <Textarea 
+                  id="edit-description" 
+                  name="description" 
+                  defaultValue={presentationToEdit?.description || ""} 
+                  placeholder="Brief description of the presentation" 
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-category">Category</Label>
+                  <Select name="category" defaultValue={presentationToEdit?.category || ""}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Sales">Sales</SelectItem>
+                      <SelectItem value="Marketing">Marketing</SelectItem>
+                      <SelectItem value="Training">Training</SelectItem>
+                      <SelectItem value="Product Demo">Product Demo</SelectItem>
+                      <SelectItem value="Executive">Executive</SelectItem>
+                      <SelectItem value="Technical">Technical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="edit-duration">Duration (minutes)</Label>
+                  <Input 
+                    id="edit-duration" 
+                    name="estimatedDuration" 
+                    type="number" 
+                    min="1" 
+                    defaultValue={presentationToEdit?.estimatedDuration || ""} 
+                    placeholder="30" 
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="edit-audience">Target Audience</Label>
+                <Input 
+                  id="edit-audience" 
+                  name="audience" 
+                  defaultValue={presentationToEdit?.audience || ""} 
+                  placeholder="e.g., Manufacturing executives, IT managers" 
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-tags">Tags (comma-separated)</Label>
+                <Input 
+                  id="edit-tags" 
+                  name="tags" 
+                  defaultValue={presentationToEdit?.tags?.join(", ") || ""} 
+                  placeholder="manufacturing, efficiency, technology" 
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-roles">Target Roles (comma-separated)</Label>
+                <Input 
+                  id="edit-roles" 
+                  name="targetRoles" 
+                  defaultValue={presentationToEdit?.targetRoles?.join(", ") || ""} 
+                  placeholder="Director, Manager, Scheduler" 
+                />
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <input 
+                    type="checkbox" 
+                    id="edit-template" 
+                    name="isTemplate" 
+                    defaultChecked={presentationToEdit?.isTemplate || false}
+                    className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500" 
+                  />
+                  <Label htmlFor="edit-template" className="text-sm">
+                    Save as template for reuse
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input 
+                    type="checkbox" 
+                    id="edit-public" 
+                    name="isPublic" 
+                    defaultChecked={presentationToEdit?.isPublic || false}
+                    className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500" 
+                  />
+                  <Label htmlFor="edit-public" className="text-sm">
+                    Make publicly available
+                  </Label>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2 mt-6">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setEditDialogOpen(false);
+                  setPresentationToEdit(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updatePresentationMutation.isPending}>
+                {updatePresentationMutation.isPending ? "Updating..." : "Update Presentation"}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
 
