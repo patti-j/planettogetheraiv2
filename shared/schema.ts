@@ -3083,6 +3083,16 @@ export type InsertPresentationSlide = z.infer<typeof insertPresentationSlideSche
 export type PresentationTourIntegration = typeof presentationTourIntegrations.$inferSelect;
 export type InsertPresentationTourIntegration = z.infer<typeof insertPresentationTourIntegrationSchema>;
 
+// Presentation Studio Types
+export type PresentationMaterial = typeof presentationMaterials.$inferSelect;
+export type InsertPresentationMaterial = z.infer<typeof insertPresentationMaterialSchema>;
+
+export type PresentationContentSuggestion = typeof presentationContentSuggestions.$inferSelect;
+export type InsertPresentationContentSuggestion = z.infer<typeof insertPresentationContentSuggestionSchema>;
+
+export type PresentationProject = typeof presentationProjects.$inferSelect;
+export type InsertPresentationProject = z.infer<typeof insertPresentationProjectSchema>;
+
 export type PresentationLibrary = typeof presentationLibrary.$inferSelect;
 export type InsertPresentationLibrary = z.infer<typeof insertPresentationLibrarySchema>;
 

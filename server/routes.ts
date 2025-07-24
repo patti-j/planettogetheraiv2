@@ -10209,6 +10209,18 @@ Create a natural, conversational voice script that explains this feature to some
     }
   });
 
+  // Presentation Projects CRUD
+  app.get("/api/presentation-projects", async (req, res) => {
+    try {
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
+      const projects = await storage.getPresentationProjects(userId);
+      res.json(projects);
+    } catch (error) {
+      console.error("Error getting presentation projects:", error);
+      res.status(500).json({ error: "Failed to get presentation projects" });
+    }
+  });
+
   app.post("/api/presentation-projects", async (req, res) => {
     try {
       const validation = insertPresentationProjectSchema.safeParse(req.body);

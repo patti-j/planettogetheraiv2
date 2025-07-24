@@ -17,7 +17,10 @@ import {
   Library, Settings, Play, Edit, Share, Trash2, Upload,
   BarChart3, Target, Calendar, Clock, Maximize2, Minimize2,
   ChevronLeft, ChevronRight, X, SkipBack, SkipForward,
-  ExternalLink, Monitor, ArrowRight, Maximize
+  ExternalLink, Monitor, ArrowRight, Maximize, Folder,
+  Filter, Download, Eye, Star, CheckCircle, XCircle,
+  User, Tag, Link, Globe, Info, HelpCircle, Zap,
+  Lightbulb, Sparkles
 } from "lucide-react";
 
 interface Presentation {
@@ -56,6 +59,58 @@ interface PresentationSlide {
   updatedAt: string;
 }
 
+// Additional interfaces for presentation studio integration
+interface PresentationMaterial {
+  id: number;
+  presentationId?: number;
+  title: string;
+  type: string;
+  content: any;
+  fileUrl?: string;
+  metadata: any;
+  tags: string[];
+  uploadedBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface PresentationProject {
+  id: number;
+  name: string; // Changed from title to match database schema
+  description?: string;
+  presentationType: string; // Changed from type to match database schema
+  targetAudience: string;
+  objectives: string[];
+  duration?: number;
+  status: string;
+  collaborators: number[];
+  deadline?: string;
+  presentationId?: number;
+  aiProfile?: {
+    tone: string;
+    complexity: string;
+    focusAreas: string[];
+    restrictions: string[];
+  };
+  createdBy: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ContentSuggestion {
+  id: number;
+  presentationId?: number;
+  title: string;
+  description: string;
+  type: string;
+  priority: string;
+  status: string;
+  aiGenerated: boolean;
+  implementedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export default function PresentationSystemPage() {
   const [isMaximized, setIsMaximized] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
@@ -66,6 +121,21 @@ export default function PresentationSystemPage() {
   const [aiGenerateDialogOpen, setAiGenerateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [presentationToDelete, setPresentationToDelete] = useState<Presentation | null>(null);
+  
+  // Studio-specific state
+  const [activeProject, setActiveProject] = useState<number | null>(null);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [projectDialogOpen, setProjectDialogOpen] = useState(false);
+  const [selectedMaterialType, setSelectedMaterialType] = useState("document");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState("all");
+  const [webContentDialogOpen, setWebContentDialogOpen] = useState(false);
+  const [webUrl, setWebUrl] = useState("");
+  const [extractionProgress, setExtractionProgress] = useState(0);
+  const [bestPracticesOpen, setBestPracticesOpen] = useState(false);
+  const [aiPromptDialogOpen, setAiPromptDialogOpen] = useState(false);
+  const [customAiPrompt, setCustomAiPrompt] = useState("");
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -96,6 +166,21 @@ export default function PresentationSystemPage() {
     queryKey: ["/api/presentation-analytics"],
   });
 
+  // Studio queries
+  const { data: projects = [], isLoading: projectsLoading } = useQuery({
+    queryKey: ["/api/presentation-projects"],
+  });
+
+  const { data: materials = [], isLoading: materialsLoading } = useQuery({
+    queryKey: ["/api/presentation-materials", activeProject],
+    enabled: !!activeProject,
+  });
+
+  const { data: suggestions = [], isLoading: suggestionsLoading } = useQuery({
+    queryKey: ["/api/presentation-suggestions", activeProject],
+    enabled: !!activeProject,
+  });
+
   // Create presentation mutation
   const createPresentationMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -113,6 +198,74 @@ export default function PresentationSystemPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to create presentation",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create project mutation
+  const createProjectMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest("POST", "/api/presentation-projects", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/presentation-projects"] });
+      setProjectDialogOpen(false);
+      toast({
+        title: "Project Created",
+        description: "Your presentation project has been created successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create project",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Upload material mutation
+  const uploadMaterialMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest("POST", "/api/presentation-materials", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/presentation-materials", activeProject] });
+      setUploadDialogOpen(false);
+      toast({
+        title: "Material Added",
+        description: "Your presentation material has been added successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload material",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Web content extraction mutation
+  const extractWebContentMutation = useMutation({
+    mutationFn: async (url: string) => {
+      return apiRequest("POST", "/api/extract-web-content", { url });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/presentation-materials", activeProject] });
+      setWebContentDialogOpen(false);
+      setWebUrl("");
+      setExtractionProgress(0);
+      toast({
+        title: "Content Extracted",
+        description: "Web content has been extracted and added to your materials.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to extract web content",
         variant: "destructive",
       });
     },
@@ -223,6 +376,75 @@ export default function PresentationSystemPage() {
   };
 
   const stats = getPresentationStats();
+
+  // Studio handler functions
+  const handleCreateProject = (formData: FormData) => {
+    const data = {
+      title: formData.get("title") as string,
+      description: formData.get("description") as string,
+      type: formData.get("type") as string,
+      targetAudience: formData.get("targetAudience") as string,
+      objectives: (formData.get("objectives") as string).split(",").map(obj => obj.trim()).filter(Boolean),
+      status: "active",
+      createdBy: 1, // Would be current user ID
+    };
+
+    createProjectMutation.mutate(data);
+  };
+
+  const handleUploadMaterial = (formData: FormData) => {
+    const data = {
+      title: formData.get("title") as string,
+      type: formData.get("type") as string,
+      content: formData.get("content") as string,
+      tags: (formData.get("tags") as string).split(",").map(tag => tag.trim()).filter(Boolean),
+      presentationId: activeProject,
+      uploadedBy: "current-user", // Would be current user
+      metadata: {}
+    };
+
+    uploadMaterialMutation.mutate(data);
+  };
+
+  const handleExtractWebContent = () => {
+    if (!webUrl.trim()) return;
+    
+    setExtractionProgress(10);
+    extractWebContentMutation.mutate(webUrl);
+    
+    // Simulate progress
+    const progressInterval = setInterval(() => {
+      setExtractionProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return 90;
+        }
+        return prev + 20;
+      });
+    }, 500);
+  };
+
+  // Initialize default AI prompt
+  const defaultAiPrompt = `Create an exciting, engaging presentation that looks like a modern website rather than boring PowerPoint slides. 
+
+Key Requirements:
+- Visual-First Design: Use bold imagery, diverse visuals, minimal text
+- Website-Style Layouts: Modern, interactive elements and design patterns
+- User Excitement Focus: Content designed to drive software adoption and engagement
+- No PowerPoint Format: Avoid traditional bullet points and text-heavy slides
+
+Design Philosophy:
+- Diverse, compelling imagery for each slide
+- Clean, modern typography with visual hierarchy
+- Interactive elements and engaging visual storytelling
+- Content that excites users about the software capabilities
+- Professional yet dynamic presentation flow
+
+Create presentations that users will find exciting and that effectively demonstrate software value and drive adoption decisions.`;
+
+  if (!customAiPrompt) {
+    setCustomAiPrompt(defaultAiPrompt);
+  }
 
   return (
     <div className={`${isMaximized ? 'fixed inset-0 z-50 bg-white' : 'relative'}`}>
@@ -420,9 +642,10 @@ export default function PresentationSystemPage() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="presentations">Presentations</TabsTrigger>
+            <TabsTrigger value="studio">Studio</TabsTrigger>
             <TabsTrigger value="library">Library</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
@@ -579,6 +802,253 @@ export default function PresentationSystemPage() {
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          <TabsContent value="studio" className="space-y-4">
+            {/* Studio Project Selection */}
+            {!activeProject ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Folder className="w-5 h-5 mr-2" />
+                    Presentation Studio
+                  </CardTitle>
+                  <CardDescription>
+                    Create modern, engaging presentations with AI-powered content generation and professional design
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {projectsLoading ? (
+                      [1, 2, 3].map((i) => (
+                        <div key={i} className="bg-gray-100 rounded-lg p-4 animate-pulse">
+                          <div className="h-4 bg-gray-200 rounded mb-2" />
+                          <div className="h-3 bg-gray-200 rounded w-2/3" />
+                        </div>
+                      ))
+                    ) : projects.length === 0 ? (
+                      <div className="col-span-full text-center py-8">
+                        <Presentation className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                        <p className="text-muted-foreground mb-4">No presentation projects yet</p>
+                        <Button onClick={() => setProjectDialogOpen(true)}>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Create First Project
+                        </Button>
+                      </div>
+                    ) : (
+                      projects.map((project: PresentationProject) => (
+                        <Card key={project.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveProject(project.id)}>
+                          <CardHeader>
+                            <CardTitle className="text-lg">{project.title}</CardTitle>
+                            <CardDescription>{project.description}</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="flex items-center justify-between">
+                              <Badge variant="secondary">{project.type}</Badge>
+                              <Badge variant={project.status === 'active' ? 'default' : 'outline'}>
+                                {project.status}
+                              </Badge>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    )}
+                  </div>
+                  
+                  <div className="mt-6 flex justify-center">
+                    <Button onClick={() => setProjectDialogOpen(true)}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      New Project
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              /* Active Project Studio Interface */
+              <div className="space-y-6">
+                {/* Project Header */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Button variant="ghost" onClick={() => setActiveProject(null)} className="mb-2">
+                      ← Back to Projects
+                    </Button>
+                    <h2 className="text-2xl font-bold">Modern Presentation Studio</h2>
+                    <p className="text-gray-600">Create exciting, website-like presentations that drive software adoption</p>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button 
+                      onClick={() => setAiPromptDialogOpen(true)}
+                      variant="outline"
+                      className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Customize AI Prompt
+                    </Button>
+                    <Button 
+                      onClick={() => {/* Generate modern presentation */}}
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+                    >
+                      <Zap className="w-4 h-4 mr-2" />
+                      Generate Modern Presentation
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Design Philosophy Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Card className="border-blue-200 bg-blue-50">
+                    <CardContent className="p-4 text-center">
+                      <Eye className="w-8 h-8 mx-auto text-blue-600 mb-2" />
+                      <h3 className="font-semibold text-blue-900">Visual-First</h3>
+                      <p className="text-sm text-blue-700">Bold visuals, diverse imagery, minimal text</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-green-200 bg-green-50">
+                    <CardContent className="p-4 text-center">
+                      <Globe className="w-8 h-8 mx-auto text-green-600 mb-2" />
+                      <h3 className="font-semibold text-green-900">Website-Style</h3>
+                      <p className="text-sm text-green-700">Modern layouts, interactive elements</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-orange-200 bg-orange-50">
+                    <CardContent className="p-4 text-center">
+                      <Zap className="w-8 h-8 mx-auto text-orange-600 mb-2" />
+                      <h3 className="font-semibold text-orange-900">User Excitement</h3>
+                      <p className="text-sm text-orange-700">Content that drives software adoption</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-red-200 bg-red-50">
+                    <CardContent className="p-4 text-center">
+                      <XCircle className="w-8 h-8 mx-auto text-red-600 mb-2" />
+                      <h3 className="font-semibold text-red-900">No PowerPoint</h3>
+                      <p className="text-sm text-red-700">Avoid boring, text-heavy formats</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Materials and Suggestions Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <span>Presentation Materials</span>
+                        <Button onClick={() => setUploadDialogOpen(true)} size="sm">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Material
+                        </Button>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {materialsLoading ? (
+                        <div className="space-y-3">
+                          {[1, 2, 3].map((i) => (
+                            <div key={i} className="flex items-center space-x-3">
+                              <div className="w-10 h-10 bg-gray-200 rounded animate-pulse" />
+                              <div className="flex-1 space-y-2">
+                                <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                                <div className="h-3 bg-gray-200 rounded w-2/3 animate-pulse" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : materials.length === 0 ? (
+                        <div className="text-center py-6">
+                          <FileText className="w-10 h-10 mx-auto text-gray-400 mb-3" />
+                          <p className="text-sm text-gray-500 mb-3">No materials added yet</p>
+                          <Button onClick={() => setUploadDialogOpen(true)} size="sm">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add First Material
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-3 max-h-64 overflow-y-auto">
+                          {materials.map((material: PresentationMaterial) => (
+                            <div key={material.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <FileText className="w-5 h-5 text-blue-600" />
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="font-medium text-sm">{material.title}</h4>
+                                <p className="text-xs text-gray-500">{material.type}</p>
+                                <div className="flex items-center space-x-2 mt-1">
+                                  {material.tags.map((tag) => (
+                                    <Badge key={tag} variant="secondary" className="text-xs">
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <span>AI Content Suggestions</span>
+                        <Button size="sm" variant="outline">
+                          <Lightbulb className="w-4 h-4 mr-2" />
+                          Generate Ideas
+                        </Button>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {suggestionsLoading ? (
+                        <div className="space-y-3">
+                          {[1, 2, 3].map((i) => (
+                            <div key={i} className="p-3 bg-gray-100 rounded animate-pulse">
+                              <div className="h-4 bg-gray-200 rounded mb-2" />
+                              <div className="h-3 bg-gray-200 rounded w-3/4" />
+                            </div>
+                          ))}
+                        </div>
+                      ) : suggestions.length === 0 ? (
+                        <div className="text-center py-6">
+                          <Lightbulb className="w-10 h-10 mx-auto text-gray-400 mb-3" />
+                          <p className="text-sm text-gray-500 mb-3">No suggestions yet</p>
+                          <Button size="sm" variant="outline">
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Generate AI Ideas
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-3 max-h-64 overflow-y-auto">
+                          {suggestions.map((suggestion: ContentSuggestion) => (
+                            <div key={suggestion.id} className="p-3 bg-gray-50 rounded-lg">
+                              <h4 className="font-medium text-sm">{suggestion.title}</h4>
+                              <p className="text-xs text-gray-600 mt-1">{suggestion.description}</p>
+                              <div className="flex items-center justify-between mt-2">
+                                <div className="flex items-center space-x-2">
+                                  <Badge variant="secondary" className="text-xs">{suggestion.priority}</Badge>
+                                  <Badge variant="outline" className="text-xs">{suggestion.status}</Badge>
+                                  {suggestion.aiGenerated && (
+                                    <Badge variant="outline" className="text-xs">
+                                      <Sparkles className="w-3 h-3 mr-1" />
+                                      AI
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Button variant="outline" size="sm">
+                                    <CheckCircle className="w-4 h-4" />
+                                  </Button>
+                                  <Button variant="outline" size="sm">
+                                    <XCircle className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="library" className="space-y-4">
@@ -890,6 +1360,236 @@ export default function PresentationSystemPage() {
             >
               {deletePresentationMutation.isPending ? "Deleting..." : "Delete"}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Studio Dialogs */}
+      {/* Project Creation Dialog */}
+      <Dialog open={projectDialogOpen} onOpenChange={setProjectDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Folder className="w-5 h-5 mr-2" />
+              Create Presentation Project
+            </DialogTitle>
+            <DialogDescription>
+              Set up a new presentation project for modern, engaging content creation
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            handleCreateProject(formData);
+          }}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="project-title">Project Title</Label>
+                <Input id="project-title" name="title" required placeholder="e.g., Q2 Sales Presentation" />
+              </div>
+              <div>
+                <Label htmlFor="project-description">Description</Label>
+                <Textarea id="project-description" name="description" placeholder="Brief description of the presentation project" />
+              </div>
+              <div>
+                <Label htmlFor="project-type">Project Type</Label>
+                <Select name="type" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select project type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sales">Sales Presentation</SelectItem>
+                    <SelectItem value="product-demo">Product Demo</SelectItem>
+                    <SelectItem value="training">Training Material</SelectItem>
+                    <SelectItem value="executive">Executive Brief</SelectItem>
+                    <SelectItem value="marketing">Marketing Campaign</SelectItem>
+                    <SelectItem value="customer-story">Customer Success Story</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="project-audience">Target Audience</Label>
+                <Input id="project-audience" name="targetAudience" placeholder="e.g., Manufacturing executives, IT managers" />
+              </div>
+              <div>
+                <Label htmlFor="project-objectives">Key Objectives (comma-separated)</Label>
+                <Input id="project-objectives" name="objectives" placeholder="Drive adoption, Show ROI, Build excitement" />
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2 mt-6">
+              <Button type="button" variant="outline" onClick={() => setProjectDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createProjectMutation.isPending}>
+                {createProjectMutation.isPending ? "Creating..." : "Create Project"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Material Upload Dialog */}
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Upload className="w-5 h-5 mr-2" />
+              Add Presentation Material
+            </DialogTitle>
+            <DialogDescription>
+              Add content materials to enhance your presentation
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Button 
+                variant="outline" 
+                className="h-20 flex-col"
+                onClick={() => setUploadDialogOpen(false)}
+              >
+                <FileText className="w-8 h-8 mb-2" />
+                <span className="text-sm">Upload Document</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-20 flex-col"
+                onClick={() => {
+                  setUploadDialogOpen(false);
+                  setWebContentDialogOpen(true);
+                }}
+              >
+                <Globe className="w-8 h-8 mb-2" />
+                <span className="text-sm">Extract from Web</span>
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Web Content Extraction Dialog */}
+      <Dialog open={webContentDialogOpen} onOpenChange={setWebContentDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Globe className="w-5 h-5 mr-2" />
+              Extract Web Content
+            </DialogTitle>
+            <DialogDescription>
+              Extract content from websites to enhance your presentation materials
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="web-url">Website URL</Label>
+              <Input 
+                id="web-url" 
+                value={webUrl}
+                onChange={(e) => setWebUrl(e.target.value)}
+                placeholder="https://www.planetogether.com" 
+              />
+            </div>
+            
+            {extractionProgress > 0 && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Extracting content...</span>
+                  <span>{extractionProgress}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-500" 
+                    style={{ width: `${extractionProgress}%` }}
+                  ></div>
+                </div>
+              </div>
+            )}
+            
+            <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded border border-blue-200">
+              <div className="font-medium text-blue-900 mb-1">Recommended Sources:</div>
+              <ul className="space-y-1 text-blue-700">
+                <li>• planetogether.com - Product information</li>
+                <li>• Customer success stories</li>
+                <li>• Industry reports and case studies</li>
+                <li>• Competitor analysis pages</li>
+              </ul>
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2 mt-6">
+            <Button type="button" variant="outline" onClick={() => setWebContentDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleExtractWebContent}
+              disabled={!webUrl.trim() || extractWebContentMutation.isPending}
+            >
+              {extractWebContentMutation.isPending ? "Extracting..." : "Extract Content"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Prompt Customization Dialog */}
+      <Dialog open={aiPromptDialogOpen} onOpenChange={setAiPromptDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Edit className="w-5 h-5 mr-2" />
+              Customize AI Prompt
+            </DialogTitle>
+            <DialogDescription>
+              Edit the AI generation prompt to control how presentations are created. The default prompt ensures exciting, website-like presentations.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-hidden">
+            <div className="space-y-4 h-full">
+              <div className="flex-1">
+                <Label htmlFor="ai-prompt">AI Generation Prompt</Label>
+                <Textarea 
+                  id="ai-prompt"
+                  value={customAiPrompt}
+                  onChange={(e) => setCustomAiPrompt(e.target.value)}
+                  className="min-h-[300px] font-mono text-sm"
+                  placeholder="Enter your custom AI prompt..."
+                />
+              </div>
+              
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <h4 className="font-semibold text-amber-900 mb-2">Key Design Requirements:</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm text-amber-800">
+                  <div>
+                    <strong>✓ Visual-First:</strong> Bold imagery, minimal text
+                  </div>
+                  <div>
+                    <strong>✓ Website-Style:</strong> Modern layouts, interactive elements
+                  </div>
+                  <div>
+                    <strong>✓ User Excitement:</strong> Content that drives software adoption
+                  </div>
+                  <div>
+                    <strong>✗ No PowerPoint:</strong> Avoid boring, text-heavy formats
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-between space-x-2 mt-4">
+            <Button 
+              type="button" 
+              variant="outline"
+              onClick={() => setCustomAiPrompt(defaultAiPrompt)}
+            >
+              Reset to Default
+            </Button>
+            <div className="flex space-x-2">
+              <Button type="button" variant="outline" onClick={() => setAiPromptDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => setAiPromptDialogOpen(false)}>
+                Save Prompt
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

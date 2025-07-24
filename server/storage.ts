@@ -52,8 +52,11 @@ import {
   type ErrorLog, type ErrorReport,
   type InsertErrorLog, type InsertErrorReport,
   presentations, presentationSlides, presentationTourIntegrations, presentationLibrary, presentationAnalytics, presentationAIContent,
+  presentationMaterials, presentationContentSuggestions, presentationProjects,
   type Presentation, type PresentationSlide, type PresentationTourIntegration, type PresentationLibrary, type PresentationAnalytics, type PresentationAIContent,
+  type PresentationMaterial, type PresentationContentSuggestion, type PresentationProject,
   type InsertPresentation, type InsertPresentationSlide, type InsertPresentationTourIntegration, type InsertPresentationLibrary, type InsertPresentationAnalytics, type InsertPresentationAIContent,
+  type InsertPresentationMaterial, type InsertPresentationContentSuggestion, type InsertPresentationProject,
   customerJourneyStages, manufacturingSegments, buyerPersonas, marketingPages, contentBlocks, customerStories, leadCaptures, pageAnalytics, abTests, emailCampaigns,
   type CustomerJourneyStage, type ManufacturingSegment, type BuyerPersona, type MarketingPage, type ContentBlock, type CustomerStory, type LeadCapture, type PageAnalytics, type ABTest, type EmailCampaign,
   type InsertCustomerJourneyStage, type InsertManufacturingSegment, type InsertBuyerPersona, type InsertMarketingPage, type InsertContentBlock, type InsertCustomerStory, type InsertLeadCapture, type InsertPageAnalytics, type InsertABTest, type InsertEmailCampaign,
@@ -722,6 +725,26 @@ export interface IStorage {
   getPresentationLibrary(category?: string): Promise<PresentationLibrary[]>;
   createPresentationLibraryEntry(entry: InsertPresentationLibrary): Promise<PresentationLibrary>;
   updatePresentationLibraryEntry(id: number, updates: Partial<InsertPresentationLibrary>): Promise<PresentationLibrary | undefined>;
+
+  // Presentation Studio - Materials Management
+  getPresentationMaterials(presentationId?: number): Promise<PresentationMaterial[]>;
+  getPresentationMaterial(id: number): Promise<PresentationMaterial | undefined>;
+  createPresentationMaterial(material: InsertPresentationMaterial): Promise<PresentationMaterial>;
+  updatePresentationMaterial(id: number, updates: Partial<InsertPresentationMaterial>): Promise<PresentationMaterial | undefined>;
+  deletePresentationMaterial(id: number): Promise<boolean>;
+
+  // Presentation Studio - Content Suggestions
+  getPresentationContentSuggestions(presentationId?: number): Promise<PresentationContentSuggestion[]>;
+  createPresentationContentSuggestion(suggestion: InsertPresentationContentSuggestion): Promise<PresentationContentSuggestion>;
+  updatePresentationContentSuggestion(id: number, updates: Partial<InsertPresentationContentSuggestion>): Promise<PresentationContentSuggestion | undefined>;
+  deletePresentationContentSuggestion(id: number): Promise<boolean>;
+
+  // Presentation Studio - Project Management
+  getPresentationProjects(userId?: number): Promise<PresentationProject[]>;
+  getPresentationProject(id: number): Promise<PresentationProject | undefined>;
+  createPresentationProject(project: InsertPresentationProject): Promise<PresentationProject>;
+  updatePresentationProject(id: number, updates: Partial<InsertPresentationProject>): Promise<PresentationProject | undefined>;
+  deletePresentationProject(id: number): Promise<boolean>;
 
   // Customer Journey Marketing System
   // Customer Journey Stages
