@@ -284,8 +284,12 @@ export function MaxSidebar() {
       setMessages(prev => [...prev, assistantMessage]);
 
       // Handle canvas actions
+      console.log('AI Response received:', response);
       if (response.canvasAction) {
+        console.log('Canvas action detected:', response.canvasAction);
         handleCanvasAction(response.canvasAction);
+      } else {
+        console.log('No canvas action in response');
       }
 
       // Play AI response if voice is enabled
@@ -399,8 +403,13 @@ export function MaxSidebar() {
   };
 
   const handleCanvasAction = (canvasAction: any) => {
-    if (!canvasAction) return;
+    console.log('handleCanvasAction called with:', canvasAction);
+    if (!canvasAction) {
+      console.log('No canvas action provided');
+      return;
+    }
     
+    console.log('Processing canvas action type:', canvasAction.type);
     switch (canvasAction.type) {
       case 'create':
         if (canvasAction.items) {
