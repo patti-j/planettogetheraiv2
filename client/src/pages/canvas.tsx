@@ -19,6 +19,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { useAITheme } from '@/hooks/use-ai-theme';
+import { useMaxDock } from '@/contexts/MaxDockContext';
 
 interface CanvasItem {
   id: string;
@@ -32,8 +33,8 @@ interface CanvasItem {
 
 export default function CanvasPage() {
   const { aiTheme } = useAITheme();
+  const { isMobile, mobileLayoutMode, setMobileLayoutMode, setCurrentFullscreenView } = useMaxDock();
   const [items, setItems] = useState<CanvasItem[]>([]);
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Load canvas items from localStorage on mount
   useEffect(() => {
@@ -88,17 +89,29 @@ export default function CanvasPage() {
     URL.revokeObjectURL(url);
   };
 
+  const handleMaximize = () => {
+    if (isMobile) {
+      setMobileLayoutMode('fullscreen');
+      setCurrentFullscreenView('main'); // Show canvas in fullscreen
+    }
+    // On desktop, no special fullscreen needed as canvas is already in main content area
+  };
+
+  const isMaximized = isMobile && mobileLayoutMode === 'fullscreen';
+
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      {/* Maximize/Minimize Button - Fixed top right, consistent with other pages */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setIsFullscreen(!isFullscreen)}
-        className="fixed top-2 right-2 z-50"
-      >
-        {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-      </Button>
+      {/* Maximize/Minimize Button - Only show on mobile */}
+      {isMobile && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleMaximize}
+          className="fixed top-2 right-2 z-50"
+        >
+          <Maximize2 className="w-4 h-4" />
+        </Button>
+      )}
       
       {/* Canvas Header */}
       <div className={`${aiTheme.gradient} text-white p-3 sm:p-6 space-y-4 sm:space-y-6`}>
@@ -140,7 +153,7 @@ export default function CanvasPage() {
       </div>
 
       {/* Canvas Content Area */}
-      <div className={`flex-1 overflow-auto p-6 ${isFullscreen ? 'fixed inset-0 z-50 bg-gray-50' : ''}`}>
+      <div className="flex-1 overflow-auto p-6">
         {items.length === 0 ? (
           <div className="h-full flex items-center justify-center">
             <div className="text-center">
