@@ -433,15 +433,17 @@ export default function Training() {
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h3 className="text-lg font-medium text-gray-900">Tour Management</h3>
           <div className="flex items-center gap-3">
             <Button
               onClick={() => setShowTourSettings(true)}
               className={`${aiTheme.gradient} text-white`}
+              size="sm"
             >
               <Settings className="w-4 h-4 mr-2" />
-              Tour Settings
+              <span className="hidden sm:inline">Tour Settings</span>
+              <span className="sm:hidden">Settings</span>
             </Button>
           </div>
         </div>
@@ -456,26 +458,9 @@ export default function Training() {
             {/* Existing Tours Section */}
             {toursArray.length > 0 && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <div className="space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <h4 className="text-md font-medium text-gray-800">Existing Tours ({toursArray.length})</h4>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSelectAll('existing')}
-                        className="text-xs"
-                      >
-                        {selectedRoles.length === rolesWithTours.length ? 'None' : `All (${toursArray.length})`}
-                      </Button>
-                      {selectedRoles.length > 0 && (
-                        <span className="text-xs text-gray-500">
-                          {selectedRoles.length} of {toursArray.length} selected
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
                     {selectedRoles.length > 0 && (
                       <Button
                         onClick={handleGenerateSelectedTours}
@@ -484,8 +469,24 @@ export default function Training() {
                         size="sm"
                       >
                         <Sparkles className="w-3 h-3 mr-1" />
-                        Regenerate Selected
+                        <span className="hidden sm:inline">Regenerate Selected</span>
+                        <span className="sm:hidden">Regenerate</span>
                       </Button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSelectAll('existing')}
+                      className="text-xs"
+                    >
+                      {selectedRoles.length === rolesWithTours.length ? 'None' : `All (${toursArray.length})`}
+                    </Button>
+                    {selectedRoles.length > 0 && (
+                      <span className="text-xs text-gray-500">
+                        {selectedRoles.length} of {toursArray.length} selected
+                      </span>
                     )}
                   </div>
                 </div>
@@ -494,7 +495,7 @@ export default function Training() {
                   {toursArray.map((tour: any) => (
                     <Card key={tour.id} className="border">
                       <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
+                        <div className="space-y-3">
                           <div className="flex items-center gap-3">
                             <Checkbox
                               checked={selectedRoles.includes(tour.roleDisplayName || tour.roleName)}
@@ -507,7 +508,7 @@ export default function Training() {
                                 }
                               }}
                             />
-                            <div>
+                            <div className="flex-1">
                               <CardTitle className="text-lg">{tour.roleDisplayName || tour.roleName}</CardTitle>
                               <CardDescription>
                                 {(() => {
@@ -523,7 +524,7 @@ export default function Training() {
                               </CardDescription>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <Button
                               variant="outline"
                               size="sm" 
@@ -531,6 +532,7 @@ export default function Training() {
                               title="Preview Tour"
                             >
                               <Eye className="w-4 h-4" />
+                              <span className="hidden sm:inline ml-1">Preview</span>
                             </Button>
                             <Button
                               variant="outline"
@@ -540,6 +542,7 @@ export default function Training() {
                               title="Start Live Tour"
                             >
                               <Play className="w-4 h-4" />
+                              <span className="hidden sm:inline ml-1">Start</span>
                             </Button>
                             <Button
                               variant="outline"
@@ -549,6 +552,7 @@ export default function Training() {
                               title="Regenerate Tour"
                             >
                               <RefreshCw className="w-4 h-4" />
+                              <span className="hidden sm:inline ml-1">Regenerate</span>
                             </Button>
                             <Button
                               variant="outline"
@@ -566,6 +570,9 @@ export default function Training() {
                               ) : (
                                 <ChevronRight className="w-4 h-4" />
                               )}
+                              <span className="hidden sm:inline ml-1">
+                                {expandedTours.includes(tour.id) ? 'Collapse' : 'Expand'}
+                              </span>
                             </Button>
                             <Button
                               variant="destructive"
@@ -576,6 +583,7 @@ export default function Training() {
                               }}
                             >
                               <Trash2 className="w-4 h-4" />
+                              <span className="hidden sm:inline ml-1">Delete</span>
                             </Button>
                           </div>
                         </div>
@@ -620,26 +628,9 @@ export default function Training() {
             {/* Generate Tours for Missing Roles */}
             {missingRoles.length > 0 && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <div className="space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <h4 className="text-md font-medium text-gray-800">Generate Tours for Additional Roles ({missingRoles.length})</h4>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSelectAll('missing')}
-                        className="text-xs"
-                      >
-                        {selectedMissingRoles.length === missingRoles.length ? 'None' : `All (${missingRoles.length})`}
-                      </Button>
-                      {selectedMissingRoles.length > 0 && (
-                        <span className="text-xs text-gray-500">
-                          {selectedMissingRoles.length} of {missingRoles.length} selected
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
                     {selectedMissingRoles.length > 0 && (
                       <Button
                         onClick={handleGenerateSelectedTours}
@@ -648,8 +639,24 @@ export default function Training() {
                         size="sm"
                       >
                         <Sparkles className="w-3 h-3 mr-1" />
-                        Generate Tours
+                        <span className="hidden sm:inline">Generate Tours</span>
+                        <span className="sm:hidden">Generate</span>
                       </Button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSelectAll('missing')}
+                      className="text-xs"
+                    >
+                      {selectedMissingRoles.length === missingRoles.length ? 'None' : `All (${missingRoles.length})`}
+                    </Button>
+                    {selectedMissingRoles.length > 0 && (
+                      <span className="text-xs text-gray-500">
+                        {selectedMissingRoles.length} of {missingRoles.length} selected
+                      </span>
                     )}
                   </div>
                 </div>
