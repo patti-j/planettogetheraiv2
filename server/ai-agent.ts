@@ -1644,15 +1644,12 @@ async function generateChartData(chartType: string, parameters: any, context: Sy
 function generatePieChartData(parameters: any, context: any) {
   const { jobs, operations, resources } = context;
   
-  // Handle "job quantity" requests by showing individual jobs and their operation counts
+  // Handle "job quantity" requests by showing individual jobs and their actual quantities
   if (parameters.title?.toLowerCase().includes("quantity") || parameters.dataType === "job_quantity") {
-    const jobData = jobs.map(job => {
-      const jobOperations = operations.filter(op => op.jobId === job.id);
-      return {
-        name: job.name || `Job ${job.id}`,
-        value: jobOperations.length || 1 // Use operation count as "quantity"
-      };
-    });
+    const jobData = jobs.map(job => ({
+      name: job.name || `Job ${job.id}`,
+      value: job.quantity || 1 // Use actual quantity field from job
+    }));
     
     return jobData.length > 0 ? jobData : [{ name: "No Jobs", value: 1 }];
   }

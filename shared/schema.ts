@@ -38,6 +38,7 @@ export const jobs = pgTable("jobs", {
   customer: text("customer").notNull(),
   priority: text("priority").notNull().default("medium"),
   status: text("status").notNull().default("planned"),
+  quantity: integer("quantity").notNull().default(1), // Number of units/items in this job
   dueDate: timestamp("due_date"),
   createdAt: timestamp("created_at").defaultNow(),
   plantId: integer("plant_id").references(() => plants.id).notNull(), // Jobs are assigned to specific plants

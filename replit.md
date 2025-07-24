@@ -114,13 +114,20 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 24, 2025)
 
+✓ **Job Schema Enhancement & Improved Chart Data (July 24, 2025)**:
+- Successfully added quantity field to job schema for better production planning
+- Updated database with ALTER TABLE to add quantity column with NOT NULL DEFAULT 1 constraint
+- Enhanced job form component to include quantity input field with validation
+- Updated sample jobs with realistic quantities (100 and 250 units)
+- Improved chart generation to use actual job quantities instead of operation counts
+- Max AI pie charts now display meaningful production quantities per job
+- Fixed TypeScript errors in job form for better type safety
+
 ✓ **Max AI API Documentation Enhancement (July 24, 2025)**:
 - Fixed issue where Max AI was listing job data instead of API documentation when asked for "available APIs"
 - Enhanced AI system prompt to better distinguish between API documentation requests and data listing requests
 - Added dedicated LIST_AVAILABLE_APIS action with comprehensive API function documentation
 - Created proper table display in canvas showing all available API functions with descriptions
-- Improved chart generation for "job quantity" requests to show individual jobs with operation counts
-- Fixed pie chart data to display meaningful job information instead of generic status percentages
 - Enhanced voice input functionality with comprehensive audio format support and debugging
 - Voice input now supports webm, mp4, wav, and ogg formats with detailed error logging
 

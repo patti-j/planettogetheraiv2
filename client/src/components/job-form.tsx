@@ -43,6 +43,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
       customer: job?.customer || "",
       priority: job?.priority || "medium",
       status: job?.status || "planned",
+      quantity: job?.quantity || 1,
       dueDate: job?.dueDate ? new Date(job.dueDate).toISOString().split('T')[0] : "",
     },
   });
@@ -196,6 +197,26 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
 
         <FormField
           control={form.control}
+          name="quantity"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Quantity</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  min="1" 
+                  placeholder="Enter quantity to produce" 
+                  {...field}
+                  onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="dueDate"
           render={({ field }) => (
             <FormItem>
@@ -215,7 +236,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Textarea placeholder="Job description" rows={3} {...field} />
+                <Textarea placeholder="Job description" rows={3} {...field} value={field.value || ""} />
               </FormControl>
               <FormMessage />
             </FormItem>
