@@ -18,7 +18,10 @@ import {
   Clock,
   AlertTriangle,
   CheckCircle,
-  Trash2
+  Trash2,
+  Copy,
+  FileImage,
+  Link
 } from 'lucide-react';
 import { useAITheme } from '@/hooks/use-ai-theme';
 import { toast } from '@/hooks/use-toast';
@@ -70,11 +73,12 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
     clearItems();
   };
 
-  const handleExport = () => {
-    // Export canvas content as JSON or image
+  const handleExportJSON = () => {
     const canvasData = {
       timestamp: new Date().toISOString(),
-      items: canvasItems
+      items: canvasItems,
+      title: "Max Canvas Export",
+      description: "Canvas content exported from Max AI Assistant"
     };
     const blob = new Blob([JSON.stringify(canvasData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -83,6 +87,141 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
     a.download = `max-canvas-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    toast({
+      title: "Canvas Exported",
+      description: "Canvas data exported as JSON file"
+    });
+  };
+
+  const handleCopyToClipboard = async () => {
+    try {
+      const canvasText = canvasItems
+        .map(item => `${item.title || 'Canvas Item'}\n${JSON.stringify(item.content, null, 2)}`)
+        .join('\n\n---\n\n');
+      
+      await navigator.clipboard.writeText(canvasText);
+      toast({
+        title: "Copied to Clipboard",
+        description: "Canvas content copied as text"
+      });
+    } catch (error) {
+      toast({
+        title: "Copy Failed",
+        description: "Unable to copy to clipboard",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleExportImage = async () => {
+    try {
+      // Create a canvas element to render the visual content
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      canvas.width = 800;
+      canvas.height = 600;
+      
+      // Set background
+      ctx.fillStyle = '#f9fafb';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Add header
+      ctx.fillStyle = '#1f2937';
+      ctx.font = 'bold 24px Arial';
+      ctx.fillText('Max Canvas Export', 40, 60);
+      
+      ctx.fillStyle = '#6b7280';
+      ctx.font = '14px Arial';
+      ctx.fillText(new Date().toLocaleString(), 40, 85);
+      
+      // Add canvas items as text
+      let yPos = 140;
+      canvasItems.forEach((item, index) => {
+        ctx.fillStyle = '#1f2937';
+        ctx.font = 'bold 16px Arial';
+        ctx.fillText(`${index + 1}. ${item.title || 'Canvas Item'}`, 40, yPos);
+        
+        yPos += 30;
+        
+        // Add content summary
+        ctx.fillStyle = '#6b7280';
+        ctx.font = '12px Arial';
+        const content = JSON.stringify(item.content);
+        const maxWidth = 720;
+        const words = content.slice(0, 100) + (content.length > 100 ? '...' : '');
+        ctx.fillText(words, 40, yPos);
+        
+        yPos += 50;
+      });
+      
+      // Convert to blob and download
+      canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `max-canvas-${Date.now()}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        toast({
+          title: "Image Exported",
+          description: "Canvas exported as PNG image"
+        });
+      }, 'image/png');
+      
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Unable to export canvas as image",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleShare = async () => {
+    const canvasData = {
+      timestamp: new Date().toISOString(),
+      items: canvasItems,
+      title: "Max Canvas Share",
+      description: "Shared canvas from Max AI Assistant"
+    };
+
+    if (navigator.share) {
+      try {
+        const blob = new Blob([JSON.stringify(canvasData, null, 2)], { type: 'application/json' });
+        const file = new File([blob], `max-canvas-${Date.now()}.json`, { type: 'application/json' });
+        
+        await navigator.share({
+          title: 'Max Canvas Content',
+          text: 'Canvas visualization from Max AI Assistant',
+          files: [file]
+        });
+        
+        toast({
+          title: "Canvas Shared",
+          description: "Canvas content shared successfully"
+        });
+      } catch (error) {
+        // Fallback to text sharing
+        const shareText = `Max Canvas Content\n\n${canvasItems
+          .map(item => `${item.title || 'Canvas Item'}: ${JSON.stringify(item.content)}`)
+          .join('\n')}`;
+        
+        await navigator.share({
+          title: 'Max Canvas Content',
+          text: shareText
+        });
+      }
+    } else {
+      // Fallback for browsers without Web Share API
+      const shareUrl = `data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify(canvasData, null, 2))}`;
+      await navigator.clipboard.writeText(shareUrl);
+      toast({
+        title: "Share Link Created",
+        description: "Canvas data URL copied to clipboard"
+      });
+    }
   };
 
   return (
@@ -107,22 +246,52 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
+                  onClick={handleCopyToClipboard}
+                  className="text-white hover:bg-white/20"
+                  title="Copy to Clipboard"
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Copy</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleExportJSON}
+                  className="text-white hover:bg-white/20"
+                  title="Export as JSON"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">JSON</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleExportImage}
+                  className="text-white hover:bg-white/20"
+                  title="Export as Image"
+                >
+                  <FileImage className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Image</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleShare}
+                  className="text-white hover:bg-white/20"
+                  title="Share Canvas"
+                >
+                  <Share2 className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Share</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={handleClearCanvas}
                   className="text-white hover:bg-white/20"
                   title="Clear Canvas"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Clear
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleExport}
-                  className="text-white hover:bg-white/20"
-                  title="Export Canvas"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Export
+                  <span className="hidden sm:inline">Clear</span>
                 </Button>
               </>
             )}
