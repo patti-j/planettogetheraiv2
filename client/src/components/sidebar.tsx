@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Factory, Briefcase, BarChart3, FileText, Bot, Columns3, Menu, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain, User, LogOut, Code, Layers, Presentation } from "lucide-react";
+import { Factory, Briefcase, BarChart3, FileText, Bot, Columns3, Menu, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleSwitcher } from "./role-switcher";
 import { TrainingModeExit } from "./training-mode-exit";
@@ -109,6 +109,7 @@ export default function Sidebar() {
     { icon: GraduationCap, label: "Training", href: "/training", active: location === "/training", feature: "training", action: "view" },
     { icon: Building, label: "Industry Templates", href: "/industry-templates", active: location === "/industry-templates", feature: "industry-templates", action: "view" },
     { icon: Presentation, label: "Presentation System", href: "/presentation-system", active: location === "/presentation-system", feature: "presentation-system", action: "view" },
+    { icon: Sparkles, label: "Presentation Studio", href: "/presentation-studio", active: location === "/presentation-studio", feature: "presentation-system", action: "view" },
     { icon: MessageCircle, label: "Chat", href: "/chat", active: location === "/chat", feature: "chat", action: "view" },
     { icon: Columns3, label: "Boards", href: "/boards", active: location === "/boards", feature: "boards", action: "view" },
 

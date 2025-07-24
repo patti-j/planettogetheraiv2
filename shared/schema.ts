@@ -910,6 +910,124 @@ export const presentationAIContent = pgTable("presentation_ai_content", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Presentation Studio - Raw materials and content storage
+export const presentationMaterials = pgTable("presentation_materials", {
+  id: serial("id").primaryKey(),
+  presentationId: integer("presentation_id").references(() => presentations.id).notNull(),
+  materialType: text("material_type").notNull(), // case_study, statistics, research, images, documents, video, audio, data_sheet, testimonial, competitive_analysis
+  title: text("title").notNull(),
+  description: text("description"),
+  content: jsonb("content").$type<{
+    // For case studies
+    caseStudy?: {
+      company: string;
+      industry: string;
+      challenge: string;
+      solution: string;
+      results: string[];
+      metrics?: { name: string; before: string; after: string; improvement: string }[];
+      timeline: string;
+      customerQuote?: string;
+      customerRole?: string;
+    };
+    // For statistics/data
+    statistics?: {
+      source: string;
+      date: string;
+      data: Array<{ metric: string; value: string; context?: string }>;
+      methodology?: string;
+      sampleSize?: string;
+    };
+    // For research/reports
+    research?: {
+      title: string;
+      authors: string[];
+      publication: string;
+      date: string;
+      keyFindings: string[];
+      relevantQuotes: string[];
+      methodology?: string;
+    };
+    // For media files
+    media?: {
+      fileType: string; // image, video, audio, pdf, excel, powerpoint
+      fileName: string;
+      fileUrl: string;
+      fileSize: number;
+      transcript?: string; // for audio/video
+      keyPoints?: string[]; // extracted key information
+    };
+    // For testimonials
+    testimonial?: {
+      customerName: string;
+      company: string;
+      role: string;
+      quote: string;
+      context: string;
+      useCase: string;
+      metrics?: string[];
+    };
+    // Raw text content
+    text?: string;
+  }>().notNull(),
+  tags: jsonb("tags").$type<string[]>().default([]),
+  source: text("source"), // where this material came from
+  credibility: integer("credibility"), // 1-5 credibility rating
+  relevanceScore: integer("relevance_score"), // AI-calculated relevance to presentation
+  usageCount: integer("usage_count").default(0), // how many times used in slides
+  isVerified: boolean("is_verified").default(false), // manually verified by user
+  aiSuggestions: jsonb("ai_suggestions").$type<{
+    bestSlideTypes: string[]; // which slide types this material works best for
+    suggestedUsage: string; // AI suggestion on how to use this material
+    contentGaps?: string[]; // what additional content might be needed
+    qualityScore: number; // 1-10 AI assessment of material quality
+  }>(),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Presentation Studio - Content suggestions and templates
+export const presentationContentSuggestions = pgTable("presentation_content_suggestions", {
+  id: serial("id").primaryKey(),
+  presentationId: integer("presentation_id").references(() => presentations.id).notNull(),
+  category: text("category").notNull(), // based on presentation type
+  suggestionType: text("suggestion_type").notNull(), // material_needed, content_gap, improvement, structure
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  priority: text("priority").notNull().default("medium"), // low, medium, high, critical
+  suggestedMaterials: jsonb("suggested_materials").$type<string[]>().default([]), // types of materials that would help
+  aiReasoning: text("ai_reasoning"), // why AI suggests this
+  status: text("status").notNull().default("pending"), // pending, accepted, rejected, completed
+  createdBy: text("created_by").notNull().default("AI"), // AI or user ID
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Presentation Studio - Project workspace
+export const presentationProjects = pgTable("presentation_projects", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  presentationType: text("presentation_type").notNull(), // sales, training, consulting, executive, technical, marketing
+  targetAudience: text("target_audience").notNull(),
+  objectives: jsonb("objectives").$type<string[]>().default([]),
+  duration: integer("duration"), // estimated minutes
+  status: text("status").notNull().default("planning"), // planning, researching, drafting, reviewing, finalizing, completed
+  collaborators: jsonb("collaborators").$type<number[]>().default([]), // user IDs
+  deadline: timestamp("deadline"),
+  presentationId: integer("presentation_id").references(() => presentations.id), // linked presentation when created
+  aiProfile: jsonb("ai_profile").$type<{
+    tone: string; // professional, friendly, authoritative, conversational
+    complexity: string; // beginner, intermediate, advanced, executive
+    focusAreas: string[]; // key topics to emphasize
+    restrictions: string[]; // what to avoid
+  }>(),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
 export type Capability = typeof capabilities.$inferSelect;
 
@@ -2936,6 +3054,25 @@ export const insertPresentationAIContentSchema = createInsertSchema(presentation
   createdAt: true,
 });
 
+// Presentation Studio Insert Schemas
+export const insertPresentationMaterialSchema = createInsertSchema(presentationMaterials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPresentationContentSuggestionSchema = createInsertSchema(presentationContentSuggestions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPresentationProjectSchema = createInsertSchema(presentationProjects).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Presentation System Types
 export type Presentation = typeof presentations.$inferSelect;
 export type InsertPresentation = z.infer<typeof insertPresentationSchema>;
@@ -2954,6 +3091,16 @@ export type InsertPresentationAnalytics = z.infer<typeof insertPresentationAnaly
 
 export type PresentationAIContent = typeof presentationAIContent.$inferSelect;
 export type InsertPresentationAIContent = z.infer<typeof insertPresentationAIContentSchema>;
+
+// Presentation Studio Types
+export type PresentationMaterial = typeof presentationMaterials.$inferSelect;
+export type InsertPresentationMaterial = z.infer<typeof insertPresentationMaterialSchema>;
+
+export type PresentationContentSuggestion = typeof presentationContentSuggestions.$inferSelect;
+export type InsertPresentationContentSuggestion = z.infer<typeof insertPresentationContentSuggestionSchema>;
+
+export type PresentationProject = typeof presentationProjects.$inferSelect;
+export type InsertPresentationProject = z.infer<typeof insertPresentationProjectSchema>;
 
 // ===== CUSTOMER JOURNEY MARKETING SYSTEM =====
 

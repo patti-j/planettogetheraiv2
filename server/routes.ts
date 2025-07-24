@@ -10024,6 +10024,353 @@ Create a natural, conversational voice script that explains this feature to some
     }
   });
 
+  // Presentation Studio API Routes
+  // Materials Management
+  app.get("/api/presentation-materials", async (req, res) => {
+    try {
+      const presentationId = req.query.presentationId ? parseInt(req.query.presentationId as string) : undefined;
+      const materials = await storage.getPresentationMaterials(presentationId);
+      res.json(materials);
+    } catch (error) {
+      console.error("Error getting presentation materials:", error);
+      res.status(500).json({ error: "Failed to get presentation materials" });
+    }
+  });
+
+  app.get("/api/presentation-materials/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid material ID" });
+      }
+
+      const material = await storage.getPresentationMaterial(id);
+      if (!material) {
+        return res.status(404).json({ error: "Material not found" });
+      }
+      res.json(material);
+    } catch (error) {
+      console.error("Error getting presentation material:", error);
+      res.status(500).json({ error: "Failed to get presentation material" });
+    }
+  });
+
+  app.post("/api/presentation-materials", async (req, res) => {
+    try {
+      const validation = insertPresentationMaterialSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid material data", details: validation.error.errors });
+      }
+
+      const material = await storage.createPresentationMaterial(validation.data);
+      res.status(201).json(material);
+    } catch (error) {
+      console.error("Error creating presentation material:", error);
+      res.status(500).json({ error: "Failed to create presentation material" });
+    }
+  });
+
+  app.put("/api/presentation-materials/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid material ID" });
+      }
+
+      const validation = insertPresentationMaterialSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid material data", details: validation.error.errors });
+      }
+
+      const material = await storage.updatePresentationMaterial(id, validation.data);
+      if (!material) {
+        return res.status(404).json({ error: "Material not found" });
+      }
+      res.json(material);
+    } catch (error) {
+      console.error("Error updating presentation material:", error);
+      res.status(500).json({ error: "Failed to update presentation material" });
+    }
+  });
+
+  app.delete("/api/presentation-materials/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid material ID" });
+      }
+
+      const success = await storage.deletePresentationMaterial(id);
+      if (!success) {
+        return res.status(404).json({ error: "Material not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting presentation material:", error);
+      res.status(500).json({ error: "Failed to delete presentation material" });
+    }
+  });
+
+  // Content Suggestions
+  app.get("/api/presentation-suggestions", async (req, res) => {
+    try {
+      const presentationId = req.query.presentationId ? parseInt(req.query.presentationId as string) : undefined;
+      const suggestions = await storage.getPresentationContentSuggestions(presentationId);
+      res.json(suggestions);
+    } catch (error) {
+      console.error("Error getting presentation suggestions:", error);
+      res.status(500).json({ error: "Failed to get presentation suggestions" });
+    }
+  });
+
+  app.post("/api/presentation-suggestions", async (req, res) => {
+    try {
+      const validation = insertPresentationContentSuggestionSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid suggestion data", details: validation.error.errors });
+      }
+
+      const suggestion = await storage.createPresentationContentSuggestion(validation.data);
+      res.status(201).json(suggestion);
+    } catch (error) {
+      console.error("Error creating presentation suggestion:", error);
+      res.status(500).json({ error: "Failed to create presentation suggestion" });
+    }
+  });
+
+  app.put("/api/presentation-suggestions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid suggestion ID" });
+      }
+
+      const validation = insertPresentationContentSuggestionSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid suggestion data", details: validation.error.errors });
+      }
+
+      const suggestion = await storage.updatePresentationContentSuggestion(id, validation.data);
+      if (!suggestion) {
+        return res.status(404).json({ error: "Suggestion not found" });
+      }
+      res.json(suggestion);
+    } catch (error) {
+      console.error("Error updating presentation suggestion:", error);
+      res.status(500).json({ error: "Failed to update presentation suggestion" });
+    }
+  });
+
+  app.delete("/api/presentation-suggestions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid suggestion ID" });
+      }
+
+      const success = await storage.deletePresentationContentSuggestion(id);
+      if (!success) {
+        return res.status(404).json({ error: "Suggestion not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting presentation suggestion:", error);
+      res.status(500).json({ error: "Failed to delete presentation suggestion" });
+    }
+  });
+
+  // Presentation Projects
+  app.get("/api/presentation-projects", async (req, res) => {
+    try {
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
+      const projects = await storage.getPresentationProjects(userId);
+      res.json(projects);
+    } catch (error) {
+      console.error("Error getting presentation projects:", error);
+      res.status(500).json({ error: "Failed to get presentation projects" });
+    }
+  });
+
+  app.get("/api/presentation-projects/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid project ID" });
+      }
+
+      const project = await storage.getPresentationProject(id);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+      res.json(project);
+    } catch (error) {
+      console.error("Error getting presentation project:", error);
+      res.status(500).json({ error: "Failed to get presentation project" });
+    }
+  });
+
+  app.post("/api/presentation-projects", async (req, res) => {
+    try {
+      const validation = insertPresentationProjectSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid project data", details: validation.error.errors });
+      }
+
+      const project = await storage.createPresentationProject(validation.data);
+      res.status(201).json(project);
+    } catch (error) {
+      console.error("Error creating presentation project:", error);
+      res.status(500).json({ error: "Failed to create presentation project" });
+    }
+  });
+
+  app.put("/api/presentation-projects/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid project ID" });
+      }
+
+      const validation = insertPresentationProjectSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid project data", details: validation.error.errors });
+      }
+
+      const project = await storage.updatePresentationProject(id, validation.data);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+      res.json(project);
+    } catch (error) {
+      console.error("Error updating presentation project:", error);
+      res.status(500).json({ error: "Failed to update presentation project" });
+    }
+  });
+
+  app.delete("/api/presentation-projects/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid project ID" });
+      }
+
+      const success = await storage.deletePresentationProject(id);
+      if (!success) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting presentation project:", error);
+      res.status(500).json({ error: "Failed to delete presentation project" });
+    }
+  });
+
+  // AI-powered Material Analysis and Suggestions
+  app.post("/api/presentation-studio/ai/analyze-material", requireAuth, async (req, res) => {
+    try {
+      const { materialContent, presentationType, targetAudience } = req.body;
+      
+      if (!materialContent || !presentationType) {
+        return res.status(400).json({ error: "Material content and presentation type are required" });
+      }
+
+      // Import OpenAI dynamically
+      const OpenAI = (await import("openai")).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      const analysisPrompt = `You are an AI assistant specialized in analyzing presentation materials and providing suggestions for optimal usage.
+
+      Material Content: ${JSON.stringify(materialContent)}
+      Presentation Type: ${presentationType}
+      Target Audience: ${targetAudience || 'General'}
+
+      Analyze this material and provide structured feedback in JSON format:
+      {
+        "relevanceScore": 1-10,
+        "qualityScore": 1-10,
+        "bestSlideTypes": ["title", "content", "data", "testimonial", "case-study"],
+        "suggestedUsage": "How to best use this material in the presentation",
+        "contentGaps": ["List of additional content that would complement this material"],
+        "improvementSuggestions": ["Ways to enhance this material"],
+        "keyStrengths": ["What makes this material valuable"],
+        "targetSlidePosition": "beginning|middle|end|multiple"
+      }`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "You are an expert presentation consultant specializing in manufacturing and business presentations." },
+          { role: "user", content: analysisPrompt }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.3,
+        max_tokens: 1000
+      });
+
+      const analysis = JSON.parse(response.choices[0].message.content);
+      res.json(analysis);
+
+    } catch (error) {
+      console.error('Error analyzing material:', error);
+      res.status(500).json({ error: 'Failed to analyze material' });
+    }
+  });
+
+  app.post("/api/presentation-studio/ai/suggest-materials", requireAuth, async (req, res) => {
+    try {
+      const { presentationType, targetAudience, existingMaterials, objectives } = req.body;
+      
+      if (!presentationType) {
+        return res.status(400).json({ error: "Presentation type is required" });
+      }
+
+      // Import OpenAI dynamically
+      const OpenAI = (await import("openai")).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      const suggestionPrompt = `You are an AI assistant specialized in recommending presentation materials for optimal presentation effectiveness.
+
+      Presentation Type: ${presentationType}
+      Target Audience: ${targetAudience || 'General'}
+      Objectives: ${objectives ? JSON.stringify(objectives) : 'Not specified'}
+      Existing Materials: ${existingMaterials ? JSON.stringify(existingMaterials) : 'None'}
+
+      Based on this presentation context, suggest what additional materials would be most valuable. Respond in JSON format:
+      {
+        "criticalMaterials": [
+          {
+            "type": "case_study|statistics|research|testimonial|competitive_analysis|data_sheet",
+            "title": "Suggested material title",
+            "description": "Why this material is needed",
+            "priority": "high|medium|low",
+            "specificRequirements": "What specific content to look for"
+          }
+        ],
+        "recommendedStructure": "Suggested flow and organization of materials",
+        "contentGaps": ["Areas where additional support is needed"],
+        "audienceConsiderations": "Special considerations for the target audience"
+      }`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "You are an expert presentation strategist with deep knowledge of effective business communication." },
+          { role: "user", content: suggestionPrompt }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.4,
+        max_tokens: 1500
+      });
+
+      const suggestions = JSON.parse(response.choices[0].message.content);
+      res.json(suggestions);
+
+    } catch (error) {
+      console.error('Error generating material suggestions:', error);
+      res.status(500).json({ error: 'Failed to generate material suggestions' });
+    }
+  });
+
   // Marketing System API Routes
 
   // Customer Journey Stages

@@ -811,6 +811,26 @@ export interface IStorage {
 
   getPresentationAIContent(presentationId?: number): Promise<PresentationAIContent[]>;
   createPresentationAIContent(content: InsertPresentationAIContent): Promise<PresentationAIContent>;
+
+  // Presentation Studio - Materials Management
+  getPresentationMaterials(presentationId?: number): Promise<PresentationMaterial[]>;
+  getPresentationMaterial(id: number): Promise<PresentationMaterial | undefined>;
+  createPresentationMaterial(material: InsertPresentationMaterial): Promise<PresentationMaterial>;
+  updatePresentationMaterial(id: number, updates: Partial<InsertPresentationMaterial>): Promise<PresentationMaterial | undefined>;
+  deletePresentationMaterial(id: number): Promise<boolean>;
+
+  // Presentation Studio - Content Suggestions
+  getPresentationContentSuggestions(presentationId?: number): Promise<PresentationContentSuggestion[]>;
+  createPresentationContentSuggestion(suggestion: InsertPresentationContentSuggestion): Promise<PresentationContentSuggestion>;
+  updatePresentationContentSuggestion(id: number, updates: Partial<InsertPresentationContentSuggestion>): Promise<PresentationContentSuggestion | undefined>;
+  deletePresentationContentSuggestion(id: number): Promise<boolean>;
+
+  // Presentation Studio - Project Management
+  getPresentationProjects(userId?: number): Promise<PresentationProject[]>;
+  getPresentationProject(id: number): Promise<PresentationProject | undefined>;
+  createPresentationProject(project: InsertPresentationProject): Promise<PresentationProject>;
+  updatePresentationProject(id: number, updates: Partial<InsertPresentationProject>): Promise<PresentationProject | undefined>;
+  deletePresentationProject(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -5598,6 +5618,100 @@ export class DatabaseStorage implements IStorage {
   async createPresentationAIContent(content: InsertPresentationAIContent): Promise<PresentationAIContent> {
     const [newContent] = await db.insert(presentationAIContent).values(content).returning();
     return newContent;
+  }
+
+  // Presentation Studio - Materials Management Implementation
+  async getPresentationMaterials(presentationId?: number): Promise<PresentationMaterial[]> {
+    let query = db.select().from(presentationMaterials);
+    if (presentationId) {
+      query = query.where(eq(presentationMaterials.presentationId, presentationId));
+    }
+    return await query.orderBy(desc(presentationMaterials.createdAt));
+  }
+
+  async getPresentationMaterial(id: number): Promise<PresentationMaterial | undefined> {
+    const [material] = await db.select().from(presentationMaterials).where(eq(presentationMaterials.id, id));
+    return material;
+  }
+
+  async createPresentationMaterial(material: InsertPresentationMaterial): Promise<PresentationMaterial> {
+    const [newMaterial] = await db.insert(presentationMaterials).values(material).returning();
+    return newMaterial;
+  }
+
+  async updatePresentationMaterial(id: number, updates: Partial<InsertPresentationMaterial>): Promise<PresentationMaterial | undefined> {
+    const [updated] = await db
+      .update(presentationMaterials)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(presentationMaterials.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePresentationMaterial(id: number): Promise<boolean> {
+    const result = await db.delete(presentationMaterials).where(eq(presentationMaterials.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Presentation Studio - Content Suggestions Implementation
+  async getPresentationContentSuggestions(presentationId?: number): Promise<PresentationContentSuggestion[]> {
+    let query = db.select().from(presentationContentSuggestions);
+    if (presentationId) {
+      query = query.where(eq(presentationContentSuggestions.presentationId, presentationId));
+    }
+    return await query.orderBy(desc(presentationContentSuggestions.createdAt));
+  }
+
+  async createPresentationContentSuggestion(suggestion: InsertPresentationContentSuggestion): Promise<PresentationContentSuggestion> {
+    const [newSuggestion] = await db.insert(presentationContentSuggestions).values(suggestion).returning();
+    return newSuggestion;
+  }
+
+  async updatePresentationContentSuggestion(id: number, updates: Partial<InsertPresentationContentSuggestion>): Promise<PresentationContentSuggestion | undefined> {
+    const [updated] = await db
+      .update(presentationContentSuggestions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(presentationContentSuggestions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePresentationContentSuggestion(id: number): Promise<boolean> {
+    const result = await db.delete(presentationContentSuggestions).where(eq(presentationContentSuggestions.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Presentation Studio - Project Management Implementation
+  async getPresentationProjects(userId?: number): Promise<PresentationProject[]> {
+    let query = db.select().from(presentationProjects);
+    if (userId) {
+      query = query.where(eq(presentationProjects.createdBy, userId));
+    }
+    return await query.orderBy(desc(presentationProjects.createdAt));
+  }
+
+  async getPresentationProject(id: number): Promise<PresentationProject | undefined> {
+    const [project] = await db.select().from(presentationProjects).where(eq(presentationProjects.id, id));
+    return project;
+  }
+
+  async createPresentationProject(project: InsertPresentationProject): Promise<PresentationProject> {
+    const [newProject] = await db.insert(presentationProjects).values(project).returning();
+    return newProject;
+  }
+
+  async updatePresentationProject(id: number, updates: Partial<InsertPresentationProject>): Promise<PresentationProject | undefined> {
+    const [updated] = await db
+      .update(presentationProjects)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(presentationProjects.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePresentationProject(id: number): Promise<boolean> {
+    const result = await db.delete(presentationProjects).where(eq(presentationProjects.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
   }
   // Marketing System Implementation
   

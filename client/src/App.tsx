@@ -56,6 +56,7 @@ import CanvasPage from "@/pages/canvas";
 import ErrorLogsPage from "@/pages/error-logs";
 import PresentationPage from "@/pages/presentation";
 import PresentationSystemPage from "@/pages/presentation-system";
+import PresentationStudioPage from "@/pages/presentation-studio";
 import MarketingLandingPage from "@/pages/marketing-landing";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
@@ -332,6 +333,11 @@ function Router() {
           <Route path="/presentation-system">
             <ProtectedRoute feature="presentation-system" action="view">
               <PresentationSystemPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/presentation-studio">
+            <ProtectedRoute feature="presentation-system" action="view">
+              <PresentationStudioPage />
             </ProtectedRoute>
           </Route>
           <Route path="/" component={DashboardWithAutoTour} />
