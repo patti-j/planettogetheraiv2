@@ -156,33 +156,67 @@ export function MaxSidebar() {
   // Initialize speech recognition
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      console.log('Initializing speech recognition...');
       const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
       recognition.current = new SpeechRecognition();
       recognition.current.continuous = false;
       recognition.current.interimResults = false;
       recognition.current.lang = 'en-US';
 
+      recognition.current.onstart = () => {
+        console.log('Speech recognition started');
+        setIsListening(true);
+      };
+
       recognition.current.onresult = (event: any) => {
+        console.log('Speech recognition result:', event.results);
         const transcript = event.results[0][0].transcript;
+        console.log('Transcript:', transcript);
         setInputMessage(transcript);
         setIsListening(false);
       };
 
-      recognition.current.onerror = () => {
+      recognition.current.onend = () => {
+        console.log('Speech recognition ended');
         setIsListening(false);
+      };
+
+      recognition.current.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+        
+        let errorMessage = "I couldn't catch what you said. Please try speaking again or type your message instead.";
+        
+        // Provide specific error messages based on error type
+        switch (event.error) {
+          case 'not-allowed':
+            errorMessage = "Microphone access was denied. Please allow microphone permission in your browser settings and try again.";
+            break;
+          case 'no-speech':
+            errorMessage = "I didn't hear anything. Please speak clearly and try again.";
+            break;
+          case 'network':
+            errorMessage = "Network error occurred. Please check your connection and try again.";
+            break;
+        }
+        
         // Show a gentle message in chat instead of error toast
         const voiceErrorMessage: Message = {
           id: Date.now().toString() + '_voice_error',
           type: 'assistant',
-          content: "I couldn't catch what you said. Please try speaking again or type your message instead.",
+          content: errorMessage,
           timestamp: new Date(),
           context: {
             page: window.location.pathname,
-            voiceError: true
+            action: 'voice_error'
           }
         };
         setMessages(prev => [...prev, voiceErrorMessage]);
       };
+      
+      console.log('Speech recognition initialized successfully');
+    } else {
+      console.log('Speech recognition not supported in this browser');
     }
   }, []);
 
@@ -264,7 +298,7 @@ export function MaxSidebar() {
         timestamp: new Date(),
         context: {
           page: window.location.pathname,
-          error: true
+          action: 'error_response'
         }
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -296,9 +330,27 @@ export function MaxSidebar() {
   };
 
   const startListening = () => {
-    if (recognition.current) {
-      setIsListening(true);
+    if (!recognition.current) {
+      console.log('Speech recognition not available');
+      const noSpeechMessage: Message = {
+        id: Date.now().toString() + '_no_speech',
+        type: 'assistant',
+        content: "Speech recognition is not available in your browser. Please type your message instead.",
+        timestamp: new Date(),
+        context: {
+          page: window.location.pathname
+        }
+      };
+      setMessages(prev => [...prev, noSpeechMessage]);
+      return;
+    }
+
+    try {
+      console.log('Starting speech recognition...');
       recognition.current.start();
+    } catch (error) {
+      console.error('Error starting speech recognition:', error);
+      setIsListening(false);
     }
   };
 
