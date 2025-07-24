@@ -364,7 +364,20 @@ export default function Training() {
 
     // Handle preview tour
     const handlePreviewTour = (tour: any) => {
-      setPreviewTourData(tour);
+      try {
+        const tourData = typeof tour.tourData === 'string' ? JSON.parse(tour.tourData) : tour.tourData;
+        const mappedTourData = {
+          ...tour,
+          steps: tourData?.steps || [],
+          totalSteps: tourData?.totalSteps || tourData?.steps?.length || 0,
+          estimatedDuration: tourData?.estimatedDuration || 'Unknown duration',
+          voiceScriptCount: tourData?.voiceScriptCount || 0
+        };
+        setPreviewTourData(mappedTourData);
+      } catch (e) {
+        console.error('Error parsing tour data:', e);
+        setPreviewTourData(tour);
+      }
       setShowTourPreviewDialog(true);
     };
 
@@ -497,7 +510,16 @@ export default function Training() {
                             <div>
                               <CardTitle className="text-lg">{tour.roleDisplayName || tour.roleName}</CardTitle>
                               <CardDescription>
-                                {tour.steps?.length || 0} steps • {tour.estimatedDuration || 'Unknown duration'}
+                                {(() => {
+                                  try {
+                                    const tourData = typeof tour.tourData === 'string' ? JSON.parse(tour.tourData) : tour.tourData;
+                                    const stepCount = tourData?.totalSteps || tourData?.steps?.length || 0;
+                                    const duration = tourData?.estimatedDuration || 'Unknown duration';
+                                    return `${stepCount} steps • ${duration}`;
+                                  } catch (e) {
+                                    return '0 steps • Unknown duration';
+                                  }
+                                })()}
                               </CardDescription>
                             </div>
                           </div>
@@ -562,22 +584,30 @@ export default function Training() {
                       {expandedTours.includes(tour.id) && (
                         <CardContent className="pt-0">
                           <div className="space-y-4">
-                            {tour.steps?.map((step: any, index: number) => (
-                              <div key={index} className="border rounded-lg p-4 space-y-2">
-                                <div className="flex items-center justify-between">
-                                  <h4 className="font-medium">{step.stepName || `Step ${index + 1}`}</h4>
-                                  <Badge variant="outline">{step.navigationPath || step.page || step.route || 'No navigation'}</Badge>
-                                </div>
-                                <p className="text-sm text-gray-600">{step.description}</p>
-                                {step.benefits && (
-                                  <div className="text-xs text-green-600">
-                                    Benefits: {step.benefits}
+                            {(() => {
+                              try {
+                                const tourData = typeof tour.tourData === 'string' ? JSON.parse(tour.tourData) : tour.tourData;
+                                const steps = tourData?.steps || [];
+                                return steps.length > 0 ? steps.map((step: any, index: number) => (
+                                  <div key={index} className="border rounded-lg p-4 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <h4 className="font-medium">{step.stepName || `Step ${index + 1}`}</h4>
+                                      <Badge variant="outline">{step.navigationPath || step.page || step.route || 'No navigation'}</Badge>
+                                    </div>
+                                    <p className="text-sm text-gray-600">{step.description}</p>
+                                    {step.benefits && (
+                                      <div className="text-xs text-green-600">
+                                        Benefits: {Array.isArray(step.benefits) ? step.benefits.join(', ') : step.benefits}
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                              </div>
-                            )) || (
-                              <p className="text-sm text-gray-500">No steps available</p>
-                            )}
+                                )) : (
+                                  <p className="text-sm text-gray-500">No steps available</p>
+                                );
+                              } catch (e) {
+                                return <p className="text-sm text-red-500">Error loading tour steps</p>;
+                              }
+                            })()}
                           </div>
                         </CardContent>
                       )}
