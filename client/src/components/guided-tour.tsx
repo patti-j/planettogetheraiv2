@@ -281,7 +281,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         const cardWidth = Math.min(280, windowWidth - 16);
         const cardHeight = Math.min(200, windowHeight * 0.35);
         const padding = 8;
-        const bottomPosition = windowHeight - cardHeight - padding - 20; // Reduced gap from bottom
+        const bottomPosition = windowHeight - cardHeight - padding - 8; // Minimal gap from bottom
         
         const position = {
           x: windowWidth - cardWidth - padding,
