@@ -121,6 +121,12 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 24, 2025)
 
+✓ **Mobile Dialog Scrolling Fix (July 24, 2025)**:
+- Fixed critical mobile scrolling issue in presentation edit dialog where content couldn't be scrolled
+- Added mobile-friendly scrolling classes (max-h-[90vh] overflow-y-auto) to all presentation dialogs
+- Enhanced create presentation, edit presentation, and AI generate dialogs with proper mobile scrolling
+- Users can now scroll through long forms on mobile devices without content being cut off
+
 ✓ **Canvas Auto-Close Navigation Fix (July 24, 2025)**:
 - Fixed critical issue where canvas wouldn't close when navigating to presentation system from main menu
 - Enhanced navigation detection in split-pane-layout with proper useEffect dependencies

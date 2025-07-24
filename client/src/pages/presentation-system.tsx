@@ -536,7 +536,7 @@ Create presentations that users will find exciting and that effectively demonstr
                   Quick Presentation
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md">
+              <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Create Quick Presentation</DialogTitle>
                   <DialogDescription>
@@ -614,7 +614,7 @@ Create presentations that users will find exciting and that effectively demonstr
                   Generate with AI
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>AI Quick Generator</DialogTitle>
                   <DialogDescription>
@@ -1504,7 +1504,7 @@ Create presentations that users will find exciting and that effectively demonstr
 
       {/* Edit Presentation Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Presentation</DialogTitle>
             <DialogDescription>
