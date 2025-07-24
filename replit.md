@@ -8,6 +8,13 @@ This is a full-stack manufacturing production scheduler application built with R
 
 Preferred communication style: Simple, everyday language.
 
+## Interface Terminology
+
+For clear communication about the interface layout:
+- **Main Content Pane** (or "main pane"): The primary area where application pages are displayed (Production Scheduling, Dashboard, Analytics, etc.)
+- **Max AI Pane**: The AI assistant panel in the split-pane layout
+- **Tour Window**: The guided tour overlay that appears during demonstrations
+
 ## System Architecture
 
 ### Frontend Architecture
