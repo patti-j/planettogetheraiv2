@@ -453,7 +453,18 @@ export function MaxSidebar() {
   };
 
   const toggleCanvas = () => {
-    setCanvasVisible(!isCanvasVisible);
+    try {
+      console.log('Canvas toggle clicked, current state:', isCanvasVisible);
+      setCanvasVisible(!isCanvasVisible);
+      console.log('Canvas toggle completed, new state should be:', !isCanvasVisible);
+    } catch (error) {
+      console.error('Error toggling canvas:', error);
+      toast({
+        title: "Canvas Error",
+        description: "Unable to toggle canvas display",
+        variant: "destructive"
+      });
+    }
   };
 
 
@@ -525,8 +536,8 @@ export function MaxSidebar() {
             variant="ghost"
             size="sm"
             onClick={toggleCanvas}
-            className="h-6 w-6 p-0 text-white hover:bg-white/20"
-            title="Canvas"
+            className={`h-6 w-6 p-0 text-white hover:bg-white/20 ${isCanvasVisible ? 'bg-white/20' : ''}`}
+            title={`${isCanvasVisible ? 'Hide' : 'Show'} Canvas`}
           >
             <Monitor className="h-3 w-3" />
           </Button>
