@@ -100,6 +100,38 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
     });
   };
 
+  const handleShareCanvasItem = async (item: CanvasItem) => {
+    const shareText = `Canvas Item: ${item.title}\nGenerated: ${item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Unknown'}\n\nContent:\n${typeof item.content === 'string' ? item.content : JSON.stringify(item.content, null, 2)}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Canvas Item: ${item.title}`,
+          text: shareText
+        });
+        
+        toast({
+          title: "Item Shared",
+          description: `"${item.title}" shared successfully`
+        });
+      } catch (error) {
+        // User cancelled or error occurred, fall back to clipboard
+        await navigator.clipboard.writeText(shareText);
+        toast({
+          title: "Copied to Clipboard",
+          description: `"${item.title}" copied to clipboard for sharing`
+        });
+      }
+    } else {
+      // Fallback for browsers without Web Share API
+      await navigator.clipboard.writeText(shareText);
+      toast({
+        title: "Copied to Clipboard",
+        description: `"${item.title}" copied to clipboard for sharing`
+      });
+    }
+  };
+
   const handleCopyToClipboard = async () => {
     try {
       const canvasText = canvasItems
@@ -372,15 +404,26 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
         ) : (
           <div className="space-y-3">
             {canvasItems.map((item) => (
-              <Card key={item.id} className="shadow-sm">
+              <Card key={item.id} className="shadow-sm group">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm">{item.title || 'Canvas Item'}</CardTitle>
-                    {item.timestamp && (
-                      <span className="text-xs text-gray-500">
-                        {new Date(item.timestamp).toLocaleString()}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {item.timestamp && (
+                        <span className="text-xs text-gray-500">
+                          {new Date(item.timestamp).toLocaleString()}
+                        </span>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleShareCanvasItem(item)}
+                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-200"
+                        title="Share this item"
+                      >
+                        <Share2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">

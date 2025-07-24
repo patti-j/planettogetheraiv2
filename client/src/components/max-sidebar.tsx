@@ -32,6 +32,7 @@ import {
   SplitSquareHorizontal,
   SplitSquareVertical,
   Monitor,
+  Share2,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AI_THEME_OPTIONS, AIThemeColor } from "@/lib/ai-theme";
@@ -481,6 +482,38 @@ export function MaxSidebar() {
     await playTTSResponse(testText);
   };
 
+  const handleShareMessage = async (message: Message) => {
+    const shareText = `Max AI Response (${message.timestamp.toLocaleString()}):\n\n${message.content}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Max AI Response',
+          text: shareText
+        });
+        
+        toast({
+          title: "Response Shared",
+          description: "Max's response shared successfully"
+        });
+      } catch (error) {
+        // User cancelled or error occurred, fall back to clipboard
+        await navigator.clipboard.writeText(shareText);
+        toast({
+          title: "Copied to Clipboard",
+          description: "Response copied to clipboard for sharing"
+        });
+      }
+    } else {
+      // Fallback for browsers without Web Share API
+      await navigator.clipboard.writeText(shareText);
+      toast({
+        title: "Copied to Clipboard",
+        description: "Response copied to clipboard for sharing"
+      });
+    }
+  };
+
   const handleHeaderMouseDown = (e: React.MouseEvent) => {
     // Only trigger drag on the header area, not on buttons
     if ((e.target as HTMLElement).closest('button')) return;
@@ -688,15 +721,26 @@ export function MaxSidebar() {
               className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] p-2 rounded-lg text-sm ${
+                className={`max-w-[80%] p-2 rounded-lg text-sm relative group ${
                   message.type === 'user'
                     ? 'bg-blue-500 text-white'
                     : 'bg-gray-100 text-gray-900'
                 }`}
               >
                 {message.content}
-                <div className={`text-xs mt-1 opacity-70`}>
-                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                <div className={`text-xs mt-1 opacity-70 flex items-center justify-between`}>
+                  <span>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  {message.type === 'assistant' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleShareMessage(message)}
+                      className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-200"
+                      title="Share this response"
+                    >
+                      <Share2 className="h-3 w-3" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
