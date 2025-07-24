@@ -120,6 +120,8 @@ The application uses a modern full-stack architecture with strong typing through
 - Optimized canvas header design for compact inline display within Max interface
 - Fixed Canvas button behavior to toggle inline canvas instead of navigating to separate page
 - Canvas now automatically opens when Max generates content, even if previously closed
+- Canvas button closes canvas and returns to previous content when canvas is already open
+- Enhanced canvas header with distinct icons: trash icon for clearing content, X icon for closing canvas
 - Improved speech recognition functionality with enhanced error handling and debugging
 - Added comprehensive console logging for microphone permissions and speech recognition troubleshooting
 

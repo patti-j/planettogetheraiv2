@@ -17,7 +17,8 @@ import {
   Package,
   Clock,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Trash2
 } from 'lucide-react';
 import { useAITheme } from '@/hooks/use-ai-theme';
 
@@ -111,7 +112,7 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
                     className="text-white hover:bg-white/20 p-1"
                     title="Clear Canvas"
                   >
-                    <X className="w-3 h-3" />
+                    <Trash2 className="w-3 h-3" />
                   </Button>
                 </>
               )}
