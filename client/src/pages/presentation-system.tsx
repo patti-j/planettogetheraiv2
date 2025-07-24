@@ -15,7 +15,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { 
   Presentation, Plus, FileText, Users, TrendingUp, Bot, 
   Library, Settings, Play, Edit, Share, Trash2, Upload,
-  BarChart3, Target, Calendar, Clock, Maximize2, Minimize2
+  BarChart3, Target, Calendar, Clock, Maximize2, Minimize2,
+  ChevronLeft, ChevronRight, X, SkipBack, SkipForward
 } from "lucide-react";
 
 interface Presentation {
@@ -57,6 +58,8 @@ export default function PresentationSystemPage() {
   const [isMaximized, setIsMaximized] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedPresentation, setSelectedPresentation] = useState<Presentation | null>(null);
+  const [presentationViewerOpen, setPresentationViewerOpen] = useState(false);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [aiGenerateDialogOpen, setAiGenerateDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -142,6 +145,32 @@ export default function PresentationSystemPage() {
 
   const handleGenerateWithAI = (prompt: string) => {
     generatePresentationMutation.mutate(prompt);
+  };
+
+  // Handle presentation playback
+  const handlePlayPresentation = (presentation: Presentation) => {
+    setSelectedPresentation(presentation);
+    setCurrentSlideIndex(0);
+    setPresentationViewerOpen(true);
+  };
+
+  // Presentation navigation
+  const nextSlide = () => {
+    if (selectedPresentation?.customization?.slides && currentSlideIndex < selectedPresentation.customization.slides.length - 1) {
+      setCurrentSlideIndex(currentSlideIndex + 1);
+    }
+  };
+
+  const previousSlide = () => {
+    if (currentSlideIndex > 0) {
+      setCurrentSlideIndex(currentSlideIndex - 1);
+    }
+  };
+
+  const closePresentationViewer = () => {
+    setPresentationViewerOpen(false);
+    setSelectedPresentation(null);
+    setCurrentSlideIndex(0);
   };
 
   const getPresentationStats = () => {
@@ -409,7 +438,10 @@ export default function PresentationSystemPage() {
                             <Button variant="ghost" size="sm">
                               <Edit className="w-4 h-4" />
                             </Button>
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" onClick={(e) => {
+                              e.stopPropagation();
+                              handlePlayPresentation(presentation);
+                            }}>
                               <Play className="w-4 h-4" />
                             </Button>
                           </div>
@@ -467,7 +499,7 @@ export default function PresentationSystemPage() {
                         <Button variant="ghost" size="sm">
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={() => handlePlayPresentation(presentation)}>
                           <Play className="w-4 h-4" />
                         </Button>
                         <Button variant="ghost" size="sm">
@@ -514,6 +546,110 @@ export default function PresentationSystemPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Presentation Viewer Modal */}
+      {presentationViewerOpen && selectedPresentation && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center">
+          <div className="w-full h-full max-w-6xl max-h-screen bg-white rounded-lg overflow-hidden">
+            {/* Viewer Header */}
+            <div className="bg-gray-900 text-white p-4 flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <h2 className="text-lg font-semibold">{selectedPresentation.title}</h2>
+                <Badge variant="secondary" className="bg-gray-700 text-white">
+                  {selectedPresentation.category}
+                </Badge>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-300">
+                  {currentSlideIndex + 1} / {selectedPresentation.customization?.slides?.length || 1}
+                </span>
+                <Button variant="ghost" size="sm" onClick={closePresentationViewer} className="text-white hover:bg-gray-700">
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Slide Content */}
+            <div className="flex-1 p-8 bg-white overflow-auto" style={{ minHeight: 'calc(100vh - 140px)' }}>
+              {selectedPresentation.customization?.slides && selectedPresentation.customization.slides.length > 0 ? (
+                <div className="max-w-4xl mx-auto">
+                  {(() => {
+                    const slide = selectedPresentation.customization.slides[currentSlideIndex];
+                    return (
+                      <div className="space-y-6">
+                        <h1 className="text-3xl font-bold text-gray-900 mb-6">{slide.title}</h1>
+                        <div className="prose prose-lg max-w-none">
+                          {slide.content && (
+                            <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                              {slide.content}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              ) : (
+                <div className="max-w-4xl mx-auto text-center py-12">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-4">{selectedPresentation.title}</h1>
+                  <p className="text-lg text-gray-600 mb-6">{selectedPresentation.description}</p>
+                  <div className="bg-blue-50 p-8 rounded-lg">
+                    <Presentation className="w-16 h-16 mx-auto text-blue-500 mb-4" />
+                    <p className="text-gray-600">This presentation is ready to be enhanced with slides.</p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      Category: {selectedPresentation.category} | 
+                      Duration: {selectedPresentation.estimatedDuration || 'Not specified'}min
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Navigation Controls */}
+            <div className="bg-gray-100 p-4 flex items-center justify-between">
+              <Button 
+                variant="outline" 
+                onClick={previousSlide}
+                disabled={currentSlideIndex === 0}
+                className="flex items-center space-x-2"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span>Previous</span>
+              </Button>
+              
+              <div className="flex items-center space-x-4">
+                <Button variant="outline" size="sm" onClick={() => setCurrentSlideIndex(0)}>
+                  <SkipBack className="w-4 h-4" />
+                </Button>
+                <span className="text-sm text-gray-600">
+                  Slide {currentSlideIndex + 1} of {selectedPresentation.customization?.slides?.length || 1}
+                </span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    if (selectedPresentation.customization?.slides) {
+                      setCurrentSlideIndex(selectedPresentation.customization.slides.length - 1);
+                    }
+                  }}
+                >
+                  <SkipForward className="w-4 h-4" />
+                </Button>
+              </div>
+
+              <Button 
+                variant="outline" 
+                onClick={nextSlide}
+                disabled={!selectedPresentation.customization?.slides || currentSlideIndex >= selectedPresentation.customization.slides.length - 1}
+                className="flex items-center space-x-2"
+              >
+                <span>Next</span>
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
