@@ -383,18 +383,65 @@ export default function Training() {
 
     // Handle start live tour
     const handleStartLiveTour = (tour: any) => {
-      // Find the role by ID or name
-      const roleToSwitch = allRoles.find(role => 
-        role.id === tour.roleId || role.name === tour.roleDisplayName || role.name === tour.roleName
-      );
+      console.log("Starting live tour for:", tour);
+      console.log("Available roles:", allRoles);
+      
+      // Find the role by ID or name with improved matching
+      let roleToSwitch = null;
+      
+      // First try to match by role ID
+      if (tour.roleId) {
+        roleToSwitch = allRoles.find(role => role.id === tour.roleId);
+      }
+      
+      // If not found, try to match by role display name
+      if (!roleToSwitch && (tour.roleDisplayName || tour.roleName)) {
+        const targetRoleName = tour.roleDisplayName || tour.roleName;
+        roleToSwitch = allRoles.find(role => 
+          role.name === targetRoleName || 
+          role.name.toLowerCase() === targetRoleName.toLowerCase()
+        );
+      }
+      
+      console.log("Found role to switch:", roleToSwitch);
       
       if (roleToSwitch) {
-        // Start tour for the role
-        window.location.href = `/dashboard?startTour=true&roleId=${roleToSwitch.id}`;
+        // Switch role first, then start tour
+        const switchRoleAndStartTour = async () => {
+          try {
+            // Switch to the target role
+            const response = await apiRequest('POST', `/api/users/${user?.id}/switch-role`, {
+              roleId: roleToSwitch.id
+            });
+            
+            if (response.ok) {
+              // Start the tour with voice enabled by default
+              startTour(roleToSwitch.id, true);
+              
+              toast({
+                title: "Tour Started",
+                description: `Starting guided tour as ${roleToSwitch.name}`,
+              });
+            } else {
+              throw new Error("Failed to switch role");
+            }
+          } catch (error) {
+            console.error("Error switching role:", error);
+            // Try to start tour anyway without role switch
+            startTour(roleToSwitch.id, true);
+            
+            toast({
+              title: "Tour Started",
+              description: `Starting guided tour as ${roleToSwitch.name}`,
+            });
+          }
+        };
+        
+        switchRoleAndStartTour();
       } else {
         toast({
           title: "Role Not Found",
-          description: "Could not find the role associated with this tour.",
+          description: `Could not find role for tour: ${tour.roleDisplayName || tour.roleName}. Available roles: ${allRoles.map(r => r.name).join(', ')}`,
           variant: "destructive",
         });
       }
