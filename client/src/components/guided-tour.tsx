@@ -301,6 +301,22 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     setPosition(getInitialPosition());
   }, []);
 
+  // Scroll tour window into view when it first appears
+  useEffect(() => {
+    if (cardRef.current && tourSteps.length > 0) {
+      const timer = setTimeout(() => {
+        cardRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'nearest',
+          inline: 'nearest' 
+        });
+        console.log("Tour window scrolled into view");
+      }, 300); // Small delay to ensure tour window has rendered
+      
+      return () => clearTimeout(timer);
+    }
+  }, [tourSteps.length]); // Trigger when tour data loads
+
   // Window resize handler
   useEffect(() => {
     const handleResize = () => {
