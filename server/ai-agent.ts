@@ -264,6 +264,7 @@ async function executeAction(action: string, parameters: any, message: string, c
               content: {
                 type: "table",
                 title: "Manufacturing Jobs Overview",
+                timestamp: new Date().toISOString(),
                 data: allJobs.map(job => ({
                   "Job ID": job.id,
                   "Job Name": job.name,
@@ -308,6 +309,7 @@ async function executeAction(action: string, parameters: any, message: string, c
               content: {
                 type: "table",
                 title: "Operations Overview",
+                timestamp: new Date().toISOString(),
                 data: allOperations.map(op => ({
                   "Operation ID": op.id,
                   "Name": op.name,
@@ -351,6 +353,7 @@ async function executeAction(action: string, parameters: any, message: string, c
               content: {
                 type: "table",
                 title: "List of Resources",
+                timestamp: new Date().toISOString(),
                 data: allResources.map(res => ({
                   "id": res.id,
                   "name": res.name,

@@ -442,7 +442,8 @@ export function MaxSidebar() {
             title: canvasAction.content.title || 'AI Generated Content',
             content: canvasAction.content.data || canvasAction.content,
             width: canvasAction.content.width || '100%',
-            height: canvasAction.content.height || 'auto'
+            height: canvasAction.content.height || 'auto',
+            timestamp: canvasAction.content.timestamp || new Date().toISOString()
           };
           console.log('Creating new canvas item:', newItem);
           setCanvasItems(prev => {

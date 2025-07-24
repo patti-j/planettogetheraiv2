@@ -8,6 +8,7 @@ export interface CanvasItem {
   width?: string;
   height?: string;
   position?: { x: number; y: number };
+  timestamp?: string;
 }
 
 interface MaxDockContextType {

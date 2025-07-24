@@ -431,7 +431,14 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
             {canvasItems.map((item) => (
               <Card key={item.id} className="shadow-sm">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">{item.title || 'Canvas Item'}</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm">{item.title || 'Canvas Item'}</CardTitle>
+                    {item.timestamp && (
+                      <span className="text-xs text-gray-500">
+                        {new Date(item.timestamp).toLocaleString()}
+                      </span>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent className="pt-0">
                   {renderCanvasItem(item)}
