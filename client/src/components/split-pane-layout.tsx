@@ -122,7 +122,7 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
       console.log('Navigation detected, closing canvas. Current location:', location);
       setCanvasVisible(false);
     }
-  }, [location]);
+  }, [location, isCanvasVisible, setCanvasVisible]);
 
   // Add event listeners for dragging
   useEffect(() => {

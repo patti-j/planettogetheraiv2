@@ -121,6 +121,12 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 24, 2025)
 
+✓ **Canvas Auto-Close Navigation Fix (July 24, 2025)**:
+- Fixed critical issue where canvas wouldn't close when navigating to presentation system from main menu
+- Enhanced navigation detection in split-pane-layout with proper useEffect dependencies
+- Canvas now automatically closes when switching between main pages to prevent UI overlap
+- Improved user experience by ensuring canvas and main pages don't conflict in the same display space
+
 ✓ **Mobile Tab Navigation Fix (July 24, 2025)**:
 - Fixed critical mobile UI issue where tab text (Overview, Presentations, Studio, Library, Analytics) was overflowing and unreadable
 - Converted fixed grid layout to horizontal scrollable tabs on mobile with shorter labels (Info, List, Create, Saved, Stats)
