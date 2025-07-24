@@ -231,6 +231,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   const [autoAdvance, setAutoAdvance] = useState(false);
   const [showRoleSelection, setShowRoleSelection] = useState(false);
   const [hasAutoStarted, setHasAutoStarted] = useState(false);
+  const [isPausedByUser, setIsPausedByUser] = useState(false);
   
   // Navigation hook
   const [location, setLocation] = useLocation();
@@ -519,15 +520,15 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   // Navigation handlers
   const handleNext = () => {
     if (currentStep < tourSteps.length - 1) {
-      // Remember if voice was playing before navigation
-      const wasVoicePlaying = isPlaying || voiceEnabled;
+      // Only restart voice if user didn't manually pause it
+      const shouldContinueVoice = voiceEnabled && !isPausedByUser;
       
       setCurrentStep(currentStep + 1);
       setAudioCompleted(false);
       stopSpeech();
       
-      // If voice was playing, start it for the new step after a brief delay
-      if (wasVoicePlaying && tourSteps[currentStep + 1]) {
+      // If voice should continue and wasn't paused by user, start it for the new step
+      if (shouldContinueVoice && tourSteps[currentStep + 1]) {
         setTimeout(() => {
           playPreloadedAudio(tourSteps[currentStep + 1].id);
         }, 600); // Small delay to allow navigation to complete
@@ -539,15 +540,15 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
 
   const handlePrevious = () => {
     if (currentStep > 0) {
-      // Remember if voice was playing before navigation
-      const wasVoicePlaying = isPlaying || voiceEnabled;
+      // Only restart voice if user didn't manually pause it
+      const shouldContinueVoice = voiceEnabled && !isPausedByUser;
       
       setCurrentStep(currentStep - 1);
       setAudioCompleted(false);
       stopSpeech();
       
-      // If voice was playing, start it for the new step after a brief delay
-      if (wasVoicePlaying && tourSteps[currentStep - 1]) {
+      // If voice should continue and wasn't paused by user, start it for the new step
+      if (shouldContinueVoice && tourSteps[currentStep - 1]) {
         setTimeout(() => {
           playPreloadedAudio(tourSteps[currentStep - 1].id);
         }, 600); // Small delay to allow navigation to complete
@@ -630,6 +631,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           setIsPlaying(false);
           setIsLoadingVoice(false);
           setAudioCompleted(true);
+          setIsPausedByUser(false); // Reset pause state when audio completes naturally
           speechRef.current = null;
           URL.revokeObjectURL(audioUrl);
           console.log("Audio playback completed - voice will not auto-replay");
@@ -684,6 +686,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     
     const newVoiceEnabled = !voiceEnabled;
     setVoiceEnabled(newVoiceEnabled);
+    setIsPausedByUser(false); // Reset pause state when toggling voice
     
     if (newVoiceEnabled && tourSteps[currentStep]) {
       playPreloadedAudio(tourSteps[currentStep].id);
@@ -694,9 +697,13 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     if (!voiceEnabled) return;
     
     if (isPlaying) {
+      setIsPausedByUser(true); // Track that user manually paused
       stopSpeech();
-    } else if (tourSteps[currentStep]) {
-      playPreloadedAudio(tourSteps[currentStep].id);
+    } else {
+      setIsPausedByUser(false); // User is manually playing
+      if (tourSteps[currentStep]) {
+        playPreloadedAudio(tourSteps[currentStep].id);
+      }
     }
   };
 
