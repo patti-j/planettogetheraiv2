@@ -10,6 +10,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { 
   X, 
   Download, 
@@ -62,14 +72,24 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
 }) => {
   const { aiTheme } = useAITheme();
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showClearConfirmation, setShowClearConfirmation] = useState(false);
   const { canvasItems, setCanvasItems } = useMaxDock();
 
   console.log('MaxCanvas rendered with items:', canvasItems, 'isVisible:', isVisible);
 
-  // Clear items function
-  const clearItems = () => {
+  // Clear items function with confirmation
+  const handleClearCanvas = () => {
+    setShowClearConfirmation(true);
+  };
+
+  const confirmClearCanvas = () => {
     setCanvasItems([]);
+    setShowClearConfirmation(false);
     toast({ title: "Canvas cleared" });
+  };
+
+  const cancelClearCanvas = () => {
+    setShowClearConfirmation(false);
   };
 
   if (!isVisible) return null;
@@ -91,9 +111,7 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
     }
   };
 
-  const handleClearCanvas = () => {
-    clearItems();
-  };
+
 
   const handleExportJSON = () => {
     const canvasData = {
@@ -458,6 +476,24 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
           </div>
         )}
       </div>
+
+      {/* Clear Canvas Confirmation Dialog */}
+      <AlertDialog open={showClearConfirmation} onOpenChange={setShowClearConfirmation}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear Canvas</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to clear all canvas content? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelClearCanvas}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmClearCanvas} className="bg-red-600 hover:bg-red-700">
+              Clear Canvas
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
