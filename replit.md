@@ -119,11 +119,12 @@ The application uses a modern full-stack architecture with strong typing through
 - Added 3-second interval chunks for periodic transcription during voice input instead of waiting for microphone off
 - Interim transcription appears with "..." indicator showing progress to users while speaking
 - Enhanced audio cleanup with proper interval clearing and error handling for streaming voice
-- Fixed guided tour auto-scrolling boundary issue preventing content from scrolling beyond available content
-- Tour auto-scroll now uses safe distance calculation limited to maximum scrollable content minus current position
-- Added bounds checking to prevent scrolling past end of content that was causing window to scroll out of view
-- Enhanced scroll distance calculation using 60% of viewport height or remaining content, whichever is smaller
-- Users now see real-time voice-to-text feedback and tours stop scrolling at appropriate content boundaries
+- Fixed guided tour auto-scrolling boundary issue that was scrolling entire page out of view
+- Implemented conservative scroll system limited to 25% of viewport height or 200px maximum
+- Added tour window position detection to skip auto-scroll if it would push tour out of view
+- Reduced scroll duration from 3 seconds to 2 seconds and pause time to 1 second for gentler experience
+- Tour auto-scroll now provides gentle content preview without disrupting user's view of the tour window
+- Users now see real-time voice-to-text feedback and gentle content demonstration without disorientation
 
 ✓ **Job Schema Enhancement & Improved Chart Data (July 24, 2025)**:
 - Successfully added quantity field to job schema for better production planning

@@ -392,12 +392,24 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     
     console.log(`Mobile scroll check: pageHeight=${pageHeight}, viewport=${viewportHeight}, currentScroll=${currentScrollTop}, maxScroll=${maxScrollableDistance}`);
     
-    // Always perform scroll demo on mobile to show content below the fold
+    // Gentle scroll demo to show content below the fold (much more conservative)
     const performMobileScrollDemo = async () => {
-      console.log('Starting mobile auto-scroll to show hidden content...');
+      console.log('Starting gentle auto-scroll to show hidden content...');
+      
+      // Check if auto-scroll would push tour window out of view
+      const tourWindow = document.querySelector('[class*="fixed bg-white shadow-2xl"]');
+      if (tourWindow) {
+        const tourRect = tourWindow.getBoundingClientRect();
+        const tourTopPosition = tourRect.top;
+        
+        // If tour window is already in lower portion of screen, don't auto-scroll
+        if (tourTopPosition > viewportHeight * 0.6) {
+          console.log('Tour window positioned low on screen - skipping auto-scroll to keep it visible');
+          return;
+        }
+      }
       
       // Check if there's actually content that extends beyond the viewport
-      // Force scroll demo if on mobile even if calculations show no scroll, since mobile layouts can be tricky
       const isMobile = window.innerWidth < 768;
       if (maxScrollableDistance <= 0 && !isMobile) {
         console.log('No scrollable content detected - page fits within viewport');
@@ -420,28 +432,29 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         return;
       }
       
-      // Calculate how far we can safely scroll down without going past the end
-      // Limit scroll to maximum possible scroll or a reasonable viewport portion, whichever is smaller
-      const safeScrollDistance = Math.min(
+      // Much more conservative scroll - only scroll enough to show a bit more content
+      // Never scroll more than 1/4 of viewport height to prevent page going out of view
+      const conservativeScrollDistance = Math.min(
         maxScrollableDistance - currentScrollTop, // Don't scroll past the end
-        viewportHeight * 0.6 // Don't scroll more than 60% of viewport height
+        viewportHeight * 0.25, // Very conservative - only 25% of viewport height
+        200 // Never scroll more than 200px
       );
       
-      if (safeScrollDistance > 50) { // Only scroll if there's meaningful content to show
-        console.log(`Scrolling down ${safeScrollDistance}px to reveal hidden content (max possible: ${maxScrollableDistance - currentScrollTop}px)...`);
+      if (conservativeScrollDistance > 30) { // Only scroll if there's meaningful content to show
+        console.log(`Conservative scroll: ${conservativeScrollDistance}px to reveal some hidden content (max possible: ${maxScrollableDistance - currentScrollTop}px)...`);
         
         // Scroll down to show hidden content
         const scrollDown = () => {
           return new Promise<void>((resolve) => {
-            const targetScrollTop = currentScrollTop + safeScrollDistance;
-            const distance = safeScrollDistance;
+            const targetScrollTop = currentScrollTop + conservativeScrollDistance;
+            const distance = conservativeScrollDistance;
             
             if (distance <= 10) {
               resolve();
               return;
             }
             
-            const duration = 3000; // 3 seconds to scroll down
+            const duration = 2000; // 2 seconds to scroll down (shorter for gentler experience)
             const startTime = Date.now();
             const startScrollTop = currentScrollTop;
             
@@ -526,12 +539,12 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           });
         };
         
-        // Execute scroll sequence
+        // Execute gentle scroll sequence
         await scrollDown();
         console.log('Pausing to show content...');
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Pause to let user see content
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Shorter pause for gentler experience
         await scrollToTop();
-        console.log('Mobile auto-scroll sequence completed');
+        console.log('Gentle auto-scroll sequence completed');
       } else {
         console.log(`Insufficient content to scroll - only ${scrollDownDistance}px available`);
       }
