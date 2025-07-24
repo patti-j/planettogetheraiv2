@@ -322,102 +322,43 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
             </div>
           </div>
             
-          {/* Header Actions - Desktop: inline buttons, Mobile: dropdown menu */}
+          {/* Header Actions - Dropdown menu for both desktop and mobile */}
           <div className="flex items-center gap-2">
             {canvasItems.length > 0 && (
-              <>
-                {/* Desktop buttons - hidden on mobile */}
-                <div className="hidden sm:flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={handleCopyToClipboard}
-                    className="text-white hover:bg-white/20"
-                    title="Copy to Clipboard"
+                    className="text-white hover:bg-white/20 p-2"
+                    title="Canvas Actions"
                   >
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={handleCopyToClipboard}>
                     <Copy className="w-4 h-4 mr-2" />
-                    Copy
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleExportJSON}
-                    className="text-white hover:bg-white/20"
-                    title="Export as JSON"
-                  >
+                    Copy to Clipboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportJSON}>
                     <Download className="w-4 h-4 mr-2" />
-                    JSON
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleExportImage}
-                    className="text-white hover:bg-white/20"
-                    title="Export as Image"
-                  >
+                    Export as JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportImage}>
                     <FileImage className="w-4 h-4 mr-2" />
-                    Image
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleShare}
-                    className="text-white hover:bg-white/20"
-                    title="Share Canvas"
-                  >
+                    Export as Image
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleShare}>
                     <Share2 className="w-4 h-4 mr-2" />
-                    Share
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClearCanvas}
-                    className="text-white hover:bg-white/20"
-                    title="Clear Canvas"
-                  >
+                    Share Canvas
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleClearCanvas} className="text-red-600">
                     <Trash2 className="w-4 h-4 mr-2" />
-                    Clear
-                  </Button>
-                </div>
-                
-                {/* Mobile dropdown menu */}
-                <div className="sm:hidden">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-white hover:bg-white/20 p-2"
-                        title="Canvas Actions"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem onClick={handleCopyToClipboard}>
-                        <Copy className="w-4 h-4 mr-2" />
-                        Copy to Clipboard
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleExportJSON}>
-                        <Download className="w-4 h-4 mr-2" />
-                        Export as JSON
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleExportImage}>
-                        <FileImage className="w-4 h-4 mr-2" />
-                        Export as Image
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleShare}>
-                        <Share2 className="w-4 h-4 mr-2" />
-                        Share Canvas
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleClearCanvas} className="text-red-600">
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Clear Canvas
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </>
+                    Clear Canvas
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
         </div>

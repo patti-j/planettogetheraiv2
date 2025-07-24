@@ -4,6 +4,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { 
   Download, 
   Share2, 
@@ -16,10 +32,15 @@ import {
   Package,
   Clock,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  MoreVertical,
+  Trash2,
+  Copy,
+  FileImage
 } from 'lucide-react';
 import { useAITheme } from '@/hooks/use-ai-theme';
 import { useMaxDock } from '@/contexts/MaxDockContext';
+import { toast } from '@/hooks/use-toast';
 
 interface CanvasItem {
   id: string;
@@ -35,6 +56,7 @@ export default function CanvasPage() {
   const { aiTheme } = useAITheme();
   const { isMobile, mobileLayoutMode, setMobileLayoutMode, setCurrentFullscreenView } = useMaxDock();
   const [items, setItems] = useState<CanvasItem[]>([]);
+  const [showClearConfirmation, setShowClearConfirmation] = useState(false);
 
   // Load canvas items from localStorage on mount
   useEffect(() => {
@@ -71,22 +93,114 @@ export default function CanvasPage() {
   };
 
   const handleClearCanvas = () => {
-    setItems([]);
+    setShowClearConfirmation(true);
   };
 
-  const handleExport = () => {
-    // Export canvas content as JSON or image
-    const canvasData = {
-      timestamp: new Date().toISOString(),
-      items: items
-    };
-    const blob = new Blob([JSON.stringify(canvasData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `max-canvas-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const confirmClearCanvas = () => {
+    setItems([]);
+    setShowClearConfirmation(false);
+    toast({
+      title: "Canvas Cleared",
+      description: "All canvas content has been removed"
+    });
+  };
+
+  const handleCopyToClipboard = async () => {
+    try {
+      const canvasText = items
+        .map(item => `${item.title}: ${JSON.stringify(item.content, null, 2)}`)
+        .join('\n\n---\n\n');
+      
+      await navigator.clipboard.writeText(canvasText);
+      toast({
+        title: "Copied to Clipboard",
+        description: "Canvas content copied successfully"
+      });
+    } catch (error) {
+      toast({
+        title: "Copy Failed",
+        description: "Unable to copy to clipboard",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleExportJSON = () => {
+    try {
+      const canvasData = {
+        timestamp: new Date().toISOString(),
+        items: items,
+        metadata: {
+          version: "1.0",
+          itemCount: items.length
+        }
+      };
+      const blob = new Blob([JSON.stringify(canvasData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `max-canvas-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "JSON Exported",
+        description: "Canvas data exported as JSON file"
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Unable to export as JSON",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleExportImage = async () => {
+    // This would require html2canvas or similar library in a real implementation
+    toast({
+      title: "Feature Coming Soon",
+      description: "Image export functionality will be available soon",
+      variant: "default"
+    });
+  };
+
+  const handleShare = async () => {
+    try {
+      const shareText = `Max Canvas Content (${items.length} items)\n\n${items
+        .map(item => `${item.title}: ${JSON.stringify(item.content)}`)
+        .join('\n\n---\n\n')}`;
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'Max Canvas Content',
+            text: shareText
+          });
+          
+          toast({
+            title: "Canvas Shared",
+            description: "Canvas content shared successfully"
+          });
+          return;
+        } catch (shareError) {
+          console.log('Web Share API failed, falling back to clipboard');
+        }
+      }
+
+      // Fallback to clipboard
+      await navigator.clipboard.writeText(shareText);
+      toast({
+        title: "Copied for Sharing",
+        description: "Canvas content copied to clipboard"
+      });
+    } catch (error) {
+      toast({
+        title: "Share Failed",
+        description: "Unable to share canvas content",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleMaximize = () => {
@@ -128,25 +242,40 @@ export default function CanvasPage() {
           
           <div className="flex items-center gap-2 lg:flex-shrink-0">
             {items.length > 0 && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleExport}
-                  className="text-white hover:bg-white/20"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Export
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleClearCanvas}
-                  className="text-white hover:bg-white/20"
-                >
-                  Clear
-                </Button>
-              </>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-white hover:bg-white/20 p-2"
+                    title="Canvas Actions"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={handleCopyToClipboard}>
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy to Clipboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportJSON}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export as JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportImage}>
+                    <FileImage className="w-4 h-4 mr-2" />
+                    Export as Image
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleShare}>
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Share Canvas
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleClearCanvas} className="text-red-600">
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Clear Canvas
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
         </div>
@@ -182,6 +311,27 @@ export default function CanvasPage() {
           </div>
         )}
       </div>
+
+      {/* Clear Confirmation Dialog */}
+      <AlertDialog open={showClearConfirmation} onOpenChange={setShowClearConfirmation}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear Canvas</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to clear all canvas content? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmClearCanvas}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Clear Canvas
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
