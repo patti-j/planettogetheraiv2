@@ -600,39 +600,59 @@ Create presentations that users will find exciting and that effectively demonstr
           </div>
         </div>
 
-        {/* Options Explanation */}
+        {/* Interactive Options Selection */}
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6">
           <h2 className="text-lg font-semibold mb-4 text-center">Choose Your Approach</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
+            <div 
+              className="text-center cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-lg bg-white rounded-lg p-4 border-2 border-green-200 hover:border-green-400"
+              onClick={() => setCreateDialogOpen(true)}
+            >
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Plus className="w-8 h-8 text-green-600" />
               </div>
               <h3 className="font-semibold text-green-800 mb-2">Quick Presentation</h3>
               <p className="text-sm text-green-700 mb-2">Simple template-based presentations for immediate use</p>
-              <p className="text-xs text-green-600 font-medium">Best for: Standard formats, quick turnaround, simple needs</p>
+              <p className="text-xs text-green-600 font-medium mb-3">Best for: Standard formats, quick turnaround, simple needs</p>
+              <div className="inline-flex items-center text-green-700 font-medium text-sm">
+                <span>Click to start</span>
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </div>
             </div>
-            <div className="text-center">
+            <div 
+              className="text-center cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-lg bg-white rounded-lg p-4 border-2 border-purple-200 hover:border-purple-400"
+              onClick={() => setAiGenerateDialogOpen(true)}
+            >
               <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Bot className="w-8 h-8 text-purple-600" />
               </div>
               <h3 className="font-semibold text-purple-800 mb-2">AI Generate</h3>
               <p className="text-sm text-purple-700 mb-2">Instant AI-created presentations from your description</p>
-              <p className="text-xs text-purple-600 font-medium">Best for: Custom content, AI-powered creation, immediate results</p>
+              <p className="text-xs text-purple-600 font-medium mb-3">Best for: Custom content, AI-powered creation, immediate results</p>
+              <div className="inline-flex items-center text-purple-700 font-medium text-sm">
+                <span>Click to start</span>
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </div>
             </div>
-            <div className="text-center">
+            <div 
+              className="text-center cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-lg bg-white rounded-lg p-4 border-2 border-blue-200 hover:border-blue-400"
+              onClick={() => setActiveTab("studio")}
+            >
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Sparkles className="w-8 h-8 text-blue-600" />
               </div>
               <h3 className="font-semibold text-blue-800 mb-2">Studio Project</h3>
               <p className="text-sm text-blue-700 mb-2">Advanced projects with research, materials, and team collaboration</p>
-              <p className="text-xs text-blue-600 font-medium">Best for: Complex presentations, website content extraction, team projects</p>
+              <p className="text-xs text-blue-600 font-medium mb-3">Best for: Complex presentations, website content extraction, team projects</p>
+              <div className="inline-flex items-center text-blue-700 font-medium text-sm">
+                <span>Click to start</span>
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </div>
             </div>
           </div>
-          <div className="mt-4 text-center">
+          <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              <strong>New to the system?</strong> Start with <span className="text-purple-600 font-medium">AI Generate</span> for instant results, 
-              or try <span className="text-blue-600 font-medium">Studio Project</span> for advanced features like web content research.
+              <strong>New to the system?</strong> Click on any card above to get started immediately.
             </p>
           </div>
         </div>
