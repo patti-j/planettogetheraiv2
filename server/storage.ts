@@ -45,6 +45,9 @@ import {
   canvasContent, canvasSettings,
   type CanvasContent, type CanvasSettings,
   type InsertCanvasContent, type InsertCanvasSettings,
+  aiMemories, aiMemoryTags, aiConversationContext,
+  type AIMemory, type AIMemoryTag, type AIConversationContext,
+  type InsertAIMemory, type InsertAIMemoryTag, type InsertAIConversationContext,
   // industryTemplates, userIndustryTemplates, templateConfigurations,
   // type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
   // type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration,
@@ -666,6 +669,20 @@ export interface IStorage {
   createWorkflowMonitoring(monitoring: InsertWorkflowMonitoring): Promise<WorkflowMonitoring>;
   updateWorkflowMonitoring(id: number, monitoring: Partial<InsertWorkflowMonitoring>): Promise<WorkflowMonitoring | undefined>;
   deleteWorkflowMonitoring(id: number): Promise<boolean>;
+
+  // AI Memory Management
+  getAIMemories(userId: string): Promise<any[]>;
+  storeAIMemory(memory: any): Promise<void>;
+  deleteAIMemory(entryId: string, userId: string): Promise<void>;
+  updateAITraining(entryId: string, content: string, userId: string): Promise<void>;
+  updateAITrainingPattern(pattern: any): Promise<void>;
+  clearAllAIMemories(userId: string): Promise<void>;
+  getAIMemoryStats(userId: string): Promise<{
+    totalMemories: number;
+    memoryTypes: Record<string, number>;
+    avgConfidence: number;
+    recentActivity: number;
+  }>;
 }
 
 export class MemStorage implements IStorage {
@@ -4477,30 +4494,45 @@ export class DatabaseStorage implements IStorage {
 
   // AI Memory and Training Management implementation
   async getAIMemories(userId: string): Promise<any[]> {
-    // Return stored AI memories for user
-    return [
-      {
-        id: '1',
-        type: 'conversation',
-        content: 'User frequently asks about production scheduling optimization',
-        timestamp: new Date(Date.now() - 86400000).toISOString(),
-        metadata: { page: '/dashboard', confidence: 85 }
-      },
-      {
-        id: '2', 
-        type: 'workflow_pattern',
-        content: 'Prefers analytics view over reports for data analysis',
-        timestamp: new Date(Date.now() - 172800000).toISOString(),
-        metadata: { page: '/analytics', confidence: 92 }
-      },
-      {
-        id: '3',
-        type: 'preference',
-        content: 'Uses voice assistance frequently during dashboard navigation',
-        timestamp: new Date(Date.now() - 259200000).toISOString(),
-        metadata: { feature: 'voice', confidence: 78 }
+    const memories = await this.db
+      .select({
+        id: aiMemories.id,
+        type: aiMemories.type,
+        category: aiMemories.category,
+        content: aiMemories.content,
+        context: aiMemories.context,
+        confidence: aiMemories.confidence,
+        importance: aiMemories.importance,
+        source: aiMemories.source,
+        lastAccessed: aiMemories.lastAccessed,
+        accessCount: aiMemories.accessCount,
+        isActive: aiMemories.isActive,
+        createdAt: aiMemories.createdAt,
+        updatedAt: aiMemories.updatedAt,
+      })
+      .from(aiMemories)
+      .where(and(eq(aiMemories.userId, userId), eq(aiMemories.isActive, true)))
+      .orderBy(desc(aiMemories.lastAccessed));
+
+    return memories.map(memory => ({
+      id: memory.id.toString(),
+      type: memory.type,
+      category: memory.category,
+      content: memory.content,
+      context: memory.context,
+      confidence: memory.confidence,
+      importance: memory.importance,
+      source: memory.source,
+      timestamp: memory.createdAt?.toISOString(),
+      lastAccessed: memory.lastAccessed?.toISOString(),
+      accessCount: memory.accessCount,
+      metadata: {
+        ...memory.context,
+        confidence: memory.confidence,
+        importance: memory.importance,
+        source: memory.source
       }
-    ];
+    }));
   }
 
   async getAITrainingData(userId: string): Promise<any[]> {
@@ -4531,27 +4563,184 @@ export class DatabaseStorage implements IStorage {
   }
 
   async storeAIMemory(memory: any): Promise<void> {
-    // Store new AI memory entry
-    console.log('Storing AI memory:', memory);
-    // In a real implementation, this would save to a database table
+    const insertData: InsertAIMemory = {
+      userId: memory.userId,
+      type: memory.type || 'conversation',
+      category: memory.category || 'general',
+      content: memory.content,
+      context: memory.context || {},
+      confidence: memory.confidence || 50,
+      importance: memory.importance || 'medium',
+      source: memory.source || 'chat',
+      expiresAt: memory.expiresAt ? new Date(memory.expiresAt) : undefined,
+    };
+
+    const [insertedMemory] = await this.db
+      .insert(aiMemories)
+      .values(insertData)
+      .returning();
+
+    // Add tags if provided
+    if (memory.tags && Array.isArray(memory.tags)) {
+      const tagInserts = memory.tags.map((tag: string) => ({
+        memoryId: insertedMemory.id,
+        tag: tag.trim(),
+      }));
+      
+      if (tagInserts.length > 0) {
+        await this.db.insert(aiMemoryTags).values(tagInserts);
+      }
+    }
+
+    console.log('Stored AI memory:', insertedMemory.id);
   }
 
   async updateAITrainingPattern(pattern: any): Promise<void> {
-    // Update AI training pattern
-    console.log('Updating AI training pattern:', pattern);
-    // In a real implementation, this would update patterns in a database
+    // Update AI training pattern (this could store conversation context updates)
+    if (pattern.userId && pattern.sessionId) {
+      await this.db
+        .insert(aiConversationContext)
+        .values({
+          userId: pattern.userId,
+          sessionId: pattern.sessionId,
+          conversationSummary: pattern.summary || '',
+          topics: pattern.topics || [],
+          keyInsights: pattern.insights || [],
+          userGoals: pattern.goals || [],
+          preferredInteractionStyle: pattern.interactionStyle || 'conversational'
+        })
+        .onConflictDoUpdate({
+          target: [aiConversationContext.userId, aiConversationContext.sessionId],
+          set: {
+            conversationSummary: pattern.summary || '',
+            topics: pattern.topics || [],
+            keyInsights: pattern.insights || [],
+            userGoals: pattern.goals || [],
+            preferredInteractionStyle: pattern.interactionStyle || 'conversational',
+            totalMessages: sql`${aiConversationContext.totalMessages} + 1`,
+            lastInteraction: new Date(),
+            updatedAt: new Date()
+          }
+        });
+    }
+    console.log('Updated AI training pattern:', pattern);
   }
 
   async deleteAIMemory(entryId: string, userId: string): Promise<void> {
-    // Delete memory entry
-    console.log('Deleting AI memory:', entryId, 'for user:', userId);
-    // In a real implementation, this would delete from database
+    const memoryId = parseInt(entryId);
+    
+    // First delete associated tags
+    await this.db
+      .delete(aiMemoryTags)
+      .where(eq(aiMemoryTags.memoryId, memoryId));
+    
+    // Then delete the memory entry (with user verification for security)
+    await this.db
+      .delete(aiMemories)
+      .where(and(eq(aiMemories.id, memoryId), eq(aiMemories.userId, userId)));
+    
+    console.log('Deleted AI memory:', entryId, 'for user:', userId);
+  }
+
+  async clearAllAIMemories(userId: string): Promise<void> {
+    // Get all memory IDs for this user first to delete associated tags
+    const userMemories = await this.db
+      .select({ id: aiMemories.id })
+      .from(aiMemories)
+      .where(eq(aiMemories.userId, userId));
+    
+    // Delete all associated tags one by one
+    for (const memory of userMemories) {
+      await this.db
+        .delete(aiMemoryTags)
+        .where(eq(aiMemoryTags.memoryId, memory.id));
+    }
+    
+    // Delete all memories for this user
+    const result = await this.db
+      .delete(aiMemories)
+      .where(eq(aiMemories.userId, userId));
+    
+    // Clear conversation context as well
+    await this.db
+      .delete(aiConversationContext)
+      .where(eq(aiConversationContext.userId, userId));
+    
+    console.log('Cleared all AI memories for user:', userId, 'Count:', result.rowCount || 0);
   }
 
   async updateAITraining(entryId: string, content: string, userId: string): Promise<void> {
-    // Update training entry
-    console.log('Updating AI training:', entryId, 'with content:', content, 'for user:', userId);
-    // In a real implementation, this would update training data in database
+    const memoryId = parseInt(entryId);
+    
+    await this.db
+      .update(aiMemories)
+      .set({
+        content: content,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(aiMemories.id, memoryId), eq(aiMemories.userId, userId)));
+    
+    console.log('Updated AI memory:', entryId, 'for user:', userId);
+  }
+
+  async clearAllAIMemories(userId: string): Promise<void> {
+    // Delete all memory tags first (foreign key constraint)
+    await this.db.delete(aiMemoryTags).where(
+      inArray(aiMemoryTags.memoryId, 
+        this.db.select({ id: aiMemories.id }).from(aiMemories).where(eq(aiMemories.userId, userId))
+      )
+    );
+    
+    // Then delete all memories for the user
+    await this.db.delete(aiMemories).where(eq(aiMemories.userId, userId));
+    
+    // Also clear conversation context
+    await this.db.delete(aiConversationContext).where(eq(aiConversationContext.userId, userId));
+    
+    console.log('Cleared all AI memories for user:', userId);
+  }
+
+  async getAIMemoryStats(userId: string): Promise<{
+    totalMemories: number;
+    memoryTypes: Record<string, number>;
+    avgConfidence: number;
+    recentActivity: number;
+  }> {
+    const memories = await this.db
+      .select({
+        type: aiMemories.type,
+        confidence: aiMemories.confidence,
+        createdAt: aiMemories.createdAt,
+      })
+      .from(aiMemories)
+      .where(and(eq(aiMemories.userId, userId), eq(aiMemories.isActive, true)));
+
+    const totalMemories = memories.length;
+    const memoryTypes: Record<string, number> = {};
+    let totalConfidence = 0;
+    let recentActivity = 0;
+
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    memories.forEach(memory => {
+      // Count by type
+      memoryTypes[memory.type] = (memoryTypes[memory.type] || 0) + 1;
+      
+      // Sum confidence
+      totalConfidence += memory.confidence || 0;
+      
+      // Count recent activity
+      if (memory.createdAt && memory.createdAt > oneWeekAgo) {
+        recentActivity++;
+      }
+    });
+
+    return {
+      totalMemories,
+      memoryTypes,
+      avgConfidence: totalMemories > 0 ? Math.round(totalConfidence / totalMemories) : 0,
+      recentActivity
+    };
   }
 
   // Plant Management Implementation

@@ -1195,6 +1195,18 @@ Provide the response as a JSON object with the following structure:
     }
   });
 
+  // Clear all AI memories
+  app.post("/api/ai-agent/memory/clear", async (req, res) => {
+    try {
+      const userId = req.user?.id || 'demo';
+      await storage.clearAllAIMemories(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Memory clear error:', error);
+      res.status(500).json({ error: 'Failed to clear memories' });
+    }
+  });
+
   // Helper function to generate default canvas content
   function generateDefaultCanvasContent(message: string): any {
     const lowerMessage = message.toLowerCase();

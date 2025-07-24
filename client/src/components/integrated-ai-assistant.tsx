@@ -494,6 +494,25 @@ export default function IntegratedAIAssistant() {
     }
   };
 
+  // Clear all memories
+  const clearAllMemories = async () => {
+    try {
+      await apiRequest("POST", "/api/ai-agent/memory/clear");
+      await fetchMemoryData(); // Refresh data
+      toast({
+        title: "Memories Cleared",
+        description: "All of Max's memories have been cleared.",
+      });
+    } catch (error) {
+      console.error('Error clearing memories:', error);
+      toast({
+        title: "Error",
+        description: "Failed to clear memories.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Toggle voice functionality
   const toggleVoice = () => {
     setIsVoiceEnabled(!isVoiceEnabled);
@@ -813,15 +832,37 @@ export default function IntegratedAIAssistant() {
                     </div>
                   </div>
 
+                  {/* Memory Actions */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={fetchMemoryData}
+                      className="h-7 text-xs flex-1"
+                    >
+                      <Eye className="h-3 w-3 mr-1" />
+                      Refresh
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={clearAllMemories}
+                      className="h-7 text-xs flex-1"
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Clear All
+                    </Button>
+                  </div>
+
                   {/* Training Data Section */}
                   <div>
                     <h4 className="text-xs font-medium text-gray-600 mb-2 flex items-center gap-1">
                       <Zap className="h-3 w-3" />
-                      Training Data ({trainingData.length})
+                      Conversation Context ({trainingData.length})
                     </h4>
                     <div className="space-y-2 max-h-32 overflow-y-auto">
                       {trainingData.length === 0 ? (
-                        <p className="text-xs text-gray-500 italic">No training data available</p>
+                        <p className="text-xs text-gray-500 italic">No conversation context available</p>
                       ) : (
                         trainingData.map((training, index) => (
                           <div key={index} className="p-2 bg-white rounded border text-xs">

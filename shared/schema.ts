@@ -2623,3 +2623,100 @@ export type InsertTourPromptTemplate = z.infer<typeof insertTourPromptTemplateSc
 
 export type TourPromptTemplateUsage = typeof tourPromptTemplateUsage.$inferSelect;
 export type InsertTourPromptTemplateUsage = z.infer<typeof insertTourPromptTemplateUsageSchema>;
+
+// Max AI Memory Management Tables
+export const aiMemories = pgTable("ai_memories", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(), // Can be user ID or demo user ID
+  type: text("type").notNull(), // conversation, workflow_pattern, preference, insight, interaction
+  category: text("category").notNull(), // page_usage, feature_preference, optimization_pattern, communication_style, error_pattern
+  content: text("content").notNull(), // The actual memory content
+  context: jsonb("context").$type<{
+    page?: string;
+    feature?: string;
+    action?: string;
+    confidence?: number;
+    metadata?: Record<string, any>;
+  }>().default({}),
+  confidence: integer("confidence").notNull().default(50), // 0-100 confidence score
+  importance: text("importance").notNull().default("medium"), // low, medium, high, critical
+  source: text("source").notNull().default("chat"), // chat, navigation, interaction, system_observation
+  lastAccessed: timestamp("last_accessed").defaultNow(),
+  accessCount: integer("access_count").default(1),
+  isActive: boolean("is_active").default(true),
+  expiresAt: timestamp("expires_at"), // Optional expiration for temporary memories
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const aiMemoryTags = pgTable("ai_memory_tags", {
+  id: serial("id").primaryKey(),
+  memoryId: integer("memory_id").references(() => aiMemories.id).notNull(),
+  tag: text("tag").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const aiConversationContext = pgTable("ai_conversation_context", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  sessionId: text("session_id").notNull(),
+  conversationSummary: text("conversation_summary"),
+  topics: jsonb("topics").$type<string[]>().default([]),
+  keyInsights: jsonb("key_insights").$type<Array<{
+    insight: string;
+    confidence: number;
+    timestamp: string;
+  }>>().default([]),
+  userGoals: jsonb("user_goals").$type<string[]>().default([]),
+  preferredInteractionStyle: text("preferred_interaction_style"), // detailed, concise, technical, conversational
+  totalMessages: integer("total_messages").default(0),
+  lastInteraction: timestamp("last_interaction").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  userSessionIdx: unique().on(table.userId, table.sessionId),
+}));
+
+// AI Memory Relations
+export const aiMemoriesRelations = relations(aiMemories, ({ many }) => ({
+  tags: many(aiMemoryTags),
+}));
+
+export const aiMemoryTagsRelations = relations(aiMemoryTags, ({ one }) => ({
+  memory: one(aiMemories, {
+    fields: [aiMemoryTags.memoryId],
+    references: [aiMemories.id],
+  }),
+}));
+
+// AI Memory Insert Schemas
+export const insertAIMemorySchema = createInsertSchema(aiMemories).omit({
+  id: true,
+  lastAccessed: true,
+  accessCount: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAIMemoryTagSchema = createInsertSchema(aiMemoryTags).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAIConversationContextSchema = createInsertSchema(aiConversationContext).omit({
+  id: true,
+  totalMessages: true,
+  lastInteraction: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// AI Memory Types
+export type AIMemory = typeof aiMemories.$inferSelect;
+export type InsertAIMemory = z.infer<typeof insertAIMemorySchema>;
+
+export type AIMemoryTag = typeof aiMemoryTags.$inferSelect;
+export type InsertAIMemoryTag = z.infer<typeof insertAIMemoryTagSchema>;
+
+export type AIConversationContext = typeof aiConversationContext.$inferSelect;
+export type InsertAIConversationContext = z.infer<typeof insertAIConversationContextSchema>;
