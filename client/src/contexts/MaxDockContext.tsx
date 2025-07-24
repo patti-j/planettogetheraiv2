@@ -19,7 +19,7 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [maxWidth, setMaxWidth] = useState(400); // Default width for desktop sidebar
   const [isMobile, setIsMobile] = useState(false);
   const [mobileLayoutMode, setMobileLayoutMode] = useState<'split' | 'fullscreen'>('split');
-  const [currentFullscreenView, setCurrentFullscreenView] = useState<'main' | 'max'>('main');
+  const [currentFullscreenView, setCurrentFullscreenView] = useState<'main' | 'max'>('max');
 
   // Detect mobile on mount and window resize
   useEffect(() => {
