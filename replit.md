@@ -118,6 +118,8 @@ The application uses a modern full-stack architecture with strong typing through
 - Fixed Max Canvas integration to display inline within Max window instead of popup overlay
 - Enhanced canvas empty state vertical centering with proper height calculations
 - Optimized canvas header design for compact inline display within Max interface
+- Fixed Canvas button behavior to toggle inline canvas instead of navigating to separate page
+- Canvas now automatically opens when Max generates content, even if previously closed
 - Improved speech recognition functionality with enhanced error handling and debugging
 - Added comprehensive console logging for microphone permissions and speech recognition troubleshooting
 

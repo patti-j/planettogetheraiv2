@@ -415,7 +415,7 @@ export function MaxSidebar() {
   };
 
   const toggleCanvas = () => {
-    setLocation('/canvas');
+    setCanvasVisible(!canvasVisible);
   };
 
   const testVoice = async () => {
