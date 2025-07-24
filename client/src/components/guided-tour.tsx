@@ -1307,46 +1307,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           </div>
         </div>
 
-        {/* Resize handles - only on desktop */}
-        {windowSize.width >= 768 && (
-          <>
-            {/* Corner handles */}
-            <div 
-              className={`absolute top-0 left-0 w-3 h-3 ${getResizeCursor('nw')}`}
-              onMouseDown={(e) => handleResizeStart(e, 'nw')}
-            />
-            <div 
-              className={`absolute top-0 right-0 w-3 h-3 ${getResizeCursor('ne')}`}
-              onMouseDown={(e) => handleResizeStart(e, 'ne')}
-            />
-            <div 
-              className={`absolute bottom-0 left-0 w-3 h-3 ${getResizeCursor('sw')}`}
-              onMouseDown={(e) => handleResizeStart(e, 'sw')}
-            />
-            <div 
-              className={`absolute bottom-0 right-0 w-3 h-3 ${getResizeCursor('se')}`}
-              onMouseDown={(e) => handleResizeStart(e, 'se')}
-            />
-            
-            {/* Edge handles */}
-            <div 
-              className={`absolute top-0 left-3 right-3 h-1 ${getResizeCursor('n')}`}
-              onMouseDown={(e) => handleResizeStart(e, 'n')}
-            />
-            <div 
-              className={`absolute bottom-0 left-3 right-3 h-1 ${getResizeCursor('s')}`}
-              onMouseDown={(e) => handleResizeStart(e, 's')}
-            />
-            <div 
-              className={`absolute left-0 top-3 bottom-3 w-1 ${getResizeCursor('w')}`}
-              onMouseDown={(e) => handleResizeStart(e, 'w')}
-            />
-            <div 
-              className={`absolute right-0 top-3 bottom-3 w-1 ${getResizeCursor('e')}`}
-              onMouseDown={(e) => handleResizeStart(e, 'e')}
-            />
-          </>
-        )}
+
       </Card>
 
       {/* Role Selection Dialog */}
