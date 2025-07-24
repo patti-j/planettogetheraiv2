@@ -121,6 +121,15 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 24, 2025)
 
+✓ **Marketing Page API Integration Fix & Presentation System HTTP Error Resolution (July 24, 2025)**:
+- Fixed critical marketing page API integration issues that were causing blank page display with "page not found" errors
+- Updated customer story and content block interfaces to match actual database structure (customerName, company, story.quote)
+- Corrected broken API calls from passing objects to proper query parameters using URLSearchParams
+- Fixed presentation system HTTP method error by updating AI generation endpoint from non-existent `/api/ai-agent/generate-presentation` to correct `/api/ai-agent/command`
+- Marketing page now properly fetches and displays authentic customer testimonials and success stories
+- Presentation AI generation now uses proper API endpoint with correct HTTP method structure
+- Both marketing system and presentation system fully operational with authentic database integration
+
 ✓ **Auto-Scrolling 3-Second Delay Enhancement Implementation (July 24, 2025)**:
 - Successfully implemented 3-second delay before auto-scrolling starts after voice narration begins for each tour step
 - Enhanced playPreloadedAudio function with setTimeout to trigger auto-scroll 3 seconds after voice starts playing
