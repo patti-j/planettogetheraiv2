@@ -4591,7 +4591,7 @@ export class DatabaseStorage implements IStorage {
       expiresAt: memory.expiresAt ? new Date(memory.expiresAt) : undefined,
     };
 
-    const [insertedMemory] = await this.db
+    const [insertedMemory] = await db
       .insert(aiMemories)
       .values(insertData)
       .returning();
@@ -4604,7 +4604,7 @@ export class DatabaseStorage implements IStorage {
       }));
       
       if (tagInserts.length > 0) {
-        await this.db.insert(aiMemoryTags).values(tagInserts);
+        await db.insert(aiMemoryTags).values(tagInserts);
       }
     }
 
@@ -4614,7 +4614,7 @@ export class DatabaseStorage implements IStorage {
   async updateAITrainingPattern(pattern: any): Promise<void> {
     // Update AI training pattern (this could store conversation context updates)
     if (pattern.userId && pattern.sessionId) {
-      await this.db
+      await db
         .insert(aiConversationContext)
         .values({
           userId: pattern.userId,
@@ -4646,12 +4646,12 @@ export class DatabaseStorage implements IStorage {
     const memoryId = parseInt(entryId);
     
     // First delete associated tags
-    await this.db
+    await db
       .delete(aiMemoryTags)
       .where(eq(aiMemoryTags.memoryId, memoryId));
     
     // Then delete the memory entry (with user verification for security)
-    await this.db
+    await db
       .delete(aiMemories)
       .where(and(eq(aiMemories.id, memoryId), eq(aiMemories.userId, userId)));
     
@@ -4660,25 +4660,25 @@ export class DatabaseStorage implements IStorage {
 
   async clearAllAIMemories(userId: string): Promise<void> {
     // Get all memory IDs for this user first to delete associated tags
-    const userMemories = await this.db
+    const userMemories = await db
       .select({ id: aiMemories.id })
       .from(aiMemories)
       .where(eq(aiMemories.userId, userId));
     
     // Delete all associated tags one by one
     for (const memory of userMemories) {
-      await this.db
+      await db
         .delete(aiMemoryTags)
         .where(eq(aiMemoryTags.memoryId, memory.id));
     }
     
     // Delete all memories for this user
-    const result = await this.db
+    const result = await db
       .delete(aiMemories)
       .where(eq(aiMemories.userId, userId));
     
     // Clear conversation context as well
-    await this.db
+    await db
       .delete(aiConversationContext)
       .where(eq(aiConversationContext.userId, userId));
     
@@ -4688,7 +4688,7 @@ export class DatabaseStorage implements IStorage {
   async updateAITraining(entryId: string, content: string, userId: string): Promise<void> {
     const memoryId = parseInt(entryId);
     
-    await this.db
+    await db
       .update(aiMemories)
       .set({
         content: content,
@@ -4699,30 +4699,13 @@ export class DatabaseStorage implements IStorage {
     console.log('Updated AI memory:', entryId, 'for user:', userId);
   }
 
-  async clearAllAIMemories(userId: string): Promise<void> {
-    // Delete all memory tags first (foreign key constraint)
-    await this.db.delete(aiMemoryTags).where(
-      inArray(aiMemoryTags.memoryId, 
-        this.db.select({ id: aiMemories.id }).from(aiMemories).where(eq(aiMemories.userId, userId))
-      )
-    );
-    
-    // Then delete all memories for the user
-    await this.db.delete(aiMemories).where(eq(aiMemories.userId, userId));
-    
-    // Also clear conversation context
-    await this.db.delete(aiConversationContext).where(eq(aiConversationContext.userId, userId));
-    
-    console.log('Cleared all AI memories for user:', userId);
-  }
-
   async getAIMemoryStats(userId: string): Promise<{
     totalMemories: number;
     memoryTypes: Record<string, number>;
     avgConfidence: number;
     recentActivity: number;
   }> {
-    const memories = await this.db
+    const memories = await db
       .select({
         type: aiMemories.type,
         confidence: aiMemories.confidence,
