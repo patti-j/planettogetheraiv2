@@ -314,6 +314,9 @@ export function MaxSidebar() {
         mimeType: mimeType
       });
       
+      // Set up periodic audio processing for streaming transcription
+      let intervalId: NodeJS.Timeout | null = null;
+      
       mediaRecorder.current.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunks.current.push(event.data);
