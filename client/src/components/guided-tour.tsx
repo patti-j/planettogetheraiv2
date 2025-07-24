@@ -910,6 +910,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   });
   const [resizeStartPosition, setResizeStartPosition] = useState({ x: 0, y: 0 });
   const [resizeStartDimensions, setResizeStartDimensions] = useState({ width: 0, height: 0 });
+  const [resizeStartWindowPosition, setResizeStartWindowPosition] = useState({ x: 0, y: 0 });
 
   // Volume control (desktop only)
   const [volume, setVolume] = useState(0.8);
@@ -954,6 +955,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     setResizeDirection(direction);
     setResizeStartPosition({ x: e.clientX, y: e.clientY });
     setResizeStartDimensions({ ...windowDimensions });
+    setResizeStartWindowPosition({ ...position });
   };
 
   const getResizeCursor = (direction: string) => {
@@ -995,37 +997,35 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         }
         if (resizeDirection.includes('w')) {
           newWidth = Math.max(300, resizeStartDimensions.width - deltaX);
-          newX = position.x + deltaX;
+          newX = resizeStartWindowPosition.x - (newWidth - resizeStartDimensions.width);
         }
         if (resizeDirection.includes('s')) {
           newHeight = Math.max(200, resizeStartDimensions.height + deltaY);
         }
         if (resizeDirection.includes('n')) {
           newHeight = Math.max(200, resizeStartDimensions.height - deltaY);
-          newY = position.y + deltaY;
+          newY = resizeStartWindowPosition.y - (newHeight - resizeStartDimensions.height);
         }
 
-        // Ensure window stays within viewport bounds during resize
-        // For east/south resizing, limit based on current position
-        if (resizeDirection.includes('e')) {
-          const maxWidth = windowSize.width - position.x;
-          newWidth = Math.min(newWidth, maxWidth);
-        }
-        if (resizeDirection.includes('s')) {
-          const maxHeight = windowSize.height - position.y;
-          newHeight = Math.min(newHeight, maxHeight);
-        }
+        // Simple boundary constraints to prevent window from going off screen
+        // Constrain width and height to viewport
+        newWidth = Math.min(newWidth, windowSize.width);
+        newHeight = Math.min(newHeight, windowSize.height);
         
-        // For west/north resizing, limit based on new position and ensure it stays in bounds
+        // For west/north resizing, ensure position doesn't go negative
         if (resizeDirection.includes('w')) {
-          const maxWidth = windowSize.width - Math.max(0, newX);
-          newWidth = Math.min(newWidth, maxWidth);
-          newX = Math.max(0, newX); // Don't let it go negative
+          newX = Math.max(0, newX);
         }
         if (resizeDirection.includes('n')) {
-          const maxHeight = windowSize.height - Math.max(0, newY);
-          newHeight = Math.min(newHeight, maxHeight);
-          newY = Math.max(0, newY); // Don't let it go negative
+          newY = Math.max(0, newY);
+        }
+        
+        // Ensure the window fits within viewport after position adjustment
+        if (newX + newWidth > windowSize.width) {
+          newWidth = windowSize.width - newX;
+        }
+        if (newY + newHeight > windowSize.height) {
+          newHeight = windowSize.height - newY;
         }
 
         // Safeguard: Reset to default if dimensions become invalid
