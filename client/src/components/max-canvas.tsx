@@ -28,9 +28,7 @@ import {
   Copy,
   FileImage,
   Link,
-  MoreVertical,
-  MessageSquare,
-  Mail
+  MoreVertical
 } from 'lucide-react';
 import { useAITheme } from '@/hooks/use-ai-theme';
 import { toast } from '@/hooks/use-toast';
@@ -238,34 +236,7 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
     }
   };
 
-  const handleShareByText = () => {
-    const shareText = `Max Canvas Content\n\n${canvasItems
-      .map(item => `${item.title || 'Canvas Item'}: ${JSON.stringify(item.content, null, 2)}`)
-      .join('\n\n---\n\n')}`;
-    
-    const smsUrl = `sms:?body=${encodeURIComponent(shareText)}`;
-    window.open(smsUrl, '_blank');
-    
-    toast({
-      title: "Text Message Ready",
-      description: "Opening text message app with canvas content"
-    });
-  };
 
-  const handleShareByEmail = () => {
-    const subject = 'Max Canvas Content - Manufacturing Data';
-    const shareText = `Max Canvas Content\n\nGenerated: ${new Date().toLocaleString()}\n\n${canvasItems
-      .map(item => `${item.title || 'Canvas Item'}:\n${JSON.stringify(item.content, null, 2)}`)
-      .join('\n\n---\n\n')}`;
-    
-    const emailUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(shareText)}`;
-    window.open(emailUrl, '_blank');
-    
-    toast({
-      title: "Email Ready",
-      description: "Opening email app with canvas content"
-    });
-  };
 
   return (
     <div className="bg-gray-50 flex flex-col h-full">
@@ -331,26 +302,6 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={handleShareByText}
-                    className="text-white hover:bg-white/20"
-                    title="Share by Text Message"
-                  >
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Text
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleShareByEmail}
-                    className="text-white hover:bg-white/20"
-                    title="Share by Email"
-                  >
-                    <Mail className="w-4 h-4 mr-2" />
-                    Email
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
                     onClick={handleClearCanvas}
                     className="text-white hover:bg-white/20"
                     title="Clear Canvas"
@@ -389,14 +340,6 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
                       <DropdownMenuItem onClick={handleShare}>
                         <Share2 className="w-4 h-4 mr-2" />
                         Share Canvas
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleShareByText}>
-                        <MessageSquare className="w-4 h-4 mr-2" />
-                        Share by Text
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleShareByEmail}>
-                        <Mail className="w-4 h-4 mr-2" />
-                        Share by Email
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={handleClearCanvas} className="text-red-600">
                         <Trash2 className="w-4 h-4 mr-2" />
