@@ -29,7 +29,8 @@ import {
   Kanban,
   Timer,
   TimerOff,
-  Star
+  Star,
+  ScrollText
 } from "lucide-react";
 
 interface TourStep {
@@ -232,6 +233,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   const [showRoleSelection, setShowRoleSelection] = useState(false);
   const [hasAutoStarted, setHasAutoStarted] = useState(false);
   const [isPausedByUser, setIsPausedByUser] = useState(false);
+  const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
   
   // Navigation hook
   const [location, setLocation] = useLocation();
@@ -342,6 +344,12 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   // Enhanced auto-scroll function for mobile to show hidden content
   const performAutoScroll = useCallback(async () => {
     console.log('performAutoScroll called - checking page dimensions...');
+    
+    // Check if auto-scroll is enabled by user
+    if (!autoScrollEnabled) {
+      console.log('Auto-scroll disabled by user - skipping content demonstration');
+      return;
+    }
     
     // Wait for page to fully load
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -551,7 +559,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     };
     
     await performMobileScrollDemo();
-  }, []);
+  }, [autoScrollEnabled]);
 
   // Navigate to step page when step changes
   useEffect(() => {
@@ -1088,6 +1096,15 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                   )}
                 </div>
               )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setAutoScrollEnabled(!autoScrollEnabled)}
+                className="h-6 w-6 sm:h-8 sm:w-8 p-0"
+                title={autoScrollEnabled ? "Disable auto-scroll content demo" : "Enable auto-scroll content demo"}
+              >
+                <ScrollText className={`h-3 w-3 sm:h-4 sm:w-4 ${autoScrollEnabled ? 'text-blue-600' : 'text-gray-400'}`} />
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
