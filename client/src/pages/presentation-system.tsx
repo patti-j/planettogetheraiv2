@@ -86,7 +86,7 @@ export default function PresentationSystemPage() {
   // Create presentation mutation
   const createPresentationMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest("/api/presentations", "POST", data);
+      return apiRequest("POST", "/api/presentations", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/presentations"] });
@@ -132,7 +132,7 @@ export default function PresentationSystemPage() {
   // Delete presentation mutation
   const deletePresentationMutation = useMutation({
     mutationFn: async (presentationId: number) => {
-      return apiRequest("/api/presentations/" + presentationId, "DELETE");
+      return apiRequest("DELETE", "/api/presentations/" + presentationId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/presentations"] });
