@@ -350,7 +350,7 @@ export default function HelpAndGuide() {
   };
 
   return (
-    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6 overflow-x-hidden max-w-full">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="md:ml-0 ml-12">
@@ -400,7 +400,7 @@ export default function HelpAndGuide() {
                 <Progress value={progressPercentage} className="h-2" />
               </div>
 
-              <div className="grid grid-cols-4 gap-4 mt-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                 {Object.entries(categorizedSteps).map(([category, steps]) => {
                   const categoryCompleted = steps.filter(s => s.completed).length;
                   const categoryTotal = steps.length;
@@ -427,7 +427,7 @@ export default function HelpAndGuide() {
       )}
 
       {/* Category Tabs */}
-      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+      <div className="flex flex-wrap gap-1 md:space-x-1 md:flex-nowrap bg-gray-100 p-1 rounded-lg max-w-full overflow-x-auto">
         {Object.keys(categorizedSteps).map((category) => {
           const steps = categorizedSteps[category as keyof typeof categorizedSteps];
           const completedCount = steps.filter(s => s.completed).length;
@@ -437,15 +437,16 @@ export default function HelpAndGuide() {
             <button
               key={category}
               onClick={() => setActiveCategory(category)}
-              className={`flex-1 flex items-center justify-center py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 flex items-center justify-center py-2 px-2 md:px-3 rounded-md text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                 activeCategory === category
                   ? 'bg-white text-blue-600 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              <CategoryIcon className="h-4 w-4 mr-2" />
-              <span className="capitalize">{category}</span>
-              <Badge variant="secondary" className="ml-2 text-xs">
+              <CategoryIcon className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+              <span className="capitalize hidden sm:inline">{category}</span>
+              <span className="capitalize sm:hidden">{category.slice(0,4)}</span>
+              <Badge variant="secondary" className="ml-1 md:ml-2 text-xs">
                 {completedCount}/{steps.length}
               </Badge>
             </button>
