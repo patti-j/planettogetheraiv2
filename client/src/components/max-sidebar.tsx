@@ -153,6 +153,7 @@ export function MaxSidebar() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognition = useRef<any>(null);
   const currentAudio = useRef<HTMLAudioElement | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
@@ -165,9 +166,10 @@ export function MaxSidebar() {
       console.log('Initializing speech recognition...');
       const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
       recognition.current = new SpeechRecognition();
-      recognition.current.continuous = false;
-      recognition.current.interimResults = false;
+      recognition.current.continuous = true;
+      recognition.current.interimResults = true;
       recognition.current.lang = 'en-US';
+      recognition.current.maxAlternatives = 3;
 
       recognition.current.onstart = () => {
         console.log('Speech recognition started');
@@ -176,10 +178,27 @@ export function MaxSidebar() {
 
       recognition.current.onresult = (event: any) => {
         console.log('Speech recognition result:', event.results);
-        const transcript = event.results[0][0].transcript;
-        console.log('Transcript:', transcript);
-        setInputMessage(transcript);
-        setIsListening(false);
+        
+        let finalTranscript = '';
+        let interimTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript + ' ';
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+        
+        console.log('Final transcript:', finalTranscript);
+        console.log('Interim transcript:', interimTranscript);
+        
+        if (finalTranscript) {
+          setInputMessage(prev => (prev + finalTranscript).trim());
+        }
+        
+        // Don't stop listening automatically - let user control it
       };
 
       recognition.current.onend = () => {
@@ -398,10 +417,31 @@ export function MaxSidebar() {
   };
 
   const toggleVoice = () => {
-    setIsVoiceEnabled(!isVoiceEnabled);
-    if (currentAudio.current) {
-      currentAudio.current.pause();
-      currentAudio.current = null;
+    console.log('Starting speech recognition...');
+    if (isListening) {
+      // Stop listening
+      if (recognition.current) {
+        recognition.current.stop();
+      }
+      setIsListening(false);
+    } else {
+      // Start listening
+      if (recognition.current) {
+        try {
+          recognition.current.start();
+          setIsListening(true);
+          // Focus input and position cursor at end
+          setTimeout(() => {
+            if (inputRef.current) {
+              inputRef.current.focus();
+              const length = inputMessage.length;
+              inputRef.current.setSelectionRange(length, length);
+            }
+          }, 100);
+        } catch (error) {
+          console.error('Failed to start speech recognition:', error);
+        }
+      }
     }
   };
 
@@ -765,18 +805,25 @@ export function MaxSidebar() {
       {/* Input */}
       <div className="p-3 border-t bg-gray-50">
         <div className="flex gap-2">
-          <div className="flex-1 flex gap-1">
+          <div className="flex-1 flex gap-1 relative">
             <Input
+              ref={inputRef}
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="Ask me anything about your operations..."
+              placeholder={isListening ? "Listening... speak now" : "Ask me anything about your operations..."}
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              className="text-sm"
+              className={`text-sm ${isListening ? 'border-green-300 bg-green-50' : ''}`}
             />
+            {isListening && (
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1 text-green-600">
+                <Mic className="h-3 w-3 animate-pulse" />
+                <span className="animate-pulse">●</span>
+              </div>
+            )}
             <Button
               variant="outline"
               size="sm"
-              onClick={isListening ? stopListening : startListening}
+              onClick={toggleVoice}
               className={`px-2 transition-colors ${
                 isListening 
                   ? 'bg-green-50 border-green-300 hover:bg-green-100' 
