@@ -197,6 +197,11 @@ export function MaxSidebar() {
         switch (event.error) {
           case 'not-allowed':
             errorMessage = "Microphone access was denied. Please allow microphone permission in your browser settings and try again.";
+            toast({
+              title: "Microphone Permission Needed",
+              description: "Please allow microphone access to use voice input",
+              variant: "destructive"
+            });
             break;
           case 'no-speech':
             errorMessage = "I didn't hear anything. Please speak clearly and try again.";
@@ -204,20 +209,33 @@ export function MaxSidebar() {
           case 'network':
             errorMessage = "Network error occurred. Please check your connection and try again.";
             break;
+          case 'audio-capture':
+            errorMessage = "Could not capture audio. Please check if your microphone is working and try again.";
+            toast({
+              title: "Audio Capture Error",
+              description: "Please check your microphone and try again",
+              variant: "destructive"
+            });
+            break;
+          case 'aborted':
+            // Don't show error for aborted - user likely clicked stop
+            return;
         }
         
-        // Show a gentle message in chat instead of error toast
-        const voiceErrorMessage: Message = {
-          id: Date.now().toString() + '_voice_error',
-          type: 'assistant',
-          content: errorMessage,
-          timestamp: new Date(),
-          context: {
-            page: window.location.pathname,
-            action: 'voice_error'
-          }
-        };
-        setMessages(prev => [...prev, voiceErrorMessage]);
+        // Show a gentle message in chat for most errors
+        if (event.error !== 'not-allowed' && event.error !== 'audio-capture') {
+          const voiceErrorMessage: Message = {
+            id: Date.now().toString() + '_voice_error',
+            type: 'assistant',
+            content: errorMessage,
+            timestamp: new Date(),
+            context: {
+              page: window.location.pathname,
+              action: 'voice_error'
+            }
+          };
+          setMessages(prev => [...prev, voiceErrorMessage]);
+        }
       };
       
       console.log('Speech recognition initialized successfully');
@@ -342,25 +360,33 @@ export function MaxSidebar() {
   const startListening = () => {
     if (!recognition.current) {
       console.log('Speech recognition not available');
-      const noSpeechMessage: Message = {
-        id: Date.now().toString() + '_no_speech',
-        type: 'assistant',
-        content: "Speech recognition is not available in your browser. Please type your message instead.",
-        timestamp: new Date(),
-        context: {
-          page: window.location.pathname
-        }
-      };
-      setMessages(prev => [...prev, noSpeechMessage]);
+      toast({
+        title: "Microphone Unavailable",
+        description: "Speech recognition is not available in your browser. Please type your message instead.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check if already listening
+    if (isListening) {
+      console.log('Already listening, stopping first...');
+      stopListening();
       return;
     }
 
     try {
       console.log('Starting speech recognition...');
       recognition.current.start();
+      setIsListening(true);
     } catch (error) {
       console.error('Error starting speech recognition:', error);
       setIsListening(false);
+      toast({
+        title: "Microphone Error", 
+        description: "Could not start voice recognition. Please check microphone permissions.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -751,9 +777,18 @@ export function MaxSidebar() {
               variant="outline"
               size="sm"
               onClick={isListening ? stopListening : startListening}
-              className={`px-2 ${isListening ? 'bg-red-50 border-red-200' : ''}`}
+              className={`px-2 transition-colors ${
+                isListening 
+                  ? 'bg-green-50 border-green-300 hover:bg-green-100' 
+                  : 'hover:bg-gray-100'
+              }`}
+              title={isListening ? 'Stop listening' : 'Start voice input'}
             >
-              {isListening ? <MicOff className="h-4 w-4 text-red-500" /> : <Mic className="h-4 w-4" />}
+              {isListening ? (
+                <Mic className="h-4 w-4 text-green-600 animate-pulse" />
+              ) : (
+                <Mic className="h-4 w-4 text-gray-500" />
+              )}
             </Button>
           </div>
           <Button
