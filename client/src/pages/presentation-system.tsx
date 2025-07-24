@@ -62,6 +62,8 @@ export default function PresentationSystemPage() {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [aiGenerateDialogOpen, setAiGenerateDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [presentationToDelete, setPresentationToDelete] = useState<Presentation | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -121,6 +123,29 @@ export default function PresentationSystemPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to generate presentation",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete presentation mutation
+  const deletePresentationMutation = useMutation({
+    mutationFn: async (presentationId: number) => {
+      return apiRequest("/api/presentations/" + presentationId, "DELETE");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/presentations"] });
+      setDeleteDialogOpen(false);
+      setPresentationToDelete(null);
+      toast({
+        title: "Presentation Deleted",
+        description: "The presentation has been deleted successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error", 
+        description: error.message || "Failed to delete presentation",
         variant: "destructive",
       });
     },
@@ -502,7 +527,15 @@ export default function PresentationSystemPage() {
                         <Button variant="ghost" size="sm" onClick={() => handlePlayPresentation(presentation)}>
                           <Play className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPresentationToDelete(presentation);
+                            setDeleteDialogOpen(true);
+                          }}
+                        >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -650,6 +683,40 @@ export default function PresentationSystemPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Presentation</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{presentationToDelete?.title}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setPresentationToDelete(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => {
+                if (presentationToDelete) {
+                  deletePresentationMutation.mutate(presentationToDelete.id);
+                }
+              }}
+              disabled={deletePresentationMutation.isPending}
+            >
+              {deletePresentationMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
