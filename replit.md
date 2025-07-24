@@ -122,9 +122,11 @@ The application uses a modern full-stack architecture with strong typing through
 
 ✓ **Row Height Slider Visual Fix (July 24, 2025)**:
 - Fixed visual truncation issue with row height slider blue circle/thumb in resource gantt
-- Increased slider width from w-8 md:w-12 to w-16 md:w-20 for proper thumb display
-- Applied fix to both resource view and customer view sliders in gantt chart
-- Slider thumb now displays properly without being cut off at container edges
+- Replaced Shadcn Slider component with HTML range input using tour window volume slider design
+- Applied blue gradient styling with dynamic fill based on current value
+- Used same styling as tour window volume control for visual consistency
+- Both resource view and customer view sliders now use consistent design
+- Removed unused Slider import to clean up component dependencies
 
 ✓ **Content-Specific Auto-Scroll System Implementation (July 24, 2025)**:
 - Successfully transformed auto-scroll to target only center page content containers instead of entire screen

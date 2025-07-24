@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
+
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import OperationBlock from "./operation-block";
 import OperationForm from "../operation-form";
@@ -1319,13 +1319,17 @@ export default function GanttChart({
                   <span className="text-sm font-medium text-gray-700">Customer Timeline</span>
                   <div className="flex items-center space-x-1 text-xs text-gray-500">
                     <span>H:</span>
-                    <Slider
-                      value={[rowHeight]}
-                      onValueChange={(value) => onRowHeightChange?.(value[0])}
-                      min={20}
-                      max={200}
-                      step={5}
-                      className="w-16 md:w-20"
+                    <input
+                      type="range"
+                      min="20"
+                      max="200"
+                      step="5"
+                      value={rowHeight}
+                      onChange={(e) => onRowHeightChange?.(parseInt(e.target.value))}
+                      className="w-16 md:w-20 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      style={{
+                        background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((rowHeight - 20) / (200 - 20)) * 100}%, #e5e7eb ${((rowHeight - 20) / (200 - 20)) * 100}%, #e5e7eb 100%)`
+                      }}
                     />
                   </div>
                 </div>
@@ -1478,13 +1482,17 @@ export default function GanttChart({
                 </Select>
                 <div className="flex items-center space-x-1 text-xs text-gray-500">
                   <span>H:</span>
-                  <Slider
-                    value={[rowHeight]}
-                    onValueChange={(value) => onRowHeightChange?.(value[0])}
-                    min={20}
-                    max={200}
-                    step={5}
-                    className="w-16 md:w-20"
+                  <input
+                    type="range"
+                    min="20"
+                    max="200"
+                    step="5"
+                    value={rowHeight}
+                    onChange={(e) => onRowHeightChange?.(parseInt(e.target.value))}
+                    className="w-16 md:w-20 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    style={{
+                      background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((rowHeight - 20) / (200 - 20)) * 100}%, #e5e7eb ${((rowHeight - 20) / (200 - 20)) * 100}%, #e5e7eb 100%)`
+                    }}
                   />
                 </div>
               </div>
