@@ -467,22 +467,22 @@ Create presentations that users will find exciting and that effectively demonstr
               <h1 className="text-xl md:text-2xl font-semibold">Presentation System</h1>
             </div>
             <p className="text-sm md:text-base text-muted-foreground mt-1">
-              Create, manage, and deliver AI-powered presentations integrated with guided tours
+              Create presentations quickly or build advanced projects with AI-powered content research
             </p>
           </div>
           <div className="flex items-center space-x-2 lg:flex-shrink-0">
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
               <DialogTrigger asChild>
-                <Button>
+                <Button variant="outline">
                   <Plus className="w-4 h-4 mr-2" />
-                  New Presentation
+                  Quick Presentation
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Create Presentation</DialogTitle>
+                  <DialogTitle>Create Quick Presentation</DialogTitle>
                   <DialogDescription>
-                    Create a new presentation from scratch
+                    Create a simple presentation using templates - fast and straightforward approach
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={(e) => {
@@ -558,9 +558,9 @@ Create presentations that users will find exciting and that effectively demonstr
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>AI Presentation Generator</DialogTitle>
+                  <DialogTitle>AI Quick Generator</DialogTitle>
                   <DialogDescription>
-                    Describe the presentation you want to create and our AI will generate it for you
+                    Describe your presentation in a few sentences and AI will create it instantly - perfect for immediate needs
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={(e) => {
@@ -597,6 +597,43 @@ Create presentations that users will find exciting and that effectively demonstr
               <Upload className="w-4 h-4 mr-2" />
               Import PowerPoint
             </Button>
+          </div>
+        </div>
+
+        {/* Options Explanation */}
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6">
+          <h2 className="text-lg font-semibold mb-4 text-center">Choose Your Approach</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Plus className="w-8 h-8 text-green-600" />
+              </div>
+              <h3 className="font-semibold text-green-800 mb-2">Quick Presentation</h3>
+              <p className="text-sm text-green-700 mb-2">Simple template-based presentations for immediate use</p>
+              <p className="text-xs text-green-600 font-medium">Best for: Standard formats, quick turnaround, simple needs</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Bot className="w-8 h-8 text-purple-600" />
+              </div>
+              <h3 className="font-semibold text-purple-800 mb-2">AI Generate</h3>
+              <p className="text-sm text-purple-700 mb-2">Instant AI-created presentations from your description</p>
+              <p className="text-xs text-purple-600 font-medium">Best for: Custom content, AI-powered creation, immediate results</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Sparkles className="w-8 h-8 text-blue-600" />
+              </div>
+              <h3 className="font-semibold text-blue-800 mb-2">Studio Project</h3>
+              <p className="text-sm text-blue-700 mb-2">Advanced projects with research, materials, and team collaboration</p>
+              <p className="text-xs text-blue-600 font-medium">Best for: Complex presentations, website content extraction, team projects</p>
+            </div>
+          </div>
+          <div className="mt-4 text-center">
+            <p className="text-sm text-gray-600">
+              <strong>New to the system?</strong> Start with <span className="text-purple-600 font-medium">AI Generate</span> for instant results, 
+              or try <span className="text-blue-600 font-medium">Studio Project</span> for advanced features like web content research.
+            </p>
           </div>
         </div>
 
