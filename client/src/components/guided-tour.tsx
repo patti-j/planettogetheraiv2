@@ -277,17 +277,18 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       console.log("Initializing tour window position:", { windowWidth, windowHeight, isMobile });
       
       if (isMobile) {
-        // Mobile window positioning - ALWAYS in viewport top-right
+        // Mobile window positioning - ALWAYS in viewport LOWER RIGHT
         const cardWidth = Math.min(280, windowWidth - 16);
+        const cardHeight = Math.min(200, windowHeight * 0.35);
         const padding = 8;
-        const topPosition = 60; // Fixed distance from viewport top
+        const bottomPosition = windowHeight - cardHeight - padding - 60; // Position from bottom with space for bottom UI
         
         const position = {
           x: windowWidth - cardWidth - padding,
-          y: topPosition
+          y: bottomPosition
         };
         
-        console.log("Mobile tour position calculated:", position);
+        console.log("Mobile tour position calculated (lower right):", position, "cardHeight:", cardHeight, "windowHeight:", windowHeight);
         return position;
       } else {
         // Desktop positioning - ALWAYS in viewport top-right
