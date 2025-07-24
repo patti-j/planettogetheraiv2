@@ -420,13 +420,15 @@ export default function SystemsManagementPage() {
       </div>
 
       <Tabs defaultValue="health" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="health">System Health</TabsTrigger>
-          <TabsTrigger value="users">User Management</TabsTrigger>
-          <TabsTrigger value="environments">Environments</TabsTrigger>
-          <TabsTrigger value="upgrades">System Upgrades</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto">
+          <TabsList className="grid w-full grid-cols-5 min-w-max">
+            <TabsTrigger value="health" className="text-xs sm:text-sm whitespace-nowrap">Health</TabsTrigger>
+            <TabsTrigger value="users" className="text-xs sm:text-sm whitespace-nowrap">Users</TabsTrigger>
+            <TabsTrigger value="environments" className="text-xs sm:text-sm whitespace-nowrap">Environments</TabsTrigger>
+            <TabsTrigger value="upgrades" className="text-xs sm:text-sm whitespace-nowrap">Upgrades</TabsTrigger>
+            <TabsTrigger value="security" className="text-xs sm:text-sm whitespace-nowrap">Security</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="health" className="space-y-4">
           <div className="grid gap-4">
