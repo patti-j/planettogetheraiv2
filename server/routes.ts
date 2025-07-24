@@ -29,7 +29,8 @@ import {
   insertWorkflowActionMappingSchema, insertWorkflowExecutionSchema, insertWorkflowActionExecutionSchema,
   insertWorkflowMonitoringSchema,
   insertTourPromptTemplateSchema, insertTourPromptTemplateUsageSchema,
-  insertCanvasContentSchema, insertCanvasSettingsSchema
+  insertCanvasContentSchema, insertCanvasSettingsSchema,
+  insertErrorLogSchema, insertErrorReportSchema, insertSystemHealthSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -2144,6 +2145,117 @@ Provide the response as a JSON object with the following structure:
     } catch (error) {
       console.error("Error cleaning up canvas content:", error);
       res.status(500).json({ error: "Failed to cleanup canvas content" });
+    }
+  });
+
+  // Error Logging and Monitoring API routes
+  app.post("/api/errors/log", async (req, res) => {
+    try {
+      const validatedData = insertErrorLogSchema.parse(req.body);
+      const error = await storage.logError(validatedData);
+      res.json(error);
+    } catch (error) {
+      console.error("Error logging error:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid error data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to log error" });
+    }
+  });
+
+  app.get("/api/errors/logs", async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 100;
+      const resolved = req.query.resolved === 'true' ? true : req.query.resolved === 'false' ? false : undefined;
+      const errors = await storage.getErrorLogs(limit, resolved);
+      res.json(errors);
+    } catch (error) {
+      console.error("Error fetching error logs:", error);
+      res.status(500).json({ error: "Failed to fetch error logs" });
+    }
+  });
+
+  app.get("/api/errors/logs/:errorId", async (req, res) => {
+    try {
+      const error = await storage.getErrorLog(req.params.errorId);
+      if (!error) {
+        return res.status(404).json({ error: "Error log not found" });
+      }
+      res.json(error);
+    } catch (error) {
+      console.error("Error fetching error log:", error);
+      res.status(500).json({ error: "Failed to fetch error log" });
+    }
+  });
+
+  app.patch("/api/errors/logs/:errorId/resolve", async (req, res) => {
+    try {
+      const resolved = await storage.markErrorResolved(req.params.errorId);
+      res.json({ success: resolved });
+    } catch (error) {
+      console.error("Error resolving error log:", error);
+      res.status(500).json({ error: "Failed to resolve error log" });
+    }
+  });
+
+  app.post("/api/errors/reports", async (req, res) => {
+    try {
+      const validatedData = insertErrorReportSchema.parse(req.body);
+      const report = await storage.createErrorReport(validatedData);
+      res.json(report);
+    } catch (error) {
+      console.error("Error creating error report:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid report data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create error report" });
+    }
+  });
+
+  app.get("/api/errors/reports", async (req, res) => {
+    try {
+      const status = req.query.status as string | undefined;
+      const reports = await storage.getErrorReports(status);
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching error reports:", error);
+      res.status(500).json({ error: "Failed to fetch error reports" });
+    }
+  });
+
+  app.patch("/api/errors/reports/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const report = await storage.updateErrorReport(id, updates);
+      res.json(report);
+    } catch (error) {
+      console.error("Error updating error report:", error);
+      res.status(500).json({ error: "Failed to update error report" });
+    }
+  });
+
+  app.get("/api/system/health", async (req, res) => {
+    try {
+      const healthData = await storage.getSystemHealth();
+      res.json(healthData);
+    } catch (error) {
+      console.error("Error fetching system health:", error);
+      res.status(500).json({ error: "Failed to fetch system health" });
+    }
+  });
+
+  app.post("/api/system/health", async (req, res) => {
+    try {
+      const validatedData = insertSystemHealthSchema.parse(req.body);
+      const health = await storage.logSystemHealth(validatedData);
+      res.json(health);
+    } catch (error) {
+      console.error("Error logging system health:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid health data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to log system health" });
     }
   });
 

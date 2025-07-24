@@ -2565,6 +2565,54 @@ export type InsertExtensionMarketplace = z.infer<typeof insertExtensionMarketpla
 export type ExtensionReview = typeof extensionReviews.$inferSelect;
 export type InsertExtensionReview = z.infer<typeof insertExtensionReviewSchema>;
 
+// Error Logging and Monitoring Tables
+export const errorLogs = pgTable("error_logs", {
+  id: serial("id").primaryKey(),
+  errorId: text("error_id").notNull().unique(),
+  message: text("message").notNull(),
+  stack: text("stack"),
+  componentStack: text("component_stack"),
+  timestamp: timestamp("timestamp").notNull(),
+  url: text("url").notNull(),
+  userAgent: text("user_agent"),
+  userId: text("user_id"),
+  sessionId: text("session_id"),
+  severity: text("severity").notNull().default("error"), // error, warning, critical
+  resolved: boolean("resolved").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const errorReports = pgTable("error_reports", {
+  id: serial("id").primaryKey(),
+  errorId: text("error_id").references(() => errorLogs.errorId).notNull(),
+  userDescription: text("user_description"),
+  severity: text("severity").notNull().default("medium"), // low, medium, high, critical
+  reproductionSteps: text("reproduction_steps"),
+  status: text("status").notNull().default("open"), // open, investigating, resolved, closed
+  assignedTo: text("assigned_to"),
+  resolutionNotes: text("resolution_notes"),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertErrorLogSchema = createInsertSchema(errorLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertErrorReportSchema = createInsertSchema(errorReports).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertErrorLog = z.infer<typeof insertErrorLogSchema>;
+export type ErrorLog = typeof errorLogs.$inferSelect;
+
+export type InsertErrorReport = z.infer<typeof insertErrorReportSchema>;
+export type ErrorReport = typeof errorReports.$inferSelect;
+
 // Tour Prompt Templates System
 export const tourPromptTemplates = pgTable("tour_prompt_templates", {
   id: serial("id").primaryKey(),

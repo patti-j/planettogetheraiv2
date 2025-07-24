@@ -12,6 +12,7 @@ import { MaxDockProvider } from "@/contexts/MaxDockContext";
 import { SplitPaneLayout } from "@/components/split-pane-layout";
 import { MaxSidebar } from "@/components/max-sidebar";
 import { useAuth } from "@/hooks/useAuth";
+import { ErrorBoundary } from "@/components/error-boundary";
 import Sidebar from "@/components/sidebar";
 import OnboardingWizard from "@/components/onboarding-wizard";
 import Login from "@/pages/Login";
@@ -326,20 +327,22 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <DndProvider backend={HTML5Backend}>
-        <TooltipProvider>
-          <TourProvider>
-            <MaxDockProvider>
-              <Router />
-              <OnboardingWizard />
-              <ResumeTourButton />
-              <Toaster />
-            </MaxDockProvider>
-          </TourProvider>
-        </TooltipProvider>
-      </DndProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <DndProvider backend={HTML5Backend}>
+          <TooltipProvider>
+            <TourProvider>
+              <MaxDockProvider>
+                <Router />
+                <OnboardingWizard />
+                <ResumeTourButton />
+                <Toaster />
+              </MaxDockProvider>
+            </TourProvider>
+          </TooltipProvider>
+        </DndProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

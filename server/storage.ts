@@ -48,6 +48,9 @@ import {
   aiMemories, aiMemoryTags, aiConversationContext,
   type AIMemory, type AIMemoryTag, type AIConversationContext,
   type InsertAIMemory, type InsertAIMemoryTag, type InsertAIConversationContext,
+  errorLogs, errorReports,
+  type ErrorLog, type ErrorReport,
+  type InsertErrorLog, type InsertErrorReport,
   // industryTemplates, userIndustryTemplates, templateConfigurations,
   // type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
   // type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration,
@@ -531,6 +534,19 @@ export interface IStorage {
   getCanvasSettings(userId: number, sessionId: string): Promise<CanvasSettings | undefined>;
   upsertCanvasSettings(settings: InsertCanvasSettings): Promise<CanvasSettings>;
   updateCanvasSettings(userId: number, sessionId: string, settings: Partial<InsertCanvasSettings>): Promise<CanvasSettings | undefined>;
+
+  // Error Logging and Monitoring
+  logError(errorData: InsertErrorLog): Promise<ErrorLog>;
+  getErrorLogs(limit?: number, resolved?: boolean): Promise<ErrorLog[]>;
+  getErrorLog(errorId: string): Promise<ErrorLog | undefined>;
+  markErrorResolved(errorId: string): Promise<boolean>;
+  
+  createErrorReport(report: InsertErrorReport): Promise<ErrorReport>;
+  getErrorReports(status?: string): Promise<ErrorReport[]>;
+  updateErrorReport(id: number, updates: Partial<InsertErrorReport>): Promise<ErrorReport | undefined>;
+  
+  getSystemHealth(): Promise<SystemHealth[]>;
+  logSystemHealth(healthData: InsertSystemHealth): Promise<SystemHealth>;
 
   // Industry Templates Management
   getIndustryTemplates(): Promise<IndustryTemplate[]>;
@@ -5258,6 +5274,86 @@ export class DatabaseStorage implements IStorage {
       ))
       .returning();
     return updatedSettings;
+  }
+
+  // Error Logging and Monitoring Implementation
+  async logError(errorData: InsertErrorLog): Promise<ErrorLog> {
+    const [error] = await db
+      .insert(errorLogs)
+      .values(errorData)
+      .returning();
+    return error;
+  }
+
+  async getErrorLogs(limit: number = 100, resolved?: boolean): Promise<ErrorLog[]> {
+    let query = db.select().from(errorLogs);
+    
+    if (resolved !== undefined) {
+      query = query.where(eq(errorLogs.resolved, resolved));
+    }
+    
+    return await query
+      .orderBy(desc(errorLogs.timestamp))
+      .limit(limit);
+  }
+
+  async getErrorLog(errorId: string): Promise<ErrorLog | undefined> {
+    const [error] = await db
+      .select()
+      .from(errorLogs)
+      .where(eq(errorLogs.errorId, errorId));
+    return error;
+  }
+
+  async markErrorResolved(errorId: string): Promise<boolean> {
+    const result = await db
+      .update(errorLogs)
+      .set({ resolved: true })
+      .where(eq(errorLogs.errorId, errorId));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async createErrorReport(report: InsertErrorReport): Promise<ErrorReport> {
+    const [errorReport] = await db
+      .insert(errorReports)
+      .values(report)
+      .returning();
+    return errorReport;
+  }
+
+  async getErrorReports(status?: string): Promise<ErrorReport[]> {
+    let query = db.select().from(errorReports);
+    
+    if (status) {
+      query = query.where(eq(errorReports.status, status));
+    }
+    
+    return await query.orderBy(desc(errorReports.createdAt));
+  }
+
+  async updateErrorReport(id: number, updates: Partial<InsertErrorReport>): Promise<ErrorReport | undefined> {
+    const [updatedReport] = await db
+      .update(errorReports)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(errorReports.id, id))
+      .returning();
+    return updatedReport;
+  }
+
+  async getSystemHealth(): Promise<SystemHealth[]> {
+    return await db
+      .select()
+      .from(systemHealth)
+      .orderBy(desc(systemHealth.timestamp))
+      .limit(100);
+  }
+
+  async logSystemHealth(healthData: InsertSystemHealth): Promise<SystemHealth> {
+    const [health] = await db
+      .insert(systemHealth)
+      .values(healthData)
+      .returning();
+    return health;
   }
 }
 
