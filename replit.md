@@ -121,6 +121,13 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 24, 2025)
 
+✓ **Presentation Auto-Scroll UX Enhancement (July 24, 2025)**:
+- Fixed critical UX issue where presentation controls were out of view when starting presentations from scrolled position
+- Added auto-scroll functionality to `handlePlayPresentation` that smoothly scrolls to top when presentation starts
+- Users can now start presentations from any scroll position and immediately see presentation viewer controls
+- Enhanced presentation user experience with seamless navigation from presentation list to viewer interface
+- Auto-scroll includes 100ms delay and smooth scrolling behavior for professional transition experience
+
 ✓ **Integrated Presentation Framework Implementation (July 24, 2025)**:
 - Successfully redesigned presentation system as integrated component within main application framework rather than separate overlay
 - Created seamless presentation-to-app transition system enabling smooth switching between presentation content and live software features

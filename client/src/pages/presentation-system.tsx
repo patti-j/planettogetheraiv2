@@ -394,6 +394,14 @@ export default function PresentationSystemPage() {
     setSelectedPresentation(presentation);
     setCurrentSlideIndex(0);
     setPresentationViewerOpen(true);
+    
+    // Auto-scroll to top to show presentation viewer controls
+    setTimeout(() => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }, 100);
   };
 
   // Presentation navigation
