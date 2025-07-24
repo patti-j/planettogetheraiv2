@@ -588,11 +588,26 @@ const DashboardWidget: React.FC<{ data: any }> = ({ data }) => {
 
 const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
   const chartType = data?.chartType || 'bar';
-  const chartData = data?.data || [];
+  const chartData = data?.data || data || [];
   const title = data?.title || 'Production Chart';
 
   // Color scheme for charts
   const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088fe', '#00c49f'];
+
+  // Check if we have valid chart data
+  if (!chartData || (Array.isArray(chartData) && chartData.length === 0)) {
+    return (
+      <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg">
+        <div className="text-center">
+          <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
+            <BarChart3 className="w-6 h-6 text-gray-400" />
+          </div>
+          <h4 className="text-sm font-medium text-gray-900 mb-2">No Chart Data</h4>
+          <p className="text-xs text-gray-600">Chart data is empty or invalid</p>
+        </div>
+      </div>
+    );
+  }
 
   const renderChart = () => {
     switch (chartType) {

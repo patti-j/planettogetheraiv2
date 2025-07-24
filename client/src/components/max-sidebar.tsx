@@ -468,7 +468,7 @@ export function MaxSidebar() {
             id: `canvas_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             type: canvasAction.content.type || 'custom',
             title: canvasAction.content.title || 'AI Generated Content',
-            content: canvasAction.content.data || canvasAction.content,
+            content: canvasAction.content.type === 'chart' ? canvasAction.content : (canvasAction.content.data || canvasAction.content),
             width: canvasAction.content.width || '100%',
             height: canvasAction.content.height || 'auto',
             timestamp: canvasAction.content.timestamp || new Date().toISOString()
