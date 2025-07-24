@@ -274,43 +274,66 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       const windowHeight = window.innerHeight;
       const isMobile = windowWidth < 768;
       
+      console.log("Initializing tour window position:", { windowWidth, windowHeight, isMobile });
+      
       if (isMobile) {
-        // Mobile window positioning - ensure it's always visible in viewport
+        // Mobile window positioning - ALWAYS in viewport top-right
         const cardWidth = Math.min(280, windowWidth - 16);
-        const maxCardHeight = Math.min(200, windowHeight * 0.35);
         const padding = 8;
+        const topPosition = 60; // Fixed distance from viewport top
         
-        // Position in top-right corner of viewport (not based on page height)
-        return {
+        const position = {
           x: windowWidth - cardWidth - padding,
-          y: padding + 50 // Small offset from top to avoid header overlap
+          y: topPosition
         };
+        
+        console.log("Mobile tour position calculated:", position);
+        return position;
       } else {
-        // Desktop positioning - top-right corner of viewport
+        // Desktop positioning - ALWAYS in viewport top-right
         const cardWidth = 384;
         const cardHeight = Math.min(600, windowHeight - 100);
         const padding = 20;
+        const topPosition = 80; // Fixed distance from viewport top
         
         // Set initial window dimensions for desktop
         setWindowDimensions({ width: cardWidth, height: cardHeight });
         
-        // Position in top-right corner of viewport
-        return {
+        const position = {
           x: windowWidth - cardWidth - padding,
-          y: padding + 80 // Offset from top to avoid header overlap
+          y: topPosition
         };
+        
+        console.log("Desktop tour position calculated:", position);
+        return position;
       }
     };
 
-    setPosition(getInitialPosition());
+    const initialPosition = getInitialPosition();
+    setPosition(initialPosition);
+    console.log("Tour window position set to:", initialPosition);
   }, []);
 
-  // Tour window positioning - no scrolling needed as window is already positioned properly
+  // Tour window positioning - verify Card element is positioned correctly
   useEffect(() => {
     if (cardRef.current && tourSteps.length > 0) {
       console.log("Tour window positioned and ready");
+      
+      // Log actual Card element position
+      setTimeout(() => {
+        if (cardRef.current) {
+          const rect = cardRef.current.getBoundingClientRect();
+          console.log("Actual Card element position:", {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+            visible: rect.top >= 0 && rect.left >= 0 && rect.top < window.innerHeight && rect.left < window.innerWidth
+          });
+        }
+      }, 100);
     }
-  }, [tourSteps.length]); // Trigger when tour data loads
+  }, [tourSteps.length, position]); // Trigger when tour data loads or position changes
 
   // Window resize handler and position adjustment
   useEffect(() => {
@@ -322,20 +345,32 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       const windowHeight = window.innerHeight;
       const isMobile = windowWidth < 768;
       
+      console.log("Resize event - repositioning tour window:", { windowWidth, windowHeight, isMobile });
+      
       if (isMobile) {
         const cardWidth = Math.min(280, windowWidth - 16);
         const padding = 8;
-        setPosition({
+        const topPosition = 60; // Fixed viewport position
+        
+        const newPosition = {
           x: windowWidth - cardWidth - padding,
-          y: padding + 50 // Keep in top area of viewport
-        });
+          y: topPosition
+        };
+        
+        console.log("Resize - Mobile position:", newPosition);
+        setPosition(newPosition);
       } else {
         const cardWidth = 384;
         const padding = 20;
-        setPosition({
+        const topPosition = 80; // Fixed viewport position
+        
+        const newPosition = {
           x: windowWidth - cardWidth - padding,
-          y: padding + 80 // Keep in top area of viewport
-        });
+          y: topPosition
+        };
+        
+        console.log("Resize - Desktop position:", newPosition);
+        setPosition(newPosition);
       }
     };
 
@@ -957,13 +992,14 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       {/* Light backdrop */}
       <div className="fixed inset-0 bg-black bg-opacity-20 z-40 pointer-events-none"></div>
       
-      {/* Draggable and resizable tour window */}
+      {/* Draggable and resizable tour window - FORCE viewport positioning */}
       <Card 
         ref={cardRef}
-        className="fixed bg-white shadow-2xl z-50 flex flex-col relative"
+        className="bg-white shadow-2xl z-50 flex flex-col"
         style={{
-          left: position.x,
-          top: position.y,
+          position: 'fixed',
+          left: `${position.x}px`,
+          top: `${position.y}px`,
           width: windowSize.width < 768 ? 
             `${Math.min(280, windowSize.width - 16)}px` : 
             `${windowDimensions.width}px`,
