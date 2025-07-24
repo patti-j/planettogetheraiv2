@@ -955,7 +955,31 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
 
   // Toggle minimize function
   const toggleMinimize = () => {
-    setIsMinimized(!isMinimized);
+    const willBeMinimized = !isMinimized;
+    setIsMinimized(willBeMinimized);
+    
+    // Reposition window when minimizing/maximizing
+    if (willBeMinimized) {
+      // When minimizing, move to bottom-right corner
+      const minimizedHeight = 160;
+      const cardWidth = 384;
+      const padding = 20;
+      
+      setPosition({
+        x: windowSize.width - cardWidth - padding,
+        y: windowSize.height - minimizedHeight - padding
+      });
+    } else {
+      // When expanding, move to better position for content viewing
+      const expandedHeight = 600;
+      const cardWidth = 384;
+      const padding = 20;
+      
+      setPosition({
+        x: windowSize.width - cardWidth - padding,
+        y: Math.max(padding, windowSize.height - expandedHeight - padding - 20)
+      });
+    }
   };
 
   useEffect(() => {
