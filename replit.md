@@ -114,6 +114,12 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 24, 2025)
 
+✓ **Row Height Slider Visual Fix (July 24, 2025)**:
+- Fixed visual truncation issue with row height slider blue circle/thumb in resource gantt
+- Increased slider width from w-8 md:w-12 to w-16 md:w-20 for proper thumb display
+- Applied fix to both resource view and customer view sliders in gantt chart
+- Slider thumb now displays properly without being cut off at container edges
+
 ✓ **Content-Specific Auto-Scroll System Implementation (July 24, 2025)**:
 - Successfully transformed auto-scroll to target only center page content containers instead of entire screen
 - Added intelligent content container detection using CSS selectors (space-y-4/6, main > div, padded content)

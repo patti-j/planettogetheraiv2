@@ -1325,7 +1325,7 @@ export default function GanttChart({
                       min={20}
                       max={200}
                       step={5}
-                      className="w-12"
+                      className="w-16 md:w-20"
                     />
                   </div>
                 </div>
@@ -1484,7 +1484,7 @@ export default function GanttChart({
                     min={20}
                     max={200}
                     step={5}
-                    className="w-8 md:w-12"
+                    className="w-16 md:w-20"
                   />
                 </div>
               </div>
