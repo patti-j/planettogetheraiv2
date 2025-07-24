@@ -12,11 +12,12 @@ const updateAIThemeCSSVariables = (theme: AIThemeColor) => {
   
   // Define HSL values for each theme
   const themeColors = {
-    'purple-pink': { from: '168 85% 52%', to: '330 81% 60%' }, // purple-500 to pink-600
+    'purple-pink': { from: '271 91% 65%', to: '330 81% 60%' }, // purple-500 to pink-600
     'blue-indigo': { from: '213 94% 68%', to: '239 84% 67%' }, // blue-400 to indigo-500
     'emerald-teal': { from: '158 64% 52%', to: '174 83% 39%' }, // emerald-500 to teal-600
     'orange-red': { from: '24 95% 53%', to: '1 83% 63%' }, // orange-500 to red-500
-    'rose-purple': { from: '330 81% 60%', to: '269 78% 62%' }, // rose-500 to purple-500
+    'violet-purple': { from: '258 90% 66%', to: '271 91% 65%' }, // violet-500 to purple-500
+    'cyan-blue': { from: '188 95% 68%', to: '213 94% 68%' }, // cyan-500 to blue-500
   };
   
   const colors = themeColors[theme];

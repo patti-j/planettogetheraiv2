@@ -114,6 +114,22 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 24, 2025)
 
+✓ **Max AI Assistant Direct Data Access Implementation (July 24, 2025)**:
+- Successfully enhanced Max AI assistant with direct data access capabilities eliminating navigation requirements
+- Enhanced AI system prompt to include live manufacturing data (jobs, operations, resources, capabilities) in real-time
+- Fixed AI response behavior to use provided live data instead of requesting page navigation
+- Max now answers "How many jobs do we have?" with "We currently have 2 jobs in the system - both are active"
+- Users can ask about job names, operation counts, resource availability, and get instant accurate responses
+- Enhanced system context with explicit instructions to use exact numbers from live data
+- Improved user experience by providing immediate answers to data questions without leaving current page
+
+✓ **AI Theme Color System Bug Fix (July 24, 2025)**:
+- Fixed critical AI theme color issue where purple-pink theme displayed as green-pink gradient
+- Corrected HSL color values in useAITheme hook: purple-pink now uses proper purple (271 91% 65%) instead of green (168 85% 52%)
+- Added missing cyan-blue and violet-purple theme definitions for complete theme coverage
+- AI theme color system now displays accurate colors matching the theme names and descriptions
+- Purple-pink theme properly shows purple-to-pink gradient as intended by users
+
 ✓ **Context-Aware Tour Role Management Implementation (July 24, 2025)**:
 - Successfully implemented intelligent context-aware tour behavior based on launch origin
 - **Training Context Tours**: Tours launched from tour management return to original trainer role after completion/skip
