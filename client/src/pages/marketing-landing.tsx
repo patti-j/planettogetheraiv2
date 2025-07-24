@@ -74,29 +74,37 @@ interface LeadCapture {
 
 interface CustomerStory {
   id: number;
-  companyName: string;
+  customerName: string;
+  customerTitle: string;
+  company: string;
   industry: string;
-  title: string;
-  summary: string;
-  results: {
-    efficiency?: number;
-    costSavings?: number;
-    timeReduction?: number;
-    qualityImprovement?: number;
-  };
-  testimonialQuote: string;
-  testimonialAuthor: string;
-  authorTitle: string;
   companySize: string;
+  story: {
+    quote: string;
+    results: Array<{
+      metric: string;
+      description: string;
+      improvement: string;
+    }>;
+    solution: string;
+    challenge: string;
+  };
+  storyType: string;
   language: string;
-  isPublished: boolean;
+  isApproved: boolean;
+  isFeatured: boolean;
 }
 
 interface ContentBlock {
   id: number;
+  name: string;
+  type: string;
   category: string;
-  title: string;
-  content: string;
+  content: {
+    text: string;
+    button_text?: string;
+    button_url?: string;
+  };
   language: string;
   usageCount: number;
   isActive: boolean;
@@ -189,12 +197,29 @@ export default function MarketingLandingPage() {
 
   // Fetch customer stories for social proof
   const { data: customerStories = [] } = useQuery<CustomerStory[]>({
-    queryKey: ['/api/marketing/customer-stories', { language: selectedLanguage, industry: selectedIndustry }]
+    queryKey: ['/api/marketing/customer-stories'],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedLanguage) params.append('language', selectedLanguage);
+      if (selectedIndustry) params.append('industry', selectedIndustry);
+      
+      const response = await fetch(`/api/marketing/customer-stories?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch customer stories');
+      return response.json();
+    }
   });
 
   // Fetch content blocks for dynamic content
   const { data: contentBlocks = [] } = useQuery<ContentBlock[]>({
-    queryKey: ['/api/marketing/content-blocks', { language: selectedLanguage }]
+    queryKey: ['/api/marketing/content-blocks'],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedLanguage) params.append('language', selectedLanguage);
+      
+      const response = await fetch(`/api/marketing/content-blocks?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch content blocks');
+      return response.json();
+    }
   });
 
   // Lead capture mutation
@@ -495,42 +520,24 @@ export default function MarketingLandingPage() {
                       <Badge variant="outline">{story.industry}</Badge>
                       <Badge variant="secondary">{story.companySize}</Badge>
                     </div>
-                    <CardTitle className="text-xl">{story.companyName}</CardTitle>
-                    <CardDescription>{story.title}</CardDescription>
+                    <CardTitle className="text-xl">{story.company}</CardTitle>
+                    <CardDescription>{story.customerName} - {story.customerTitle}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-600 mb-6 italic">"{story.testimonialQuote}"</p>
+                    <p className="text-gray-600 mb-6 italic">"{story.story.quote}"</p>
                     
                     <div className="grid grid-cols-2 gap-4 mb-6">
-                      {story.results.efficiency && (
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-green-600">+{story.results.efficiency}%</div>
-                          <div className="text-sm text-gray-600">Efficiency</div>
+                      {story.story.results.slice(0, 4).map((result, index) => (
+                        <div key={index} className="text-center">
+                          <div className="text-lg font-bold text-blue-600">{result.improvement}</div>
+                          <div className="text-sm text-gray-600">{result.metric}</div>
                         </div>
-                      )}
-                      {story.results.costSavings && (
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-blue-600">${story.results.costSavings}k</div>
-                          <div className="text-sm text-gray-600">Annual Savings</div>
-                        </div>
-                      )}
-                      {story.results.timeReduction && (
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-purple-600">-{story.results.timeReduction}%</div>
-                          <div className="text-sm text-gray-600">Lead Time</div>
-                        </div>
-                      )}
-                      {story.results.qualityImprovement && (
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-orange-600">+{story.results.qualityImprovement}%</div>
-                          <div className="text-sm text-gray-600">Quality</div>
-                        </div>
-                      )}
+                      ))}
                     </div>
                     
                     <div className="text-center">
-                      <div className="font-semibold">{story.testimonialAuthor}</div>
-                      <div className="text-sm text-gray-600">{story.authorTitle}</div>
+                      <div className="font-semibold">{story.customerName}</div>
+                      <div className="text-sm text-gray-600">{story.customerTitle}</div>
                     </div>
                   </CardContent>
                 </Card>
