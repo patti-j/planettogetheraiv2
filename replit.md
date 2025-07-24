@@ -112,6 +112,19 @@ Preferred communication style: Simple, everyday language.
 
 The application uses a modern full-stack architecture with strong typing throughout, real-time updates, and an intuitive drag-and-drop interface for manufacturing production scheduling.
 
+## Recent Changes (July 24, 2025)
+
+✓ **Context-Aware Tour Role Management Implementation (July 24, 2025)**:
+- Successfully implemented intelligent context-aware tour behavior based on launch origin
+- **Training Context Tours**: Tours launched from tour management return to original trainer role after completion/skip
+- **Demo Context Tours**: External/demo tours keep user in the toured role after completion for continued exploration
+- Added tourContext and originalRoleId state tracking to TourContext for proper role restoration
+- Enhanced startTour function to accept context parameter ('training' | 'demo') with automatic role preservation
+- Updated completeTour and skipTour handlers to restore original role for training context tours
+- Modified tour launch points: training page uses 'training' context, demo registration uses 'demo' context
+- Fixed role switching control display issue by adding React Query cache invalidation after tour completion
+- System now provides appropriate role behavior based on user intent and tour launch context
+
 ## Recent Changes (July 23, 2025)
 
 ✓ **Max Canvas Mobile UI Optimization (July 23, 2025)**:

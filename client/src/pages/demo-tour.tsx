@@ -344,7 +344,7 @@ export default function DemoTour() {
       
       // Start guided tour using global context with role ID
       setDemoRole(primaryRole);
-      startTour(roleId, voiceEnabledParam);
+      startTour(roleId, voiceEnabledParam, 'demo');
       console.log("Demo tour started globally for roleId:", roleId, "with voice:", voiceEnabledParam);
       
       // Use proper navigation instead of window.location to avoid 404

@@ -415,8 +415,8 @@ export default function Training() {
             });
             
             if (response.ok) {
-              // Start the tour with voice enabled by default
-              startTour(roleToSwitch.id, true);
+              // Start the tour with voice enabled by default and 'training' context
+              startTour(roleToSwitch.id, true, 'training');
               
               toast({
                 title: "Tour Started",
@@ -428,7 +428,7 @@ export default function Training() {
           } catch (error) {
             console.error("Error switching role:", error);
             // Try to start tour anyway without role switch
-            startTour(roleToSwitch.id, true);
+            startTour(roleToSwitch.id, true, 'training');
             
             toast({
               title: "Tour Started",

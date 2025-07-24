@@ -98,8 +98,8 @@ function DashboardWithAutoTour() {
             console.log('Starting auto tour for role:', roleKey, currentRole.name, 'roleId:', roleId);
             
             if (roleId) {
-              // Start the tour with voice enabled by default
-              startTour(roleId, true);
+              // Start the tour with voice enabled by default and 'demo' context (external link)
+              startTour(roleId, true, 'demo');
             } else {
               console.error('No role ID found for role:', roleKey);
             }

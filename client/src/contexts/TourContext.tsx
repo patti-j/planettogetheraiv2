@@ -7,7 +7,7 @@ interface TourContextType {
   isActive: boolean;
   currentRoleId: number | null;
   voiceEnabled: boolean;
-  startTour: (roleId: number, voiceEnabled?: boolean) => void;
+  startTour: (roleId: number, voiceEnabled?: boolean, context?: 'training' | 'demo') => void;
   completeTour: () => void;
   skipTour: () => void;
   closeTour: () => void;
@@ -20,6 +20,8 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const [isActive, setIsActive] = useState(false);
   const [currentRoleId, setCurrentRoleId] = useState<number | null>(null);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [tourContext, setTourContext] = useState<'training' | 'demo'>('demo');
+  const [originalRoleId, setOriginalRoleId] = useState<number | null>(null);
   const { isAuthenticated, isLoading, user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -31,6 +33,8 @@ export function TourProvider({ children }: { children: ReactNode }) {
       setIsActive(true);
       setCurrentRoleId(tourData.roleId);
       setVoiceEnabled(tourData.voiceEnabled || false);
+      setTourContext(tourData.context || 'demo');
+      setOriginalRoleId(tourData.originalRoleId || null);
       console.log("Restored active tour from localStorage:", tourData, "voice enabled:", tourData.voiceEnabled);
     }
   }, []);
@@ -55,46 +59,126 @@ export function TourProvider({ children }: { children: ReactNode }) {
     }
   }, [isAuthenticated, isLoading, isActive]);
 
-  const startTour = (roleId: number, voiceEnabledParam = false) => {
-    console.log("TourContext startTour called with roleId:", roleId, "voiceEnabledParam:", voiceEnabledParam);
+  const startTour = (roleId: number, voiceEnabledParam = false, context: 'training' | 'demo' = 'demo') => {
+    console.log("TourContext startTour called with roleId:", roleId, "voiceEnabledParam:", voiceEnabledParam, "context:", context);
+    
+    // Store original role for training context tours
+    if (context === 'training' && user?.id) {
+      // Get current role to restore later
+      queryClient.fetchQuery({
+        queryKey: [`/api/users/${user.id}/current-role`],
+        queryFn: async () => {
+          const response = await fetch(`/api/users/${user.id}/current-role`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            }
+          });
+          return await response.json();
+        }
+      }).then(currentRole => {
+        setOriginalRoleId(currentRole?.id || null);
+        console.log("Stored original role for training context:", currentRole?.id);
+      }).catch(err => {
+        console.warn("Could not fetch current role:", err);
+        setOriginalRoleId(null);
+      });
+    }
+    
     setIsActive(true);
     setCurrentRoleId(roleId);
     setVoiceEnabled(voiceEnabledParam);
+    setTourContext(context);
     
     // Save tour state to localStorage
     const tourData = { 
       roleId, 
       active: true, 
-      voiceEnabled: voiceEnabledParam 
+      voiceEnabled: voiceEnabledParam,
+      context,
+      originalRoleId: context === 'training' ? originalRoleId : null
     };
     localStorage.setItem("activeDemoTour", JSON.stringify(tourData));
     console.log("Saved tour state to localStorage:", tourData);
   };
 
   const completeTour = () => {
-    console.log("Completing global tour");
+    console.log("Completing global tour, context:", tourContext, "originalRoleId:", originalRoleId);
+    
+    // Handle role restoration based on context
+    if (tourContext === 'training' && originalRoleId && user?.id) {
+      // For training context, restore original role
+      console.log("Restoring original role for training context:", originalRoleId);
+      fetch(`/api/users/${user.id}/switch-role`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify({ roleId: originalRoleId })
+      }).then(() => {
+        console.log("Successfully restored original role");
+        // Invalidate cache after role switch
+        queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/current-role`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/assigned-roles`] });
+      }).catch(err => {
+        console.error("Failed to restore original role:", err);
+        // Still invalidate cache even if role switch failed
+        queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/current-role`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/assigned-roles`] });
+      });
+    } else {
+      // For demo context, stay in current role but invalidate cache
+      console.log("Demo context tour - staying in current role");
+      if (user?.id) {
+        queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/current-role`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/assigned-roles`] });
+      }
+    }
+    
     setIsActive(false);
     setCurrentRoleId(null);
+    setTourContext('demo');
+    setOriginalRoleId(null);
     localStorage.removeItem("activeDemoTour");
-    
-    // Invalidate role-related cache to update role switcher display
-    if (user?.id) {
-      queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/current-role`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/assigned-roles`] });
-    }
   };
 
   const skipTour = () => {
-    console.log("Skipping global tour");
+    console.log("Skipping global tour, context:", tourContext, "originalRoleId:", originalRoleId);
+    
+    // Handle role restoration based on context (same logic as completeTour)
+    if (tourContext === 'training' && originalRoleId && user?.id) {
+      // For training context, restore original role
+      console.log("Restoring original role for skipped training tour:", originalRoleId);
+      fetch(`/api/users/${user.id}/switch-role`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify({ roleId: originalRoleId })
+      }).then(() => {
+        console.log("Successfully restored original role after skip");
+        queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/current-role`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/assigned-roles`] });
+      }).catch(err => {
+        console.error("Failed to restore original role after skip:", err);
+        queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/current-role`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/assigned-roles`] });
+      });
+    } else {
+      // For demo context, stay in current role but invalidate cache
+      console.log("Demo context tour skipped - staying in current role");
+      if (user?.id) {
+        queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/current-role`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/assigned-roles`] });
+      }
+    }
+    
     setIsActive(false);
     setCurrentRoleId(null);
+    setTourContext('demo');
+    setOriginalRoleId(null);
     localStorage.removeItem("activeDemoTour");
-    
-    // Invalidate role-related cache to update role switcher display
-    if (user?.id) {
-      queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/current-role`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/assigned-roles`] });
-    }
   };
 
   const closeTour = () => {
@@ -115,11 +199,13 @@ export function TourProvider({ children }: { children: ReactNode }) {
     console.log("Switching to new roleId:", newRoleId);
     setCurrentRoleId(newRoleId);
     
-    // Update localStorage with new role but keep voice setting
+    // Update localStorage with new role but keep voice setting and context
     const tourData = { 
       roleId: newRoleId, 
       active: true, 
-      voiceEnabled 
+      voiceEnabled,
+      context: tourContext,
+      originalRoleId 
     };
     localStorage.setItem("activeDemoTour", JSON.stringify(tourData));
     console.log("Updated tour state for role switch:", tourData);
