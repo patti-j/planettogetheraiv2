@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { GuidedTour } from "@/components/guided-tour";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -19,7 +20,8 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const [isActive, setIsActive] = useState(false);
   const [currentRoleId, setCurrentRoleId] = useState<number | null>(null);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const queryClient = useQueryClient();
 
   // Check localStorage for active tour on mount
   useEffect(() => {
@@ -74,6 +76,12 @@ export function TourProvider({ children }: { children: ReactNode }) {
     setIsActive(false);
     setCurrentRoleId(null);
     localStorage.removeItem("activeDemoTour");
+    
+    // Invalidate role-related cache to update role switcher display
+    if (user?.id) {
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/current-role`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/assigned-roles`] });
+    }
   };
 
   const skipTour = () => {
@@ -81,6 +89,12 @@ export function TourProvider({ children }: { children: ReactNode }) {
     setIsActive(false);
     setCurrentRoleId(null);
     localStorage.removeItem("activeDemoTour");
+    
+    // Invalidate role-related cache to update role switcher display
+    if (user?.id) {
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/current-role`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/assigned-roles`] });
+    }
   };
 
   const closeTour = () => {
@@ -89,6 +103,12 @@ export function TourProvider({ children }: { children: ReactNode }) {
     setCurrentRoleId(null);
     setVoiceEnabled(false);
     localStorage.removeItem("activeDemoTour");
+    
+    // Invalidate role-related cache to update role switcher display
+    if (user?.id) {
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/current-role`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${user.id}/assigned-roles`] });
+    }
   };
 
   const switchToRole = (newRoleId: number) => {
