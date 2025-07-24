@@ -42,6 +42,9 @@ import {
   workflows, workflowTriggers, workflowActions, workflowActionMappings, workflowExecutions, workflowActionExecutions, workflowMonitoring,
   type Workflow, type WorkflowTrigger, type WorkflowAction, type WorkflowActionMapping, type WorkflowExecution, type WorkflowActionExecution, type WorkflowMonitoring,
   type InsertWorkflow, type InsertWorkflowTrigger, type InsertWorkflowAction, type InsertWorkflowActionMapping, type InsertWorkflowExecution, type InsertWorkflowActionExecution, type InsertWorkflowMonitoring,
+  canvasContent, canvasSettings,
+  type CanvasContent, type CanvasSettings,
+  type InsertCanvasContent, type InsertCanvasSettings,
   // industryTemplates, userIndustryTemplates, templateConfigurations,
   // type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
   // type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration,
@@ -512,6 +515,19 @@ export interface IStorage {
     topCategories: { category: string; count: number }[];
     recentActivity: number;
   }>;
+
+  // Canvas Content Management
+  getCanvasContent(userId: number, sessionId: string): Promise<CanvasContent[]>;
+  addCanvasContent(content: InsertCanvasContent): Promise<CanvasContent>;
+  clearCanvasContent(userId: number, sessionId: string): Promise<boolean>;
+  deleteCanvasContent(id: number): Promise<boolean>;
+  reorderCanvasContent(contentIds: number[]): Promise<boolean>;
+  cleanupExpiredCanvasContent(): Promise<boolean>;
+  
+  // Canvas Settings Management
+  getCanvasSettings(userId: number, sessionId: string): Promise<CanvasSettings | undefined>;
+  upsertCanvasSettings(settings: InsertCanvasSettings): Promise<CanvasSettings>;
+  updateCanvasSettings(userId: number, sessionId: string, settings: Partial<InsertCanvasSettings>): Promise<CanvasSettings | undefined>;
 
   // Industry Templates Management
   getIndustryTemplates(): Promise<IndustryTemplate[]>;
@@ -4916,6 +4932,143 @@ export class DatabaseStorage implements IStorage {
   async deleteWorkflowMonitoring(id: number): Promise<boolean> {
     const result = await db.delete(workflowMonitoring).where(eq(workflowMonitoring.id, id));
     return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Canvas Content Management
+  async getCanvasContent(userId: number, sessionId: string): Promise<CanvasContent[]> {
+    return await db
+      .select()
+      .from(canvasContent)
+      .where(and(
+        eq(canvasContent.userId, userId),
+        eq(canvasContent.sessionId, sessionId),
+        eq(canvasContent.isVisible, true)
+      ))
+      .orderBy(desc(canvasContent.displayOrder), desc(canvasContent.createdAt));
+  }
+
+  async addCanvasContent(content: InsertCanvasContent): Promise<CanvasContent> {
+    // Get current highest display order for this user/session
+    const maxOrderResult = await db
+      .select({ maxOrder: sql<number>`max(${canvasContent.displayOrder})` })
+      .from(canvasContent)
+      .where(and(
+        eq(canvasContent.userId, content.userId),
+        eq(canvasContent.sessionId, content.sessionId)
+      ));
+
+    const maxOrder = maxOrderResult[0]?.maxOrder || 0;
+    
+    // Insert new content with incremented display order
+    const [newContent] = await db
+      .insert(canvasContent)
+      .values({
+        ...content,
+        displayOrder: maxOrder + 1
+      })
+      .returning();
+
+    return newContent;
+  }
+
+  async clearCanvasContent(userId: number, sessionId: string): Promise<boolean> {
+    const result = await db
+      .update(canvasContent)
+      .set({ isVisible: false })
+      .where(and(
+        eq(canvasContent.userId, userId),
+        eq(canvasContent.sessionId, sessionId)
+      ));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async deleteCanvasContent(id: number): Promise<boolean> {
+    const result = await db.delete(canvasContent).where(eq(canvasContent.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async reorderCanvasContent(contentIds: number[]): Promise<boolean> {
+    try {
+      // Update display orders based on the array order
+      for (let i = 0; i < contentIds.length; i++) {
+        await db
+          .update(canvasContent)
+          .set({ displayOrder: i + 1 })
+          .where(eq(canvasContent.id, contentIds[i]));
+      }
+      return true;
+    } catch (error) {
+      console.error('Error reordering canvas content:', error);
+      return false;
+    }
+  }
+
+  async cleanupExpiredCanvasContent(): Promise<boolean> {
+    try {
+      // Get all canvas settings to check retention policies
+      const settings = await db.select().from(canvasSettings);
+      
+      for (const setting of settings) {
+        if (setting.autoClear && setting.retentionDays > 0) {
+          const cutoffDate = new Date();
+          cutoffDate.setDate(cutoffDate.getDate() - setting.retentionDays);
+          
+          await db
+            .update(canvasContent)
+            .set({ isVisible: false })
+            .where(and(
+              eq(canvasContent.userId, setting.userId),
+              eq(canvasContent.sessionId, setting.sessionId),
+              lte(canvasContent.createdAt, cutoffDate)
+            ));
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error('Error cleaning up expired canvas content:', error);
+      return false;
+    }
+  }
+
+  // Canvas Settings Management
+  async getCanvasSettings(userId: number, sessionId: string): Promise<CanvasSettings | undefined> {
+    const [settings] = await db
+      .select()
+      .from(canvasSettings)
+      .where(and(
+        eq(canvasSettings.userId, userId),
+        eq(canvasSettings.sessionId, sessionId)
+      ));
+    return settings;
+  }
+
+  async upsertCanvasSettings(settings: InsertCanvasSettings): Promise<CanvasSettings> {
+    const [result] = await db
+      .insert(canvasSettings)
+      .values(settings)
+      .onConflictDoUpdate({
+        target: [canvasSettings.userId, canvasSettings.sessionId],
+        set: {
+          retentionDays: settings.retentionDays,
+          autoClear: settings.autoClear,
+          maxItems: settings.maxItems,
+          updatedAt: new Date()
+        }
+      })
+      .returning();
+    return result;
+  }
+
+  async updateCanvasSettings(userId: number, sessionId: string, settings: Partial<InsertCanvasSettings>): Promise<CanvasSettings | undefined> {
+    const [updatedSettings] = await db
+      .update(canvasSettings)
+      .set({ ...settings, updatedAt: new Date() })
+      .where(and(
+        eq(canvasSettings.userId, userId),
+        eq(canvasSettings.sessionId, sessionId)
+      ))
+      .returning();
+    return updatedSettings;
   }
 }
 

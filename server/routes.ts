@@ -28,7 +28,8 @@ import {
   insertWorkflowSchema, insertWorkflowTriggerSchema, insertWorkflowActionSchema,
   insertWorkflowActionMappingSchema, insertWorkflowExecutionSchema, insertWorkflowActionExecutionSchema,
   insertWorkflowMonitoringSchema,
-  insertTourPromptTemplateSchema, insertTourPromptTemplateUsageSchema
+  insertTourPromptTemplateSchema, insertTourPromptTemplateUsageSchema,
+  insertCanvasContentSchema, insertCanvasSettingsSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -2087,6 +2088,134 @@ For canvas requests, respond in JSON format with this structure:
     } catch (error) {
       console.error("Error removing vote:", error);
       res.status(500).json({ error: "Failed to remove vote" });
+    }
+  });
+
+  // Canvas Content API routes
+  app.get("/api/canvas/content/:sessionId", requireAuth, async (req, res) => {
+    try {
+      const sessionId = req.params.sessionId;
+      const userId = typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 0 : req.user.id;
+
+      const content = await storage.getCanvasContent(userId, sessionId);
+      res.json(content);
+    } catch (error) {
+      console.error("Error fetching canvas content:", error);
+      res.status(500).json({ error: "Failed to fetch canvas content" });
+    }
+  });
+
+  app.post("/api/canvas/content", requireAuth, async (req, res) => {
+    try {
+      const userId = typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 0 : req.user.id;
+      
+      const contentData = {
+        ...req.body,
+        userId
+      };
+
+      const validatedData = insertCanvasContentSchema.parse(contentData);
+      const content = await storage.addCanvasContent(validatedData);
+      res.json(content);
+    } catch (error) {
+      console.error("Error adding canvas content:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid content data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to add canvas content" });
+    }
+  });
+
+  app.delete("/api/canvas/content/:sessionId", requireAuth, async (req, res) => {
+    try {
+      const sessionId = req.params.sessionId;
+      const userId = typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 0 : req.user.id;
+
+      const cleared = await storage.clearCanvasContent(userId, sessionId);
+      res.json({ success: cleared });
+    } catch (error) {
+      console.error("Error clearing canvas content:", error);
+      res.status(500).json({ error: "Failed to clear canvas content" });
+    }
+  });
+
+  app.delete("/api/canvas/content/item/:id", requireAuth, async (req, res) => {
+    try {
+      const contentId = parseInt(req.params.id);
+      if (isNaN(contentId)) {
+        return res.status(400).json({ error: "Invalid content ID" });
+      }
+
+      const deleted = await storage.deleteCanvasContent(contentId);
+      if (!deleted) {
+        return res.status(404).json({ error: "Content not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting canvas content:", error);
+      res.status(500).json({ error: "Failed to delete canvas content" });
+    }
+  });
+
+  app.put("/api/canvas/content/reorder", requireAuth, async (req, res) => {
+    try {
+      const { contentIds } = req.body;
+      
+      if (!Array.isArray(contentIds)) {
+        return res.status(400).json({ error: "contentIds must be an array" });
+      }
+
+      const reordered = await storage.reorderCanvasContent(contentIds);
+      res.json({ success: reordered });
+    } catch (error) {
+      console.error("Error reordering canvas content:", error);
+      res.status(500).json({ error: "Failed to reorder canvas content" });
+    }
+  });
+
+  // Canvas Settings API routes
+  app.get("/api/canvas/settings/:sessionId", requireAuth, async (req, res) => {
+    try {
+      const sessionId = req.params.sessionId;
+      const userId = typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 0 : req.user.id;
+
+      const settings = await storage.getCanvasSettings(userId, sessionId);
+      res.json(settings || { retentionDays: 7, autoClear: true, maxItems: 50 });
+    } catch (error) {
+      console.error("Error fetching canvas settings:", error);
+      res.status(500).json({ error: "Failed to fetch canvas settings" });
+    }
+  });
+
+  app.post("/api/canvas/settings", requireAuth, async (req, res) => {
+    try {
+      const userId = typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 0 : req.user.id;
+      
+      const settingsData = {
+        ...req.body,
+        userId
+      };
+
+      const validatedData = insertCanvasSettingsSchema.parse(settingsData);
+      const settings = await storage.upsertCanvasSettings(validatedData);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating canvas settings:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid settings data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to update canvas settings" });
+    }
+  });
+
+  app.post("/api/canvas/cleanup", async (req, res) => {
+    try {
+      const cleaned = await storage.cleanupExpiredCanvasContent();
+      res.json({ success: cleaned });
+    } catch (error) {
+      console.error("Error cleaning up canvas content:", error);
+      res.status(500).json({ error: "Failed to cleanup canvas content" });
     }
   });
 

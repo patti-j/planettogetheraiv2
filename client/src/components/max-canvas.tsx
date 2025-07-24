@@ -21,54 +21,123 @@ import {
   Trash2
 } from 'lucide-react';
 import { useAITheme } from '@/hooks/use-ai-theme';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from '@/hooks/use-toast';
 
 interface CanvasItem {
-  id: string;
-  type: 'dashboard' | 'chart' | 'table' | 'image' | 'interactive' | 'custom';
-  title: string;
-  content: any;
-  width?: string;
-  height?: string;
-  position?: { x: number; y: number };
+  id: number;
+  userId: number;
+  sessionId: string;
+  itemData: any;
+  displayOrder: number;
+  createdAt: string;
+  isVisible: boolean;
 }
 
 interface MaxCanvasProps {
   isVisible: boolean;
   onClose: () => void;
-  items: CanvasItem[];
-  onUpdateItems: (items: CanvasItem[]) => void;
+  sessionId: string;
 }
 
 export const MaxCanvas: React.FC<MaxCanvasProps> = ({
   isVisible,
   onClose,
-  items,
-  onUpdateItems
+  sessionId
 }) => {
   const { aiTheme } = useAITheme();
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Expose addContent method globally for Max AI to use
+  useEffect(() => {
+    if (isVisible) {
+      (window as any).addCanvasContent = (content: any) => {
+        addContentMutation.mutate(content);
+      };
+    }
+    return () => {
+      delete (window as any).addCanvasContent;
+    };
+  }, [isVisible]);
+
+  // Fetch canvas content
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: ['/api/canvas/content', sessionId],
+    enabled: isVisible
+  });
+
+  // Add content mutation
+  const addContentMutation = useMutation({
+    mutationFn: async (content: any) => {
+      const response = await fetch('/api/canvas/content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify({
+          sessionId,
+          itemData: content,
+          displayOrder: 0,
+          isVisible: true
+        })
+      });
+      if (!response.ok) throw new Error('Failed to add content');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/canvas/content', sessionId] });
+      toast({ title: "Content added to canvas" });
+    },
+    onError: () => {
+      toast({ title: "Failed to add content", variant: "destructive" });
+    }
+  });
+
+  // Clear content mutation
+  const clearContentMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/canvas/content/${sessionId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to clear content');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/canvas/content', sessionId] });
+      toast({ title: "Canvas cleared" });
+    },
+    onError: () => {
+      toast({ title: "Failed to clear canvas", variant: "destructive" });
+    }
+  });
 
   if (!isVisible) return null;
 
   const renderCanvasItem = (item: CanvasItem) => {
-    switch (item.type) {
+    const data = item.itemData;
+    switch (data?.type) {
       case 'dashboard':
-        return <DashboardWidget data={item.content} />;
+        return <DashboardWidget data={data.content} />;
       case 'chart':
-        return <ChartWidget data={item.content} />;
+        return <ChartWidget data={data.content} />;
       case 'table':
-        return <TableWidget data={item.content} />;
+        return <TableWidget data={data.content} />;
       case 'interactive':
-        return <InteractiveWidget data={item.content} />;
+        return <InteractiveWidget data={data.content} />;
       case 'custom':
-        return <CustomWidget data={item.content} />;
+        return <CustomWidget data={data.content} />;
       default:
         return <div className="p-4 text-gray-500">Unknown content type</div>;
     }
   };
 
   const handleClearCanvas = () => {
-    onUpdateItems([]);
+    clearContentMutation.mutate();
   };
 
   const handleExport = () => {
@@ -133,7 +202,16 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
 
         {/* Canvas Content Area - Compact for inline display */}
         <div className="flex-1 overflow-auto bg-gray-50 p-3 min-h-0">
-          {items.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center" style={{ minHeight: '280px' }}>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse">
+                  <BarChart3 className="w-6 h-6 text-gray-400" />
+                </div>
+                <p className="text-xs text-gray-600">Loading canvas content...</p>
+              </div>
+            </div>
+          ) : items.length === 0 ? (
             <div className="flex items-center justify-center" style={{ minHeight: '280px' }}>
               <div className="text-center">
                 <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -151,7 +229,7 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
               {items.map((item) => (
                 <Card key={item.id} className="shadow-sm">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">{item.title}</CardTitle>
+                    <CardTitle className="text-sm">{item.itemData?.title || 'Canvas Item'}</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
                     {renderCanvasItem(item)}

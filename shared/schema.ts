@@ -596,6 +596,8 @@ export const insertDisruptionEscalationSchema = createInsertSchema(disruptionEsc
   actualResponse: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
+
+
 // Capacity Planning Tables for Production Planners
 
 // Capacity planning scenarios for different planning periods
@@ -748,6 +750,36 @@ export const capacityProjections = pgTable("capacity_projections", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Canvas Content Storage
+export const canvasContent = pgTable("canvas_content", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  sessionId: text("session_id").notNull(), // Groups content from same conversation session
+  itemData: jsonb("item_data").$type<{
+    id: string;
+    type: 'dashboard' | 'chart' | 'table' | 'image' | 'interactive' | 'custom';
+    title: string;
+    content: any;
+    width?: string;
+    height?: string;
+    position?: { x: number; y: number };
+  }>().notNull(),
+  displayOrder: integer("display_order").notNull().default(0), // Higher numbers appear at top
+  createdAt: timestamp("created_at").defaultNow(),
+  isVisible: boolean("is_visible").default(true),
+});
+
+// User settings for canvas retention
+export const canvasSettings = pgTable("canvas_settings", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull().unique(),
+  retentionDays: integer("retention_days").notNull().default(30),
+  autoScroll: boolean("auto_scroll").default(true),
+  maxItemsPerSession: integer("max_items_per_session").default(50),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
 export type Capability = typeof capabilities.$inferSelect;
 
@@ -819,6 +851,13 @@ export type DisruptionAction = typeof disruptionActions.$inferSelect;
 export type InsertDisruptionEscalation = z.infer<typeof insertDisruptionEscalationSchema>;
 export type DisruptionEscalation = typeof disruptionEscalations.$inferSelect;
 
+// Canvas Content Types
+export type InsertCanvasContent = z.infer<typeof insertCanvasContentSchema>;
+export type CanvasContent = typeof canvasContent.$inferSelect;
+
+export type InsertCanvasSettings = z.infer<typeof insertCanvasSettingsSchema>;
+export type CanvasSettings = typeof canvasSettings.$inferSelect;
+
 // Capacity Planning Insert Schemas
 export const insertCapacityPlanningScenarioSchema = createInsertSchema(capacityPlanningScenarios).omit({
   id: true,
@@ -830,6 +869,18 @@ export const insertCapacityPlanningScenarioSchema = createInsertSchema(capacityP
 });
 
 export const insertStaffingPlanSchema = createInsertSchema(staffingPlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Canvas Content Insert Schemas
+export const insertCanvasContentSchema = createInsertSchema(canvasContent).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertCanvasSettingsSchema = createInsertSchema(canvasSettings).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
