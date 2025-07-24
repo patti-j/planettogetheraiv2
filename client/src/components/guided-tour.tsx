@@ -22,6 +22,7 @@ import {
   Play,
   Move,
   Volume2,
+  Volume1,
   VolumeX,
   Pause,
   RotateCcw,
@@ -240,6 +241,8 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   const autoAdvanceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const audioCache = useRef<Map<string, string>>(new Map());
   const preloadingSteps = useRef<Set<string>>(new Set());
+  const currentAudio = useRef<HTMLAudioElement | null>(null);
+  const volumeSliderRef = useRef<HTMLDivElement>(null);
   
   // Position state for draggable window
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -621,6 +624,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         const audio = new Audio(audioUrl);
         
         audio.preload = "auto";
+        audio.volume = volume; // Set volume control
         
         audio.onended = () => {
           setIsPlaying(false);
@@ -653,6 +657,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         };
           
         speechRef.current = audio;
+        currentAudio.current = audio; // Update current audio reference for volume control
         
         try {
           await audio.play();
@@ -726,6 +731,24 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   });
   const [resizeStartPosition, setResizeStartPosition] = useState({ x: 0, y: 0 });
   const [resizeStartDimensions, setResizeStartDimensions] = useState({ width: 0, height: 0 });
+
+  // Volume control (desktop only)
+  const [volume, setVolume] = useState(0.8);
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+
+  // Click outside handler for volume slider
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (volumeSliderRef.current && !volumeSliderRef.current.contains(event.target as Node)) {
+        setShowVolumeSlider(false);
+      }
+    };
+
+    if (showVolumeSlider) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showVolumeSlider]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
@@ -937,14 +960,56 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
               </Badge>
             </div>
             <div className="flex items-center gap-0.5 sm:gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleVoice}
-                className="h-6 w-6 sm:h-8 sm:w-8 p-0"
-              >
-                {voiceEnabled ? <Volume2 className="h-3 w-3 sm:h-4 sm:w-4" /> : <VolumeX className="h-3 w-3 sm:h-4 sm:w-4" />}
-              </Button>
+              {/* Desktop volume control */}
+              {windowSize.width >= 768 && (
+                <div className="relative" ref={volumeSliderRef}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowVolumeSlider(!showVolumeSlider)}
+                    className="h-8 w-8 p-0"
+                    title={`Volume: ${Math.round(volume * 100)}%`}
+                  >
+                    {volume === 0 ? (
+                      <VolumeX className="h-4 w-4" />
+                    ) : volume < 0.5 ? (
+                      <Volume1 className="h-4 w-4" />
+                    ) : (
+                      <Volume2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                  {showVolumeSlider && (
+                    <div className="absolute top-full right-0 mt-1 bg-white border rounded-lg shadow-lg p-3 z-50 min-w-[140px]">
+                      <div className="flex items-center gap-2">
+                        <VolumeX className="h-3 w-3 text-gray-500" />
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.1"
+                          value={volume}
+                          onChange={(e) => {
+                            const newVolume = parseFloat(e.target.value);
+                            setVolume(newVolume);
+                            // Update current audio volume if playing
+                            if (currentAudio.current) {
+                              currentAudio.current.volume = newVolume;
+                            }
+                          }}
+                          className="flex-1 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                          style={{
+                            background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${volume * 100}%, #e5e7eb ${volume * 100}%, #e5e7eb 100%)`
+                          }}
+                        />
+                        <Volume2 className="h-3 w-3 text-gray-500" />
+                      </div>
+                      <div className="text-xs text-gray-500 text-center mt-1">
+                        {Math.round(volume * 100)}%
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
