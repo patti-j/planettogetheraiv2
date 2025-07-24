@@ -77,7 +77,7 @@ LIVE DATA AVAILABLE:
 
 IMPORTANT: You have access to real live manufacturing data. When users ask about jobs, operations, resources, or system status, use the provided live data above to give accurate answers. DO NOT say you don't have access - you have direct access to current system data.
 
-Available actions: LIST_JOBS, LIST_OPERATIONS, LIST_RESOURCES, CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, and others.
+Available actions: LIST_JOBS, LIST_OPERATIONS, LIST_RESOURCES, CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, CREATE_CHART, CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART, and others.
 
 UI Navigation Actions:
 - NAVIGATE_TO_PAGE: Navigate to specific pages (dashboard, analytics, reports, scheduling-optimizer, etc.)
@@ -105,6 +105,13 @@ Canvas Guidelines:
 - Canvas displays in the main content area and auto-opens when content is added
 - Perfect for: job lists, resource lists, operation tables, performance metrics, data visualizations
 - Examples: "show jobs" = LIST_JOBS with displayInCanvas=true, "list resources" = LIST_RESOURCES with displayInCanvas=true
+
+Chart Creation Guidelines:
+- For chart requests, use specific chart actions: CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART
+- Chart parameters: {title: "Chart Title", data: [{label: "A", value: 10}, ...], chartType: "pie|line|bar|histogram|gantt"}
+- Use live data from the system for charts (jobs, resources, operations, etc.)
+- Examples: "pie chart of job status" = CREATE_PIE_CHART with job status data, "line chart of operations over time" = CREATE_LINE_CHART with timeline data
+- All charts automatically display in canvas with proper formatting and interactive features
 
 Respond with JSON: {"action": "ACTION_NAME", "parameters": {...}, "message": "response"}`
           },
@@ -142,7 +149,7 @@ async function processCommandWithAttachments(command: string, attachments: Attac
 
 User command: ${command}
 
-Available actions: CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, and others.
+Available actions: CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, CREATE_CHART, CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART, and others.
 
 UI Navigation Actions:
 - NAVIGATE_TO_PAGE: Navigate to specific pages (dashboard, analytics, reports, scheduling-optimizer, etc.)
@@ -1071,6 +1078,141 @@ async function executeAction(action: string, parameters: any, message: string, c
           actions: ["ADD_CANVAS_CONTENT"]
         };
 
+      case "CREATE_PIE_CHART":
+        // Create a pie chart with live system data
+        let pieChartContext = context;
+        if (!pieChartContext) {
+          pieChartContext = await getSystemContext();
+        }
+        
+        const pieChartData = await generateChartData("pie", parameters, pieChartContext);
+        return {
+          success: true,
+          message: message || `Created pie chart: ${parameters.title || "Data Distribution"}`,
+          data: pieChartData,
+          canvasAction: {
+            type: "ADD_CANVAS_CONTENT",
+            content: {
+              type: "chart",
+              chartType: "pie",
+              title: parameters.title || "Data Distribution",
+              data: pieChartData,
+              width: "100%",
+              height: "400px",
+              timestamp: new Date().toISOString()
+            }
+          },
+          actions: ["CREATE_PIE_CHART", "ADD_CANVAS_CONTENT"]
+        };
+
+      case "CREATE_LINE_CHART":
+        // Create a line chart with live system data
+        let lineChartContext = context;
+        if (!lineChartContext) {
+          lineChartContext = await getSystemContext();
+        }
+        
+        const lineChartData = await generateChartData("line", parameters, lineChartContext);
+        return {
+          success: true,
+          message: message || `Created line chart: ${parameters.title || "Trend Analysis"}`,
+          data: lineChartData,
+          canvasAction: {
+            type: "ADD_CANVAS_CONTENT",
+            content: {
+              type: "chart",
+              chartType: "line",
+              title: parameters.title || "Trend Analysis",
+              data: lineChartData,
+              width: "100%",
+              height: "400px",
+              timestamp: new Date().toISOString()
+            }
+          },
+          actions: ["CREATE_LINE_CHART", "ADD_CANVAS_CONTENT"]
+        };
+
+      case "CREATE_BAR_CHART":
+        // Create a bar chart with live system data
+        let barChartContext = context;
+        if (!barChartContext) {
+          barChartContext = await getSystemContext();
+        }
+        
+        const barChartData = await generateChartData("bar", parameters, barChartContext);
+        return {
+          success: true,
+          message: message || `Created bar chart: ${parameters.title || "Comparison Analysis"}`,
+          data: barChartData,
+          canvasAction: {
+            type: "ADD_CANVAS_CONTENT",
+            content: {
+              type: "chart",
+              chartType: "bar",
+              title: parameters.title || "Comparison Analysis",
+              data: barChartData,
+              width: "100%",
+              height: "400px",
+              timestamp: new Date().toISOString()
+            }
+          },
+          actions: ["CREATE_BAR_CHART", "ADD_CANVAS_CONTENT"]
+        };
+
+      case "CREATE_HISTOGRAM":
+        // Create a histogram with live system data
+        let histogramContext = context;
+        if (!histogramContext) {
+          histogramContext = await getSystemContext();
+        }
+        
+        const histogramData = await generateChartData("histogram", parameters, histogramContext);
+        return {
+          success: true,
+          message: message || `Created histogram: ${parameters.title || "Distribution Analysis"}`,
+          data: histogramData,
+          canvasAction: {
+            type: "ADD_CANVAS_CONTENT",
+            content: {
+              type: "chart",
+              chartType: "histogram",
+              title: parameters.title || "Distribution Analysis",
+              data: histogramData,
+              width: "100%",
+              height: "400px",
+              timestamp: new Date().toISOString()
+            }
+          },
+          actions: ["CREATE_HISTOGRAM", "ADD_CANVAS_CONTENT"]
+        };
+
+      case "CREATE_GANTT_CHART":
+        // Create a Gantt chart with live system data
+        let ganttContext = context;
+        if (!ganttContext) {
+          ganttContext = await getSystemContext();
+        }
+        
+        const ganttData = await generateChartData("gantt", parameters, ganttContext);
+        return {
+          success: true,
+          message: message || `Created Gantt chart: ${parameters.title || "Project Timeline"}`,
+          data: ganttData,
+          canvasAction: {
+            type: "ADD_CANVAS_CONTENT",
+            content: {
+              type: "chart",
+              chartType: "gantt",
+              title: parameters.title || "Project Timeline",
+              data: ganttData,
+              width: "100%",
+              height: "500px",
+              timestamp: new Date().toISOString()
+            }
+          },
+          actions: ["CREATE_GANTT_CHART", "ADD_CANVAS_CONTENT"]
+        };
+
       default:
         return {
           success: false,
@@ -1354,6 +1496,273 @@ async function createCustomMetrics(parameters: any, context?: SystemContext) {
   }
   
   return metrics;
+}
+
+async function generateChartData(chartType: string, parameters: any, context: SystemContext) {
+  const { jobs, operations, resources, capabilities } = context;
+
+  switch (chartType) {
+    case "pie":
+      return generatePieChartData(parameters, { jobs, operations, resources, capabilities });
+    
+    case "line":
+      return generateLineChartData(parameters, { jobs, operations, resources, capabilities });
+    
+    case "bar":
+      return generateBarChartData(parameters, { jobs, operations, resources, capabilities });
+    
+    case "histogram":
+      return generateHistogramData(parameters, { jobs, operations, resources, capabilities });
+    
+    case "gantt":
+      return generateGanttChartData(parameters, { jobs, operations, resources, capabilities });
+    
+    default:
+      return [];
+  }
+}
+
+function generatePieChartData(parameters: any, context: any) {
+  const { jobs, operations, resources } = context;
+  
+  // Determine what data to visualize based on parameters
+  if (parameters.dataType === "job_status" || parameters.title?.toLowerCase().includes("job") || !parameters.dataType) {
+    const statusCounts = {};
+    jobs.forEach(job => {
+      const status = job.status || "unknown";
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+    });
+    
+    return Object.entries(statusCounts).map(([name, value]) => ({
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      value: value as number
+    }));
+  }
+  
+  if (parameters.dataType === "resource_type") {
+    const typeCounts = {};
+    resources.forEach(resource => {
+      const type = resource.type || "unknown";
+      typeCounts[type] = (typeCounts[type] || 0) + 1;
+    });
+    
+    return Object.entries(typeCounts).map(([name, value]) => ({
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      value: value as number
+    }));
+  }
+  
+  if (parameters.dataType === "job_priority") {
+    const priorityCounts = {};
+    jobs.forEach(job => {
+      const priority = job.priority || "medium";
+      priorityCounts[priority] = (priorityCounts[priority] || 0) + 1;
+    });
+    
+    return Object.entries(priorityCounts).map(([name, value]) => ({
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      value: value as number
+    }));
+  }
+  
+  // Default: job status distribution
+  const statusCounts = {};
+  jobs.forEach(job => {
+    const status = job.status || "unknown";
+    statusCounts[status] = (statusCounts[status] || 0) + 1;
+  });
+  
+  return Object.entries(statusCounts).map(([name, value]) => ({
+    name: name.charAt(0).toUpperCase() + name.slice(1),
+    value: value as number
+  }));
+}
+
+function generateLineChartData(parameters: any, context: any) {
+  const { jobs, operations } = context;
+  
+  // Generate timeline data based on job creation or operation timeline
+  if (parameters.dataType === "jobs_over_time" || !parameters.dataType) {
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      last7Days.push(date.toISOString().split('T')[0]);
+    }
+    
+    return last7Days.map(date => ({
+      date: date,
+      jobs: jobs.filter(job => job.createdAt?.startsWith(date)).length,
+      operations: operations.filter(op => op.createdAt?.startsWith(date)).length
+    }));
+  }
+  
+  if (parameters.dataType === "completion_trend") {
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      last7Days.push(date.toISOString().split('T')[0]);
+    }
+    
+    return last7Days.map(date => {
+      const completedJobs = jobs.filter(job => 
+        job.status === "completed" && job.updatedAt?.startsWith(date)
+      ).length;
+      
+      return {
+        date: date,
+        completed: completedJobs
+      };
+    });
+  }
+  
+  // Default: operations over time
+  const last7Days = [];
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    last7Days.push(date.toISOString().split('T')[0]);
+  }
+  
+  return last7Days.map(date => ({
+    date: date,
+    operations: operations.filter(op => op.createdAt?.startsWith(date)).length
+  }));
+}
+
+function generateBarChartData(parameters: any, context: any) {
+  const { jobs, operations, resources } = context;
+  
+  if (parameters.dataType === "jobs_by_customer" || parameters.title?.toLowerCase().includes("customer")) {
+    const customerCounts = {};
+    jobs.forEach(job => {
+      const customer = job.customer || "Unknown";
+      customerCounts[customer] = (customerCounts[customer] || 0) + 1;
+    });
+    
+    return Object.entries(customerCounts).map(([name, value]) => ({
+      name,
+      value: value as number
+    }));
+  }
+  
+  if (parameters.dataType === "resources_by_type") {
+    const typeCounts = {};
+    resources.forEach(resource => {
+      const type = resource.type || "Unknown";
+      typeCounts[type] = (typeCounts[type] || 0) + 1;
+    });
+    
+    return Object.entries(typeCounts).map(([name, value]) => ({
+      name,
+      value: value as number
+    }));
+  }
+  
+  if (parameters.dataType === "operations_by_status") {
+    const statusCounts = {};
+    operations.forEach(operation => {
+      const status = operation.status || "Unknown";
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+    });
+    
+    return Object.entries(statusCounts).map(([name, value]) => ({
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      value: value as number
+    }));
+  }
+  
+  // Default: job priority distribution
+  const priorityCounts = {};
+  jobs.forEach(job => {
+    const priority = job.priority || "medium";
+    priorityCounts[priority] = (priorityCounts[priority] || 0) + 1;
+  });
+  
+  return Object.entries(priorityCounts).map(([name, value]) => ({
+    name: name.charAt(0).toUpperCase() + name.slice(1),
+    value: value as number
+  }));
+}
+
+function generateHistogramData(parameters: any, context: any) {
+  const { operations } = context;
+  
+  if (parameters.dataType === "operation_duration" || !parameters.dataType) {
+    // Create duration buckets
+    const buckets = {
+      "0-2h": 0,
+      "2-4h": 0,
+      "4-8h": 0,
+      "8-16h": 0,
+      "16h+": 0
+    };
+    
+    operations.forEach(operation => {
+      const duration = operation.duration || 0;
+      if (duration <= 2) buckets["0-2h"]++;
+      else if (duration <= 4) buckets["2-4h"]++;
+      else if (duration <= 8) buckets["4-8h"]++;
+      else if (duration <= 16) buckets["8-16h"]++;
+      else buckets["16h+"]++;
+    });
+    
+    return Object.entries(buckets).map(([range, count]) => ({
+      range,
+      count: count as number
+    }));
+  }
+  
+  // Default: operation duration distribution
+  const buckets = {
+    "0-2h": 0,
+    "2-4h": 0,
+    "4-8h": 0,
+    "8-16h": 0,
+    "16h+": 0
+  };
+  
+  operations.forEach(operation => {
+    const duration = operation.duration || 0;
+    if (duration <= 2) buckets["0-2h"]++;
+    else if (duration <= 4) buckets["2-4h"]++;
+    else if (duration <= 8) buckets["4-8h"]++;
+    else if (duration <= 16) buckets["8-16h"]++;
+    else buckets["16h+"]++;
+  });
+  
+  return Object.entries(buckets).map(([range, count]) => ({
+    range,
+    count: count as number
+  }));
+}
+
+function generateGanttChartData(parameters: any, context: any) {
+  const { operations, jobs, resources } = context;
+  
+  // Generate Gantt chart data with operations and their timelines
+  return operations.map(operation => {
+    const job = jobs.find(j => j.id === operation.jobId);
+    const resource = resources.find(r => r.id === operation.assignedResourceId);
+    
+    const startDate = operation.startTime ? new Date(operation.startTime) : new Date();
+    const endDate = operation.endTime ? new Date(operation.endTime) : 
+      new Date(startDate.getTime() + (operation.duration || 1) * 60 * 60 * 1000);
+    
+    return {
+      id: operation.id,
+      name: operation.name,
+      start: startDate.toISOString(),
+      end: endDate.toISOString(),
+      duration: operation.duration || 1,
+      jobName: job?.name || "Unknown Job",
+      resourceName: resource?.name || "Unassigned",
+      status: operation.status || "pending",
+      progress: operation.status === "completed" ? 100 : 
+                operation.status === "in_progress" ? 50 : 0
+    };
+  });
 }
 
 function generateWidgetData(type: string, config: any, context?: SystemContext) {

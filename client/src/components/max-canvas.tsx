@@ -33,6 +33,21 @@ import {
 import { useAITheme } from '@/hooks/use-ai-theme';
 import { toast } from '@/hooks/use-toast';
 import { useMaxDock, CanvasItem } from '@/contexts/MaxDockContext';
+import {
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
+  BarChart as RechartsBarChart,
+  Bar,
+  LineChart as RechartsLineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts';
 
 interface MaxCanvasProps {
   isVisible: boolean;
@@ -541,14 +556,140 @@ const DashboardWidget: React.FC<{ data: any }> = ({ data }) => {
 };
 
 const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
+  const chartType = data?.chartType || 'bar';
+  const chartData = data?.data || [];
+  const title = data?.title || 'Production Chart';
+
+  // Color scheme for charts
+  const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088fe', '#00c49f'];
+
+  const renderChart = () => {
+    switch (chartType) {
+      case 'pie':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <RechartsPieChart>
+              <Pie
+                data={chartData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </RechartsPieChart>
+          </ResponsiveContainer>
+        );
+
+      case 'line':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <RechartsLineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="jobs" stroke="#8884d8" strokeWidth={2} />
+              <Line type="monotone" dataKey="operations" stroke="#82ca9d" strokeWidth={2} />
+              <Line type="monotone" dataKey="completed" stroke="#ffc658" strokeWidth={2} />
+            </RechartsLineChart>
+          </ResponsiveContainer>
+        );
+
+      case 'bar':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <RechartsBarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="value" fill="#8884d8" />
+            </RechartsBarChart>
+          </ResponsiveContainer>
+        );
+
+      case 'histogram':
+        return (
+          <ResponsiveContainer width="100%" height="100%">
+            <RechartsBarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="range" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="count" fill="#82ca9d" />
+            </RechartsBarChart>
+          </ResponsiveContainer>
+        );
+
+      case 'gantt':
+        return (
+          <div className="space-y-2 max-h-full overflow-y-auto">
+            {chartData.map((item, index) => (
+              <div key={item.id} className="border rounded p-3 bg-gray-50">
+                <div className="flex justify-between items-center mb-2">
+                  <h5 className="font-medium text-sm">{item.name}</h5>
+                  <span className={`px-2 py-1 rounded text-xs ${
+                    item.status === 'completed' ? 'bg-green-100 text-green-800' :
+                    item.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {item.status}
+                  </span>
+                </div>
+                <div className="text-xs text-gray-600 mb-2">
+                  <p>Job: {item.jobName}</p>
+                  <p>Resource: {item.resourceName}</p>
+                  <p>Duration: {item.duration}h</p>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full" 
+                    style={{width: `${item.progress}%`}}
+                  ></div>
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {item.progress}% complete
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+
+      default:
+        return (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center">
+              <PieChart className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-500">Unsupported chart type: {chartType}</p>
+            </div>
+          </div>
+        );
+    }
+  };
+
   return (
-    <div className="h-64 bg-white rounded-lg border p-4">
-      <h4 className="font-medium mb-4">{data?.title || 'Production Chart'}</h4>
-      <div className="h-48 bg-gray-50 rounded flex items-center justify-center">
-        <div className="text-center">
-          <PieChart className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-          <p className="text-sm text-gray-500">Chart visualization would appear here</p>
-        </div>
+    <div className="bg-white rounded-lg border p-4" style={{ height: data?.height || '400px' }}>
+      <h4 className="font-medium mb-4">{title}</h4>
+      <div className="h-full" style={{ height: 'calc(100% - 40px)' }}>
+        {chartData.length > 0 ? renderChart() : (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center">
+              <PieChart className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-500">No data available for chart</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
