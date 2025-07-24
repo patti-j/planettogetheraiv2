@@ -86,80 +86,79 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
   };
 
   return (
-    <div className="bg-white border-t border-gray-200 flex flex-col h-80">
-      {/* Canvas container - inline within Max window */}
-      <div className="flex flex-col h-full relative">
-
-        {/* Canvas Header - Compact inline header */}
-        <div className={`${aiTheme.gradient} text-white p-2 flex-shrink-0`}>
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 bg-white/20 rounded flex items-center justify-center">
-              <BarChart3 className="w-3 h-3" />
+    <div className="bg-gray-50 flex flex-col h-full">
+      {/* Canvas Header - Full page header with proper hamburger clearance */}
+      <div className={`${aiTheme.gradient} text-white p-3 sm:p-6 space-y-4 sm:space-y-6`}>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex items-center gap-3 md:ml-0 ml-12">
+            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+              <BarChart3 className="w-4 h-4" />
             </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-semibold">Canvas</h3>
-            </div>
-            
-            {/* Header Action Buttons - Compact */}
-            <div className="flex items-center gap-1">
-              {canvasItems.length > 0 && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClearCanvas}
-                    className="text-white hover:bg-white/20 p-1"
-                    title="Clear Canvas"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                </>
-              )}
-              
-              {/* Close button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClose}
-                className="text-white hover:bg-white/20 p-1"
-                title="Close Canvas"
-              >
-                <X className="w-3 h-3" />
-              </Button>
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold">Canvas</h1>
+              <p className="text-white/80 text-sm md:text-base">Dynamic content space for AI-generated visualizations</p>
             </div>
           </div>
+            
+          {/* Header Action Buttons */}
+          <div className="flex items-center gap-2 lg:flex-shrink-0">
+            {canvasItems.length > 0 && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearCanvas}
+                  className="text-white hover:bg-white/20"
+                  title="Clear Canvas"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Clear
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleExport}
+                  className="text-white hover:bg-white/20"
+                  title="Export Canvas"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export
+                </Button>
+              </>
+            )}
+          </div>
         </div>
+      </div>
 
-        {/* Canvas Content Area - Compact for inline display */}
-        <div className="flex-1 overflow-auto bg-gray-50 p-3 min-h-0">
-          {canvasItems.length === 0 ? (
-            <div className="flex items-center justify-center" style={{ minHeight: '280px' }}>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <BarChart3 className="w-6 h-6 text-gray-400" />
-                </div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2">Canvas is ready</h4>
-                <p className="text-xs text-gray-600 mb-2">Ask Max to create visualizations!</p>
-                <div className="text-xs text-gray-500">
-                  Try: "Show me job data" or "Create a chart"
-                </div>
+      {/* Canvas Content Area */}
+      <div className="flex-1 overflow-auto bg-white p-6">
+        {canvasItems.length === 0 ? (
+          <div className="flex items-center justify-center" style={{ minHeight: '280px' }}>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                <BarChart3 className="w-6 h-6 text-gray-400" />
+              </div>
+              <h4 className="text-sm font-medium text-gray-900 mb-2">Canvas is ready</h4>
+              <p className="text-xs text-gray-600 mb-2">Ask Max to create visualizations!</p>
+              <div className="text-xs text-gray-500">
+                Try: "Show me job data" or "Create a chart"
               </div>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {canvasItems.map((item) => (
-                <Card key={item.id} className="shadow-sm">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">{item.title || 'Canvas Item'}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    {renderCanvasItem(item)}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {canvasItems.map((item) => (
+              <Card key={item.id} className="shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">{item.title || 'Canvas Item'}</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  {renderCanvasItem(item)}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
