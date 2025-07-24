@@ -867,10 +867,7 @@ Create presentations that users will find exciting and that effectively demonstr
                       <div className="col-span-full text-center py-8">
                         <Presentation className="w-12 h-12 mx-auto text-gray-400 mb-4" />
                         <p className="text-muted-foreground mb-4">No presentation projects yet</p>
-                        <Button onClick={() => setProjectDialogOpen(true)}>
-                          <Plus className="w-4 h-4 mr-2" />
-                          Create First Project
-                        </Button>
+                        <p className="text-sm text-gray-500">Use the "New Project" button below to get started</p>
                       </div>
                     ) : (
                       projects.map((project: PresentationProject) => (

@@ -378,6 +378,7 @@ The application uses a modern full-stack architecture with strong typing through
 - Clarified that Quick Presentation is for template-based presentations, AI Generate is for instant AI creation, and Studio Project is for advanced research and collaboration features
 - Enhanced dialog descriptions to clearly explain each option's purpose and ideal use cases
 - Added recommendation guidance for new users to start with AI Generate for instant results or Studio Project for advanced features
+- **Fixed redundant buttons**: Removed confusing "Create First Project" button in Studio tab, keeping only the clear "New Project" button to eliminate user confusion
 - Interface now provides clear path selection helping users choose the right tool for their presentation needs
 
 ✓ **Modern Presentation Studio Enhancement - Website-Like Design Focus (July 24, 2025)**:
