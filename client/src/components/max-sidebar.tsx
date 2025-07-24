@@ -297,9 +297,21 @@ export function MaxSidebar() {
       // Clear previous audio chunks
       audioChunks.current = [];
       
-      // Create new MediaRecorder
+      // Create new MediaRecorder with fallback format support
+      let mimeType = 'audio/webm';
+      if (!MediaRecorder.isTypeSupported('audio/webm')) {
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+          mimeType = 'audio/webm;codecs=opus';
+        } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+          mimeType = 'audio/mp4';
+        } else if (MediaRecorder.isTypeSupported('audio/wav')) {
+          mimeType = 'audio/wav';
+        }
+      }
+      
+      console.log('Using MediaRecorder MIME type:', mimeType);
       mediaRecorder.current = new MediaRecorder(stream, {
-        mimeType: 'audio/webm'
+        mimeType: mimeType
       });
       
       mediaRecorder.current.ondataavailable = (event) => {
@@ -317,22 +329,45 @@ export function MaxSidebar() {
           inputRef.current.removeAttribute('readonly');
         }
         
-        // Create blob from recorded chunks
-        const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
+        // Check if we have valid audio data
+        if (audioChunks.current.length === 0) {
+          console.error('No audio data recorded');
+          showVoiceError("No audio was recorded. Please try speaking again.");
+          return;
+        }
+        
+        // Create blob from recorded chunks (use the same mimeType as MediaRecorder)
+        const mimeType = mediaRecorder.current?.mimeType || 'audio/webm';
+        const audioBlob = new Blob(audioChunks.current, { type: mimeType });
+        console.log('Audio blob created:', audioBlob.size, 'bytes, type:', mimeType);
+        
+        // Check if audio blob is empty or too small
+        if (audioBlob.size < 1000) {
+          console.error('Audio blob too small:', audioBlob.size, 'bytes');
+          showVoiceError("Recording too short. Please speak for at least 1-2 seconds.");
+          return;
+        }
         
         // Send to Whisper API for transcription
         const formData = new FormData();
         formData.append('audio', audioBlob, 'recording.webm');
         
         try {
+          console.log('Sending audio to Whisper API...');
           const response = await fetch('/api/ai-agent/transcribe', {
             method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+            },
             body: formData
           });
           
+          console.log('Whisper API response status:', response.status);
           const result = await response.json();
+          console.log('Whisper API result:', result);
           
           if (result.success && result.text) {
+            console.log('Transcription successful:', result.text);
             // Add transcribed text to input
             const baseMessage = inputMessage.trim();
             setInputMessage(baseMessage ? `${baseMessage} ${result.text}` : result.text);
@@ -345,11 +380,11 @@ export function MaxSidebar() {
             }
           } else {
             console.error('Transcription failed:', result);
-            showVoiceError("Sorry, I couldn't understand what you said. Please try again.");
+            showVoiceError(`Transcription failed: ${result.error || "Couldn't understand what you said"}. Please try again.`);
           }
         } catch (error) {
           console.error('Transcription error:', error);
-          showVoiceError("There was an issue processing your voice input. Please try again.");
+          showVoiceError("Network error during transcription. Please check your connection and try again.");
         }
         
         // Stop all tracks to release microphone

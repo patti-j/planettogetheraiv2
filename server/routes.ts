@@ -1129,7 +1129,20 @@ Provide the response as a JSON object with the following structure:
   app.post("/api/ai-agent/transcribe", requireAuth, upload.single('audio'), async (req, res) => {
     try {
       if (!req.file) {
-        return res.status(400).json({ error: 'Audio file is required' });
+        console.error('No audio file provided');
+        return res.status(400).json({ error: 'Audio file is required', success: false });
+      }
+
+      console.log('Audio file received:', {
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.buffer.length
+      });
+
+      // Check file size
+      if (req.file.buffer.length < 1000) {
+        console.error('Audio file too small:', req.file.buffer.length, 'bytes');
+        return res.status(400).json({ error: 'Audio file too small', success: false });
       }
 
       const openai = await import('openai');
@@ -1137,11 +1150,23 @@ Provide the response as a JSON object with the following structure:
         apiKey: process.env.OPENAI_API_KEY,
       });
 
+      // Determine appropriate filename based on MIME type
+      let filename = 'audio.webm';
+      if (req.file.mimetype) {
+        if (req.file.mimetype.includes('mp4')) filename = 'audio.mp4';
+        else if (req.file.mimetype.includes('wav')) filename = 'audio.wav';
+        else if (req.file.mimetype.includes('ogg')) filename = 'audio.ogg';
+        else if (req.file.mimetype.includes('webm')) filename = 'audio.webm';
+      }
+
+      console.log('Creating File object with filename:', filename, 'mimetype:', req.file.mimetype);
+
       // Create a file-like object for OpenAI Whisper
-      const audioFile = new File([req.file.buffer], req.file.originalname || 'audio.webm', {
+      const audioFile = new File([req.file.buffer], filename, {
         type: req.file.mimetype || 'audio/webm'
       });
 
+      console.log('Sending to Whisper API...');
       const transcription = await client.audio.transcriptions.create({
         file: audioFile,
         model: 'whisper-1',
@@ -1149,13 +1174,17 @@ Provide the response as a JSON object with the following structure:
         response_format: 'json'
       });
 
+      console.log('Whisper transcription successful:', transcription.text);
       res.json({ 
         text: transcription.text,
         success: true 
       });
     } catch (error) {
       console.error('Whisper transcription error:', error);
-      res.status(500).json({ error: 'Failed to transcribe audio' });
+      res.status(500).json({ 
+        error: error.message || 'Failed to transcribe audio',
+        success: false 
+      });
     }
   });
 
