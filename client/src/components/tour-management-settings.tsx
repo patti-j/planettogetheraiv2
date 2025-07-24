@@ -247,7 +247,7 @@ export function TourManagementSettings({ open, onOpenChange }: TourManagementSet
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-w-[95vw] max-h-[90vh] overflow-hidden w-full">
+      <DialogContent className="max-w-6xl max-w-[95vw] max-h-[90vh] w-full flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings className="w-5 h-5" />
@@ -275,7 +275,7 @@ export function TourManagementSettings({ open, onOpenChange }: TourManagementSet
           </TabsList>
 
           {/* Prompt Templates Tab */}
-          <TabsContent value="templates" className="flex-1 overflow-hidden">
+          <TabsContent value="templates" className="flex-1 overflow-y-auto">
             <div className="flex flex-col gap-4 h-full">
               {/* Search and filters */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -414,7 +414,7 @@ export function TourManagementSettings({ open, onOpenChange }: TourManagementSet
           </TabsContent>
 
           {/* Template Library Tab */}
-          <TabsContent value="library" className="flex-1">
+          <TabsContent value="library" className="flex-1 overflow-y-auto">
             <ScrollArea className="h-full">
               <div className="space-y-6 pr-4">
                 <div>
@@ -463,8 +463,8 @@ export function TourManagementSettings({ open, onOpenChange }: TourManagementSet
           </TabsContent>
 
           {/* Usage Analytics Tab */}
-          <TabsContent value="analytics" className="flex-1">
-            <div className="grid gap-6">
+          <TabsContent value="analytics" className="flex-1 overflow-y-auto">
+            <div className="grid gap-6 p-4">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card className="p-4">
                   <div className="flex items-center gap-2">
@@ -517,7 +517,7 @@ export function TourManagementSettings({ open, onOpenChange }: TourManagementSet
 
     {/* Template Editor Dialog - Separate from main dialog */}
     <Dialog open={showTemplateEditor} onOpenChange={setShowTemplateEditor}>
-      <DialogContent className="max-w-4xl max-w-[95vw] max-h-[90vh] overflow-hidden w-full">
+      <DialogContent className="max-w-4xl max-w-[95vw] max-h-[90vh] w-full flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className={`w-5 h-5 ${aiTheme.text}`} />
@@ -525,7 +525,7 @@ export function TourManagementSettings({ open, onOpenChange }: TourManagementSet
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 overflow-hidden">
+        <div className="flex flex-col gap-4 overflow-y-auto flex-1">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="template-name">Template Name</Label>
