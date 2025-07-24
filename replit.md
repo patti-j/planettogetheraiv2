@@ -114,6 +114,13 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 24, 2025)
 
+✓ **Max Canvas UI Improvements (July 24, 2025)**:
+- Fixed Max Canvas integration to display inline within Max window instead of popup overlay
+- Enhanced canvas empty state vertical centering with proper height calculations
+- Optimized canvas header design for compact inline display within Max interface
+- Improved speech recognition functionality with enhanced error handling and debugging
+- Added comprehensive console logging for microphone permissions and speech recognition troubleshooting
+
 ✓ **Max AI Assistant Direct Data Access Implementation (July 24, 2025)**:
 - Successfully enhanced Max AI assistant with direct data access capabilities eliminating navigation requirements
 - Enhanced AI system prompt to include live manufacturing data (jobs, operations, resources, capabilities) in real-time

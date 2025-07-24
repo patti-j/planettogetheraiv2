@@ -131,9 +131,9 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
         </div>
 
         {/* Canvas Content Area - Compact for inline display */}
-        <div className="flex-1 overflow-auto bg-gray-50 p-3">
+        <div className="flex-1 overflow-auto bg-gray-50 p-3 min-h-0">
           {items.length === 0 ? (
-            <div className="h-full flex items-center justify-center">
+            <div className="flex items-center justify-center" style={{ minHeight: '280px' }}>
               <div className="text-center">
                 <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
                   <BarChart3 className="w-6 h-6 text-gray-400" />
