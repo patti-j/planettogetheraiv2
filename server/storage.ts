@@ -51,6 +51,9 @@ import {
   errorLogs, errorReports,
   type ErrorLog, type ErrorReport,
   type InsertErrorLog, type InsertErrorReport,
+  presentations, presentationSlides, presentationTourIntegrations, presentationLibrary, presentationAnalytics, presentationAIContent,
+  type Presentation, type PresentationSlide, type PresentationTourIntegration, type PresentationLibrary, type PresentationAnalytics, type PresentationAIContent,
+  type InsertPresentation, type InsertPresentationSlide, type InsertPresentationTourIntegration, type InsertPresentationLibrary, type InsertPresentationAnalytics, type InsertPresentationAIContent,
   // industryTemplates, userIndustryTemplates, templateConfigurations,
   // type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
   // type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration,
@@ -699,6 +702,33 @@ export interface IStorage {
     avgConfidence: number;
     recentActivity: number;
   }>;
+
+  // Presentation System
+  getPresentations(userId?: number): Promise<Presentation[]>;
+  getPresentation(id: number): Promise<Presentation | undefined>;
+  createPresentation(presentation: InsertPresentation): Promise<Presentation>;
+  updatePresentation(id: number, updates: Partial<InsertPresentation>): Promise<Presentation | undefined>;
+  deletePresentation(id: number): Promise<boolean>;
+
+  getPresentationSlides(presentationId: number): Promise<PresentationSlide[]>;
+  getPresentationSlide(id: number): Promise<PresentationSlide | undefined>;
+  createPresentationSlide(slide: InsertPresentationSlide): Promise<PresentationSlide>;
+  updatePresentationSlide(id: number, updates: Partial<InsertPresentationSlide>): Promise<PresentationSlide | undefined>;
+  deletePresentationSlide(id: number): Promise<boolean>;
+
+  getPresentationLibrary(category?: string): Promise<PresentationLibrary[]>;
+  createPresentationLibraryEntry(entry: InsertPresentationLibrary): Promise<PresentationLibrary>;
+  updatePresentationLibraryEntry(id: number, updates: Partial<InsertPresentationLibrary>): Promise<PresentationLibrary | undefined>;
+
+  getPresentationTourIntegrations(presentationId?: number): Promise<PresentationTourIntegration[]>;
+  createPresentationTourIntegration(integration: InsertPresentationTourIntegration): Promise<PresentationTourIntegration>;
+  deletePresentationTourIntegration(id: number): Promise<boolean>;
+
+  getPresentationAnalytics(presentationId?: number): Promise<PresentationAnalytics[]>;
+  createPresentationAnalyticsEntry(entry: InsertPresentationAnalytics): Promise<PresentationAnalytics>;
+
+  getPresentationAIContent(presentationId?: number): Promise<PresentationAIContent[]>;
+  createPresentationAIContent(content: InsertPresentationAIContent): Promise<PresentationAIContent>;
 }
 
 export class MemStorage implements IStorage {
@@ -5337,6 +5367,137 @@ export class DatabaseStorage implements IStorage {
       .values(healthData)
       .returning();
     return health;
+  }
+
+  // Presentation System Implementation
+  async getPresentations(userId?: number): Promise<Presentation[]> {
+    let query = db.select().from(presentations);
+    if (userId) {
+      query = query.where(eq(presentations.createdBy, userId));
+    }
+    return await query.orderBy(desc(presentations.createdAt));
+  }
+
+  async getPresentation(id: number): Promise<Presentation | undefined> {
+    const [presentation] = await db.select().from(presentations).where(eq(presentations.id, id));
+    return presentation;
+  }
+
+  async createPresentation(presentation: InsertPresentation): Promise<Presentation> {
+    const [newPresentation] = await db.insert(presentations).values(presentation).returning();
+    return newPresentation;
+  }
+
+  async updatePresentation(id: number, updates: Partial<InsertPresentation>): Promise<Presentation | undefined> {
+    const [updated] = await db
+      .update(presentations)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(presentations.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePresentation(id: number): Promise<boolean> {
+    const result = await db.delete(presentations).where(eq(presentations.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async getPresentationSlides(presentationId: number): Promise<PresentationSlide[]> {
+    return await db
+      .select()
+      .from(presentationSlides)
+      .where(eq(presentationSlides.presentationId, presentationId))
+      .orderBy(asc(presentationSlides.slideOrder));
+  }
+
+  async getPresentationSlide(id: number): Promise<PresentationSlide | undefined> {
+    const [slide] = await db.select().from(presentationSlides).where(eq(presentationSlides.id, id));
+    return slide;
+  }
+
+  async createPresentationSlide(slide: InsertPresentationSlide): Promise<PresentationSlide> {
+    const [newSlide] = await db.insert(presentationSlides).values(slide).returning();
+    return newSlide;
+  }
+
+  async updatePresentationSlide(id: number, updates: Partial<InsertPresentationSlide>): Promise<PresentationSlide | undefined> {
+    const [updated] = await db
+      .update(presentationSlides)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(presentationSlides.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePresentationSlide(id: number): Promise<boolean> {
+    const result = await db.delete(presentationSlides).where(eq(presentationSlides.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async getPresentationLibrary(category?: string): Promise<PresentationLibrary[]> {
+    let query = db.select().from(presentationLibrary);
+    if (category) {
+      query = query.where(eq(presentationLibrary.category, category));
+    }
+    return await query.orderBy(desc(presentationLibrary.createdAt));
+  }
+
+  async createPresentationLibraryEntry(entry: InsertPresentationLibrary): Promise<PresentationLibrary> {
+    const [newEntry] = await db.insert(presentationLibrary).values(entry).returning();
+    return newEntry;
+  }
+
+  async updatePresentationLibraryEntry(id: number, updates: Partial<InsertPresentationLibrary>): Promise<PresentationLibrary | undefined> {
+    const [updated] = await db
+      .update(presentationLibrary)
+      .set(updates)
+      .where(eq(presentationLibrary.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getPresentationTourIntegrations(presentationId?: number): Promise<PresentationTourIntegration[]> {
+    let query = db.select().from(presentationTourIntegrations);
+    if (presentationId) {
+      query = query.where(eq(presentationTourIntegrations.presentationId, presentationId));
+    }
+    return await query.orderBy(desc(presentationTourIntegrations.createdAt));
+  }
+
+  async createPresentationTourIntegration(integration: InsertPresentationTourIntegration): Promise<PresentationTourIntegration> {
+    const [newIntegration] = await db.insert(presentationTourIntegrations).values(integration).returning();
+    return newIntegration;
+  }
+
+  async deletePresentationTourIntegration(id: number): Promise<boolean> {
+    const result = await db.delete(presentationTourIntegrations).where(eq(presentationTourIntegrations.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async getPresentationAnalytics(presentationId?: number): Promise<PresentationAnalytics[]> {
+    let query = db.select().from(presentationAnalytics);
+    if (presentationId) {
+      query = query.where(eq(presentationAnalytics.presentationId, presentationId));
+    }
+    return await query.orderBy(desc(presentationAnalytics.createdAt));
+  }
+
+  async createPresentationAnalyticsEntry(entry: InsertPresentationAnalytics): Promise<PresentationAnalytics> {
+    const [newEntry] = await db.insert(presentationAnalytics).values(entry).returning();
+    return newEntry;
+  }
+
+  async getPresentationAIContent(presentationId?: number): Promise<PresentationAIContent[]> {
+    let query = db.select().from(presentationAIContent);
+    if (presentationId) {
+      query = query.where(eq(presentationAIContent.presentationId, presentationId));
+    }
+    return await query.orderBy(desc(presentationAIContent.createdAt));
+  }
+
+  async createPresentationAIContent(content: InsertPresentationAIContent): Promise<PresentationAIContent> {
+    const [newContent] = await db.insert(presentationAIContent).values(content).returning();
+    return newContent;
   }
 }
 

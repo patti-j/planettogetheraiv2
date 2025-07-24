@@ -781,6 +781,135 @@ export const canvasSettings = pgTable("canvas_settings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Presentation System - stores presentation templates and content
+export const presentations = pgTable("presentations", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  category: text("category").notNull().default("general"), // sales, training, consulting, custom
+  audience: text("audience"), // specific customer name or role
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  isTemplate: boolean("is_template").default(false), // true for reusable templates
+  isPublic: boolean("is_public").default(false), // can be used by other users
+  tags: jsonb("tags").$type<string[]>().default([]), // searchable tags
+  thumbnail: text("thumbnail"), // base64 image or URL
+  estimatedDuration: integer("estimated_duration"), // minutes
+  targetRoles: jsonb("target_roles").$type<string[]>().default([]), // which roles this is designed for
+  customization: jsonb("customization").$type<{
+    customerName?: string;
+    industry?: string;
+    specificNeeds?: string[];
+    customBranding?: {
+      logo?: string;
+      colors?: { primary: string; secondary: string };
+      fonts?: string;
+    };
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Individual slides within presentations
+export const presentationSlides = pgTable("presentation_slides", {
+  id: serial("id").primaryKey(),
+  presentationId: integer("presentation_id").references(() => presentations.id).notNull(),
+  slideOrder: integer("slide_order").notNull(),
+  title: text("title").notNull(),
+  slideType: text("slide_type").notNull(), // title, content, demo, transition, summary, etc.
+  content: jsonb("content").$type<{
+    text?: string;
+    bullets?: string[];
+    images?: { url: string; caption?: string; position?: string }[];
+    charts?: any[];
+    demoStep?: {
+      route: string;
+      action?: string;
+      highlights?: string[];
+      interaction?: string;
+    };
+    notes?: string; // presenter notes
+    transitions?: {
+      animation?: string;
+      duration?: number;
+    };
+  }>().notNull(),
+  layout: text("layout").default("standard"), // standard, two-column, full-image, demo-split
+  backgroundColor: text("background_color").default("#ffffff"),
+  textColor: text("text_color").default("#000000"),
+  duration: integer("duration"), // seconds to display this slide
+  voiceNarration: text("voice_narration"), // AI-generated or custom script
+  isInteractive: boolean("is_interactive").default(false), // requires user interaction
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Integration with tour system
+export const presentationTourIntegrations = pgTable("presentation_tour_integrations", {
+  id: serial("id").primaryKey(),
+  presentationId: integer("presentation_id").references(() => presentations.id).notNull(),
+  tourId: integer("tour_id").references(() => tours.id).notNull(),
+  integrationMode: text("integration_mode").notNull(), // 'interleaved', 'before', 'after', 'parallel'
+  slideMapping: jsonb("slide_mapping").$type<Array<{
+    slideId: number;
+    tourStepId: number;
+    timing: 'before' | 'after' | 'during';
+    transitionType: 'fade' | 'slide' | 'instant';
+  }>>().default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Presentation library and sharing
+export const presentationLibrary = pgTable("presentation_library", {
+  id: serial("id").primaryKey(),
+  presentationId: integer("presentation_id").references(() => presentations.id).notNull(),
+  category: text("category").notNull(), // sales-templates, training-modules, industry-specific, customer-custom
+  subcategory: text("subcategory"), // automotive, healthcare, manufacturing-101, etc.
+  downloadCount: integer("download_count").default(0),
+  rating: integer("rating").default(0), // average rating 1-5
+  ratingCount: integer("rating_count").default(0),
+  keywords: jsonb("keywords").$type<string[]>().default([]),
+  isApproved: boolean("is_approved").default(false),
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Presentation analytics and usage tracking
+export const presentationAnalytics = pgTable("presentation_analytics", {
+  id: serial("id").primaryKey(),
+  presentationId: integer("presentation_id").references(() => presentations.id).notNull(),
+  sessionId: text("session_id").notNull(), // unique session identifier
+  presentedBy: integer("presented_by").references(() => users.id).notNull(),
+  audienceType: text("audience_type"), // internal, customer, prospect, partner
+  audienceSize: integer("audience_size"),
+  duration: integer("duration"), // actual presentation duration in minutes
+  slidesViewed: integer("slides_viewed"),
+  interactionCount: integer("interaction_count"), // demo interactions during presentation
+  feedback: jsonb("feedback").$type<{
+    rating?: number;
+    comments?: string;
+    effectiveness?: number;
+    engagement?: number;
+  }>(),
+  completionRate: integer("completion_rate"), // percentage of presentation completed
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// AI-generated content cache for presentations
+export const presentationAIContent = pgTable("presentation_ai_content", {
+  id: serial("id").primaryKey(),
+  presentationId: integer("presentation_id").references(() => presentations.id).notNull(),
+  slideId: integer("slide_id").references(() => presentationSlides.id),
+  contentType: text("content_type").notNull(), // voice, text, image, chart
+  prompt: text("prompt").notNull(), // original AI prompt
+  generatedContent: jsonb("generated_content").notNull(),
+  model: text("model").notNull(), // AI model used
+  cost: integer("cost"), // API cost in cents
+  quality: integer("quality"), // 1-5 quality rating
+  isApproved: boolean("is_approved").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
 export type Capability = typeof capabilities.$inferSelect;
 
@@ -2769,3 +2898,59 @@ export type InsertAIMemoryTag = z.infer<typeof insertAIMemoryTagSchema>;
 
 export type AIConversationContext = typeof aiConversationContext.$inferSelect;
 export type InsertAIConversationContext = z.infer<typeof insertAIConversationContextSchema>;
+
+// Presentation System Insert Schemas
+export const insertPresentationSchema = createInsertSchema(presentations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPresentationSlideSchema = createInsertSchema(presentationSlides).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPresentationTourIntegrationSchema = createInsertSchema(presentationTourIntegrations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPresentationLibrarySchema = createInsertSchema(presentationLibrary).omit({
+  id: true,
+  downloadCount: true,
+  rating: true,
+  ratingCount: true,
+  approvedAt: true,
+  createdAt: true,
+});
+
+export const insertPresentationAnalyticsSchema = createInsertSchema(presentationAnalytics).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPresentationAIContentSchema = createInsertSchema(presentationAIContent).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Presentation System Types
+export type Presentation = typeof presentations.$inferSelect;
+export type InsertPresentation = z.infer<typeof insertPresentationSchema>;
+
+export type PresentationSlide = typeof presentationSlides.$inferSelect;
+export type InsertPresentationSlide = z.infer<typeof insertPresentationSlideSchema>;
+
+export type PresentationTourIntegration = typeof presentationTourIntegrations.$inferSelect;
+export type InsertPresentationTourIntegration = z.infer<typeof insertPresentationTourIntegrationSchema>;
+
+export type PresentationLibrary = typeof presentationLibrary.$inferSelect;
+export type InsertPresentationLibrary = z.infer<typeof insertPresentationLibrarySchema>;
+
+export type PresentationAnalytics = typeof presentationAnalytics.$inferSelect;
+export type InsertPresentationAnalytics = z.infer<typeof insertPresentationAnalyticsSchema>;
+
+export type PresentationAIContent = typeof presentationAIContent.$inferSelect;
+export type InsertPresentationAIContent = z.infer<typeof insertPresentationAIContentSchema>;

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Factory, Briefcase, BarChart3, FileText, Bot, Columns3, Menu, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain, User, LogOut, Code, Layers } from "lucide-react";
+import { Factory, Briefcase, BarChart3, FileText, Bot, Columns3, Menu, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain, User, LogOut, Code, Layers, Presentation } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleSwitcher } from "./role-switcher";
 import { TrainingModeExit } from "./training-mode-exit";
@@ -108,6 +108,7 @@ export default function Sidebar() {
     { icon: UserCheck, label: "User Role Assignments", href: "/user-role-assignments-page", active: location === "/user-role-assignments-page", feature: "user-management", action: "view" },
     { icon: GraduationCap, label: "Training", href: "/training", active: location === "/training", feature: "training", action: "view" },
     { icon: Building, label: "Industry Templates", href: "/industry-templates", active: location === "/industry-templates", feature: "industry-templates", action: "view" },
+    { icon: Presentation, label: "Presentation System", href: "/presentation-system", active: location === "/presentation-system", feature: "presentation-system", action: "view" },
     { icon: MessageCircle, label: "Chat", href: "/chat", active: location === "/chat", feature: "chat", action: "view" },
     { icon: Columns3, label: "Boards", href: "/boards", active: location === "/boards", feature: "boards", action: "view" },
 
@@ -154,6 +155,7 @@ export default function Sidebar() {
       "/user-role-assignments-page": "Assign multiple roles to users and manage user role relationships",
       "/training": "Interactive training modules and role demonstrations for comprehensive system training",
       "/industry-templates": "Select pre-configured industry templates for automated application setup with AI-generated configurations",
+      "/presentation-system": "Manage and create presentations with slides, templates, and libraries for sales, training, and consulting",
       "/chat": "Real-time messaging and communication with team members and contextual discussions",
       "/boards": "Organize jobs, operations, and resources with drag-and-drop boards",
       "/system-integrations": "Connect and manage integrations with external systems like SAP, NetSuite, and other enterprise software with AI-powered data flows",

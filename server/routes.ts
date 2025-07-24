@@ -30,7 +30,9 @@ import {
   insertWorkflowMonitoringSchema,
   insertTourPromptTemplateSchema, insertTourPromptTemplateUsageSchema,
   insertCanvasContentSchema, insertCanvasSettingsSchema,
-  insertErrorLogSchema, insertErrorReportSchema, insertSystemHealthSchema
+  insertErrorLogSchema, insertErrorReportSchema,
+  insertPresentationSchema, insertPresentationSlideSchema, insertPresentationTourIntegrationSchema,
+  insertPresentationLibrarySchema, insertPresentationAnalyticsSchema, insertPresentationAIContentSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -272,7 +274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             isDemo: true,
             role: 'Director',
             activeRole: { id: 'demo_director_role', name: 'Director' },
-            permissions: ['business-goals-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+            permissions: ['business-goals-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view', 'presentation-system-view'],
             roles: [{ id: 'demo_director_role', name: 'Director' }]
           },
           'demo_plant': { 
@@ -9667,6 +9669,274 @@ Create a natural, conversational voice script that explains this feature to some
     } catch (error) {
       console.error("Error deleting workflow monitoring:", error);
       res.status(500).json({ error: "Failed to delete workflow monitoring" });
+    }
+  });
+
+  // Presentation System API Endpoints
+  
+  // Presentations CRUD
+  app.get("/api/presentations", async (req, res) => {
+    try {
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
+      const presentations = await storage.getPresentations(userId);
+      res.json(presentations);
+    } catch (error) {
+      console.error("Error getting presentations:", error);
+      res.status(500).json({ error: "Failed to get presentations" });
+    }
+  });
+
+  app.get("/api/presentations/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid presentation ID" });
+      }
+
+      const presentation = await storage.getPresentation(id);
+      if (!presentation) {
+        return res.status(404).json({ error: "Presentation not found" });
+      }
+      res.json(presentation);
+    } catch (error) {
+      console.error("Error getting presentation:", error);
+      res.status(500).json({ error: "Failed to get presentation" });
+    }
+  });
+
+  app.post("/api/presentations", async (req, res) => {
+    try {
+      const validation = insertPresentationSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid presentation data", details: validation.error.errors });
+      }
+
+      const presentation = await storage.createPresentation(validation.data);
+      res.status(201).json(presentation);
+    } catch (error) {
+      console.error("Error creating presentation:", error);
+      res.status(500).json({ error: "Failed to create presentation" });
+    }
+  });
+
+  app.put("/api/presentations/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid presentation ID" });
+      }
+
+      const validation = insertPresentationSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid presentation data", details: validation.error.errors });
+      }
+
+      const presentation = await storage.updatePresentation(id, validation.data);
+      if (!presentation) {
+        return res.status(404).json({ error: "Presentation not found" });
+      }
+      res.json(presentation);
+    } catch (error) {
+      console.error("Error updating presentation:", error);
+      res.status(500).json({ error: "Failed to update presentation" });
+    }
+  });
+
+  app.delete("/api/presentations/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid presentation ID" });
+      }
+
+      const success = await storage.deletePresentation(id);
+      if (!success) {
+        return res.status(404).json({ error: "Presentation not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting presentation:", error);
+      res.status(500).json({ error: "Failed to delete presentation" });
+    }
+  });
+
+  // Presentation Slides CRUD
+  app.get("/api/presentations/:presentationId/slides", async (req, res) => {
+    try {
+      const presentationId = parseInt(req.params.presentationId);
+      if (isNaN(presentationId)) {
+        return res.status(400).json({ error: "Invalid presentation ID" });
+      }
+
+      const slides = await storage.getPresentationSlides(presentationId);
+      res.json(slides);
+    } catch (error) {
+      console.error("Error getting presentation slides:", error);
+      res.status(500).json({ error: "Failed to get presentation slides" });
+    }
+  });
+
+  app.post("/api/presentation-slides", async (req, res) => {
+    try {
+      const validation = insertPresentationSlideSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid slide data", details: validation.error.errors });
+      }
+
+      const slide = await storage.createPresentationSlide(validation.data);
+      res.status(201).json(slide);
+    } catch (error) {
+      console.error("Error creating presentation slide:", error);
+      res.status(500).json({ error: "Failed to create presentation slide" });
+    }
+  });
+
+  app.put("/api/presentation-slides/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid slide ID" });
+      }
+
+      const validation = insertPresentationSlideSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid slide data", details: validation.error.errors });
+      }
+
+      const slide = await storage.updatePresentationSlide(id, validation.data);
+      if (!slide) {
+        return res.status(404).json({ error: "Presentation slide not found" });
+      }
+      res.json(slide);
+    } catch (error) {
+      console.error("Error updating presentation slide:", error);
+      res.status(500).json({ error: "Failed to update presentation slide" });
+    }
+  });
+
+  app.delete("/api/presentation-slides/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid slide ID" });
+      }
+
+      const success = await storage.deletePresentationSlide(id);
+      if (!success) {
+        return res.status(404).json({ error: "Presentation slide not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting presentation slide:", error);
+      res.status(500).json({ error: "Failed to delete presentation slide" });
+    }
+  });
+
+  // Presentation Library
+  app.get("/api/presentation-library", async (req, res) => {
+    try {
+      const category = req.query.category as string | undefined;
+      const library = await storage.getPresentationLibrary(category);
+      res.json(library);
+    } catch (error) {
+      console.error("Error getting presentation library:", error);
+      res.status(500).json({ error: "Failed to get presentation library" });
+    }
+  });
+
+  app.post("/api/presentation-library", async (req, res) => {
+    try {
+      const validation = insertPresentationLibrarySchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid library entry data", details: validation.error.errors });
+      }
+
+      const entry = await storage.createPresentationLibraryEntry(validation.data);
+      res.status(201).json(entry);
+    } catch (error) {
+      console.error("Error creating presentation library entry:", error);
+      res.status(500).json({ error: "Failed to create presentation library entry" });
+    }
+  });
+
+  // Presentation Tour Integrations
+  app.get("/api/presentation-tour-integrations", async (req, res) => {
+    try {
+      const presentationId = req.query.presentationId ? parseInt(req.query.presentationId as string) : undefined;
+      const integrations = await storage.getPresentationTourIntegrations(presentationId);
+      res.json(integrations);
+    } catch (error) {
+      console.error("Error getting presentation tour integrations:", error);
+      res.status(500).json({ error: "Failed to get presentation tour integrations" });
+    }
+  });
+
+  app.post("/api/presentation-tour-integrations", async (req, res) => {
+    try {
+      const validation = insertPresentationTourIntegrationSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid integration data", details: validation.error.errors });
+      }
+
+      const integration = await storage.createPresentationTourIntegration(validation.data);
+      res.status(201).json(integration);
+    } catch (error) {
+      console.error("Error creating presentation tour integration:", error);
+      res.status(500).json({ error: "Failed to create presentation tour integration" });
+    }
+  });
+
+  // Presentation Analytics
+  app.get("/api/presentation-analytics", async (req, res) => {
+    try {
+      const presentationId = req.query.presentationId ? parseInt(req.query.presentationId as string) : undefined;
+      const analytics = await storage.getPresentationAnalytics(presentationId);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error getting presentation analytics:", error);
+      res.status(500).json({ error: "Failed to get presentation analytics" });
+    }
+  });
+
+  app.post("/api/presentation-analytics", async (req, res) => {
+    try {
+      const validation = insertPresentationAnalyticsSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid analytics data", details: validation.error.errors });
+      }
+
+      const analytics = await storage.createPresentationAnalyticsEntry(validation.data);
+      res.status(201).json(analytics);
+    } catch (error) {
+      console.error("Error creating presentation analytics entry:", error);
+      res.status(500).json({ error: "Failed to create presentation analytics entry" });
+    }
+  });
+
+  // Presentation AI Content
+  app.get("/api/presentation-ai-content", async (req, res) => {
+    try {
+      const presentationId = req.query.presentationId ? parseInt(req.query.presentationId as string) : undefined;
+      const content = await storage.getPresentationAIContent(presentationId);
+      res.json(content);
+    } catch (error) {
+      console.error("Error getting presentation AI content:", error);
+      res.status(500).json({ error: "Failed to get presentation AI content" });
+    }
+  });
+
+  app.post("/api/presentation-ai-content", async (req, res) => {
+    try {
+      const validation = insertPresentationAIContentSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid AI content data", details: validation.error.errors });
+      }
+
+      const content = await storage.createPresentationAIContent(validation.data);
+      res.status(201).json(content);
+    } catch (error) {
+      console.error("Error creating presentation AI content:", error);
+      res.status(500).json({ error: "Failed to create presentation AI content" });
     }
   });
 
