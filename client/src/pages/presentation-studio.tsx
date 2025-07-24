@@ -282,6 +282,44 @@ export default function PresentationStudio() {
     },
   });
 
+  const generateModernPresentationMutation = useMutation({
+    mutationFn: async () => {
+      const currentProject = projects.find((p: PresentationProject) => p.id === activeProject);
+      if (!currentProject) throw new Error("No active project");
+
+      return apiRequest("/api/presentation-studio/generate-modern-presentation", {
+        method: "POST",
+        body: JSON.stringify({
+          projectId: activeProject,
+          presentationType: currentProject.type,
+          targetAudience: currentProject.targetAudience,
+          objectives: currentProject.objectives,
+          keyMessage: currentProject.keyMessage,
+          brandGuidelines: currentProject.brandGuidelines,
+          materials: materials.map((m: PresentationMaterial) => ({ 
+            title: m.title, 
+            type: m.type, 
+            content: m.content 
+          }))
+        }),
+      });
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/presentations"] });
+      toast({
+        title: "Success",
+        description: `Generated modern presentation: "${data.designData.title}" with ${data.designData.slides.length} engaging slides`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to generate modern presentation. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -990,19 +1028,75 @@ export default function PresentationStudio() {
               </TabsContent>
 
               <TabsContent value="suggestions" className="flex-1 p-6">
-                {/* Suggestions Header */}
+                {/* Modern Presentation Generation Header */}
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h3 className="text-lg font-semibold">AI Suggestions</h3>
-                    <p className="text-sm text-gray-600">Get intelligent recommendations for your presentation</p>
+                    <h3 className="text-lg font-semibold">AI Presentation Generation</h3>
+                    <p className="text-sm text-gray-600">Create exciting, website-like presentations that engage users and drive software adoption</p>
                   </div>
-                  <Button 
-                    onClick={() => generateSuggestionsMutation.mutate()}
-                    disabled={generateSuggestionsMutation.isPending}
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    {generateSuggestionsMutation.isPending ? "Generating..." : "Generate Suggestions"}
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button 
+                      onClick={() => generateSuggestionsMutation.mutate()}
+                      disabled={generateSuggestionsMutation.isPending}
+                      variant="outline"
+                    >
+                      <Lightbulb className="w-4 h-4 mr-2" />
+                      {generateSuggestionsMutation.isPending ? "Generating..." : "Material Ideas"}
+                    </Button>
+                    <Button 
+                      onClick={() => generateModernPresentationMutation.mutate()}
+                      disabled={generateModernPresentationMutation.isPending}
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+                    >
+                      <Zap className="w-4 h-4 mr-2" />
+                      {generateModernPresentationMutation.isPending ? "Creating..." : "Generate Modern Presentation"}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Design Philosophy Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <Card className="border-purple-200 bg-purple-50">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center text-sm text-purple-700">
+                        <Eye className="w-4 h-4 mr-2" />
+                        Visual-First Design
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-xs text-purple-600 space-y-1">
+                      <p>• Bold, diverse imagery</p>
+                      <p>• Minimal text, maximum impact</p>
+                      <p>• Website-style layouts</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="border-blue-200 bg-blue-50">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center text-sm text-blue-700">
+                        <Zap className="w-4 h-4 mr-2" />
+                        User Engagement
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-xs text-blue-600 space-y-1">
+                      <p>• Interactive elements</p>
+                      <p>• Excitement-driven content</p>
+                      <p>• Persuasive storytelling</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="border-green-200 bg-green-50">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center text-sm text-green-700">
+                        <TrendingUp className="w-4 h-4 mr-2" />
+                        Software Adoption
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-xs text-green-600 space-y-1">
+                      <p>• Conversion-focused flow</p>
+                      <p>• Modern, professional look</p>
+                      <p>• Clear value proposition</p>
+                    </CardContent>
+                  </Card>
                 </div>
 
                 {/* Suggestions List */}

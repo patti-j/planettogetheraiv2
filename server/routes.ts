@@ -10418,33 +10418,34 @@ Create a natural, conversational voice script that explains this feature to some
       const OpenAI = (await import("openai")).default;
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-      const suggestionPrompt = `You are an AI assistant specialized in recommending presentation materials for optimal presentation effectiveness.
+      const suggestionPrompt = `You are an AI assistant specialized in creating ENGAGING, VISUAL, WEBSITE-LIKE presentations that EXCITE users and drive software adoption. AVOID boring PowerPoint-style slides.
 
       Presentation Type: ${presentationType}
       Target Audience: ${targetAudience || 'General'}
       Objectives: ${objectives ? JSON.stringify(objectives) : 'Not specified'}
       Existing Materials: ${existingMaterials ? JSON.stringify(existingMaterials) : 'None'}
 
-      Based on this presentation context, suggest what additional materials would be most valuable. Respond in JSON format:
+      Create materials for a modern, exciting presentation that looks like an engaging website, not traditional slides. Focus on visual storytelling, minimal text, and user excitement. Respond in JSON format:
       {
         "criticalMaterials": [
           {
-            "type": "case_study|statistics|research|testimonial|competitive_analysis|data_sheet",
-            "title": "Suggested material title",
-            "description": "Why this material is needed",
+            "type": "hero_visual|customer_success_story|interactive_demo|visual_comparison|transformation_story|roi_calculator",
+            "title": "Engaging material title",
+            "description": "Why this visual/interactive material creates excitement",
             "priority": "high|medium|low",
-            "specificRequirements": "What specific content to look for"
+            "visualRequirements": "Specific visual elements needed (images, icons, animations)",
+            "engagementFactor": "How this material excites and persuades users"
           }
         ],
-        "recommendedStructure": "Suggested flow and organization of materials",
-        "contentGaps": ["Areas where additional support is needed"],
-        "audienceConsiderations": "Special considerations for the target audience"
+        "visualDesignStyle": "Modern, clean, website-like with bold visuals and minimal text",
+        "excitementElements": ["Interactive elements that create user engagement"],
+        "persuasionStrategy": "How to structure content for maximum software adoption impact"
       }`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
-          { role: "system", content: "You are an expert presentation strategist with deep knowledge of effective business communication." },
+          { role: "system", content: "You are an expert in creating EXCITING, VISUAL presentations that look like modern websites. You specialize in driving software adoption through engaging, non-boring presentation design that uses bold visuals, minimal text, and interactive elements." },
           { role: "user", content: suggestionPrompt }
         ],
         response_format: { type: "json_object" },
@@ -10458,6 +10459,132 @@ Create a natural, conversational voice script that explains this feature to some
     } catch (error) {
       console.error('Error generating material suggestions:', error);
       res.status(500).json({ error: 'Failed to generate material suggestions' });
+    }
+  });
+
+  // AI-Powered Modern Presentation Generation
+  app.post("/api/presentation-studio/generate-modern-presentation", requireAuth, async (req, res) => {
+    try {
+      const { projectId, presentationType, targetAudience, objectives, keyMessage, brandGuidelines, materials } = req.body;
+      
+      if (!projectId || !presentationType) {
+        return res.status(400).json({ error: "Project ID and presentation type are required" });
+      }
+
+      const OpenAI = (await import("openai")).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      const modernPresentationPrompt = `You are an expert in creating EXCITING, VISUAL, WEBSITE-LIKE presentations that drive software adoption. Create a modern presentation that looks like an engaging website, NOT traditional PowerPoint slides.
+
+      CRITICAL REQUIREMENTS:
+      - Create presentations that EXCITE users and make them want to use the software
+      - Use BOLD VISUALS, diverse imagery, and minimal text
+      - Design like a modern website with interactive elements
+      - Focus on user engagement and persuasion for software adoption
+      - Avoid boring, text-heavy, traditional slide formats
+
+      Project Details:
+      Presentation Type: ${presentationType}
+      Target Audience: ${targetAudience || 'Manufacturing professionals'}
+      Objectives: ${objectives || 'Drive software adoption'}
+      Key Message: ${keyMessage || 'Transform your manufacturing operations'}
+      Brand Guidelines: ${brandGuidelines || 'Professional, modern, technology-focused'}
+      Available Materials: ${materials ? JSON.stringify(materials) : 'Standard manufacturing content'}
+
+      Generate a complete modern presentation structure in JSON format:
+      {
+        "title": "Engaging presentation title",
+        "subtitle": "Compelling subtitle that creates excitement",
+        "designTheme": {
+          "primaryColor": "#color-hex",
+          "accentColor": "#color-hex", 
+          "style": "modern-website|sleek-tech|bold-industrial",
+          "typography": "clean-sans|modern-display",
+          "layout": "website-style|card-based|full-screen-visuals"
+        },
+        "slides": [
+          {
+            "id": 1,
+            "type": "hero_splash|problem_story|solution_showcase|transformation_demo|social_proof|call_to_action",
+            "title": "Bold, engaging slide title",
+            "layout": "full_screen_visual|split_visual_text|card_grid|interactive_demo",
+            "content": {
+              "mainText": "Minimal, powerful text that excites",
+              "visualElements": [
+                {
+                  "type": "hero_image|icon_grid|before_after|customer_photo|product_screenshot",
+                  "description": "Specific visual element needed",
+                  "placement": "background|foreground|overlay",
+                  "size": "full_screen|large|medium"
+                }
+              ],
+              "interactiveElements": ["hover_effects|click_reveals|animated_counters|progress_bars"],
+              "callouts": ["Key benefit or statistic that creates excitement"],
+              "emotionalTriggers": ["Specific elements that make users excited about the software"]
+            },
+            "engagementFactors": ["What makes this slide exciting and persuasive"],
+            "userJourney": "How this slide moves users toward software adoption"
+          }
+        ],
+        "visualAssets": [
+          {
+            "type": "hero_images|customer_photos|product_screenshots|infographic_elements|icon_sets",
+            "description": "Specific visual asset needed",
+            "purpose": "How this asset creates excitement and drives adoption",
+            "placement": "Which slides use this asset"
+          }
+        ],
+        "engagementStrategy": {
+          "openingHook": "How to immediately grab attention",
+          "excitementBuilders": ["Elements that create user excitement throughout"],
+          "persuasionFlow": "How slides build toward software adoption decision",
+          "closingAction": "Strong call-to-action that drives software trial/purchase"
+        }
+      }
+
+      Create ${Math.max(5, Math.min(12, Math.floor(Math.random() * 8) + 5))} slides that tell a compelling story and drive software adoption.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { 
+            role: "system", 
+            content: "You are a world-class presentation designer who creates EXCITING, VISUAL presentations that look like modern websites. You specialize in driving software adoption through engaging design that uses bold visuals, minimal text, and interactive elements. You NEVER create boring PowerPoint-style presentations." 
+          },
+          { role: "user", content: modernPresentationPrompt }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+        max_tokens: 4000
+      });
+
+      const presentationData = JSON.parse(response.choices[0].message.content);
+      
+      // Store the generated presentation in the database
+      const presentation = await storage.createPresentation({
+        title: presentationData.title,
+        description: presentationData.subtitle,
+        content: JSON.stringify(presentationData),
+        authorId: req.user.id,
+        status: "draft",
+        tags: [presentationType, "ai-generated", "modern-design"],
+        metadata: {
+          designTheme: presentationData.designTheme,
+          engagementStrategy: presentationData.engagementStrategy,
+          generatedAt: new Date().toISOString(),
+          projectId: projectId
+        }
+      });
+
+      res.json({
+        presentation,
+        designData: presentationData,
+        message: "Modern, engaging presentation generated successfully"
+      });
+
+    } catch (error) {
+      console.error('Error generating modern presentation:', error);
+      res.status(500).json({ error: 'Failed to generate modern presentation' });
     }
   });
 
