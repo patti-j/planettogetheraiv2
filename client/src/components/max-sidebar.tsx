@@ -29,6 +29,7 @@ import {
   Maximize,
   Minimize2,
   SplitSquareHorizontal,
+  SplitSquareVertical,
   Monitor,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -536,7 +537,7 @@ export function MaxSidebar() {
                     className="h-6 w-6 p-0 text-white hover:bg-white/20"
                     title="Switch to Split Mode"
                   >
-                    <SplitSquareHorizontal className="h-3 w-3" />
+                    <SplitSquareVertical className="h-3 w-3" />
                   </Button>
                 </>
               )}
