@@ -291,18 +291,18 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         console.log("Mobile tour position calculated (lower right):", position, "cardHeight:", cardHeight, "windowHeight:", windowHeight);
         return position;
       } else {
-        // Desktop positioning - ALWAYS in viewport top-right
+        // Desktop positioning - ALWAYS in viewport bottom-right 
         const cardWidth = 384;
         const cardHeight = Math.min(600, windowHeight - 100);
         const padding = 20;
-        const topPosition = 80; // Fixed distance from viewport top
+        const bottomPosition = windowHeight - cardHeight - padding - 20; // Position near bottom edge
         
         // Set initial window dimensions for desktop
         setWindowDimensions({ width: cardWidth, height: cardHeight });
         
         const position = {
           x: windowWidth - cardWidth - padding,
-          y: topPosition
+          y: bottomPosition
         };
         
         console.log("Desktop tour position calculated:", position);
@@ -362,12 +362,13 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         setPosition(newPosition);
       } else {
         const cardWidth = 384;
+        const cardHeight = Math.min(600, windowHeight - 100);
         const padding = 20;
-        const topPosition = 80; // Fixed viewport position
+        const bottomPosition = windowHeight - cardHeight - padding - 20; // Position near bottom edge
         
         const newPosition = {
           x: windowWidth - cardWidth - padding,
-          y: topPosition
+          y: bottomPosition
         };
         
         console.log("Resize - Desktop position:", newPosition);
