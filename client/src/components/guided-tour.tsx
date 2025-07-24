@@ -1242,10 +1242,10 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           </CardContent>
         )}
 
-        <div className={`flex-shrink-0 border-t ${windowDimensions.height < 200 ? 'p-1 space-y-1' : windowDimensions.height < 300 ? 'p-2 space-y-2' : 'p-1.5 sm:p-6 pt-1 sm:pt-2 space-y-1 sm:space-y-3'}`}>
-          {voiceEnabled && windowDimensions.height >= 150 && (
+        <div className={`flex-shrink-0 border-t ${isMinimized ? 'p-1.5 space-y-1.5' : windowDimensions.height < 200 ? 'p-1 space-y-1' : windowDimensions.height < 300 ? 'p-2 space-y-2' : 'p-1.5 sm:p-6 pt-1 sm:pt-2 space-y-1 sm:space-y-3'}`}>
+          {voiceEnabled && (isMinimized || windowDimensions.height >= 150) && (
             <div className="flex items-center justify-between">
-              <span className={`${windowDimensions.height < 200 ? 'text-xs' : 'text-sm'} text-gray-600`}>Voice Guide</span>
+              <span className={`${isMinimized || windowDimensions.height < 200 ? 'text-xs' : 'text-sm'} text-gray-600`}>Voice Guide</span>
               <div className="flex items-center gap-1">
                 {isLoadingVoice && (
                   <div className="animate-spin h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full"></div>
@@ -1255,53 +1255,53 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                   size="sm"
                   onClick={togglePlayPause}
                   disabled={isLoadingVoice}
-                  className={`${windowDimensions.height < 200 ? 'h-6 w-6' : 'h-8 w-8'} p-0`}
+                  className={`${isMinimized || windowDimensions.height < 200 ? 'h-6 w-6' : 'h-8 w-8'} p-0`}
                 >
-                  {isPlaying ? <Pause className={`${windowDimensions.height < 200 ? 'h-3 w-3' : 'h-4 w-4'}`} /> : <Play className={`${windowDimensions.height < 200 ? 'h-3 w-3' : 'h-4 w-4'}`} />}
+                  {isPlaying ? <Pause className={`${isMinimized || windowDimensions.height < 200 ? 'h-3 w-3' : 'h-4 w-4'}`} /> : <Play className={`${isMinimized || windowDimensions.height < 200 ? 'h-3 w-3' : 'h-4 w-4'}`} />}
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => playPreloadedAudio(tourSteps[currentStep]?.id)}
                   disabled={isLoadingVoice || !tourSteps[currentStep]}
-                  className={`${windowDimensions.height < 200 ? 'h-6 w-6' : 'h-8 w-8'} p-0`}
+                  className={`${isMinimized || windowDimensions.height < 200 ? 'h-6 w-6' : 'h-8 w-8'} p-0`}
                   title="Replay voice narration"
                 >
-                  <RotateCcw className={`${windowDimensions.height < 200 ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                  <RotateCcw className={`${isMinimized || windowDimensions.height < 200 ? 'h-3 w-3' : 'h-4 w-4'}`} />
                 </Button>
               </div>
             </div>
           )}
 
-          <div className={`flex ${windowDimensions.height < 200 ? 'gap-1' : 'gap-2'}`}>
+          <div className={`flex ${isMinimized || windowDimensions.height < 200 ? 'gap-1' : 'gap-2'}`}>
             <Button
               variant="outline"
               onClick={handlePrevious}
               disabled={currentStep === 0}
-              className={`flex-1 ${windowDimensions.height < 200 ? 'h-7 text-xs px-2' : windowDimensions.height < 250 ? 'h-8 text-sm px-3' : ''}`}
+              className={`flex-1 ${isMinimized ? 'h-6 text-xs px-1' : windowDimensions.height < 200 ? 'h-7 text-xs px-2' : windowDimensions.height < 250 ? 'h-8 text-sm px-3' : ''}`}
             >
-              <ChevronLeft className={`${windowDimensions.height < 200 ? 'h-3 w-3 mr-0.5' : 'h-4 w-4 mr-1'}`} />
-              {windowDimensions.height < 200 ? 'Prev' : 'Previous'}
+              <ChevronLeft className={`${isMinimized ? 'h-2.5 w-2.5 mr-0.5' : windowDimensions.height < 200 ? 'h-3 w-3 mr-0.5' : 'h-4 w-4 mr-1'}`} />
+              {isMinimized || windowDimensions.height < 200 ? 'Prev' : 'Previous'}
             </Button>
             
             <Button
               onClick={handleNext}
-              className={`flex-1 bg-blue-600 hover:bg-blue-700 ${windowDimensions.height < 200 ? 'h-7 text-xs px-2' : windowDimensions.height < 250 ? 'h-8 text-sm px-3' : ''}`}
+              className={`flex-1 bg-blue-600 hover:bg-blue-700 ${isMinimized ? 'h-6 text-xs px-1' : windowDimensions.height < 200 ? 'h-7 text-xs px-2' : windowDimensions.height < 250 ? 'h-8 text-sm px-3' : ''}`}
             >
               {currentStep === tourSteps.length - 1 ? (
                 <>
-                  {windowDimensions.height < 200 ? 'Done' : 'Complete'}
-                  <CheckCircle className={`${windowDimensions.height < 200 ? 'h-3 w-3 ml-0.5' : 'h-4 w-4 ml-1'}`} />
+                  {isMinimized || windowDimensions.height < 200 ? 'Done' : 'Complete'}
+                  <CheckCircle className={`${isMinimized ? 'h-2.5 w-2.5 ml-0.5' : windowDimensions.height < 200 ? 'h-3 w-3 ml-0.5' : 'h-4 w-4 ml-1'}`} />
                 </>
               ) : (
                 <>
-                  Next
-                  <ChevronRight className={`${windowDimensions.height < 200 ? 'h-3 w-3 ml-0.5' : 'h-4 w-4 ml-1'}`} />
+                  {isMinimized ? 'Next' : 'Next'}
+                  <ChevronRight className={`${isMinimized ? 'h-2.5 w-2.5 ml-0.5' : windowDimensions.height < 200 ? 'h-3 w-3 ml-0.5' : 'h-4 w-4 ml-1'}`} />
                 </>
               )}
             </Button>
 
-            {windowDimensions.height >= 180 && (
+            {!isMinimized && windowDimensions.height >= 180 && (
               <Button
                 variant={autoAdvance ? "default" : "outline"}
                 onClick={() => {
