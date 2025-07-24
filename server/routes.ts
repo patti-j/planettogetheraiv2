@@ -1124,6 +1124,40 @@ Provide the response as a JSON object with the following structure:
     }
   });
 
+  // AI Agent Speech-to-Text (Whisper) endpoint
+  app.post("/api/ai-agent/transcribe", upload.single('audio'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'Audio file is required' });
+      }
+
+      const openai = await import('openai');
+      const client = new openai.default({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+
+      // Create a file-like object for OpenAI Whisper
+      const audioFile = new File([req.file.buffer], req.file.originalname || 'audio.webm', {
+        type: req.file.mimetype || 'audio/webm'
+      });
+
+      const transcription = await client.audio.transcriptions.create({
+        file: audioFile,
+        model: 'whisper-1',
+        language: 'en',
+        response_format: 'json'
+      });
+
+      res.json({ 
+        text: transcription.text,
+        success: true 
+      });
+    } catch (error) {
+      console.error('Whisper transcription error:', error);
+      res.status(500).json({ error: 'Failed to transcribe audio' });
+    }
+  });
+
   // AI Agent Memory Management endpoints
   app.get("/api/ai-agent/memory", async (req, res) => {
     try {

@@ -151,7 +151,6 @@ export function MaxSidebar() {
   }, [setCanvasVisible]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const recognition = useRef<any>(null);
   const currentAudio = useRef<HTMLAudioElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -160,113 +159,13 @@ export function MaxSidebar() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Initialize speech recognition
+  // Initialize MediaRecorder for Whisper transcription
+  const mediaRecorder = useRef<MediaRecorder | null>(null);
+  const audioChunks = useRef<Blob[]>([]);
+
   useEffect(() => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      console.log('Initializing speech recognition...');
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-      recognition.current = new SpeechRecognition();
-      recognition.current.continuous = true;
-      recognition.current.interimResults = true;
-      recognition.current.lang = 'en-US';
-      recognition.current.maxAlternatives = 1;
-
-      recognition.current.onstart = () => {
-        console.log('Speech recognition started');
-        setIsListening(true);
-      };
-
-      recognition.current.onresult = (event: any) => {
-        console.log('Speech recognition result:', event.results);
-        
-        let finalTranscript = '';
-        let interimTranscript = '';
-        
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript + ' ';
-          } else {
-            interimTranscript += transcript;
-          }
-        }
-        
-        console.log('Final transcript:', finalTranscript);
-        console.log('Interim transcript:', interimTranscript);
-        
-        // Show interim results immediately for better responsiveness - no "listening" text
-        if (interimTranscript && !finalTranscript) {
-          // Store the base message without interim text
-          const baseMessage = inputMessage.replace(/\s*\[.*?\].*$/, '');
-          setInputMessage(`${baseMessage} ${interimTranscript}`.trim());
-        }
-        
-        if (finalTranscript) {
-          // Remove any interim text and add final transcript
-          const baseMessage = inputMessage.replace(/\s*\[.*?\].*$/, '');
-          setInputMessage(`${baseMessage} ${finalTranscript}`.trim());
-        }
-        
-        // Don't stop listening automatically - let user control it
-      };
-
-      recognition.current.onend = () => {
-        console.log('Speech recognition ended');
-        setIsListening(false);
-      };
-
-      recognition.current.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-        setIsListening(false);
-        
-        let errorMessage = "I couldn't catch what you said. Please try speaking again or type your message instead.";
-        
-        // Provide specific error messages based on error type
-        switch (event.error) {
-          case 'not-allowed':
-            errorMessage = "Microphone access was denied. Please allow microphone permission in your browser settings and try again.";
-            toast({
-              title: "Microphone Permission Needed",
-              description: "Please allow microphone access to use voice input",
-              variant: "destructive"
-            });
-            break;
-          case 'no-speech':
-            errorMessage = "I didn't hear anything. Please speak clearly and try again.";
-            break;
-          case 'network':
-            errorMessage = "Network error occurred. Please check your connection and try again.";
-            break;
-          case 'audio-capture':
-            errorMessage = "Your microphone might be in use by another application. Please close other apps using the microphone and try again.";
-            console.log('Audio capture error: Microphone may be in use by another application or there was a hardware issue');
-            // Don't show disruptive toast for audio capture - just log it
-            break;
-          case 'aborted':
-            // Don't show error for aborted - user likely clicked stop
-            return;
-        }
-        
-        // Show a gentle message in chat for most errors (but not audio-capture)
-        if (event.error !== 'not-allowed' && event.error !== 'audio-capture' && event.error !== 'aborted') {
-          const voiceErrorMessage: Message = {
-            id: Date.now().toString() + '_voice_error',
-            type: 'assistant',
-            content: errorMessage,
-            timestamp: new Date(),
-            context: {
-              page: window.location.pathname,
-              action: 'voice_error'
-            }
-          };
-          setMessages(prev => [...prev, voiceErrorMessage]);
-        }
-      };
-      
-      console.log('Speech recognition initialized successfully');
-    } else {
-      console.log('Speech recognition not supported in this browser');
-    }
+    console.log('Initializing Whisper-based speech recognition...');
+    // Whisper transcription is server-based, no browser initialization needed
   }, []);
 
   // Generate page insights
@@ -382,75 +281,111 @@ export function MaxSidebar() {
     sendMessageMutation.mutate(inputMessage.trim());
   };
 
-  const startListening = () => {
-    if (!recognition.current) {
-      console.log('Speech recognition not available');
-      toast({
-        title: "Microphone Unavailable",
-        description: "Speech recognition is not available in your browser. Please type your message instead.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Check if already listening
-    if (isListening) {
-      console.log('Already listening, stopping first...');
-      stopListening();
-      return;
-    }
-
+  const startListening = async () => {
     try {
-      console.log('Starting speech recognition...');
-      recognition.current.start();
-      setIsListening(true);
-    } catch (error) {
-      console.error('Error starting speech recognition:', error);
-      setIsListening(false);
-      toast({
-        title: "Microphone Error", 
-        description: "Could not start voice recognition. Please check microphone permissions.",
-        variant: "destructive"
+      console.log('Starting Whisper-based recording...');
+      
+      // Request microphone access
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // Clear previous audio chunks
+      audioChunks.current = [];
+      
+      // Create new MediaRecorder
+      mediaRecorder.current = new MediaRecorder(stream, {
+        mimeType: 'audio/webm'
       });
+      
+      mediaRecorder.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunks.current.push(event.data);
+        }
+      };
+      
+      mediaRecorder.current.onstop = async () => {
+        console.log('Recording stopped, transcribing with Whisper...');
+        setIsListening(false);
+        
+        // Create blob from recorded chunks
+        const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
+        
+        // Send to Whisper API for transcription
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'recording.webm');
+        
+        try {
+          const response = await fetch('/api/ai-agent/transcribe', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const result = await response.json();
+          
+          if (result.success && result.text) {
+            // Add transcribed text to input
+            const baseMessage = inputMessage.trim();
+            setInputMessage(baseMessage ? `${baseMessage} ${result.text}` : result.text);
+          } else {
+            console.error('Transcription failed:', result);
+            showVoiceError("Sorry, I couldn't understand what you said. Please try again.");
+          }
+        } catch (error) {
+          console.error('Transcription error:', error);
+          showVoiceError("There was an issue processing your voice input. Please try again.");
+        }
+        
+        // Stop all tracks to release microphone
+        stream.getTracks().forEach(track => track.stop());
+      };
+      
+      // Start recording
+      mediaRecorder.current.start();
+      setIsListening(true);
+      console.log('Recording started with Whisper transcription');
+      
+    } catch (error) {
+      console.error('Microphone access error:', error);
+      setIsListening(false);
+      
+      if (error.name === 'NotAllowedError') {
+        toast({
+          title: "Microphone Permission Needed",
+          description: "Please allow microphone access to use voice input",
+          variant: "destructive"
+        });
+      } else {
+        showVoiceError("Unable to access microphone. Please check your device settings.");
+      }
     }
   };
 
+  // Helper function to show voice errors in chat
+  const showVoiceError = (message: string) => {
+    const errorMessage: Message = {
+      id: Date.now().toString() + '_voice_error',
+      type: 'assistant',
+      content: message,
+      timestamp: new Date(),
+      context: {
+        page: window.location.pathname,
+        action: 'voice_error'
+      }
+    };
+    setMessages(prev => [...prev, errorMessage]);
+  };
+
   const stopListening = () => {
-    if (recognition.current) {
-      recognition.current.stop();
-      setIsListening(false);
+    if (mediaRecorder.current && mediaRecorder.current.state === 'recording') {
+      console.log('Stopping Whisper recording...');
+      mediaRecorder.current.stop();
     }
   };
 
   const toggleVoice = () => {
-    console.log('Starting speech recognition...');
     if (isListening) {
-      // Stop listening
-      if (recognition.current) {
-        recognition.current.stop();
-      }
-      setIsListening(false);
+      stopListening();
     } else {
-      // Start listening
-      if (recognition.current) {
-        try {
-          recognition.current.start();
-          setIsListening(true);
-          // Focus input and position cursor at end
-          setTimeout(() => {
-            if (inputRef.current) {
-              inputRef.current.focus();
-              const length = inputMessage.length;
-              inputRef.current.setSelectionRange(length, length);
-            }
-          }, 100);
-        } catch (error) {
-          console.error('Failed to start speech recognition:', error);
-          setIsListening(false);
-          // Handle common startup errors gracefully
-          console.log('Speech recognition failed to start. This may be due to another app using the microphone.');
-        }
-      }
+      startListening();
     }
   };
 
