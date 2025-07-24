@@ -133,44 +133,22 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
     });
   };
 
-  const handleShareCanvasItem = async (item: CanvasItem) => {
-    const shareText = `Canvas Item: ${item.title}\nGenerated: ${item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Unknown'}\n\nContent:\n${typeof item.content === 'string' ? item.content : JSON.stringify(item.content, null, 2)}`;
+  const handleCopyCanvasItem = async (item: CanvasItem) => {
+    const copyText = `Canvas Item: ${item.title}\nGenerated: ${item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Unknown'}\n\nContent:\n${typeof item.content === 'string' ? item.content : JSON.stringify(item.content, null, 2)}`;
     
     try {
-      // Always try clipboard first as it's more reliable
-      await navigator.clipboard.writeText(shareText);
+      await navigator.clipboard.writeText(copyText);
       toast({
         title: "Copied to Clipboard",
-        description: `"${item.title}" copied to clipboard for sharing`
+        description: `"${item.title}" copied to clipboard`
       });
-    } catch (clipboardError) {
-      // If clipboard fails, try Web Share API
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: `Canvas Item: ${item.title}`,
-            text: shareText
-          });
-          
-          toast({
-            title: "Item Shared",
-            description: `"${item.title}" shared successfully`
-          });
-        } catch (shareError) {
-          // Both failed, show error
-          toast({
-            title: "Share Failed",
-            description: `Unable to share "${item.title}". Please copy manually.`,
-            variant: "destructive"
-          });
-        }
-      } else {
-        toast({
-          title: "Share Unavailable",
-          description: "Please copy the text manually to share",
-          variant: "destructive"
-        });
-      }
+    } catch (error) {
+      console.error('Clipboard access failed:', error);
+      toast({
+        title: "Copy Failed",
+        description: `Unable to copy "${item.title}". Please copy manually.`,
+        variant: "destructive"
+      });
     }
   };
 
@@ -476,11 +454,11 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleShareCanvasItem(item)}
+                        onClick={() => handleCopyCanvasItem(item)}
                         className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-200"
-                        title="Share this item"
+                        title="Copy this item"
                       >
-                        <Share2 className="h-3 w-3" />
+                        <Copy className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
