@@ -121,6 +121,16 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 24, 2025)
 
+✓ **Auto-Scrolling 3-Second Delay Enhancement Implementation (July 24, 2025)**:
+- Successfully implemented 3-second delay before auto-scrolling starts after voice narration begins for each tour step
+- Enhanced playPreloadedAudio function with setTimeout to trigger auto-scroll 3 seconds after voice starts playing
+- Removed immediate auto-scroll triggers that occurred during navigation and page load
+- Auto-scroll now waits for voice to begin speaking before demonstrating page content after 3-second delay
+- Users can listen to initial voice instruction before page content demonstration begins
+- Improved tour flow by allowing voice narration to establish context before visual page scrolling
+- Enhanced user experience by preventing immediate scrolling that could distract from voice instruction
+- Timing sequence: Voice starts → 3-second delay → Auto-scroll demonstrates content below fold
+
 ✓ **Tour Window Resize Boundary Fix (July 24, 2025)**:
 - Fixed critical tour window resize issue where window would shrink and disappear during resize operations
 - Corrected resize boundary logic to prevent feedback loops that caused unpredictable window behavior

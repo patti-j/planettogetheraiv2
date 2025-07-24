@@ -700,16 +700,11 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       if (targetPath && targetPath !== 'current' && targetPath !== location) {
         console.log(`Tour navigating from ${location} to ${targetPath} for step: ${currentStepData.title}`);
         setLocation(targetPath);
-        // Trigger auto-scroll after navigation
-        console.log('Setting auto-scroll timeout after navigation...');
-        setTimeout(() => {
-          console.log('Auto-scroll timeout triggered after navigation');
-          performAutoScroll();
-        }, 500);
+        // Auto-scroll will be triggered with delay when voice starts after navigation
+        console.log('Navigation complete, auto-scroll will be triggered with voice delay');
       } else {
-        // If no navigation needed, still do auto-scroll to show content
-        console.log('No navigation needed, triggering auto-scroll directly');
-        performAutoScroll();
+        // If no navigation needed, auto-scroll will be triggered with delay when voice starts
+        console.log('No navigation needed, auto-scroll will be triggered with voice delay');
       }
     }
   }, [currentStep, tourSteps, location, setLocation, performAutoScroll]);
@@ -863,6 +858,14 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           setIsLoadingVoice(false);
           setIsPlaying(true);
           console.log("Audio started playing");
+          
+          // Start auto-scroll with 3-second delay after voice begins
+          if (autoScrollEnabled) {
+            setTimeout(() => {
+              console.log("Starting auto-scroll 3 seconds after voice began");
+              performAutoScroll();
+            }, 3000);
+          }
         } catch (playError) {
           console.error("Auto-play failed:", playError);
           setIsPlaying(false);
