@@ -36,6 +36,7 @@ interface Presentation {
   customization: any;
   createdAt: string;
   updatedAt: string;
+  creatorUsername?: string;
 }
 
 interface PresentationSlide {
@@ -67,6 +68,18 @@ export default function PresentationSystemPage() {
   const [presentationToDelete, setPresentationToDelete] = useState<Presentation | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Helper function to format dates
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   // Fetch presentations
   const { data: presentations = [], isLoading: presentationsLoading } = useQuery({
@@ -459,6 +472,17 @@ export default function PresentationSystemPage() {
                                   </span>
                                 )}
                               </div>
+                              <div className="flex items-center space-x-2 mt-2 text-xs text-muted-foreground">
+                                <span>By {presentation.creatorUsername || 'Unknown'}</span>
+                                <span>•</span>
+                                <span>Created {formatDate(presentation.createdAt)}</span>
+                                {presentation.updatedAt !== presentation.createdAt && (
+                                  <>
+                                    <span>•</span>
+                                    <span>Updated {formatDate(presentation.updatedAt)}</span>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
@@ -517,29 +541,38 @@ export default function PresentationSystemPage() {
                     <CardDescription>{presentation.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="secondary">{presentation.category}</Badge>
-                        {presentation.isTemplate && <Badge variant="outline">Template</Badge>}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="secondary">{presentation.category}</Badge>
+                          {presentation.isTemplate && <Badge variant="outline">Template</Badge>}
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Button variant="ghost" size="sm">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handlePlayPresentation(presentation)}>
+                            <Play className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPresentationToDelete(presentation);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <Button variant="ghost" size="sm">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handlePlayPresentation(presentation)}>
-                          <Play className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPresentationToDelete(presentation);
-                            setDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        <div>By {presentation.creatorUsername || 'Unknown'}</div>
+                        <div>Created {formatDate(presentation.createdAt)}</div>
+                        {presentation.updatedAt !== presentation.createdAt && (
+                          <div>Updated {formatDate(presentation.updatedAt)}</div>
+                        )}
                       </div>
                     </div>
                   </CardContent>

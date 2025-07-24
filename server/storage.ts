@@ -5453,7 +5453,25 @@ export class DatabaseStorage implements IStorage {
 
   // Presentation System Implementation
   async getPresentations(userId?: number): Promise<Presentation[]> {
-    let query = db.select().from(presentations);
+    let query = db.select({
+      id: presentations.id,
+      title: presentations.title,
+      description: presentations.description,
+      category: presentations.category,
+      audience: presentations.audience,
+      createdBy: presentations.createdBy,
+      isTemplate: presentations.isTemplate,
+      isPublic: presentations.isPublic,
+      tags: presentations.tags,
+      thumbnail: presentations.thumbnail,
+      estimatedDuration: presentations.estimatedDuration,
+      targetRoles: presentations.targetRoles,
+      customization: presentations.customization,
+      createdAt: presentations.createdAt,
+      updatedAt: presentations.updatedAt,
+      creatorUsername: users.username,
+    }).from(presentations).leftJoin(users, eq(presentations.createdBy, users.id));
+    
     if (userId) {
       query = query.where(eq(presentations.createdBy, userId));
     }
