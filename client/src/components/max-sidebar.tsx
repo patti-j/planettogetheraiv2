@@ -33,6 +33,7 @@ import {
   SplitSquareVertical,
   Monitor,
   Share2,
+  Copy,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AI_THEME_OPTIONS, AIThemeColor } from "@/lib/ai-theme";
@@ -482,44 +483,21 @@ export function MaxSidebar() {
     await playTTSResponse(testText);
   };
 
-  const handleShareMessage = async (message: Message) => {
-    const shareText = `Max AI Response (${message.timestamp.toLocaleString()}):\n\n${message.content}`;
+  const handleCopyMessage = async (message: Message) => {
+    const copyText = `Max AI Response (${message.timestamp.toLocaleString()}):\n\n${message.content}`;
     
     try {
-      // Always try clipboard first as it's more reliable
-      await navigator.clipboard.writeText(shareText);
+      await navigator.clipboard.writeText(copyText);
       toast({
         title: "Copied to Clipboard",
-        description: "Response copied to clipboard for sharing"
+        description: "Response copied to clipboard"
       });
-    } catch (clipboardError) {
-      // If clipboard fails, try Web Share API
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: 'Max AI Response',
-            text: shareText
-          });
-          
-          toast({
-            title: "Response Shared",
-            description: "Max's response shared successfully"
-          });
-        } catch (shareError) {
-          // Both failed, show error
-          toast({
-            title: "Share Failed",
-            description: "Unable to share response. Please copy manually.",
-            variant: "destructive"
-          });
-        }
-      } else {
-        toast({
-          title: "Share Unavailable",
-          description: "Please copy the text manually to share",
-          variant: "destructive"
-        });
-      }
+    } catch (error) {
+      toast({
+        title: "Copy Failed",
+        description: "Unable to copy response. Please select and copy manually.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -743,11 +721,11 @@ export function MaxSidebar() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleShareMessage(message)}
+                      onClick={() => handleCopyMessage(message)}
                       className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-200"
-                      title="Share this response"
+                      title="Copy this response"
                     >
-                      <Share2 className="h-3 w-3" />
+                      <Copy className="h-3 w-3" />
                     </Button>
                   )}
                 </div>
