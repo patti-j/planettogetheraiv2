@@ -170,47 +170,27 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
     // Mobile: vertical split with Max at bottom
     return (
       <div ref={containerRef} className="w-full h-full flex flex-col">
-        {/* Main content area - split vertically if canvas is visible */}
+        {/* Main content area - show either canvas or regular content */}
         <div 
-          className="flex-1 overflow-hidden flex flex-col" 
+          className="flex-1 overflow-hidden" 
           style={{ 
             height: `calc(100% - ${maxHeight}px - 4px)`,
             touchAction: 'pan-y pan-x' // Allow normal scrolling
           }}
         >
-          {isCanvasVisible && (
-            <>
-              {/* Canvas area */}
-              <div 
-                className="bg-gray-50 border-b overflow-hidden flex-shrink-0"
-                style={{ height: `${canvasHeight}px` }}
-              >
-                <MaxCanvas 
-                  isVisible={isCanvasVisible}
-                  onClose={() => {}}
-                  sessionId={`canvas_mobile_${Date.now()}`}
-                />
-              </div>
-              
-              {/* Canvas resizer */}
-              <div
-                className="h-1 bg-gray-300 hover:bg-blue-400 cursor-row-resize transition-colors relative group"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  setIsDragging(true);
-                }}
-              >
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-8 h-0.5 bg-gray-500 group-hover:bg-blue-600 transition-colors"></div>
-                </div>
-              </div>
-            </>
+          {isCanvasVisible ? (
+            <div className="h-full bg-gray-50 overflow-hidden">
+              <MaxCanvas 
+                isVisible={isCanvasVisible}
+                onClose={() => {}}
+                sessionId={`canvas_mobile_${Date.now()}`}
+              />
+            </div>
+          ) : (
+            <div className="h-full overflow-auto">
+              {children}
+            </div>
           )}
-          
-          {/* Regular content */}
-          <div className="flex-1 overflow-auto">
-            {children}
-          </div>
         </div>
         
         {/* Resizer - Reverted to original thickness */}
@@ -258,43 +238,21 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
         </div>
       </div>
       
-      {/* Main content area - split vertically if canvas is visible */}
-      <div className="flex-1 overflow-hidden flex flex-col">
-        {isCanvasVisible && (
-          <>
-            {/* Canvas area */}
-            <div 
-              className="bg-gray-50 border-b overflow-hidden flex-shrink-0"
-              style={{ height: `${canvasHeight}px` }}
-            >
-              <MaxCanvas 
-                isVisible={isCanvasVisible}
-                onClose={() => {}}
-                sessionId={`canvas_${Date.now()}`}
-              />
-            </div>
-            
-            {/* Canvas resizer */}
-            <div
-              className="h-1 bg-gray-300 hover:bg-blue-400 cursor-row-resize transition-colors relative group"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                setIsDragging(true);
-                document.addEventListener('mousemove', handleCanvasResize);
-                document.addEventListener('mouseup', handleCanvasResizeEnd);
-              }}
-            >
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-8 h-0.5 bg-gray-500 group-hover:bg-blue-600 transition-colors"></div>
-              </div>
-            </div>
-          </>
+      {/* Main content area - show either canvas or regular content */}
+      <div className="flex-1 overflow-hidden">
+        {isCanvasVisible ? (
+          <div className="h-full bg-gray-50 overflow-hidden">
+            <MaxCanvas 
+              isVisible={isCanvasVisible}
+              onClose={() => {}}
+              sessionId={`canvas_${Date.now()}`}
+            />
+          </div>
+        ) : (
+          <div className="h-full overflow-auto">
+            {children}
+          </div>
         )}
-        
-        {/* Regular content */}
-        <div className="flex-1 overflow-auto">
-          {children}
-        </div>
       </div>
     </div>
   );
