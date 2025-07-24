@@ -53,6 +53,7 @@ import IndustryTemplates from "@/pages/industry-templates";
 import PlantsManagementPage from "@/pages/plants-management";
 import ExtensionStudioPage from "@/pages/extension-studio";
 import CanvasPage from "@/pages/canvas";
+import ErrorLogsPage from "@/pages/error-logs";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
@@ -312,6 +313,11 @@ function Router() {
           </Route>
           <Route path="/canvas">
             <CanvasPage />
+          </Route>
+          <Route path="/error-logs">
+            <ProtectedRoute feature="systems-management" action="view">
+              <ErrorLogsPage />
+            </ProtectedRoute>
           </Route>
           <Route path="/account" component={Account} />
           <Route path="/pricing" component={Pricing} />
