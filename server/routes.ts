@@ -10265,6 +10265,96 @@ Create a natural, conversational voice script that explains this feature to some
     }
   });
 
+  // Web content extraction endpoint
+  app.post("/api/presentation-studio/extract-web-content", requireAuth, async (req, res) => {
+    try {
+      const { url } = req.body;
+      
+      if (!url) {
+        return res.status(400).json({ error: "URL is required" });
+      }
+
+      // Validate URL format
+      try {
+        new URL(url);
+      } catch {
+        return res.status(400).json({ error: "Invalid URL format" });
+      }
+
+      // Fetch content from the URL
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; PresentationStudio/1.0)'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const html = await response.text();
+      
+      // Extract metadata and content
+      const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+      const title = titleMatch ? titleMatch[1].trim() : new URL(url).hostname;
+      
+      const descMatch = html.match(/<meta[^>]*name=["\']description["\'][^>]*content=["\']([^"']+)["\'][^>]*>/i);
+      const description = descMatch ? descMatch[1] : "";
+      
+      // Extract headings for key points
+      const headingMatches = html.match(/<h[1-6][^>]*>([^<]+)<\/h[1-6]>/gi);
+      const keyPoints = headingMatches ? headingMatches.slice(0, 10).map(h => h.replace(/<[^>]*>/g, '').trim()) : [];
+      
+      // Clean text content
+      const textContent = html
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .substring(0, 5000);
+
+      const content = {
+        title,
+        description,
+        url,
+        extractedText: textContent,
+        keyPoints,
+        domain: new URL(url).hostname,
+        extractedAt: new Date().toISOString()
+      };
+
+      // Create material entry
+      const materialData = {
+        title: `Web Content: ${title}`,
+        type: "web_content",
+        content: content,
+        fileUrl: url,
+        metadata: {
+          sourceUrl: url,
+          extractedAt: new Date().toISOString(),
+          contentType: "web_page",
+          domain: new URL(url).hostname
+        },
+        tags: ["web-content", "extracted", new URL(url).hostname],
+        uploadedBy: req.user.username || "system"
+      };
+
+      const material = await storage.createPresentationMaterial(materialData);
+      
+      res.json({
+        success: true,
+        title,
+        insights: keyPoints.length + (description ? 1 : 0),
+        material,
+        keyPoints
+      });
+    } catch (error) {
+      console.error("Error extracting web content:", error);
+      res.status(500).json({ error: "Failed to extract web content. Please check the URL and try again." });
+    }
+  });
+
   // AI-powered Material Analysis and Suggestions
   app.post("/api/presentation-studio/ai/analyze-material", requireAuth, async (req, res) => {
     try {

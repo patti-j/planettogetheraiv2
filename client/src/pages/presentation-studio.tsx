@@ -35,7 +35,15 @@ import {
   Calendar,
   Tag,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Link,
+  Globe,
+  Target,
+  Users,
+  Info,
+  HelpCircle,
+  Zap,
+  TrendingUp
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -99,7 +107,14 @@ export default function PresentationStudio() {
     description: "",
     type: "Sales",
     targetAudience: "",
-    objectives: ""
+    objectives: "",
+    audienceRole: "",
+    audienceSize: "",
+    presentationLength: "",
+    keyMessage: "",
+    successMetrics: "",
+    competitorInfo: "",
+    brandGuidelines: ""
   });
 
   // Upload form state
@@ -108,8 +123,15 @@ export default function PresentationStudio() {
     type: "document",
     content: "",
     tags: "",
-    metadata: ""
+    metadata: "",
+    webUrl: ""
   });
+
+  // Web content extraction state
+  const [webContentDialogOpen, setWebContentDialogOpen] = useState(false);
+  const [webUrl, setWebUrl] = useState("");
+  const [extractionProgress, setExtractionProgress] = useState(0);
+  const [bestPracticesOpen, setBestPracticesOpen] = useState(false);
 
   // Queries
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
@@ -142,7 +164,20 @@ export default function PresentationStudio() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/presentation-projects"] });
       setProjectDialogOpen(false);
-      setNewProject({ title: "", description: "", type: "Sales", targetAudience: "", objectives: "" });
+      setNewProject({
+        title: "",
+        description: "",
+        type: "Sales",
+        targetAudience: "",
+        objectives: "",
+        audienceRole: "",
+        audienceSize: "",
+        presentationLength: "",
+        keyMessage: "",
+        successMetrics: "",
+        competitorInfo: "",
+        brandGuidelines: ""
+      });
       toast({ title: "Success", description: "Project created successfully" });
     },
     onError: () => {
@@ -166,7 +201,7 @@ export default function PresentationStudio() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/presentation-materials", activeProject] });
       setUploadDialogOpen(false);
-      setUploadForm({ title: "", type: "document", content: "", tags: "", metadata: "" });
+      setUploadForm({ title: "", type: "document", content: "", tags: "", metadata: "", webUrl: "" });
       toast({ title: "Success", description: "Material uploaded successfully" });
     },
     onError: () => {
@@ -212,6 +247,38 @@ export default function PresentationStudio() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to generate suggestions", variant: "destructive" });
+    },
+  });
+
+  const extractWebContentMutation = useMutation({
+    mutationFn: async (url: string) => {
+      setExtractionProgress(25);
+      const response = await apiRequest("/api/presentation-studio/extract-web-content", {
+        method: "POST",
+        body: JSON.stringify({ url }),
+      });
+      setExtractionProgress(75);
+      const result = await response.json();
+      setExtractionProgress(100);
+      return result;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/presentation-materials"] });
+      setWebContentDialogOpen(false);
+      setWebUrl("");
+      setExtractionProgress(0);
+      toast({
+        title: "Success",
+        description: `Extracted content from ${data.title}. Generated ${data.insights || 0} insights.`,
+      });
+    },
+    onError: (error) => {
+      setExtractionProgress(0);
+      toast({
+        title: "Error",
+        description: "Failed to extract web content. Please check the URL and try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -275,6 +342,24 @@ export default function PresentationStudio() {
             </div>
           </div>
           <div className="flex items-center space-x-2">
+            <Dialog open={bestPracticesOpen} onOpenChange={setBestPracticesOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <HelpCircle className="w-4 h-4 mr-2" />
+                  Best Practices
+                </Button>
+              </DialogTrigger>
+            </Dialog>
+            
+            <Dialog open={webContentDialogOpen} onOpenChange={setWebContentDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Globe className="w-4 h-4 mr-2" />
+                  Extract Web Content
+                </Button>
+              </DialogTrigger>
+            </Dialog>
+
             <Button
               variant="outline"
               size="sm"
@@ -299,65 +384,169 @@ export default function PresentationStudio() {
                     New Project
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Create New Project</DialogTitle>
-                    <DialogDescription>Set up a new presentation project with AI assistance</DialogDescription>
+                    <DialogTitle className="flex items-center">
+                      <Target className="w-5 h-5 mr-2 text-purple-600" />
+                      Create New Project
+                    </DialogTitle>
+                    <DialogDescription>Provide detailed context to create the most effective presentation</DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="title">Project Title</Label>
-                      <Input
-                        id="title"
-                        value={newProject.title}
-                        onChange={(e) => setNewProject(prev => ({ ...prev, title: e.target.value }))}
-                        placeholder="Enter project title"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="description">Description</Label>
-                      <Textarea
-                        id="description"
-                        value={newProject.description}
-                        onChange={(e) => setNewProject(prev => ({ ...prev, description: e.target.value }))}
-                        placeholder="Brief project description"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="type">Presentation Type</Label>
-                      <Select value={newProject.type} onValueChange={(value) => setNewProject(prev => ({ ...prev, type: value }))}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Sales">Sales</SelectItem>
-                          <SelectItem value="Training">Training</SelectItem>
-                          <SelectItem value="Executive">Executive</SelectItem>
-                          <SelectItem value="Technical">Technical</SelectItem>
-                          <SelectItem value="Marketing">Marketing</SelectItem>
-                          <SelectItem value="Operations">Operations</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="audience">Target Audience</Label>
-                      <Input
-                        id="audience"
-                        value={newProject.targetAudience}
-                        onChange={(e) => setNewProject(prev => ({ ...prev, targetAudience: e.target.value }))}
-                        placeholder="e.g., Manufacturing Executives, Technical Teams"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="objectives">Objectives (comma-separated)</Label>
-                      <Textarea
-                        id="objectives"
-                        value={newProject.objectives}
-                        onChange={(e) => setNewProject(prev => ({ ...prev, objectives: e.target.value }))}
-                        placeholder="Increase awareness, Drive sales, Educate users"
-                      />
-                    </div>
-                  </div>
+                  
+                  <Tabs defaultValue="basic" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                      <TabsTrigger value="audience">Audience & Context</TabsTrigger>
+                      <TabsTrigger value="requirements">Requirements</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="basic" className="space-y-4 mt-4">
+                      <div>
+                        <Label htmlFor="title">Project Title *</Label>
+                        <Input
+                          id="title"
+                          value={newProject.title}
+                          onChange={(e) => setNewProject(prev => ({ ...prev, title: e.target.value }))}
+                          placeholder="Enter project title"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea
+                          id="description"
+                          value={newProject.description}
+                          onChange={(e) => setNewProject(prev => ({ ...prev, description: e.target.value }))}
+                          placeholder="Brief project description and purpose"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="type">Presentation Type *</Label>
+                        <Select value={newProject.type} onValueChange={(value) => setNewProject(prev => ({ ...prev, type: value }))}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Sales">Sales Presentation</SelectItem>
+                            <SelectItem value="Training">Training & Education</SelectItem>
+                            <SelectItem value="Executive">Executive Briefing</SelectItem>
+                            <SelectItem value="Technical">Technical Deep Dive</SelectItem>
+                            <SelectItem value="Marketing">Marketing & Promotion</SelectItem>
+                            <SelectItem value="Operations">Operations Review</SelectItem>
+                            <SelectItem value="Customer">Customer Success Story</SelectItem>
+                            <SelectItem value="Product">Product Demonstration</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="audience" className="space-y-4 mt-4">
+                      <div>
+                        <Label htmlFor="audience">Target Audience *</Label>
+                        <Input
+                          id="audience"
+                          value={newProject.targetAudience}
+                          onChange={(e) => setNewProject(prev => ({ ...prev, targetAudience: e.target.value }))}
+                          placeholder="e.g., Manufacturing Executives, Technical Teams, C-Level Decision Makers"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="audienceRole">Primary Audience Role</Label>
+                        <Select value={newProject.audienceRole} onValueChange={(value) => setNewProject(prev => ({ ...prev, audienceRole: value }))}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select primary audience role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="executives">C-Level Executives</SelectItem>
+                            <SelectItem value="directors">Directors & VPs</SelectItem>
+                            <SelectItem value="managers">Managers</SelectItem>
+                            <SelectItem value="engineers">Engineers & Technical Staff</SelectItem>
+                            <SelectItem value="operators">Plant Operators</SelectItem>
+                            <SelectItem value="procurement">Procurement Team</SelectItem>
+                            <SelectItem value="consultants">Consultants & Partners</SelectItem>
+                            <SelectItem value="customers">Customers & Prospects</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="audienceSize">Expected Audience Size</Label>
+                        <Select value={newProject.audienceSize} onValueChange={(value) => setNewProject(prev => ({ ...prev, audienceSize: value }))}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select audience size" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1-5">1-5 people (Small meeting)</SelectItem>
+                            <SelectItem value="6-15">6-15 people (Team meeting)</SelectItem>
+                            <SelectItem value="16-50">16-50 people (Department meeting)</SelectItem>
+                            <SelectItem value="51-100">51-100 people (Large meeting)</SelectItem>
+                            <SelectItem value="100+">100+ people (Conference/Event)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="keyMessage">Key Message/Value Proposition</Label>
+                        <Textarea
+                          id="keyMessage"
+                          value={newProject.keyMessage}
+                          onChange={(e) => setNewProject(prev => ({ ...prev, keyMessage: e.target.value }))}
+                          placeholder="What's the main message you want to communicate?"
+                        />
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="requirements" className="space-y-4 mt-4">
+                      <div>
+                        <Label htmlFor="presentationLength">Presentation Length</Label>
+                        <Select value={newProject.presentationLength} onValueChange={(value) => setNewProject(prev => ({ ...prev, presentationLength: value }))}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select presentation length" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="5-10">5-10 minutes</SelectItem>
+                            <SelectItem value="15-20">15-20 minutes</SelectItem>
+                            <SelectItem value="30-45">30-45 minutes</SelectItem>
+                            <SelectItem value="60">1 hour</SelectItem>
+                            <SelectItem value="90+">90+ minutes</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="objectives">Primary Objectives (comma-separated) *</Label>
+                        <Textarea
+                          id="objectives"
+                          value={newProject.objectives}
+                          onChange={(e) => setNewProject(prev => ({ ...prev, objectives: e.target.value }))}
+                          placeholder="e.g., Increase product awareness, Drive sales conversion, Educate on new features"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="successMetrics">Success Metrics</Label>
+                        <Textarea
+                          id="successMetrics"
+                          value={newProject.successMetrics}
+                          onChange={(e) => setNewProject(prev => ({ ...prev, successMetrics: e.target.value }))}
+                          placeholder="How will you measure success? e.g., Lead generation, Meeting bookings, Approval rates"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="competitorInfo">Competitive Context</Label>
+                        <Textarea
+                          id="competitorInfo"
+                          value={newProject.competitorInfo}
+                          onChange={(e) => setNewProject(prev => ({ ...prev, competitorInfo: e.target.value }))}
+                          placeholder="Who are your main competitors? What should we differentiate against?"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="brandGuidelines">Brand Guidelines & Requirements</Label>
+                        <Textarea
+                          id="brandGuidelines"
+                          value={newProject.brandGuidelines}
+                          onChange={(e) => setNewProject(prev => ({ ...prev, brandGuidelines: e.target.value }))}
+                          placeholder="Any specific brand colors, fonts, messaging guidelines, or compliance requirements?"
+                        />
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setProjectDialogOpen(false)}>Cancel</Button>
                     <Button 
@@ -371,6 +560,191 @@ export default function PresentationStudio() {
               </Dialog>
             </div>
           </div>
+
+          {/* Best Practices Dialog */}
+          <Dialog open={bestPracticesOpen} onOpenChange={setBestPracticesOpen}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center">
+                  <Lightbulb className="w-5 h-5 mr-2 text-yellow-500" />
+                  Presentation Best Practices & Tips
+                </DialogTitle>
+                <DialogDescription>
+                  Professional guidance for creating high-impact presentations
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center text-sm">
+                        <Target className="w-4 h-4 mr-2" />
+                        Content Strategy
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-sm space-y-2">
+                      <p>• Start with a compelling story or problem statement</p>
+                      <p>• Follow the "Rule of 3" - group information in threes</p>
+                      <p>• Use data to support claims, not overwhelm</p>
+                      <p>• Include customer success stories and testimonials</p>
+                      <p>• End with clear next steps or call-to-action</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center text-sm">
+                        <Users className="w-4 h-4 mr-2" />
+                        Audience Engagement
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-sm space-y-2">
+                      <p>• Know your audience's pain points and priorities</p>
+                      <p>• Use industry-specific language and examples</p>
+                      <p>• Include interactive elements and Q&A breaks</p>
+                      <p>• Address common objections proactively</p>
+                      <p>• Personalize content for specific stakeholders</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center text-sm">
+                        <Eye className="w-4 h-4 mr-2" />
+                        Visual Design
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-sm space-y-2">
+                      <p>• Use consistent branding and color scheme</p>
+                      <p>• Limit text to 6-8 words per bullet point</p>
+                      <p>• Include high-quality images and graphics</p>
+                      <p>• Use white space effectively for readability</p>
+                      <p>• Choose readable fonts (minimum 24pt for presentations)</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center text-sm">
+                        <TrendingUp className="w-4 h-4 mr-2" />
+                        Data & Metrics
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-sm space-y-2">
+                      <p>• Use specific numbers and percentages</p>
+                      <p>• Include before/after comparisons</p>
+                      <p>• Show ROI and business impact clearly</p>
+                      <p>• Use charts and graphs for complex data</p>
+                      <p>• Highlight key metrics with visual emphasis</p>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                <Separator />
+                
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center">
+                    <Zap className="w-4 h-4 mr-2 text-blue-500" />
+                    Quick Content Checklist
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="space-y-1">
+                      <p>✓ Clear value proposition in first 3 slides</p>
+                      <p>✓ Problem statement with audience relevance</p>
+                      <p>✓ Solution overview with key benefits</p>
+                      <p>✓ Proof points (case studies, testimonials)</p>
+                      <p>✓ Competitive differentiation</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p>✓ Implementation timeline or process</p>
+                      <p>✓ Pricing or investment information</p>
+                      <p>✓ Risk mitigation strategies</p>
+                      <p>✓ Next steps and timeline</p>
+                      <p>✓ Contact information and resources</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <h4 className="font-semibold text-yellow-800 mb-2">💡 Pro Tips</h4>
+                  <ul className="text-sm text-yellow-700 space-y-1">
+                    <li>• Practice your presentation out loud at least 3 times</li>
+                    <li>• Prepare for common questions and objections</li>
+                    <li>• Have backup slides for technical deep-dives</li>
+                    <li>• Test all technology and have offline backups</li>
+                    <li>• Arrive early to set up and test equipment</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button onClick={() => setBestPracticesOpen(false)}>Got it</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          {/* Web Content Extraction Dialog */}
+          <Dialog open={webContentDialogOpen} onOpenChange={setWebContentDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="flex items-center">
+                  <Link className="w-5 h-5 mr-2 text-blue-500" />
+                  Extract Web Content
+                </DialogTitle>
+                <DialogDescription>
+                  Extract content and insights from customer websites or planetogether.com
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="webUrl">Website URL</Label>
+                  <Input
+                    id="webUrl"
+                    value={webUrl}
+                    onChange={(e) => setWebUrl(e.target.value)}
+                    placeholder="https://example.com or https://planetogether.com"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Extract key content, headings, and insights for your presentation
+                  </p>
+                </div>
+                
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <h4 className="font-semibold text-blue-800 text-sm mb-2">💡 Recommended URLs</h4>
+                  <div className="space-y-1 text-sm text-blue-700">
+                    <p>• Customer company websites and about pages</p>
+                    <p>• planetogether.com product pages and case studies</p>
+                    <p>• Industry reports and whitepapers</p>
+                    <p>• Competitor websites for competitive analysis</p>
+                  </div>
+                </div>
+                
+                {extractionProgress > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Extracting content...</span>
+                      <span>{extractionProgress}%</span>
+                    </div>
+                    <Progress value={extractionProgress} className="h-2" />
+                  </div>
+                )}
+              </div>
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setWebContentDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={() => extractWebContentMutation.mutate(webUrl)}
+                  disabled={extractWebContentMutation.isPending || !webUrl.trim()}
+                >
+                  {extractWebContentMutation.isPending ? "Extracting..." : "Extract Content"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {projectsLoading ? (
