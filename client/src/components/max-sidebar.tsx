@@ -236,6 +236,12 @@ export function MaxSidebar() {
         console.log('No canvas action in response');
       }
 
+      // Handle navigation actions
+      if (response.data?.path && response.data?.action) {
+        console.log('Navigation action detected:', response.data);
+        handleNavigationAction(response.data);
+      }
+
       // Play AI response if voice is enabled
       if (isVoiceEnabled && response.message) {
         playTTSResponse(response.message);
@@ -510,7 +516,20 @@ export function MaxSidebar() {
     }
   };
 
-
+  const handleNavigationAction = (navigationData: any) => {
+    console.log('Processing navigation action:', navigationData);
+    
+    if (navigationData.path) {
+      console.log('Navigating to:', navigationData.path);
+      setLocation(navigationData.path);
+      
+      // Give user feedback about navigation
+      toast({
+        title: "Navigation",
+        description: `Opened ${navigationData.page || 'page'}`,
+      });
+    }
+  };
 
   const testVoice = async () => {
     const testText = `Hello! This is the ${VOICE_OPTIONS.find(v => v.value === selectedVoice)?.name} voice.`;

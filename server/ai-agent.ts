@@ -897,8 +897,8 @@ async function executeAction(action: string, parameters: any, message: string, c
           success: true,
           message: message || "Opening the production schedule Gantt chart to view and manage operations",
           data: { 
-            page: "dashboard", // Production schedule is on dashboard
-            path: "/dashboard",
+            page: "production-schedule",
+            path: "/production-schedule",
             action: "open_gantt_chart",
             view: "gantt"
           },
