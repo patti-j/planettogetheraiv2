@@ -62,7 +62,7 @@ export async function processAICommand(command: string, attachments?: Attachment
             role: "system",
             content: `AI agent for manufacturing system. Current state: ${contextSummary.jobCount} jobs, ${contextSummary.operationCount} operations, ${contextSummary.resourceCount} resources.
 
-Available actions: CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, and others.
+Available actions: CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, and others.
 
 UI Navigation Actions:
 - NAVIGATE_TO_PAGE: Navigate to specific pages (dashboard, analytics, reports, scheduling-optimizer, etc.)
@@ -76,8 +76,15 @@ UI Navigation Actions:
 - SHOW_SCHEDULE_EVALUATION: Show schedule evaluation system
 - MAXIMIZE_VIEW: Maximize current view
 - MINIMIZE_VIEW: Minimize current view
+- SHOW_CANVAS: Automatically show canvas in the top portion of the screen when displaying content
+- CANVAS_CONTENT: Add content to the canvas for visual display
 
 For CREATE_KANBAN_BOARD: parameters need name, description, viewType (jobs/operations), swimLaneField (status/priority/customer), filters (optional).
+
+Canvas Guidelines:
+- When creating visual content like dashboards, charts, analytics, or complex data displays, use SHOW_CANVAS action to automatically display the canvas
+- Use CANVAS_CONTENT to add interactive elements to the canvas area for better user visualization
+- Canvas is ideal for showing: production dashboards, performance metrics, Gantt chart summaries, system overviews, data visualizations
 
 Respond with JSON: {"action": "ACTION_NAME", "parameters": {...}, "message": "response"}`
           },
@@ -115,7 +122,7 @@ async function processCommandWithAttachments(command: string, attachments: Attac
 
 User command: ${command}
 
-Available actions: CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, and others.
+Available actions: CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, and others.
 
 UI Navigation Actions:
 - NAVIGATE_TO_PAGE: Navigate to specific pages (dashboard, analytics, reports, scheduling-optimizer, etc.)
@@ -129,6 +136,8 @@ UI Navigation Actions:
 - SHOW_SCHEDULE_EVALUATION: Show schedule evaluation system
 - MAXIMIZE_VIEW: Maximize current view
 - MINIMIZE_VIEW: Minimize current view
+- SHOW_CANVAS: Automatically show canvas in the top portion of the screen when displaying content
+- CANVAS_CONTENT: Add content to the canvas for visual display
 
 Analyze any attached files to help fulfill the user's request. Extract relevant information from documents, images, or data files that could be used to create manufacturing jobs, operations, resources, or provide insights.
 
@@ -860,6 +869,35 @@ async function executeAction(action: string, parameters: any, message: string, c
             params: {}
           },
           actions: ["TRIGGER_UI_ACTION", "MINIMIZE_VIEW"]
+        };
+
+      case "SHOW_CANVAS":
+        // Show canvas in the top portion of the screen
+        return {
+          success: true,
+          message: message || "Showing canvas for displaying visual content",
+          data: {
+            uiAction: "show_canvas",
+            target: "split_pane_layout",
+            params: {}
+          },
+          actions: ["TRIGGER_UI_ACTION", "SHOW_CANVAS"]
+        };
+
+      case "CANVAS_CONTENT":
+        // Add content to the canvas
+        return {
+          success: true,
+          message: message || "Adding content to the canvas",
+          data: {
+            uiAction: "canvas_content",
+            target: "canvas",
+            params: {
+              content: parameters.content || "",
+              type: parameters.type || "text"
+            }
+          },
+          actions: ["TRIGGER_UI_ACTION", "CANVAS_CONTENT"]
         };
 
       default:

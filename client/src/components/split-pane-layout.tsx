@@ -16,9 +16,12 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
     isMobile, 
     mobileLayoutMode, 
     currentFullscreenView, 
+    isCanvasVisible,
+    canvasHeight,
     setMaxWidth, 
     setCurrentFullscreenView, 
-    setMobileLayoutMode 
+    setMobileLayoutMode,
+    setCanvasHeight
   } = useMaxDock();
   const { aiTheme } = useAITheme();
   const [isDragging, setIsDragging] = useState(false);
@@ -79,6 +82,21 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
 
   const handleMouseUp = () => {
     setIsDragging(false);
+  };
+
+  const handleCanvasResize = (e: MouseEvent) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const newHeight = e.clientY - rect.top;
+    const minHeight = 200;
+    const maxHeightLimit = rect.height * 0.6;
+    setCanvasHeight(Math.max(minHeight, Math.min(newHeight, maxHeightLimit)));
+  };
+
+  const handleCanvasResizeEnd = () => {
+    setIsDragging(false);
+    document.removeEventListener('mousemove', handleCanvasResize);
+    document.removeEventListener('mouseup', handleCanvasResizeEnd);
   };
 
   // Listen for header drag events from Max panel
@@ -207,9 +225,44 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
         </div>
       </div>
       
-      {/* Main content area */}
-      <div className="flex-1 overflow-hidden">
-        {children}
+      {/* Main content area - split vertically if canvas is visible */}
+      <div className="flex-1 overflow-hidden flex flex-col">
+        {isCanvasVisible && (
+          <>
+            {/* Canvas area */}
+            <div 
+              className="bg-gray-50 border-b overflow-hidden flex-shrink-0"
+              style={{ height: `${canvasHeight}px` }}
+            >
+              <div className="h-full w-full flex items-center justify-center text-gray-500">
+                <div className="text-center">
+                  <div className="text-lg font-medium">Canvas</div>
+                  <div className="text-sm">Dynamic content will appear here</div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Canvas resizer */}
+            <div
+              className="h-1 bg-gray-300 hover:bg-blue-400 cursor-row-resize transition-colors relative group"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+                document.addEventListener('mousemove', handleCanvasResize);
+                document.addEventListener('mouseup', handleCanvasResizeEnd);
+              }}
+            >
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-8 h-0.5 bg-gray-500 group-hover:bg-blue-600 transition-colors"></div>
+              </div>
+            </div>
+          </>
+        )}
+        
+        {/* Regular content */}
+        <div className="flex-1 overflow-auto">
+          {children}
+        </div>
       </div>
     </div>
   );

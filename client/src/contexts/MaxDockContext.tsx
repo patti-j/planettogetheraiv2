@@ -6,10 +6,14 @@ interface MaxDockContextType {
   isMobile: boolean;
   mobileLayoutMode: 'split' | 'fullscreen';
   currentFullscreenView: 'main' | 'max';
+  isCanvasVisible: boolean;
+  canvasHeight: number;
   setMaxOpen: (open: boolean) => void;
   setMaxWidth: (width: number) => void;
   setMobileLayoutMode: (mode: 'split' | 'fullscreen') => void;
   setCurrentFullscreenView: (view: 'main' | 'max') => void;
+  setCanvasVisible: (visible: boolean) => void;
+  setCanvasHeight: (height: number) => void;
 }
 
 const MaxDockContext = createContext<MaxDockContextType | undefined>(undefined);
@@ -20,6 +24,8 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [isMobile, setIsMobile] = useState(false);
   const [mobileLayoutMode, setMobileLayoutMode] = useState<'split' | 'fullscreen'>('split');
   const [currentFullscreenView, setCurrentFullscreenView] = useState<'main' | 'max'>('max');
+  const [isCanvasVisible, setIsCanvasVisible] = useState(false);
+  const [canvasHeight, setCanvasHeight] = useState(300); // Default canvas height
 
   // Detect mobile on mount and window resize
   useEffect(() => {
@@ -40,6 +46,10 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
     setMaxWidth(Math.max(200, Math.min(width, window.innerWidth * 0.8)));
   };
 
+  const setCanvasHeightValue = (height: number) => {
+    setCanvasHeight(Math.max(200, Math.min(height, window.innerHeight * 0.6)));
+  };
+
   return (
     <MaxDockContext.Provider
       value={{
@@ -48,10 +58,14 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
         isMobile,
         mobileLayoutMode,
         currentFullscreenView,
+        isCanvasVisible,
+        canvasHeight,
         setMaxOpen,
         setMaxWidth: setMaxWidthValue,
         setMobileLayoutMode,
         setCurrentFullscreenView,
+        setCanvasVisible: setIsCanvasVisible,
+        setCanvasHeight: setCanvasHeightValue,
       }}
     >
       {children}

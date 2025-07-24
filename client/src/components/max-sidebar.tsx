@@ -127,8 +127,10 @@ export function MaxSidebar() {
     isMobile, 
     mobileLayoutMode, 
     currentFullscreenView, 
+    isCanvasVisible,
     setMobileLayoutMode, 
-    setCurrentFullscreenView 
+    setCurrentFullscreenView,
+    setIsCanvasVisible
   } = useMaxDock();
   const { getThemeClasses } = useAITheme();
   
@@ -140,21 +142,21 @@ export function MaxSidebar() {
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
   const [selectedVoice, setSelectedVoice] = useState('alloy');
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
+  const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]);
   
-  // Canvas state
-  const [canvasVisible, setCanvasVisible] = useState(false);
+  // Canvas session ID
   const [canvasSessionId] = useState(() => `canvas_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
 
   // Expose canvas control for Max AI
   useEffect(() => {
-    (window as any).openCanvas = () => setCanvasVisible(true);
-    (window as any).closeCanvas = () => setCanvasVisible(false);
+    (window as any).openCanvas = () => setIsCanvasVisible(true);
+    (window as any).closeCanvas = () => setIsCanvasVisible(false);
     
     return () => {
       delete (window as any).openCanvas;
       delete (window as any).closeCanvas;
     };
-  }, []);
+  }, [setIsCanvasVisible]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognition = useRef<any>(null);
@@ -407,28 +409,54 @@ export function MaxSidebar() {
   };
 
   const handleCanvasAction = (canvasAction: any) => {
+    if (!canvasAction) return;
+    
     switch (canvasAction.type) {
       case 'create':
         if (canvasAction.items) {
           setCanvasItems(canvasAction.items);
-          setCanvasVisible(true);
+          // Auto-show canvas in split-pane layout using context
+          setIsCanvasVisible(true);
         }
         break;
       case 'update':
         if (canvasAction.items) {
           setCanvasItems(prev => [...prev, ...canvasAction.items]);
-          setCanvasVisible(true);
+          // Auto-show canvas in split-pane layout using context
+          setIsCanvasVisible(true);
         }
         break;
       case 'clear':
         setCanvasItems([]);
         break;
+      case 'SHOW_CANVAS':
+        setIsCanvasVisible(true);
+        break;
+      case 'HIDE_CANVAS':
+        setIsCanvasVisible(false);
+        break;
+      case 'ADD_CANVAS_CONTENT':
+        if (canvasAction.content) {
+          const newItem: CanvasItem = {
+            id: `canvas_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            type: canvasAction.content.type || 'custom',
+            title: canvasAction.content.title || 'AI Generated Content',
+            content: canvasAction.content.data || canvasAction.content,
+            width: canvasAction.content.width || '100%',
+            height: canvasAction.content.height || 'auto'
+          };
+          setCanvasItems(prev => [newItem, ...prev]); // Add to top
+          setIsCanvasVisible(true); // Auto-show canvas when content is added
+        }
+        break;
     }
   };
 
   const toggleCanvas = () => {
-    setCanvasVisible(!canvasVisible);
+    setIsCanvasVisible(!isCanvasVisible);
   };
+
+
 
   const testVoice = async () => {
     const testText = `Hello! This is the ${VOICE_OPTIONS.find(v => v.value === selectedVoice)?.name} voice.`;
@@ -696,7 +724,7 @@ export function MaxSidebar() {
       
       {/* Canvas Component */}
       <MaxCanvas
-        isVisible={canvasVisible}
+        isVisible={isCanvasVisible}
         onClose={() => setCanvasVisible(false)}
         sessionId={canvasSessionId}
       />
