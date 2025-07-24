@@ -327,6 +327,12 @@ export function MaxSidebar() {
         console.log('Recording stopped, transcribing with Whisper...');
         setIsListening(false);
         
+        // Clean up interval
+        if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+        
         // Re-enable input for typing (remove readonly)
         if (inputRef.current) {
           inputRef.current.removeAttribute('readonly');
@@ -371,8 +377,8 @@ export function MaxSidebar() {
           
           if (result.success && result.text) {
             console.log('Transcription successful:', result.text);
-            // Add transcribed text to input
-            const baseMessage = inputMessage.trim();
+            // Add transcribed text to input, removing any interim "..." markers
+            const baseMessage = inputMessage.replace(/\.\.\.$/, '').trim();
             setInputMessage(baseMessage ? `${baseMessage} ${result.text}` : result.text);
             
             // Focus input and position cursor at end after transcription
@@ -394,10 +400,52 @@ export function MaxSidebar() {
         stream.getTracks().forEach(track => track.stop());
       };
       
-      // Start recording
-      mediaRecorder.current.start();
+      // Start recording with timeslice for periodic data
+      mediaRecorder.current.start(3000); // Get data every 3 seconds for streaming
       setIsListening(true);
       console.log('Recording started with Whisper transcription');
+      
+      // Set up periodic transcription for streaming feedback
+      intervalId = setInterval(async () => {
+        if (mediaRecorder.current && mediaRecorder.current.state === 'recording' && audioChunks.current.length > 0) {
+          // Create interim transcription from current chunks
+          const tempChunks = [...audioChunks.current];
+          if (tempChunks.length > 0) {
+            try {
+              const mimeType = mediaRecorder.current.mimeType || 'audio/webm';
+              const tempBlob = new Blob(tempChunks, { type: mimeType });
+              
+              if (tempBlob.size >= 5000) { // Only process if we have enough data
+                const formData = new FormData();
+                formData.append('audio', tempBlob, 'interim.webm');
+                
+                const response = await fetch('/api/ai-agent/transcribe', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                  },
+                  body: formData
+                });
+                
+                const result = await response.json();
+                if (result.success && result.text) {
+                  // Update input with interim transcription
+                  const baseMessage = inputMessage.split('...')[0].trim(); // Remove previous interim text
+                  setInputMessage(baseMessage ? `${baseMessage} ${result.text}...` : `${result.text}...`);
+                  
+                  // Update cursor position
+                  if (inputRef.current) {
+                    const newMessage = baseMessage ? `${baseMessage} ${result.text}...` : `${result.text}...`;
+                    inputRef.current.setSelectionRange(newMessage.length, newMessage.length);
+                  }
+                }
+              }
+            } catch (error) {
+              console.log('Interim transcription failed, continuing...', error);
+            }
+          }
+        }
+      }, 3000);
       
       // Focus input without triggering keyboard on mobile
       if (inputRef.current) {

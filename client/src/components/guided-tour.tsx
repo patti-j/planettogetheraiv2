@@ -420,17 +420,21 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         return;
       }
       
-      // Calculate how far we can scroll down to show more content
-      const scrollDownDistance = Math.min(maxScrollableDistance, viewportHeight * 0.8);
+      // Calculate how far we can safely scroll down without going past the end
+      // Limit scroll to maximum possible scroll or a reasonable viewport portion, whichever is smaller
+      const safeScrollDistance = Math.min(
+        maxScrollableDistance - currentScrollTop, // Don't scroll past the end
+        viewportHeight * 0.6 // Don't scroll more than 60% of viewport height
+      );
       
-      if (scrollDownDistance > 50) { // Only scroll if there's meaningful content to show
-        console.log(`Scrolling down ${scrollDownDistance}px to reveal hidden content...`);
+      if (safeScrollDistance > 50) { // Only scroll if there's meaningful content to show
+        console.log(`Scrolling down ${safeScrollDistance}px to reveal hidden content (max possible: ${maxScrollableDistance - currentScrollTop}px)...`);
         
         // Scroll down to show hidden content
         const scrollDown = () => {
           return new Promise<void>((resolve) => {
-            const targetScrollTop = Math.min(currentScrollTop + scrollDownDistance, maxScrollableDistance);
-            const distance = targetScrollTop - currentScrollTop;
+            const targetScrollTop = currentScrollTop + safeScrollDistance;
+            const distance = safeScrollDistance;
             
             if (distance <= 10) {
               resolve();
@@ -449,14 +453,16 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                 ? 2 * progress * progress 
                 : 1 - Math.pow(-2 * progress + 2, 2) / 2;
               
-              const newScrollTop = startScrollTop + distance * easeInOut;
+              const newScrollTop = Math.min(startScrollTop + distance * easeInOut, maxScrollableDistance);
               
               // Find main content container and scroll only that, not the tour window
               const mainContent = document.querySelector('main') || document.querySelector('#root > div:first-child');
               if (mainContent && mainContent !== document.body) {
-                mainContent.scrollTop = newScrollTop;
+                // Ensure we don't scroll past the maximum scrollable distance
+                const maxScroll = mainContent.scrollHeight - mainContent.clientHeight;
+                mainContent.scrollTop = Math.min(newScrollTop, maxScroll);
               } else {
-                window.scrollTo(0, newScrollTop);
+                window.scrollTo(0, Math.min(newScrollTop, maxScrollableDistance));
               }
               
               if (progress < 1) {

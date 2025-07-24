@@ -114,6 +114,17 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 24, 2025)
 
+✓ **Streaming Voice Transcription & Auto-Scroll Boundary Fix (July 24, 2025)**:
+- Successfully implemented real-time voice streaming transcription for Max AI assistant providing instant user feedback
+- Added 3-second interval chunks for periodic transcription during voice input instead of waiting for microphone off
+- Interim transcription appears with "..." indicator showing progress to users while speaking
+- Enhanced audio cleanup with proper interval clearing and error handling for streaming voice
+- Fixed guided tour auto-scrolling boundary issue preventing content from scrolling beyond available content
+- Tour auto-scroll now uses safe distance calculation limited to maximum scrollable content minus current position
+- Added bounds checking to prevent scrolling past end of content that was causing window to scroll out of view
+- Enhanced scroll distance calculation using 60% of viewport height or remaining content, whichever is smaller
+- Users now see real-time voice-to-text feedback and tours stop scrolling at appropriate content boundaries
+
 ✓ **Job Schema Enhancement & Improved Chart Data (July 24, 2025)**:
 - Successfully added quantity field to job schema for better production planning
 - Updated database with ALTER TABLE to add quantity column with NOT NULL DEFAULT 1 constraint
