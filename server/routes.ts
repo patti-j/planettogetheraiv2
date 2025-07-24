@@ -10465,7 +10465,7 @@ Create a natural, conversational voice script that explains this feature to some
   // AI-Powered Modern Presentation Generation
   app.post("/api/presentation-studio/generate-modern-presentation", requireAuth, async (req, res) => {
     try {
-      const { projectId, presentationType, targetAudience, objectives, keyMessage, brandGuidelines, materials } = req.body;
+      const { projectId, presentationType, targetAudience, objectives, keyMessage, brandGuidelines, materials, customPrompt } = req.body;
       
       if (!projectId || !presentationType) {
         return res.status(400).json({ error: "Project ID and presentation type are required" });
@@ -10474,7 +10474,8 @@ Create a natural, conversational voice script that explains this feature to some
       const OpenAI = (await import("openai")).default;
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-      const modernPresentationPrompt = `You are an expert in creating EXCITING, VISUAL, WEBSITE-LIKE presentations that drive software adoption. Create a modern presentation that looks like an engaging website, NOT traditional PowerPoint slides.
+      // Use custom prompt if provided, otherwise use default
+      const modernPresentationPrompt = customPrompt || `You are an expert in creating EXCITING, VISUAL, WEBSITE-LIKE presentations that drive software adoption. Create a modern presentation that looks like an engaging website, NOT traditional PowerPoint slides.
 
       CRITICAL REQUIREMENTS:
       - Create presentations that EXCITE users and make them want to use the software

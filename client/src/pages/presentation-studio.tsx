@@ -132,6 +132,10 @@ export default function PresentationStudio() {
   const [webUrl, setWebUrl] = useState("");
   const [extractionProgress, setExtractionProgress] = useState(0);
   const [bestPracticesOpen, setBestPracticesOpen] = useState(false);
+  
+  // AI Prompt customization state
+  const [aiPromptDialogOpen, setAiPromptDialogOpen] = useState(false);
+  const [customAiPrompt, setCustomAiPrompt] = useState("");
 
   // Queries
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
@@ -300,7 +304,8 @@ export default function PresentationStudio() {
             title: m.title, 
             type: m.type, 
             content: m.content 
-          }))
+          })),
+          customPrompt: customAiPrompt // Include custom prompt if provided
         }),
       });
     },
@@ -319,6 +324,45 @@ export default function PresentationStudio() {
       });
     },
   });
+
+  // Function to generate the default AI prompt
+  const generateDefaultPrompt = () => {
+    const currentProject = projects.find((p: PresentationProject) => p.id === activeProject);
+    if (!currentProject) return "";
+
+    return `You are an expert in creating EXCITING, VISUAL, WEBSITE-LIKE presentations that drive software adoption. Create a modern presentation that looks like an engaging website, NOT traditional PowerPoint slides.
+
+CRITICAL REQUIREMENTS:
+- Create presentations that EXCITE users and make them want to use the software
+- Use BOLD VISUALS, diverse imagery, and minimal text
+- Design like a modern website with interactive elements
+- Focus on user engagement and persuasion for software adoption
+- Avoid boring, text-heavy, traditional slide formats
+
+Project Details:
+Presentation Type: ${currentProject.type}
+Target Audience: ${currentProject.targetAudience || 'Manufacturing professionals'}
+Objectives: ${currentProject.objectives || 'Drive software adoption'}
+Key Message: ${currentProject.keyMessage || 'Transform your manufacturing operations'}
+Brand Guidelines: ${currentProject.brandGuidelines || 'Professional, modern, technology-focused'}
+Available Materials: ${materials ? JSON.stringify(materials.map(m => ({ title: m.title, type: m.type }))) : 'Standard manufacturing content'}
+
+Generate a complete modern presentation structure that tells a compelling story and drives software adoption. Focus on:
+- Hero visuals that immediately grab attention
+- Customer success stories with real transformations
+- Interactive demos and product showcases
+- Before/after comparisons showing value
+- Social proof and testimonials
+- Clear, exciting call-to-action
+
+Create ${Math.max(5, Math.min(12, Math.floor(Math.random() * 8) + 5))} slides that build excitement and persuade users to adopt the software.`;
+  };
+
+  // Initialize custom prompt with default when dialog opens
+  const openAiPromptDialog = () => {
+    setCustomAiPrompt(generateDefaultPrompt());
+    setAiPromptDialogOpen(true);
+  };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -1043,14 +1087,24 @@ export default function PresentationStudio() {
                       <Lightbulb className="w-4 h-4 mr-2" />
                       {generateSuggestionsMutation.isPending ? "Generating..." : "Material Ideas"}
                     </Button>
-                    <Button 
-                      onClick={() => generateModernPresentationMutation.mutate()}
-                      disabled={generateModernPresentationMutation.isPending}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
-                    >
-                      <Zap className="w-4 h-4 mr-2" />
-                      {generateModernPresentationMutation.isPending ? "Creating..." : "Generate Modern Presentation"}
-                    </Button>
+                    <div className="flex space-x-2">
+                      <Button 
+                        onClick={openAiPromptDialog}
+                        variant="outline"
+                        className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Customize AI Prompt
+                      </Button>
+                      <Button 
+                        onClick={() => generateModernPresentationMutation.mutate()}
+                        disabled={generateModernPresentationMutation.isPending}
+                        className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+                      >
+                        <Zap className="w-4 h-4 mr-2" />
+                        {generateModernPresentationMutation.isPending ? "Creating..." : "Generate Modern Presentation"}
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
@@ -1178,6 +1232,82 @@ export default function PresentationStudio() {
           )}
         </div>
       </div>
+
+      {/* AI Prompt Customization Dialog */}
+      <Dialog open={aiPromptDialogOpen} onOpenChange={setAiPromptDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Edit className="w-5 h-5 mr-2 text-purple-600" />
+              Customize AI Presentation Generation Prompt
+            </DialogTitle>
+            <DialogDescription>
+              Edit the full AI prompt to control exactly how your presentation is generated. This includes all the visual design requirements and presentation philosophy.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center mb-2">
+                <Info className="w-4 h-4 mr-2 text-blue-600" />
+                <span className="text-sm font-medium text-blue-800">Presenter Control</span>
+              </div>
+              <p className="text-sm text-blue-700">
+                You have complete control over the AI generation process. This prompt includes the critical requirements 
+                for creating exciting, website-like presentations that avoid boring PowerPoint formats.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                AI Generation Prompt
+              </label>
+              <textarea
+                value={customAiPrompt}
+                onChange={(e) => setCustomAiPrompt(e.target.value)}
+                className="w-full h-64 p-3 border border-gray-300 rounded-lg text-sm font-mono resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="Enter your custom AI prompt here..."
+              />
+              <p className="text-xs text-gray-500">
+                This prompt controls all aspects of presentation generation including visual design, content structure, and engagement strategy.
+              </p>
+            </div>
+
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <div className="flex items-center mb-2">
+                <Target className="w-4 h-4 mr-2 text-purple-600" />
+                <span className="text-sm font-medium text-purple-800">Key Design Requirements</span>
+              </div>
+              <div className="text-xs text-purple-700 space-y-1">
+                <p>• <strong>Visual-First:</strong> Bold visuals, diverse imagery, minimal text</p>
+                <p>• <strong>Website-Style:</strong> Modern layouts, interactive elements, engaging design</p>
+                <p>• <strong>User Excitement:</strong> Content that excites users and drives software adoption</p>
+                <p>• <strong>No PowerPoint:</strong> Avoid boring, text-heavy, traditional slide formats</p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex justify-between">
+            <Button 
+              variant="outline" 
+              onClick={() => setCustomAiPrompt(generateDefaultPrompt())}
+            >
+              Reset to Default
+            </Button>
+            <div className="flex space-x-2">
+              <Button variant="outline" onClick={() => setAiPromptDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => setAiPromptDialogOpen(false)}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+              >
+                Save & Use Prompt
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
