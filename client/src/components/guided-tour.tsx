@@ -275,17 +275,18 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       const isMobile = windowWidth < 768;
       
       if (isMobile) {
-        // Make mobile window ultra-compact with minimal white space
+        // Mobile window positioning - ensure it's always visible in viewport
         const cardWidth = Math.min(280, windowWidth - 16);
         const maxCardHeight = Math.min(200, windowHeight * 0.35);
         const padding = 8;
         
+        // Position in top-right corner of viewport (not based on page height)
         return {
           x: windowWidth - cardWidth - padding,
-          y: windowHeight - maxCardHeight - padding
+          y: padding + 50 // Small offset from top to avoid header overlap
         };
       } else {
-        // Desktop positioning - initialize dimensions for desktop
+        // Desktop positioning - top-right corner of viewport
         const cardWidth = 384;
         const cardHeight = Math.min(600, windowHeight - 100);
         const padding = 20;
@@ -293,9 +294,10 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         // Set initial window dimensions for desktop
         setWindowDimensions({ width: cardWidth, height: cardHeight });
         
+        // Position in top-right corner of viewport
         return {
           x: windowWidth - cardWidth - padding,
-          y: windowHeight - cardHeight - padding
+          y: padding + 80 // Offset from top to avoid header overlap
         };
       }
     };
@@ -310,10 +312,31 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     }
   }, [tourSteps.length]); // Trigger when tour data loads
 
-  // Window resize handler
+  // Window resize handler and position adjustment
   useEffect(() => {
     const handleResize = () => {
       setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+      
+      // Reposition tour window to ensure it stays visible after resize
+      const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
+      const isMobile = windowWidth < 768;
+      
+      if (isMobile) {
+        const cardWidth = Math.min(280, windowWidth - 16);
+        const padding = 8;
+        setPosition({
+          x: windowWidth - cardWidth - padding,
+          y: padding + 50 // Keep in top area of viewport
+        });
+      } else {
+        const cardWidth = 384;
+        const padding = 20;
+        setPosition({
+          x: windowWidth - cardWidth - padding,
+          y: padding + 80 // Keep in top area of viewport
+        });
+      }
     };
 
     window.addEventListener('resize', handleResize);

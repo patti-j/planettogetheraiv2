@@ -119,6 +119,9 @@ The application uses a modern full-stack architecture with strong typing through
 - Removed problematic scrollIntoView call that was forcing page-wide scrolling
 - Tour window now stays properly positioned without disrupting main page or Max layout
 - Tour content demonstration (auto-scroll) now only affects page content containers, not entire screen
+- Fixed tour window positioning to always appear in viewport top-right corner using fixed positioning
+- Added automatic repositioning on window resize to maintain visibility
+- Tour window now consistently visible regardless of page scroll position
 
 ✓ **Row Height Slider Visual Fix (July 24, 2025)**:
 - Fixed visual truncation issue with row height slider blue circle/thumb in resource gantt
