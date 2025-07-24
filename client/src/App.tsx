@@ -83,10 +83,14 @@ function DashboardWithAutoTour() {
               "it-administrator": 4,
               "systems-manager": 5,
               "administrator": 6,
-              "maintenance-technician": 7,
+              "it-systems-administrator": 7,
               "data-analyst": 8,
               "trainer": 9,
-              "shop-floor-operations": 10
+              "shop-floor-operations": 10,
+              "sales-representative": 12,
+              "customer-service-representative": 13,
+              "support-engineer": 14,
+              "supply-chain-planner": 15
             };
             
             const roleKey = currentRole.name.toLowerCase().replace(/\s+/g, '-');
