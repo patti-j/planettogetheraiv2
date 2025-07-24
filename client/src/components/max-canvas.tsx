@@ -86,109 +86,73 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
   };
 
   return (
-    <div className={`fixed inset-0 z-50 bg-black/50 backdrop-blur-sm ${isFullscreen ? '' : 'p-4'}`}>
-      <div className={`bg-white rounded-lg shadow-xl overflow-hidden ${isFullscreen ? 'w-full h-full' : 'w-full h-full max-w-7xl max-h-[90vh] mx-auto'} relative`}>
-        {/* Maximize/Minimize Button - Fixed top right, consistent with other pages */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsFullscreen(!isFullscreen)}
-          className="fixed top-2 right-2 z-50"
-        >
-          {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-        </Button>
+    <div className="bg-white border-t border-gray-200 flex flex-col h-80">
+      {/* Canvas container - inline within Max window */}
+      <div className="flex flex-col h-full relative">
 
-        {/* Canvas Header - Ultra compact on mobile */}
-        <div className={`${aiTheme.gradient} text-white p-2 sm:p-4`}>
-          <div className="flex items-center gap-1 sm:gap-3">
-            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-white/20 rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-4 h-4 sm:w-4 sm:h-4" />
+        {/* Canvas Header - Compact inline header */}
+        <div className={`${aiTheme.gradient} text-white p-2 flex-shrink-0`}>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 bg-white/20 rounded flex items-center justify-center">
+              <BarChart3 className="w-3 h-3" />
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-sm sm:text-lg font-semibold">Max Canvas</h2>
-              <p className="text-white/80 text-xs sm:text-sm hidden sm:block">Dynamic content space</p>
+              <h3 className="text-sm font-semibold">Canvas</h3>
             </div>
             
-            {/* Header Action Buttons - More compact on mobile */}
-            <div className="flex items-center gap-1 sm:gap-2">
+            {/* Header Action Buttons - Compact */}
+            <div className="flex items-center gap-1">
               {items.length > 0 && (
                 <>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={handleExport}
-                    className="text-white hover:bg-white/20 hidden sm:flex"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    <span className="hidden md:inline">Export</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
                     onClick={handleClearCanvas}
-                    className="text-white hover:bg-white/20 hidden sm:flex"
+                    className="text-white hover:bg-white/20 p-1"
+                    title="Clear Canvas"
                   >
-                    <span className="hidden md:inline">Clear</span>
-                  </Button>
-                  {/* Mobile export/clear buttons - icon only */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleExport}
-                    className="text-white hover:bg-white/20 sm:hidden p-1"
-                    title="Export"
-                  >
-                    <Download className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClearCanvas}
-                    className="text-white hover:bg-white/20 sm:hidden p-1"
-                    title="Clear"
-                  >
-                    <X className="w-4 h-4" />
+                    <X className="w-3 h-3" />
                   </Button>
                 </>
               )}
               
-              {/* Close button - always visible */}
+              {/* Close button */}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onClose}
-                className="text-white hover:bg-white/20 p-1 sm:p-2"
-                title="Close"
+                className="text-white hover:bg-white/20 p-1"
+                title="Close Canvas"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3 h-3" />
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Canvas Content Area */}
-        <div className="flex-1 overflow-auto bg-gray-50 p-6">
+        {/* Canvas Content Area - Compact for inline display */}
+        <div className="flex-1 overflow-auto bg-gray-50 p-3">
           {items.length === 0 ? (
             <div className="h-full flex items-center justify-center">
               <div className="text-center">
-                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <BarChart3 className="w-8 h-8 text-gray-400" />
+                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <BarChart3 className="w-6 h-6 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Canvas is empty</h3>
-                <p className="text-gray-600 mb-4">Ask Max to create something for you!</p>
-                <div className="text-sm text-gray-500">
-                  Try: "Create a dashboard" or "Show me a chart of production metrics"
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Canvas is ready</h4>
+                <p className="text-xs text-gray-600 mb-2">Ask Max to create visualizations!</p>
+                <div className="text-xs text-gray-500">
+                  Try: "Show me job data" or "Create a chart"
                 </div>
               </div>
             </div>
           ) : (
-            <div className="grid gap-6 auto-fit-minmax-400">
+            <div className="space-y-3">
               {items.map((item) => (
                 <Card key={item.id} className="shadow-sm">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">{item.title}</CardTitle>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">{item.title}</CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="pt-0">
                     {renderCanvasItem(item)}
                   </CardContent>
                 </Card>
