@@ -194,16 +194,16 @@ export function MaxSidebar() {
         console.log('Final transcript:', finalTranscript);
         console.log('Interim transcript:', interimTranscript);
         
-        // Show interim results immediately for better responsiveness
+        // Show interim results immediately for better responsiveness - no "listening" text
         if (interimTranscript && !finalTranscript) {
           // Store the base message without interim text
-          const baseMessage = inputMessage.replace(/\s*\[listening\.\.\.\].*$/, '');
-          setInputMessage(`${baseMessage} [listening...] ${interimTranscript}`.trim());
+          const baseMessage = inputMessage.replace(/\s*\[.*?\].*$/, '');
+          setInputMessage(`${baseMessage} ${interimTranscript}`.trim());
         }
         
         if (finalTranscript) {
           // Remove any interim text and add final transcript
-          const baseMessage = inputMessage.replace(/\s*\[listening\.\.\.\].*$/, '');
+          const baseMessage = inputMessage.replace(/\s*\[.*?\].*$/, '');
           setInputMessage(`${baseMessage} ${finalTranscript}`.trim());
         }
         
@@ -238,20 +238,17 @@ export function MaxSidebar() {
             errorMessage = "Network error occurred. Please check your connection and try again.";
             break;
           case 'audio-capture':
-            errorMessage = "Could not capture audio. Please check if your microphone is working and try again.";
-            toast({
-              title: "Audio Capture Error",
-              description: "Please check your microphone and try again",
-              variant: "destructive"
-            });
+            errorMessage = "Your microphone might be in use by another application. Please close other apps using the microphone and try again.";
+            console.log('Audio capture error: Microphone may be in use by another application or there was a hardware issue');
+            // Don't show disruptive toast for audio capture - just log it
             break;
           case 'aborted':
             // Don't show error for aborted - user likely clicked stop
             return;
         }
         
-        // Show a gentle message in chat for most errors
-        if (event.error !== 'not-allowed' && event.error !== 'audio-capture') {
+        // Show a gentle message in chat for most errors (but not audio-capture)
+        if (event.error !== 'not-allowed' && event.error !== 'audio-capture' && event.error !== 'aborted') {
           const voiceErrorMessage: Message = {
             id: Date.now().toString() + '_voice_error',
             type: 'assistant',
@@ -449,6 +446,9 @@ export function MaxSidebar() {
           }, 100);
         } catch (error) {
           console.error('Failed to start speech recognition:', error);
+          setIsListening(false);
+          // Handle common startup errors gracefully
+          console.log('Speech recognition failed to start. This may be due to another app using the microphone.');
         }
       }
     }
