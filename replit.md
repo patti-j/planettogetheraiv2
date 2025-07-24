@@ -148,6 +148,17 @@ The application uses a modern full-stack architecture with strong typing through
 - Added comprehensive chart type support: pie charts for distributions, line charts for trends, bar charts for comparisons, histograms for data distribution, Gantt charts for project timelines
 - Enhanced AI system prompt with chart creation guidelines and examples for seamless user experience
 
+✓ **Max AI Plant Listing Capability Implementation (July 24, 2025)**:
+- Fixed critical issue where Max AI couldn't list manufacturing plants when requested by users
+- Added missing LIST_PLANTS action to AI agent system prompts and executeAction function
+- Enhanced system context to include plant data with complete plant information (name, address, timezone, status)
+- Implemented canvas display support for plant listings showing comprehensive plant overview table
+- Added plant data to live system context summary provided to AI for accurate plant-related responses
+- Max can now properly respond to "show me our plants", "list manufacturing facilities", and similar requests
+- Plant listings display in both text and canvas format with proper formatting and timestamps
+- Enhanced AI system prompt to include plants in available data types alongside jobs, operations, and resources
+- Fixed plant context data structure to include all relevant plant details for comprehensive AI responses
+
 ✓ **Enhanced Microphone Functionality & Share System Improvements (July 24, 2025)**:
 - **Improved Microphone Visual States**: Fixed confusing microphone button behavior with clear visual indicators
 - **Enhanced Error Handling**: Added comprehensive error handling for speech recognition with specific error messages for permission denied, audio capture errors, and network issues

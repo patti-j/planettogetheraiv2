@@ -34,6 +34,7 @@ export interface SystemContext {
   operations: any[];
   resources: any[];
   capabilities: any[];
+  plants: any[];
 }
 
 export async function processAICommand(command: string, attachments?: AttachmentFile[]): Promise<AIAgentResponse> {
@@ -47,9 +48,11 @@ export async function processAICommand(command: string, attachments?: Attachment
       operationCount: context.operations.length,
       resourceCount: context.resources.length,
       capabilityCount: context.capabilities.length,
+      plantCount: context.plants.length,
       allJobs: context.jobs.map(j => ({ id: j.id, name: j.name, status: j.status, customer: j.customer, priority: j.priority, dueDate: j.dueDate })),
       sampleResources: context.resources.slice(0, 5).map(r => ({ id: r.id, name: r.name, type: r.type })),
-      sampleCapabilities: context.capabilities.slice(0, 5).map(c => ({ id: c.id, name: c.name }))
+      sampleCapabilities: context.capabilities.slice(0, 5).map(c => ({ id: c.id, name: c.name })),
+      allPlants: context.plants.map(p => ({ id: p.id, name: p.name, address: p.address, timezone: p.timezone, isActive: p.isActive }))
     };
 
     let aiResponse;
@@ -74,10 +77,12 @@ LIVE DATA AVAILABLE:
 - Sample Resources: ${JSON.stringify(contextSummary.sampleResources)}
 - Total Capabilities: ${contextSummary.capabilityCount}
 - Sample Capabilities: ${JSON.stringify(contextSummary.sampleCapabilities)}
+- Total Plants: ${contextSummary.plantCount}
+- All Plants: ${JSON.stringify(contextSummary.allPlants)}
 
-IMPORTANT: You have access to real live manufacturing data. When users ask about jobs, operations, resources, or system status, use the provided live data above to give accurate answers. DO NOT say you don't have access - you have direct access to current system data.
+IMPORTANT: You have access to real live manufacturing data. When users ask about jobs, operations, resources, plants, or system status, use the provided live data above to give accurate answers. DO NOT say you don't have access - you have direct access to current system data.
 
-Available actions: LIST_JOBS, LIST_OPERATIONS, LIST_RESOURCES, CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, CLEAR_CANVAS, CREATE_CHART, CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART, and others.
+Available actions: LIST_JOBS, LIST_OPERATIONS, LIST_RESOURCES, LIST_PLANTS, CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, CLEAR_CANVAS, CREATE_CHART, CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART, and others.
 
 UI Navigation Actions:
 - NAVIGATE_TO_PAGE: Navigate to specific pages (dashboard, analytics, reports, scheduling-optimizer, etc.)
@@ -101,6 +106,7 @@ Canvas Guidelines:
 - For jobs: LIST_JOBS with parameters.displayInCanvas=true
 - For resources: LIST_RESOURCES with parameters.displayInCanvas=true
 - For operations: LIST_OPERATIONS with parameters.displayInCanvas=true
+- For plants: LIST_PLANTS with parameters.displayInCanvas=true
 - For other data: ADD_CANVAS_CONTENT action with parameters: {title: "descriptive title", type: "table", data: structured_data}
 - Canvas displays in the main content area and auto-opens when content is added
 - Perfect for: job lists, resource lists, operation tables, performance metrics, data visualizations
@@ -151,7 +157,7 @@ async function processCommandWithAttachments(command: string, attachments: Attac
 
 User command: ${command}
 
-Available actions: CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, CREATE_CHART, CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART, and others.
+Available actions: LIST_JOBS, LIST_OPERATIONS, LIST_RESOURCES, LIST_PLANTS, CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, CREATE_CHART, CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART, and others.
 
 UI Navigation Actions:
 - NAVIGATE_TO_PAGE: Navigate to specific pages (dashboard, analytics, reports, scheduling-optimizer, etc.)
@@ -239,14 +245,15 @@ Respond with JSON: {"action": "ACTION_NAME", "parameters": {...}, "message": "re
 async function getSystemContext(): Promise<SystemContext> {
   // For AI requests, don't load full data to prevent token overflow
   // Just get counts and limited samples
-  const [jobs, operations, resources, capabilities] = await Promise.all([
+  const [jobs, operations, resources, capabilities, plants] = await Promise.all([
     storage.getJobs().then(jobs => jobs.slice(0, 10)), // Max 10 jobs for context
     storage.getOperations().then(ops => ops.slice(0, 20)), // Max 20 operations
     storage.getResources().then(res => res.slice(0, 10)), // Max 10 resources
-    storage.getCapabilities()
+    storage.getCapabilities(),
+    storage.getPlants() // Include all plants since there are typically fewer plants
   ]);
 
-  return { jobs, operations, resources, capabilities };
+  return { jobs, operations, resources, capabilities, plants };
 }
 
 async function executeAction(action: string, parameters: any, message: string, context?: SystemContext, attachments?: AttachmentFile[]): Promise<AIAgentResponse> {
@@ -381,6 +388,50 @@ async function executeAction(action: string, parameters: any, message: string, c
           message: message || `Here are the resources in our system:\n\n${allResources.map(res => `• ${res.name} (ID: ${res.id})\n  Type: ${res.type}\n  Status: ${res.status || 'Unknown'}`).join('\n\n')}`,
           data: allResources,
           actions: ["LIST_RESOURCES"]
+        };
+
+      case "LIST_PLANTS":
+        const allPlants = await storage.getPlants();
+        
+        // Check if this should be displayed in canvas - detect various ways users ask to see data
+        const shouldDisplayPlantsInCanvas = parameters.displayInCanvas || 
+                                           parameters.canvas || 
+                                           message.toLowerCase().includes('canvas') ||
+                                           message.toLowerCase().includes('display') ||
+                                           message.toLowerCase().includes('show') ||
+                                           message.toLowerCase().includes('list');
+        
+        if (shouldDisplayPlantsInCanvas) {
+          return {
+            success: true,
+            message: message || "Displaying list of manufacturing plants in the canvas.",
+            data: allPlants,
+            canvasAction: {
+              type: "ADD_CANVAS_CONTENT",
+              content: {
+                type: "table",
+                title: "Manufacturing Plants Overview",
+                timestamp: new Date().toISOString(),
+                data: allPlants.map(plant => ({
+                  "Plant ID": plant.id,
+                  "Plant Name": plant.name,
+                  "Address": plant.address || 'Not specified',
+                  "Timezone": plant.timezone,
+                  "Status": plant.isActive ? 'Active' : 'Inactive'
+                })),
+                width: "100%",
+                height: "auto"
+              }
+            },
+            actions: ["LIST_PLANTS", "ADD_CANVAS_CONTENT"]
+          };
+        }
+        
+        return {
+          success: true,
+          message: message || `Here are the manufacturing plants in our system:\n\n${allPlants.map(plant => `• ${plant.name} (ID: ${plant.id})\n  Address: ${plant.address || 'Not specified'}\n  Timezone: ${plant.timezone}\n  Status: ${plant.isActive ? 'Active' : 'Inactive'}`).join('\n\n')}`,
+          data: allPlants,
+          actions: ["LIST_PLANTS"]
         };
 
       case "CREATE_JOB":
