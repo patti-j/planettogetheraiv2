@@ -1234,126 +1234,8 @@ Provide the response as a JSON object with the following structure:
         return res.status(400).json({ error: "Message is required" });
       }
 
-      // Get current system data for Max to answer questions
-      const [jobs, operations, resources, capabilities] = await Promise.all([
-        storage.getJobs(),
-        storage.getOperations(), 
-        storage.getResources(),
-        storage.getCapabilities()
-      ]);
-
-      // Build context-aware prompt with real data
-      let systemPrompt = `You are Max, an intelligent AI data analyst integrated into a manufacturing management platform. Your primary role is to provide immediate answers using the live system data below.
-
-*** LIVE SYSTEM DATA - USE THIS TO ANSWER ALL QUESTIONS ***
-- Total Jobs: ${jobs.length} 
-- Active Jobs: ${jobs.filter(j => j.status === 'active').length}
-- In Progress Jobs: ${jobs.filter(j => j.status === 'In Progress').length}
-- Completed Jobs: ${jobs.filter(j => j.status === 'Completed').length}
-- Total Operations: ${operations.length}
-- Total Resources: ${resources.length}
-- Total Capabilities: ${capabilities.length}
-
-Current Job Details:
-${jobs.slice(0, 5).map(job => `- "${job.name}" (ID: ${job.id}) - Status: ${job.status} - Priority: ${job.priority} - Customer: ${job.customer}`).join('\n')}
-
-IMPORTANT: When users ask "how many jobs do we have?" or similar data questions, use the exact numbers above. For example, answer "We currently have ${jobs.length} jobs in the system" with the specific breakdown.
-
-Your capabilities:
-- ANSWER DIRECT QUESTIONS IMMEDIATELY using the live system data provided above
-- Analyze production data and suggest optimizations  
-- Help with scheduling and resource allocation
-- Provide insights based on current workflow patterns
-- Learn from user interactions to improve suggestions
-- Offer contextual help based on the current page/feature
-
-CRITICAL INSTRUCTIONS:
-- When asked "how many jobs" or similar data questions, USE THE EXACT NUMBERS from the live system data above
-- DO NOT ask users to navigate anywhere - you have real-time access to all data
-- DO NOT suggest going to other pages for information you already have
-- Answer immediately with specific numbers and details from the live data
-
-Conversation Style:
-- Be concise and actionable
-- Provide specific, implementable suggestions with actual data
-- Answer data questions immediately without requiring navigation
-- Ask clarifying questions when needed
-- Show confidence levels for recommendations
-- Be proactive in identifying opportunities
-
-EXAMPLE: If asked "how many jobs do we have?", respond with "We currently have ${jobs.length} jobs in the system - ${jobs.filter(j => j.status === 'active').length} are active" using the actual live data numbers.`;
-
-      // Add conversation history for context
-      if (conversationHistory && conversationHistory.length > 0) {
-        systemPrompt += "\n\nRecent conversation:\n";
-        conversationHistory.forEach((msg: any) => {
-          systemPrompt += `${msg.type === 'user' ? 'User' : 'Max'}: ${msg.content}\n`;
-        });
-      }
-
-      const openai = await import('openai');
-      const client = new openai.default({
-        apiKey: process.env.OPENAI_API_KEY,
-      });
-
-      // Check if this is a canvas-related request
-      const canvasKeywords = ['dashboard', 'chart', 'create', 'show', 'display', 'canvas', 'visualize', 'table'];
-      const isCanvasRequest = canvasKeywords.some(keyword => message.toLowerCase().includes(keyword));
-      
-      let canvasAction = null;
-      
-      if (isCanvasRequest) {
-        // Enhanced system prompt for canvas generation
-        systemPrompt += `\n\nCanvas Capabilities:
-- You can create visual content on a canvas for users
-- Available canvas types: dashboard, chart, table, interactive widgets
-- When users ask to create something visual, generate canvas content
-- Always respond with both a text message AND canvas action when appropriate
-
-For canvas requests, respond in JSON format with this structure:
-{
-  "message": "Your response text here",
-  "canvasAction": {
-    "type": "create",
-    "items": [
-      {
-        "id": "unique_id",
-        "type": "dashboard|chart|table|interactive|custom",
-        "title": "Content Title",
-        "content": { actual_data_here }
-      }
-    ]
-  }
-}`;
-      }
-
-
-
-      const completion = await client.chat.completions.create({
-        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: message }
-        ],
-        max_tokens: 500,
-        temperature: 0.7,
-        response_format: isCanvasRequest ? { type: "json_object" } : undefined
-      });
-
-      let response;
-      
-      if (isCanvasRequest) {
-        try {
-          const jsonResponse = JSON.parse(completion.choices[0]?.message?.content || "{}");
-          response = jsonResponse.message || "I've created something for you on the canvas!";
-          canvasAction = jsonResponse.canvasAction || generateDefaultCanvasContent(message);
-        } catch (error) {
-          response = "I'll create something for you on the canvas!";
-          canvasAction = generateDefaultCanvasContent(message);
-        }
-      } else {
-        response = completion.choices[0]?.message?.content || "I'm having trouble processing that request. Could you please try again?";
-      }
+      // Use the enhanced AI agent system that properly handles canvas actions
+      const agentResponse = await processAICommand(message, []);
 
       // Store this interaction in memory for learning
       await storage.storeAIMemory({
@@ -1374,11 +1256,11 @@ For canvas requests, respond in JSON format with this structure:
       });
 
       // Generate contextual insights based on the conversation
-      const insights = await generateContextualInsights(context, message, response);
+      const insights = await generateContextualInsights(context, message, agentResponse.message);
 
       res.json({ 
-        message: response,
-        canvasAction,
+        message: agentResponse.message,
+        canvasAction: agentResponse.canvasAction,
         insights,
         context: {
           page: context?.page,

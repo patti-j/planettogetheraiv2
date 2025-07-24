@@ -97,11 +97,12 @@ UI Navigation Actions:
 For CREATE_KANBAN_BOARD: parameters need name, description, viewType (jobs/operations), swimLaneField (status/priority/customer), filters (optional).
 
 Canvas Guidelines:
-- When user asks to show data in canvas or display lists/tables visually, use ADD_CANVAS_CONTENT action to automatically show and populate the canvas
-- ADD_CANVAS_CONTENT displays data in the top portion of the screen above main content
+- When user asks to show jobs/data "in canvas" or display lists visually, use LIST_JOBS action with parameters.displayInCanvas=true
+- LIST_JOBS automatically detects canvas requests and adds content to canvas display
+- For other data types, use ADD_CANVAS_CONTENT action with parameters: {title: "descriptive title", type: "table", data: structured_data}
+- Canvas displays in the top portion of the screen above main content
 - Perfect for: job lists, resource lists, operation tables, performance metrics, data visualizations
-- Use ADD_CANVAS_CONTENT with parameters: {title: "descriptive title", type: "table", data: structured_data}
-- Canvas automatically shows when content is added, no separate SHOW_CANVAS needed with ADD_CANVAS_CONTENT
+- Examples: "show jobs in canvas" = LIST_JOBS with displayInCanvas=true, "display job information" = LIST_JOBS
 
 Respond with JSON: {"action": "ACTION_NAME", "parameters": {...}, "message": "response"}`
           },
@@ -242,6 +243,34 @@ async function executeAction(action: string, parameters: any, message: string, c
     switch (action) {
       case "LIST_JOBS":
         const allJobs = await storage.getJobs();
+        
+        // Check if this should be displayed in canvas
+        if (parameters.displayInCanvas || parameters.canvas || message.toLowerCase().includes('canvas')) {
+          return {
+            success: true,
+            message: message || "Here are all the jobs in your manufacturing system, displayed in the canvas above:",
+            data: allJobs,
+            canvasAction: {
+              type: "ADD_CANVAS_CONTENT",
+              content: {
+                type: "table",
+                title: "Manufacturing Jobs Overview",
+                data: allJobs.map(job => ({
+                  "Job ID": job.id,
+                  "Job Name": job.name,
+                  "Customer": job.customer,
+                  "Priority": job.priority,
+                  "Status": job.status,
+                  "Due Date": job.dueDate ? new Date(job.dueDate).toLocaleDateString() : 'Not set'
+                })),
+                width: "100%",
+                height: "auto"
+              }
+            },
+            actions: ["LIST_JOBS", "ADD_CANVAS_CONTENT"]
+          };
+        }
+        
         return {
           success: true,
           message: message || `Here are the active jobs in our system:\n\n${allJobs.map(job => `• ${job.name} (ID: ${job.id})\n  Customer: ${job.customer}\n  Priority: ${job.priority}\n  Status: ${job.status}\n  Due: ${job.dueDate ? new Date(job.dueDate).toLocaleDateString() : 'Not set'}`).join('\n\n')}`,
