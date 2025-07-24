@@ -54,6 +54,7 @@ import PlantsManagementPage from "@/pages/plants-management";
 import ExtensionStudioPage from "@/pages/extension-studio";
 import CanvasPage from "@/pages/canvas";
 import ErrorLogsPage from "@/pages/error-logs";
+import PresentationPage from "@/pages/presentation";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
@@ -146,6 +147,7 @@ function Router() {
       <Switch>
         <Route path="/pricing" component={Pricing} />
         <Route path="/demo-tour" component={DemoTour} />
+        <Route path="/presentation" component={PresentationPage} />
         <Route path="/" component={Login} />
         <Route component={Login} />
       </Switch>
@@ -322,6 +324,7 @@ function Router() {
           <Route path="/account" component={Account} />
           <Route path="/pricing" component={Pricing} />
           <Route path="/demo-tour" component={DemoTour} />
+          <Route path="/presentation" component={PresentationPage} />
           <Route path="/" component={DashboardWithAutoTour} />
           <Route component={NotFound} />
         </Switch>
