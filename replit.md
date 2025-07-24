@@ -114,6 +114,16 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 24, 2025)
 
+✓ **Max AI API Documentation Enhancement (July 24, 2025)**:
+- Fixed issue where Max AI was listing job data instead of API documentation when asked for "available APIs"
+- Enhanced AI system prompt to better distinguish between API documentation requests and data listing requests
+- Added dedicated LIST_AVAILABLE_APIS action with comprehensive API function documentation
+- Created proper table display in canvas showing all available API functions with descriptions
+- Improved chart generation for "job quantity" requests to show individual jobs with operation counts
+- Fixed pie chart data to display meaningful job information instead of generic status percentages
+- Enhanced voice input functionality with comprehensive audio format support and debugging
+- Voice input now supports webm, mp4, wav, and ogg formats with detailed error logging
+
 ✓ **Comprehensive Error Logs Admin Interface Implementation (July 24, 2025)**:
 - Successfully created complete error logs administration interface with professional dashboard design
 - Built comprehensive error monitoring page with real-time error tracking, search, filtering, and resolution capabilities

@@ -82,7 +82,11 @@ LIVE DATA AVAILABLE:
 
 IMPORTANT: You have access to real live manufacturing data. When users ask about jobs, operations, resources, plants, or system status, use the provided live data above to give accurate answers. DO NOT say you don't have access - you have direct access to current system data.
 
-Available actions: LIST_JOBS, LIST_OPERATIONS, LIST_RESOURCES, LIST_PLANTS, CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, CLEAR_CANVAS, CREATE_CHART, CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART, and others.
+Available actions: LIST_JOBS, LIST_OPERATIONS, LIST_RESOURCES, LIST_PLANTS, CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, CLEAR_CANVAS, CREATE_CHART, CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART, SHOW_API_DOCUMENTATION, and others.
+
+CRITICAL DISTINCTION:
+- For API documentation requests ("available APIs", "what APIs can you call", "list of available functions", "what can you do", "your capabilities", "available commands"): Use LIST_AVAILABLE_APIS action
+- For actual data requests ("list jobs", "show resources", "available jobs", "available resources"): Use appropriate data actions (LIST_JOBS, LIST_RESOURCES, etc.)
 
 UI Navigation Actions:
 - NAVIGATE_TO_PAGE: Navigate to specific pages (dashboard, analytics, reports, scheduling-optimizer, etc.)
@@ -1275,6 +1279,57 @@ async function executeAction(action: string, parameters: any, message: string, c
             type: "clear"
           },
           actions: ["CLEAR_CANVAS"]
+        };
+
+      case "LIST_AVAILABLE_APIS":
+      case "SHOW_API_DOCUMENTATION":
+        const apiDocumentation = [
+          { "API Function": "LIST_JOBS", "Description": "List all active jobs with optional display in canvas." },
+          { "API Function": "LIST_OPERATIONS", "Description": "List all active operations with optional display in canvas." },
+          { "API Function": "LIST_RESOURCES", "Description": "List all active resources with optional display in canvas." },
+          { "API Function": "LIST_PLANTS", "Description": "List all active plants with optional display in canvas." },
+          { "API Function": "CREATE_JOB", "Description": "Create a new job with required details." },
+          { "API Function": "CREATE_OPERATION", "Description": "Create a new operation within a job." },
+          { "API Function": "CREATE_RESOURCE", "Description": "Create a new resource (operator or machine)." },
+          { "API Function": "CREATE_KANBAN_BOARD", "Description": "Create a new Kanban board for tracking jobs or operations." },
+          { "API Function": "ANALYZE_LATE_JOBS", "Description": "Analyze jobs that are late." },
+          { "API Function": "GET_STATUS", "Description": "Get current system status." },
+          { "API Function": "ANALYZE_DOCUMENT", "Description": "Analyze uploaded documents." },
+          { "API Function": "ANALYZE_IMAGE", "Description": "Analyze uploaded images." },
+          { "API Function": "NAVIGATE_TO_PAGE", "Description": "Navigate to specific pages in the application." },
+          { "API Function": "OPEN_DASHBOARD", "Description": "Open the dashboard page." },
+          { "API Function": "CREATE_DASHBOARD", "Description": "Create a new dashboard with widgets." },
+          { "API Function": "OPEN_GANTT_CHART", "Description": "Open production schedule (Gantt chart) page." },
+          { "API Function": "OPEN_ANALYTICS", "Description": "Navigate to analytics page." },
+          { "API Function": "OPEN_BOARDS", "Description": "Navigate to Kanban boards page." },
+          { "API Function": "OPEN_REPORTS", "Description": "Navigate to reports page." },
+          { "API Function": "CREATE_PIE_CHART", "Description": "Create pie charts for data visualization." },
+          { "API Function": "CREATE_LINE_CHART", "Description": "Create line charts for trend analysis." },
+          { "API Function": "CREATE_BAR_CHART", "Description": "Create bar charts for comparison analysis." },
+          { "API Function": "CREATE_HISTOGRAM", "Description": "Create histograms for distribution analysis." },
+          { "API Function": "CREATE_GANTT_CHART", "Description": "Create Gantt charts for project timelines." },
+          { "API Function": "SHOW_CANVAS", "Description": "Display or show canvas content area." },
+          { "API Function": "CLEAR_CANVAS", "Description": "Clear all content from canvas." },
+          { "API Function": "MAXIMIZE_VIEW", "Description": "Maximize current view." },
+          { "API Function": "MINIMIZE_VIEW", "Description": "Minimize current view." }
+        ];
+
+        return {
+          success: true,
+          message: message || "Here are the API functions I have access to:",
+          data: apiDocumentation,
+          canvasAction: {
+            type: "ADD_CANVAS_CONTENT",
+            content: {
+              type: "table",
+              title: "Available API Functions",
+              timestamp: new Date().toISOString(),
+              data: apiDocumentation,
+              width: "100%",
+              height: "auto"
+            }
+          },
+          actions: ["LIST_AVAILABLE_APIS", "ADD_CANVAS_CONTENT"]
         };
 
       default:
