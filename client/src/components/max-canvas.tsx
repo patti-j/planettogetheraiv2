@@ -103,32 +103,41 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
   const handleShareCanvasItem = async (item: CanvasItem) => {
     const shareText = `Canvas Item: ${item.title}\nGenerated: ${item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Unknown'}\n\nContent:\n${typeof item.content === 'string' ? item.content : JSON.stringify(item.content, null, 2)}`;
     
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Canvas Item: ${item.title}`,
-          text: shareText
-        });
-        
-        toast({
-          title: "Item Shared",
-          description: `"${item.title}" shared successfully`
-        });
-      } catch (error) {
-        // User cancelled or error occurred, fall back to clipboard
-        await navigator.clipboard.writeText(shareText);
-        toast({
-          title: "Copied to Clipboard",
-          description: `"${item.title}" copied to clipboard for sharing`
-        });
-      }
-    } else {
-      // Fallback for browsers without Web Share API
+    try {
+      // Always try clipboard first as it's more reliable
       await navigator.clipboard.writeText(shareText);
       toast({
         title: "Copied to Clipboard",
         description: `"${item.title}" copied to clipboard for sharing`
       });
+    } catch (clipboardError) {
+      // If clipboard fails, try Web Share API
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: `Canvas Item: ${item.title}`,
+            text: shareText
+          });
+          
+          toast({
+            title: "Item Shared",
+            description: `"${item.title}" shared successfully`
+          });
+        } catch (shareError) {
+          // Both failed, show error
+          toast({
+            title: "Share Failed",
+            description: `Unable to share "${item.title}". Please copy manually.`,
+            variant: "destructive"
+          });
+        }
+      } else {
+        toast({
+          title: "Share Unavailable",
+          description: "Please copy the text manually to share",
+          variant: "destructive"
+        });
+      }
     }
   };
 

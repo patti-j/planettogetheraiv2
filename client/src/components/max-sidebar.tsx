@@ -485,32 +485,41 @@ export function MaxSidebar() {
   const handleShareMessage = async (message: Message) => {
     const shareText = `Max AI Response (${message.timestamp.toLocaleString()}):\n\n${message.content}`;
     
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Max AI Response',
-          text: shareText
-        });
-        
-        toast({
-          title: "Response Shared",
-          description: "Max's response shared successfully"
-        });
-      } catch (error) {
-        // User cancelled or error occurred, fall back to clipboard
-        await navigator.clipboard.writeText(shareText);
-        toast({
-          title: "Copied to Clipboard",
-          description: "Response copied to clipboard for sharing"
-        });
-      }
-    } else {
-      // Fallback for browsers without Web Share API
+    try {
+      // Always try clipboard first as it's more reliable
       await navigator.clipboard.writeText(shareText);
       toast({
         title: "Copied to Clipboard",
         description: "Response copied to clipboard for sharing"
       });
+    } catch (clipboardError) {
+      // If clipboard fails, try Web Share API
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'Max AI Response',
+            text: shareText
+          });
+          
+          toast({
+            title: "Response Shared",
+            description: "Max's response shared successfully"
+          });
+        } catch (shareError) {
+          // Both failed, show error
+          toast({
+            title: "Share Failed",
+            description: "Unable to share response. Please copy manually.",
+            variant: "destructive"
+          });
+        }
+      } else {
+        toast({
+          title: "Share Unavailable",
+          description: "Please copy the text manually to share",
+          variant: "destructive"
+        });
+      }
     }
   };
 
