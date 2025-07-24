@@ -13,8 +13,12 @@ export async function seedDatabase() {
   const existingCapabilities = await db.select().from(capabilities).limit(1);
   const existingUsers = await db.select().from(users).limit(1);
   const existingDefaultRoles = await db.select().from(roles).where(eq(roles.name, "Administrator")).limit(1);
+  const existingPresentationPermissions = await db.select().from(permissions).where(eq(permissions.feature, "presentation-system")).limit(1);
   
-  if (existingCapabilities.length > 0 && existingUsers.length > 0 && existingDefaultRoles.length > 0) {
+  // Force re-seed if presentation permissions are missing
+  const shouldReseedPermissions = existingPresentationPermissions.length === 0;
+  
+  if (existingCapabilities.length > 0 && existingUsers.length > 0 && existingDefaultRoles.length > 0 && !shouldReseedPermissions) {
     console.log("Database already seeded, skipping...");
     return;
   }
@@ -197,7 +201,13 @@ export async function seedDatabase() {
     { name: "reports-view", feature: "reports", action: "view", description: "View reports and analytics dashboards" },
     { name: "reports-create", feature: "reports", action: "create", description: "Create custom reports and analytics" },
     { name: "reports-edit", feature: "reports", action: "edit", description: "Edit report configurations" },
-    { name: "reports-delete", feature: "reports", action: "delete", description: "Delete custom reports" }
+    { name: "reports-delete", feature: "reports", action: "delete", description: "Delete custom reports" },
+    
+    // Presentation System (Directors, Plant Managers, Trainers)
+    { name: "presentation-system-view", feature: "presentation-system", action: "view", description: "View presentations and presentation library" },
+    { name: "presentation-system-create", feature: "presentation-system", action: "create", description: "Create presentations with AI generation" },
+    { name: "presentation-system-edit", feature: "presentation-system", action: "edit", description: "Edit presentation content and settings" },
+    { name: "presentation-system-delete", feature: "presentation-system", action: "delete", description: "Delete presentations" }
   ];
 
   const insertedPermissions = await db.insert(permissions).values(permissionData).onConflictDoUpdate({
