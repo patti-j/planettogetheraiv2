@@ -130,7 +130,7 @@ export function MaxSidebar() {
     isCanvasVisible,
     setMobileLayoutMode, 
     setCurrentFullscreenView,
-    setIsCanvasVisible
+    setCanvasVisible
   } = useMaxDock();
   const { getThemeClasses } = useAITheme();
   
@@ -149,14 +149,14 @@ export function MaxSidebar() {
 
   // Expose canvas control for Max AI
   useEffect(() => {
-    (window as any).openCanvas = () => setIsCanvasVisible(true);
-    (window as any).closeCanvas = () => setIsCanvasVisible(false);
+    (window as any).openCanvas = () => setCanvasVisible(true);
+    (window as any).closeCanvas = () => setCanvasVisible(false);
     
     return () => {
       delete (window as any).openCanvas;
       delete (window as any).closeCanvas;
     };
-  }, [setIsCanvasVisible]);
+  }, [setCanvasVisible]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognition = useRef<any>(null);
@@ -416,24 +416,24 @@ export function MaxSidebar() {
         if (canvasAction.items) {
           setCanvasItems(canvasAction.items);
           // Auto-show canvas in split-pane layout using context
-          setIsCanvasVisible(true);
+          setCanvasVisible(true);
         }
         break;
       case 'update':
         if (canvasAction.items) {
           setCanvasItems(prev => [...prev, ...canvasAction.items]);
           // Auto-show canvas in split-pane layout using context
-          setIsCanvasVisible(true);
+          setCanvasVisible(true);
         }
         break;
       case 'clear':
         setCanvasItems([]);
         break;
       case 'SHOW_CANVAS':
-        setIsCanvasVisible(true);
+        setCanvasVisible(true);
         break;
       case 'HIDE_CANVAS':
-        setIsCanvasVisible(false);
+        setCanvasVisible(false);
         break;
       case 'ADD_CANVAS_CONTENT':
         if (canvasAction.content) {
@@ -446,14 +446,14 @@ export function MaxSidebar() {
             height: canvasAction.content.height || 'auto'
           };
           setCanvasItems(prev => [newItem, ...prev]); // Add to top
-          setIsCanvasVisible(true); // Auto-show canvas when content is added
+          setCanvasVisible(true); // Auto-show canvas when content is added
         }
         break;
     }
   };
 
   const toggleCanvas = () => {
-    setIsCanvasVisible(!isCanvasVisible);
+    setCanvasVisible(!isCanvasVisible);
   };
 
 

@@ -82,9 +82,11 @@ UI Navigation Actions:
 For CREATE_KANBAN_BOARD: parameters need name, description, viewType (jobs/operations), swimLaneField (status/priority/customer), filters (optional).
 
 Canvas Guidelines:
-- When creating visual content like dashboards, charts, analytics, or complex data displays, use SHOW_CANVAS action to automatically display the canvas
-- Use CANVAS_CONTENT to add interactive elements to the canvas area for better user visualization
-- Canvas is ideal for showing: production dashboards, performance metrics, Gantt chart summaries, system overviews, data visualizations
+- When user asks to show data in canvas or display lists/tables visually, use ADD_CANVAS_CONTENT action to automatically show and populate the canvas
+- ADD_CANVAS_CONTENT displays data in the top portion of the screen above main content
+- Perfect for: job lists, resource lists, operation tables, performance metrics, data visualizations
+- Use ADD_CANVAS_CONTENT with parameters: {title: "descriptive title", type: "table", data: structured_data}
+- Canvas automatically shows when content is added, no separate SHOW_CANVAS needed with ADD_CANVAS_CONTENT
 
 Respond with JSON: {"action": "ACTION_NAME", "parameters": {...}, "message": "response"}`
           },
@@ -898,6 +900,25 @@ async function executeAction(action: string, parameters: any, message: string, c
             }
           },
           actions: ["TRIGGER_UI_ACTION", "CANVAS_CONTENT"]
+        };
+
+      case "ADD_CANVAS_CONTENT":
+        // Add specific content to the canvas with auto-show
+        return {
+          success: true,
+          message: message || "Adding content to the canvas display",
+          data: null,
+          canvasAction: {
+            type: "ADD_CANVAS_CONTENT",
+            content: {
+              type: parameters.type || "table",
+              title: parameters.title || "AI Generated Content",
+              data: parameters.data || parameters.content,
+              width: parameters.width || "100%",
+              height: parameters.height || "auto"
+            }
+          },
+          actions: ["ADD_CANVAS_CONTENT"]
         };
 
       default:
