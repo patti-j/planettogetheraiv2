@@ -1000,10 +1000,14 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           newX = resizeStartWindowPosition.x - (newWidth - resizeStartDimensions.width);
         }
         if (resizeDirection.includes('s')) {
-          newHeight = Math.max(200, resizeStartDimensions.height + deltaY);
+          // Dynamic minimum height based on compact mode
+          const minHeight = windowDimensions.height < 300 ? 120 : 200;
+          newHeight = Math.max(minHeight, resizeStartDimensions.height + deltaY);
         }
         if (resizeDirection.includes('n')) {
-          newHeight = Math.max(200, resizeStartDimensions.height - deltaY);
+          // Dynamic minimum height based on compact mode
+          const minHeight = windowDimensions.height < 300 ? 120 : 200;
+          newHeight = Math.max(minHeight, resizeStartDimensions.height - deltaY);
           newY = resizeStartWindowPosition.y - (newHeight - resizeStartDimensions.height);
         }
 
@@ -1028,8 +1032,10 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           newHeight = windowSize.height - newY;
         }
 
-        // Safeguard: Reset to default if dimensions become invalid
-        if (newWidth < 200 || newHeight < 100) {
+        // Safeguard: Reset to default if dimensions become invalid (but allow smaller sizes in compact mode)
+        const minWidth = 200;
+        const minHeight = newHeight < 150 ? 120 : 150;
+        if (newWidth < minWidth || newHeight < minHeight) {
           console.log('Invalid dimensions detected during resize, resetting to defaults');
           setWindowDimensions({ width: 384, height: 600 });
           setPosition({
@@ -1262,12 +1268,14 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           </div>
         </CardHeader>
 
-        <CardContent className="flex-1 overflow-y-auto p-1 sm:p-6 pt-0">
-          <div className="space-y-0 sm:space-y-4">
-            {/* Hide description on mobile to save space */}
-            <p className="hidden sm:block text-sm text-gray-700 leading-relaxed">{currentStepData.description}</p>
+        <CardContent className={`flex-1 overflow-y-auto pt-0 ${windowDimensions.height < 200 ? 'p-1 min-h-0' : windowDimensions.height < 300 ? 'p-2 min-h-0' : 'p-1 sm:p-6'}`}>
+          <div className={`${windowDimensions.height < 200 ? 'space-y-0' : 'space-y-0 sm:space-y-4'}`}>
+            {/* Hide description when window is very small or on mobile */}
+            {windowDimensions.height >= 200 && (
+              <p className="hidden sm:block text-sm text-gray-700 leading-relaxed">{currentStepData.description}</p>
+            )}
             
-            {currentStepData.benefits && currentStepData.benefits.length > 0 && (
+            {currentStepData.benefits && currentStepData.benefits.length > 0 && windowDimensions.height >= 250 && (
               <div className="space-y-2 hidden sm:block">
                 <h4 className="text-sm font-medium text-gray-900">Key Benefits:</h4>
                 <ul className="space-y-1">
@@ -1283,90 +1291,92 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           </div>
         </CardContent>
 
-        <div className="flex-shrink-0 p-1.5 sm:p-6 pt-1 sm:pt-2 border-t space-y-1 sm:space-y-3">
-          {voiceEnabled && (
+        <div className={`flex-shrink-0 border-t ${windowDimensions.height < 200 ? 'p-1 space-y-1' : windowDimensions.height < 300 ? 'p-2 space-y-2' : 'p-1.5 sm:p-6 pt-1 sm:pt-2 space-y-1 sm:space-y-3'}`}>
+          {voiceEnabled && windowDimensions.height >= 150 && (
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Voice Guide</span>
-              <div className="flex items-center gap-2">
+              <span className={`${windowDimensions.height < 200 ? 'text-xs' : 'text-sm'} text-gray-600`}>Voice Guide</span>
+              <div className="flex items-center gap-1">
                 {isLoadingVoice && (
-                  <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                  <div className="animate-spin h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full"></div>
                 )}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={togglePlayPause}
                   disabled={isLoadingVoice}
-                  className="h-8 w-8 p-0"
+                  className={`${windowDimensions.height < 200 ? 'h-6 w-6' : 'h-8 w-8'} p-0`}
                 >
-                  {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                  {isPlaying ? <Pause className={`${windowDimensions.height < 200 ? 'h-3 w-3' : 'h-4 w-4'}`} /> : <Play className={`${windowDimensions.height < 200 ? 'h-3 w-3' : 'h-4 w-4'}`} />}
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => playPreloadedAudio(tourSteps[currentStep]?.id)}
                   disabled={isLoadingVoice || !tourSteps[currentStep]}
-                  className="h-8 w-8 p-0"
+                  className={`${windowDimensions.height < 200 ? 'h-6 w-6' : 'h-8 w-8'} p-0`}
                   title="Replay voice narration"
                 >
-                  <RotateCcw className="h-4 w-4" />
+                  <RotateCcw className={`${windowDimensions.height < 200 ? 'h-3 w-3' : 'h-4 w-4'}`} />
                 </Button>
               </div>
             </div>
           )}
 
-          <div className="flex gap-2">
+          <div className={`flex ${windowDimensions.height < 200 ? 'gap-1' : 'gap-2'}`}>
             <Button
               variant="outline"
               onClick={handlePrevious}
               disabled={currentStep === 0}
-              className="flex-1"
+              className={`flex-1 ${windowDimensions.height < 200 ? 'h-7 text-xs px-2' : windowDimensions.height < 250 ? 'h-8 text-sm px-3' : ''}`}
             >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Previous
+              <ChevronLeft className={`${windowDimensions.height < 200 ? 'h-3 w-3 mr-0.5' : 'h-4 w-4 mr-1'}`} />
+              {windowDimensions.height < 200 ? 'Prev' : 'Previous'}
             </Button>
             
             <Button
               onClick={handleNext}
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
+              className={`flex-1 bg-blue-600 hover:bg-blue-700 ${windowDimensions.height < 200 ? 'h-7 text-xs px-2' : windowDimensions.height < 250 ? 'h-8 text-sm px-3' : ''}`}
             >
               {currentStep === tourSteps.length - 1 ? (
                 <>
-                  Complete
-                  <CheckCircle className="h-4 w-4 ml-1" />
+                  {windowDimensions.height < 200 ? 'Done' : 'Complete'}
+                  <CheckCircle className={`${windowDimensions.height < 200 ? 'h-3 w-3 ml-0.5' : 'h-4 w-4 ml-1'}`} />
                 </>
               ) : (
                 <>
                   Next
-                  <ChevronRight className="h-4 w-4 ml-1" />
+                  <ChevronRight className={`${windowDimensions.height < 200 ? 'h-3 w-3 ml-0.5' : 'h-4 w-4 ml-1'}`} />
                 </>
               )}
             </Button>
 
-            <Button
-              variant={autoAdvance ? "default" : "outline"}
-              onClick={() => {
-                const newAutoAdvance = !autoAdvance;
-                setAutoAdvance(newAutoAdvance);
-                // If turning on auto-advance and audio has completed, advance immediately
-                if (newAutoAdvance && audioCompleted && currentStep < tourSteps.length - 1) {
-                  setTimeout(() => handleNext(), 500);
-                }
-              }}
-              className={`h-10 px-3 ${autoAdvance ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
-              title={autoAdvance ? "Auto-advance enabled" : "Auto-advance disabled"}
-            >
-              {autoAdvance ? (
-                <>
-                  <Timer className="h-4 w-4 mr-1" />
-                  <span className="hidden sm:inline">Auto</span>
-                </>
-              ) : (
-                <>
-                  <TimerOff className="h-4 w-4 mr-1" />
-                  <span className="hidden sm:inline">Manual</span>
-                </>
-              )}
-            </Button>
+            {windowDimensions.height >= 180 && (
+              <Button
+                variant={autoAdvance ? "default" : "outline"}
+                onClick={() => {
+                  const newAutoAdvance = !autoAdvance;
+                  setAutoAdvance(newAutoAdvance);
+                  // If turning on auto-advance and audio has completed, advance immediately
+                  if (newAutoAdvance && audioCompleted && currentStep < tourSteps.length - 1) {
+                    setTimeout(() => handleNext(), 500);
+                  }
+                }}
+                className={`${windowDimensions.height < 200 ? 'h-7 px-2' : windowDimensions.height < 250 ? 'h-8 px-3' : 'h-10 px-3'} ${autoAdvance ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
+                title={autoAdvance ? "Auto-advance enabled" : "Auto-advance disabled"}
+              >
+                {autoAdvance ? (
+                  <>
+                    <Timer className={`${windowDimensions.height < 200 ? 'h-3 w-3 mr-0.5' : 'h-4 w-4 mr-1'}`} />
+                    <span className="hidden sm:inline">{windowDimensions.height < 200 ? '' : 'Auto'}</span>
+                  </>
+                ) : (
+                  <>
+                    <TimerOff className={`${windowDimensions.height < 200 ? 'h-3 w-3 mr-0.5' : 'h-4 w-4 mr-1'}`} />
+                    <span className="hidden sm:inline">{windowDimensions.height < 200 ? '' : 'Manual'}</span>
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </div>
 
