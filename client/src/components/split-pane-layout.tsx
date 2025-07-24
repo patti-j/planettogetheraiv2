@@ -3,6 +3,7 @@ import { useMaxDock } from '@/contexts/MaxDockContext';
 import { Button } from '@/components/ui/button';
 import { Bot, MessageSquare, SplitSquareVertical } from 'lucide-react';
 import { useAITheme } from '@/hooks/use-ai-theme';
+import { MaxCanvas } from '@/components/max-canvas';
 
 interface SplitPaneLayoutProps {
   children: React.ReactNode;
@@ -169,15 +170,47 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
     // Mobile: vertical split with Max at bottom
     return (
       <div ref={containerRef} className="w-full h-full flex flex-col">
-        {/* Main content area */}
+        {/* Main content area - split vertically if canvas is visible */}
         <div 
-          className="flex-1 overflow-auto" 
+          className="flex-1 overflow-hidden flex flex-col" 
           style={{ 
             height: `calc(100% - ${maxHeight}px - 4px)`,
             touchAction: 'pan-y pan-x' // Allow normal scrolling
           }}
         >
-          {children}
+          {isCanvasVisible && (
+            <>
+              {/* Canvas area */}
+              <div 
+                className="bg-gray-50 border-b overflow-hidden flex-shrink-0"
+                style={{ height: `${canvasHeight}px` }}
+              >
+                <MaxCanvas 
+                  isVisible={isCanvasVisible}
+                  onClose={() => {}}
+                  sessionId={`canvas_mobile_${Date.now()}`}
+                />
+              </div>
+              
+              {/* Canvas resizer */}
+              <div
+                className="h-1 bg-gray-300 hover:bg-blue-400 cursor-row-resize transition-colors relative group"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+              >
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-8 h-0.5 bg-gray-500 group-hover:bg-blue-600 transition-colors"></div>
+                </div>
+              </div>
+            </>
+          )}
+          
+          {/* Regular content */}
+          <div className="flex-1 overflow-auto">
+            {children}
+          </div>
         </div>
         
         {/* Resizer - Reverted to original thickness */}
@@ -234,12 +267,11 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
               className="bg-gray-50 border-b overflow-hidden flex-shrink-0"
               style={{ height: `${canvasHeight}px` }}
             >
-              <div className="h-full w-full flex items-center justify-center text-gray-500">
-                <div className="text-center">
-                  <div className="text-lg font-medium">Canvas</div>
-                  <div className="text-sm">Dynamic content will appear here</div>
-                </div>
-              </div>
+              <MaxCanvas 
+                isVisible={isCanvasVisible}
+                onClose={() => {}}
+                sessionId={`canvas_${Date.now()}`}
+              />
             </div>
             
             {/* Canvas resizer */}

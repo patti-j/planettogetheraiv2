@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AI_THEME_OPTIONS, AIThemeColor } from "@/lib/ai-theme";
-import { MaxCanvas } from "@/components/max-canvas";
+
 
 interface Message {
   id: string;
@@ -142,11 +142,6 @@ export function MaxSidebar() {
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
   const [selectedVoice, setSelectedVoice] = useState('alloy');
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
-  const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]);
-  
-  // Canvas session ID
-  const [canvasSessionId] = useState(() => `canvas_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
-
   // Expose canvas control for Max AI
   useEffect(() => {
     (window as any).openCanvas = () => setCanvasVisible(true);
@@ -732,13 +727,7 @@ export function MaxSidebar() {
           </Button>
         </div>
       </div>
-      
-      {/* Canvas Component */}
-      <MaxCanvas
-        isVisible={isCanvasVisible}
-        onClose={() => setCanvasVisible(false)}
-        sessionId={canvasSessionId}
-      />
+
     </div>
   );
 }
