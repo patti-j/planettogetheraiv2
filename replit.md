@@ -147,6 +147,15 @@ The application uses a modern full-stack architecture with strong typing through
 - Enhanced system context with explicit instructions to use exact numbers from live data
 - Improved user experience by providing immediate answers to data questions without leaving current page
 
+✓ **Max AI Job Listing Capability Fix (July 24, 2025)**:
+- Fixed critical issue where Max AI claimed it didn't have job listing capability despite having direct data access
+- Enhanced AI system prompt with explicit "LIVE DATA ACCESS" instructions and comprehensive data context
+- Added dedicated LIST_JOBS, LIST_OPERATIONS, and LIST_RESOURCES actions to AI agent with detailed formatted responses
+- Updated contextSummary to include ALL jobs with complete details (name, customer, priority, status, due date) instead of just samples
+- AI now properly responds to "show me a list of jobs" requests with formatted job information including IDs, customers, priorities, and due dates
+- Max can now provide comprehensive job listings, operation details, and resource information directly from live system data
+- Enhanced error handling ensures AI uses available data instead of claiming lack of capability
+
 ✓ **AI Theme Color System Bug Fix (July 24, 2025)**:
 - Fixed critical AI theme color issue where purple-pink theme displayed as green-pink gradient
 - Corrected HSL color values in useAITheme hook: purple-pink now uses proper purple (271 91% 65%) instead of green (168 85% 52%)

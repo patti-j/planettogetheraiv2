@@ -23,6 +23,10 @@ export interface AIAgentResponse {
   message: string;
   data?: any;
   actions?: string[];
+  canvasAction?: {
+    type: string;
+    content?: any;
+  };
 }
 
 export interface SystemContext {
@@ -37,14 +41,14 @@ export async function processAICommand(command: string, attachments?: Attachment
     // Get current system context
     const context = await getSystemContext();
     
-    // Limit context size to prevent token overflow - just get counts and basic info
+    // Include live system data for AI responses
     const contextSummary = {
       jobCount: context.jobs.length,
       operationCount: context.operations.length,
       resourceCount: context.resources.length,
       capabilityCount: context.capabilities.length,
-      sampleJobs: context.jobs.slice(0, 3).map(j => ({ id: j.id, name: j.name, status: j.status })),
-      sampleResources: context.resources.slice(0, 3).map(r => ({ id: r.id, name: r.name, type: r.type })),
+      allJobs: context.jobs.map(j => ({ id: j.id, name: j.name, status: j.status, customer: j.customer, priority: j.priority, dueDate: j.dueDate })),
+      sampleResources: context.resources.slice(0, 5).map(r => ({ id: r.id, name: r.name, type: r.type })),
       sampleCapabilities: context.capabilities.slice(0, 5).map(c => ({ id: c.id, name: c.name }))
     };
 
@@ -60,9 +64,20 @@ export async function processAICommand(command: string, attachments?: Attachment
         messages: [
           {
             role: "system",
-            content: `AI agent for manufacturing system. Current state: ${contextSummary.jobCount} jobs, ${contextSummary.operationCount} operations, ${contextSummary.resourceCount} resources.
+            content: `AI agent for manufacturing system with LIVE DATA ACCESS. Current system data:
 
-Available actions: CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, and others.
+LIVE DATA AVAILABLE:
+- Total Jobs: ${contextSummary.jobCount}
+- All Jobs: ${JSON.stringify(contextSummary.allJobs)}
+- Total Operations: ${contextSummary.operationCount} 
+- Total Resources: ${contextSummary.resourceCount}
+- Sample Resources: ${JSON.stringify(contextSummary.sampleResources)}
+- Total Capabilities: ${contextSummary.capabilityCount}
+- Sample Capabilities: ${JSON.stringify(contextSummary.sampleCapabilities)}
+
+IMPORTANT: You have access to real live manufacturing data. When users ask about jobs, operations, resources, or system status, use the provided live data above to give accurate answers. DO NOT say you don't have access - you have direct access to current system data.
+
+Available actions: LIST_JOBS, LIST_OPERATIONS, LIST_RESOURCES, CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, and others.
 
 UI Navigation Actions:
 - NAVIGATE_TO_PAGE: Navigate to specific pages (dashboard, analytics, reports, scheduling-optimizer, etc.)
@@ -178,7 +193,7 @@ Respond with JSON: {"action": "ACTION_NAME", "parameters": {...}, "message": "re
     });
 
     // Parse the response
-    const responseText = response.content[0].text;
+    const responseText = response.content[0].type === 'text' ? response.content[0].text : '';
     let aiResponse;
     try {
       // Try to parse JSON from response
@@ -225,6 +240,33 @@ async function getSystemContext(): Promise<SystemContext> {
 async function executeAction(action: string, parameters: any, message: string, context?: SystemContext, attachments?: AttachmentFile[]): Promise<AIAgentResponse> {
   try {
     switch (action) {
+      case "LIST_JOBS":
+        const allJobs = await storage.getJobs();
+        return {
+          success: true,
+          message: message || `Here are the active jobs in our system:\n\n${allJobs.map(job => `• ${job.name} (ID: ${job.id})\n  Customer: ${job.customer}\n  Priority: ${job.priority}\n  Status: ${job.status}\n  Due: ${job.dueDate ? new Date(job.dueDate).toLocaleDateString() : 'Not set'}`).join('\n\n')}`,
+          data: allJobs,
+          actions: ["LIST_JOBS"]
+        };
+
+      case "LIST_OPERATIONS":
+        const allOperations = await storage.getOperations();
+        return {
+          success: true,
+          message: message || `Here are the operations in our system:\n\n${allOperations.map(op => `• ${op.name} (ID: ${op.id})\n  Job ID: ${op.jobId}\n  Duration: ${op.duration}h\n  Status: ${op.status}`).join('\n\n')}`,
+          data: allOperations,
+          actions: ["LIST_OPERATIONS"]
+        };
+
+      case "LIST_RESOURCES":
+        const allResources = await storage.getResources();
+        return {
+          success: true,
+          message: message || `Here are the resources in our system:\n\n${allResources.map(res => `• ${res.name} (ID: ${res.id})\n  Type: ${res.type}\n  Status: ${res.status || 'Unknown'}`).join('\n\n')}`,
+          data: allResources,
+          actions: ["LIST_RESOURCES"]
+        };
+
       case "CREATE_JOB":
         // Extract customer from various parameter names or from the command itself
         let customerName = parameters.customer || parameters.customerName;
@@ -240,6 +282,7 @@ async function executeAction(action: string, parameters: any, message: string, c
           name: parameters.name || "New Job",
           description: parameters.description || null,
           customer: customerName || "Unknown Customer",
+          plantId: parameters.plantId || 1, // Default to plant 1
           priority: parameters.priority || "medium",
           dueDate: parameters.dueDate ? new Date(parameters.dueDate) : null,
           status: "active"
@@ -549,10 +592,10 @@ async function executeAction(action: string, parameters: any, message: string, c
 
       case "CREATE_RESOURCE_VIEW":
         // Get all resources if no specific IDs are provided
-        const allResources = await storage.getResources();
+        const availableResources = await storage.getResources();
         const resourceSequence = parameters.resourceIds && parameters.resourceIds.length > 0 
           ? parameters.resourceIds 
-          : allResources.map(r => r.id);
+          : availableResources.map(r => r.id);
         
         const resourceViewConfig = {
           name: parameters.name || "AI Generated View",
