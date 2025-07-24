@@ -77,7 +77,7 @@ LIVE DATA AVAILABLE:
 
 IMPORTANT: You have access to real live manufacturing data. When users ask about jobs, operations, resources, or system status, use the provided live data above to give accurate answers. DO NOT say you don't have access - you have direct access to current system data.
 
-Available actions: LIST_JOBS, LIST_OPERATIONS, LIST_RESOURCES, CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, CREATE_CHART, CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART, and others.
+Available actions: LIST_JOBS, LIST_OPERATIONS, LIST_RESOURCES, CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, CLEAR_CANVAS, CREATE_CHART, CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART, and others.
 
 UI Navigation Actions:
 - NAVIGATE_TO_PAGE: Navigate to specific pages (dashboard, analytics, reports, scheduling-optimizer, etc.)
@@ -105,6 +105,8 @@ Canvas Guidelines:
 - Canvas displays in the main content area and auto-opens when content is added
 - Perfect for: job lists, resource lists, operation tables, performance metrics, data visualizations
 - Examples: "show jobs" = LIST_JOBS with displayInCanvas=true, "list resources" = LIST_RESOURCES with displayInCanvas=true
+- For clearing canvas: Use CLEAR_CANVAS when user asks to "clear canvas", "clear the canvas", "remove canvas content", "empty canvas", or similar requests
+- Canvas clearing removes all content and widgets from the canvas display area
 
 Chart Creation Guidelines:
 - For chart requests, use specific chart actions: CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART
@@ -1211,6 +1213,17 @@ async function executeAction(action: string, parameters: any, message: string, c
             }
           },
           actions: ["CREATE_GANTT_CHART", "ADD_CANVAS_CONTENT"]
+        };
+
+      case "CLEAR_CANVAS":
+        return {
+          success: true,
+          message: message || "Canvas has been cleared.",
+          data: null,
+          canvasAction: {
+            type: "clear"
+          },
+          actions: ["CLEAR_CANVAS"]
         };
 
       default:
