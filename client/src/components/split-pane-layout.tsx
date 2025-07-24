@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'wouter';
 import { useMaxDock } from '@/contexts/MaxDockContext';
 import { Button } from '@/components/ui/button';
 import { Bot, MessageSquare, SplitSquareVertical } from 'lucide-react';
@@ -22,12 +23,14 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
     setMaxWidth, 
     setCurrentFullscreenView, 
     setMobileLayoutMode,
-    setCanvasHeight
+    setCanvasHeight,
+    setCanvasVisible
   } = useMaxDock();
   const { aiTheme } = useAITheme();
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [maxHeight, setMaxHeight] = useState(300); // For mobile vertical split
+  const [location] = useLocation();
 
   // Handle mouse/touch events for resizing
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -112,6 +115,14 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
       window.removeEventListener('max-header-drag-start', handleHeaderDragStart);
     };
   }, []);
+
+  // Navigation detection: close canvas when route changes
+  useEffect(() => {
+    if (isCanvasVisible) {
+      console.log('Navigation detected, closing canvas. Current location:', location);
+      setCanvasVisible(false);
+    }
+  }, [location]);
 
   // Add event listeners for dragging
   useEffect(() => {

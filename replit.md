@@ -127,6 +127,7 @@ The application uses a modern full-stack architecture with strong typing through
 - **Share Functionality**: Native Web Share API support with text message and email sharing options
 - **Canvas Auto-Display Fix**: Fixed issue where Max stopped displaying data in canvas by enhancing detection for "show", "list", "display" commands
 - **Canvas Timestamps**: Added creation timestamps to all canvas items showing when content was added to help users track data freshness
+- **Navigation-Triggered Canvas Hiding**: Canvas automatically closes when users navigate to different pages for cleaner navigation experience
 - **Professional Header**: Proper hamburger menu clearance (ml-12 spacing) and AI theme integration
 - **Error Handling**: All export functions include proper error handling and user feedback via toast notifications
 - **TypeScript Safety**: Fixed all TypeScript errors with proper null checks for canvas context
