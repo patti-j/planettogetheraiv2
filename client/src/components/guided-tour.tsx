@@ -348,8 +348,23 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     );
     
     const viewportHeight = window.innerHeight;
-    const currentScrollTop = window.pageYOffset;
-    const maxScrollableDistance = pageHeight - viewportHeight;
+    // Try to find the main content container first
+    const mainContent = document.querySelector('main') || document.querySelector('#root > div:first-child');
+    
+    let currentScrollTop, maxScrollableDistance;
+    if (mainContent && mainContent !== document.body) {
+      // Use main content container for scroll calculations
+      currentScrollTop = mainContent.scrollTop;
+      const mainContentHeight = mainContent.scrollHeight;
+      const mainContentClientHeight = mainContent.clientHeight;
+      maxScrollableDistance = mainContentHeight - mainContentClientHeight;
+      console.log(`Using main content for scroll: scrollTop=${currentScrollTop}, scrollHeight=${mainContentHeight}, clientHeight=${mainContentClientHeight}`);
+    } else {
+      // Fallback to window scrolling
+      currentScrollTop = window.pageYOffset;
+      maxScrollableDistance = pageHeight - viewportHeight;
+      console.log(`Using window for scroll: scrollTop=${currentScrollTop}, pageHeight=${pageHeight}, viewportHeight=${viewportHeight}`);
+    }
     
     console.log(`Detailed height analysis:
       - body.scrollHeight: ${bodyHeight}
@@ -377,11 +392,14 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         const forcedScrollDistance = viewportHeight * 0.5;
         console.log(`Forcing mobile scroll demo with ${forcedScrollDistance}px scroll distance`);
         
-        // Simple forced scroll for mobile
-        window.scrollTo({ top: forcedScrollDistance, behavior: 'smooth' });
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Simple forced scroll for mobile - target main content only
+        const mainContent = document.querySelector('main') || document.querySelector('#root > div:first-child');
+        if (mainContent && mainContent !== document.body) {
+          mainContent.scrollTo({ top: forcedScrollDistance, behavior: 'smooth' });
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          mainContent.scrollTo({ top: 0, behavior: 'smooth' });
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
         console.log('Forced mobile scroll demo completed');
         return;
       }
@@ -416,7 +434,14 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                 : 1 - Math.pow(-2 * progress + 2, 2) / 2;
               
               const newScrollTop = startScrollTop + distance * easeInOut;
-              window.scrollTo(0, newScrollTop);
+              
+              // Find main content container and scroll only that, not the tour window
+              const mainContent = document.querySelector('main') || document.querySelector('#root > div:first-child');
+              if (mainContent && mainContent !== document.body) {
+                mainContent.scrollTop = newScrollTop;
+              } else {
+                window.scrollTo(0, newScrollTop);
+              }
               
               if (progress < 1) {
                 requestAnimationFrame(animateScroll);
@@ -433,7 +458,11 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
         // Scroll back to top
         const scrollToTop = () => {
           return new Promise<void>((resolve) => {
-            const startingPosition = window.pageYOffset;
+            // Get current scroll position from the correct container
+            const mainContent = document.querySelector('main') || document.querySelector('#root > div:first-child');
+            const startingPosition = (mainContent && mainContent !== document.body) 
+              ? mainContent.scrollTop 
+              : window.pageYOffset;
             const distance = startingPosition;
             
             if (distance <= 10) {
@@ -454,7 +483,14 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                 : 1 - Math.pow(-2 * progress + 2, 2) / 2;
               
               const newScrollTop = startingPosition * (1 - easeInOut);
-              window.scrollTo(0, newScrollTop);
+              
+              // Find main content container and scroll only that, not the tour window
+              const mainContent = document.querySelector('main') || document.querySelector('#root > div:first-child');
+              if (mainContent && mainContent !== document.body) {
+                mainContent.scrollTop = newScrollTop;
+              } else {
+                window.scrollTo(0, newScrollTop);
+              }
               
               if (progress < 1) {
                 requestAnimationFrame(animateScroll);
