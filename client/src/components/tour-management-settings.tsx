@@ -170,6 +170,14 @@ export function TourManagementSettings({ open, onOpenChange }: TourManagementSet
         title: "Template created",
         description: "Your prompt template has been saved successfully.",
       });
+    },
+    onError: (error: any) => {
+      console.error("Create template error:", error);
+      toast({
+        title: "Failed to create template",
+        description: error?.message || "There was an error creating the template. Please try again.",
+        variant: "destructive"
+      });
     }
   });
 
@@ -184,6 +192,14 @@ export function TourManagementSettings({ open, onOpenChange }: TourManagementSet
       toast({
         title: "Template updated",
         description: "Your prompt template has been updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      console.error("Update template error:", error);
+      toast({
+        title: "Failed to update template",
+        description: error?.message || "There was an error updating the template. Please try again.",
+        variant: "destructive"
       });
     }
   });
@@ -220,13 +236,28 @@ export function TourManagementSettings({ open, onOpenChange }: TourManagementSet
       return;
     }
 
+    console.log("Saving template:", templateForm);
+
     if (editingTemplate) {
       updateTemplateMutation.mutate({
         id: editingTemplate.id,
         ...templateForm
       } as { id: number } & Partial<InsertTourPromptTemplate>);
     } else {
-      createTemplateMutation.mutate(templateForm as InsertTourPromptTemplate);
+      // Ensure we have all required fields and proper defaults
+      const templateData = {
+        name: templateForm.name,
+        description: templateForm.description || "",
+        category: templateForm.category || "general",
+        promptContent: templateForm.promptContent,
+        variables: templateForm.variables || [],
+        tags: templateForm.tags || [],
+        isBuiltIn: false,
+        isActive: true
+      } as InsertTourPromptTemplate;
+      
+      console.log("Creating template with data:", templateData);
+      createTemplateMutation.mutate(templateData);
     }
   };
 
