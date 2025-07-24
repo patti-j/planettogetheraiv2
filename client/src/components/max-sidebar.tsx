@@ -444,8 +444,15 @@ export function MaxSidebar() {
             width: canvasAction.content.width || '100%',
             height: canvasAction.content.height || 'auto'
           };
-          setCanvasItems(prev => [newItem, ...prev]); // Add to top
+          console.log('Creating new canvas item:', newItem);
+          setCanvasItems(prev => {
+            const newItems = [newItem, ...prev];
+            console.log('Setting canvas items to:', newItems);
+            return newItems;
+          }); // Add to top
+          console.log('Setting canvas visible to true');
           setCanvasVisible(true); // Auto-show canvas when content is added
+          console.log('Canvas visibility state after setting:', isCanvasVisible);
         }
         break;
     }
