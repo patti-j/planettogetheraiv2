@@ -9943,6 +9943,87 @@ Create a natural, conversational voice script that explains this feature to some
     }
   });
 
+  // AI Presentation Generation endpoint
+  app.post("/api/presentations/generate-with-ai", requireAuth, async (req, res) => {
+    try {
+      const { prompt } = req.body;
+      if (!prompt) {
+        return res.status(400).json({ error: "Prompt is required" });
+      }
+
+      // Import OpenAI dynamically
+      const OpenAI = (await import("openai")).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      // Generate presentation content with AI
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are an AI assistant specialized in creating manufacturing presentations. 
+            Generate a structured presentation based on the user's requirements. 
+            Respond with a JSON object containing:
+            - title: A compelling presentation title
+            - description: A brief description of the presentation
+            - category: One of: Sales, Training, Executive, Technical, Marketing, Operations
+            - audience: Target audience description
+            - estimatedDuration: Duration in minutes (number)
+            - tags: Array of relevant tags
+            - targetRoles: Array of job roles this presentation targets
+            - slides: Array of slide objects with title and content
+            
+            Make the content specific to manufacturing and production optimization.`
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7
+      });
+
+      const aiContent = JSON.parse(response.choices[0].message.content);
+
+      // Create the presentation in the database
+      const presentationData = {
+        title: aiContent.title,
+        description: aiContent.description,
+        category: aiContent.category,
+        audience: aiContent.audience,
+        createdBy: typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 1 : req.user.id,
+        estimatedDuration: aiContent.estimatedDuration || 30,
+        tags: aiContent.tags || [],
+        targetRoles: aiContent.targetRoles || [],
+        isTemplate: false,
+        isPublic: false,
+        customization: {
+          aiGenerated: true,
+          originalPrompt: prompt,
+          slides: aiContent.slides || []
+        }
+      };
+
+      const validation = insertPresentationSchema.safeParse(presentationData);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid presentation data generated", details: validation.error.errors });
+      }
+
+      const presentation = await storage.createPresentation(validation.data);
+      
+      res.status(201).json({
+        success: true,
+        presentation,
+        message: "AI presentation generated successfully"
+      });
+
+    } catch (error) {
+      console.error("Error generating AI presentation:", error);
+      res.status(500).json({ error: "Failed to generate presentation with AI" });
+    }
+  });
+
   // Marketing System API Routes
 
   // Customer Journey Stages

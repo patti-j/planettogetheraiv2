@@ -102,8 +102,8 @@ export default function PresentationSystemPage() {
   // AI-powered presentation generation
   const generatePresentationMutation = useMutation({
     mutationFn: async (prompt: string) => {
-      // This integrates with the AI agent for presentation generation
-      const response = await apiRequest("POST", "/api/ai-agent/command", { command: `Create a presentation: ${prompt}` });
+      // Use dedicated AI presentation generation endpoint
+      const response = await apiRequest("POST", "/api/presentations/generate-with-ai", { prompt });
       return response.json();
     },
     onSuccess: (data) => {
