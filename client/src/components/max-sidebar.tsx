@@ -169,7 +169,7 @@ export function MaxSidebar() {
       recognition.current.continuous = true;
       recognition.current.interimResults = true;
       recognition.current.lang = 'en-US';
-      recognition.current.maxAlternatives = 3;
+      recognition.current.maxAlternatives = 1;
 
       recognition.current.onstart = () => {
         console.log('Speech recognition started');
@@ -194,8 +194,17 @@ export function MaxSidebar() {
         console.log('Final transcript:', finalTranscript);
         console.log('Interim transcript:', interimTranscript);
         
+        // Show interim results immediately for better responsiveness
+        if (interimTranscript && !finalTranscript) {
+          // Store the base message without interim text
+          const baseMessage = inputMessage.replace(/\s*\[listening\.\.\.\].*$/, '');
+          setInputMessage(`${baseMessage} [listening...] ${interimTranscript}`.trim());
+        }
+        
         if (finalTranscript) {
-          setInputMessage(prev => (prev + finalTranscript).trim());
+          // Remove any interim text and add final transcript
+          const baseMessage = inputMessage.replace(/\s*\[listening\.\.\.\].*$/, '');
+          setInputMessage(`${baseMessage} ${finalTranscript}`.trim());
         }
         
         // Don't stop listening automatically - let user control it
@@ -812,10 +821,10 @@ export function MaxSidebar() {
               onChange={(e) => setInputMessage(e.target.value)}
               placeholder={isListening ? "Listening... speak now" : "Ask me anything about your operations..."}
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              className={`text-sm ${isListening ? 'border-green-300 bg-green-50' : ''}`}
+              className={`text-sm ${isListening ? 'border-green-300 bg-green-50 pl-8' : ''}`}
             />
             {isListening && (
-              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1 text-green-600">
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1 text-green-600">
                 <Mic className="h-3 w-3 animate-pulse" />
                 <span className="animate-pulse">●</span>
               </div>
