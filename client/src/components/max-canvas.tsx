@@ -4,6 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { 
   X, 
   Download, 
@@ -21,7 +27,8 @@ import {
   Trash2,
   Copy,
   FileImage,
-  Link
+  Link,
+  MoreVertical
 } from 'lucide-react';
 import { useAITheme } from '@/hooks/use-ai-theme';
 import { toast } from '@/hooks/use-toast';
@@ -119,6 +126,10 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       
+      if (!ctx) {
+        throw new Error('Canvas context not available');
+      }
+      
       canvas.width = 800;
       canvas.height = 600;
       
@@ -148,7 +159,6 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
         ctx.fillStyle = '#6b7280';
         ctx.font = '12px Arial';
         const content = JSON.stringify(item.content);
-        const maxWidth = 720;
         const words = content.slice(0, 100) + (content.length > 100 ? '...' : '');
         ctx.fillText(words, 40, yPos);
         
@@ -157,17 +167,19 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
       
       // Convert to blob and download
       canvas.toBlob((blob) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `max-canvas-${Date.now()}.png`;
-        a.click();
-        URL.revokeObjectURL(url);
-        
-        toast({
-          title: "Image Exported",
-          description: "Canvas exported as PNG image"
-        });
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `max-canvas-${Date.now()}.png`;
+          a.click();
+          URL.revokeObjectURL(url);
+          
+          toast({
+            title: "Image Exported",
+            description: "Canvas exported as PNG image"
+          });
+        }
       }, 'image/png');
       
     } catch (error) {
@@ -226,73 +238,114 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
 
   return (
     <div className="bg-gray-50 flex flex-col h-full">
-      {/* Canvas Header - Full page header with proper hamburger clearance */}
-      <div className={`${aiTheme.gradient} text-white p-3 sm:p-6 space-y-4 sm:space-y-6`}>
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-center gap-3 md:ml-0 ml-12">
-            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-4 h-4" />
+      {/* Canvas Header - Compact mobile design with dropdown menu */}
+      <div className={`${aiTheme.gradient} text-white p-2 sm:p-6`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3 md:ml-0 ml-12">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-white/20 rounded-lg flex items-center justify-center">
+              <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
             </div>
             <div>
-              <h1 className="text-xl md:text-2xl font-bold">Canvas</h1>
-              <p className="text-white/80 text-sm md:text-base">Dynamic content space for AI-generated visualizations</p>
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold">Canvas</h1>
+              <p className="text-white/80 text-xs sm:text-sm md:text-base hidden sm:block">Dynamic content space for AI-generated visualizations</p>
             </div>
           </div>
             
-          {/* Header Action Buttons */}
-          <div className="flex items-center gap-2 lg:flex-shrink-0">
+          {/* Header Actions - Desktop: inline buttons, Mobile: dropdown menu */}
+          <div className="flex items-center gap-2">
             {canvasItems.length > 0 && (
               <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCopyToClipboard}
-                  className="text-white hover:bg-white/20"
-                  title="Copy to Clipboard"
-                >
-                  <Copy className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Copy</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleExportJSON}
-                  className="text-white hover:bg-white/20"
-                  title="Export as JSON"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">JSON</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleExportImage}
-                  className="text-white hover:bg-white/20"
-                  title="Export as Image"
-                >
-                  <FileImage className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Image</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleShare}
-                  className="text-white hover:bg-white/20"
-                  title="Share Canvas"
-                >
-                  <Share2 className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Share</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleClearCanvas}
-                  className="text-white hover:bg-white/20"
-                  title="Clear Canvas"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Clear</span>
-                </Button>
+                {/* Desktop buttons - hidden on mobile */}
+                <div className="hidden sm:flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCopyToClipboard}
+                    className="text-white hover:bg-white/20"
+                    title="Copy to Clipboard"
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleExportJSON}
+                    className="text-white hover:bg-white/20"
+                    title="Export as JSON"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    JSON
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleExportImage}
+                    className="text-white hover:bg-white/20"
+                    title="Export as Image"
+                  >
+                    <FileImage className="w-4 h-4 mr-2" />
+                    Image
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleShare}
+                    className="text-white hover:bg-white/20"
+                    title="Share Canvas"
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Share
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearCanvas}
+                    className="text-white hover:bg-white/20"
+                    title="Clear Canvas"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Clear
+                  </Button>
+                </div>
+                
+                {/* Mobile dropdown menu */}
+                <div className="sm:hidden">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-white hover:bg-white/20 p-2"
+                        title="Canvas Actions"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem onClick={handleCopyToClipboard}>
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copy to Clipboard
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleExportJSON}>
+                        <Download className="w-4 h-4 mr-2" />
+                        Export as JSON
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleExportImage}>
+                        <FileImage className="w-4 h-4 mr-2" />
+                        Export as Image
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleShare}>
+                        <Share2 className="w-4 h-4 mr-2" />
+                        Share Canvas
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleClearCanvas} className="text-red-600">
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Clear Canvas
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </>
             )}
           </div>
