@@ -446,7 +446,10 @@ export function MaxSidebar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setMobileLayoutMode('fullscreen')}
+                  onClick={() => {
+                    setMobileLayoutMode('fullscreen');
+                    setCurrentFullscreenView('max'); // Show Max by default when entering fullscreen
+                  }}
                   className="h-6 w-6 p-0 text-white hover:bg-white/20"
                   title="Switch to Fullscreen Mode"
                 >

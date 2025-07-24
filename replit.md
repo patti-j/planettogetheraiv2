@@ -130,6 +130,12 @@ The application uses a modern full-stack architecture with strong typing through
 - AI theme color system now displays accurate colors matching the theme names and descriptions
 - Purple-pink theme properly shows purple-to-pink gradient as intended by users
 
+✓ **Max Mobile Fullscreen Behavior Fix (July 24, 2025)**:
+- Fixed mobile fullscreen toggle in Max header to prioritize Max view instead of main content
+- When clicking maximize icon (broken lines square) in Max header, users now see Max in fullscreen by default
+- Users can then switch to main content view using the floating toggle button if desired
+- Improved user experience by making fullscreen mode focus on Max AI assistant as intended
+
 ✓ **Context-Aware Tour Role Management Implementation (July 24, 2025)**:
 - Successfully implemented intelligent context-aware tour behavior based on launch origin
 - **Training Context Tours**: Tours launched from tour management return to original trainer role after completion/skip
