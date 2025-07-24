@@ -125,6 +125,7 @@ The application uses a modern full-stack architecture with strong typing through
 - **JSON Export**: Downloads complete canvas data with metadata and timestamps
 - **Image Export**: Generates PNG screenshots of canvas content with visual formatting
 - **Share Functionality**: Native Web Share API support with text message and email sharing options
+- **Canvas Auto-Display Fix**: Fixed issue where Max stopped displaying data in canvas by enhancing detection for "show", "list", "display" commands
 - **Professional Header**: Proper hamburger menu clearance (ml-12 spacing) and AI theme integration
 - **Error Handling**: All export functions include proper error handling and user feedback via toast notifications
 - **TypeScript Safety**: Fixed all TypeScript errors with proper null checks for canvas context

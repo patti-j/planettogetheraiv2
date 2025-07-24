@@ -97,12 +97,14 @@ UI Navigation Actions:
 For CREATE_KANBAN_BOARD: parameters need name, description, viewType (jobs/operations), swimLaneField (status/priority/customer), filters (optional).
 
 Canvas Guidelines:
-- When user asks to show jobs/data "in canvas" or display lists visually, use LIST_JOBS action with parameters.displayInCanvas=true
-- LIST_JOBS automatically detects canvas requests and adds content to canvas display
-- For other data types, use ADD_CANVAS_CONTENT action with parameters: {title: "descriptive title", type: "table", data: structured_data}
-- Canvas displays in the top portion of the screen above main content
+- When user asks to show data/lists visually or mentions "canvas", "display", "show", or wants to see information, use canvas actions
+- For jobs: LIST_JOBS with parameters.displayInCanvas=true
+- For resources: LIST_RESOURCES with parameters.displayInCanvas=true
+- For operations: LIST_OPERATIONS with parameters.displayInCanvas=true
+- For other data: ADD_CANVAS_CONTENT action with parameters: {title: "descriptive title", type: "table", data: structured_data}
+- Canvas displays in the main content area and auto-opens when content is added
 - Perfect for: job lists, resource lists, operation tables, performance metrics, data visualizations
-- Examples: "show jobs in canvas" = LIST_JOBS with displayInCanvas=true, "display job information" = LIST_JOBS
+- Examples: "show jobs" = LIST_JOBS with displayInCanvas=true, "list resources" = LIST_RESOURCES with displayInCanvas=true
 
 Respond with JSON: {"action": "ACTION_NAME", "parameters": {...}, "message": "response"}`
           },
@@ -244,8 +246,15 @@ async function executeAction(action: string, parameters: any, message: string, c
       case "LIST_JOBS":
         const allJobs = await storage.getJobs();
         
-        // Check if this should be displayed in canvas
-        if (parameters.displayInCanvas || parameters.canvas || message.toLowerCase().includes('canvas')) {
+        // Check if this should be displayed in canvas - detect various ways users ask to see data
+        const shouldDisplayJobsInCanvas = parameters.displayInCanvas || 
+                                         parameters.canvas || 
+                                         message.toLowerCase().includes('canvas') ||
+                                         message.toLowerCase().includes('display') ||
+                                         message.toLowerCase().includes('show') ||
+                                         message.toLowerCase().includes('list');
+        
+        if (shouldDisplayJobsInCanvas) {
           return {
             success: true,
             message: message || "Here are all the jobs in your manufacturing system, displayed in the canvas above:",
@@ -280,6 +289,40 @@ async function executeAction(action: string, parameters: any, message: string, c
 
       case "LIST_OPERATIONS":
         const allOperations = await storage.getOperations();
+        
+        // Check if this should be displayed in canvas - detect various ways users ask to see data
+        const shouldDisplayOperationsInCanvas = parameters.displayInCanvas || 
+                                               parameters.canvas || 
+                                               message.toLowerCase().includes('canvas') ||
+                                               message.toLowerCase().includes('display') ||
+                                               message.toLowerCase().includes('show') ||
+                                               message.toLowerCase().includes('list');
+        
+        if (shouldDisplayOperationsInCanvas) {
+          return {
+            success: true,
+            message: message || "Displaying list of operations in the canvas.",
+            data: allOperations,
+            canvasAction: {
+              type: "ADD_CANVAS_CONTENT",
+              content: {
+                type: "table",
+                title: "Operations Overview",
+                data: allOperations.map(op => ({
+                  "Operation ID": op.id,
+                  "Name": op.name,
+                  "Job ID": op.jobId,
+                  "Duration": `${op.duration}h`,
+                  "Status": op.status
+                })),
+                width: "100%",
+                height: "auto"
+              }
+            },
+            actions: ["LIST_OPERATIONS", "ADD_CANVAS_CONTENT"]
+          };
+        }
+        
         return {
           success: true,
           message: message || `Here are the operations in our system:\n\n${allOperations.map(op => `• ${op.name} (ID: ${op.id})\n  Job ID: ${op.jobId}\n  Duration: ${op.duration}h\n  Status: ${op.status}`).join('\n\n')}`,
@@ -289,6 +332,38 @@ async function executeAction(action: string, parameters: any, message: string, c
 
       case "LIST_RESOURCES":
         const allResources = await storage.getResources();
+        
+        // Check if this should be displayed in canvas - detect various ways users ask to see data
+        const shouldDisplayResourcesInCanvas = parameters.displayInCanvas || 
+                                              parameters.canvas || 
+                                              message.toLowerCase().includes('canvas') ||
+                                              message.toLowerCase().includes('display') ||
+                                              message.toLowerCase().includes('show') ||
+                                              message.toLowerCase().includes('list');
+        
+        if (shouldDisplayResourcesInCanvas) {
+          return {
+            success: true,
+            message: message || "Displaying list of resources in the canvas.",
+            data: allResources,
+            canvasAction: {
+              type: "ADD_CANVAS_CONTENT",
+              content: {
+                type: "table",
+                title: "List of Resources",
+                data: allResources.map(res => ({
+                  "id": res.id,
+                  "name": res.name,
+                  "type": res.type
+                })),
+                width: "100%",
+                height: "auto"
+              }
+            },
+            actions: ["LIST_RESOURCES", "ADD_CANVAS_CONTENT"]
+          };
+        }
+        
         return {
           success: true,
           message: message || `Here are the resources in our system:\n\n${allResources.map(res => `• ${res.name} (ID: ${res.id})\n  Type: ${res.type}\n  Status: ${res.status || 'Unknown'}`).join('\n\n')}`,
