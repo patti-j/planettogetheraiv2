@@ -186,9 +186,10 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
         description: "Canvas content copied as text"
       });
     } catch (error) {
+      console.error('Clipboard access failed:', error);
       toast({
-        title: "Copy Failed",
-        description: "Unable to copy to clipboard",
+        title: "Copy Unavailable",
+        description: "Please manually select and copy the content",
         variant: "destructive"
       });
     }
@@ -266,46 +267,62 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
   };
 
   const handleShare = async () => {
-    const canvasData = {
-      timestamp: new Date().toISOString(),
-      items: canvasItems,
-      title: "Max Canvas Share",
-      description: "Shared canvas from Max AI Assistant"
-    };
+    try {
+      const canvasData = {
+        timestamp: new Date().toISOString(),
+        items: canvasItems,
+        title: "Max Canvas Share",
+        description: "Shared canvas from Max AI Assistant"
+      };
 
-    if (navigator.share) {
+      // Try Web Share API first (if available)
+      if (navigator.share) {
+        try {
+          const shareText = `Max Canvas Content (${canvasItems.length} items)\n\n${canvasItems
+            .map(item => `${item.title || 'Canvas Item'}: ${JSON.stringify(item.content)}`)
+            .join('\n\n---\n\n')}`;
+          
+          await navigator.share({
+            title: 'Max Canvas Content',
+            text: shareText
+          });
+          
+          toast({
+            title: "Canvas Shared",
+            description: "Canvas content shared successfully"
+          });
+          return;
+        } catch (shareError) {
+          console.log('Web Share API failed or denied, falling back to clipboard');
+        }
+      }
+
+      // Fallback to clipboard
       try {
-        const blob = new Blob([JSON.stringify(canvasData, null, 2)], { type: 'application/json' });
-        const file = new File([blob], `max-canvas-${Date.now()}.json`, { type: 'application/json' });
-        
-        await navigator.share({
-          title: 'Max Canvas Content',
-          text: 'Canvas visualization from Max AI Assistant',
-          files: [file]
-        });
-        
+        const shareText = `Max Canvas Content (${canvasItems.length} items)\n\n${canvasItems
+          .map(item => `${item.title || 'Canvas Item'}: ${JSON.stringify(item.content, null, 2)}`)
+          .join('\n\n---\n\n')}`;
+          
+        await navigator.clipboard.writeText(shareText);
         toast({
-          title: "Canvas Shared",
-          description: "Canvas content shared successfully"
+          title: "Copied to Clipboard",
+          description: "Canvas content copied for sharing"
         });
-      } catch (error) {
-        // Fallback to text sharing
-        const shareText = `Max Canvas Content\n\n${canvasItems
-          .map(item => `${item.title || 'Canvas Item'}: ${JSON.stringify(item.content)}`)
-          .join('\n')}`;
-        
-        await navigator.share({
-          title: 'Max Canvas Content',
-          text: shareText
+      } catch (clipboardError) {
+        // Final fallback - just show informational message
+        console.error('Both share and clipboard failed:', clipboardError);
+        toast({
+          title: "Share Unavailable", 
+          description: "Please manually copy the canvas content",
+          variant: "destructive"
         });
       }
-    } else {
-      // Fallback for browsers without Web Share API
-      const shareUrl = `data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify(canvasData, null, 2))}`;
-      await navigator.clipboard.writeText(shareUrl);
+    } catch (error) {
+      console.error('Share function error:', error);
       toast({
-        title: "Share Link Created",
-        description: "Canvas data URL copied to clipboard"
+        title: "Share Failed",
+        description: "Unable to share canvas content",
+        variant: "destructive"
       });
     }
   };
