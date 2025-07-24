@@ -256,17 +256,20 @@ export function TourManagementSettings({ open, onOpenChange }: TourManagementSet
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="templates" className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
-              Prompt Templates
+            <TabsTrigger value="templates" className="flex items-center gap-1 sm:gap-2 justify-center">
+              <BookOpen className="w-4 h-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Prompt Templates</span>
+              <span className="sm:hidden text-xs">Templates</span>
             </TabsTrigger>
-            <TabsTrigger value="library" className="flex items-center gap-2">
-              <Star className="w-4 h-4" />
-              Template Library
+            <TabsTrigger value="library" className="flex items-center gap-1 sm:gap-2 justify-center">
+              <Star className="w-4 h-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Template Library</span>
+              <span className="sm:hidden text-xs">Library</span>
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              Usage Analytics
+            <TabsTrigger value="analytics" className="flex items-center gap-1 sm:gap-2 justify-center">
+              <TrendingUp className="w-4 h-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Usage Analytics</span>
+              <span className="sm:hidden text-xs">Analytics</span>
             </TabsTrigger>
           </TabsList>
 
