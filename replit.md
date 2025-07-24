@@ -124,7 +124,7 @@ The application uses a modern full-stack architecture with strong typing through
 - **Copy to Clipboard**: Quick text sharing of canvas content with proper formatting
 - **JSON Export**: Downloads complete canvas data with metadata and timestamps
 - **Image Export**: Generates PNG screenshots of canvas content with visual formatting
-- **Share Functionality**: Native Web Share API support with fallback options
+- **Share Functionality**: Native Web Share API support with text message and email sharing options
 - **Professional Header**: Proper hamburger menu clearance (ml-12 spacing) and AI theme integration
 - **Error Handling**: All export functions include proper error handling and user feedback via toast notifications
 - **TypeScript Safety**: Fixed all TypeScript errors with proper null checks for canvas context
