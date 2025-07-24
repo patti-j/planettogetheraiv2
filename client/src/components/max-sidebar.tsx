@@ -9,6 +9,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useMaxDock } from "@/contexts/MaxDockContext";
+import type { CanvasItem } from "@/contexts/MaxDockContext";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { useLocation } from "wouter";
 import { 
@@ -52,15 +53,7 @@ interface Message {
   };
 }
 
-interface CanvasItem {
-  id: string;
-  type: 'dashboard' | 'chart' | 'table' | 'image' | 'interactive' | 'custom';
-  title: string;
-  content: any;
-  width?: string;
-  height?: string;
-  position?: { x: number; y: number };
-}
+
 
 interface AIInsight {
   type: 'suggestion' | 'warning' | 'optimization' | 'learning';
@@ -128,9 +121,11 @@ export function MaxSidebar() {
     mobileLayoutMode, 
     currentFullscreenView, 
     isCanvasVisible,
+    canvasItems,
     setMobileLayoutMode, 
     setCurrentFullscreenView,
-    setCanvasVisible
+    setCanvasVisible,
+    setCanvasItems
   } = useMaxDock();
   const { getThemeClasses } = useAITheme();
   

@@ -1,5 +1,15 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
+export interface CanvasItem {
+  id: string;
+  type: 'dashboard' | 'chart' | 'table' | 'image' | 'interactive' | 'custom';
+  title: string;
+  content: any;
+  width?: string;
+  height?: string;
+  position?: { x: number; y: number };
+}
+
 interface MaxDockContextType {
   isMaxOpen: boolean;
   maxWidth: number;
@@ -8,12 +18,14 @@ interface MaxDockContextType {
   currentFullscreenView: 'main' | 'max';
   isCanvasVisible: boolean;
   canvasHeight: number;
+  canvasItems: CanvasItem[];
   setMaxOpen: (open: boolean) => void;
   setMaxWidth: (width: number) => void;
   setMobileLayoutMode: (mode: 'split' | 'fullscreen') => void;
   setCurrentFullscreenView: (view: 'main' | 'max') => void;
   setCanvasVisible: (visible: boolean) => void;
   setCanvasHeight: (height: number) => void;
+  setCanvasItems: (items: CanvasItem[] | ((prev: CanvasItem[]) => CanvasItem[])) => void;
 }
 
 const MaxDockContext = createContext<MaxDockContextType | undefined>(undefined);
@@ -26,6 +38,7 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [currentFullscreenView, setCurrentFullscreenView] = useState<'main' | 'max'>('max');
   const [isCanvasVisible, setIsCanvasVisible] = useState(false);
   const [canvasHeight, setCanvasHeight] = useState(300); // Default canvas height
+  const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]); // Canvas items state
 
   // Detect mobile on mount and window resize
   useEffect(() => {
@@ -60,12 +73,14 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
         currentFullscreenView,
         isCanvasVisible,
         canvasHeight,
+        canvasItems,
         setMaxOpen,
         setMaxWidth: setMaxWidthValue,
         setMobileLayoutMode,
         setCurrentFullscreenView,
         setCanvasVisible: setIsCanvasVisible,
         setCanvasHeight: setCanvasHeightValue,
+        setCanvasItems,
       }}
     >
       {children}
