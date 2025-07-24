@@ -1092,7 +1092,7 @@ Provide the response as a JSON object with the following structure:
 
   // AI Chat Assistant Route
   // AI Agent Text-to-Speech endpoint
-  app.post("/api/ai-agent/tts", async (req, res) => {
+  app.post("/api/ai-agent/tts", requireAuth, async (req, res) => {
     try {
       const { text, voice = 'alloy' } = req.body;
       
@@ -1126,7 +1126,7 @@ Provide the response as a JSON object with the following structure:
   });
 
   // AI Agent Speech-to-Text (Whisper) endpoint
-  app.post("/api/ai-agent/transcribe", upload.single('audio'), async (req, res) => {
+  app.post("/api/ai-agent/transcribe", requireAuth, upload.single('audio'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: 'Audio file is required' });
@@ -1160,7 +1160,7 @@ Provide the response as a JSON object with the following structure:
   });
 
   // AI Agent Memory Management endpoints
-  app.get("/api/ai-agent/memory", async (req, res) => {
+  app.get("/api/ai-agent/memory", requireAuth, async (req, res) => {
     try {
       // Get stored memory and training data for the current user
       const memories = await storage.getAIMemories(req.user?.id || 'demo');
@@ -1173,7 +1173,7 @@ Provide the response as a JSON object with the following structure:
     }
   });
 
-  app.delete("/api/ai-agent/memory/:entryId", async (req, res) => {
+  app.delete("/api/ai-agent/memory/:entryId", requireAuth, async (req, res) => {
     try {
       const { entryId } = req.params;
       await storage.deleteAIMemory(entryId, req.user?.id || 'demo');
@@ -1184,7 +1184,7 @@ Provide the response as a JSON object with the following structure:
     }
   });
 
-  app.put("/api/ai-agent/training/:entryId", async (req, res) => {
+  app.put("/api/ai-agent/training/:entryId", requireAuth, async (req, res) => {
     try {
       const { entryId } = req.params;
       const { content } = req.body;
@@ -1197,7 +1197,7 @@ Provide the response as a JSON object with the following structure:
   });
 
   // Clear all AI memories
-  app.post("/api/ai-agent/memory/clear", async (req, res) => {
+  app.post("/api/ai-agent/memory/clear", requireAuth, async (req, res) => {
     try {
       const userId = req.user?.id || 'demo';
       await storage.clearAllAIMemories(userId);
@@ -1273,7 +1273,7 @@ Provide the response as a JSON object with the following structure:
     }
   }
 
-  app.post("/api/ai-agent/chat", async (req, res) => {
+  app.post("/api/ai-agent/chat", requireAuth, async (req, res) => {
     try {
       const { message, context, conversationHistory } = req.body;
       
@@ -1364,7 +1364,7 @@ Provide the response as a JSON object with the following structure:
     return insights;
   };
 
-  app.post("/api/ai-agent/command", async (req, res) => {
+  app.post("/api/ai-agent/command", requireAuth, async (req, res) => {
     try {
       const { command, attachments } = req.body;
       if (!command || typeof command !== "string") {
@@ -1382,7 +1382,7 @@ Provide the response as a JSON object with the following structure:
     }
   });
 
-  app.post("/api/ai-agent/voice", upload.single("audio"), async (req, res) => {
+  app.post("/api/ai-agent/voice", requireAuth, upload.single("audio"), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "Audio file is required" });
@@ -1398,7 +1398,7 @@ Provide the response as a JSON object with the following structure:
     }
   });
 
-  app.post("/api/ai-agent/upload-attachment", upload.single("attachment"), async (req, res) => {
+  app.post("/api/ai-agent/upload-attachment", requireAuth, upload.single("attachment"), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "Attachment file is required" });
