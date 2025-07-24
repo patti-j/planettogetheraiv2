@@ -16,7 +16,8 @@ import {
   Presentation, Plus, FileText, Users, TrendingUp, Bot, 
   Library, Settings, Play, Edit, Share, Trash2, Upload,
   BarChart3, Target, Calendar, Clock, Maximize2, Minimize2,
-  ChevronLeft, ChevronRight, X, SkipBack, SkipForward
+  ChevronLeft, ChevronRight, X, SkipBack, SkipForward,
+  ExternalLink, Monitor, ArrowRight, Maximize
 } from "lucide-react";
 
 interface Presentation {
@@ -199,10 +200,11 @@ export default function PresentationSystemPage() {
   };
 
   const getPresentationStats = () => {
-    const total = presentations.length;
-    const templates = presentations.filter((p: Presentation) => p.isTemplate).length;
-    const public_ = presentations.filter((p: Presentation) => p.isPublic).length;
-    const avgDuration = presentations.reduce((acc: number, p: Presentation) => acc + (p.estimatedDuration || 0), 0) / Math.max(total, 1);
+    const presentationData = (presentations as Presentation[]) || [];
+    const total = presentationData.length;
+    const templates = presentationData.filter((p: Presentation) => p.isTemplate).length;
+    const public_ = presentationData.filter((p: Presentation) => p.isPublic).length;
+    const avgDuration = presentationData.reduce((acc: number, p: Presentation) => acc + (p.estimatedDuration || 0), 0) / Math.max(total, 1);
     
     return { total, templates, public: public_, avgDuration };
   };
@@ -432,7 +434,7 @@ export default function PresentationSystemPage() {
                         </div>
                       ))}
                     </div>
-                  ) : presentations.length === 0 ? (
+                  ) : (presentations as Presentation[] || []).length === 0 ? (
                     <div className="text-center py-8">
                       <Presentation className="w-12 h-12 mx-auto text-gray-400 mb-4" />
                       <p className="text-muted-foreground">No presentations yet</p>
@@ -440,7 +442,7 @@ export default function PresentationSystemPage() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {presentations.slice(0, 5).map((presentation: Presentation) => (
+                      {(presentations as Presentation[] || []).slice(0, 5).map((presentation: Presentation) => (
                         <div key={presentation.id} className="flex items-center justify-between p-4 border rounded-lg">
                           <div className="flex items-center space-x-4">
                             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
@@ -505,7 +507,7 @@ export default function PresentationSystemPage() {
 
           <TabsContent value="presentations" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {presentations.map((presentation: Presentation) => (
+              {(presentations as Presentation[] || []).map((presentation: Presentation) => (
                 <Card key={presentation.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedPresentation(presentation)}>
                   <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 rounded-t-lg flex items-center justify-center">
                     <Presentation className="w-12 h-12 text-white" />
@@ -580,105 +582,254 @@ export default function PresentationSystemPage() {
         </Tabs>
       </div>
 
-      {/* Presentation Viewer Modal */}
+      {/* Desktop-Optimized Presentation Viewer */}
       {presentationViewerOpen && selectedPresentation && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center">
-          <div className="w-full h-full max-w-6xl max-h-screen bg-white rounded-lg overflow-hidden">
-            {/* Viewer Header */}
-            <div className="bg-gray-900 text-white p-4 flex items-center justify-between">
-              <div className="flex items-center space-x-4">
+        <div className="fixed inset-0 z-50 bg-black flex">
+          {/* Main Presentation Area */}
+          <div className="flex-1 flex flex-col bg-white">
+            {/* Presenter Toolbar */}
+            <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white px-6 py-3 flex items-center justify-between shadow-lg">
+              <div className="flex items-center space-x-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="font-medium">LIVE PRESENTATION</span>
+                </div>
+                <div className="h-6 w-px bg-blue-700"></div>
                 <h2 className="text-lg font-semibold">{selectedPresentation.title}</h2>
-                <Badge variant="secondary" className="bg-gray-700 text-white">
+                <Badge variant="secondary" className="bg-blue-800 text-blue-100 border-blue-700">
                   {selectedPresentation.category}
                 </Badge>
               </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-300">
-                  {currentSlideIndex + 1} / {selectedPresentation.customization?.slides?.length || 1}
-                </span>
-                <Button variant="ghost" size="sm" onClick={closePresentationViewer} className="text-white hover:bg-gray-700">
+              
+              <div className="flex items-center space-x-4">
+                <div className="text-sm text-blue-100">
+                  Slide {currentSlideIndex + 1} of {selectedPresentation.customization?.slides?.length || 1}
+                </div>
+                <div className="h-6 w-px bg-blue-700"></div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-blue-100 hover:bg-blue-800 transition-colors"
+                  onClick={() => window.open('/', '_blank')}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Open Live App
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={closePresentationViewer} 
+                  className="text-blue-100 hover:bg-blue-800 transition-colors"
+                >
                   <X className="w-4 h-4" />
                 </Button>
               </div>
             </div>
 
-            {/* Slide Content */}
-            <div className="flex-1 p-8 bg-white overflow-auto" style={{ minHeight: 'calc(100vh - 140px)' }}>
+            {/* Slide Content Area */}
+            <div className="flex-1 bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-8">
               {selectedPresentation.customization?.slides && selectedPresentation.customization.slides.length > 0 ? (
-                <div className="max-w-4xl mx-auto">
+                <div className="w-full max-w-5xl">
                   {(() => {
                     const slide = selectedPresentation.customization.slides[currentSlideIndex];
                     return (
-                      <div className="space-y-6">
-                        <h1 className="text-3xl font-bold text-gray-900 mb-6">{slide.title}</h1>
-                        <div className="prose prose-lg max-w-none">
+                      <div className="bg-white rounded-2xl shadow-2xl p-12 border border-gray-100">
+                        <div className="text-center mb-8">
+                          <h1 className="text-4xl font-bold text-gray-900 mb-4 leading-tight">{slide.title}</h1>
+                          <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-indigo-600 mx-auto rounded-full"></div>
+                        </div>
+                        
+                        <div className="prose prose-xl max-w-none text-center">
                           {slide.content && (
-                            <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                            <div className="text-gray-700 leading-relaxed text-lg whitespace-pre-wrap">
                               {slide.content}
                             </div>
                           )}
+                        </div>
+
+                        {/* Demo Integration Hint */}
+                        <div className="mt-12 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                          <div className="flex items-center justify-center space-x-3 text-blue-700">
+                            <Monitor className="w-5 h-5" />
+                            <span className="font-medium">Ready for live software demonstration</span>
+                            <ArrowRight className="w-4 h-4" />
+                          </div>
                         </div>
                       </div>
                     );
                   })()}
                 </div>
               ) : (
-                <div className="max-w-4xl mx-auto text-center py-12">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-4">{selectedPresentation.title}</h1>
-                  <p className="text-lg text-gray-600 mb-6">{selectedPresentation.description}</p>
-                  <div className="bg-blue-50 p-8 rounded-lg">
-                    <Presentation className="w-16 h-16 mx-auto text-blue-500 mb-4" />
-                    <p className="text-gray-600">This presentation is ready to be enhanced with slides.</p>
-                    <p className="text-sm text-gray-500 mt-2">
-                      Category: {selectedPresentation.category} | 
-                      Duration: {selectedPresentation.estimatedDuration || 'Not specified'}min
-                    </p>
+                <div className="w-full max-w-4xl text-center">
+                  <div className="bg-white rounded-2xl shadow-2xl p-16 border border-gray-100">
+                    <h1 className="text-4xl font-bold text-gray-900 mb-6">{selectedPresentation.title}</h1>
+                    <p className="text-xl text-gray-600 mb-8">{selectedPresentation.description}</p>
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-8 rounded-xl border border-blue-100">
+                      <Presentation className="w-20 h-20 mx-auto text-blue-500 mb-6" />
+                      <p className="text-lg text-gray-700 mb-4">Professional presentation ready for delivery</p>
+                      <div className="flex items-center justify-center space-x-6 text-sm text-gray-500">
+                        <span>Category: {selectedPresentation.category}</span>
+                        <span>•</span>
+                        <span>Duration: {selectedPresentation.estimatedDuration || 'Flexible'}min</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Navigation Controls */}
-            <div className="bg-gray-100 p-4 flex items-center justify-between">
-              <Button 
-                variant="outline" 
-                onClick={previousSlide}
-                disabled={currentSlideIndex === 0}
-                className="flex items-center space-x-2"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                <span>Previous</span>
-              </Button>
-              
+            {/* Presenter Navigation Controls */}
+            <div className="bg-gray-900 px-6 py-4 flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <Button variant="outline" size="sm" onClick={() => setCurrentSlideIndex(0)}>
-                  <SkipBack className="w-4 h-4" />
-                </Button>
-                <span className="text-sm text-gray-600">
-                  Slide {currentSlideIndex + 1} of {selectedPresentation.customization?.slides?.length || 1}
-                </span>
                 <Button 
                   variant="outline" 
-                  size="sm" 
-                  onClick={() => {
-                    if (selectedPresentation.customization?.slides) {
-                      setCurrentSlideIndex(selectedPresentation.customization.slides.length - 1);
-                    }
-                  }}
+                  onClick={previousSlide}
+                  disabled={currentSlideIndex === 0}
+                  className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700 flex items-center space-x-2"
                 >
-                  <SkipForward className="w-4 h-4" />
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>Previous</span>
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  onClick={nextSlide}
+                  disabled={!selectedPresentation.customization?.slides || currentSlideIndex >= selectedPresentation.customization.slides.length - 1}
+                  className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700 flex items-center space-x-2"
+                >
+                  <span>Next</span>
+                  <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
 
-              <Button 
-                variant="outline" 
-                onClick={nextSlide}
-                disabled={!selectedPresentation.customization?.slides || currentSlideIndex >= selectedPresentation.customization.slides.length - 1}
-                className="flex items-center space-x-2"
-              >
-                <span>Next</span>
-                <ChevronRight className="w-4 h-4" />
-              </Button>
+              <div className="flex items-center space-x-6">
+                <div className="flex items-center space-x-3">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setCurrentSlideIndex(0)}
+                    className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700"
+                  >
+                    <SkipBack className="w-4 h-4" />
+                  </Button>
+                  <span className="text-gray-300 font-mono">
+                    {String(currentSlideIndex + 1).padStart(2, '0')} / {String(selectedPresentation.customization?.slides?.length || 1).padStart(2, '0')}
+                  </span>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      if (selectedPresentation.customization?.slides) {
+                        setCurrentSlideIndex(selectedPresentation.customization.slides.length - 1);
+                      }
+                    }}
+                    className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700"
+                  >
+                    <SkipForward className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                <div className="h-6 w-px bg-gray-700"></div>
+
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="bg-green-800 border-green-700 text-green-100 hover:bg-green-700"
+                    onClick={() => window.open('/', '_blank')}
+                  >
+                    <Monitor className="w-4 h-4 mr-2" />
+                    Live Demo
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="bg-blue-800 border-blue-700 text-blue-100 hover:bg-blue-700"
+                  >
+                    <Maximize className="w-4 h-4 mr-2" />
+                    Fullscreen
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Side Panel for Presenter Notes & Controls */}
+          <div className="w-80 bg-gray-900 text-white flex flex-col border-l border-gray-800">
+            {/* Panel Header */}
+            <div className="p-4 border-b border-gray-800">
+              <h3 className="font-semibold text-gray-100">Presenter Panel</h3>
+              <p className="text-xs text-gray-400 mt-1">Controls & notes for seamless delivery</p>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="p-4 border-b border-gray-800">
+              <h4 className="text-sm font-medium text-gray-300 mb-3">Quick Actions</h4>
+              <div className="space-y-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full bg-gray-800 border-gray-700 text-white hover:bg-gray-700 justify-start"
+                  onClick={() => window.open('/', '_blank')}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Open Live Application
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full bg-gray-800 border-gray-700 text-white hover:bg-gray-700 justify-start"
+                  onClick={() => window.open('/dashboard', '_blank')}
+                >
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Dashboard Demo
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full bg-gray-800 border-gray-700 text-white hover:bg-gray-700 justify-start"
+                  onClick={() => window.open('/production-schedule', '_blank')}
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Schedule Demo
+                </Button>
+              </div>
+            </div>
+
+            {/* Presenter Notes */}
+            <div className="flex-1 p-4 overflow-auto">
+              <h4 className="text-sm font-medium text-gray-300 mb-3">Presenter Notes</h4>
+              <div className="space-y-3 text-sm text-gray-400">
+                <div className="bg-gray-800 p-3 rounded-lg border border-gray-700">
+                  <div className="text-yellow-400 font-medium mb-1">💡 Transition Tip</div>
+                  <p>Use "Live Demo" button to switch to software while keeping presentation context</p>
+                </div>
+                
+                <div className="bg-gray-800 p-3 rounded-lg border border-gray-700">
+                  <div className="text-blue-400 font-medium mb-1">🎯 Key Points</div>
+                  <ul className="list-disc list-inside space-y-1 text-xs">
+                    <li>Emphasize real-time capabilities</li>
+                    <li>Show drag-and-drop scheduling</li>
+                    <li>Highlight AI-powered insights</li>
+                  </ul>
+                </div>
+
+                <div className="bg-gray-800 p-3 rounded-lg border border-gray-700">
+                  <div className="text-green-400 font-medium mb-1">⏱️ Timing</div>
+                  <p>Slide duration: ~2-3 minutes<br/>Demo time: ~5-7 minutes</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Status Footer */}
+            <div className="p-4 border-t border-gray-800">
+              <div className="flex items-center justify-between text-xs text-gray-400">
+                <span>Status: Live</span>
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <span>Connected</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
