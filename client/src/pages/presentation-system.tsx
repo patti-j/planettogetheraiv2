@@ -341,6 +341,8 @@ export default function PresentationSystemPage() {
 
   // Handle presentation playback
   const handlePlayPresentation = (presentation: Presentation) => {
+    console.log("Starting presentation:", presentation);
+    console.log("Slides data:", presentation.customization?.slides);
     setSelectedPresentation(presentation);
     setCurrentSlideIndex(0);
     setPresentationViewerOpen(true);
@@ -1264,10 +1266,10 @@ Create presentations that users will find exciting and that effectively demonstr
                     size="sm"
                     onClick={previousSlide}
                     disabled={currentSlideIndex === 0}
-                    className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700 flex items-center space-x-1 px-2 py-1"
+                    className="bg-blue-600 border-blue-500 text-white hover:bg-blue-700 disabled:bg-gray-700 disabled:border-gray-600 flex items-center space-x-1 px-3 py-2"
                   >
-                    <ChevronLeft className="w-3 h-3" />
-                    <span className="text-xs">Prev</span>
+                    <ChevronLeft className="w-4 h-4" />
+                    <span className="text-sm">Previous</span>
                   </Button>
                   
                   <span className="text-xs text-gray-300 font-mono px-2">
@@ -1279,21 +1281,22 @@ Create presentations that users will find exciting and that effectively demonstr
                     size="sm"
                     onClick={nextSlide}
                     disabled={!selectedPresentation.customization?.slides || currentSlideIndex >= selectedPresentation.customization.slides.length - 1}
-                    className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700 flex items-center space-x-1 px-2 py-1"
+                    className="bg-blue-600 border-blue-500 text-white hover:bg-blue-700 disabled:bg-gray-700 disabled:border-gray-600 flex items-center space-x-1 px-3 py-2"
                   >
-                    <span className="text-xs">Next</span>
-                    <ChevronRight className="w-3 h-3" />
+                    <span className="text-sm">Next</span>
+                    <ChevronRight className="w-4 h-4" />
                   </Button>
                 </div>
                 
-                <div className="flex justify-center space-x-2">
+                <div className="flex justify-center space-x-2 mt-2">
                   <Button 
                     variant="outline" 
                     size="sm" 
                     onClick={() => setCurrentSlideIndex(0)}
-                    className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700 px-2 py-1"
+                    className="bg-green-600 border-green-500 text-white hover:bg-green-700 px-3 py-1"
+                    title="Go to first slide"
                   >
-                    <SkipBack className="w-3 h-3" />
+                    <SkipBack className="w-4 h-4" />
                   </Button>
                   <Button 
                     variant="outline" 
@@ -1303,9 +1306,10 @@ Create presentations that users will find exciting and that effectively demonstr
                         setCurrentSlideIndex(selectedPresentation.customization.slides.length - 1);
                       }
                     }}
-                    className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700 px-2 py-1"
+                    className="bg-green-600 border-green-500 text-white hover:bg-green-700 px-3 py-1"
+                    title="Go to last slide"
                   >
-                    <SkipForward className="w-3 h-3" />
+                    <SkipForward className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
