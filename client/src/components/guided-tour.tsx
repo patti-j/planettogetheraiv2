@@ -30,7 +30,9 @@ import {
   Timer,
   TimerOff,
   Star,
-  ScrollText
+  ScrollText,
+  Minimize2,
+  Maximize2
 } from "lucide-react";
 
 interface TourStep {
@@ -251,6 +253,21 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
   
+  // Dragging functionality
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  // Tour window minimize toggle
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [windowDimensions, setWindowDimensions] = useState({
+    width: 384,
+    height: 600
+  });
+
+  // Volume control (desktop only)
+  const [volume, setVolume] = useState(0.8);
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  
   // Fetch role data
   const { data: roleData } = useQuery<RoleData>({
     queryKey: [`/api/roles/${roleId}`],
@@ -266,6 +283,14 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   // Get tour steps
   const tourSteps = toursLoading ? [] : getTourStepsFromDatabase(roleId, toursFromAPI);
   const progress = tourSteps.length > 0 ? ((currentStep + 1) / tourSteps.length) * 100 : 0;
+
+  // Update window height based on minimize state
+  useEffect(() => {
+    setWindowDimensions(prev => ({
+      ...prev,
+      height: isMinimized ? 160 : 600
+    }));
+  }, [isMinimized]);
 
   // Initialize position and dimensions
   useEffect(() => {
@@ -897,25 +922,6 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     }
   }, [initialVoiceEnabled, tourSteps, currentStep, hasAutoStarted, roleId]);
 
-  // Dragging functionality
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-
-  // Resizing functionality
-  const [isResizing, setIsResizing] = useState(false);
-  const [resizeDirection, setResizeDirection] = useState<string>('');
-  const [windowDimensions, setWindowDimensions] = useState({
-    width: 384,
-    height: 600
-  });
-  const [resizeStartPosition, setResizeStartPosition] = useState({ x: 0, y: 0 });
-  const [resizeStartDimensions, setResizeStartDimensions] = useState({ width: 0, height: 0 });
-  const [resizeStartWindowPosition, setResizeStartWindowPosition] = useState({ x: 0, y: 0 });
-
-  // Volume control (desktop only)
-  const [volume, setVolume] = useState(0.8);
-  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
-
   // Click outside handler for volume slider
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -947,29 +953,9 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     });
   };
 
-  // Resize handlers
-  const handleResizeStart = (e: React.MouseEvent, direction: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsResizing(true);
-    setResizeDirection(direction);
-    setResizeStartPosition({ x: e.clientX, y: e.clientY });
-    setResizeStartDimensions({ ...windowDimensions });
-    setResizeStartWindowPosition({ ...position });
-  };
-
-  const getResizeCursor = (direction: string) => {
-    switch (direction) {
-      case 'n': return 'cursor-n-resize';
-      case 's': return 'cursor-s-resize';
-      case 'e': return 'cursor-e-resize';
-      case 'w': return 'cursor-w-resize';
-      case 'ne': return 'cursor-ne-resize';
-      case 'nw': return 'cursor-nw-resize';
-      case 'se': return 'cursor-se-resize';
-      case 'sw': return 'cursor-sw-resize';
-      default: return '';
-    }
+  // Toggle minimize function
+  const toggleMinimize = () => {
+    setIsMinimized(!isMinimized);
   };
 
   useEffect(() => {
@@ -982,76 +968,6 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           x: newX,
           y: newY
         });
-      } else if (isResizing) {
-        const deltaX = e.clientX - resizeStartPosition.x;
-        const deltaY = e.clientY - resizeStartPosition.y;
-        
-        let newWidth = resizeStartDimensions.width;
-        let newHeight = resizeStartDimensions.height;
-        let newX = position.x;
-        let newY = position.y;
-
-        // Apply resizing based on direction
-        if (resizeDirection.includes('e')) {
-          newWidth = Math.max(300, resizeStartDimensions.width + deltaX);
-        }
-        if (resizeDirection.includes('w')) {
-          newWidth = Math.max(300, resizeStartDimensions.width - deltaX);
-          newX = resizeStartWindowPosition.x - (newWidth - resizeStartDimensions.width);
-        }
-        if (resizeDirection.includes('s')) {
-          // Dynamic minimum height based on compact mode
-          const minHeight = windowDimensions.height < 300 ? 120 : 200;
-          newHeight = Math.max(minHeight, resizeStartDimensions.height + deltaY);
-        }
-        if (resizeDirection.includes('n')) {
-          // Dynamic minimum height based on compact mode
-          const minHeight = windowDimensions.height < 300 ? 120 : 200;
-          newHeight = Math.max(minHeight, resizeStartDimensions.height - deltaY);
-          newY = resizeStartWindowPosition.y - (newHeight - resizeStartDimensions.height);
-        }
-
-        // Simple boundary constraints to prevent window from going off screen
-        // Constrain width and height to viewport
-        newWidth = Math.min(newWidth, windowSize.width);
-        newHeight = Math.min(newHeight, windowSize.height);
-        
-        // For west/north resizing, ensure position doesn't go negative
-        if (resizeDirection.includes('w')) {
-          newX = Math.max(0, newX);
-        }
-        if (resizeDirection.includes('n')) {
-          newY = Math.max(0, newY);
-        }
-        
-        // Ensure the window fits within viewport after position adjustment
-        if (newX + newWidth > windowSize.width) {
-          newWidth = windowSize.width - newX;
-        }
-        if (newY + newHeight > windowSize.height) {
-          newHeight = windowSize.height - newY;
-        }
-
-        // Safeguard: Reset to default if dimensions become invalid (but allow smaller sizes in compact mode)
-        const minWidth = 200;
-        const minHeight = newHeight < 150 ? 120 : 150;
-        if (newWidth < minWidth || newHeight < minHeight) {
-          console.log('Invalid dimensions detected during resize, resetting to defaults');
-          setWindowDimensions({ width: 384, height: 600 });
-          setPosition({
-            x: windowSize.width - 384 - 20,
-            y: Math.max(20, windowSize.height - 600 - 40)
-          });
-          return;
-        }
-
-        // Update dimensions
-        setWindowDimensions({ width: newWidth, height: newHeight });
-        
-        // Update position if resizing from north or west
-        if (resizeDirection.includes('w') || resizeDirection.includes('n')) {
-          setPosition({ x: newX, y: newY });
-        }
       }
     };
 
@@ -1070,11 +986,9 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
 
     const handleEnd = () => {
       setIsDragging(false);
-      setIsResizing(false);
-      setResizeDirection('');
     };
 
-    if (isDragging || isResizing) {
+    if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleEnd);
       document.addEventListener('touchmove', handleTouchMove);
@@ -1087,7 +1001,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleEnd);
     };
-  }, [isDragging, isResizing, dragOffset, resizeDirection, resizeStartPosition, resizeStartDimensions, position]);
+  }, [isDragging, dragOffset, position, windowDimensions, windowSize]);
 
   // Role selection handlers
   const getAvailableRoles = () => [
@@ -1168,15 +1082,13 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
             `${Math.min(200, windowSize.height * 0.35)}px` : 
             `${windowDimensions.height}px`,
           maxHeight: windowSize.width < 768 ? '35vh' : '90vh',
-          cursor: isDragging ? 'grabbing' : isResizing ? 'default' : 'default'
+          cursor: isDragging ? 'grabbing' : 'default'
         }}
       >
         <CardHeader 
-          className={`relative flex-shrink-0 p-1.5 sm:p-6 pb-1 sm:pb-6 ${
-            isResizing ? 'cursor-default' : 'cursor-move'
-          }`}
-          onMouseDown={!isResizing ? handleMouseDown : undefined}
-          onTouchStart={!isResizing ? handleTouchStart : undefined}
+          className="relative flex-shrink-0 p-1.5 sm:p-6 pb-1 sm:pb-6 cursor-move"
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
         >
           <div className="flex items-center justify-between mb-1 sm:mb-4">
             <div className="flex items-center gap-1 sm:gap-2">
@@ -1245,6 +1157,18 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
               >
                 <ScrollText className={`h-3 w-3 sm:h-4 sm:w-4 ${autoScrollEnabled ? 'text-blue-600' : 'text-gray-400'}`} />
               </Button>
+              {/* Desktop only: Minimize toggle */}
+              {windowSize.width >= 768 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleMinimize}
+                  className="h-6 w-6 sm:h-8 sm:w-8 p-0"
+                  title={isMinimized ? "Expand tour window" : "Minimize tour window"}
+                >
+                  {isMinimized ? <Maximize2 className="h-3 w-3 sm:h-4 sm:w-4" /> : <Minimize2 className="h-3 w-3 sm:h-4 sm:w-4" />}
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
@@ -1268,28 +1192,31 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           </div>
         </CardHeader>
 
-        <CardContent className={`flex-1 overflow-y-auto pt-0 ${windowDimensions.height < 200 ? 'p-1 min-h-0' : windowDimensions.height < 300 ? 'p-2 min-h-0' : 'p-1 sm:p-6'}`}>
-          <div className={`${windowDimensions.height < 200 ? 'space-y-0' : 'space-y-0 sm:space-y-4'}`}>
-            {/* Hide description when window is very small or on mobile */}
-            {windowDimensions.height >= 200 && (
-              <p className="hidden sm:block text-sm text-gray-700 leading-relaxed">{currentStepData.description}</p>
-            )}
-            
-            {currentStepData.benefits && currentStepData.benefits.length > 0 && windowDimensions.height >= 250 && (
-              <div className="space-y-2 hidden sm:block">
-                <h4 className="text-sm font-medium text-gray-900">Key Benefits:</h4>
-                <ul className="space-y-1">
-                  {currentStepData.benefits.map((benefit, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
-                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>{benefit}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </CardContent>
+        {/* Hide middle panel content when minimized */}
+        {!isMinimized && (
+          <CardContent className={`flex-1 overflow-y-auto pt-0 ${windowDimensions.height < 200 ? 'p-1 min-h-0' : windowDimensions.height < 300 ? 'p-2 min-h-0' : 'p-1 sm:p-6'}`}>
+            <div className={`${windowDimensions.height < 200 ? 'space-y-0' : 'space-y-0 sm:space-y-4'}`}>
+              {/* Hide description when window is very small or on mobile */}
+              {windowDimensions.height >= 200 && (
+                <p className="hidden sm:block text-sm text-gray-700 leading-relaxed">{currentStepData.description}</p>
+              )}
+              
+              {currentStepData.benefits && currentStepData.benefits.length > 0 && windowDimensions.height >= 250 && (
+                <div className="space-y-2 hidden sm:block">
+                  <h4 className="text-sm font-medium text-gray-900">Key Benefits:</h4>
+                  <ul className="space-y-1">
+                    {currentStepData.benefits.map((benefit, index) => (
+                      <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
+                        <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span>{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        )}
 
         <div className={`flex-shrink-0 border-t ${windowDimensions.height < 200 ? 'p-1 space-y-1' : windowDimensions.height < 300 ? 'p-2 space-y-2' : 'p-1.5 sm:p-6 pt-1 sm:pt-2 space-y-1 sm:space-y-3'}`}>
           {voiceEnabled && windowDimensions.height >= 150 && (
