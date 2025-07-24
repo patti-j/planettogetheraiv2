@@ -973,9 +973,12 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging) {
+        // Add boundary checking to keep window in viewport
+        const newX = Math.max(0, Math.min(windowSize.width - windowDimensions.width, e.clientX - dragOffset.x));
+        const newY = Math.max(0, Math.min(windowSize.height - windowDimensions.height, e.clientY - dragOffset.y));
         setPosition({
-          x: e.clientX - dragOffset.x,
-          y: e.clientY - dragOffset.y
+          x: newX,
+          y: newY
         });
       } else if (isResizing) {
         const deltaX = e.clientX - resizeStartPosition.x;
@@ -1002,6 +1005,22 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           newY = position.y + deltaY;
         }
 
+        // Ensure window stays within viewport bounds during resize
+        const maxWidth = windowSize.width - position.x;
+        const maxHeight = windowSize.height - position.y;
+        newWidth = Math.min(newWidth, maxWidth);
+        newHeight = Math.min(newHeight, maxHeight);
+        
+        // Ensure position stays within bounds when resizing from north/west
+        if (resizeDirection.includes('w')) {
+          const minX = Math.max(0, windowSize.width - newWidth);
+          newX = Math.max(minX, newX);
+        }
+        if (resizeDirection.includes('n')) {
+          const minY = Math.max(0, windowSize.height - newHeight);
+          newY = Math.max(minY, newY);
+        }
+
         // Update dimensions
         setWindowDimensions({ width: newWidth, height: newHeight });
         
@@ -1015,9 +1034,12 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     const handleTouchMove = (e: TouchEvent) => {
       if (isDragging) {
         const touch = e.touches[0];
+        // Add boundary checking to keep window in viewport
+        const newX = Math.max(0, Math.min(windowSize.width - windowDimensions.width, touch.clientX - dragOffset.x));
+        const newY = Math.max(0, Math.min(windowSize.height - windowDimensions.height, touch.clientY - dragOffset.y));
         setPosition({
-          x: touch.clientX - dragOffset.x,
-          y: touch.clientY - dragOffset.y
+          x: newX,
+          y: newY
         });
       }
     };
