@@ -761,7 +761,7 @@ Create presentations that users will find exciting and that effectively demonstr
             <TabsList className="inline-flex w-full min-w-max md:grid md:grid-cols-5">
               <TabsTrigger value="overview" className="flex-shrink-0">
                 <span className="hidden sm:inline">Overview</span>
-                <span className="sm:hidden">Info</span>
+                <span className="sm:hidden">Recent</span>
               </TabsTrigger>
               <TabsTrigger value="presentations" className="flex-shrink-0">
                 <span className="hidden sm:inline">Presentations</span>
@@ -769,11 +769,11 @@ Create presentations that users will find exciting and that effectively demonstr
               </TabsTrigger>
               <TabsTrigger value="studio" className="flex-shrink-0">
                 <span className="hidden sm:inline">Studio</span>
-                <span className="sm:hidden">Create</span>
+                <span className="sm:hidden">Studio</span>
               </TabsTrigger>
               <TabsTrigger value="library" className="flex-shrink-0">
                 <span className="hidden sm:inline">Library</span>
-                <span className="sm:hidden">Saved</span>
+                <span className="sm:hidden">Library</span>
               </TabsTrigger>
               <TabsTrigger value="analytics" className="flex-shrink-0">
                 <span className="hidden sm:inline">Analytics</span>
