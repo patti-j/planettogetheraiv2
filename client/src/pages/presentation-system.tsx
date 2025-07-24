@@ -582,95 +582,108 @@ export default function PresentationSystemPage() {
         </Tabs>
       </div>
 
-      {/* Desktop-Optimized Presentation Viewer */}
+      {/* Integrated Presentation Viewer */}
       {presentationViewerOpen && selectedPresentation && (
-        <div className="fixed inset-0 z-50 bg-black flex">
-          {/* Main Presentation Area */}
-          <div className="flex-1 flex flex-col bg-white">
-            {/* Presenter Toolbar */}
-            <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white px-6 py-3 flex items-center justify-between shadow-lg">
-              <div className="flex items-center space-x-6">
-                <div className="flex items-center space-x-3">
-                  <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="font-medium">LIVE PRESENTATION</span>
-                </div>
-                <div className="h-6 w-px bg-blue-700"></div>
-                <h2 className="text-lg font-semibold">{selectedPresentation.title}</h2>
-                <Badge variant="secondary" className="bg-blue-800 text-blue-100 border-blue-700">
-                  {selectedPresentation.category}
-                </Badge>
+        <div className="absolute inset-0 bg-white flex flex-col">
+          {/* Integrated Presenter Toolbar */}
+          <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white px-4 py-2 flex items-center justify-between shadow-lg">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium">PRESENTING</span>
+              </div>
+              <div className="h-4 w-px bg-blue-700"></div>
+              <h2 className="text-sm font-semibold">{selectedPresentation.title}</h2>
+              <Badge variant="secondary" className="bg-blue-800 text-blue-100 border-blue-700 text-xs">
+                {selectedPresentation.category}
+              </Badge>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <div className="text-xs text-blue-100">
+                {currentSlideIndex + 1} / {selectedPresentation.customization?.slides?.length || 1}
               </div>
               
-              <div className="flex items-center space-x-4">
-                <div className="text-sm text-blue-100">
-                  Slide {currentSlideIndex + 1} of {selectedPresentation.customization?.slides?.length || 1}
-                </div>
-                <div className="h-6 w-px bg-blue-700"></div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-blue-100 hover:bg-blue-800 transition-colors"
-                  onClick={() => window.open('/', '_blank')}
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Open Live App
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={closePresentationViewer} 
-                  className="text-blue-100 hover:bg-blue-800 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
+              {/* Quick Demo Access */}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-xs text-blue-100 hover:bg-blue-800 transition-colors px-2 py-1"
+                onClick={() => setPresentationViewerOpen(false)}
+              >
+                <Monitor className="w-3 h-3 mr-1" />
+                Live App
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={closePresentationViewer} 
+                className="text-blue-100 hover:bg-blue-800 transition-colors px-2 py-1"
+              >
+                <X className="w-3 h-3" />
+              </Button>
             </div>
+          </div>
 
-            {/* Slide Content Area */}
-            <div className="flex-1 bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-8">
+          {/* Main Content Area with Integrated Layout */}
+          <div className="flex-1 flex">
+            {/* Slide Display Area */}
+            <div className="flex-1 bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-6">
               {selectedPresentation.customization?.slides && selectedPresentation.customization.slides.length > 0 ? (
-                <div className="w-full max-w-5xl">
+                <div className="w-full max-w-4xl">
                   {(() => {
                     const slide = selectedPresentation.customization.slides[currentSlideIndex];
                     return (
-                      <div className="bg-white rounded-2xl shadow-2xl p-12 border border-gray-100">
-                        <div className="text-center mb-8">
-                          <h1 className="text-4xl font-bold text-gray-900 mb-4 leading-tight">{slide.title}</h1>
-                          <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-indigo-600 mx-auto rounded-full"></div>
+                      <div className="bg-white rounded-xl shadow-xl p-8 border border-gray-100">
+                        <div className="text-center mb-6">
+                          <h1 className="text-3xl font-bold text-gray-900 mb-3 leading-tight">{slide.title}</h1>
+                          <div className="w-20 h-1 bg-gradient-to-r from-blue-500 to-indigo-600 mx-auto rounded-full"></div>
                         </div>
                         
-                        <div className="prose prose-xl max-w-none text-center">
+                        <div className="prose prose-lg max-w-none text-center">
                           {slide.content && (
-                            <div className="text-gray-700 leading-relaxed text-lg whitespace-pre-wrap">
+                            <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
                               {slide.content}
                             </div>
                           )}
                         </div>
 
-                        {/* Demo Integration Hint */}
-                        <div className="mt-12 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
-                          <div className="flex items-center justify-center space-x-3 text-blue-700">
-                            <Monitor className="w-5 h-5" />
-                            <span className="font-medium">Ready for live software demonstration</span>
-                            <ArrowRight className="w-4 h-4" />
-                          </div>
+                        {/* Interactive Demo Elements */}
+                        <div className="mt-8 grid grid-cols-2 gap-4">
+                          <Button 
+                            variant="outline" 
+                            className="flex items-center justify-center space-x-2 p-4 border-blue-200 hover:bg-blue-50"
+                            onClick={() => setPresentationViewerOpen(false)}
+                          >
+                            <BarChart3 className="w-4 h-4 text-blue-600" />
+                            <span className="text-blue-600">Show Dashboard</span>
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            className="flex items-center justify-center space-x-2 p-4 border-green-200 hover:bg-green-50"
+                            onClick={() => setPresentationViewerOpen(false)}
+                          >
+                            <Calendar className="w-4 h-4 text-green-600" />
+                            <span className="text-green-600">Live Scheduling</span>
+                          </Button>
                         </div>
                       </div>
                     );
                   })()}
                 </div>
               ) : (
-                <div className="w-full max-w-4xl text-center">
-                  <div className="bg-white rounded-2xl shadow-2xl p-16 border border-gray-100">
-                    <h1 className="text-4xl font-bold text-gray-900 mb-6">{selectedPresentation.title}</h1>
-                    <p className="text-xl text-gray-600 mb-8">{selectedPresentation.description}</p>
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-8 rounded-xl border border-blue-100">
-                      <Presentation className="w-20 h-20 mx-auto text-blue-500 mb-6" />
-                      <p className="text-lg text-gray-700 mb-4">Professional presentation ready for delivery</p>
-                      <div className="flex items-center justify-center space-x-6 text-sm text-gray-500">
-                        <span>Category: {selectedPresentation.category}</span>
+                <div className="w-full max-w-3xl text-center">
+                  <div className="bg-white rounded-xl shadow-xl p-12 border border-gray-100">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-4">{selectedPresentation.title}</h1>
+                    <p className="text-lg text-gray-600 mb-6">{selectedPresentation.description}</p>
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-100">
+                      <Presentation className="w-16 h-16 mx-auto text-blue-500 mb-4" />
+                      <p className="text-gray-700 mb-3">Integrated presentation ready for seamless delivery</p>
+                      <div className="flex items-center justify-center space-x-4 text-sm text-gray-500">
+                        <span>{selectedPresentation.category}</span>
                         <span>•</span>
-                        <span>Duration: {selectedPresentation.estimatedDuration || 'Flexible'}min</span>
+                        <span>{selectedPresentation.estimatedDuration || 'Flexible'}min</span>
                       </div>
                     </div>
                   </div>
@@ -678,43 +691,53 @@ export default function PresentationSystemPage() {
               )}
             </div>
 
-            {/* Presenter Navigation Controls */}
-            <div className="bg-gray-900 px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <Button 
-                  variant="outline" 
-                  onClick={previousSlide}
-                  disabled={currentSlideIndex === 0}
-                  className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700 flex items-center space-x-2"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  <span>Previous</span>
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  onClick={nextSlide}
-                  disabled={!selectedPresentation.customization?.slides || currentSlideIndex >= selectedPresentation.customization.slides.length - 1}
-                  className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700 flex items-center space-x-2"
-                >
-                  <span>Next</span>
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
+            {/* Integrated Control Panel */}
+            <div className="w-72 bg-gray-900 text-white flex flex-col border-l border-gray-800">
+              {/* Control Header */}
+              <div className="p-3 border-b border-gray-800">
+                <h3 className="text-sm font-semibold text-gray-100">Presentation Controls</h3>
+                <p className="text-xs text-gray-400 mt-1">Seamless demo integration</p>
               </div>
 
-              <div className="flex items-center space-x-6">
-                <div className="flex items-center space-x-3">
+              {/* Navigation Controls */}
+              <div className="p-3 border-b border-gray-800">
+                <div className="flex items-center justify-between mb-3">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={previousSlide}
+                    disabled={currentSlideIndex === 0}
+                    className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700 flex items-center space-x-1 px-2 py-1"
+                  >
+                    <ChevronLeft className="w-3 h-3" />
+                    <span className="text-xs">Prev</span>
+                  </Button>
+                  
+                  <span className="text-xs text-gray-300 font-mono px-2">
+                    {String(currentSlideIndex + 1).padStart(2, '0')} / {String(selectedPresentation.customization?.slides?.length || 1).padStart(2, '0')}
+                  </span>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={nextSlide}
+                    disabled={!selectedPresentation.customization?.slides || currentSlideIndex >= selectedPresentation.customization.slides.length - 1}
+                    className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700 flex items-center space-x-1 px-2 py-1"
+                  >
+                    <span className="text-xs">Next</span>
+                    <ChevronRight className="w-3 h-3" />
+                  </Button>
+                </div>
+                
+                <div className="flex justify-center space-x-2">
                   <Button 
                     variant="outline" 
                     size="sm" 
                     onClick={() => setCurrentSlideIndex(0)}
-                    className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700"
+                    className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700 px-2 py-1"
                   >
-                    <SkipBack className="w-4 h-4" />
+                    <SkipBack className="w-3 h-3" />
                   </Button>
-                  <span className="text-gray-300 font-mono">
-                    {String(currentSlideIndex + 1).padStart(2, '0')} / {String(selectedPresentation.customization?.slides?.length || 1).padStart(2, '0')}
-                  </span>
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -723,111 +746,80 @@ export default function PresentationSystemPage() {
                         setCurrentSlideIndex(selectedPresentation.customization.slides.length - 1);
                       }
                     }}
-                    className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700"
+                    className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700 px-2 py-1"
                   >
-                    <SkipForward className="w-4 h-4" />
+                    <SkipForward className="w-3 h-3" />
                   </Button>
                 </div>
+              </div>
 
-                <div className="h-6 w-px bg-gray-700"></div>
-
-                <div className="flex items-center space-x-2">
+              {/* Quick Demo Actions */}
+              <div className="p-3 border-b border-gray-800">
+                <h4 className="text-xs font-medium text-gray-300 mb-2">Quick Demo Access</h4>
+                <div className="space-y-2">
                   <Button 
                     variant="outline" 
-                    size="sm"
-                    className="bg-green-800 border-green-700 text-green-100 hover:bg-green-700"
-                    onClick={() => window.open('/', '_blank')}
+                    size="sm" 
+                    className="w-full bg-gray-800 border-gray-700 text-white hover:bg-gray-700 justify-start text-xs py-1"
+                    onClick={() => setPresentationViewerOpen(false)}
                   >
-                    <Monitor className="w-4 h-4 mr-2" />
-                    Live Demo
+                    <BarChart3 className="w-3 h-3 mr-2" />
+                    Dashboard
                   </Button>
                   <Button 
                     variant="outline" 
-                    size="sm"
-                    className="bg-blue-800 border-blue-700 text-blue-100 hover:bg-blue-700"
+                    size="sm" 
+                    className="w-full bg-gray-800 border-gray-700 text-white hover:bg-gray-700 justify-start text-xs py-1"
+                    onClick={() => setPresentationViewerOpen(false)}
                   >
-                    <Maximize className="w-4 h-4 mr-2" />
-                    Fullscreen
+                    <Calendar className="w-3 h-3 mr-2" />
+                    Production Schedule
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full bg-gray-800 border-gray-700 text-white hover:bg-gray-700 justify-start text-xs py-1"
+                    onClick={() => setPresentationViewerOpen(false)}
+                  >
+                    <Bot className="w-3 h-3 mr-2" />
+                    Max AI Demo
                   </Button>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Side Panel for Presenter Notes & Controls */}
-          <div className="w-80 bg-gray-900 text-white flex flex-col border-l border-gray-800">
-            {/* Panel Header */}
-            <div className="p-4 border-b border-gray-800">
-              <h3 className="font-semibold text-gray-100">Presenter Panel</h3>
-              <p className="text-xs text-gray-400 mt-1">Controls & notes for seamless delivery</p>
-            </div>
+              {/* Presenter Notes */}
+              <div className="flex-1 p-3 overflow-auto">
+                <h4 className="text-xs font-medium text-gray-300 mb-2">Presenter Notes</h4>
+                <div className="space-y-2 text-xs text-gray-400">
+                  <div className="bg-gray-800 p-2 rounded border border-gray-700">
+                    <div className="text-yellow-400 font-medium mb-1">💡 Transition</div>
+                    <p className="text-xs">Click demo buttons to switch to live features seamlessly</p>
+                  </div>
+                  
+                  <div className="bg-gray-800 p-2 rounded border border-gray-700">
+                    <div className="text-blue-400 font-medium mb-1">🎯 Key Points</div>
+                    <ul className="list-disc list-inside space-y-0.5 text-xs">
+                      <li>Real-time data</li>
+                      <li>Drag-and-drop UI</li>
+                      <li>AI insights</li>
+                    </ul>
+                  </div>
 
-            {/* Quick Actions */}
-            <div className="p-4 border-b border-gray-800">
-              <h4 className="text-sm font-medium text-gray-300 mb-3">Quick Actions</h4>
-              <div className="space-y-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full bg-gray-800 border-gray-700 text-white hover:bg-gray-700 justify-start"
-                  onClick={() => window.open('/', '_blank')}
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Open Live Application
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full bg-gray-800 border-gray-700 text-white hover:bg-gray-700 justify-start"
-                  onClick={() => window.open('/dashboard', '_blank')}
-                >
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  Dashboard Demo
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full bg-gray-800 border-gray-700 text-white hover:bg-gray-700 justify-start"
-                  onClick={() => window.open('/production-schedule', '_blank')}
-                >
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Schedule Demo
-                </Button>
-              </div>
-            </div>
-
-            {/* Presenter Notes */}
-            <div className="flex-1 p-4 overflow-auto">
-              <h4 className="text-sm font-medium text-gray-300 mb-3">Presenter Notes</h4>
-              <div className="space-y-3 text-sm text-gray-400">
-                <div className="bg-gray-800 p-3 rounded-lg border border-gray-700">
-                  <div className="text-yellow-400 font-medium mb-1">💡 Transition Tip</div>
-                  <p>Use "Live Demo" button to switch to software while keeping presentation context</p>
-                </div>
-                
-                <div className="bg-gray-800 p-3 rounded-lg border border-gray-700">
-                  <div className="text-blue-400 font-medium mb-1">🎯 Key Points</div>
-                  <ul className="list-disc list-inside space-y-1 text-xs">
-                    <li>Emphasize real-time capabilities</li>
-                    <li>Show drag-and-drop scheduling</li>
-                    <li>Highlight AI-powered insights</li>
-                  </ul>
-                </div>
-
-                <div className="bg-gray-800 p-3 rounded-lg border border-gray-700">
-                  <div className="text-green-400 font-medium mb-1">⏱️ Timing</div>
-                  <p>Slide duration: ~2-3 minutes<br/>Demo time: ~5-7 minutes</p>
+                  <div className="bg-gray-800 p-2 rounded border border-gray-700">
+                    <div className="text-green-400 font-medium mb-1">⏱️ Timing</div>
+                    <p className="text-xs">2-3min slide + 5-7min demo</p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Status Footer */}
-            <div className="p-4 border-t border-gray-800">
-              <div className="flex items-center justify-between text-xs text-gray-400">
-                <span>Status: Live</span>
-                <div className="flex items-center space-x-1">
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  <span>Connected</span>
+              {/* Max AI Integration Hint */}
+              <div className="p-3 border-t border-gray-800">
+                <div className="bg-purple-900 p-2 rounded border border-purple-700">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <Bot className="w-3 h-3 text-purple-300" />
+                    <span className="text-xs font-medium text-purple-300">Max AI Ready</span>
+                  </div>
+                  <p className="text-xs text-purple-400">Use Max for presentation control and live demos</p>
                 </div>
               </div>
             </div>
