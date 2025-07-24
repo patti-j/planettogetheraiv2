@@ -261,7 +261,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   const tourSteps = toursLoading ? [] : getTourStepsFromDatabase(roleId, toursFromAPI);
   const progress = tourSteps.length > 0 ? ((currentStep + 1) / tourSteps.length) * 100 : 0;
 
-  // Initialize position
+  // Initialize position and dimensions
   useEffect(() => {
     const getInitialPosition = () => {
       const windowWidth = window.innerWidth;
@@ -279,13 +279,17 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           y: windowHeight - maxCardHeight - padding
         };
       } else {
+        // Desktop positioning - initialize dimensions for desktop
         const cardWidth = 384;
-        const maxCardHeight = Math.min(600, windowHeight - 100);
+        const cardHeight = Math.min(600, windowHeight - 100);
         const padding = 20;
+        
+        // Set initial window dimensions for desktop
+        setWindowDimensions({ width: cardWidth, height: cardHeight });
         
         return {
           x: windowWidth - cardWidth - padding,
-          y: windowHeight - maxCardHeight - padding
+          y: windowHeight - cardHeight - padding
         };
       }
     };
@@ -713,6 +717,16 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
+  // Resizing functionality
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeDirection, setResizeDirection] = useState<string>('');
+  const [windowDimensions, setWindowDimensions] = useState({
+    width: 384,
+    height: 600
+  });
+  const [resizeStartPosition, setResizeStartPosition] = useState({ x: 0, y: 0 });
+  const [resizeStartDimensions, setResizeStartDimensions] = useState({ width: 0, height: 0 });
+
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
     setDragOffset({
@@ -730,6 +744,30 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     });
   };
 
+  // Resize handlers
+  const handleResizeStart = (e: React.MouseEvent, direction: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizing(true);
+    setResizeDirection(direction);
+    setResizeStartPosition({ x: e.clientX, y: e.clientY });
+    setResizeStartDimensions({ ...windowDimensions });
+  };
+
+  const getResizeCursor = (direction: string) => {
+    switch (direction) {
+      case 'n': return 'cursor-n-resize';
+      case 's': return 'cursor-s-resize';
+      case 'e': return 'cursor-e-resize';
+      case 'w': return 'cursor-w-resize';
+      case 'ne': return 'cursor-ne-resize';
+      case 'nw': return 'cursor-nw-resize';
+      case 'se': return 'cursor-se-resize';
+      case 'sw': return 'cursor-sw-resize';
+      default: return '';
+    }
+  };
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging) {
@@ -737,6 +775,38 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           x: e.clientX - dragOffset.x,
           y: e.clientY - dragOffset.y
         });
+      } else if (isResizing) {
+        const deltaX = e.clientX - resizeStartPosition.x;
+        const deltaY = e.clientY - resizeStartPosition.y;
+        
+        let newWidth = resizeStartDimensions.width;
+        let newHeight = resizeStartDimensions.height;
+        let newX = position.x;
+        let newY = position.y;
+
+        // Apply resizing based on direction
+        if (resizeDirection.includes('e')) {
+          newWidth = Math.max(300, resizeStartDimensions.width + deltaX);
+        }
+        if (resizeDirection.includes('w')) {
+          newWidth = Math.max(300, resizeStartDimensions.width - deltaX);
+          newX = position.x + deltaX;
+        }
+        if (resizeDirection.includes('s')) {
+          newHeight = Math.max(200, resizeStartDimensions.height + deltaY);
+        }
+        if (resizeDirection.includes('n')) {
+          newHeight = Math.max(200, resizeStartDimensions.height - deltaY);
+          newY = position.y + deltaY;
+        }
+
+        // Update dimensions
+        setWindowDimensions({ width: newWidth, height: newHeight });
+        
+        // Update position if resizing from north or west
+        if (resizeDirection.includes('w') || resizeDirection.includes('n')) {
+          setPosition({ x: newX, y: newY });
+        }
       }
     };
 
@@ -752,9 +822,11 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
 
     const handleEnd = () => {
       setIsDragging(false);
+      setIsResizing(false);
+      setResizeDirection('');
     };
 
-    if (isDragging) {
+    if (isDragging || isResizing) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleEnd);
       document.addEventListener('touchmove', handleTouchMove);
@@ -767,7 +839,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleEnd);
     };
-  }, [isDragging, dragOffset]);
+  }, [isDragging, isResizing, dragOffset, resizeDirection, resizeStartPosition, resizeStartDimensions, position]);
 
   // Role selection handlers
   const getAvailableRoles = () => [
@@ -833,24 +905,29 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       {/* Light backdrop */}
       <div className="fixed inset-0 bg-black bg-opacity-20 z-40 pointer-events-none"></div>
       
-      {/* Draggable tour window */}
+      {/* Draggable and resizable tour window */}
       <Card 
         ref={cardRef}
-        className="fixed bg-white shadow-2xl z-50 cursor-move flex flex-col md:w-96"
+        className="fixed bg-white shadow-2xl z-50 flex flex-col relative"
         style={{
           left: position.x,
           top: position.y,
-          width: windowSize.width < 768 ? `${Math.min(280, windowSize.width - 16)}px` : '384px',
+          width: windowSize.width < 768 ? 
+            `${Math.min(280, windowSize.width - 16)}px` : 
+            `${windowDimensions.width}px`,
           height: windowSize.width < 768 ? 
             `${Math.min(200, windowSize.height * 0.35)}px` : 
-            `${Math.min(600, windowSize.height - 100)}px`,
-          maxHeight: windowSize.width < 768 ? '35vh' : '90vh'
+            `${windowDimensions.height}px`,
+          maxHeight: windowSize.width < 768 ? '35vh' : '90vh',
+          cursor: isDragging ? 'grabbing' : isResizing ? 'default' : 'default'
         }}
       >
         <CardHeader 
-          className="relative cursor-move flex-shrink-0 p-1.5 sm:p-6 pb-1 sm:pb-6"
-          onMouseDown={handleMouseDown}
-          onTouchStart={handleTouchStart}
+          className={`relative flex-shrink-0 p-1.5 sm:p-6 pb-1 sm:pb-6 ${
+            isResizing ? 'cursor-default' : 'cursor-move'
+          }`}
+          onMouseDown={!isResizing ? handleMouseDown : undefined}
+          onTouchStart={!isResizing ? handleTouchStart : undefined}
         >
           <div className="flex items-center justify-between mb-1 sm:mb-4">
             <div className="flex items-center gap-1 sm:gap-2">
@@ -998,6 +1075,47 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
             </Button>
           </div>
         </div>
+
+        {/* Resize handles - only on desktop */}
+        {windowSize.width >= 768 && (
+          <>
+            {/* Corner handles */}
+            <div 
+              className={`absolute top-0 left-0 w-3 h-3 ${getResizeCursor('nw')}`}
+              onMouseDown={(e) => handleResizeStart(e, 'nw')}
+            />
+            <div 
+              className={`absolute top-0 right-0 w-3 h-3 ${getResizeCursor('ne')}`}
+              onMouseDown={(e) => handleResizeStart(e, 'ne')}
+            />
+            <div 
+              className={`absolute bottom-0 left-0 w-3 h-3 ${getResizeCursor('sw')}`}
+              onMouseDown={(e) => handleResizeStart(e, 'sw')}
+            />
+            <div 
+              className={`absolute bottom-0 right-0 w-3 h-3 ${getResizeCursor('se')}`}
+              onMouseDown={(e) => handleResizeStart(e, 'se')}
+            />
+            
+            {/* Edge handles */}
+            <div 
+              className={`absolute top-0 left-3 right-3 h-1 ${getResizeCursor('n')}`}
+              onMouseDown={(e) => handleResizeStart(e, 'n')}
+            />
+            <div 
+              className={`absolute bottom-0 left-3 right-3 h-1 ${getResizeCursor('s')}`}
+              onMouseDown={(e) => handleResizeStart(e, 's')}
+            />
+            <div 
+              className={`absolute left-0 top-3 bottom-3 w-1 ${getResizeCursor('w')}`}
+              onMouseDown={(e) => handleResizeStart(e, 'w')}
+            />
+            <div 
+              className={`absolute right-0 top-3 bottom-3 w-1 ${getResizeCursor('e')}`}
+              onMouseDown={(e) => handleResizeStart(e, 'e')}
+            />
+          </>
+        )}
       </Card>
 
       {/* Role Selection Dialog */}
