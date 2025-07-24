@@ -411,7 +411,7 @@ export function MaxSidebar() {
     }
   };
 
-  const toggleVoice = () => {
+  const toggleMicrophone = () => {
     if (isListening) {
       stopListening();
     } else {
@@ -419,7 +419,16 @@ export function MaxSidebar() {
     }
   };
 
+  const toggleVoiceOutput = () => {
+    setIsVoiceEnabled(!isVoiceEnabled);
+  };
+
   const playTTSResponse = async (text: string) => {
+    // Only play TTS if voice output is enabled
+    if (!isVoiceEnabled) {
+      return;
+    }
+    
     try {
       const response = await apiRequest('POST', '/api/ai-agent/tts', { 
         text, 
@@ -596,8 +605,9 @@ export function MaxSidebar() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={toggleVoice}
+            onClick={toggleVoiceOutput}
             className="h-6 w-6 p-0 text-white hover:bg-white/20"
+            title={isVoiceEnabled ? "Disable voice responses" : "Enable voice responses"}
           >
             {isVoiceEnabled ? <Volume2 className="h-3 w-3" /> : <VolumeX className="h-3 w-3" />}
           </Button>
@@ -810,7 +820,7 @@ export function MaxSidebar() {
             <Button
               variant="outline"
               size="sm"
-              onClick={toggleVoice}
+              onClick={toggleMicrophone}
               className={`px-2 transition-colors ${
                 isListening 
                   ? 'bg-green-50 border-green-300 hover:bg-green-100' 

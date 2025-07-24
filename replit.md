@@ -114,6 +114,16 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 24, 2025)
 
+✓ **Max AI Speaker Icon Voice Control Fix (July 24, 2025)**:
+- Fixed critical issue where speaker icon in Max's header was controlling microphone instead of voice output
+- Separated microphone control (`toggleMicrophone`) from voice output control (`toggleVoiceOutput`)
+- Speaker icon (Volume2/VolumeX) now properly controls whether Max speaks responses aloud
+- Microphone icon now correctly controls voice input (speech-to-text) functionality
+- Updated `playTTSResponse` function to respect voice output settings - only plays audio when voice is enabled
+- Added proper tooltips: "Enable/Disable voice responses" for speaker, "Start/Stop voice input" for microphone
+- Fixed function naming and references throughout Max sidebar component for clarity
+- Voice output and voice input now operate independently as intended
+
 ✓ **Max AI Direct Resource Listing Capability Fix (July 24, 2025)**:
 - Fixed critical issue where Max AI was saying it "can help with listing resources" instead of directly listing them
 - Updated AI system prompt to include complete resource and capability data instead of limited samples
