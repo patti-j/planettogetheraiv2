@@ -1589,8 +1589,21 @@ async function generateChartData(chartType: string, parameters: any, context: Sy
 function generatePieChartData(parameters: any, context: any) {
   const { jobs, operations, resources } = context;
   
-  // Determine what data to visualize based on parameters
-  if (parameters.dataType === "job_status" || parameters.title?.toLowerCase().includes("job") || !parameters.dataType) {
+  // Handle "job quantity" requests by showing individual jobs and their operation counts
+  if (parameters.title?.toLowerCase().includes("quantity") || parameters.dataType === "job_quantity") {
+    const jobData = jobs.map(job => {
+      const jobOperations = operations.filter(op => op.jobId === job.id);
+      return {
+        name: job.name || `Job ${job.id}`,
+        value: jobOperations.length || 1 // Use operation count as "quantity"
+      };
+    });
+    
+    return jobData.length > 0 ? jobData : [{ name: "No Jobs", value: 1 }];
+  }
+  
+  // Handle job status requests
+  if (parameters.dataType === "job_status" || parameters.title?.toLowerCase().includes("status")) {
     const statusCounts = {};
     jobs.forEach(job => {
       const status = job.status || "unknown";
@@ -1601,6 +1614,16 @@ function generatePieChartData(parameters: any, context: any) {
       name: name.charAt(0).toUpperCase() + name.slice(1),
       value: value as number
     }));
+  }
+  
+  // Default for job-related requests: show individual jobs by customer or name
+  if (parameters.title?.toLowerCase().includes("job") || !parameters.dataType) {
+    const jobData = jobs.map(job => ({
+      name: job.name || `Job ${job.id}`,
+      value: 1 // Each job represents 1 unit
+    }));
+    
+    return jobData.length > 0 ? jobData : [{ name: "No Jobs", value: 1 }];
   }
   
   if (parameters.dataType === "resource_type") {
