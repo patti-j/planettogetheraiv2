@@ -114,6 +114,12 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 24, 2025)
 
+✓ **Tour Window Scroll Prevention Fix (July 24, 2025)**:
+- Fixed critical issue where tour start caused entire window (including Max) to scroll out of view
+- Removed problematic scrollIntoView call that was forcing page-wide scrolling
+- Tour window now stays properly positioned without disrupting main page or Max layout
+- Tour content demonstration (auto-scroll) now only affects page content containers, not entire screen
+
 ✓ **Row Height Slider Visual Fix (July 24, 2025)**:
 - Fixed visual truncation issue with row height slider blue circle/thumb in resource gantt
 - Increased slider width from w-8 md:w-12 to w-16 md:w-20 for proper thumb display
