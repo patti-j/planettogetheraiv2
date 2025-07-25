@@ -234,6 +234,29 @@ export function MaxSidebar() {
     // Whisper transcription is server-based, no browser initialization needed
   }, []);
 
+  // Add global unhandled rejection handler to debug the issue
+  useEffect(() => {
+    const handleUnhandledRejection = (event: any) => {
+      console.error('CAUGHT UNHANDLED PROMISE REJECTION:', event.reason);
+      console.error('Promise:', event.promise);
+      console.error('Stack trace:', event.reason?.stack);
+      
+      // Check if it's related to canvas or HTTP requests
+      if (event.reason?.message?.includes('Method') || event.reason?.message?.includes('HTTP') || event.reason?.message?.includes('token')) {
+        console.error('*** THIS IS THE CANVAS HTTP ERROR WE ARE INVESTIGATING ***:', event.reason);
+      }
+      
+      // Prevent the unhandled rejection from being thrown
+      event.preventDefault();
+    };
+
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    
+    return () => {
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
+
   // Generate page insights
   useEffect(() => {
     const currentPage = window.location.pathname;
@@ -705,10 +728,14 @@ export function MaxSidebar() {
 
           // Persist canvas content to database (background, non-blocking)
           const sessionId = `session_${Date.now()}`;
-          saveCanvasContentToDatabase(newItem, sessionId).catch(error => {
-            console.warn('Failed to persist canvas content to database:', error);
-            // Don't show error to user as canvas still works with frontend state
-          });
+          try {
+            saveCanvasContentToDatabase(newItem, sessionId).catch(error => {
+              console.warn('Failed to persist canvas content to database:', error);
+              // Don't show error to user as canvas still works with frontend state
+            });
+          } catch (syncError) {
+            console.warn('Synchronous error in canvas persistence:', syncError);
+          }
         }
         break;
     }
