@@ -23,12 +23,16 @@ export default function Sidebar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [desktopMenuOpen, setDesktopMenuOpen] = useState(false);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+  const [userProfileOpen, setUserProfileOpen] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
   
   // Authentication hooks
   const { hasPermission } = usePermissions();
+  const { logout } = useAuth();
   const { isMaxOpen, setMaxOpen } = useMaxDock();
   const { getThemeClasses } = useAITheme();
+  
+  console.log("Sidebar component loading, location:", location);
 
 
 
