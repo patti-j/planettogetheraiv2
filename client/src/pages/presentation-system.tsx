@@ -20,7 +20,7 @@ import {
   ExternalLink, Monitor, ArrowRight, Maximize, Folder,
   Filter, Download, Eye, Star, CheckCircle, XCircle,
   User, Tag, Link, Globe, Info, HelpCircle, Zap,
-  Lightbulb, Sparkles
+  Lightbulb, Sparkles, Search
 } from "lucide-react";
 
 interface Presentation {
@@ -111,6 +111,21 @@ interface ContentSuggestion {
   updatedAt: Date;
 }
 
+interface PresentationLibrary {
+  id: number;
+  presentationId: number;
+  category: string;
+  subcategory?: string;
+  downloadCount: number;
+  rating: number;
+  ratingCount: number;
+  keywords: string[];
+  isApproved: boolean;
+  approvedBy?: number;
+  approvedAt?: string;
+  createdAt: string;
+}
+
 export default function PresentationSystemPage() {
   const [isMaximized, setIsMaximized] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
@@ -138,6 +153,11 @@ export default function PresentationSystemPage() {
   const [aiPromptDialogOpen, setAiPromptDialogOpen] = useState(false);
   const [customAiPrompt, setCustomAiPrompt] = useState("");
   
+  // Library-specific state
+  const [librarySearchTerm, setLibrarySearchTerm] = useState("");
+  const [selectedLibraryCategory, setSelectedLibraryCategory] = useState("");
+  const [shareTemplateDialogOpen, setShareTemplateDialogOpen] = useState(false);
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -153,14 +173,28 @@ export default function PresentationSystemPage() {
     });
   };
 
+  // Filter library templates based on search and category
+  const filteredLibraryTemplates = libraryTemplates.filter((template: PresentationLibrary) => {
+    const matchesSearch = !librarySearchTerm || 
+      template.category.toLowerCase().includes(librarySearchTerm.toLowerCase()) ||
+      (template.subcategory && template.subcategory.toLowerCase().includes(librarySearchTerm.toLowerCase())) ||
+      (template.keywords && template.keywords.some(keyword => 
+        keyword.toLowerCase().includes(librarySearchTerm.toLowerCase())
+      ));
+    
+    const matchesCategory = !selectedLibraryCategory || template.category === selectedLibraryCategory;
+    
+    return matchesSearch && matchesCategory;
+  });
+
   // Fetch presentations
   const { data: presentations = [], isLoading: presentationsLoading } = useQuery({
     queryKey: ["/api/presentations"],
   });
 
   // Fetch presentation library
-  const { data: library = [], isLoading: libraryLoading } = useQuery({
-    queryKey: ["/api/presentation-library"],
+  const { data: libraryTemplates = [], isLoading: libraryTemplatesLoading } = useQuery({
+    queryKey: ["/api/presentation-library", selectedLibraryCategory],
   });
 
   // Fetch presentation analytics
@@ -292,6 +326,28 @@ export default function PresentationSystemPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to generate presentation",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Share template mutation
+  const shareTemplateMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest("POST", "/api/presentation-library", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/presentation-library", selectedLibraryCategory] });
+      setShareTemplateDialogOpen(false);
+      toast({
+        title: "Template Shared",
+        description: "Your presentation template has been shared with the community.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to share template",
         variant: "destructive",
       });
     },
@@ -1188,19 +1244,201 @@ Create presentations that users will find exciting and that effectively demonstr
           </TabsContent>
 
           <TabsContent value="library" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Presentation Library</CardTitle>
-                <CardDescription>Browse and discover presentation templates from the community</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Library className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                  <p className="text-muted-foreground">Library functionality coming soon</p>
-                  <p className="text-sm text-muted-foreground">Share and discover presentation templates</p>
+            {/* Library Header with Search and Filters */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+              <div>
+                <h2 className="text-xl font-semibold">Presentation Library</h2>
+                <p className="text-gray-600">Discover and share presentation templates with the community</p>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Search templates..."
+                    value={librarySearchTerm}
+                    onChange={(e) => setLibrarySearchTerm(e.target.value)}
+                    className="pl-10 pr-4 py-2 border rounded-lg text-sm w-64"
+                  />
                 </div>
-              </CardContent>
-            </Card>
+                <select
+                  value={selectedLibraryCategory}
+                  onChange={(e) => setSelectedLibraryCategory(e.target.value)}
+                  className="px-3 py-2 border rounded-lg text-sm"
+                >
+                  <option value="">All Categories</option>
+                  <option value="sales-templates">Sales Templates</option>
+                  <option value="training-modules">Training Modules</option>
+                  <option value="industry-specific">Industry Specific</option>
+                  <option value="customer-custom">Customer Custom</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Library Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center">
+                    <Library className="w-8 h-8 text-blue-600 mr-3" />
+                    <div>
+                      <p className="text-2xl font-bold">{libraryTemplates.length}</p>
+                      <p className="text-sm text-gray-600">Total Templates</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center">
+                    <Download className="w-8 h-8 text-green-600 mr-3" />
+                    <div>
+                      <p className="text-2xl font-bold">{libraryTemplates.reduce((acc, t) => acc + (t.downloadCount || 0), 0)}</p>
+                      <p className="text-sm text-gray-600">Total Downloads</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center">
+                    <Star className="w-8 h-8 text-yellow-600 mr-3" />
+                    <div>
+                      <p className="text-2xl font-bold">{libraryTemplates.filter(t => t.isApproved).length}</p>
+                      <p className="text-sm text-gray-600">Approved Templates</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center">
+                    <Users className="w-8 h-8 text-purple-600 mr-3" />
+                    <div>
+                      <p className="text-2xl font-bold">{new Set(libraryTemplates.map(t => t.presentationId)).size}</p>
+                      <p className="text-sm text-gray-600">Contributors</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Library Templates Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {libraryTemplatesLoading ? (
+                [1, 2, 3, 4, 5, 6].map((i) => (
+                  <Card key={i} className="animate-pulse">
+                    <div className="aspect-video bg-gray-200 rounded-t-lg" />
+                    <CardHeader>
+                      <div className="h-4 bg-gray-200 rounded mb-2" />
+                      <div className="h-3 bg-gray-200 rounded w-2/3" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-3 bg-gray-200 rounded mb-3" />
+                      <div className="flex justify-between">
+                        <div className="h-6 bg-gray-200 rounded w-16" />
+                        <div className="h-6 bg-gray-200 rounded w-20" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : filteredLibraryTemplates.length === 0 ? (
+                <div className="col-span-full text-center py-12">
+                  <Library className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No templates found</h3>
+                  <p className="text-gray-600 mb-4">
+                    {librarySearchTerm || selectedLibraryCategory 
+                      ? "Try adjusting your search or filter criteria" 
+                      : "Be the first to share a presentation template with the community"}
+                  </p>
+                  <Button onClick={() => setShareTemplateDialogOpen(true)}>
+                    <Share className="w-4 h-4 mr-2" />
+                    Share Template
+                  </Button>
+                </div>
+              ) : (
+                filteredLibraryTemplates.map((template) => (
+                  <Card key={template.id} className="hover:shadow-lg transition-shadow cursor-pointer group">
+                    <div className="aspect-video bg-gradient-to-br from-indigo-500 to-purple-600 rounded-t-lg flex items-center justify-center relative overflow-hidden">
+                      <Presentation className="w-12 h-12 text-white group-hover:scale-110 transition-transform" />
+                      {template.isApproved && (
+                        <div className="absolute top-2 right-2">
+                          <Badge className="bg-green-500 text-white">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Approved
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center justify-between">
+                        <span>Template {template.id}</span>
+                        <div className="flex items-center text-sm text-gray-500">
+                          <Star className="w-4 h-4 mr-1 text-yellow-500" />
+                          {template.rating || 0}/5
+                        </div>
+                      </CardTitle>
+                      <CardDescription>{template.category.replace('-', ' ').toUpperCase()}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {template.subcategory && (
+                          <Badge variant="secondary">{template.subcategory}</Badge>
+                        )}
+                        <div className="flex items-center justify-between text-sm text-gray-500">
+                          <div className="flex items-center">
+                            <Download className="w-4 h-4 mr-1" />
+                            {template.downloadCount || 0} downloads
+                          </div>
+                          <div className="flex items-center">
+                            <Calendar className="w-4 h-4 mr-1" />
+                            {formatDate(template.createdAt)}
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Button size="sm" className="flex-1">
+                            <Download className="w-4 h-4 mr-2" />
+                            Use Template
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Star className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        {template.keywords && template.keywords.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {template.keywords.slice(0, 3).map((keyword) => (
+                              <Badge key={keyword} variant="outline" className="text-xs">
+                                {keyword}
+                              </Badge>
+                            ))}
+                            {template.keywords.length > 3 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{template.keywords.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+
+            {/* Share Template Button - Fixed Position */}
+            <div className="fixed bottom-6 right-6 z-40">
+              <Button 
+                onClick={() => setShareTemplateDialogOpen(true)}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:shadow-xl"
+                size="lg"
+              >
+                <Share className="w-5 h-5 mr-2" />
+                Share Template
+              </Button>
+            </div>
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-4">
@@ -1632,6 +1870,116 @@ Create presentations that users will find exciting and that effectively demonstr
               </Button>
               <Button type="submit" disabled={updatePresentationMutation.isPending}>
                 {updatePresentationMutation.isPending ? "Updating..." : "Update Presentation"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Template Dialog */}
+      <Dialog open={shareTemplateDialogOpen} onOpenChange={setShareTemplateDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Share className="w-5 h-5 mr-2" />
+              Share Template with Community
+            </DialogTitle>
+            <DialogDescription>
+              Share your presentation template with the community library for others to discover and use
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const templateData = {
+              presentationId: parseInt(formData.get("presentationId") as string),
+              category: formData.get("category") as string,
+              subcategory: formData.get("subcategory") as string || undefined,
+              keywords: (formData.get("keywords") as string).split(',').map(k => k.trim()).filter(Boolean),
+              downloadCount: 0,
+              rating: 0,
+              ratingCount: 0,
+              isApproved: false
+            };
+            shareTemplateMutation.mutate(templateData);
+          }}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="template-presentation">Select Presentation</Label>
+                <Select name="presentationId" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose presentation to share" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {presentations.map((presentation: Presentation) => (
+                      <SelectItem key={presentation.id} value={presentation.id.toString()}>
+                        {presentation.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="template-category">Category</Label>
+                <Select name="category" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sales-templates">Sales Templates</SelectItem>
+                    <SelectItem value="training-modules">Training Modules</SelectItem>
+                    <SelectItem value="industry-specific">Industry Specific</SelectItem>
+                    <SelectItem value="customer-custom">Customer Custom</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="template-subcategory">Subcategory (Optional)</Label>
+                <Input 
+                  id="template-subcategory" 
+                  name="subcategory" 
+                  placeholder="e.g., Manufacturing, Automotive, Healthcare"
+                />
+              </div>
+              <div>
+                <Label htmlFor="template-keywords">Keywords (comma-separated)</Label>
+                <Input 
+                  id="template-keywords" 
+                  name="keywords" 
+                  placeholder="manufacturing, efficiency, AI, optimization"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Help others discover your template with relevant keywords
+                </p>
+              </div>
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <div className="flex items-center space-x-2 text-blue-800">
+                  <Info className="w-4 h-4" />
+                  <span className="font-medium text-sm">Community Guidelines</span>
+                </div>
+                <ul className="text-xs text-blue-700 mt-2 space-y-1 ml-6 list-disc">
+                  <li>Templates will be reviewed before approval</li>
+                  <li>Ensure content is appropriate for professional use</li>
+                  <li>Include clear, descriptive keywords</li>
+                  <li>Templates become available to all community members</li>
+                </ul>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2 mt-6">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShareTemplateDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={shareTemplateMutation.isPending}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
+              >
+                {shareTemplateMutation.isPending ? "Sharing..." : "Share Template"}
               </Button>
             </div>
           </form>
