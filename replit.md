@@ -121,6 +121,12 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 25, 2025)
 
+✓ **Plant Manager Dashboard Cost Variance Rounding Fix (July 25, 2025)**:
+- Fixed cost variance metric display in plant manager dashboard to show whole numbers instead of decimal values
+- Updated costVariance calculation to use Math.round() for cleaner percentage display
+- Cost variance now displays as integer values (e.g., "-3%" instead of "-3.1%") for better readability
+- Maintains accuracy while providing cleaner user interface in dashboard metrics
+
 ✓ **Sample Disruptions for Disruption Planning Implementation (July 25, 2025)**:
 - Successfully added comprehensive sample disruption data to database seed file for realistic testing and demonstration
 - Added 5 diverse disruption scenarios: CNC machine breakdown, material shortage, absent employee, quality issues, and power outage

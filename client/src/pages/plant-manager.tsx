@@ -122,7 +122,7 @@ export default function PlantManagerPage() {
     qualityScore: 94.8 - (Math.random() * 5), // Some variation
     onTimeDelivery: totalJobs > 0 ? Math.round((completedJobs / totalJobs) * 100 * 0.91) : 0,
     resourceUtilization: totalResources > 0 ? Math.round((activeResources / totalResources) * 100) : 0,
-    costVariance: -2.1 - (Math.random() * 2), // Random variance
+    costVariance: Math.round(-2.1 - (Math.random() * 2)), // Random variance (rounded)
     safetyIncidents: 0,
     energyUsage: 12450 + (activeResources * 150), // Scale with active resources
     wasteReduction: 15.7 + (Math.random() * 5),
