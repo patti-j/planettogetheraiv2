@@ -1,7 +1,8 @@
 import { db } from "./db";
 import { 
   capabilities, resources, jobs, operations, users, roles, permissions, userRoles, rolePermissions,
-  customerStories, contentBlocks, marketingPages, leadCaptures, disruptions, disruptionActions
+  customerStories, contentBlocks, marketingPages, leadCaptures, disruptions, disruptionActions,
+  businessGoals, goalProgress, goalRisks, goalIssues
 } from "@shared/schema";
 import { sql, eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -15,18 +16,20 @@ export async function seedDatabase() {
   const existingDefaultRoles = await db.select().from(roles).where(eq(roles.name, "Administrator")).limit(1);
   const existingPresentationPermissions = await db.select().from(permissions).where(eq(permissions.feature, "presentation-system")).limit(1);
   const existingDisruptions = await db.select().from(disruptions).limit(1);
+  const existingBusinessGoals = await db.select().from(businessGoals).limit(1);
   
-  // Force re-seed if presentation permissions or disruptions are missing
+  // Force re-seed if presentation permissions, disruptions, or business goals are missing
   const shouldReseedPermissions = existingPresentationPermissions.length === 0;
   const shouldReseedDisruptions = existingDisruptions.length === 0;
+  const shouldReseedBusinessGoals = existingBusinessGoals.length === 0;
   
-  if (existingCapabilities.length > 0 && existingUsers.length > 0 && existingDefaultRoles.length > 0 && !shouldReseedPermissions && !shouldReseedDisruptions) {
+  if (existingCapabilities.length > 0 && existingUsers.length > 0 && existingDefaultRoles.length > 0 && !shouldReseedPermissions && !shouldReseedDisruptions && !shouldReseedBusinessGoals) {
     console.log("Database already seeded, skipping...");
     return;
   }
   
   // Skip production data seeding if it already exists but seed user management
-  const shouldSeedProduction = existingCapabilities.length === 0 || shouldReseedDisruptions;
+  const shouldSeedProduction = existingCapabilities.length === 0 || shouldReseedDisruptions || shouldReseedBusinessGoals;
 
   if (shouldSeedProduction) {
     // Only insert capabilities if they don't exist
@@ -323,6 +326,306 @@ export async function seedDatabase() {
 
       await db.insert(disruptionActions).values(disruptionActionData);
     }
+  }
+
+  // Seed business goals if missing
+  if (shouldReseedBusinessGoals) {
+    console.log("Seeding business goals...");
+    
+    const sampleBusinessGoals = [
+      {
+        title: "Increase Production Efficiency",
+        description: "Improve overall production efficiency by optimizing resource allocation and reducing downtime across all manufacturing lines.",
+        category: "operational",
+        goalType: "efficiency",
+        targetValue: 9500, // 95% efficiency
+        currentValue: 8700, // 87% current
+        unit: "percentage",
+        timeframe: "quarterly",
+        priority: "high",
+        status: "active",
+        owner: "Sarah Chen - Operations Director",
+        department: "Manufacturing",
+        startDate: new Date("2025-01-01"),
+        targetDate: new Date("2025-03-31"),
+        createdBy: "admin",
+      },
+      {
+        title: "Reduce Manufacturing Costs",
+        description: "Achieve 12% reduction in total manufacturing costs through lean processes, waste elimination, and energy optimization.",
+        category: "financial",
+        goalType: "cost_reduction",
+        targetValue: 1200, // 12% reduction
+        currentValue: 750, // 7.5% achieved
+        unit: "percentage",
+        timeframe: "annual",
+        priority: "critical",
+        status: "active",
+        owner: "Michael Torres - Plant Manager",
+        department: "Operations",
+        startDate: new Date("2025-01-01"),
+        targetDate: new Date("2025-12-31"),
+        createdBy: "admin",
+      },
+      {
+        title: "Zero Safety Incidents",
+        description: "Maintain zero workplace safety incidents for 180 consecutive days through enhanced safety protocols and training programs.",
+        category: "safety",
+        goalType: "quality_improvement",
+        targetValue: 0, // Zero incidents
+        currentValue: 2, // 2 incidents this period
+        unit: "incidents",
+        timeframe: "quarterly",
+        priority: "critical",
+        status: "at-risk",
+        owner: "Jennifer Rodriguez - Safety Manager",
+        department: "Safety & Compliance",
+        startDate: new Date("2025-01-01"),
+        targetDate: new Date("2025-06-30"),
+        createdBy: "admin",
+      },
+      {
+        title: "Customer Satisfaction Excellence",
+        description: "Achieve and maintain customer satisfaction rating above 95% through improved quality control and delivery performance.",
+        category: "customer",
+        goalType: "customer_satisfaction",
+        targetValue: 9500, // 95% satisfaction
+        currentValue: 9200, // 92% current
+        unit: "percentage",
+        timeframe: "quarterly",
+        priority: "high",
+        status: "on-track",
+        owner: "David Park - Quality Director",
+        department: "Quality Assurance",
+        startDate: new Date("2025-01-01"),
+        targetDate: new Date("2025-03-31"),
+        createdBy: "admin",
+      },
+      {
+        title: "Market Share Growth",
+        description: "Expand market share in automotive manufacturing segment by 8% through strategic partnerships and capacity expansion.",
+        category: "growth",
+        goalType: "market_share",
+        targetValue: 800, // 8% growth
+        currentValue: 350, // 3.5% achieved
+        unit: "percentage",
+        timeframe: "annual",
+        priority: "medium",
+        status: "active",
+        owner: "Lisa Wang - Strategic Planning Director",
+        department: "Business Development",
+        startDate: new Date("2025-01-01"),
+        targetDate: new Date("2025-12-31"),
+        createdBy: "admin",
+      },
+      {
+        title: "Digital Transformation Initiative",
+        description: "Complete digital transformation of production monitoring systems with IoT sensors and real-time analytics across all plants.",
+        category: "strategic",
+        goalType: "efficiency",
+        targetValue: 100, // 100% completion
+        currentValue: 65, // 65% completed
+        unit: "percentage",
+        timeframe: "annual",
+        priority: "high",
+        status: "active",
+        owner: "Robert Kim - IT Director",
+        department: "Information Technology",
+        startDate: new Date("2024-10-01"),
+        targetDate: new Date("2025-09-30"),
+        createdBy: "admin",
+      },
+      {
+        title: "Inventory Optimization",
+        description: "Reduce inventory carrying costs by 15% while maintaining 99.5% stockout prevention through advanced forecasting.",
+        category: "operational",
+        goalType: "cost_reduction",
+        targetValue: 1500, // 15% reduction
+        currentValue: 800, // 8% achieved
+        unit: "percentage",
+        timeframe: "quarterly",
+        priority: "medium",
+        status: "active",
+        owner: "Amanda Foster - Supply Chain Director",
+        department: "Supply Chain",
+        startDate: new Date("2025-01-01"),
+        targetDate: new Date("2025-03-31"),
+        createdBy: "admin",
+      },
+      {
+        title: "Energy Efficiency Program",
+        description: "Achieve 20% reduction in energy consumption per unit produced through equipment upgrades and process optimization.",
+        category: "sustainability",
+        goalType: "cost_reduction",
+        targetValue: 2000, // 20% reduction
+        currentValue: 1200, // 12% achieved
+        unit: "percentage",
+        timeframe: "annual",
+        priority: "medium",
+        status: "on-track",
+        owner: "Carlos Martinez - Facilities Manager",
+        department: "Facilities",
+        startDate: new Date("2025-01-01"),
+        targetDate: new Date("2025-12-31"),
+        createdBy: "admin",
+      }
+    ];
+
+    await db.insert(businessGoals).values(sampleBusinessGoals);
+
+    // Add some sample goal progress entries
+    const sampleGoalProgress = [
+      {
+        goalId: 1, // Production Efficiency
+        reportedValue: 8700,
+        progressPercentage: 9158, // (8700/9500) * 100 * 100 for storage
+        reportingPeriod: "Q1-2025",
+        milestone: "Line A optimization completed",
+        notes: "Improved efficiency in Line A by optimizing resource allocation. Line B still needs attention.",
+        reportedBy: "Operations Team",
+        confidence: 95,
+      },
+      {
+        goalId: 1,
+        reportedValue: 8850,
+        progressPercentage: 9316, // (8850/9500) * 100 * 100 for storage
+        reportingPeriod: "Q1-2025",
+        milestone: "Line B efficiency improvements",
+        notes: "Line B efficiency improvements showing results. On track for quarterly target.",
+        reportedBy: "Operations Team",
+        confidence: 90,
+      },
+      {
+        goalId: 2, // Cost Reduction
+        reportedValue: 750,
+        progressPercentage: 6250, // (750/1200) * 100 * 100 for storage
+        reportingPeriod: "Q1-2025",
+        milestone: "Initial waste reduction phase",
+        notes: "Waste reduction initiatives contributing to cost savings. Energy optimization in progress.",
+        reportedBy: "Finance Team",
+        confidence: 85,
+      },
+      {
+        goalId: 4, // Customer Satisfaction
+        reportedValue: 9200,
+        progressPercentage: 9684, // (9200/9500) * 100 * 100 for storage
+        reportingPeriod: "Q1-2025",
+        milestone: "Customer feedback survey completed",
+        notes: "Customer feedback survey results positive. Delivery performance improvements noted.",
+        reportedBy: "Quality Team",
+        confidence: 95,
+      },
+      {
+        goalId: 6, // Digital Transformation
+        reportedValue: 6500,
+        progressPercentage: 6500, // Already percentage value
+        reportingPeriod: "Q1-2025",
+        milestone: "Plant 1 IoT deployment completed",
+        notes: "IoT sensor deployment completed in Plant 1. Analytics platform integration 70% complete.",
+        reportedBy: "IT Team",
+        confidence: 85,
+      }
+    ];
+
+    await db.insert(goalProgress).values(sampleGoalProgress);
+
+    // Add some sample risks
+    const sampleGoalRisks = [
+      {
+        goalId: 2, // Cost Reduction
+        title: "Supply Chain Disruption",
+        description: "Potential supply chain disruptions could increase raw material costs and impact cost reduction targets.",
+        riskType: "external",
+        probability: "medium",
+        impact: "high",
+        mitigationPlan: "Diversify supplier base and increase strategic inventory buffers for critical materials.",
+        mitigationOwner: "Supply Chain Team",
+        mitigationDeadline: new Date("2025-02-15"),
+        status: "active",
+        identifiedBy: "Risk Management",
+        identifiedAt: new Date("2025-01-05"),
+      },
+      {
+        goalId: 3, // Safety
+        title: "Equipment Aging",
+        description: "Aging equipment in Line C poses increased safety risks that could impact zero incident goal.",
+        riskType: "operational",
+        probability: "medium",
+        impact: "critical",
+        mitigationPlan: "Accelerate equipment replacement schedule and increase preventive maintenance frequency.",
+        mitigationOwner: "Maintenance Team",
+        mitigationDeadline: new Date("2025-02-28"),
+        status: "active",
+        identifiedBy: "Safety Team",
+        identifiedAt: new Date("2025-01-08"),
+      },
+      {
+        goalId: 6, // Digital Transformation
+        title: "Technology Integration Complexity",
+        description: "Complex system integrations may delay digital transformation timeline and increase implementation costs.",
+        riskType: "technical",
+        probability: "high",
+        impact: "medium",
+        mitigationPlan: "Engage external integration specialists and implement phased rollout approach.",
+        mitigationOwner: "IT Team",
+        mitigationDeadline: new Date("2025-02-01"),
+        status: "mitigated",
+        identifiedBy: "IT Team",
+        identifiedAt: new Date("2025-01-03"),
+      }
+    ];
+
+    await db.insert(goalRisks).values(sampleGoalRisks);
+
+    // Add some sample issues
+    const sampleGoalIssues = [
+      {
+        goalId: 1, // Production Efficiency
+        title: "Line B Equipment Malfunction",
+        description: "Recurring equipment malfunctions on Line B are impacting efficiency targets and causing unplanned downtime.",
+        issueType: "blocker",
+        severity: "high",
+        impact: "schedule",
+        assignedTo: "Maintenance Team",
+        resolutionPlan: "Replace faulty components and implement predictive maintenance sensors to prevent future issues.",
+        estimatedResolutionDate: new Date("2025-02-10"),
+        status: "in-progress",
+        reportedBy: "Operations Team",
+        reportedAt: new Date("2025-01-12"),
+      },
+      {
+        goalId: 4, // Customer Satisfaction
+        title: "Delivery Delays",
+        description: "Recent delivery delays have resulted in customer complaints and may impact satisfaction ratings.",
+        issueType: "concern",
+        severity: "medium",
+        impact: "quality",
+        assignedTo: "Logistics Team",
+        resolutionPlan: "Optimize delivery routes and implement real-time tracking system for better customer communication.",
+        estimatedResolutionDate: new Date("2025-02-05"),
+        status: "open",
+        reportedBy: "Customer Service",
+        reportedAt: new Date("2025-01-18"),
+      },
+      {
+        goalId: 7, // Inventory Optimization
+        title: "Forecasting Model Accuracy",
+        description: "Current demand forecasting model showing decreased accuracy, affecting inventory optimization efforts.",
+        issueType: "risk",
+        severity: "medium",
+        impact: "cost",
+        assignedTo: "Data Analytics Team",
+        resolutionPlan: "Retrain forecasting algorithms with recent data and incorporate additional market indicators.",
+        estimatedResolutionDate: new Date("2025-01-30"),
+        status: "resolved",
+        reportedBy: "Supply Chain Team",
+        reportedAt: new Date("2025-01-10"),
+      }
+    ];
+
+    await db.insert(goalIssues).values(sampleGoalIssues);
+
+    console.log("✅ Business goals sample data seeded successfully");
   }
 
   // Seed User Management System (only if users don't exist)
