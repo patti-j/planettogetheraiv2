@@ -66,9 +66,9 @@ import {
   optimizationAlgorithms, algorithmTests, algorithmDeployments, extensionData,
   type OptimizationAlgorithm, type AlgorithmTest, type AlgorithmDeployment, type ExtensionData,
   type InsertOptimizationAlgorithm, type InsertAlgorithmTest, type InsertAlgorithmDeployment, type InsertExtensionData,
-  // industryTemplates, userIndustryTemplates, templateConfigurations,
-  // type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
-  // type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration,
+  industryTemplates, userIndustryTemplates, templateConfigurations,
+  type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
+  type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration,
   // accountInfo, billingHistory, usageMetrics,
   // type AccountInfo, type BillingHistory, type UsageMetrics,
   // type InsertAccountInfo, type InsertBillingHistory, type InsertUsageMetrics

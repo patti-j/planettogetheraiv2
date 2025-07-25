@@ -3,7 +3,7 @@ import {
   capabilities, resources, jobs, operations, users, roles, permissions, userRoles, rolePermissions,
   customerStories, contentBlocks, marketingPages, leadCaptures, disruptions, disruptionActions,
   businessGoals, goalProgress, goalRisks, goalIssues, dashboardConfigs, reportConfigs,
-  visualFactoryDisplays
+  visualFactoryDisplays, industryTemplates
 } from "@shared/schema";
 import { sql, eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -21,22 +21,24 @@ export async function seedDatabase() {
   const existingDashboards = await db.select().from(dashboardConfigs).limit(1);
   const existingReports = await db.select().from(reportConfigs).limit(1);
   const existingVisualFactoryDisplays = await db.select().from(visualFactoryDisplays).limit(1);
+  const existingIndustryTemplates = await db.select().from(industryTemplates).limit(1);
   
-  // Force re-seed if presentation permissions, disruptions, business goals, dashboards, reports, or visual factory displays are missing
+  // Force re-seed if presentation permissions, disruptions, business goals, dashboards, reports, visual factory displays, or industry templates are missing
   const shouldReseedPermissions = existingPresentationPermissions.length === 0;
   const shouldReseedDisruptions = existingDisruptions.length === 0;
   const shouldReseedBusinessGoals = existingBusinessGoals.length === 0;
   const shouldReseedDashboards = existingDashboards.length === 0;
   const shouldReseedReports = existingReports.length === 0;
   const shouldReseedVisualFactory = existingVisualFactoryDisplays.length === 0;
+  const shouldReseedIndustryTemplates = existingIndustryTemplates.length === 0;
   
-  if (existingCapabilities.length > 0 && existingUsers.length > 0 && existingDefaultRoles.length > 0 && !shouldReseedPermissions && !shouldReseedDisruptions && !shouldReseedBusinessGoals && !shouldReseedDashboards && !shouldReseedReports && !shouldReseedVisualFactory) {
+  if (existingCapabilities.length > 0 && existingUsers.length > 0 && existingDefaultRoles.length > 0 && !shouldReseedPermissions && !shouldReseedDisruptions && !shouldReseedBusinessGoals && !shouldReseedDashboards && !shouldReseedReports && !shouldReseedVisualFactory && !shouldReseedIndustryTemplates) {
     console.log("Database already seeded, skipping...");
     return;
   }
   
   // Skip production data seeding if it already exists but seed user management
-  const shouldSeedProduction = existingCapabilities.length === 0 || shouldReseedDisruptions || shouldReseedBusinessGoals || shouldReseedDashboards || shouldReseedReports || shouldReseedVisualFactory;
+  const shouldSeedProduction = existingCapabilities.length === 0 || shouldReseedDisruptions || shouldReseedBusinessGoals || shouldReseedDashboards || shouldReseedReports || shouldReseedVisualFactory || shouldReseedIndustryTemplates;
 
   if (shouldSeedProduction) {
     // Only insert capabilities if they don't exist
@@ -2373,4 +2375,251 @@ async function seedMarketingData() {
   } catch (error) {
     console.error("Error seeding marketing data:", error);
   }
+
+  // Seed Industry Templates
+  if (shouldReseedIndustryTemplates) {
+    console.log("Seeding industry templates...");
+
+    const industryTemplateData = [
+      {
+        name: "Automotive Manufacturing",
+        description: "Comprehensive template for automotive parts and assembly operations with lean manufacturing principles, quality control, and safety management.",
+        category: "automotive",
+        targetIndustry: "Automotive",
+        companySize: "large",
+        configuration: {
+          dashboards: [
+            {
+              name: "Production Overview",
+              description: "Main production dashboard for automotive manufacturing",
+              layout: "grid",
+              widgets: [
+                { type: "production_metrics", position: { x: 0, y: 0, width: 2, height: 1 }, config: { title: "Production Rate", metric: "units_per_hour" } },
+                { type: "quality_metrics", position: { x: 2, y: 0, width: 2, height: 1 }, config: { title: "Quality Score", metric: "defect_rate" } },
+                { type: "efficiency_chart", position: { x: 0, y: 1, width: 4, height: 2 }, config: { title: "Line Efficiency", timeRange: "24h" } }
+              ]
+            }
+          ],
+          kpis: [
+            { name: "OEE", description: "Overall Equipment Effectiveness", category: "efficiency", calculation: "availability * performance * quality", target: 85, unit: "%", displayFormat: "percentage" },
+            { name: "Takt Time", description: "Available production time / customer demand", category: "production", calculation: "working_time / demand", target: 45, unit: "seconds", displayFormat: "decimal" },
+            { name: "First Pass Yield", description: "Units passing quality on first attempt", category: "quality", calculation: "good_units / total_units", target: 98, unit: "%", displayFormat: "percentage" }
+          ],
+          theme: {
+            primaryColor: "#1e40af",
+            secondaryColor: "#3b82f6",
+            accentColor: "#60a5fa",
+            backgroundColor: "#f8fafc",
+            textColor: "#1e293b"
+          }
+        },
+        features: ["production_scheduling", "quality_control", "maintenance_management", "inventory_tracking", "lean_manufacturing"],
+        prerequisites: ["ERP_integration", "quality_systems", "maintenance_planning"],
+        setupInstructions: "1. Configure production lines and work centers\n2. Set up quality checkpoints and inspection protocols\n3. Integrate with existing ERP and MES systems\n4. Train operators on lean manufacturing principles\n5. Establish preventive maintenance schedules",
+        benefits: ["Improved OEE by 15-25%", "Reduced quality defects by 30%", "Faster changeover times", "Better supplier quality management", "Real-time production visibility"],
+        tags: ["automotive", "lean", "quality", "oee", "manufacturing"],
+        aiPrompt: "Create an automotive manufacturing template focusing on lean principles, quality control, and operational efficiency for automotive parts production."
+      },
+      {
+        name: "Electronics Assembly",
+        description: "Specialized template for electronics manufacturing with SMT lines, component traceability, and strict quality standards for electronic components.",
+        category: "electronics",
+        targetIndustry: "Electronics",
+        companySize: "medium",
+        configuration: {
+          dashboards: [
+            {
+              name: "SMT Line Dashboard",
+              description: "Surface Mount Technology line monitoring",
+              layout: "grid",
+              widgets: [
+                { type: "line_status", position: { x: 0, y: 0, width: 2, height: 1 }, config: { title: "Line Status", lines: ["SMT-1", "SMT-2", "SMT-3"] } },
+                { type: "component_usage", position: { x: 2, y: 0, width: 2, height: 1 }, config: { title: "Component Consumption", realTime: true } },
+                { type: "defect_tracking", position: { x: 0, y: 1, width: 4, height: 2 }, config: { title: "Defect Analysis", categories: ["solder", "placement", "missing"] } }
+              ]
+            }
+          ],
+          kpis: [
+            { name: "Placement Accuracy", description: "Component placement precision rate", category: "quality", calculation: "accurate_placements / total_placements", target: 99.9, unit: "%", displayFormat: "percentage" },
+            { name: "Throughput", description: "Boards per hour", category: "production", calculation: "completed_boards / hour", target: 120, unit: "boards/hr", displayFormat: "integer" },
+            { name: "First Pass Yield", description: "Boards passing without rework", category: "quality", calculation: "pass_boards / total_boards", target: 95, unit: "%", displayFormat: "percentage" }
+          ],
+          theme: {
+            primaryColor: "#059669",
+            secondaryColor: "#10b981",
+            accentColor: "#34d399",
+            backgroundColor: "#f0fdf4",
+            textColor: "#064e3b"
+          }
+        },
+        features: ["smt_line_control", "component_traceability", "aoi_integration", "pick_place_optimization", "pcb_tracking"],
+        prerequisites: ["SMT_equipment", "component_management", "traceability_system"],
+        setupInstructions: "1. Configure SMT line equipment integration\n2. Set up component reel tracking and management\n3. Integrate AOI (Automated Optical Inspection) systems\n4. Configure pick-and-place optimization algorithms\n5. Establish PCB traceability workflows",
+        benefits: ["Reduced placement defects by 40%", "Improved component utilization", "Faster line changeovers", "Enhanced traceability", "Better yield management"],
+        tags: ["electronics", "smt", "pcb", "component", "traceability"],
+        aiPrompt: "Create an electronics manufacturing template optimized for SMT assembly lines with component tracking and quality control."
+      },
+      {
+        name: "Food & Beverage Production",
+        description: "Template for food and beverage manufacturing with HACCP compliance, batch tracking, expiration management, and safety protocols.",
+        category: "food_beverage",
+        targetIndustry: "Food & Beverage",
+        companySize: "medium",
+        configuration: {
+          dashboards: [
+            {
+              name: "Production Control",
+              description: "Food production monitoring with safety focus",
+              layout: "grid",
+              widgets: [
+                { type: "batch_tracking", position: { x: 0, y: 0, width: 2, height: 1 }, config: { title: "Active Batches", includeExpiry: true } },
+                { type: "temperature_monitoring", position: { x: 2, y: 0, width: 2, height: 1 }, config: { title: "Temperature Control", criticalPoints: true } },
+                { type: "safety_alerts", position: { x: 0, y: 1, width: 4, height: 1 }, config: { title: "Safety & Compliance", haccp: true } }
+              ]
+            }
+          ],
+          kpis: [
+            { name: "Batch Yield", description: "Successful batch completion rate", category: "production", calculation: "good_batches / total_batches", target: 98, unit: "%", displayFormat: "percentage" },
+            { name: "Safety Score", description: "HACCP compliance score", category: "safety", calculation: "compliant_checks / total_checks", target: 100, unit: "%", displayFormat: "percentage" },
+            { name: "Waste Percentage", description: "Production waste rate", category: "efficiency", calculation: "waste_volume / total_volume", target: 2, unit: "%", displayFormat: "percentage" }
+          ],
+          theme: {
+            primaryColor: "#dc2626",
+            secondaryColor: "#ef4444",
+            accentColor: "#f87171",
+            backgroundColor: "#fef2f2",
+            textColor: "#7f1d1d"
+          }
+        },
+        features: ["batch_management", "haccp_compliance", "temperature_monitoring", "expiry_tracking", "allergen_management"],
+        prerequisites: ["HACCP_system", "temperature_sensors", "batch_tracking"],
+        setupInstructions: "1. Set up HACCP critical control points\n2. Configure temperature monitoring systems\n3. Establish batch tracking and lot management\n4. Implement allergen control procedures\n5. Set up expiration date management",
+        benefits: ["100% HACCP compliance", "Reduced food safety incidents", "Better batch traceability", "Improved yield consistency", "Faster recall response"],
+        tags: ["food", "beverage", "haccp", "safety", "batch"],
+        aiPrompt: "Create a food and beverage manufacturing template with HACCP compliance, batch tracking, and food safety protocols."
+      },
+      {
+        name: "Pharmaceutical Manufacturing",
+        description: "GMP-compliant template for pharmaceutical production with validation protocols, serialization, and regulatory compliance tracking.",
+        category: "pharmaceutical",
+        targetIndustry: "Pharmaceutical",
+        companySize: "large",
+        configuration: {
+          dashboards: [
+            {
+              name: "GMP Compliance",
+              description: "Good Manufacturing Practice monitoring",
+              layout: "grid",
+              widgets: [
+                { type: "validation_status", position: { x: 0, y: 0, width: 2, height: 1 }, config: { title: "Validation Status", protocols: ["IQ", "OQ", "PQ"] } },
+                { type: "serialization", position: { x: 2, y: 0, width: 2, height: 1 }, config: { title: "Product Serialization", trackAndTrace: true } },
+                { type: "environmental_monitoring", position: { x: 0, y: 1, width: 4, height: 2 }, config: { title: "Clean Room Conditions", parameters: ["temperature", "humidity", "pressure", "particles"] } }
+              ]
+            }
+          ],
+          kpis: [
+            { name: "GMP Compliance", description: "Good Manufacturing Practice score", category: "quality", calculation: "compliant_activities / total_activities", target: 100, unit: "%", displayFormat: "percentage" },
+            { name: "Right First Time", description: "Batches passing without deviation", category: "production", calculation: "successful_batches / total_batches", target: 99, unit: "%", displayFormat: "percentage" },
+            { name: "Clean Room Grade", description: "Environmental compliance score", category: "safety", calculation: "compliant_measurements / total_measurements", target: 99.9, unit: "%", displayFormat: "percentage" }
+          ],
+          theme: {
+            primaryColor: "#7c3aed",
+            secondaryColor: "#8b5cf6",
+            accentColor: "#a78bfa",
+            backgroundColor: "#faf5ff",
+            textColor: "#581c87"
+          }
+        },
+        features: ["gmp_compliance", "validation_management", "serialization", "clean_room_monitoring", "deviation_tracking"],
+        prerequisites: ["GMP_certification", "validation_protocols", "serialization_system"],
+        setupInstructions: "1. Implement GMP validation protocols\n2. Set up product serialization and track-and-trace\n3. Configure clean room environmental monitoring\n4. Establish deviation management workflows\n5. Implement electronic batch records",
+        benefits: ["100% GMP compliance", "Reduced regulatory risks", "Faster product releases", "Complete traceability", "Improved audit readiness"],
+        tags: ["pharmaceutical", "gmp", "validation", "serialization", "compliance"],
+        aiPrompt: "Create a pharmaceutical manufacturing template with GMP compliance, validation protocols, and regulatory tracking."
+      },
+      {
+        name: "Aerospace Manufacturing",
+        description: "High-precision template for aerospace components with AS9100 standards, material traceability, and strict quality requirements.",
+        category: "aerospace",
+        targetIndustry: "Aerospace",
+        companySize: "large",
+        configuration: {
+          dashboards: [
+            {
+              name: "Precision Manufacturing",
+              description: "Aerospace component production monitoring",
+              layout: "grid",
+              widgets: [
+                { type: "precision_metrics", position: { x: 0, y: 0, width: 2, height: 1 }, config: { title: "Precision Control", tolerance: "±0.001" } },
+                { type: "material_traceability", position: { x: 2, y: 0, width: 2, height: 1 }, config: { title: "Material Pedigree", certifications: true } },
+                { type: "inspection_results", position: { x: 0, y: 1, width: 4, height: 2 }, config: { title: "Quality Inspections", nonDestructive: true } }
+              ]
+            }
+          ],
+          kpis: [
+            { name: "First Article Approval", description: "FAI success rate", category: "quality", calculation: "approved_fai / total_fai", target: 95, unit: "%", displayFormat: "percentage" },
+            { name: "AS9100 Score", description: "Quality management system compliance", category: "quality", calculation: "compliant_processes / total_processes", target: 100, unit: "%", displayFormat: "percentage" },
+            { name: "Material Traceability", description: "Complete material pedigree tracking", category: "compliance", calculation: "traced_materials / total_materials", target: 100, unit: "%", displayFormat: "percentage" }
+          ],
+          theme: {
+            primaryColor: "#0f172a",
+            secondaryColor: "#334155",
+            accentColor: "#64748b",
+            backgroundColor: "#f8fafc",
+            textColor: "#0f172a"
+          }
+        },
+        features: ["as9100_compliance", "material_traceability", "precision_control", "fai_management", "ndt_integration"],
+        prerequisites: ["AS9100_certification", "precision_equipment", "traceability_system"],
+        setupInstructions: "1. Implement AS9100 quality management system\n2. Set up complete material traceability workflows\n3. Configure precision measurement and control systems\n4. Establish First Article Inspection protocols\n5. Integrate Non-Destructive Testing equipment",
+        benefits: ["AS9100 compliance", "Complete material traceability", "Reduced scrap and rework", "Faster customer approvals", "Enhanced quality reputation"],
+        tags: ["aerospace", "as9100", "precision", "traceability", "quality"],
+        aiPrompt: "Create an aerospace manufacturing template with AS9100 compliance, precision control, and material traceability."
+      },
+      {
+        name: "General Manufacturing",
+        description: "Versatile template suitable for various manufacturing industries with core production planning, quality control, and efficiency tracking.",
+        category: "manufacturing",
+        targetIndustry: "General Manufacturing",
+        companySize: "medium",
+        configuration: {
+          dashboards: [
+            {
+              name: "Manufacturing Overview",
+              description: "General purpose manufacturing dashboard",
+              layout: "grid",
+              widgets: [
+                { type: "production_status", position: { x: 0, y: 0, width: 2, height: 1 }, config: { title: "Production Status", realTime: true } },
+                { type: "efficiency_metrics", position: { x: 2, y: 0, width: 2, height: 1 }, config: { title: "Efficiency Tracking", oee: true } },
+                { type: "quality_overview", position: { x: 0, y: 1, width: 4, height: 2 }, config: { title: "Quality Metrics", trending: true } }
+              ]
+            }
+          ],
+          kpis: [
+            { name: "Overall Equipment Effectiveness", description: "Combined availability, performance, and quality", category: "efficiency", calculation: "availability * performance * quality", target: 80, unit: "%", displayFormat: "percentage" },
+            { name: "On-Time Delivery", description: "Orders delivered on schedule", category: "production", calculation: "on_time_orders / total_orders", target: 95, unit: "%", displayFormat: "percentage" },
+            { name: "Quality Rate", description: "Products meeting quality standards", category: "quality", calculation: "quality_products / total_products", target: 98, unit: "%", displayFormat: "percentage" }
+          ],
+          theme: {
+            primaryColor: "#2563eb",
+            secondaryColor: "#3b82f6",
+            accentColor: "#60a5fa",
+            backgroundColor: "#f8fafc",
+            textColor: "#1e293b"
+          }
+        },
+        features: ["production_planning", "quality_control", "efficiency_tracking", "inventory_management", "maintenance_scheduling"],
+        prerequisites: ["production_systems", "quality_processes", "maintenance_planning"],
+        setupInstructions: "1. Configure production planning workflows\n2. Set up quality control checkpoints\n3. Implement efficiency tracking and OEE calculation\n4. Establish inventory management processes\n5. Create maintenance scheduling system",
+        benefits: ["Improved operational efficiency", "Better production visibility", "Enhanced quality control", "Reduced downtime", "Streamlined workflows"],
+        tags: ["general", "manufacturing", "oee", "quality", "efficiency"],
+        aiPrompt: "Create a general manufacturing template with core production planning, quality control, and efficiency tracking suitable for various industries."
+      }
+    ];
+
+    await db.insert(industryTemplates).values(industryTemplateData);
+    console.log("Industry templates seeded successfully");
+  }
+
+  console.log("Database seeded successfully");
 }

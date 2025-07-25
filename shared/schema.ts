@@ -3812,3 +3812,145 @@ export type InsertResourceAllocation = z.infer<typeof insertResourceAllocationSc
 
 export type ProductionMilestone = typeof productionMilestones.$inferSelect;
 export type InsertProductionMilestone = z.infer<typeof insertProductionMilestoneSchema>;
+
+// Industry Templates System for Manufacturing Sectors
+export const industryTemplates = pgTable("industry_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(), // automotive, electronics, food_beverage, pharmaceutical, aerospace, textiles, chemicals, metals, manufacturing, custom
+  version: text("version").notNull().default("1.0.0"),
+  targetIndustry: text("target_industry").notNull(),
+  companySize: text("company_size").notNull().default("medium"), // small, medium, large, enterprise
+  configuration: jsonb("configurations").$type<{
+    // Dashboard configurations
+    dashboards?: Array<{
+      name: string;
+      description: string;
+      layout: string; // grid, flex, custom
+      widgets: Array<{
+        type: string;
+        position: { x: number; y: number; width: number; height: number };
+        config: any;
+      }>;
+    }>;
+    
+    // KPI and metrics configuration
+    kpis?: Array<{
+      name: string;
+      description: string;
+      category: string; // production, quality, efficiency, cost, safety
+      calculation: string;
+      target: number;
+      unit: string;
+      displayFormat: string;
+    }>;
+    
+    // Report templates
+    reports?: Array<{
+      name: string;
+      description: string;
+      type: string; // production, quality, efficiency, custom
+      frequency: string; // daily, weekly, monthly, quarterly
+      template: string;
+      parameters: any;
+    }>;
+    
+    // Visual Factory displays
+    visualFactory?: Array<{
+      name: string;
+      description: string;
+      type: string; // metrics, alerts, schedule, custom
+      layout: any;
+      dataSource: string;
+    }>;
+    
+    // Production workflows
+    workflows?: Array<{
+      name: string;
+      description: string;
+      steps: Array<{
+        name: string;
+        type: string;
+        parameters: any;
+      }>;
+    }>;
+    
+    // Color schemes and branding
+    theme?: {
+      primaryColor: string;
+      secondaryColor: string;
+      accentColor: string;
+      backgroundColor: string;
+      textColor: string;
+    };
+  }>().notNull(),
+  features: jsonb("features").$type<string[]>().default([]), // List of included features
+  prerequisites: jsonb("prerequisites").$type<string[]>().default([]), // Required capabilities or setup
+  setupInstructions: text("setup_instructions").notNull(),
+  benefits: jsonb("benefits").$type<string[]>().default([]),
+  isActive: boolean("is_active").default(true),
+  isPublic: boolean("is_public").default(true),
+  usageCount: integer("usage_count").default(0),
+  rating: integer("rating").default(5), // 1-5 stars
+  createdBy: integer("created_by"),
+  tags: jsonb("tags").$type<string[]>().default([]),
+  aiPrompt: text("ai_prompt"), // For AI-assisted customization
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User applications of industry templates
+export const userIndustryTemplates = pgTable("user_industry_templates", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  templateId: integer("template_id").references(() => industryTemplates.id).notNull(),
+  customName: text("custom_name"),
+  customConfiguration: jsonb("custom_configuration").$type<any>(), // User customizations
+  status: text("status").notNull().default("applied"), // applied, customizing, active, inactive
+  appliedAt: timestamp("applied_at").defaultNow(),
+  lastModified: timestamp("last_modified").defaultNow(),
+}, (table) => ({
+  userTemplateIdx: unique().on(table.userId, table.templateId),
+}));
+
+// Template configurations for specific use cases
+export const templateConfigurations = pgTable("template_configurations", {
+  id: serial("id").primaryKey(),
+  templateId: integer("template_id").references(() => industryTemplates.id).notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  configurationType: text("configuration_type").notNull(), // dashboard, report, workflow, kpi
+  configuration: jsonb("configuration").notNull(),
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Industry Templates Insert Schemas
+export const insertIndustryTemplateSchema = createInsertSchema(industryTemplates).omit({
+  id: true,
+  usageCount: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUserIndustryTemplateSchema = createInsertSchema(userIndustryTemplates).omit({
+  id: true,
+  appliedAt: true,
+  lastModified: true,
+});
+
+export const insertTemplateConfigurationSchema = createInsertSchema(templateConfigurations).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Industry Templates Types
+export type IndustryTemplate = typeof industryTemplates.$inferSelect;
+export type InsertIndustryTemplate = z.infer<typeof insertIndustryTemplateSchema>;
+
+export type UserIndustryTemplate = typeof userIndustryTemplates.$inferSelect;
+export type InsertUserIndustryTemplate = z.infer<typeof insertUserIndustryTemplateSchema>;
+
+export type TemplateConfiguration = typeof templateConfigurations.$inferSelect;
+export type InsertTemplateConfiguration = z.infer<typeof insertTemplateConfigurationSchema>;
