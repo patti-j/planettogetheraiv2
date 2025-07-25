@@ -119,7 +119,7 @@ export default function PlantManagerPage() {
   const plantMetrics: PlantMetrics = {
     totalProduction: completedJobs * 100 + activeJobs * 50, // Approximate production units
     efficiency: totalJobs > 0 ? Math.round((completedJobs / totalJobs) * 100 * 0.87) : 0,
-    qualityScore: 94.8 - (Math.random() * 5), // Some variation
+    qualityScore: Math.round(94.8 - (Math.random() * 5)), // Some variation, rounded
     onTimeDelivery: totalJobs > 0 ? Math.round((completedJobs / totalJobs) * 100 * 0.91) : 0,
     resourceUtilization: totalResources > 0 ? Math.round((activeResources / totalResources) * 100) : 0,
     costVariance: Math.round(-2.1 - (Math.random() * 2)), // Random variance (rounded)
