@@ -12,6 +12,16 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  // Validate HTTP method before making request
+  const validMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
+  if (!validMethods.includes(method.toUpperCase())) {
+    console.error('INVALID HTTP METHOD DETECTED:', method);
+    console.error('URL:', url);
+    console.error('Data:', data);
+    console.error('Stack trace:', new Error().stack);
+    throw new Error(`Invalid HTTP method: ${method}. Valid methods are: ${validMethods.join(', ')}`);
+  }
+
   const token = localStorage.getItem('authToken');
   const headers: HeadersInit = data ? { "Content-Type": "application/json" } : {};
   
@@ -19,15 +29,21 @@ export async function apiRequest(
     headers.Authorization = `Bearer ${token}`;
   }
   
-  const res = await fetch(url, {
-    method,
-    headers,
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
+  try {
+    const res = await fetch(url, {
+      method: method.toUpperCase(), // Ensure method is uppercase
+      headers,
+      body: data ? JSON.stringify(data) : undefined,
+      credentials: "include",
+    });
 
-  await throwIfResNotOk(res);
-  return res;
+    await throwIfResNotOk(res);
+    return res;
+  } catch (error) {
+    console.error('Fetch error in apiRequest:', error);
+    console.error('Method:', method, 'URL:', url);
+    throw error;
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
