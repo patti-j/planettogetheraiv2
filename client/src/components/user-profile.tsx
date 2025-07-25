@@ -695,21 +695,28 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
   );
 }
 
-// Main export component with trigger
-export function UserProfileDialog() {
-  const [open, setOpen] = useState(false);
+// Main export component with trigger - supports both internal and external state management
+export function UserProfileDialog({ open: externalOpen, onOpenChange: externalOnOpenChange }: { open?: boolean; onOpenChange?: (open: boolean) => void } = {}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  // Use external state if provided, otherwise use internal state
+  const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setIsOpen = externalOnOpenChange || setInternalOpen;
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setOpen(true)}
-        className="p-1 rounded-full hover:bg-gray-100"
-      >
-        <Settings className="w-4 h-4 text-gray-600" />
-      </Button>
-      <UserProfileDialogContent open={open} onOpenChange={setOpen} />
+      {/* Only show the gear icon button if no external state management is provided */}
+      {externalOpen === undefined && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsOpen(true)}
+          className="p-1 rounded-full hover:bg-gray-100"
+        >
+          <Settings className="w-4 h-4 text-gray-600" />
+        </Button>
+      )}
+      <UserProfileDialogContent open={isOpen} onOpenChange={setIsOpen} />
     </>
   );
 }

@@ -95,6 +95,7 @@ const featureGroups = [
 export default function TopMenu() {
   const [location] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [userProfileOpen, setUserProfileOpen] = useState(false);
   const { user, logout } = useAuth();
   const { hasPermission } = usePermissions();
   const { isMaxOpen, setMaxOpen } = useMaxDock();
@@ -186,17 +187,26 @@ export default function TopMenu() {
                     <RoleSwitcher userId={user?.id || 0} currentRole={user?.currentRole || null} />
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Avatar className="w-6 h-6 sm:w-8 sm:h-8">
+                    <Avatar 
+                      className="w-6 h-6 sm:w-8 sm:h-8 cursor-pointer hover:ring-2 hover:ring-blue-300 transition-all duration-200"
+                      onClick={() => setUserProfileOpen(true)}
+                    >
                       <AvatarFallback className="bg-blue-500 text-white text-xs sm:text-sm">
                         {user?.username?.charAt(0)?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="hidden md:block text-left">
+                    <div 
+                      className="hidden md:block text-left cursor-pointer hover:bg-gray-50 rounded-md px-2 py-1 transition-colors duration-200"
+                      onClick={() => setUserProfileOpen(true)}
+                    >
                       <p className="text-sm font-medium text-gray-900">{user?.username}</p>
                       <p className="text-xs text-gray-500">{user?.currentRole?.name || 'No Role'}</p>
                     </div>
                     <div className="flex items-center space-x-1">
-                      <UserProfileDialog />
+                      <UserProfileDialog 
+                        open={userProfileOpen}
+                        onOpenChange={setUserProfileOpen}
+                      />
                       <Button
                         variant="ghost"
                         size="sm"

@@ -121,6 +121,17 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 25, 2025)
 
+✓ **User Profile Click Enhancement (July 25, 2025)**:
+- Added click functionality to user avatar and username in hamburger menu to open user settings dialog
+- Enhanced UserProfileDialog component to support both internal and external state management
+- Users can now click avatar, username, or gear icon to access profile settings
+- Added hover effects on clickable elements with visual feedback (ring on avatar, background on username)
+
+✓ **User Role Display Fix (July 25, 2025)**:
+- Fixed "No Role" display issue for trainer user by updating getUserWithRoles method to include currentRole property
+- Enhanced TypeScript interface to support currentRole field in UserWithRoles type
+- Verified trainer user has activeRoleId = 9 (Trainer role) in database and now displays correctly
+
 ✓ **Menu Organization Enhancement (July 25, 2025)**:
 - Moved Industry Templates from Training & Support to System Administration category for better logical organization
 - Industry Templates now properly grouped with other system configuration features
