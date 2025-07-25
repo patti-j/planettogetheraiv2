@@ -142,6 +142,12 @@ The application uses a modern full-stack architecture with strong typing through
 - Presentation System now logically grouped with other training-related features for improved user experience
 - Menu organization now follows clear functional groupings: Core Production, Training & Support, Role-Specific, Systems & Integration
 
+✓ **System Administration Menu Enhancement (July 25, 2025)**:
+- Renamed "Error Logs" to "Logs" in the system administration section for cleaner menu organization
+- Updated tooltip description to reflect broader logging functionality beyond just error monitoring
+- Logs menu item properly positioned in system administration section alongside Systems Management, Plants Management, and Extension Studio
+- Enhanced menu clarity by using concise, descriptive labels for administrative functions
+
 ✓ **Visual Factory Mobile Dialog Scrolling Fix (July 25, 2025)**:
 - Fixed critical mobile scrolling issue in create display dialogs where users couldn't scroll content on mobile devices
 - Added mobile-friendly scrolling classes (max-h-[90vh] overflow-y-auto) to both AI and manual display creation dialogs
