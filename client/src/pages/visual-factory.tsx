@@ -554,7 +554,7 @@ export default function VisualFactory() {
                         <span className="sm:hidden">New Display</span>
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>AI Display Configuration</DialogTitle>
                       </DialogHeader>
@@ -625,7 +625,7 @@ export default function VisualFactory() {
                         <span className="sm:hidden">New Display</span>
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
+                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>Create New Display</DialogTitle>
                       </DialogHeader>

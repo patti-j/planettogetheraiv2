@@ -121,6 +121,13 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 25, 2025)
 
+✓ **Visual Factory Mobile Dialog Scrolling Fix (July 25, 2025)**:
+- Fixed critical mobile scrolling issue in create display dialogs where users couldn't scroll content on mobile devices
+- Added mobile-friendly scrolling classes (max-h-[90vh] overflow-y-auto) to both AI and manual display creation dialogs
+- Users can now scroll through form content in both "AI Display Configuration" and "Create New Display" dialogs on mobile
+- Enhanced dialog accessibility with proper viewport height limits preventing content from being cut off
+- Mobile users now have full access to all form fields and content in create display workflows
+
 ✓ **User Profile Mobile Tab Overflow Fix (July 25, 2025)**:
 - Fixed critical mobile tab header overflow issue where tab text was spilling out and colliding in user profile dialog
 - Implemented responsive tab design with separate mobile and desktop layouts
