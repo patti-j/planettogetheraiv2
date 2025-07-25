@@ -393,13 +393,28 @@ export default function MobileSchedule({
 
   // Get operation details
   const getOperationDetails = (operation: Operation) => {
-    const job = jobs.find(j => j.id === operation.jobId);
-    const resource = resources.find(r => r.id === operation.assignedResourceId);
-    const requiredCapabilities = capabilities.filter(c => 
-      operation.requiredCapabilities && operation.requiredCapabilities.includes(c.id)
-    );
+    // Add comprehensive error handling and logging
+    if (!operation) {
+      console.error('getOperationDetails called with null/undefined operation');
+      return { job: undefined, resource: undefined, requiredCapabilities: [] };
+    }
 
-    return { job, resource, requiredCapabilities };
+    try {
+      const job = jobs.find(j => j.id === operation.jobId);
+      const resource = resources.find(r => r.id === operation.assignedResourceId);
+      
+      // Safe access to requiredCapabilities with multiple fallbacks
+      const operationCapabilities = operation.requiredCapabilities || [];
+      const requiredCapabilities = capabilities.filter(c => 
+        Array.isArray(operationCapabilities) && operationCapabilities.includes(c.id)
+      );
+
+      return { job, resource, requiredCapabilities };
+    } catch (error) {
+      console.error('Error in getOperationDetails:', error);
+      console.error('Operation object:', operation);
+      return { job: undefined, resource: undefined, requiredCapabilities: [] };
+    }
   };
 
   // Get status color and icon
