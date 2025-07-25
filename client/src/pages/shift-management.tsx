@@ -20,7 +20,8 @@ import {
 } from '@/components/ui/select';
 import { 
   Clock, Users, Calendar, Settings, BarChart3, 
-  Plus, Building2, Brain, ChevronLeft, Trash2 
+  Plus, Building2, Brain, ChevronLeft, Trash2, UserCheck, 
+  ArrowRight, CheckCircle, AlertCircle, Edit
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useMaxDock } from '@/contexts/MaxDockContext';
@@ -41,6 +42,10 @@ export default function ShiftManagement() {
 
   const { data: resources = [] } = useQuery({
     queryKey: ['/api/resources'],
+  });
+
+  const { data: assignments = [], isLoading: assignmentsLoading } = useQuery({
+    queryKey: ['/api/resource-shift-assignments'],
   });
 
   return (
@@ -101,7 +106,13 @@ export default function ShiftManagement() {
               </TabsContent>
 
               <TabsContent value="assignments" className="space-y-6">
-                <AssignmentsTab />
+                <AssignmentsTab 
+                  assignments={assignments}
+                  loading={assignmentsLoading}
+                  templates={templates}
+                  resources={resources}
+                  plants={plants}
+                />
               </TabsContent>
 
               <TabsContent value="holidays" className="space-y-6">
@@ -665,6 +676,504 @@ function EditShiftTemplateForm({ template, onSubmit, onDelete, isLoading }: any)
   );
 }
 
+// Assignments Tab Component
+function AssignmentsTab({ assignments, loading, templates, resources, plants }: any) {
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const createAssignmentMutation = useMutation({
+    mutationFn: (data: any) => apiRequest('/api/resource-shift-assignments', { method: 'POST', body: data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/resource-shift-assignments'] });
+      toast({ title: "Success", description: "Shift assignment created successfully" });
+      setIsCreateDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  if (loading) {
+    return <div className="flex justify-center p-8">Loading shift assignments...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-semibold">Shift Assignments</h2>
+        <div className="flex gap-2">
+          {/* AI Assignment Button */}
+          <Dialog open={isAIDialogOpen} onOpenChange={setIsAIDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700">
+                <Brain className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">AI Assign Shifts</span>
+                <span className="sm:hidden">AI</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>AI Shift Assignment</DialogTitle>
+                <DialogDescription>
+                  Let AI automatically assign shifts to resources based on requirements and availability
+                </DialogDescription>
+              </DialogHeader>
+              <AIShiftAssignmentForm 
+                templates={templates}
+                resources={resources}
+                plants={plants}
+                onClose={() => setIsAIDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+
+          {/* Manual Assignment Button */}
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <UserCheck className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Manual Assign</span>
+                <span className="sm:hidden">Assign</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Manual Shift Assignment</DialogTitle>
+                <DialogDescription>
+                  Manually assign shift templates to specific resources
+                </DialogDescription>
+              </DialogHeader>
+              <div className="max-h-[70vh] overflow-y-auto pr-2">
+                <ManualShiftAssignmentForm 
+                  templates={templates}
+                  resources={resources}
+                  plants={plants}
+                  onSubmit={(data: any) => createAssignmentMutation.mutate(data)}
+                  isLoading={createAssignmentMutation.isPending}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* Assignments Grid */}
+      <div className="space-y-4">
+        {assignments.length === 0 ? (
+          <div className="text-center py-12">
+            <UserCheck className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-2 text-sm font-semibold text-muted-foreground">No shift assignments</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Get started by assigning shifts to your resources
+            </p>
+          </div>
+        ) : (
+          assignments.map((assignment: any) => (
+            <ShiftAssignmentCard key={assignment.id} assignment={assignment} />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+// AI Shift Assignment Form
+function AIShiftAssignmentForm({ templates, resources, plants, onClose }: any) {
+  const [requirements, setRequirements] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const handleAIAssignment = async () => {
+    if (!requirements.trim()) {
+      toast({ title: "Error", description: "Please describe your assignment requirements", variant: "destructive" });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await apiRequest('/api/shifts/ai-assign', {
+        method: 'POST',
+        body: {
+          requirements,
+          templates,
+          resources,
+          plants
+        }
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['/api/resource-shift-assignments'] });
+      toast({ title: "Success", description: "AI assignment completed successfully" });
+      onClose();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="ai-assignment-requirements">Assignment Requirements</Label>
+        <Textarea
+          id="ai-assignment-requirements"
+          placeholder="Example: Assign day shift to all CNC operators in Main Plant starting next Monday, ensure 24/7 coverage for welding department with rotating shifts..."
+          value={requirements}
+          onChange={(e) => setRequirements(e.target.value)}
+          rows={6}
+          className="resize-none"
+        />
+        <p className="text-sm text-muted-foreground">
+          Describe your shift assignment needs in detail. Include resource types, plants, time periods, and coverage requirements.
+        </p>
+      </div>
+
+      <div className="flex gap-2 pt-4 border-t">
+        <Button onClick={handleAIAssignment} disabled={isLoading} className="flex-1">
+          {isLoading ? "Processing..." : "Generate AI Assignments"}
+        </Button>
+        <Button variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// Manual Shift Assignment Form
+function ManualShiftAssignmentForm({ templates, resources, plants, onSubmit, isLoading }: any) {
+  const [formData, setFormData] = useState({
+    resourceId: '',
+    shiftTemplateId: '',
+    effectiveDate: new Date().toISOString().split('T')[0],
+    endDate: '',
+    assignedBy: 6, // Assuming current user ID
+    notes: '',
+    isTemporary: false
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const submitData = {
+      ...formData,
+      resourceId: parseInt(formData.resourceId),
+      shiftTemplateId: parseInt(formData.shiftTemplateId),
+      effectiveDate: new Date(formData.effectiveDate).toISOString(),
+      endDate: formData.endDate ? new Date(formData.endDate).toISOString() : null
+    };
+    
+    onSubmit(submitData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="assignment-resource">Resource</Label>
+          <Select value={formData.resourceId} onValueChange={(value) => setFormData(prev => ({ ...prev, resourceId: value }))}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select resource" />
+            </SelectTrigger>
+            <SelectContent>
+              {resources.map((resource: any) => (
+                <SelectItem key={resource.id} value={resource.id.toString()}>
+                  {resource.name} ({resource.type})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="assignment-template">Shift Template</Label>
+          <Select value={formData.shiftTemplateId} onValueChange={(value) => setFormData(prev => ({ ...prev, shiftTemplateId: value }))}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select shift template" />
+            </SelectTrigger>
+            <SelectContent>
+              {templates.map((template: any) => (
+                <SelectItem key={template.id} value={template.id.toString()}>
+                  {template.name} ({template.startTime} - {template.endTime})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="assignment-start">Start Date</Label>
+          <Input
+            id="assignment-start"
+            type="date"
+            value={formData.effectiveDate}
+            onChange={(e) => setFormData(prev => ({ ...prev, effectiveDate: e.target.value }))}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="assignment-end">End Date (Optional)</Label>
+          <Input
+            id="assignment-end"
+            type="date"
+            value={formData.endDate}
+            onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="assignment-notes">Notes</Label>
+        <Textarea
+          id="assignment-notes"
+          value={formData.notes}
+          onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+          rows={3}
+          placeholder="Optional notes about this assignment..."
+        />
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <input
+          type="checkbox"
+          id="assignment-temporary"
+          checked={formData.isTemporary}
+          onChange={(e) => setFormData(prev => ({ ...prev, isTemporary: e.target.checked }))}
+          className="rounded"
+        />
+        <Label htmlFor="assignment-temporary">Temporary assignment (overtime, vacation coverage, etc.)</Label>
+      </div>
+
+      <div className="flex gap-2 pt-4 border-t">
+        <Button type="submit" disabled={isLoading} className="flex-1">
+          {isLoading ? "Creating..." : "Create Assignment"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+// Shift Assignment Card
+function ShiftAssignmentCard({ assignment }: any) {
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const updateAssignmentMutation = useMutation({
+    mutationFn: (data: any) => apiRequest(`/api/resource-shift-assignments/${assignment.id}`, { method: 'PUT', body: data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/resource-shift-assignments'] });
+      toast({ title: "Success", description: "Assignment updated successfully" });
+      setIsEditDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteAssignmentMutation = useMutation({
+    mutationFn: () => apiRequest(`/api/resource-shift-assignments/${assignment.id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/resource-shift-assignments'] });
+      toast({ title: "Success", description: "Assignment deleted successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex flex-col">
+              <CardTitle className="text-lg">
+                {assignment.resourceName || `Resource ${assignment.resourceId}`}
+              </CardTitle>
+              <CardDescription>
+                {assignment.shiftTemplateName || `Template ${assignment.shiftTemplateId}`}
+              </CardDescription>
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm">
+                {assignment.startTime || '00:00'} - {assignment.endTime || '00:00'}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge 
+              variant={assignment.status === 'active' ? 'default' : 'secondary'}
+              className={assignment.isTemporary ? 'bg-orange-100 text-orange-800' : ''}
+            >
+              {assignment.isTemporary ? 'Temporary' : assignment.status || 'active'}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditDialogOpen(true)}
+              className="h-8 w-8 p-0"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span className="font-medium">Start Date:</span>
+            <p className="text-muted-foreground">{formatDate(assignment.effectiveDate)}</p>
+          </div>
+          <div>
+            <span className="font-medium">End Date:</span>
+            <p className="text-muted-foreground">
+              {assignment.endDate ? formatDate(assignment.endDate) : 'Indefinite'}
+            </p>
+          </div>
+          {assignment.notes && (
+            <div className="col-span-2">
+              <span className="font-medium">Notes:</span>
+              <p className="text-muted-foreground">{assignment.notes}</p>
+            </div>
+          )}
+        </div>
+      </CardContent>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Shift Assignment</DialogTitle>
+            <DialogDescription>
+              Modify the assignment details
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[70vh] overflow-y-auto pr-2">
+            <EditShiftAssignmentForm 
+              assignment={assignment}
+              onSubmit={(data: any) => updateAssignmentMutation.mutate(data)}
+              onDelete={() => deleteAssignmentMutation.mutate()}
+              isLoading={updateAssignmentMutation.isPending || deleteAssignmentMutation.isPending}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
+// Edit Shift Assignment Form
+function EditShiftAssignmentForm({ assignment, onSubmit, onDelete, isLoading }: any) {
+  const [formData, setFormData] = useState({
+    effectiveDate: assignment.effectiveDate ? assignment.effectiveDate.split('T')[0] : '',
+    endDate: assignment.endDate ? assignment.endDate.split('T')[0] : '',
+    notes: assignment.notes || '',
+    isTemporary: assignment.isTemporary || false,
+    status: assignment.status || 'active'
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const submitData = {
+      ...formData,
+      effectiveDate: new Date(formData.effectiveDate).toISOString(),
+      endDate: formData.endDate ? new Date(formData.endDate).toISOString() : null
+    };
+    
+    onSubmit(submitData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="edit-start">Start Date</Label>
+          <Input
+            id="edit-start"
+            type="date"
+            value={formData.effectiveDate}
+            onChange={(e) => setFormData(prev => ({ ...prev, effectiveDate: e.target.value }))}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="edit-end">End Date (Optional)</Label>
+          <Input
+            id="edit-end"
+            type="date"
+            value={formData.endDate}
+            onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="edit-status">Status</Label>
+          <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="suspended">Suspended</SelectItem>
+              <SelectItem value="ended">Ended</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="edit-notes">Notes</Label>
+        <Textarea
+          id="edit-notes"
+          value={formData.notes}
+          onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+          rows={3}
+        />
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <input
+          type="checkbox"
+          id="edit-temporary"
+          checked={formData.isTemporary}
+          onChange={(e) => setFormData(prev => ({ ...prev, isTemporary: e.target.checked }))}
+          className="rounded"
+        />
+        <Label htmlFor="edit-temporary">Temporary assignment</Label>
+      </div>
+
+      <div className="flex gap-2 pt-4 border-t">
+        <Button type="submit" disabled={isLoading} className="flex-1">
+          {isLoading ? "Updating..." : "Update Assignment"}
+        </Button>
+        <Button 
+          type="button" 
+          variant="destructive" 
+          onClick={onDelete}
+          disabled={isLoading}
+          className="flex items-center gap-2"
+        >
+          <Trash2 className="h-4 w-4" />
+          Delete
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 // Individual Shift Template Card
 function ShiftTemplateCard({ template }: any) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -769,17 +1278,6 @@ function ShiftTemplateCard({ template }: any) {
 }
 
 // Placeholder components for other tabs
-function AssignmentsTab() {
-  return (
-    <div className="text-center p-8">
-      <Calendar className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-      <h3 className="text-lg font-semibold mb-2">Shift Assignments</h3>
-      <p className="text-muted-foreground">
-        Assign resources to specific shifts and manage scheduling
-      </p>
-    </div>
-  );
-}
 
 function HolidaysTab() {
   return (

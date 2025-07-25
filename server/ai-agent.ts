@@ -139,6 +139,132 @@ Please analyze and optimize the shift schedule to improve efficiency, reduce cos
   }
 }
 
+export async function processShiftAssignmentAIRequest(request: any): Promise<AIAgentResponse> {
+  try {
+    // Get current system context for shift assignment
+    const context = await getSystemContext();
+    const resources = await storage.getResources();
+    const shiftTemplates = await storage.getShiftTemplates();
+    const existingAssignments = await storage.getResourceShiftAssignments();
+    
+    const systemPrompt = `You are an AI shift assignment expert for a manufacturing facility. You intelligently assign shift templates to specific resources based on requirements.
+
+AVAILABLE RESOURCES:
+${resources.map(r => `- ID ${r.id}: ${r.name} (${r.type}) - Status: ${r.status}, Capabilities: ${r.capabilities?.join(', ') || 'None'}`).join('\n')}
+
+AVAILABLE SHIFT TEMPLATES:
+${shiftTemplates.map(t => `- ID ${t.id}: ${t.name} (${t.shiftType}) - ${t.startTime} to ${t.endTime}, Days: ${t.daysOfWeek?.join(',') || 'All'}, Min Staff: ${t.minimumStaffing}, Max Staff: ${t.maximumStaffing}`).join('\n')}
+
+EXISTING ASSIGNMENTS:
+${existingAssignments.map(a => `- Resource ${a.resourceId} assigned to Template ${a.shiftTemplateId} from ${a.effectiveDate} ${a.endDate ? `to ${a.endDate}` : '(indefinite)'} - Status: ${a.status}`).join('\n')}
+
+Your capabilities:
+1. ASSIGN SHIFTS: Match resources to appropriate shift templates
+2. OPTIMIZE COVERAGE: Ensure proper staffing levels and skill coverage
+3. HANDLE CONSTRAINTS: Consider resource availability, skills, and existing assignments
+4. PLAN TRANSITIONS: Schedule shift changes and temporary assignments
+
+Assignment considerations:
+- Resource type and capabilities must match shift requirements
+- Avoid conflicting assignments (same resource on multiple shifts at same time)
+- Consider workload balancing and fair shift distribution
+- Respect minimum/maximum staffing requirements for each shift
+- Plan for transition periods and training requirements
+
+Response format: Always return JSON with:
+{
+  "success": true,
+  "message": "Description of assignments made",
+  "assignments": [array of assignment objects],
+  "recommendations": [array of optimization suggestions],
+  "reasoning": "Explanation of AI assignment decisions",
+  "conflicts": [array of any conflicts detected],
+  "coverage": "Summary of shift coverage achieved"
+}
+
+Assignment object format:
+{
+  "resourceId": number,
+  "shiftTemplateId": number,
+  "effectiveDate": "YYYY-MM-DD",
+  "endDate": "YYYY-MM-DD" or null for indefinite,
+  "assignedBy": 6,
+  "notes": "string explanation",
+  "isTemporary": boolean,
+  "status": "active"
+}`;
+
+    const userPrompt = `Create shift assignments based on these requirements:
+
+Requirements: ${request.requirements}
+
+Available Templates: ${request.templates.length} shift templates
+Available Resources: ${request.resources.length} resources  
+Plants: ${request.plants.length} plant locations
+
+Please create optimized shift assignments that:
+1. Meet the stated requirements
+2. Ensure proper coverage and staffing levels
+3. Balance workload across resources
+4. Minimize conflicts and scheduling issues
+5. Consider resource capabilities and shift requirements
+
+Focus on practical, implementable assignments that can be created immediately.`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.3
+    });
+
+    const aiResult = JSON.parse(response.choices[0].message.content || '{}');
+    
+    // Create the assignments if AI generated them
+    const createdAssignments = [];
+    if (aiResult.assignments && Array.isArray(aiResult.assignments)) {
+      for (const assignment of aiResult.assignments) {
+        try {
+          const created = await storage.createResourceShiftAssignment({
+            resourceId: assignment.resourceId,
+            shiftTemplateId: assignment.shiftTemplateId,
+            effectiveDate: new Date(assignment.effectiveDate),
+            endDate: assignment.endDate ? new Date(assignment.endDate) : null,
+            assignedBy: assignment.assignedBy || 6,
+            notes: assignment.notes || '',
+            isTemporary: assignment.isTemporary || false,
+            status: assignment.status || 'active'
+          });
+          createdAssignments.push(created);
+        } catch (assignmentError) {
+          console.error("Error creating assignment:", assignmentError);
+        }
+      }
+    }
+    
+    return {
+      success: aiResult.success || true,
+      message: aiResult.message || `AI created ${createdAssignments.length} shift assignments`,
+      data: {
+        assignments: createdAssignments,
+        recommendations: aiResult.recommendations || [],
+        reasoning: aiResult.reasoning || "AI assignment analysis completed",
+        conflicts: aiResult.conflicts || [],
+        coverage: aiResult.coverage || "Assignment coverage analysis completed"
+      }
+    };
+  } catch (error) {
+    console.error("Error processing shift assignment AI request:", error);
+    return {
+      success: false,
+      message: "Failed to process AI shift assignment request: " + error.message
+    };
+  }
+}
+
 export async function processAICommand(command: string, attachments?: AttachmentFile[]): Promise<AIAgentResponse> {
   try {
     // Get current system context

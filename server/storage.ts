@@ -6761,25 +6761,7 @@ export class DatabaseStorage implements IStorage {
 
   // Resource Shift Assignments Management
   async getResourceShiftAssignments(resourceId?: number, effectiveDate?: Date): Promise<ResourceShiftAssignment[]> {
-    let query = db
-      .select({
-        id: resourceShiftAssignments.id,
-        resourceId: resourceShiftAssignments.resourceId,
-        shiftTemplateId: resourceShiftAssignments.shiftTemplateId,
-        effectiveDate: resourceShiftAssignments.effectiveDate,
-        endDate: resourceShiftAssignments.endDate,
-        isActive: resourceShiftAssignments.isActive,
-        createdAt: resourceShiftAssignments.createdAt,
-        updatedAt: resourceShiftAssignments.updatedAt,
-        // Include related data
-        resourceName: resources.name,
-        shiftTemplateName: shiftTemplates.name,
-        startTime: shiftTemplates.startTime,
-        endTime: shiftTemplates.endTime
-      })
-      .from(resourceShiftAssignments)
-      .leftJoin(resources, eq(resourceShiftAssignments.resourceId, resources.id))
-      .leftJoin(shiftTemplates, eq(resourceShiftAssignments.shiftTemplateId, shiftTemplates.id));
+    let query = db.select().from(resourceShiftAssignments);
     
     if (resourceId) {
       query = query.where(eq(resourceShiftAssignments.resourceId, resourceId));

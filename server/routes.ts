@@ -41,7 +41,7 @@ import {
   insertShiftTemplateSchema, insertResourceShiftAssignmentSchema, insertShiftScenarioSchema, 
   insertHolidaySchema, insertResourceAbsenceSchema, insertShiftCoverageSchema, insertShiftUtilizationSchema
 } from "@shared/schema";
-import { processAICommand, processShiftAIRequest, transcribeAudio } from "./ai-agent";
+import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
 import multer from "multer";
 import session from "express-session";
@@ -12171,6 +12171,29 @@ Create a natural, conversational voice script that explains this feature to some
     } catch (error) {
       console.error("Error adjusting AI shift:", error);
       res.status(500).json({ error: "Failed to adjust AI shift" });
+    }
+  });
+
+  // AI Shift Assignment
+  app.post("/api/shifts/ai-assign", requireAuth, async (req, res) => {
+    try {
+      const { requirements, templates, resources, plants } = req.body;
+      
+      if (!requirements || typeof requirements !== 'string') {
+        return res.status(400).json({ error: "Requirements field is required" });
+      }
+      
+      const aiResponse = await processShiftAssignmentAIRequest({
+        requirements,
+        templates: templates || [],
+        resources: resources || [],
+        plants: plants || []
+      });
+      
+      res.json(aiResponse);
+    } catch (error) {
+      console.error("Error processing AI shift assignment:", error);
+      res.status(500).json({ error: "Failed to process AI shift assignment" });
     }
   });
 
