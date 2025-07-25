@@ -127,9 +127,9 @@ export default function TopMenu() {
     setMenuOpen(false);
   };
 
-  // All cards are now uniform size - about 30% smaller than previous large cards
+  // All cards are now uniform square size 
   const getCardSize = (priority: string) => {
-    return "col-span-1 row-span-1 h-20"; // Uniform size for all cards
+    return "col-span-1 row-span-1 aspect-square"; // Square cards with equal width and height
   };
 
   const getIconSize = (priority: string) => {
@@ -137,7 +137,7 @@ export default function TopMenu() {
   };
 
   const getTextSize = (priority: string) => {
-    return "text-sm font-medium"; // Uniform text size
+    return "text-xs font-medium"; // Smaller text to fit square cards
   };
 
   return (
@@ -214,14 +214,14 @@ export default function TopMenu() {
                         <div className={`
                           ${getCardSize(group.priority)}
                           bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md
-                          rounded-xl p-4 cursor-pointer transition-all duration-200 hover:scale-[1.02]
-                          flex flex-col items-center justify-center text-center space-y-3
+                          rounded-xl p-3 cursor-pointer transition-all duration-200 hover:scale-[1.02]
+                          flex flex-col items-center justify-center text-center space-y-2
                           ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50' : ''}
                           ${feature.isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
                         `}>
                           <div className={`
                             ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : 'bg-gray-100'}
-                            p-3 rounded-full flex items-center justify-center
+                            p-2 rounded-full flex items-center justify-center flex-shrink-0
                           `}>
                             <feature.icon 
                               className={`${getIconSize(group.priority)} ${feature.isAI ? 'text-white' : feature.color.replace('bg-', 'text-').replace('-500', '-600')}`} 
@@ -229,7 +229,7 @@ export default function TopMenu() {
                               fill="none"
                             />
                           </div>
-                          <span className={`${getTextSize(group.priority)} text-gray-800 font-medium leading-tight`}>
+                          <span className={`${getTextSize(group.priority)} text-gray-800 font-medium leading-tight text-center line-clamp-2 flex-shrink-0`}>
                             {feature.label}
                           </span>
                         </div>
