@@ -14,6 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { useAITheme } from '@/hooks/use-ai-theme';
+import { useErrorHandler, createSafeQuery, createSafeSubmission } from '@/lib/error-handler';
 import { 
   Monitor, 
   Settings, 
@@ -119,6 +120,7 @@ export default function VisualFactory() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { aiTheme } = useAITheme();
+  const errorHandler = useErrorHandler('VisualFactory');
 
   // Fetch data
   const { data: displays = [] } = useQuery<VisualFactoryDisplay[]>({

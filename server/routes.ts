@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { createSafeHandler, errorMiddleware, ValidationError, DatabaseError, NotFoundError, AuthenticationError } from "./error-handler";
 import { 
   insertPlantSchema, insertCapabilitySchema, insertResourceSchema, insertJobSchema, 
   insertOperationSchema, insertDependencySchema, insertResourceViewSchema,
@@ -515,16 +516,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Plants
-  app.get("/api/plants", requireAuth, async (req, res) => {
-    try {
-      const plants = await storage.getPlants();
-      res.json(plants);
-    } catch (error) {
-      console.error("Error fetching plants:", error);
-      res.status(500).json({ message: "Failed to fetch plants" });
+  // Plants - Enhanced with error handling
+  app.get("/api/plants", requireAuth, createSafeHandler('Get Plants')(async (req, res) => {
+    const plants = await storage.getPlants();
+    if (!plants) {
+      throw new DatabaseError('Failed to retrieve plants from database', {
+        operation: 'Get Plants',
+        endpoint: '/api/plants',
+        userId: req.user?.id
+      });
     }
-  });
+    res.json(plants);
+  }));
 
   app.get("/api/plants/:id", requireAuth, async (req, res) => {
     try {
@@ -543,16 +546,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/plants", requireAuth, async (req, res) => {
-    try {
-      const data = insertPlantSchema.parse(req.body);
-      const plant = await storage.createPlant(data);
-      res.status(201).json(plant);
-    } catch (error: any) {
-      console.error("Error creating plant:", error);
-      res.status(400).json({ error: error.message });
+  app.post("/api/plants", requireAuth, createSafeHandler('Create Plant')(async (req, res) => {
+    const parseResult = insertPlantSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      throw new ValidationError('Invalid plant data provided', {
+        operation: 'Create Plant',
+        endpoint: '/api/plants',
+        userId: req.user?.id,
+        requestData: req.body,
+        additionalInfo: { validationErrors: parseResult.error.issues }
+      });
     }
-  });
+    
+    const plant = await storage.createPlant(parseResult.data);
+    if (!plant) {
+      throw new DatabaseError('Failed to create plant in database', {
+        operation: 'Create Plant',
+        endpoint: '/api/plants',
+        userId: req.user?.id,
+        requestData: parseResult.data
+      });
+    }
+    
+    res.status(201).json(plant);
+  }));
 
   app.put("/api/plants/:id", requireAuth, async (req, res) => {
     try {
@@ -688,15 +705,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Jobs
-  app.get("/api/jobs", async (req, res) => {
-    try {
-      const jobs = await storage.getJobs();
-      res.json(jobs);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch jobs" });
+  // Jobs - Enhanced with error handling
+  app.get("/api/jobs", createSafeHandler('Get Jobs')(async (req, res) => {
+    const jobs = await storage.getJobs();
+    if (!jobs) {
+      throw new DatabaseError('Failed to retrieve jobs from database', {
+        operation: 'Get Jobs',
+        endpoint: '/api/jobs',
+        userId: req.user?.id
+      });
     }
-  });
+    res.json(jobs);
+  }));
 
   app.get("/api/jobs/:id", async (req, res) => {
     try {
@@ -711,15 +731,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/jobs", async (req, res) => {
-    try {
-      const job = insertJobSchema.parse(req.body);
-      const newJob = await storage.createJob(job);
-      res.status(201).json(newJob);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid job data" });
+  app.post("/api/jobs", createSafeHandler('Create Job')(async (req, res) => {
+    const parseResult = insertJobSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      throw new ValidationError('Invalid job data provided', {
+        operation: 'Create Job',
+        endpoint: '/api/jobs',
+        userId: req.user?.id,
+        requestData: req.body,
+        additionalInfo: { validationErrors: parseResult.error.issues }
+      });
     }
-  });
+    
+    const newJob = await storage.createJob(parseResult.data);
+    if (!newJob) {
+      throw new DatabaseError('Failed to create job in database', {
+        operation: 'Create Job',
+        endpoint: '/api/jobs',
+        userId: req.user?.id,
+        requestData: parseResult.data
+      });
+    }
+    
+    res.status(201).json(newJob);
+  }));
 
   app.put("/api/jobs/:id", async (req, res) => {
     try {
@@ -11879,5 +11914,8 @@ Create a natural, conversational voice script that explains this feature to some
   });
 
   const httpServer = createServer(app);
+  // Add global error handling middleware at the end
+  app.use(errorMiddleware);
+
   return httpServer;
 }
