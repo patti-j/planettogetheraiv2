@@ -121,6 +121,18 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 25, 2025)
 
+✓ **Shop Floor Menu Organization Update (July 25, 2025)**:
+- Successfully moved Shop Floor view from "Planning & Scheduling" section to "Operations" section in main navigation menu
+- Shop Floor now logically grouped with other operational features: Operator Dashboard, Forklift Driver, Maintenance, and Disruption Management
+- Enhanced menu organization by placing Shop Floor in the Operations category where it belongs functionally
+- Updated menu structure provides clearer categorization of planning vs operational features
+
+✓ **Quality Metrics Display Rounding Fix (July 25, 2025)**:
+- Fixed quality score display in plant manager dashboard showing too many decimal places
+- Updated qualityScore calculation to use Math.round() instead of raw decimal values
+- Quality metrics now display as clean whole numbers (e.g., "94%" instead of "94.8237%") for better readability
+- Other quality metrics throughout system already properly use .toFixed(1) for appropriate precision
+
 ✓ **Plant Manager Dashboard Cost Variance Rounding Fix (July 25, 2025)**:
 - Fixed cost variance metric display in plant manager dashboard to show whole numbers instead of decimal values
 - Updated costVariance calculation to use Math.round() for cleaner percentage display
