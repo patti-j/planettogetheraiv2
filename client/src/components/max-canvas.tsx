@@ -331,42 +331,48 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
             
           {/* Header Actions - Dropdown menu for both desktop and mobile */}
           <div className="flex items-center gap-2">
-            {canvasItems.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-white hover:bg-white/20 p-2"
-                    title="Canvas Actions"
-                  >
-                    <MoreVertical className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={handleCopyToClipboard}>
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copy to Clipboard
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleExportJSON}>
-                    <Download className="w-4 h-4 mr-2" />
-                    Export as JSON
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleExportImage}>
-                    <FileImage className="w-4 h-4 mr-2" />
-                    Export as Image
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleShare}>
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Share Canvas
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleClearCanvas} className="text-red-600">
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Clear Canvas
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-white/20 p-2"
+                  title="Canvas Actions"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={onClose}>
+                  <X className="w-4 h-4 mr-2" />
+                  Close Canvas
+                </DropdownMenuItem>
+                {canvasItems.length > 0 && (
+                  <>
+                    <DropdownMenuItem onClick={handleCopyToClipboard}>
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy to Clipboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleExportJSON}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Export as JSON
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleExportImage}>
+                      <FileImage className="w-4 h-4 mr-2" />
+                      Export as Image
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleShare}>
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Share Canvas
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleClearCanvas} className="text-red-600">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Clear Canvas
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
