@@ -615,6 +615,41 @@ export function MaxSidebar() {
     setInputMessage(`Tell me more about: ${insight.title}`);
   };
 
+  // Function to save canvas content to database
+  const saveCanvasContentToDatabase = async (canvasItem: CanvasItem, sessionId: string) => {
+    try {
+      const authToken = localStorage.getItem('authToken');
+      if (!authToken) {
+        console.log('No auth token available for canvas persistence');
+        return;
+      }
+
+      const canvasContentData = {
+        sessionId,
+        itemData: canvasItem
+      };
+
+      const response = await fetch('/api/canvas/content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify(canvasContentData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('Canvas content persisted to database:', result);
+    } catch (error) {
+      console.error('Failed to save canvas content to database:', error);
+      throw error;
+    }
+  };
+
   const handleCanvasAction = (canvasAction: any) => {
     console.log('handleCanvasAction called with:', canvasAction);
     if (!canvasAction) {
@@ -667,6 +702,13 @@ export function MaxSidebar() {
           console.log('Setting canvas visible to true');
           setCanvasVisible(true); // Auto-show canvas when content is added
           console.log('Canvas visibility state after setting:', isCanvasVisible);
+
+          // Persist canvas content to database (background, non-blocking)
+          const sessionId = `session_${Date.now()}`;
+          saveCanvasContentToDatabase(newItem, sessionId).catch(error => {
+            console.warn('Failed to persist canvas content to database:', error);
+            // Don't show error to user as canvas still works with frontend state
+          });
         }
         break;
     }
