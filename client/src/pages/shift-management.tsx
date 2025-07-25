@@ -33,7 +33,10 @@ export default function ShiftManagement() {
   // Fetch shift templates
   const { data: shiftTemplates = [], isLoading: templatesLoading } = useQuery({
     queryKey: ['/api/shift-templates', selectedPlant],
-    queryFn: () => apiRequest(`/api/shift-templates${selectedPlant !== 'all' ? `?plantId=${selectedPlant}` : ''}`),
+    queryFn: async () => {
+      const response = await fetch(`/api/shift-templates${selectedPlant !== 'all' ? `?plantId=${selectedPlant}` : ''}`);
+      return response.json();
+    },
   });
 
   // Fetch plants for filtering
@@ -129,14 +132,35 @@ export default function ShiftManagement() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="templates">Shift Templates</TabsTrigger>
-            <TabsTrigger value="assignments">Assignments</TabsTrigger>
-            <TabsTrigger value="holidays">Holidays</TabsTrigger>
-            <TabsTrigger value="absences">Absences</TabsTrigger>
-            <TabsTrigger value="scenarios">Scenarios</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          </TabsList>
+          {/* Desktop: Grid layout, Mobile: Horizontal scrolling */}
+          <div className="overflow-x-auto">
+            <TabsList className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground min-w-full sm:grid sm:w-full sm:grid-cols-6">
+              <TabsTrigger value="templates" className="flex-shrink-0 px-3 sm:px-6">
+                <span className="hidden sm:inline">Shift Templates</span>
+                <span className="sm:hidden">Templates</span>
+              </TabsTrigger>
+              <TabsTrigger value="assignments" className="flex-shrink-0 px-3 sm:px-6">
+                <span className="hidden sm:inline">Assignments</span>
+                <span className="sm:hidden">Assignments</span>
+              </TabsTrigger>
+              <TabsTrigger value="holidays" className="flex-shrink-0 px-3 sm:px-6">
+                <span className="hidden sm:inline">Holidays</span>
+                <span className="sm:hidden">Holidays</span>
+              </TabsTrigger>
+              <TabsTrigger value="absences" className="flex-shrink-0 px-3 sm:px-6">
+                <span className="hidden sm:inline">Absences</span>
+                <span className="sm:hidden">Absences</span>
+              </TabsTrigger>
+              <TabsTrigger value="scenarios" className="flex-shrink-0 px-3 sm:px-6">
+                <span className="hidden sm:inline">Scenarios</span>
+                <span className="sm:hidden">Scenarios</span>
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="flex-shrink-0 px-3 sm:px-6">
+                <span className="hidden sm:inline">Analytics</span>
+                <span className="sm:hidden">Analytics</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Shift Templates Tab */}
           <TabsContent value="templates" className="space-y-6">
