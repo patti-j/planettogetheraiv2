@@ -121,6 +121,13 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 25, 2025)
 
+✓ **Gantt Chart Zoom Persistence Implementation (July 25, 2025)**:
+- Successfully implemented localStorage persistence for Gantt chart zoom level between browser sessions
+- Users' selected zoom level (hour, shift, day, week, month, quarter, year, decade) now remembered across sessions
+- Added initialization from localStorage with validation for valid zoom levels and fallback to "day"
+- Automatic saving of zoom changes to localStorage for seamless user experience
+- Gantt chart now restores to user's preferred zoom level when returning to the application
+
 ✓ **Menu Section Title Update (July 25, 2025)**:
 - Renamed "Core Production" section title to "Planning & Scheduling" in the main menu for better clarity
 - Updated section title in top-menu.tsx to reflect the planning and scheduling focus of the grouped features
