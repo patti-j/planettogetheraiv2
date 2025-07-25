@@ -493,6 +493,8 @@ export function MaxSidebar() {
     setMessages(prev => [...prev, errorMessage]);
   };
 
+
+
   const stopListening = () => {
     if (mediaRecorder.current && mediaRecorder.current.state === 'recording') {
       console.log('Stopping Whisper recording...');

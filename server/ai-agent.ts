@@ -140,8 +140,13 @@ Respond with JSON: {"action": "ACTION_NAME", "parameters": {...}, "message": "re
       aiResponse = JSON.parse(responseContent);
     }
     
+    console.log("AI Response parsed:", JSON.stringify(aiResponse, null, 2));
+    
     // Execute the determined action
-    return await executeAction(aiResponse.action, aiResponse.parameters, aiResponse.message, context, attachments);
+    const actionResult = await executeAction(aiResponse.action, aiResponse.parameters, aiResponse.message, context, attachments);
+    console.log("Action Result:", JSON.stringify(actionResult, null, 2));
+    
+    return actionResult;
     
   } catch (error) {
     console.error("AI Agent Error:", error);
