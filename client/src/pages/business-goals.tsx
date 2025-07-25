@@ -17,6 +17,7 @@ import {
   AlertCircle, Activity, Maximize2, Minimize2
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useMaxDock } from "@/contexts/MaxDockContext";
 import type { 
   BusinessGoal, GoalProgress, GoalRisk, GoalIssue, GoalKpi, GoalAction,
   InsertBusinessGoal, InsertGoalProgress, InsertGoalRisk, InsertGoalIssue, InsertGoalKpi, InsertGoalAction 
@@ -24,6 +25,7 @@ import type {
 
 export default function BusinessGoalsPage() {
   const [isMaximized, setIsMaximized] = useState(false);
+  const { isMaxOpen } = useMaxDock();
   const [selectedGoal, setSelectedGoal] = useState<BusinessGoal | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showGoalDetails, setShowGoalDetails] = useState(false);
@@ -431,7 +433,7 @@ export default function BusinessGoalsPage() {
       <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="md:ml-0 ml-12">
+          <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
             <h1 className="text-xl md:text-2xl font-semibold text-gray-800 dark:text-white flex items-center">
               <TrendingUp className="w-6 h-6 mr-2" />
               Business Goals & Strategy

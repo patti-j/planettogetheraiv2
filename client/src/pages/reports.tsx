@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useAITheme } from "@/hooks/use-ai-theme";
+import { useMaxDock } from "@/contexts/MaxDockContext";
 
 import { 
   Plus, 
@@ -56,6 +57,7 @@ export default function Reports() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { aiTheme } = useAITheme();
+  const { isMaxOpen } = useMaxDock();
 
   const { data: reportConfigs = [] } = useQuery({
     queryKey: ['/api/report-configs'],
@@ -356,7 +358,7 @@ export default function Reports() {
     <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="relative">
-        <div className="md:ml-0 ml-12">
+        <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
           <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
             <FileText className="w-6 h-6 mr-2" />
             Reports

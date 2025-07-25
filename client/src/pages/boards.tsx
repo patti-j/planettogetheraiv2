@@ -11,6 +11,7 @@ import ResourceForm from "@/components/resource-form";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAITheme } from "@/hooks/use-ai-theme";
+import { useMaxDock } from "@/contexts/MaxDockContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
@@ -26,6 +27,7 @@ import { type Job, type Operation, type Resource, type KanbanConfig, type Capabi
 export default function Boards() {
   const isMobile = useIsMobile();
   const [isMaximized, setIsMaximized] = useState(false);
+  const { isMaxOpen } = useMaxDock();
   
   // Automatically maximize on mobile devices and keep it maximized
   useEffect(() => {
@@ -158,7 +160,7 @@ export default function Boards() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200 p-3 sm:p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="md:ml-0 ml-12">
+          <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
             <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
               <Columns3 className="w-6 h-6 mr-2" />
               Boards

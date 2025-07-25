@@ -44,6 +44,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { useMaxDock } from '@/contexts/MaxDockContext';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 
 interface SystemIntegration {
@@ -103,6 +104,7 @@ const POPULAR_SYSTEMS = [
 
 export default function SystemIntegrationsPage() {
   const { toast } = useToast();
+  const { isMaxOpen } = useMaxDock();
   const [activeTab, setActiveTab] = useState('integrations');
   const [selectedIntegration, setSelectedIntegration] = useState<SystemIntegration | null>(null);
   const [showNewIntegrationDialog, setShowNewIntegrationDialog] = useState(false);
@@ -238,7 +240,7 @@ export default function SystemIntegrationsPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-8">
-        <div className="md:ml-0 ml-12">
+        <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">System Integrations</h1>
           <p className="text-gray-600">
             Connect PlanetTogether with external systems using AI-powered integration builder

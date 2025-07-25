@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { useMaxDock } from "@/contexts/MaxDockContext";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   User,
@@ -128,6 +129,7 @@ const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
 
 export default function AccountPage() {
   const { toast } = useToast();
+  const { isMaxOpen } = useMaxDock();
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const [showBillingDialog, setShowBillingDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>('');
@@ -287,7 +289,7 @@ export default function AccountPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="mb-8">
-        <div className="md:ml-0 ml-12">
+        <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Account Settings</h1>
           <p className="text-gray-600">
             Manage your subscription, billing information, and account preferences

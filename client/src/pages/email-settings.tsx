@@ -7,9 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { EmailManager, EmailStatusPanel } from "@/components/email-manager";
 import { Mail, Settings, CheckCircle, AlertTriangle, Info } from "lucide-react";
+import { useMaxDock } from "@/contexts/MaxDockContext";
 
 export default function EmailSettings() {
   const [isMaximized, setIsMaximized] = useState(false);
+  const { isMaxOpen } = useMaxDock();
 
   const awsSetupSteps = [
     {
@@ -254,7 +256,7 @@ export default function EmailSettings() {
     return (
       <div className="fixed inset-0 bg-white z-50 flex flex-col">
         <div className="flex items-center justify-between p-4 border-b">
-          <h1 className="text-2xl font-semibold text-gray-800 md:ml-0 ml-12">Email Settings</h1>
+          <h1 className={`text-2xl font-semibold text-gray-800 ${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>Email Settings</h1>
           <Button 
             variant="outline" 
             size="sm"
@@ -274,7 +276,7 @@ export default function EmailSettings() {
     <div className="p-6">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-        <div className="md:ml-0 ml-12">
+        <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
           <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
             <Mail className="w-6 h-6 mr-2" />
             Email Settings

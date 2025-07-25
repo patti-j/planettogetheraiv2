@@ -20,6 +20,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAITheme } from "@/hooks/use-ai-theme";
+import { useMaxDock } from "@/contexts/MaxDockContext";
 
 export default function CapacityPlanning() {
   const [activeTab, setActiveTab] = useState("scenarios");
@@ -28,6 +29,7 @@ export default function CapacityPlanning() {
   const [showAIRecommendations, setShowAIRecommendations] = useState(false);
   const { toast } = useToast();
   const { aiTheme } = useAITheme();
+  const { isMaxOpen } = useMaxDock();
 
   // Queries
   const { data: scenarios = [], isLoading: loadingScenarios } = useQuery<CapacityPlanningScenario[]>({
@@ -180,7 +182,7 @@ export default function CapacityPlanning() {
     <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div className="md:ml-0 ml-12">
+        <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
           <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
             <Briefcase className="w-6 h-6 mr-2" />
             Capacity Planning

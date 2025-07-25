@@ -46,6 +46,7 @@ import {
 import { Job, Operation, Resource } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useMaxDock } from "@/contexts/MaxDockContext";
 
 interface OperatorOperation extends Operation {
   jobName: string;
@@ -101,6 +102,7 @@ export default function OperatorDashboard() {
   const [currentOperator] = useState("John Smith"); // In real app, this would come from auth
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isMaxOpen } = useMaxDock();
 
   // Fetch production data
   const { data: jobs = [] } = useQuery<Job[]>({
@@ -293,7 +295,7 @@ export default function OperatorDashboard() {
       {/* Header */}
       <div className="bg-white shadow-sm border-b p-3 sm:p-6 flex-shrink-0">
         <div className="relative">
-          <div className="md:ml-0 ml-12">
+          <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
             <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
               <Settings className="w-6 h-6 mr-2" />
               Operator Dashboard

@@ -14,6 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertTriangle, Clock, CheckCircle, XCircle, Plus, Calendar, User, Settings } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useMaxDock } from "@/contexts/MaxDockContext";
 import { insertDisruptionSchema, insertDisruptionActionSchema, insertDisruptionEscalationSchema } from "@shared/schema";
 import { z } from "zod";
 import { format } from "date-fns";
@@ -373,6 +374,7 @@ export default function DisruptionManagement() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isMaxOpen } = useMaxDock();
 
   const { data: disruptions = [], isLoading } = useQuery<Disruption[]>({
     queryKey: ["/api/disruptions"],
@@ -422,7 +424,7 @@ export default function DisruptionManagement() {
     <div className="container mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div className="md:ml-0 ml-12">
+        <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
           <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
             <AlertTriangle className="w-6 h-6 mr-2" />
             Disruption Management

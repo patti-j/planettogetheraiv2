@@ -17,6 +17,7 @@ import AnalyticsWidget from "@/components/analytics-widget";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useMobile } from "@/hooks/use-mobile";
+import { useMaxDock } from "@/contexts/MaxDockContext";
 import type { Job, Operation, Resource, Capability } from "@shared/schema";
 
 interface AnalyticsWidget {
@@ -262,6 +263,7 @@ export default function Analytics() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isMobile = useMobile();
+  const { isMaxOpen } = useMaxDock();
 
   // AI Event Listeners for analytics actions
   useEffect(() => {
@@ -564,7 +566,7 @@ export default function Analytics() {
         {/* Header */}
         <div className="p-3 sm:p-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="md:ml-0 ml-12">
+            <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
               <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
                 <BarChart3 className="w-6 h-6 mr-2" />
                 Analytics
