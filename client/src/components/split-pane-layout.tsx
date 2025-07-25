@@ -24,13 +24,20 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
     setCurrentFullscreenView, 
     setMobileLayoutMode,
     setCanvasHeight,
-    setCanvasVisible
+    setCanvasVisible,
+    setCurrentPage
   } = useMaxDock();
   const { aiTheme } = useAITheme();
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [maxHeight, setMaxHeight] = useState(300); // For mobile vertical split
   const [location] = useLocation();
+
+  // Track current page for Max AI state persistence
+  useEffect(() => {
+    // Simple localStorage update without triggering database save
+    localStorage.setItem('max-ai-current-page', location);
+  }, [location]);
 
   // Handle mouse/touch events for resizing
   const handleMouseDown = (e: React.MouseEvent) => {

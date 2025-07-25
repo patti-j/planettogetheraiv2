@@ -1,4 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 
 export interface CanvasItem {
   id: string;
@@ -20,6 +23,7 @@ interface MaxDockContextType {
   isCanvasVisible: boolean;
   canvasHeight: number;
   canvasItems: CanvasItem[];
+  currentPage: string;
   setMaxOpen: (open: boolean) => void;
   setMaxWidth: (width: number) => void;
   setMobileLayoutMode: (mode: 'split' | 'fullscreen') => void;
@@ -27,19 +31,62 @@ interface MaxDockContextType {
   setCanvasVisible: (visible: boolean) => void;
   setCanvasHeight: (height: number) => void;
   setCanvasItems: (items: CanvasItem[] | ((prev: CanvasItem[]) => CanvasItem[])) => void;
+  setCurrentPage: (page: string) => void;
 }
 
 const MaxDockContext = createContext<MaxDockContextType | undefined>(undefined);
 
 export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [isMaxOpen, setIsMaxOpen] = useState(true); // Default to visible
-  const [maxWidth, setMaxWidth] = useState(400); // Default width for desktop sidebar
+  const { user } = useAuth();
+  
+  // Initialize states with localStorage persistence
+  const [isMaxOpen, setIsMaxOpen] = useState(() => {
+    const saved = localStorage.getItem('max-ai-open');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  
+  const [maxWidth, setMaxWidth] = useState(() => {
+    const saved = localStorage.getItem('max-ai-width');
+    return saved ? parseInt(saved) : 400;
+  });
+  
+  const [currentPage, setCurrentPage] = useState(() => {
+    return localStorage.getItem('max-ai-current-page') || '/';
+  });
+  
   const [isMobile, setIsMobile] = useState(false);
-  const [mobileLayoutMode, setMobileLayoutMode] = useState<'split' | 'fullscreen'>('split');
-  const [currentFullscreenView, setCurrentFullscreenView] = useState<'main' | 'max'>('max');
-  const [isCanvasVisible, setIsCanvasVisible] = useState(false);
-  const [canvasHeight, setCanvasHeight] = useState(300); // Default canvas height
+  const [mobileLayoutMode, setMobileLayoutMode] = useState<'split' | 'fullscreen'>(() => {
+    const saved = localStorage.getItem('max-ai-mobile-layout');
+    return (saved as 'split' | 'fullscreen') || 'split';
+  });
+  
+  const [currentFullscreenView, setCurrentFullscreenView] = useState<'main' | 'max'>(() => {
+    const saved = localStorage.getItem('max-ai-fullscreen-view');
+    return (saved as 'main' | 'max') || 'max';
+  });
+  
+  const [isCanvasVisible, setIsCanvasVisible] = useState(() => {
+    const saved = localStorage.getItem('max-ai-canvas-visible');
+    return saved !== null ? JSON.parse(saved) : false;
+  });
+  
+  const [canvasHeight, setCanvasHeight] = useState(() => {
+    const saved = localStorage.getItem('max-ai-canvas-height');
+    return saved ? parseInt(saved) : 300;
+  });
+  
   const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]); // Canvas items state
+
+  // User preferences query and mutation for authenticated users
+  const { data: userPreferences } = useQuery({
+    queryKey: [`/api/user-preferences/${user?.id}`],
+    enabled: !!user?.id,
+  });
+
+  const updatePreferencesMutation = useMutation({
+    mutationFn: (preferences: any) => 
+      apiRequest(`/api/user-preferences/${user?.id}`, 'PATCH', preferences),
+  });
 
   // Detect mobile on mount and window resize
   useEffect(() => {
@@ -52,16 +99,70 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Load user preferences when available
+  useEffect(() => {
+    if (userPreferences && (userPreferences as any).maxAiState) {
+      const maxState = (userPreferences as any).maxAiState;
+      if (maxState.isOpen !== undefined) setIsMaxOpen(maxState.isOpen);
+      if (maxState.width) setMaxWidth(maxState.width);
+      if (maxState.currentPage) setCurrentPage(maxState.currentPage);
+      if (maxState.mobileLayoutMode) setMobileLayoutMode(maxState.mobileLayoutMode);
+      if (maxState.currentFullscreenView) setCurrentFullscreenView(maxState.currentFullscreenView);
+      if (maxState.isCanvasVisible !== undefined) setIsCanvasVisible(maxState.isCanvasVisible);
+      if (maxState.canvasHeight) setCanvasHeight(maxState.canvasHeight);
+    }
+  }, [userPreferences]);
+
+  // Save state to localStorage and database
+  const saveMaxState = (updates: any) => {
+    // Save to localStorage immediately
+    Object.keys(updates).forEach(key => {
+      localStorage.setItem(`max-ai-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`, 
+        typeof updates[key] === 'boolean' ? JSON.stringify(updates[key]) : updates[key].toString());
+    });
+    
+    // Save to database for authenticated users (debounced)
+    if (user?.id) {
+      const maxAiState = updates;
+      updatePreferencesMutation.mutate({ maxAiState });
+    }
+  };
+
   const setMaxOpen = (open: boolean) => {
     setIsMaxOpen(open);
+    saveMaxState({ isOpen: open });
   };
 
   const setMaxWidthValue = (width: number) => {
-    setMaxWidth(Math.max(200, Math.min(width, window.innerWidth * 0.8)));
+    const newWidth = Math.max(200, Math.min(width, window.innerWidth * 0.8));
+    setMaxWidth(newWidth);
+    saveMaxState({ width: newWidth });
   };
 
   const setCanvasHeightValue = (height: number) => {
-    setCanvasHeight(Math.max(200, Math.min(height, window.innerHeight * 0.6)));
+    const newHeight = Math.max(200, Math.min(height, window.innerHeight * 0.6));
+    setCanvasHeight(newHeight);
+    saveMaxState({ canvasHeight: newHeight });
+  };
+
+  const setCurrentPageValue = (page: string) => {
+    setCurrentPage(page);
+    saveMaxState({ currentPage: page });
+  };
+
+  const setMobileLayoutModeValue = (mode: 'split' | 'fullscreen') => {
+    setMobileLayoutMode(mode);
+    saveMaxState({ mobileLayoutMode: mode });
+  };
+
+  const setCurrentFullscreenViewValue = (view: 'main' | 'max') => {
+    setCurrentFullscreenView(view);
+    saveMaxState({ currentFullscreenView: view });
+  };
+
+  const setCanvasVisibleValue = (visible: boolean) => {
+    setIsCanvasVisible(visible);
+    saveMaxState({ isCanvasVisible: visible });
   };
 
   return (
@@ -75,13 +176,15 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
         isCanvasVisible,
         canvasHeight,
         canvasItems,
+        currentPage,
         setMaxOpen,
         setMaxWidth: setMaxWidthValue,
-        setMobileLayoutMode,
-        setCurrentFullscreenView,
-        setCanvasVisible: setIsCanvasVisible,
+        setMobileLayoutMode: setMobileLayoutModeValue,
+        setCurrentFullscreenView: setCurrentFullscreenViewValue,
+        setCanvasVisible: setCanvasVisibleValue,
         setCanvasHeight: setCanvasHeightValue,
         setCanvasItems,
+        setCurrentPage: setCurrentPageValue,
       }}
     >
       {children}

@@ -532,7 +532,7 @@ export function MaxSidebar() {
       console.error('Microphone access error:', error);
       setIsListening(false);
       
-      if (error.name === 'NotAllowedError') {
+      if ((error as any).name === 'NotAllowedError') {
         toast({
           title: "Microphone Permission Needed",
           description: "Please allow microphone access to use voice input",
