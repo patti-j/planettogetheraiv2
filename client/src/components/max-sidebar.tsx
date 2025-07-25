@@ -694,14 +694,61 @@ export function MaxSidebar() {
   const handleNavigationAction = (navigationData: any) => {
     console.log('Processing navigation action:', navigationData);
     
-    if (navigationData.path) {
-      console.log('Navigating to:', navigationData.path);
-      setLocation(navigationData.path);
-      
-      // Give user feedback about navigation
+    try {
+      // Handle navigation based on the data structure
+      if (navigationData.page && navigationData.path) {
+        // Modern navigation with page and path - check permissions if required
+        const { page, path, name, requiredPermissions = [] } = navigationData;
+        
+        // For now, allow all navigation (permission checking can be enhanced later)
+        if (requiredPermissions.length > 0) {
+          console.log(`Navigation to ${name} requires permissions:`, requiredPermissions);
+        }
+        
+        console.log('Navigating to:', path);
+        setLocation(path);
+        
+        // Add buffer to prevent navigation conflicts
+        setTimeout(() => {
+          (window as any).lastNavigationTime = Date.now();
+        }, 500);
+        
+        console.log(`Navigated to ${name || page} (${path})`);
+        
+        // Show success message for permissions-required pages
+        toast({
+          title: "Navigation Successful",
+          description: `Opened ${name || page}`,
+        });
+      } else if (navigationData.path) {
+        // Simple navigation with path only
+        console.log('Navigating to:', navigationData.path);
+        setLocation(navigationData.path);
+        
+        // Give user feedback about navigation
+        toast({
+          title: "Navigation",
+          description: `Opened ${navigationData.page || 'page'}`,
+        });
+      } else if (navigationData.route) {
+        // Legacy navigation with route
+        const targetPath = navigationData.route.startsWith('/') ? navigationData.route : `/${navigationData.route}`;
+        setLocation(targetPath);
+        
+        console.log(`Navigated to ${targetPath}`);
+        toast({
+          title: "Navigation",
+          description: `Opened ${navigationData.page || 'page'}`,
+        });
+      } else {
+        console.warn('Unknown navigation data structure:', navigationData);
+      }
+    } catch (error) {
+      console.error('Navigation error:', error);
       toast({
-        title: "Navigation",
-        description: `Opened ${navigationData.page || 'page'}`,
+        title: "Navigation Error",
+        description: "Unable to navigate to the requested page",
+        variant: "destructive"
       });
     }
   };

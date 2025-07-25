@@ -82,19 +82,26 @@ LIVE DATA AVAILABLE:
 
 IMPORTANT: You have access to real live manufacturing data. When users ask about jobs, operations, resources, plants, or system status, use the provided live data above to give accurate answers. DO NOT say you don't have access - you have direct access to current system data.
 
-Available actions: LIST_JOBS, LIST_OPERATIONS, LIST_RESOURCES, LIST_PLANTS, CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, CLEAR_CANVAS, CREATE_CHART, CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART, SHOW_API_DOCUMENTATION, and others.
+Available actions: LIST_JOBS, LIST_OPERATIONS, LIST_RESOURCES, LIST_PLANTS, CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, OPEN_SHOP_FLOOR, OPEN_VISUAL_FACTORY, OPEN_CAPACITY_PLANNING, OPEN_OPTIMIZATION_STUDIO, OPEN_PRODUCTION_PLANNING, OPEN_SYSTEMS_INTEGRATION, OPEN_ROLE_MANAGEMENT, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, CLEAR_CANVAS, CREATE_CHART, CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART, SHOW_API_DOCUMENTATION, and others.
 
 CRITICAL DISTINCTION:
 - For API documentation requests ("available APIs", "what APIs can you call", "list of available functions", "what can you do", "your capabilities", "available commands"): Use LIST_AVAILABLE_APIS action
 - For actual data requests ("list jobs", "show resources", "available jobs", "available resources"): Use appropriate data actions (LIST_JOBS, LIST_RESOURCES, etc.)
 
 UI Navigation Actions:
-- NAVIGATE_TO_PAGE: Navigate to specific pages (dashboard, analytics, reports, scheduling-optimizer, etc.)
+- NAVIGATE_TO_PAGE: Navigate to specific pages (supports all application pages with permission checking)
 - OPEN_DASHBOARD: Open dashboard page and optionally create new dashboard
 - OPEN_GANTT_CHART: Navigate to production schedule (Gantt chart) page
 - OPEN_ANALYTICS: Navigate to analytics page for data visualization
 - OPEN_BOARDS: Navigate to Kanban boards page
 - OPEN_REPORTS: Navigate to reports page
+- OPEN_SHOP_FLOOR: Navigate to shop floor interface (requires shop-floor-view permission)
+- OPEN_VISUAL_FACTORY: Navigate to visual factory interface (requires visual-factory-view permission)
+- OPEN_CAPACITY_PLANNING: Navigate to capacity planning (requires capacity-planning-view permission)
+- OPEN_OPTIMIZATION_STUDIO: Navigate to optimization studio (requires optimization-studio-view permission)
+- OPEN_PRODUCTION_PLANNING: Navigate to production planning (requires production-planning-view permission)
+- OPEN_SYSTEMS_INTEGRATION: Navigate to systems integration (requires systems-integration-view permission)
+- OPEN_ROLE_MANAGEMENT: Navigate to role management (requires user-management-view permission)
 - CREATE_ANALYTICS_WIDGET: Create analytics widgets on dashboard
 - TRIGGER_UI_ACTION: Trigger specific UI interactions (open dialogs, click buttons, etc.)
 - SHOW_SCHEDULE_EVALUATION: Show schedule evaluation system
@@ -102,6 +109,8 @@ UI Navigation Actions:
 - MINIMIZE_VIEW: Minimize current view
 - SHOW_CANVAS: Automatically show canvas in the top portion of the screen when displaying content
 - CANVAS_CONTENT: Add content to the canvas for visual display
+
+Available Pages (use with NAVIGATE_TO_PAGE): dashboard, production-schedule, production-planning, analytics, reports, boards, shop-floor, visual-factory, capacity-planning, optimization-studio, scheduling-optimizer, inventory-optimization, demand-forecasting, disruption-management, sales, customer-service, operator-dashboard, maintenance, forklift-driver, plant-manager, systems-integration, system-integrations, systems-management, plants-management, error-logs, role-management, user-roles, business-goals, training, industry-templates, help, chat, presentation-system, presentation-studio, extension-studio, canvas, email-settings, feedback, account, pricing
 
 For CREATE_KANBAN_BOARD: parameters need name, description, viewType (jobs/operations), swimLaneField (status/priority/customer), filters (optional).
 
@@ -168,10 +177,10 @@ async function processCommandWithAttachments(command: string, attachments: Attac
 
 User command: ${command}
 
-Available actions: LIST_JOBS, LIST_OPERATIONS, LIST_RESOURCES, LIST_PLANTS, CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, CREATE_CHART, CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART, and others.
+Available actions: LIST_JOBS, LIST_OPERATIONS, LIST_RESOURCES, LIST_PLANTS, CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, OPEN_SHOP_FLOOR, OPEN_VISUAL_FACTORY, OPEN_CAPACITY_PLANNING, OPEN_OPTIMIZATION_STUDIO, OPEN_PRODUCTION_PLANNING, OPEN_SYSTEMS_INTEGRATION, OPEN_ROLE_MANAGEMENT, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, CREATE_CHART, CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART, and others.
 
 UI Navigation Actions:
-- NAVIGATE_TO_PAGE: Navigate to specific pages (dashboard, analytics, reports, scheduling-optimizer, etc.)
+- NAVIGATE_TO_PAGE: Navigate to specific pages (supports all application pages with permission checking)
 - OPEN_DASHBOARD: Open dashboard page and optionally create new dashboard
 - OPEN_GANTT_CHART: Navigate to production schedule (Gantt chart) page
 - OPEN_ANALYTICS: Navigate to analytics page for data visualization
@@ -908,13 +917,85 @@ async function executeAction(action: string, parameters: any, message: string, c
         };
 
       case "NAVIGATE_TO_PAGE":
-        // Navigate to a specific page in the application
+        // Navigate to a specific page in the application with comprehensive support
+        const pageMapping: Record<string, { path: string, name: string, permissions?: string[] }> = {
+          // Core Production
+          "dashboard": { path: "/", name: "Dashboard" },
+          "production-schedule": { path: "/production-schedule", name: "Production Schedule" },
+          "production-planning": { path: "/production-planning", name: "Production Planning", permissions: ["production-planning-view"] },
+          "analytics": { path: "/analytics", name: "Analytics" },
+          "reports": { path: "/reports", name: "Reports" },
+          "boards": { path: "/boards", name: "Kanban Boards" },
+          "shop-floor": { path: "/shop-floor", name: "Shop Floor", permissions: ["shop-floor-view"] },
+          "visual-factory": { path: "/visual-factory", name: "Visual Factory", permissions: ["visual-factory-view"] },
+          
+          // Optimization & Planning
+          "capacity-planning": { path: "/capacity-planning", name: "Capacity Planning", permissions: ["capacity-planning-view"] },
+          "optimization-studio": { path: "/optimization-studio", name: "Optimization Studio", permissions: ["optimization-studio-view"] },
+          "scheduling-optimizer": { path: "/optimize-orders", name: "Scheduling Optimizer" },
+          "inventory-optimization": { path: "/inventory-optimization", name: "Inventory Optimization" },
+          "demand-forecasting": { path: "/demand-forecasting", name: "Demand Forecasting" },
+          "disruption-management": { path: "/disruption-management", name: "Disruption Management" },
+          
+          // Role-Specific Pages
+          "sales": { path: "/sales", name: "Sales Dashboard", permissions: ["sales-view"] },
+          "customer-service": { path: "/customer-service", name: "Customer Service", permissions: ["customer-service-view"] },
+          "operator-dashboard": { path: "/operator-dashboard", name: "Operator Dashboard", permissions: ["operator-view"] },
+          "maintenance": { path: "/maintenance", name: "Maintenance", permissions: ["maintenance-view"] },
+          "forklift-driver": { path: "/forklift-driver", name: "Forklift Driver", permissions: ["forklift-driver-view"] },
+          "plant-manager": { path: "/plant-manager-dashboard", name: "Plant Manager Dashboard", permissions: ["plant-manager-view"] },
+          
+          // Systems & Integration
+          "systems-integration": { path: "/systems-integration", name: "Systems Integration", permissions: ["systems-integration-view"] },
+          "system-integrations": { path: "/system-integrations", name: "System Integrations", permissions: ["systems-integration-view"] },
+          "systems-management": { path: "/systems-management-dashboard", name: "Systems Management", permissions: ["systems-management-view"] },
+          "plants-management": { path: "/plants-management", name: "Plants Management", permissions: ["plants-management-view"] },
+          "error-logs": { path: "/error-logs", name: "Error Logs", permissions: ["systems-management-view"] },
+          
+          // User & Role Management
+          "role-management": { path: "/role-management", name: "Role Management", permissions: ["user-management-view"] },
+          "user-roles": { path: "/user-role-assignments-page", name: "User Role Assignments", permissions: ["user-management-view"] },
+          "business-goals": { path: "/business-goals", name: "Business Goals", permissions: ["business-goals-view"] },
+          
+          // Training & Support
+          "training": { path: "/training", name: "Training", permissions: ["training-view"] },
+          "industry-templates": { path: "/industry-templates", name: "Industry Templates", permissions: ["training-view"] },
+          "help": { path: "/help", name: "Help & Guide" },
+          "chat": { path: "/chat", name: "Chat Support" },
+          
+          // Presentation & Extensions
+          "presentation-system": { path: "/presentation-system", name: "Presentation System", permissions: ["training-view"] },
+          "presentation-studio": { path: "/presentation-studio", name: "Presentation Studio", permissions: ["training-view"] },
+          "extension-studio": { path: "/extension-studio", name: "Extension Studio", permissions: ["systems-integration-view"] },
+          "canvas": { path: "/canvas", name: "Canvas" },
+          
+          // Settings & Configuration
+          "email-settings": { path: "/email-settings", name: "Email Settings", permissions: ["systems-management-view"] },
+          "feedback": { path: "/feedback", name: "Feedback" },
+          "account": { path: "/account", name: "Account Settings" },
+          "pricing": { path: "/pricing", name: "Pricing" }
+        };
+
+        const targetPage = parameters.page || parameters.route || parameters.target;
+        const pageInfo = pageMapping[targetPage?.toLowerCase()];
+        
+        if (!pageInfo) {
+          return {
+            success: false,
+            message: `Unknown page "${targetPage}". Available pages: ${Object.keys(pageMapping).join(', ')}`,
+            data: { availablePages: Object.keys(pageMapping) },
+            actions: ["NAVIGATE_TO_PAGE"]
+          };
+        }
+
         return {
           success: true,
-          message: message || `Navigating to ${parameters.page || parameters.route} page`,
+          message: message || `Navigating to ${pageInfo.name}${pageInfo.permissions ? ' (permission required)' : ''}`,
           data: { 
-            page: parameters.page || parameters.route,
-            path: parameters.path || `/${parameters.page || parameters.route}`
+            page: targetPage,
+            path: pageInfo.path,
+            name: pageInfo.name,
+            requiredPermissions: pageInfo.permissions || []
           },
           actions: ["NAVIGATE_TO_PAGE"]
         };
@@ -1053,6 +1134,104 @@ async function executeAction(action: string, parameters: any, message: string, c
             action: "open_reports"
           },
           actions: ["NAVIGATE_TO_PAGE", "OPEN_REPORTS"]
+        };
+
+      case "OPEN_SHOP_FLOOR":
+        // Navigate to shop floor page
+        return {
+          success: true,
+          message: message || "Opening the shop floor interface for real-time operations monitoring",
+          data: { 
+            page: "shop-floor",
+            path: "/shop-floor",
+            action: "open_shop_floor",
+            requiredPermissions: ["shop-floor-view"]
+          },
+          actions: ["NAVIGATE_TO_PAGE", "OPEN_SHOP_FLOOR"]
+        };
+
+      case "OPEN_VISUAL_FACTORY":
+        // Navigate to visual factory page
+        return {
+          success: true,
+          message: message || "Opening the visual factory interface for production visualization",
+          data: { 
+            page: "visual-factory",
+            path: "/visual-factory",
+            action: "open_visual_factory",
+            requiredPermissions: ["visual-factory-view"]
+          },
+          actions: ["NAVIGATE_TO_PAGE", "OPEN_VISUAL_FACTORY"]
+        };
+
+      case "OPEN_CAPACITY_PLANNING":
+        // Navigate to capacity planning page
+        return {
+          success: true,
+          message: message || "Opening capacity planning for resource allocation and scheduling optimization",
+          data: { 
+            page: "capacity-planning",
+            path: "/capacity-planning",
+            action: "open_capacity_planning",
+            requiredPermissions: ["capacity-planning-view"]
+          },
+          actions: ["NAVIGATE_TO_PAGE", "OPEN_CAPACITY_PLANNING"]
+        };
+
+      case "OPEN_OPTIMIZATION_STUDIO":
+        // Navigate to optimization studio page
+        return {
+          success: true,
+          message: message || "Opening optimization studio for algorithm development and testing",
+          data: { 
+            page: "optimization-studio",
+            path: "/optimization-studio",
+            action: "open_optimization_studio",
+            requiredPermissions: ["optimization-studio-view"]
+          },
+          actions: ["NAVIGATE_TO_PAGE", "OPEN_OPTIMIZATION_STUDIO"]
+        };
+
+      case "OPEN_PRODUCTION_PLANNING":
+        // Navigate to production planning page
+        return {
+          success: true,
+          message: message || "Opening production planning for strategic production management",
+          data: { 
+            page: "production-planning",
+            path: "/production-planning",
+            action: "open_production_planning",
+            requiredPermissions: ["production-planning-view"]
+          },
+          actions: ["NAVIGATE_TO_PAGE", "OPEN_PRODUCTION_PLANNING"]
+        };
+
+      case "OPEN_SYSTEMS_INTEGRATION":
+        // Navigate to systems integration page
+        return {
+          success: true,
+          message: message || "Opening systems integration for ERP and external system connections",
+          data: { 
+            page: "systems-integration",
+            path: "/systems-integration",
+            action: "open_systems_integration",
+            requiredPermissions: ["systems-integration-view"]
+          },
+          actions: ["NAVIGATE_TO_PAGE", "OPEN_SYSTEMS_INTEGRATION"]
+        };
+
+      case "OPEN_ROLE_MANAGEMENT":
+        // Navigate to role management page
+        return {
+          success: true,
+          message: message || "Opening role management for user permissions and access control",
+          data: { 
+            page: "role-management",
+            path: "/role-management",
+            action: "open_role_management",
+            requiredPermissions: ["user-management-view"]
+          },
+          actions: ["NAVIGATE_TO_PAGE", "OPEN_ROLE_MANAGEMENT"]
         };
 
       case "SHOW_SCHEDULE_EVALUATION":
