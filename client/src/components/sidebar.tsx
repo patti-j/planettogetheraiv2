@@ -113,15 +113,31 @@ export default function Sidebar() {
     { icon: FileText, label: "Reports", href: "/reports", active: location === "/reports", feature: "reports", action: "view" },
     { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback", feature: "feedback", action: "view" },
 
-  ].filter(item => 
+  ].filter(item => {
     // Always show Getting Started, Production Schedule, Canvas, and Max AI Assistant (when closed) for authenticated users
-    item.href === "#" || 
-    item.href === "/production-schedule" || 
-    item.href === "/canvas" ||
-    item.href === "#max" ||
-    // Show item if user has permission
-    hasPermission(item.feature || "", item.action || "")
-  );
+    const isAlwaysVisible = item.href === "#" || 
+      item.href === "/production-schedule" || 
+      item.href === "/canvas" ||
+      item.href === "#max";
+    
+    // Check permission for other items
+    const hasPermissionForItem = hasPermission(item.feature || "", item.action || "");
+    
+    // Debug logging for Logs menu specifically
+    if (item.label === "Logs") {
+      console.log("Logs menu filter check:", {
+        label: item.label,
+        href: item.href,
+        feature: item.feature,
+        action: item.action,
+        hasPermissionForItem,
+        isAlwaysVisible,
+        shouldShow: isAlwaysVisible || hasPermissionForItem
+      });
+    }
+    
+    return isAlwaysVisible || hasPermissionForItem;
+  });
 
   const getNavigationTooltip = (href: string) => {
     const tooltips: Record<string, string> = {
