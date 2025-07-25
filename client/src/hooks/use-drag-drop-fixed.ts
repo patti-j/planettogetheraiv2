@@ -83,12 +83,13 @@ export function useOperationDrop(
     accept: "operation",
     canDrop: (item) => {
       const operation = item.operation;
-      if (!operation.requiredCapabilities || operation.requiredCapabilities.length === 0) {
+      if (!operation || !operation.requiredCapabilities || operation.requiredCapabilities.length === 0) {
         return true;
       }
       
       const resourceCapabilities = resource.capabilities || [];
-      return operation.requiredCapabilities.every(reqCap => 
+      const operationCapabilities = operation.requiredCapabilities || [];
+      return operationCapabilities.every(reqCap => 
         resourceCapabilities.includes(reqCap)
       );
     },
@@ -219,12 +220,13 @@ export function useTimelineDrop(
 export function useCapabilityValidation() {
   return {
     canAssignOperation: (operation: Operation, resource: Resource) => {
-      if (!operation.requiredCapabilities || operation.requiredCapabilities.length === 0) {
+      if (!operation || !operation.requiredCapabilities || operation.requiredCapabilities.length === 0) {
         return true;
       }
       
       const resourceCapabilities = resource.capabilities || [];
-      return operation.requiredCapabilities.every(reqCap => 
+      const operationCapabilities = operation.requiredCapabilities || [];
+      return operationCapabilities.every(reqCap => 
         resourceCapabilities.includes(reqCap)
       );
     }
