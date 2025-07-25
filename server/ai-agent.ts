@@ -135,7 +135,9 @@ Respond with JSON: {"action": "ACTION_NAME", "parameters": {...}, "message": "re
         response_format: { type: "json_object" }
       });
 
-      aiResponse = JSON.parse(response.choices[0].message.content || "{}");
+      const responseContent = response.choices[0].message.content || "{}";
+      console.log("OpenAI Raw Response:", responseContent);
+      aiResponse = JSON.parse(responseContent);
     }
     
     // Execute the determined action

@@ -550,8 +550,8 @@ export default function VisualFactory() {
                     <DialogTrigger asChild>
                       <Button className={`${aiTheme.gradient} text-white text-sm`} size="sm">
                         <Sparkles className="w-4 h-4 mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">Configure</span>
-                        <span className="sm:hidden">AI</span>
+                        <span className="hidden sm:inline">New Display</span>
+                        <span className="sm:hidden">New Display</span>
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
@@ -622,7 +622,7 @@ export default function VisualFactory() {
                       <Button className="text-xs sm:text-sm">
                         <Monitor className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                         <span className="hidden sm:inline">New Display</span>
-                        <span className="sm:hidden">New</span>
+                        <span className="sm:hidden">New Display</span>
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-2xl">
