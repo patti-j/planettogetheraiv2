@@ -196,6 +196,7 @@ interface DraggableResourceProps {
   globalImageSize: number;
   individualImageSizes: { [key: number]: number };
   onImageSizeChange: (resourceId: number, size: number) => void;
+  isEditMode?: boolean;
 }
 
 interface DraggableAreaBubbleProps {
@@ -221,7 +222,7 @@ interface AreaLayout {
   height: number;
 }
 
-const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo, globalImageSize, individualImageSizes, onImageSizeChange }: DraggableResourceProps) => {
+const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo, globalImageSize, individualImageSizes, onImageSizeChange, isEditMode = false }: DraggableResourceProps) => {
   const [hasDragged, setHasDragged] = useState(false);
   const [clickBlocked, setClickBlocked] = useState(false);
   const [showImageControls, setShowImageControls] = useState(false);
@@ -238,20 +239,22 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo,
       onMove(layout.id, newX, newY);
       // Clear click blocking after position change
       setTimeout(() => setClickBlocked(false), 500);
-    }
+    },
+    !isEditMode // Disable mobile drag if not in edit mode
   );
 
-  // Disable react-dnd for area view to prevent conflicts with mobile drag
+  // React-dnd drag implementation - only enabled in edit mode
   const [{ isDragging }, drag] = useDrag({
     type: "resource",
     item: () => {
+      if (!isEditMode) return null;
       setHasDragged(true);
       return { id: layout.id, x: layout.x, y: layout.y };
     },
     collect: (monitor) => ({
-      isDragging: false, // Disable react-dnd dragging for area view
+      isDragging: monitor.isDragging(),
     }),
-    canDrag: false, // Disable react-dnd dragging
+    canDrag: () => isEditMode,
     end: () => {
       // Reset drag state after a longer delay to prevent click
       setTimeout(() => setHasDragged(false), 300);
@@ -330,10 +333,10 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo,
 
   return (
     <div
-      ref={combinedRef}
-      className={`absolute cursor-move select-none ${
-        isCurrentlyDragging ? 'opacity-50 scale-105' : 'opacity-100 scale-100'
-      }`}
+      ref={isEditMode ? combinedRef : undefined}
+      className={`absolute select-none ${
+        isEditMode ? 'cursor-move' : 'cursor-pointer'
+      } ${isCurrentlyDragging ? 'opacity-50 scale-105' : 'opacity-100 scale-100'}`}
       style={{
         left: currentPosition.x,
         top: currentPosition.y,
@@ -342,7 +345,7 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo,
         transform: `rotate(${layout.rotation}deg)`,
         transition: isCurrentlyDragging ? 'none' : 'all 0.2s ease',
       }}
-      {...mobileDrag.listeners}
+      {...(isEditMode ? mobileDrag.listeners : {})}
     >
       <TooltipProvider>
         <Tooltip open={false}>
@@ -459,19 +462,22 @@ const DraggableResourceCard = ({
   status, 
   photo, 
   onResourceDetails, 
-  currentArea 
+  currentArea,
+  isEditMode 
 }: { 
   resource: Resource; 
   status: ResourceStatus; 
   photo?: string; 
   onResourceDetails: (resource: Resource, status: ResourceStatus) => void; 
   currentArea?: { name: string; id?: number }; 
+  isEditMode?: boolean;
 }) => {
   const [hasDragged, setHasDragged] = useState(false);
   
   const [{ isDragging }, drag] = useDrag({
     type: "resource-card",
     item: () => {
+      if (!isEditMode) return null; // Disable dragging if not in edit mode
       setHasDragged(true);
       return { resourceId: resource.id, currentArea: currentArea?.name || "No Area" };
     },
@@ -482,6 +488,7 @@ const DraggableResourceCard = ({
       // Reset drag state after a longer delay to prevent click
       setTimeout(() => setHasDragged(false), 300);
     },
+    canDrag: () => isEditMode || false, // Only allow dragging in edit mode
   });
 
   const handleClick = (e: React.MouseEvent) => {
@@ -526,10 +533,10 @@ const DraggableResourceCard = ({
 
   return (
     <div
-      ref={drag}
-      className={`relative ${getStatusColor(status.status)} rounded-lg border-2 p-3 cursor-pointer hover:shadow-md transition-all ${
+      ref={isEditMode ? drag : null}
+      className={`relative ${getStatusColor(status.status)} rounded-lg border-2 p-3 hover:shadow-md transition-all ${
         isDragging ? 'opacity-50 scale-95' : 'opacity-100 scale-100'
-      }`}
+      } ${isEditMode ? 'cursor-move' : 'cursor-pointer'}`}
       onClick={handleClick}
     >
       {/* Resource Icon/Photo */}
@@ -583,11 +590,13 @@ const DraggableAreaBubble = ({
   onResourceMove,
   shopFloorLayout,
   setCurrentArea,
-  handleResourcePositionMove
+  handleResourcePositionMove,
+  isEditMode = false
 }: DraggableAreaBubbleProps & { 
   onResourceMove: (resourceId: number, newArea: string) => void;
   shopFloorLayout: ShopFloorLayout[];
   handleResourcePositionMove: (layoutId: string, x: number, y: number) => void;
+  isEditMode?: boolean;
 }) => {
   // Calculate dimensions based on actual resource sizes
   const avgResourceSize = resources.reduce((sum, r) => sum + (individualImageSizes[r.id] || globalImageSize), 0) / Math.max(1, resources.length);
@@ -651,7 +660,8 @@ const DraggableAreaBubble = ({
       
       // Notify parent to trigger re-render
       onMove(areaKey, newX, newY);
-    }
+    },
+    !isEditMode // Disable mobile drag if not in edit mode
   );
 
   // Use mobile drag position if dragging, otherwise use stored position
@@ -660,10 +670,11 @@ const DraggableAreaBubble = ({
   // Fallback to react-dnd for desktop
   const [{ isDragging }, drag] = useDrag({
     type: "area",
-    item: () => ({ areaKey, x: position.x, y: position.y }),
+    item: () => isEditMode ? ({ areaKey, x: position.x, y: position.y }) : null,
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
+    canDrag: () => isEditMode,
     end: (item, monitor) => {
       const offset = monitor.getDifferenceFromInitialOffset();
       if (offset) {
@@ -734,9 +745,10 @@ const DraggableAreaBubble = ({
 
   return (
     <div
-      ref={combinedRef}
-      className={`absolute cursor-move select-none transition-all duration-200 ${
-        isCurrentlyDragging ? 'opacity-50 scale-105' : 'opacity-100 scale-100'
+      ref={isEditMode ? combinedRef : drop}
+      className={`absolute select-none transition-all duration-200 ${
+        isEditMode ? 'cursor-move' : 'cursor-default'
+      } ${isCurrentlyDragging ? 'opacity-50 scale-105' : 'opacity-100 scale-100'
       } ${isOver ? 'ring-2 ring-blue-500' : ''}`}
       style={{
         left: position.x,
@@ -888,6 +900,7 @@ const DraggableAreaBubble = ({
                             globalImageSize={globalImageSize}
                             individualImageSizes={individualImageSizes}
                             onImageSizeChange={onImageSizeChange}
+                            isEditMode={isEditMode}
                           />
                         );
                       })}
@@ -1350,6 +1363,11 @@ export default function ShopFloor() {
   useEffect(() => {
     localStorage.setItem('shopFloor_currentArea', JSON.stringify(currentArea));
   }, [currentArea]);
+
+  // Persist edit mode
+  useEffect(() => {
+    localStorage.setItem('shopFloor_editMode', JSON.stringify(isEditMode));
+  }, [isEditMode]);
   const [areas, setAreas] = useState<{[key: string]: {name: string, resources: number[]}}>({
     all: { name: 'All Resources', resources: [] }
   });
@@ -1359,6 +1377,10 @@ export default function ShopFloor() {
   const [globalImageSize, setGlobalImageSize] = useState(100); // Global image size percentage
   const [individualImageSizes, setIndividualImageSizes] = useState<{ [key: number]: number }>({}); // Individual resource image sizes
   const [selectedPlantId, setSelectedPlantId] = useState<number | 'all'>('all'); // Multi-plant filtering
+  const [isEditMode, setIsEditMode] = useState(() => {
+    const saved = localStorage.getItem('shopFloor_editMode');
+    return saved !== null ? JSON.parse(saved) : false;
+  }); // Edit mode for dragging vs scrolling
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -1964,6 +1986,33 @@ export default function ShopFloor() {
                 </SelectContent>
               </Select>
               
+              {/* Edit Mode Toggle */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={isEditMode ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setIsEditMode(!isEditMode)}
+                    className={`text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3 ${
+                      isEditMode 
+                        ? "bg-blue-600 text-white hover:bg-blue-700" 
+                        : "text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    <Edit className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">
+                      {isEditMode ? "Exit Edit" : "Edit Layout"}
+                    </span>
+                    <span className="sm:hidden">
+                      {isEditMode ? "Exit" : "Edit"}
+                    </span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isEditMode ? "Exit edit mode (enable scrolling)" : "Enter edit mode (enable dragging)"}</p>
+                </TooltipContent>
+              </Tooltip>
+              
               {/* Zoom controls */}
               <div className="flex items-center gap-1 border rounded-lg p-1">
                 <Tooltip>
@@ -2193,6 +2242,7 @@ export default function ShopFloor() {
                       shopFloorLayout={shopFloorLayout}
                       setCurrentArea={setCurrentArea}
                       handleResourcePositionMove={handleResourcePositionMove}
+                      isEditMode={isEditMode}
                     />
                   ))}
                   
@@ -2232,6 +2282,7 @@ export default function ShopFloor() {
                           globalImageSize={globalImageSize}
                           individualImageSizes={individualImageSizes}
                           onImageSizeChange={handleImageSizeChange}
+                          isEditMode={isEditMode}
                         />
                       );
                     });
@@ -2349,6 +2400,7 @@ export default function ShopFloor() {
                             globalImageSize={globalImageSize}
                             individualImageSizes={individualImageSizes}
                             onImageSizeChange={handleImageSizeChange}
+                            isEditMode={isEditMode}
                           />
                         );
                       })}
