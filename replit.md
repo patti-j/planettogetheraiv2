@@ -121,6 +121,24 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 25, 2025)
 
+✓ **Analytics Dashboard Layout Improvements (July 25, 2025)**:
+- Fixed critical layout issues where dashboard cards were getting cut off in analytics page
+- Improved dashboard sizing logic with better width/height bounds (500-800px width, 400-600px height)
+- Changed from flex-wrap layout to responsive CSS grid (1 column mobile, 2 columns xl+ screens)
+- Enhanced dashboard card content area with better overflow handling and scroll functionality
+- Improved widget container styling with gray background and proper padding
+- Added minimum size constraints to prevent dashboards from becoming too small
+- Dashboard cards now display properly without being truncated on all screen sizes
+
+✓ **Reports Loading Fix & Dashboard Persistence Implementation (July 25, 2025)**:
+- Fixed reports page issue where default reports weren't displaying when selected from dropdown
+- Added auto-selection of default or first available report configuration when none selected
+- Implemented comprehensive localStorage persistence for dashboard selections across sessions
+- Analytics page uses 'analytics-visible-dashboards' and 'analytics-dashboard-order' storage keys
+- Production schedule page uses 'production-schedule-visible-dashboards' storage key
+- Users' dashboard visibility preferences now remembered between browser sessions automatically
+- Enhanced user experience by restoring previous dashboard configurations when returning to application
+
 ✓ **Menu Organization Updates (July 25, 2025)**:
 - Successfully moved Shop Floor view from "Planning & Scheduling" section to "Operations" section in main navigation menu
 - Shop Floor now logically grouped with other operational features: Operator Dashboard, Forklift Driver, Maintenance, and Disruption Management

@@ -73,19 +73,19 @@ function DraggableDashboardCard({
       return JSON.parse(saved);
     }
     
-    // Auto-calculate size based on widgets
+    // Auto-calculate size based on widgets with better bounds
     if (dashboard.configuration?.customWidgets?.length > 0) {
       const widgets = dashboard.configuration.customWidgets;
       const maxX = Math.max(...widgets.map((w: any) => w.position.x + w.size.width));
       const maxY = Math.max(...widgets.map((w: any) => w.position.y + w.size.height));
-      const padding = 40;
+      const padding = 60; // More padding for better layout
       return { 
-        width: Math.max(400, maxX + padding), 
-        height: Math.max(300, maxY + padding) 
+        width: Math.max(500, Math.min(800, maxX + padding)), // Better width bounds
+        height: Math.max(400, Math.min(600, maxY + padding)) // Better height bounds
       };
     }
     
-    return { width: 600, height: 400 };
+    return { width: 500, height: 400 }; // Better default size
   });
   
   const [isResizing, setIsResizing] = useState(false);
@@ -162,8 +162,8 @@ function DraggableDashboardCard({
   return (
     <div
       ref={(node) => drag(drop(node))}
-      className={`${isDragging ? 'opacity-50 scale-105' : ''} ${isOver ? 'ring-2 ring-blue-500' : ''} relative transition-all duration-200 resize-smooth ${isResizing ? 'resizing' : ''} group cursor-move`}
-      style={{ width: size.width, height: size.height }}
+      className={`${isDragging ? 'opacity-50 scale-105' : ''} ${isOver ? 'ring-2 ring-blue-500' : ''} relative transition-all duration-200 resize-smooth ${isResizing ? 'resizing' : ''} group cursor-move w-full h-full`}
+      style={{ minWidth: '500px', minHeight: '400px', width: size.width, height: size.height }}
     >
       <Card className="border border-gray-200 shadow-sm h-full">
         <CardHeader>
@@ -196,9 +196,12 @@ function DraggableDashboardCard({
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 p-4">
+        <CardContent className="flex-1 p-3 overflow-hidden">
           {dashboard.configuration?.customWidgets?.length > 0 ? (
-            <div className="relative w-full bg-white overflow-hidden border border-gray-100 rounded-lg" style={{ height: Math.max(200, size.height - 200) }}>
+            <div 
+              className="relative w-full bg-gray-50 overflow-auto border border-gray-100 rounded-lg" 
+              style={{ height: Math.max(300, size.height - 160) }}
+            >
               {dashboard.configuration.customWidgets.map((widget: AnalyticsWidget) => (
                 <AnalyticsWidget
                   key={widget.id}
@@ -535,17 +538,18 @@ export default function Analytics() {
         {/* Live Dashboard Widgets */}
         {visibleDashboardConfigs.length > 0 && (
           <DndProvider backend={HTML5Backend}>
-            <div className="flex flex-wrap gap-6 min-h-[200px]">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 min-h-[200px] auto-rows-min">
               {visibleDashboardConfigs.map((dashboard, index) => (
-                <DraggableDashboardCard
-                  key={dashboard.id}
-                  dashboard={dashboard}
-                  index={index}
-                  onMove={handleDashboardMove}
-                  generateWidgetData={generateWidgetData}
-                  isLivePaused={isLivePaused}
-                  setDashboardManagerOpen={setDashboardManagerOpen}
-                />
+                <div key={dashboard.id} className="w-full min-w-0">
+                  <DraggableDashboardCard
+                    dashboard={dashboard}
+                    index={index}
+                    onMove={handleDashboardMove}
+                    generateWidgetData={generateWidgetData}
+                    isLivePaused={isLivePaused}
+                    setDashboardManagerOpen={setDashboardManagerOpen}
+                  />
+                </div>
               ))}
             </div>
           </DndProvider>
