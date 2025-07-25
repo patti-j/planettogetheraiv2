@@ -136,9 +136,75 @@ export function MaxSidebar() {
   const [inputMessage, setInputMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [currentInsights, setCurrentInsights] = useState<AIInsight[]>([]);
-  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
-  const [selectedVoice, setSelectedVoice] = useState('alloy');
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(() => {
+    const saved = localStorage.getItem('maxVoiceEnabled');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [selectedVoice, setSelectedVoice] = useState(() => {
+    return localStorage.getItem('maxSelectedVoice') || 'alloy';
+  });
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
+  
+  // Save voice settings to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('maxVoiceEnabled', JSON.stringify(isVoiceEnabled));
+    
+    // Also save to user preferences for authenticated users
+    if (user?.id) {
+      const saveVoicePreference = async () => {
+        try {
+          await apiRequest('PATCH', `/api/user-preferences/${user.id}`, {
+            maxVoiceEnabled: isVoiceEnabled
+          });
+        } catch (error) {
+          console.error('Failed to save voice preference:', error);
+        }
+      };
+      saveVoicePreference();
+    }
+  }, [isVoiceEnabled, user?.id]);
+  
+  useEffect(() => {
+    localStorage.setItem('maxSelectedVoice', selectedVoice);
+    
+    // Also save to user preferences for authenticated users
+    if (user?.id) {
+      const saveVoicePreference = async () => {
+        try {
+          await apiRequest('PATCH', `/api/user-preferences/${user.id}`, {
+            maxSelectedVoice: selectedVoice
+          });
+        } catch (error) {
+          console.error('Failed to save voice preference:', error);
+        }
+      };
+      saveVoicePreference();
+    }
+  }, [selectedVoice, user?.id]);
+  
+  // Load user preferences when user logs in
+  useEffect(() => {
+    if (user?.id) {
+      const loadUserVoicePreferences = async () => {
+        try {
+          const response = await apiRequest('GET', `/api/user-preferences/${user.id}`);
+          const preferences = await response.json();
+          
+          if (preferences.maxVoiceEnabled !== undefined) {
+            setIsVoiceEnabled(preferences.maxVoiceEnabled);
+          }
+          if (preferences.maxSelectedVoice) {
+            setSelectedVoice(preferences.maxSelectedVoice);
+          }
+        } catch (error) {
+          console.error('Failed to load voice preferences:', error);
+          // Fall back to localStorage values which are already set
+        }
+      };
+      loadUserVoicePreferences();
+    }
+  }, [user?.id]);
+  
   // Expose canvas control for Max AI
   useEffect(() => {
     (window as any).openCanvas = () => setCanvasVisible(true);
