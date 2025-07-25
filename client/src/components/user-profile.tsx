@@ -184,24 +184,49 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
         </DialogHeader>
 
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="profile" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Profile
-            </TabsTrigger>
-            <TabsTrigger value="preferences" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Preferences
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-2">
-              <Bell className="h-4 w-4" />
-              Notifications
-            </TabsTrigger>
-            <TabsTrigger value="account" className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
-              Account & Billing
-            </TabsTrigger>
-          </TabsList>
+          {/* Mobile: Horizontal scrolling tabs */}
+          <div className="sm:hidden overflow-x-auto">
+            <TabsList className="flex w-max gap-1 p-1">
+              <TabsTrigger value="profile" className="flex items-center gap-1 text-xs flex-shrink-0 px-3 py-2">
+                <User className="h-4 w-4" />
+                Info
+              </TabsTrigger>
+              <TabsTrigger value="preferences" className="flex items-center gap-1 text-xs flex-shrink-0 px-3 py-2">
+                <Settings className="h-4 w-4" />
+                Prefs
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="flex items-center gap-1 text-xs flex-shrink-0 px-3 py-2">
+                <Bell className="h-4 w-4" />
+                Alerts
+              </TabsTrigger>
+              <TabsTrigger value="account" className="flex items-center gap-1 text-xs flex-shrink-0 px-3 py-2">
+                <CreditCard className="h-4 w-4" />
+                Account
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          
+          {/* Desktop: Grid layout */}
+          <div className="hidden sm:block">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="profile" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Profile
+              </TabsTrigger>
+              <TabsTrigger value="preferences" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Preferences
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="flex items-center gap-2">
+                <Bell className="h-4 w-4" />
+                Notifications
+              </TabsTrigger>
+              <TabsTrigger value="account" className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                Account & Billing
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Profile Tab */}
           <TabsContent value="profile" className="space-y-6">
