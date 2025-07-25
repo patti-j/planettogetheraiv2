@@ -77,8 +77,10 @@ interface PresentationMaterial {
 interface PresentationProject {
   id: number;
   name: string; // Changed from title to match database schema
+  title: string; // Keep for backward compatibility
   description?: string;
   presentationType: string; // Changed from type to match database schema
+  type: string; // Keep for backward compatibility
   targetAudience: string;
   objectives: string[];
   duration?: number;
@@ -161,6 +163,16 @@ export default function PresentationSystemPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch presentations
+  const { data: presentations = [], isLoading: presentationsLoading } = useQuery({
+    queryKey: ["/api/presentations"],
+  });
+
+  // Fetch presentation library
+  const { data: libraryTemplates = [], isLoading: libraryTemplatesLoading } = useQuery({
+    queryKey: ["/api/presentation-library", selectedLibraryCategory],
+  });
+
   // Helper function to format dates
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -185,16 +197,6 @@ export default function PresentationSystemPage() {
     const matchesCategory = !selectedLibraryCategory || template.category === selectedLibraryCategory;
     
     return matchesSearch && matchesCategory;
-  });
-
-  // Fetch presentations
-  const { data: presentations = [], isLoading: presentationsLoading } = useQuery({
-    queryKey: ["/api/presentations"],
-  });
-
-  // Fetch presentation library
-  const { data: libraryTemplates = [], isLoading: libraryTemplatesLoading } = useQuery({
-    queryKey: ["/api/presentation-library", selectedLibraryCategory],
   });
 
   // Fetch presentation analytics
