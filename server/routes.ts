@@ -11992,6 +11992,23 @@ Create a natural, conversational voice script that explains this feature to some
     }
   });
 
+  // AI Shift Creation
+  app.post("/api/shifts/ai-create", requireAuth, async (req, res) => {
+    try {
+      const { requirements } = req.body;
+      
+      if (!requirements || typeof requirements !== 'string') {
+        return res.status(400).json({ error: "Requirements field is required" });
+      }
+      
+      const aiResponse = await processShiftAIRequest(requirements);
+      res.json(aiResponse);
+    } catch (error) {
+      console.error("Error processing AI shift request:", error);
+      res.status(500).json({ error: "Failed to process AI shift request" });
+    }
+  });
+
   // Resource Shift Assignments
   app.get("/api/resource-shift-assignments", async (req, res) => {
     try {
