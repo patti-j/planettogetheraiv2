@@ -140,9 +140,10 @@ The application uses a modern full-stack architecture with strong typing through
 
 ✓ **Mobile Menu Scrolling Problem Fix (July 25, 2025)**:
 - Fixed mobile touch scrolling issue where hard press on command menu caused underlying window to scroll instead of menu
-- Added proper touch event handling with touchAction: 'none' on overlay and touchAction: 'pan-y' on menu content
-- Implemented touch event propagation control with stopPropagation() to prevent interference
-- Enhanced mobile menu with proper touch event prevention to ensure menu scrolling works independently
+- Added comprehensive touch event handling with touchAction: 'none' on overlay and touchAction: 'pan-y' on menu content
+- Implemented complete touch event propagation control with stopPropagation() on all touch events (start, move, end)
+- Enhanced mobile menu with robust touch event prevention including hard press gesture handling
+- Menu scrolling now works independently of underlying window scroll even after hard press interactions
 
 ✓ **Optimization Studio Mobile Layout Fix (July 25, 2025)**:
 - Fixed asymmetric margin issue where left margin was wider than right margin on mobile devices

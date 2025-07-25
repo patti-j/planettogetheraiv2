@@ -176,16 +176,32 @@ export default function TopMenu() {
         <div 
           className="fixed inset-0 z-50 bg-black bg-opacity-25"
           style={{ touchAction: 'none' }}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
           onTouchMove={(e) => {
             // Prevent background scrolling when touching outside menu content
             e.preventDefault();
+            e.stopPropagation();
+          }}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
           }}
         >
           <div 
             className="bg-white border-b border-gray-200 shadow-lg min-h-[50vh] max-h-[80vh] overflow-y-auto"
             style={{ touchAction: 'pan-y' }}
-            onTouchStart={(e) => e.stopPropagation()}
-            onTouchMove={(e) => e.stopPropagation()}
+            onTouchStart={(e) => {
+              e.stopPropagation();
+            }}
+            onTouchMove={(e) => {
+              e.stopPropagation();
+            }}
+            onTouchEnd={(e) => {
+              e.stopPropagation();
+            }}
           >
             {/* Menu Header with Logo and Controls */}
             <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50">
@@ -302,7 +318,19 @@ export default function TopMenu() {
           <div 
             className="absolute inset-0 -z-10" 
             onClick={() => setMenuOpen(false)}
-            onTouchEnd={() => setMenuOpen(false)}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onTouchMove={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setMenuOpen(false);
+            }}
             style={{ touchAction: 'none' }}
           />
         </div>
