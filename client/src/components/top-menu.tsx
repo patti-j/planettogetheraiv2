@@ -127,31 +127,17 @@ export default function TopMenu() {
     setMenuOpen(false);
   };
 
+  // All cards are now uniform size - about 30% smaller than previous large cards
   const getCardSize = (priority: string) => {
-    switch (priority) {
-      case "high": return "col-span-2 row-span-2 h-32"; // Large cards
-      case "medium": return "col-span-1 row-span-1 h-20"; // Medium cards  
-      case "low": return "col-span-1 row-span-1 h-16"; // Small cards
-      default: return "col-span-1 row-span-1 h-20";
-    }
+    return "col-span-1 row-span-1 h-20"; // Uniform size for all cards
   };
 
   const getIconSize = (priority: string) => {
-    switch (priority) {
-      case "high": return "w-8 h-8";
-      case "medium": return "w-6 h-6"; 
-      case "low": return "w-5 h-5";
-      default: return "w-6 h-6";
-    }
+    return "w-5 h-5"; // Uniform icon size (about 30% smaller than previous large)
   };
 
   const getTextSize = (priority: string) => {
-    switch (priority) {
-      case "high": return "text-base font-semibold";
-      case "medium": return "text-sm font-medium";
-      case "low": return "text-xs font-medium";
-      default: return "text-sm font-medium";
-    }
+    return "text-sm font-medium"; // Uniform text size
   };
 
   return (
@@ -218,7 +204,7 @@ export default function TopMenu() {
                   <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
                     {group.title}
                   </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
                     {group.features.map((feature, featureIndex) => (
                       <Link 
                         key={featureIndex} 
