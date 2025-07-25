@@ -138,6 +138,12 @@ The application uses a modern full-stack architecture with strong typing through
 - Moved Industry Templates from Training & Support to System Administration category for better logical organization
 - Industry Templates now properly grouped with other system configuration features
 
+✓ **Mobile Menu Scrolling Problem Fix (July 25, 2025)**:
+- Fixed mobile touch scrolling issue where hard press on command menu caused underlying window to scroll instead of menu
+- Added proper touch event handling with touchAction: 'none' on overlay and touchAction: 'pan-y' on menu content
+- Implemented touch event propagation control with stopPropagation() to prevent interference
+- Enhanced mobile menu with proper touch event prevention to ensure menu scrolling works independently
+
 ✓ **Complete Permission System Resolution (July 25, 2025)**:
 - Added missing systems-integration permissions (4 permissions: view, create, edit, delete)
 - Added Visual Factory to Core Production menu section with Eye icon

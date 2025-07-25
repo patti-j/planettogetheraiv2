@@ -60,6 +60,7 @@ export interface User {
   firstName: string;
   lastName: string;
   isActive: boolean;
+  activeRoleId?: number;
   currentRole?: {
     id: number;
     name: string;

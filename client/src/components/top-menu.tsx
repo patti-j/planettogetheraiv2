@@ -106,6 +106,13 @@ export default function TopMenu() {
   const currentRole = user?.currentRole || (user?.activeRoleId && user?.roles ? 
     user.roles.find(role => role.id === user.activeRoleId) : null);
 
+  // Convert to RoleSwitcher-compatible format with required description
+  const currentRoleForSwitcher = currentRole ? {
+    id: currentRole.id,
+    name: currentRole.name,
+    description: currentRole.description || ''
+  } : null;
+
   // Function to toggle Max AI Assistant
   const toggleMaxAI = () => {
     setMaxOpen(!isMaxOpen);
@@ -166,8 +173,20 @@ export default function TopMenu() {
 
       {/* Full Screen Dropdown Menu */}
       {menuOpen && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-25">
-          <div className="bg-white border-b border-gray-200 shadow-lg min-h-[50vh] max-h-[80vh] overflow-y-auto">
+        <div 
+          className="fixed inset-0 z-50 bg-black bg-opacity-25"
+          style={{ touchAction: 'none' }}
+          onTouchMove={(e) => {
+            // Prevent background scrolling when touching outside menu content
+            e.preventDefault();
+          }}
+        >
+          <div 
+            className="bg-white border-b border-gray-200 shadow-lg min-h-[50vh] max-h-[80vh] overflow-y-auto"
+            style={{ touchAction: 'pan-y' }}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+          >
             {/* Menu Header with Logo and Controls */}
             <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50">
               <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
@@ -189,7 +208,7 @@ export default function TopMenu() {
                 <div className="flex items-center space-x-1 sm:space-x-3">
                   <div className="hidden sm:flex items-center space-x-3">
                     <TrainingModeExit />
-                    <RoleSwitcher userId={user?.id || 0} currentRole={currentRole || null} />
+                    <RoleSwitcher userId={user?.id || 0} currentRole={currentRoleForSwitcher} />
                   </div>
                   <div className="flex items-center space-x-2">
                     <Avatar 
@@ -231,7 +250,7 @@ export default function TopMenu() {
             <div className="sm:hidden px-4 py-3 border-b border-gray-200 bg-gray-25">
               <div className="flex items-center justify-center space-x-4">
                 <TrainingModeExit />
-                <RoleSwitcher userId={user?.id || 0} currentRole={currentRole || null} />
+                <RoleSwitcher userId={user?.id || 0} currentRole={currentRoleForSwitcher} />
               </div>
             </div>
 
@@ -283,6 +302,8 @@ export default function TopMenu() {
           <div 
             className="absolute inset-0 -z-10" 
             onClick={() => setMenuOpen(false)}
+            onTouchEnd={() => setMenuOpen(false)}
+            style={{ touchAction: 'none' }}
           />
         </div>
       )}
