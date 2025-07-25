@@ -131,6 +131,8 @@ The application uses a modern full-stack architecture with strong typing through
 - Fixed "No Role" display issue for trainer user by updating getUserWithRoles method to include currentRole property
 - Enhanced TypeScript interface to support currentRole field in UserWithRoles type
 - Verified trainer user has activeRoleId = 9 (Trainer role) in database and now displays correctly
+- Added frontend fallback logic to derive currentRole from activeRoleId and roles array when currentRole field is missing
+- Updated TopMenu component to use derived currentRole for consistent role display across all interface elements
 
 ✓ **Menu Organization Enhancement (July 25, 2025)**:
 - Moved Industry Templates from Training & Support to System Administration category for better logical organization

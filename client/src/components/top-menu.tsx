@@ -1,5 +1,6 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { 
@@ -101,6 +102,10 @@ export default function TopMenu() {
   const { isMaxOpen, setMaxOpen } = useMaxDock();
   const { aiTheme } = useAITheme();
 
+  // Derive current role from user data if not provided
+  const currentRole = user?.currentRole || (user?.activeRoleId && user?.roles ? 
+    user.roles.find(role => role.id === user.activeRoleId) : null);
+
   // Function to toggle Max AI Assistant
   const toggleMaxAI = () => {
     setMaxOpen(!isMaxOpen);
@@ -184,7 +189,7 @@ export default function TopMenu() {
                 <div className="flex items-center space-x-1 sm:space-x-3">
                   <div className="hidden sm:flex items-center space-x-3">
                     <TrainingModeExit />
-                    <RoleSwitcher userId={user?.id || 0} currentRole={user?.currentRole || null} />
+                    <RoleSwitcher userId={user?.id || 0} currentRole={currentRole || null} />
                   </div>
                   <div className="flex items-center space-x-2">
                     <Avatar 
@@ -200,7 +205,7 @@ export default function TopMenu() {
                       onClick={() => setUserProfileOpen(true)}
                     >
                       <p className="text-sm font-medium text-gray-900">{user?.username}</p>
-                      <p className="text-xs text-gray-500">{user?.currentRole?.name || 'No Role'}</p>
+                      <p className="text-xs text-gray-500">{currentRole?.name || 'No Role'}</p>
                     </div>
                     <div className="flex items-center space-x-1">
                       <UserProfileDialog 
@@ -226,7 +231,7 @@ export default function TopMenu() {
             <div className="sm:hidden px-4 py-3 border-b border-gray-200 bg-gray-25">
               <div className="flex items-center justify-center space-x-4">
                 <TrainingModeExit />
-                <RoleSwitcher userId={user?.id || 0} currentRole={user?.currentRole || null} />
+                <RoleSwitcher userId={user?.id || 0} currentRole={currentRole || null} />
               </div>
             </div>
 

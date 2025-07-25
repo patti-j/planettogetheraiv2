@@ -63,7 +63,7 @@ export interface User {
   currentRole?: {
     id: number;
     name: string;
-    description: string;
+    description?: string;
   };
   roles: Array<{
     id: number;
