@@ -274,6 +274,15 @@ export default function GanttChart({
   const isDraggingResourceList = useRef(false);
   const lastMousePos = useRef({ x: 0, y: 0 });
 
+  // Handle operation drag start for unscheduled operations
+  const handleOperationDrag = useCallback((e: React.DragEvent, operation: Operation) => {
+    e.dataTransfer.setData("application/json", JSON.stringify({
+      type: "operation",
+      operation: operation
+    }));
+    e.dataTransfer.effectAllowed = "move";
+  }, []);
+
   // Generate dynamic time scale based on time unit and operations
   const timeScale = useMemo(() => {
     const periods = [];
@@ -397,7 +406,7 @@ export default function GanttChart({
       });
     }
     
-    return { periods, minDate, stepMs };
+    return { periods, minDate, maxDate, stepMs };
   }, [timeUnit, operations]);
 
   // Calculate timeline dimensions
