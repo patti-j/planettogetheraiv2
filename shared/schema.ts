@@ -1926,6 +1926,10 @@ export type UserWithRoles = User & {
   roles: (Role & {
     permissions: Permission[];
   })[];
+  currentRole?: {
+    id: number;
+    name: string;
+  } | null;
 };
 
 // Visual Factory Display Schema

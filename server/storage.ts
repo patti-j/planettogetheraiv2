@@ -2562,9 +2562,20 @@ export class DatabaseStorage implements IStorage {
       }
     });
 
+    // Determine current role
+    let currentRole = null;
+    if (user.activeRoleId) {
+      // Find the active role from the fetched roles
+      const activeRole = Array.from(rolesMap.values()).find(role => role.id === user.activeRoleId);
+      if (activeRole) {
+        currentRole = { id: activeRole.id, name: activeRole.name };
+      }
+    }
+
     return {
       ...user,
       roles: Array.from(rolesMap.values()),
+      currentRole,
     };
   }
 
