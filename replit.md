@@ -121,11 +121,12 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 25, 2025)
 
-✓ **Shop Floor Menu Organization Update (July 25, 2025)**:
+✓ **Menu Organization Updates (July 25, 2025)**:
 - Successfully moved Shop Floor view from "Planning & Scheduling" section to "Operations" section in main navigation menu
 - Shop Floor now logically grouped with other operational features: Operator Dashboard, Forklift Driver, Maintenance, and Disruption Management
-- Enhanced menu organization by placing Shop Floor in the Operations category where it belongs functionally
-- Updated menu structure provides clearer categorization of planning vs operational features
+- Moved Visual Factory from "Planning & Scheduling" section to "Communication & Collaboration" section for better logical organization
+- Visual Factory now properly grouped with Chat, Boards, and Feedback as communication and collaboration tools
+- Enhanced menu organization provides clearer categorization of planning vs operational vs communication features
 
 ✓ **Quality Metrics Display Rounding Fix (July 25, 2025)**:
 - Fixed quality score display in plant manager dashboard showing too many decimal places
