@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Factory, Briefcase, BarChart3, FileText, Bot, Columns3, Menu, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3 } from "lucide-react";
+import { Factory, Briefcase, BarChart3, FileText, Bot, Columns3, Menu, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, FileSearch } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleSwitcher } from "./role-switcher";
 import { TrainingModeExit } from "./training-mode-exit";
@@ -97,7 +97,7 @@ export default function Sidebar() {
     { icon: Server, label: "Systems Management", href: "/systems-management-dashboard", active: location === "/systems-management-dashboard", feature: "systems-management", action: "view" },
     { icon: Building, label: "Plants Management", href: "/plants-management", active: location === "/plants-management", feature: "systems-management", action: "view" },
     { icon: Code, label: "Extension Studio", href: "/extension-studio", active: location === "/extension-studio", feature: "systems-management", action: "view" },
-    { icon: AlertTriangle, label: "Logs", href: "/error-logs", active: location === "/error-logs", feature: "systems-management", action: "view" },
+    { icon: FileSearch, label: "Logs", href: "/error-logs", active: location === "/error-logs", feature: "systems-management", action: "view" },
     { icon: Layers, label: "Canvas", href: "/canvas", active: location === "/canvas", feature: "", action: "" },
     { icon: Shield, label: "Role Management", href: "/role-management", active: location === "/role-management", feature: "user-management", action: "view" },
     { icon: UserCheck, label: "User Role Assignments", href: "/user-role-assignments-page", active: location === "/user-role-assignments-page", feature: "user-management", action: "view" },
