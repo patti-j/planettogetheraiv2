@@ -121,6 +121,12 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 25, 2025)
 
+✓ **Visual Factory Menu Reorganization (July 25, 2025)**:
+- Successfully moved Visual Factory menu item from Core Production section to Communication & Collaboration section
+- Visual Factory now appears alongside Chat and Boards in the Communication & Collaboration group
+- Updated sidebar navigation structure for better logical organization of menu items
+- Enhanced menu organization by grouping Visual Factory with other communication and collaboration tools
+
 ✓ **Hamburger Menu Title Positioning Fix (July 25, 2025)**:
 - Fixed critical desktop UI issue where collapsed hamburger menu overlapped main page titles when Max panel was not showing
 - Added conditional margin logic using `${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12` for proper title positioning

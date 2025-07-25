@@ -99,7 +99,6 @@ export default function Sidebar() {
     { icon: Target, label: "Production Planning", href: "/production-planning", active: location === "/production-planning", feature: "production-planning", action: "view" },
     { icon: Sparkles, label: "Optimization Studio", href: "/optimization-studio", active: location === "/optimization-studio", feature: "optimization-studio", action: "view" },
     { icon: Database, label: "System Integration", href: "/systems-integration", active: location === "/systems-integration", feature: "systems-integration", action: "view" },
-    { icon: Factory, label: "Visual Factory", href: "/visual-factory", active: location === "/visual-factory", feature: "visual-factory", action: "view" },
     { icon: Smartphone, label: "Shop Floor", href: "/shop-floor", active: location === "/shop-floor", feature: "shop-floor", action: "view" },
     { icon: Settings, label: "Operator", href: "/operator-dashboard", active: location === "/operator-dashboard", feature: "operator-dashboard", action: "view" },
     { icon: Truck, label: "Forklift Driver", href: "/forklift-driver", active: location === "/forklift-driver", feature: "forklift-driver", action: "view" },
@@ -118,6 +117,7 @@ export default function Sidebar() {
     { icon: Presentation, label: "Presentation System", href: "/presentation-system", active: location === "/presentation-system" || location === "/presentation-studio", feature: "training", action: "view" },
     { icon: MessageCircle, label: "Chat", href: "/chat", active: location === "/chat", feature: "chat", action: "view" },
     { icon: Columns3, label: "Boards", href: "/boards", active: location === "/boards", feature: "boards", action: "view" },
+    { icon: Factory, label: "Visual Factory", href: "/visual-factory", active: location === "/visual-factory", feature: "visual-factory", action: "view" },
 
     { icon: DollarSign, label: "Sales", href: "/sales", active: location === "/sales", feature: "sales", action: "view" },
     { icon: Headphones, label: "Customer Service", href: "/customer-service", active: location === "/customer-service", feature: "customer-service", action: "view" },
