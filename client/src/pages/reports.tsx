@@ -77,9 +77,20 @@ export default function Reports() {
 
   const selectedConfig = reportConfigs.find((config: any) => config.id === selectedConfigId);
 
+  // Auto-select default or first config if none selected
+  useEffect(() => {
+    if (!selectedConfigId && reportConfigs.length > 0) {
+      const defaultConfig = reportConfigs.find(c => c.isDefault) || reportConfigs[0];
+      setSelectedConfigId(defaultConfig.id);
+    }
+  }, [reportConfigs, selectedConfigId]);
+
   useEffect(() => {
     if (selectedConfig && selectedConfig.configuration) {
       setReports(selectedConfig.configuration.reports || []);
+    } else if (selectedConfig && !selectedConfig.configuration.reports) {
+      // If config exists but has no reports, initialize with empty array
+      setReports([]);
     }
   }, [selectedConfig]);
 

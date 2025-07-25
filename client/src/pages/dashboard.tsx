@@ -64,7 +64,10 @@ export default function Dashboard() {
   const [selectedResourceViewId, setSelectedResourceViewId] = useState<number | null>(null);
   const [rowHeight, setRowHeight] = useState(60);
   const [analyticsManagerOpen, setAnalyticsManagerOpen] = useState(false);
-  const [visibleDashboards, setVisibleDashboards] = useState<Set<number>>(new Set());
+  const [visibleDashboards, setVisibleDashboards] = useState<Set<number>>(() => {
+    const saved = localStorage.getItem('production-schedule-visible-dashboards');
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
   const [isLivePaused, setIsLivePaused] = useState(false);
   const isMobile = useIsMobile();
   const [customWidgets, setCustomWidgets] = useState<AnalyticsWidget[]>([]);
@@ -118,6 +121,11 @@ export default function Dashboard() {
   const visibleDashboardConfigs = dashboards.filter(dashboard => 
     visibleDashboards.has(dashboard.id)
   );
+
+  // Save visible dashboards to localStorage
+  useEffect(() => {
+    localStorage.setItem('production-schedule-visible-dashboards', JSON.stringify(Array.from(visibleDashboards)));
+  }, [visibleDashboards]);
 
   // Update custom widgets when dashboard configuration loads
   useEffect(() => {

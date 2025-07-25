@@ -256,9 +256,15 @@ export default function Analytics() {
   const [isMaximized, setIsMaximized] = useState(false);
   const [dashboardManagerOpen, setDashboardManagerOpen] = useState(false);
   const [aiAnalyticsOpen, setAiAnalyticsOpen] = useState(false);
-  const [visibleDashboards, setVisibleDashboards] = useState<Set<number>>(new Set());
+  const [visibleDashboards, setVisibleDashboards] = useState<Set<number>>(() => {
+    const saved = localStorage.getItem('analytics-visible-dashboards');
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
   const [isLivePaused, setIsLivePaused] = useState(false);
-  const [dashboardOrder, setDashboardOrder] = useState<number[]>([]);
+  const [dashboardOrder, setDashboardOrder] = useState<number[]>(() => {
+    const saved = localStorage.getItem('analytics-dashboard-order');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -319,6 +325,18 @@ export default function Analytics() {
       setDashboardOrder(sortedDashboards.map(d => d.id));
     }
   }, [dashboards, dashboardOrder.length]);
+
+  // Save visible dashboards to localStorage
+  useEffect(() => {
+    localStorage.setItem('analytics-visible-dashboards', JSON.stringify(Array.from(visibleDashboards)));
+  }, [visibleDashboards]);
+
+  // Save dashboard order to localStorage
+  useEffect(() => {
+    if (dashboardOrder.length > 0) {
+      localStorage.setItem('analytics-dashboard-order', JSON.stringify(dashboardOrder));
+    }
+  }, [dashboardOrder]);
 
   // Handle dashboard reordering
   const handleDashboardMove = (dragIndex: number, dropIndex: number) => {
