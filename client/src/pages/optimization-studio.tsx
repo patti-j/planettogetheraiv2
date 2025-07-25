@@ -252,7 +252,7 @@ export default function OptimizationStudio() {
         {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
       </Button>
 
-      <div className={`p-3 sm:p-6 space-y-4 sm:space-y-6 ${isMaximized ? '' : 'md:ml-0 ml-12'}`}>
+      <div className={`p-3 sm:p-6 space-y-4 sm:space-y-6 ${isMaximized ? '' : ''}`}>
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
