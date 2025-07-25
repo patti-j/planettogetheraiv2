@@ -131,9 +131,9 @@ export default function Sidebar() {
     // Check permission for other items
     const hasPermissionForItem = hasPermission(item.feature || "", item.action || "");
     
-    // Debug logging for Logs menu specifically
-    if (item.label === "Logs") {
-      console.log("Logs menu filter check:", {
+    // Debug logging for specific menu items
+    if (item.label === "Logs" || item.label === "Systems Management" || item.label === "Extension Studio") {
+      console.log(`Menu filter check for ${item.label}:`, {
         label: item.label,
         href: item.href,
         feature: item.feature,
@@ -146,6 +146,9 @@ export default function Sidebar() {
     
     return isAlwaysVisible || hasPermissionForItem;
   });
+
+  // Debug: log total filtered items
+  console.log(`Sidebar navigationItems filtered count: ${navigationItems.length}`);
 
   const getNavigationTooltip = (href: string) => {
     const tooltips: Record<string, string> = {
