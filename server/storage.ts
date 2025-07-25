@@ -63,6 +63,9 @@ import {
   productionPlans, productionTargets, resourceAllocations, productionMilestones,
   type ProductionPlan, type ProductionTarget, type ResourceAllocation, type ProductionMilestone,
   type InsertProductionPlan, type InsertProductionTarget, type InsertResourceAllocation, type InsertProductionMilestone,
+  optimizationAlgorithms, algorithmTests, algorithmDeployments, extensionData,
+  type OptimizationAlgorithm, type AlgorithmTest, type AlgorithmDeployment, type ExtensionData,
+  type InsertOptimizationAlgorithm, type InsertAlgorithmTest, type InsertAlgorithmDeployment, type InsertExtensionData,
   // industryTemplates, userIndustryTemplates, templateConfigurations,
   // type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
   // type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration,
@@ -888,6 +891,45 @@ export interface IStorage {
   updateProductionMilestone(id: number, updates: Partial<InsertProductionMilestone>): Promise<ProductionMilestone | undefined>;
   deleteProductionMilestone(id: number): Promise<boolean>;
   markMilestoneComplete(id: number): Promise<ProductionMilestone | undefined>;
+
+  // Optimization Studio - Algorithm Management
+  getOptimizationAlgorithms(category?: string, status?: string): Promise<OptimizationAlgorithm[]>;
+  getOptimizationAlgorithm(id: number): Promise<OptimizationAlgorithm | undefined>;
+  createOptimizationAlgorithm(algorithm: InsertOptimizationAlgorithm): Promise<OptimizationAlgorithm>;
+  updateOptimizationAlgorithm(id: number, updates: Partial<InsertOptimizationAlgorithm>): Promise<OptimizationAlgorithm | undefined>;
+  deleteOptimizationAlgorithm(id: number): Promise<boolean>;
+  approveOptimizationAlgorithm(id: number, approvedBy: number, comments?: string): Promise<OptimizationAlgorithm | undefined>;
+  deployOptimizationAlgorithm(id: number, targetModule: string, environment: string): Promise<OptimizationAlgorithm | undefined>;
+  getStandardAlgorithms(category?: string): Promise<OptimizationAlgorithm[]>;
+  getDerivedAlgorithms(baseId: number): Promise<OptimizationAlgorithm[]>;
+
+  // Optimization Studio - Algorithm Testing
+  getAlgorithmTests(algorithmId?: number, testType?: string): Promise<AlgorithmTest[]>;
+  getAlgorithmTest(id: number): Promise<AlgorithmTest | undefined>;
+  createAlgorithmTest(test: InsertAlgorithmTest): Promise<AlgorithmTest>;
+  updateAlgorithmTest(id: number, updates: Partial<InsertAlgorithmTest>): Promise<AlgorithmTest | undefined>;
+  deleteAlgorithmTest(id: number): Promise<boolean>;
+  runAlgorithmTest(id: number, datasetType: string): Promise<AlgorithmTest | undefined>;
+  getTestResults(algorithmId: number): Promise<AlgorithmTest[]>;
+
+  // Optimization Studio - Algorithm Deployments
+  getAlgorithmDeployments(algorithmId?: number, targetModule?: string): Promise<AlgorithmDeployment[]>;
+  getAlgorithmDeployment(id: number): Promise<AlgorithmDeployment | undefined>;
+  createAlgorithmDeployment(deployment: InsertAlgorithmDeployment): Promise<AlgorithmDeployment>;
+  updateAlgorithmDeployment(id: number, updates: Partial<InsertAlgorithmDeployment>): Promise<AlgorithmDeployment | undefined>;
+  deleteAlgorithmDeployment(id: number): Promise<boolean>;
+  activateDeployment(id: number): Promise<AlgorithmDeployment | undefined>;
+  rollbackDeployment(id: number): Promise<AlgorithmDeployment | undefined>;
+  updateDeploymentHealth(id: number, metrics: Record<string, number>): Promise<AlgorithmDeployment | undefined>;
+
+  // Optimization Studio - Extension Data Management
+  getExtensionData(algorithmId?: number, entityType?: string, entityId?: number): Promise<ExtensionData[]>;
+  getExtensionDataItem(id: number): Promise<ExtensionData | undefined>;
+  createExtensionData(data: InsertExtensionData): Promise<ExtensionData>;
+  updateExtensionData(id: number, updates: Partial<InsertExtensionData>): Promise<ExtensionData | undefined>;
+  deleteExtensionData(id: number): Promise<boolean>;
+  getExtensionDataByEntity(entityType: string, entityId: number): Promise<ExtensionData[]>;
+  getExtensionDataFields(algorithmId: number): Promise<{ entityType: string; fields: string[] }[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -6278,6 +6320,316 @@ export class DatabaseStorage implements IStorage {
       .where(eq(productionMilestones.id, id))
       .returning();
     return updated;
+  }
+
+  // Optimization Studio - Algorithm Management Implementation
+  async getOptimizationAlgorithms(category?: string, status?: string): Promise<OptimizationAlgorithm[]> {
+    let query = db.select().from(optimizationAlgorithms);
+    
+    const conditions = [];
+    if (category) conditions.push(eq(optimizationAlgorithms.category, category));
+    if (status) conditions.push(eq(optimizationAlgorithms.status, status));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(optimizationAlgorithms.createdAt));
+  }
+
+  async getOptimizationAlgorithm(id: number): Promise<OptimizationAlgorithm | undefined> {
+    const [algorithm] = await db.select().from(optimizationAlgorithms)
+      .where(eq(optimizationAlgorithms.id, id));
+    return algorithm;
+  }
+
+  async createOptimizationAlgorithm(algorithm: InsertOptimizationAlgorithm): Promise<OptimizationAlgorithm> {
+    const [newAlgorithm] = await db.insert(optimizationAlgorithms).values(algorithm).returning();
+    return newAlgorithm;
+  }
+
+  async updateOptimizationAlgorithm(id: number, updates: Partial<InsertOptimizationAlgorithm>): Promise<OptimizationAlgorithm | undefined> {
+    const [updated] = await db.update(optimizationAlgorithms)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(optimizationAlgorithms.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteOptimizationAlgorithm(id: number): Promise<boolean> {
+    const result = await db.delete(optimizationAlgorithms).where(eq(optimizationAlgorithms.id, id));
+    return result.rowCount > 0;
+  }
+
+  async approveOptimizationAlgorithm(id: number, approvedBy: number, comments?: string): Promise<OptimizationAlgorithm | undefined> {
+    const [updated] = await db.update(optimizationAlgorithms)
+      .set({
+        status: 'approved',
+        approvals: {
+          approved: true,
+          approvedBy,
+          approvedAt: new Date(),
+          comments: comments || '',
+          requiredPermissions: []
+        },
+        updatedAt: new Date()
+      })
+      .where(eq(optimizationAlgorithms.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deployOptimizationAlgorithm(id: number, targetModule: string, environment: string): Promise<OptimizationAlgorithm | undefined> {
+    // Create deployment record
+    await db.insert(algorithmDeployments).values({
+      algorithmId: id,
+      targetModule,
+      environment,
+      version: '1.0.0',
+      status: 'active',
+      deployedBy: 1 // This should come from the authenticated user
+    });
+
+    // Update algorithm status
+    const [updated] = await db.update(optimizationAlgorithms)
+      .set({
+        status: 'deployed',
+        updatedAt: new Date()
+      })
+      .where(eq(optimizationAlgorithms.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getStandardAlgorithms(category?: string): Promise<OptimizationAlgorithm[]> {
+    let query = db.select().from(optimizationAlgorithms)
+      .where(eq(optimizationAlgorithms.isStandard, true));
+    
+    if (category) {
+      query = query.where(and(
+        eq(optimizationAlgorithms.isStandard, true),
+        eq(optimizationAlgorithms.category, category)
+      ));
+    }
+    
+    return await query.orderBy(asc(optimizationAlgorithms.name));
+  }
+
+  async getDerivedAlgorithms(baseId: number): Promise<OptimizationAlgorithm[]> {
+    return await db.select().from(optimizationAlgorithms)
+      .where(eq(optimizationAlgorithms.baseAlgorithmId, baseId))
+      .orderBy(desc(optimizationAlgorithms.createdAt));
+  }
+
+  // Optimization Studio - Algorithm Testing Implementation
+  async getAlgorithmTests(algorithmId?: number, testType?: string): Promise<AlgorithmTest[]> {
+    let query = db.select().from(algorithmTests);
+    
+    const conditions = [];
+    if (algorithmId) conditions.push(eq(algorithmTests.algorithmId, algorithmId));
+    if (testType) conditions.push(eq(algorithmTests.testType, testType));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(algorithmTests.createdAt));
+  }
+
+  async getAlgorithmTest(id: number): Promise<AlgorithmTest | undefined> {
+    const [test] = await db.select().from(algorithmTests)
+      .where(eq(algorithmTests.id, id));
+    return test;
+  }
+
+  async createAlgorithmTest(test: InsertAlgorithmTest): Promise<AlgorithmTest> {
+    const [newTest] = await db.insert(algorithmTests).values(test).returning();
+    return newTest;
+  }
+
+  async updateAlgorithmTest(id: number, updates: Partial<InsertAlgorithmTest>): Promise<AlgorithmTest | undefined> {
+    const [updated] = await db.update(algorithmTests)
+      .set(updates)
+      .where(eq(algorithmTests.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteAlgorithmTest(id: number): Promise<boolean> {
+    const result = await db.delete(algorithmTests).where(eq(algorithmTests.id, id));
+    return result.rowCount > 0;
+  }
+
+  async runAlgorithmTest(id: number, datasetType: string): Promise<AlgorithmTest | undefined> {
+    // This would integrate with actual algorithm execution
+    const testResults = {
+      executionTime: Math.random() * 1000,
+      accuracy: 0.85 + Math.random() * 0.15,
+      performance: Math.random() * 100,
+      errors: [],
+      datasetType
+    };
+
+    const [updated] = await db.update(algorithmTests)
+      .set({
+        results: testResults
+      })
+      .where(eq(algorithmTests.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getTestResults(algorithmId: number): Promise<AlgorithmTest[]> {
+    return await db.select().from(algorithmTests)
+      .where(and(
+        eq(algorithmTests.algorithmId, algorithmId),
+        isNotNull(algorithmTests.results)
+      ))
+      .orderBy(desc(algorithmTests.createdAt));
+  }
+
+  // Optimization Studio - Algorithm Deployments Implementation
+  async getAlgorithmDeployments(algorithmId?: number, targetModule?: string): Promise<AlgorithmDeployment[]> {
+    let query = db.select().from(algorithmDeployments);
+    
+    const conditions = [];
+    if (algorithmId) conditions.push(eq(algorithmDeployments.algorithmId, algorithmId));
+    if (targetModule) conditions.push(eq(algorithmDeployments.targetModule, targetModule));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(algorithmDeployments.deployedAt));
+  }
+
+  async getAlgorithmDeployment(id: number): Promise<AlgorithmDeployment | undefined> {
+    const [deployment] = await db.select().from(algorithmDeployments)
+      .where(eq(algorithmDeployments.id, id));
+    return deployment;
+  }
+
+  async createAlgorithmDeployment(deployment: InsertAlgorithmDeployment): Promise<AlgorithmDeployment> {
+    const [newDeployment] = await db.insert(algorithmDeployments).values(deployment).returning();
+    return newDeployment;
+  }
+
+  async updateAlgorithmDeployment(id: number, updates: Partial<InsertAlgorithmDeployment>): Promise<AlgorithmDeployment | undefined> {
+    const [updated] = await db.update(algorithmDeployments)
+      .set(updates)
+      .where(eq(algorithmDeployments.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteAlgorithmDeployment(id: number): Promise<boolean> {
+    const result = await db.delete(algorithmDeployments).where(eq(algorithmDeployments.id, id));
+    return result.rowCount > 0;
+  }
+
+  async activateDeployment(id: number): Promise<AlgorithmDeployment | undefined> {
+    const [updated] = await db.update(algorithmDeployments)
+      .set({
+        status: 'active',
+        lastHealthCheck: new Date()
+      })
+      .where(eq(algorithmDeployments.id, id))
+      .returning();
+    return updated;
+  }
+
+  async rollbackDeployment(id: number): Promise<AlgorithmDeployment | undefined> {
+    const [updated] = await db.update(algorithmDeployments)
+      .set({
+        status: 'rolled_back',
+        lastHealthCheck: new Date()
+      })
+      .where(eq(algorithmDeployments.id, id))
+      .returning();
+    return updated;
+  }
+
+  async updateDeploymentHealth(id: number, metrics: Record<string, number>): Promise<AlgorithmDeployment | undefined> {
+    const [updated] = await db.update(algorithmDeployments)
+      .set({
+        metrics,
+        lastHealthCheck: new Date()
+      })
+      .where(eq(algorithmDeployments.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Optimization Studio - Extension Data Management Implementation
+  async getExtensionData(algorithmId?: number, entityType?: string, entityId?: number): Promise<ExtensionData[]> {
+    let query = db.select().from(extensionData);
+    
+    const conditions = [];
+    if (algorithmId) conditions.push(eq(extensionData.algorithmId, algorithmId));
+    if (entityType) conditions.push(eq(extensionData.entityType, entityType));
+    if (entityId) conditions.push(eq(extensionData.entityId, entityId));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(extensionData.createdAt));
+  }
+
+  async getExtensionDataItem(id: number): Promise<ExtensionData | undefined> {
+    const [data] = await db.select().from(extensionData)
+      .where(eq(extensionData.id, id));
+    return data;
+  }
+
+  async createExtensionData(data: InsertExtensionData): Promise<ExtensionData> {
+    const [newData] = await db.insert(extensionData).values(data).returning();
+    return newData;
+  }
+
+  async updateExtensionData(id: number, updates: Partial<InsertExtensionData>): Promise<ExtensionData | undefined> {
+    const [updated] = await db.update(extensionData)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(extensionData.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteExtensionData(id: number): Promise<boolean> {
+    const result = await db.delete(extensionData).where(eq(extensionData.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getExtensionDataByEntity(entityType: string, entityId: number): Promise<ExtensionData[]> {
+    return await db.select().from(extensionData)
+      .where(and(
+        eq(extensionData.entityType, entityType),
+        eq(extensionData.entityId, entityId)
+      ))
+      .orderBy(asc(extensionData.fieldName));
+  }
+
+  async getExtensionDataFields(algorithmId: number): Promise<{ entityType: string; fields: string[] }[]> {
+    const results = await db.select({
+      entityType: extensionData.entityType,
+      fieldName: extensionData.fieldName
+    })
+    .from(extensionData)
+    .where(eq(extensionData.algorithmId, algorithmId))
+    .groupBy(extensionData.entityType, extensionData.fieldName);
+
+    const grouped = results.reduce((acc, curr) => {
+      if (!acc[curr.entityType]) {
+        acc[curr.entityType] = [];
+      }
+      acc[curr.entityType].push(curr.fieldName);
+      return acc;
+    }, {} as Record<string, string[]>);
+
+    return Object.entries(grouped).map(([entityType, fields]) => ({
+      entityType,
+      fields
+    }));
   }
 }
 

@@ -4577,6 +4577,355 @@ Provide the response as a JSON object with the following structure:
     }
   });
 
+  // Optimization Studio API Routes
+  // Optimization Algorithms
+  app.get("/api/optimization/algorithms", async (req, res) => {
+    try {
+      const { category, status } = req.query;
+      const algorithms = await storage.getOptimizationAlgorithms(
+        category as string, 
+        status as string
+      );
+      res.json(algorithms);
+    } catch (error) {
+      console.error("Error fetching optimization algorithms:", error);
+      res.status(500).json({ error: "Failed to fetch optimization algorithms" });
+    }
+  });
+
+  app.get("/api/optimization/algorithms/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid algorithm ID" });
+      }
+
+      const algorithm = await storage.getOptimizationAlgorithm(id);
+      if (!algorithm) {
+        return res.status(404).json({ error: "Algorithm not found" });
+      }
+      res.json(algorithm);
+    } catch (error) {
+      console.error("Error fetching optimization algorithm:", error);
+      res.status(500).json({ error: "Failed to fetch optimization algorithm" });
+    }
+  });
+
+  app.post("/api/optimization/algorithms", requireAuth, async (req, res) => {
+    try {
+      const userId = typeof req.user.id === 'string' ? 1 : req.user.id; // Handle demo users
+      
+      const algorithmData = {
+        ...req.body,
+        createdBy: userId
+      };
+
+      const algorithm = await storage.createOptimizationAlgorithm(algorithmData);
+      res.status(201).json(algorithm);
+    } catch (error) {
+      console.error("Error creating optimization algorithm:", error);
+      res.status(500).json({ error: "Failed to create optimization algorithm" });
+    }
+  });
+
+  app.put("/api/optimization/algorithms/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid algorithm ID" });
+      }
+
+      const algorithm = await storage.updateOptimizationAlgorithm(id, req.body);
+      if (!algorithm) {
+        return res.status(404).json({ error: "Algorithm not found" });
+      }
+      res.json(algorithm);
+    } catch (error) {
+      console.error("Error updating optimization algorithm:", error);
+      res.status(500).json({ error: "Failed to update optimization algorithm" });
+    }
+  });
+
+  app.delete("/api/optimization/algorithms/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid algorithm ID" });
+      }
+
+      const success = await storage.deleteOptimizationAlgorithm(id);
+      if (!success) {
+        return res.status(404).json({ error: "Algorithm not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting optimization algorithm:", error);
+      res.status(500).json({ error: "Failed to delete optimization algorithm" });
+    }
+  });
+
+  app.post("/api/optimization/algorithms/:id/approve", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = typeof req.user.id === 'string' ? 1 : req.user.id; // Handle demo users
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid algorithm ID" });
+      }
+
+      const algorithm = await storage.approveOptimizationAlgorithm(id, userId, req.body.comments);
+      if (!algorithm) {
+        return res.status(404).json({ error: "Algorithm not found" });
+      }
+      res.json(algorithm);
+    } catch (error) {
+      console.error("Error approving optimization algorithm:", error);
+      res.status(500).json({ error: "Failed to approve optimization algorithm" });
+    }
+  });
+
+  app.post("/api/optimization/algorithms/:id/deploy", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid algorithm ID" });
+      }
+
+      const { targetModule, environment } = req.body;
+      const algorithm = await storage.deployOptimizationAlgorithm(id, targetModule, environment);
+      if (!algorithm) {
+        return res.status(404).json({ error: "Algorithm not found" });
+      }
+      res.json(algorithm);
+    } catch (error) {
+      console.error("Error deploying optimization algorithm:", error);
+      res.status(500).json({ error: "Failed to deploy optimization algorithm" });
+    }
+  });
+
+  app.get("/api/optimization/standard-algorithms", async (req, res) => {
+    try {
+      const { category } = req.query;
+      const algorithms = await storage.getStandardAlgorithms(category as string);
+      res.json(algorithms);
+    } catch (error) {
+      console.error("Error fetching standard algorithms:", error);
+      res.status(500).json({ error: "Failed to fetch standard algorithms" });
+    }
+  });
+
+  // Algorithm Tests
+  app.get("/api/optimization/tests", async (req, res) => {
+    try {
+      const { algorithmId, testType } = req.query;
+      const tests = await storage.getAlgorithmTests(
+        algorithmId ? parseInt(algorithmId as string) : undefined,
+        testType as string
+      );
+      res.json(tests);
+    } catch (error) {
+      console.error("Error fetching algorithm tests:", error);
+      res.status(500).json({ error: "Failed to fetch algorithm tests" });
+    }
+  });
+
+  app.post("/api/optimization/tests", requireAuth, async (req, res) => {
+    try {
+      const userId = typeof req.user.id === 'string' ? 1 : req.user.id; // Handle demo users
+      
+      const testData = {
+        ...req.body,
+        createdBy: userId
+      };
+
+      const test = await storage.createAlgorithmTest(testData);
+      res.status(201).json(test);
+    } catch (error) {
+      console.error("Error creating algorithm test:", error);
+      res.status(500).json({ error: "Failed to create algorithm test" });
+    }
+  });
+
+  app.post("/api/optimization/tests/:id/run", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid test ID" });
+      }
+
+      const { datasetType } = req.body;
+      const test = await storage.runAlgorithmTest(id, datasetType);
+      if (!test) {
+        return res.status(404).json({ error: "Test not found" });
+      }
+      res.json(test);
+    } catch (error) {
+      console.error("Error running algorithm test:", error);
+      res.status(500).json({ error: "Failed to run algorithm test" });
+    }
+  });
+
+  // Algorithm Deployments
+  app.get("/api/optimization/deployments", async (req, res) => {
+    try {
+      const { algorithmId, targetModule } = req.query;
+      const deployments = await storage.getAlgorithmDeployments(
+        algorithmId ? parseInt(algorithmId as string) : undefined,
+        targetModule as string
+      );
+      res.json(deployments);
+    } catch (error) {
+      console.error("Error fetching algorithm deployments:", error);
+      res.status(500).json({ error: "Failed to fetch algorithm deployments" });
+    }
+  });
+
+  app.post("/api/optimization/deployments", requireAuth, async (req, res) => {
+    try {
+      const userId = typeof req.user.id === 'string' ? 1 : req.user.id; // Handle demo users
+      
+      const deploymentData = {
+        ...req.body,
+        deployedBy: userId
+      };
+
+      const deployment = await storage.createAlgorithmDeployment(deploymentData);
+      res.status(201).json(deployment);
+    } catch (error) {
+      console.error("Error creating algorithm deployment:", error);
+      res.status(500).json({ error: "Failed to create algorithm deployment" });
+    }
+  });
+
+  app.post("/api/optimization/deployments/:id/activate", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid deployment ID" });
+      }
+
+      const deployment = await storage.activateDeployment(id);
+      if (!deployment) {
+        return res.status(404).json({ error: "Deployment not found" });
+      }
+      res.json(deployment);
+    } catch (error) {
+      console.error("Error activating deployment:", error);
+      res.status(500).json({ error: "Failed to activate deployment" });
+    }
+  });
+
+  app.post("/api/optimization/deployments/:id/rollback", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid deployment ID" });
+      }
+
+      const deployment = await storage.rollbackDeployment(id);
+      if (!deployment) {
+        return res.status(404).json({ error: "Deployment not found" });
+      }
+      res.json(deployment);
+    } catch (error) {
+      console.error("Error rolling back deployment:", error);
+      res.status(500).json({ error: "Failed to rollback deployment" });
+    }
+  });
+
+  // Extension Data
+  app.get("/api/optimization/extension-data", async (req, res) => {
+    try {
+      const { algorithmId, entityType, entityId } = req.query;
+      const data = await storage.getExtensionData(
+        algorithmId ? parseInt(algorithmId as string) : undefined,
+        entityType as string,
+        entityId ? parseInt(entityId as string) : undefined
+      );
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching extension data:", error);
+      res.status(500).json({ error: "Failed to fetch extension data" });
+    }
+  });
+
+  app.post("/api/optimization/extension-data", requireAuth, async (req, res) => {
+    try {
+      const data = await storage.createExtensionData(req.body);
+      res.status(201).json(data);
+    } catch (error) {
+      console.error("Error creating extension data:", error);
+      res.status(500).json({ error: "Failed to create extension data" });
+    }
+  });
+
+  app.put("/api/optimization/extension-data/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid extension data ID" });
+      }
+
+      const data = await storage.updateExtensionData(id, req.body);
+      if (!data) {
+        return res.status(404).json({ error: "Extension data not found" });
+      }
+      res.json(data);
+    } catch (error) {
+      console.error("Error updating extension data:", error);
+      res.status(500).json({ error: "Failed to update extension data" });
+    }
+  });
+
+  app.delete("/api/optimization/extension-data/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid extension data ID" });
+      }
+
+      const success = await storage.deleteExtensionData(id);
+      if (!success) {
+        return res.status(404).json({ error: "Extension data not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting extension data:", error);
+      res.status(500).json({ error: "Failed to delete extension data" });
+    }
+  });
+
+  app.get("/api/optimization/extension-data/entity/:entityType/:entityId", async (req, res) => {
+    try {
+      const { entityType, entityId } = req.params;
+      const entityIdNum = parseInt(entityId);
+      if (isNaN(entityIdNum)) {
+        return res.status(400).json({ error: "Invalid entity ID" });
+      }
+
+      const data = await storage.getExtensionDataByEntity(entityType, entityIdNum);
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching extension data by entity:", error);
+      res.status(500).json({ error: "Failed to fetch extension data by entity" });
+    }
+  });
+
+  app.get("/api/optimization/extension-fields/:algorithmId", async (req, res) => {
+    try {
+      const algorithmId = parseInt(req.params.algorithmId);
+      if (isNaN(algorithmId)) {
+        return res.status(400).json({ error: "Invalid algorithm ID" });
+      }
+
+      const fields = await storage.getExtensionDataFields(algorithmId);
+      res.json(fields);
+    } catch (error) {
+      console.error("Error fetching extension fields:", error);
+      res.status(500).json({ error: "Failed to fetch extension fields" });
+    }
+  });
+
   // Visual Factory routes
   app.get('/api/visual-factory/displays', async (req, res) => {
     try {

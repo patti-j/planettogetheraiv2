@@ -57,6 +57,7 @@ import ErrorLogsPage from "@/pages/error-logs";
 import PresentationPage from "@/pages/presentation";
 import PresentationSystemPage from "@/pages/presentation-system";
 import ProductionPlanningPage from "@/pages/production-planning";
+import OptimizationStudioPage from "@/pages/optimization-studio";
 import MarketingLandingPage from "@/pages/marketing-landing";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
@@ -333,6 +334,11 @@ function Router() {
           <Route path="/production-planning">
             <ProtectedRoute feature="production-planning" action="view">
               <ProductionPlanningPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/optimization-studio">
+            <ProtectedRoute feature="optimization-studio" action="view">
+              <OptimizationStudioPage />
             </ProtectedRoute>
           </Route>
           <Route path="/presentation-system">

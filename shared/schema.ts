@@ -2764,6 +2764,168 @@ export const extensionReviews = pgTable("extension_reviews", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Optimization Studio Tables
+export const optimizationAlgorithms = pgTable("optimization_algorithms", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  displayName: text("display_name").notNull(),
+  description: text("description"),
+  category: text("category").notNull(), // production_scheduling, inventory_optimization, capacity_planning, resource_allocation
+  type: text("type").notNull(), // standard, custom, derived
+  baseAlgorithmId: integer("base_algorithm_id").references(() => optimizationAlgorithms.id), // For derived algorithms
+  version: text("version").notNull().default("1.0.0"),
+  status: text("status").notNull().default("draft"), // draft, testing, approved, deployed, deprecated
+  isStandard: boolean("is_standard").default(false), // System-provided standard algorithms
+  configuration: jsonb("configuration").$type<{
+    parameters: Record<string, {
+      type: string;
+      default: any;
+      min?: number;
+      max?: number;
+      options?: string[];
+      description: string;
+      required: boolean;
+    }>;
+    constraints: Array<{
+      name: string;
+      type: string;
+      value: any;
+      description: string;
+    }>;
+    objectives: Array<{
+      name: string;
+      type: string; // minimize, maximize
+      weight: number;
+      description: string;
+    }>;
+    dataSources: string[]; // Which data types the algorithm needs
+    extensionData: Array<{
+      entityType: string; // jobs, resources, operations, custom
+      fields: Array<{
+        name: string;
+        type: string;
+        required: boolean;
+        description: string;
+      }>;
+    }>;
+  }>().default({}),
+  algorithmCode: text("algorithm_code"), // AI-generated or custom algorithm logic
+  uiComponents: jsonb("ui_components").$type<{
+    settingsForm: Array<{
+      field: string;
+      type: string;
+      label: string;
+      placeholder?: string;
+      options?: string[];
+      validation?: Record<string, any>;
+    }>;
+    resultsDisplay: Array<{
+      type: string; // chart, table, metric, summary
+      config: Record<string, any>;
+    }>;
+  }>().default({}),
+  performance: jsonb("performance").$type<{
+    averageExecutionTime: number; // milliseconds
+    memoryUsage: number; // MB
+    successRate: number; // percentage
+    lastBenchmark: string;
+    testResults: Array<{
+      testId: string;
+      dataset: string;
+      score: number;
+      metrics: Record<string, number>;
+      executedAt: string;
+    }>;
+  }>().default({}),
+  approvals: jsonb("approvals").$type<{
+    approved: boolean;
+    approvedBy: number | null;
+    approvedAt: string | null;
+    comments: string;
+    requiredPermissions: string[];
+  }>().default({ approved: false, approvedBy: null, approvedAt: null, comments: "", requiredPermissions: [] }),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  updatedBy: integer("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const algorithmTests = pgTable("algorithm_tests", {
+  id: serial("id").primaryKey(),
+  algorithmId: integer("algorithm_id").references(() => optimizationAlgorithms.id).notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  testType: text("test_type").notNull(), // performance, accuracy, stress, comparison
+  configuration: jsonb("configuration").$type<{
+    dataset: {
+      type: string; // sample, production, synthetic
+      size: number;
+      parameters: Record<string, any>;
+    };
+    metrics: string[]; // Which metrics to track
+    constraints: Record<string, any>;
+    duration: number; // Test duration in minutes
+  }>().notNull(),
+  results: jsonb("results").$type<{
+    status: string; // running, completed, failed
+    startTime: string;
+    endTime: string;
+    executionTime: number;
+    memoryUsed: number;
+    score: number;
+    metrics: Record<string, number>;
+    errors: string[];
+    output: any;
+    comparison?: {
+      baselineAlgorithm: number;
+      improvement: number;
+      significantDifference: boolean;
+    };
+  }>(),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const algorithmDeployments = pgTable("algorithm_deployments", {
+  id: serial("id").primaryKey(),
+  algorithmId: integer("algorithm_id").references(() => optimizationAlgorithms.id).notNull(),
+  targetModule: text("target_module").notNull(), // production_scheduling, inventory_optimization, capacity_planning
+  environment: text("environment").notNull(), // development, staging, production
+  version: text("version").notNull(),
+  status: text("status").notNull().default("pending"), // pending, active, rollback, failed
+  configuration: jsonb("configuration").$type<Record<string, any>>().default({}),
+  rollbackConfig: jsonb("rollback_config").$type<{
+    previousAlgorithmId: number | null;
+    rollbackTriggers: Array<{
+      metric: string;
+      threshold: number;
+      operator: string;
+    }>;
+  }>(),
+  deployedBy: integer("deployed_by").references(() => users.id).notNull(),
+  deployedAt: timestamp("deployed_at").defaultNow(),
+  lastHealthCheck: timestamp("last_health_check"),
+  metrics: jsonb("metrics").$type<Record<string, number>>().default({}),
+});
+
+export const extensionData = pgTable("extension_data", {
+  id: serial("id").primaryKey(),
+  algorithmId: integer("algorithm_id").references(() => optimizationAlgorithms.id).notNull(),
+  entityType: text("entity_type").notNull(), // jobs, resources, operations, custom
+  entityId: integer("entity_id"), // ID of the related entity (can be null for custom entities)
+  fieldName: text("field_name").notNull(),
+  fieldType: text("field_type").notNull(), // string, number, boolean, date, json
+  value: jsonb("value").notNull(),
+  metadata: jsonb("metadata").$type<{
+    description?: string;
+    source?: string;
+    lastUpdated?: string;
+    validationRules?: Record<string, any>;
+  }>().default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Extension Studio Insert Schemas
 export const insertExtensionSchema = createInsertSchema(extensions).omit({
   id: true,
@@ -2771,6 +2933,30 @@ export const insertExtensionSchema = createInsertSchema(extensions).omit({
   rating: true,
   lastUpdated: true,
   createdAt: true,
+});
+
+// Optimization Studio Insert Schemas
+export const insertOptimizationAlgorithmSchema = createInsertSchema(optimizationAlgorithms).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAlgorithmTestSchema = createInsertSchema(algorithmTests).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAlgorithmDeploymentSchema = createInsertSchema(algorithmDeployments).omit({
+  id: true,
+  deployedAt: true,
+  lastHealthCheck: true,
+});
+
+export const insertExtensionDataSchema = createInsertSchema(extensionData).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertExtensionFileSchema = createInsertSchema(extensionFiles).omit({
@@ -2812,6 +2998,19 @@ export type InsertExtensionMarketplace = z.infer<typeof insertExtensionMarketpla
 
 export type ExtensionReview = typeof extensionReviews.$inferSelect;
 export type InsertExtensionReview = z.infer<typeof insertExtensionReviewSchema>;
+
+// Optimization Studio Types
+export type OptimizationAlgorithm = typeof optimizationAlgorithms.$inferSelect;
+export type InsertOptimizationAlgorithm = z.infer<typeof insertOptimizationAlgorithmSchema>;
+
+export type AlgorithmTest = typeof algorithmTests.$inferSelect;
+export type InsertAlgorithmTest = z.infer<typeof insertAlgorithmTestSchema>;
+
+export type AlgorithmDeployment = typeof algorithmDeployments.$inferSelect;
+export type InsertAlgorithmDeployment = z.infer<typeof insertAlgorithmDeploymentSchema>;
+
+export type ExtensionData = typeof extensionData.$inferSelect;
+export type InsertExtensionData = z.infer<typeof insertExtensionDataSchema>;
 
 // Error Logging and Monitoring Tables
 export const errorLogs = pgTable("error_logs", {
