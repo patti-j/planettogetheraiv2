@@ -13,7 +13,7 @@ import { SplitPaneLayout } from "@/components/split-pane-layout";
 import { MaxSidebar } from "@/components/max-sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { ErrorBoundary } from "@/components/error-boundary";
-import Sidebar from "@/components/sidebar";
+import TopMenu from "@/components/top-menu";
 import OnboardingWizard from "@/components/onboarding-wizard";
 import Login from "@/pages/Login";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -160,8 +160,8 @@ function Router() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
+    <div className="h-screen bg-gray-50 pt-16"> {/* Add top padding for fixed menu */}
+      <TopMenu />
       <SplitPaneLayout maxPanel={<MaxSidebar />}>
         <Switch>
           <Route path="/marketing" component={MarketingLandingPage} />
