@@ -191,6 +191,7 @@ export default function TopMenu() {
                       <p className="text-sm font-medium text-gray-900">{user?.username}</p>
                       <p className="text-xs text-gray-500">{user?.currentRole?.name}</p>
                     </div>
+                    <UserProfileDialog />
                   </div>
                 </div>
               </div>
