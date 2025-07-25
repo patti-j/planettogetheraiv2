@@ -161,29 +161,31 @@ export default function TopMenu() {
         <div className="fixed inset-0 z-50 bg-black bg-opacity-25">
           <div className="bg-white border-b border-gray-200 shadow-lg min-h-[50vh] max-h-[80vh] overflow-y-auto">
             {/* Menu Header with Logo and Controls */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <div className="flex items-center space-x-3">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
                 {/* Close Button - moved to left side */}
                 <Button 
                   variant="ghost" 
                   size="sm"
                   onClick={() => setMenuOpen(false)}
-                  className="p-2 hover:bg-gray-200"
+                  className="p-2 hover:bg-gray-200 flex-shrink-0"
                 >
                   <ChevronDown className="w-5 h-5" />
                 </Button>
-                <Factory className="w-8 h-8 text-blue-600" />
-                <h1 className="text-xl font-bold text-gray-900">PlanetTogether</h1>
+                <Factory className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 flex-shrink-0" />
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">PlanetTogether</h1>
               </div>
               
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
                 {/* User Profile Section */}
-                <div className="flex items-center space-x-3">
-                  <TrainingModeExit />
-                  <RoleSwitcher userId={user?.id || 0} currentRole={user?.currentRole} />
+                <div className="flex items-center space-x-1 sm:space-x-3">
+                  <div className="hidden sm:flex items-center space-x-3">
+                    <TrainingModeExit />
+                    <RoleSwitcher userId={user?.id || 0} currentRole={user?.currentRole} />
+                  </div>
                   <div className="flex items-center space-x-2">
-                    <Avatar className="w-8 h-8">
-                      <AvatarFallback className="bg-blue-500 text-white text-sm">
+                    <Avatar className="w-6 h-6 sm:w-8 sm:h-8">
+                      <AvatarFallback className="bg-blue-500 text-white text-xs sm:text-sm">
                         {user?.username?.charAt(0)?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
@@ -194,6 +196,14 @@ export default function TopMenu() {
                     <UserProfileDialog />
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Mobile-only user controls */}
+            <div className="sm:hidden px-4 py-3 border-b border-gray-200 bg-gray-25">
+              <div className="flex items-center justify-center space-x-4">
+                <TrainingModeExit />
+                <RoleSwitcher userId={user?.id || 0} currentRole={user?.currentRole} />
               </div>
             </div>
 
