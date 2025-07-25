@@ -1815,15 +1815,35 @@ export default function ShopFloor() {
     }
   }, [resources]); // Update when resources change
 
-  // Load areas from localStorage
+  // Load areas from localStorage and initialize with default areas if empty
   useEffect(() => {
     const savedAreas = localStorage.getItem('shopFloorAreas');
     if (savedAreas) {
       try {
-        setAreas(JSON.parse(savedAreas));
+        const parsedAreas = JSON.parse(savedAreas);
+        // Ensure we always have an "all" option
+        const areasWithAll = {
+          all: { name: 'All Areas', x: 0, y: 0, width: 100, height: 100, resources: [] },
+          ...parsedAreas
+        };
+        setAreas(areasWithAll);
       } catch (error) {
         console.error('Failed to load shop floor areas:', error);
+        // Set default areas on error
+        setAreas({
+          all: { name: 'All Areas', x: 0, y: 0, width: 100, height: 100, resources: [] }
+        });
       }
+    } else {
+      // Initialize with default areas if no saved areas exist
+      const defaultAreas = {
+        all: { name: 'All Areas', x: 0, y: 0, width: 100, height: 100, resources: [] },
+        'production-line-1': { name: 'Production Line 1', x: 50, y: 50, width: 200, height: 150, resources: [] },
+        'assembly-area': { name: 'Assembly Area', x: 300, y: 50, width: 200, height: 150, resources: [] },
+        'quality-control': { name: 'Quality Control', x: 50, y: 250, width: 200, height: 150, resources: [] }
+      };
+      setAreas(defaultAreas);
+      localStorage.setItem('shopFloorAreas', JSON.stringify(defaultAreas));
     }
   }, []);
 
@@ -1989,7 +2009,8 @@ export default function ShopFloor() {
                   <SelectValue placeholder="Area" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(areas).map(([key, area]) => (
+                  <SelectItem value="all">All Areas</SelectItem>
+                  {Object.entries(areas).filter(([key]) => key !== 'all').map(([key, area]) => (
                     <SelectItem key={key} value={key}>
                       {area.name}
                     </SelectItem>
