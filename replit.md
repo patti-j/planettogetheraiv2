@@ -121,6 +121,17 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 25, 2025)
 
+✓ **Menu Organization Enhancement (July 25, 2025)**:
+- Moved Industry Templates from Training & Support to System Administration category for better logical organization
+- Industry Templates now properly grouped with other system configuration features
+
+✓ **Complete Permission System Resolution (July 25, 2025)**:
+- Added missing systems-integration permissions (4 permissions: view, create, edit, delete)
+- Added Visual Factory to Core Production menu section with Eye icon
+- Verified Trainer role has all 88 required permissions including optimization-studio, production-planning, systems-integration, user-management, and visual-factory
+- Fixed TypeScript interface issues with currentRole property handling
+- All permission checks now return true for trainer role with complete feature access
+
 ✓ **Permission System Authentication Fix & Logout Button Implementation (July 25, 2025)**:
 - Successfully resolved critical frontend permission checking issues that were preventing role management access
 - Enhanced permission debugging system with comprehensive user object inspection and role structure validation

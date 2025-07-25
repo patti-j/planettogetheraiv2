@@ -68,7 +68,8 @@ const featureGroups = [
       { icon: Server, label: "Systems Management", href: "/systems-management-dashboard", feature: "systems-management", action: "view", color: "bg-gray-600" },
       { icon: Database, label: "System Integration", href: "/systems-integration", feature: "systems-integration", action: "view", color: "bg-stone-500" },
       { icon: Shield, label: "Role Management", href: "/role-management", feature: "user-management", action: "view", color: "bg-amber-600" },
-      { icon: Code, label: "Extension Studio", href: "/extension-studio", feature: "systems-management", action: "view", color: "bg-violet-500" }
+      { icon: Code, label: "Extension Studio", href: "/extension-studio", feature: "systems-management", action: "view", color: "bg-violet-500" },
+      { icon: Building, label: "Industry Templates", href: "/industry-templates", feature: "industry-templates", action: "view", color: "bg-cyan-600" }
     ]
   },
   {
@@ -86,8 +87,7 @@ const featureGroups = [
     priority: "low", 
     features: [
       { icon: BookOpen, label: "Getting Started", href: "/help", feature: "getting-started", action: "view", color: "bg-lime-500" },
-      { icon: GraduationCap, label: "Training", href: "/training", feature: "training", action: "view", color: "bg-blue-500" },
-      { icon: Building, label: "Industry Templates", href: "/industry-templates", feature: "industry-templates", action: "view", color: "bg-cyan-600" }
+      { icon: GraduationCap, label: "Training", href: "/training", feature: "training", action: "view", color: "bg-blue-500" }
     ]
   }
 ];
