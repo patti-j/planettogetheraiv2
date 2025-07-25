@@ -30,7 +30,10 @@ import {
   Search,
   Filter,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Users,
+  Package,
+  FileText
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

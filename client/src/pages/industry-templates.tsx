@@ -147,10 +147,175 @@ export default function IndustryTemplates() {
 
             </div>
 
-            {/* Content goes here - simplified for now */}
-            <div className="text-center py-12">
-              <p className="text-gray-500">Industry templates content will be displayed here.</p>
+            {/* Active Template Status */}
+            {activeTemplate && (
+              <Card className="border-green-200 bg-green-50">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Check className="w-5 h-5 text-green-600" />
+                    <div>
+                      <p className="font-medium text-green-800">Current Template: {activeTemplate.name}</p>
+                      <p className="text-sm text-green-600">{activeTemplate.description}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Category Filter */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-full sm:w-64">
+                  <SelectValue placeholder="Select industry category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.value} value={category.value}>
+                      {category.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className={aiTheme.gradient}>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Generate Custom Template
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Generate Custom Industry Template</DialogTitle>
+                    <DialogDescription>
+                      Create a specialized template for your unique industry requirements
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="industry">Industry Type</Label>
+                      <Input
+                        id="industry"
+                        placeholder="e.g., Precision Machining, Medical Devices"
+                        value={customIndustry}
+                        onChange={(e) => setCustomIndustry(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sourceUrl">Reference URL (Optional)</Label>
+                      <Input
+                        id="sourceUrl"
+                        placeholder="Industry website or documentation"
+                        value={sourceUrl}
+                        onChange={(e) => setSourceUrl(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sourcePrompt">Additional Requirements (Optional)</Label>
+                      <Textarea
+                        id="sourcePrompt"
+                        placeholder="Specific processes, regulations, or requirements..."
+                        value={sourcePrompt}
+                        onChange={(e) => setSourcePrompt(e.target.value)}
+                        rows={3}
+                      />
+                    </div>
+                    <Button 
+                      onClick={handleGenerateTemplate}
+                      disabled={generateTemplateMutation.isPending}
+                      className="w-full"
+                    >
+                      {generateTemplateMutation.isPending ? "Generating..." : "Generate Template"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
+
+            {/* Templates Grid */}
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[...Array(6)].map((_, i) => (
+                  <Card key={i} className="animate-pulse">
+                    <CardContent className="p-4">
+                      <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : templates.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {templates.map((template: any) => (
+                  <Card key={template.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Factory className="w-5 h-5 text-blue-600" />
+                          <CardTitle className="text-lg">{template.name}</CardTitle>
+                        </div>
+                        <Badge variant={template.category === 'custom' ? 'secondary' : 'default'}>
+                          {template.category}
+                        </Badge>
+                      </div>
+                      <CardDescription>{template.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="text-sm text-gray-600">
+                          <strong>Includes:</strong>
+                          <ul className="mt-1 list-disc list-inside text-xs space-y-1">
+                            {template.features?.slice(0, 3).map((feature: string, index: number) => (
+                              <li key={index}>{feature}</li>
+                            ))}
+                            {template.features?.length > 3 && (
+                              <li className="text-gray-500">+{template.features.length - 3} more features</li>
+                            )}
+                          </ul>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => setSelectedTemplate(template)}
+                            variant="outline"
+                            className="flex-1"
+                          >
+                            View Details
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleApplyTemplate(template)}
+                            disabled={applyTemplateMutation.isPending || activeTemplate?.id === template.id}
+                            className="flex-1"
+                          >
+                            {activeTemplate?.id === template.id ? "Active" : "Apply"}
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Templates Found</h3>
+                  <p className="text-gray-600 mb-4">
+                    No templates available for the selected category. Try a different category or generate a custom template.
+                  </p>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className={aiTheme.gradient}>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Generate Custom Template
+                      </Button>
+                    </DialogTrigger>
+                  </Dialog>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
@@ -173,10 +338,227 @@ export default function IndustryTemplates() {
 
         </div>
 
-        {/* Content goes here - simplified for now */}
-        <div className="text-center py-12">
-          <p className="text-gray-500">Industry templates content will be displayed here.</p>
+        {/* Active Template Status */}
+        {activeTemplate && (
+          <Card className="border-green-200 bg-green-50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <Check className="w-5 h-5 text-green-600" />
+                <div>
+                  <p className="font-medium text-green-800">Current Template: {activeTemplate.name}</p>
+                  <p className="text-sm text-green-600">{activeTemplate.description}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Category Filter */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-full sm:w-64">
+              <SelectValue placeholder="Select industry category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((category) => (
+                <SelectItem key={category.value} value={category.value}>
+                  {category.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className={aiTheme.gradient}>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Generate Custom Template
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Generate Custom Industry Template</DialogTitle>
+                <DialogDescription>
+                  Create a specialized template for your unique industry requirements
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="industry">Industry Type</Label>
+                  <Input
+                    id="industry"
+                    placeholder="e.g., Precision Machining, Medical Devices"
+                    value={customIndustry}
+                    onChange={(e) => setCustomIndustry(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sourceUrl">Reference URL (Optional)</Label>
+                  <Input
+                    id="sourceUrl"
+                    placeholder="Industry website or documentation"
+                    value={sourceUrl}
+                    onChange={(e) => setSourceUrl(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sourcePrompt">Additional Requirements (Optional)</Label>
+                  <Textarea
+                    id="sourcePrompt"
+                    placeholder="Specific processes, regulations, or requirements..."
+                    value={sourcePrompt}
+                    onChange={(e) => setSourcePrompt(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+                <Button 
+                  onClick={handleGenerateTemplate}
+                  disabled={generateTemplateMutation.isPending}
+                  className="w-full"
+                >
+                  {generateTemplateMutation.isPending ? "Generating..." : "Generate Template"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
+
+        {/* Templates Grid */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardContent className="p-4">
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : templates.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {templates.map((template: any) => (
+              <Card key={template.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Factory className="w-5 h-5 text-blue-600" />
+                      <CardTitle className="text-lg">{template.name}</CardTitle>
+                    </div>
+                    <Badge variant={template.category === 'custom' ? 'secondary' : 'default'}>
+                      {template.category}
+                    </Badge>
+                  </div>
+                  <CardDescription>{template.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="text-sm text-gray-600">
+                      <strong>Includes:</strong>
+                      <ul className="mt-1 list-disc list-inside text-xs space-y-1">
+                        {template.features?.slice(0, 3).map((feature: string, index: number) => (
+                          <li key={index}>{feature}</li>
+                        ))}
+                        {template.features?.length > 3 && (
+                          <li className="text-gray-500">+{template.features.length - 3} more features</li>
+                        )}
+                      </ul>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => setSelectedTemplate(template)}
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        View Details
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleApplyTemplate(template)}
+                        disabled={applyTemplateMutation.isPending || activeTemplate?.id === template.id}
+                        className="flex-1"
+                      >
+                        {activeTemplate?.id === template.id ? "Active" : "Apply"}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Templates Found</h3>
+              <p className="text-gray-600 mb-4">
+                No templates available for the selected category. Try a different category or generate a custom template.
+              </p>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className={aiTheme.gradient}>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Generate Custom Template
+                  </Button>
+                </DialogTrigger>
+              </Dialog>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Template Details Dialog */}
+        {selectedTemplate && (
+          <Dialog open={!!selectedTemplate} onOpenChange={() => setSelectedTemplate(null)}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Factory className="w-5 h-5 text-blue-600" />
+                  {selectedTemplate.name}
+                </DialogTitle>
+                <DialogDescription>{selectedTemplate.description}</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-6">
+                <div>
+                  <h4 className="font-medium mb-2">Industry Category</h4>
+                  <Badge>{selectedTemplate.category}</Badge>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium mb-2">Features & Capabilities</h4>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    {selectedTemplate.features?.map((feature: string, index: number) => (
+                      <li key={index}>{feature}</li>
+                    )) || ['Manufacturing process optimization', 'Resource allocation', 'Quality control workflows']}
+                  </ul>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium mb-2">Configuration Details</h4>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p><strong>Workflows:</strong> {selectedTemplate.workflows || 'Standard manufacturing workflows'}</p>
+                    <p><strong>Metrics:</strong> {selectedTemplate.metrics || 'OEE, throughput, quality metrics'}</p>
+                    <p><strong>Compliance:</strong> {selectedTemplate.compliance || 'Industry standard compliance'}</p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    onClick={() => handleApplyTemplate(selectedTemplate)}
+                    disabled={applyTemplateMutation.isPending || activeTemplate?.id === selectedTemplate.id}
+                    className="flex-1"
+                  >
+                    {activeTemplate?.id === selectedTemplate.id ? "Currently Active" : "Apply Template"}
+                  </Button>
+                  <Button variant="outline" onClick={() => setSelectedTemplate(null)}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </div>
   );

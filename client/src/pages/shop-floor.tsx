@@ -1325,6 +1325,7 @@ export default function ShopFloor() {
   const [selectedStatus, setSelectedStatus] = useState<ResourceStatus | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [shopFloorLayout, setShopFloorLayout] = useState<ShopFloorLayout[]>([]);
+  const [areas, setAreas] = useState<{ [key: string]: { x: number; y: number; width: number; height: number; resources: number[] } }>({});
   // Load UI state from localStorage with fallback defaults
   const [showHelp, setShowHelp] = useState(() => {
     const saved = localStorage.getItem('shopFloor_showHelp');
@@ -1368,9 +1369,6 @@ export default function ShopFloor() {
   useEffect(() => {
     localStorage.setItem('shopFloor_editMode', JSON.stringify(isEditMode));
   }, [isEditMode]);
-  const [areas, setAreas] = useState<{[key: string]: {name: string, resources: number[]}}>({
-    all: { name: 'All Resources', resources: [] }
-  });
   const [showAreaManager, setShowAreaManager] = useState(false);
   const [showLayoutManager, setShowLayoutManager] = useState(false);
   const [forceUpdate, setForceUpdate] = useState(0);
