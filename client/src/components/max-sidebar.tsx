@@ -237,9 +237,17 @@ export function MaxSidebar() {
       }
 
       // Handle navigation actions
+      console.log('Checking for navigation actions in response:', response.data);
       if (response.data?.path && response.data?.action) {
         console.log('Navigation action detected:', response.data);
         handleNavigationAction(response.data);
+      } else if (response.actions?.includes('NAVIGATE_TO_PAGE') || response.actions?.includes('OPEN_GANTT_CHART')) {
+        console.log('Navigation action in actions array:', response.actions, 'data:', response.data);
+        if (response.data?.path) {
+          handleNavigationAction(response.data);
+        }
+      } else {
+        console.log('No navigation action found - data:', response.data, 'actions:', response.actions);
       }
 
       // Play AI response if voice is enabled
