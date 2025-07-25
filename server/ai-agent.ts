@@ -960,12 +960,12 @@ async function executeAction(action: string, parameters: any, message: string, c
           // Training & Support
           "training": { path: "/training", name: "Training", permissions: ["training-view"] },
           "industry-templates": { path: "/industry-templates", name: "Industry Templates", permissions: ["training-view"] },
+          "presentation-system": { path: "/presentation-system", name: "Presentation System", permissions: ["training-view"] },
+          "presentation-studio": { path: "/presentation-studio", name: "Presentation Studio", permissions: ["training-view"] },
           "help": { path: "/help", name: "Help & Guide" },
           "chat": { path: "/chat", name: "Chat Support" },
           
-          // Presentation & Extensions
-          "presentation-system": { path: "/presentation-system", name: "Presentation System", permissions: ["training-view"] },
-          "presentation-studio": { path: "/presentation-studio", name: "Presentation Studio", permissions: ["training-view"] },
+          // Extensions
           "extension-studio": { path: "/extension-studio", name: "Extension Studio", permissions: ["systems-integration-view"] },
           "canvas": { path: "/canvas", name: "Canvas" },
           

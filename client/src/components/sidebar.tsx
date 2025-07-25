@@ -103,7 +103,7 @@ export default function Sidebar() {
     { icon: UserCheck, label: "User Role Assignments", href: "/user-role-assignments-page", active: location === "/user-role-assignments-page", feature: "user-management", action: "view" },
     { icon: GraduationCap, label: "Training", href: "/training", active: location === "/training", feature: "training", action: "view" },
     { icon: Building, label: "Industry Templates", href: "/industry-templates", active: location === "/industry-templates", feature: "industry-templates", action: "view" },
-    { icon: Presentation, label: "Presentation System", href: "/presentation-system", active: location === "/presentation-system" || location === "/presentation-studio", feature: "presentation-system", action: "view" },
+    { icon: Presentation, label: "Presentation System", href: "/presentation-system", active: location === "/presentation-system" || location === "/presentation-studio", feature: "training", action: "view" },
     { icon: MessageCircle, label: "Chat", href: "/chat", active: location === "/chat", feature: "chat", action: "view" },
     { icon: Columns3, label: "Boards", href: "/boards", active: location === "/boards", feature: "boards", action: "view" },
 
