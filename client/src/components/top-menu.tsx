@@ -181,7 +181,7 @@ export default function TopMenu() {
                 <div className="flex items-center space-x-1 sm:space-x-3">
                   <div className="hidden sm:flex items-center space-x-3">
                     <TrainingModeExit />
-                    <RoleSwitcher userId={user?.id || 0} currentRole={user?.currentRole} />
+                    <RoleSwitcher userId={user?.id || 0} currentRole={user?.currentRole || null} />
                   </div>
                   <div className="flex items-center space-x-2">
                     <Avatar className="w-6 h-6 sm:w-8 sm:h-8">
@@ -191,7 +191,7 @@ export default function TopMenu() {
                     </Avatar>
                     <div className="hidden md:block text-left">
                       <p className="text-sm font-medium text-gray-900">{user?.username}</p>
-                      <p className="text-xs text-gray-500">{user?.currentRole?.name}</p>
+                      <p className="text-xs text-gray-500">{user?.currentRole?.name || 'No Role'}</p>
                     </div>
                     <div className="flex items-center space-x-1">
                       <UserProfileDialog />
@@ -214,7 +214,7 @@ export default function TopMenu() {
             <div className="sm:hidden px-4 py-3 border-b border-gray-200 bg-gray-25">
               <div className="flex items-center justify-center space-x-4">
                 <TrainingModeExit />
-                <RoleSwitcher userId={user?.id || 0} currentRole={user?.currentRole} />
+                <RoleSwitcher userId={user?.id || 0} currentRole={user?.currentRole || null} />
               </div>
             </div>
 
