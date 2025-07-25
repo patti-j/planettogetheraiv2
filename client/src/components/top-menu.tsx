@@ -93,7 +93,7 @@ const featureGroups = [
 export default function TopMenu() {
   const [location] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { hasPermission } = usePermissions();
   const { isMaxOpen, setMaxOpen } = useMaxDock();
   const { aiTheme } = useAITheme();
@@ -193,7 +193,18 @@ export default function TopMenu() {
                       <p className="text-sm font-medium text-gray-900">{user?.username}</p>
                       <p className="text-xs text-gray-500">{user?.currentRole?.name}</p>
                     </div>
-                    <UserProfileDialog />
+                    <div className="flex items-center space-x-1">
+                      <UserProfileDialog />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => logout()}
+                        className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                        title="Logout"
+                      >
+                        <LogOut className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
