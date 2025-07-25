@@ -60,6 +60,9 @@ import {
   customerJourneyStages, manufacturingSegments, buyerPersonas, marketingPages, contentBlocks, customerStories, leadCaptures, pageAnalytics, abTests, emailCampaigns,
   type CustomerJourneyStage, type ManufacturingSegment, type BuyerPersona, type MarketingPage, type ContentBlock, type CustomerStory, type LeadCapture, type PageAnalytics, type ABTest, type EmailCampaign,
   type InsertCustomerJourneyStage, type InsertManufacturingSegment, type InsertBuyerPersona, type InsertMarketingPage, type InsertContentBlock, type InsertCustomerStory, type InsertLeadCapture, type InsertPageAnalytics, type InsertABTest, type InsertEmailCampaign,
+  productionPlans, productionTargets, resourceAllocations, productionMilestones,
+  type ProductionPlan, type ProductionTarget, type ResourceAllocation, type ProductionMilestone,
+  type InsertProductionPlan, type InsertProductionTarget, type InsertResourceAllocation, type InsertProductionMilestone,
   // industryTemplates, userIndustryTemplates, templateConfigurations,
   // type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
   // type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration,
@@ -854,6 +857,37 @@ export interface IStorage {
   createPresentationProject(project: InsertPresentationProject): Promise<PresentationProject>;
   updatePresentationProject(id: number, updates: Partial<InsertPresentationProject>): Promise<PresentationProject | undefined>;
   deletePresentationProject(id: number): Promise<boolean>;
+
+  // Production Planning System
+  // Production Plans
+  getProductionPlans(plantId?: number): Promise<ProductionPlan[]>;
+  getProductionPlan(id: number): Promise<ProductionPlan | undefined>;
+  createProductionPlan(plan: InsertProductionPlan): Promise<ProductionPlan>;
+  updateProductionPlan(id: number, updates: Partial<InsertProductionPlan>): Promise<ProductionPlan | undefined>;
+  deleteProductionPlan(id: number): Promise<boolean>;
+  approveProductionPlan(id: number, approvedBy: string): Promise<ProductionPlan | undefined>;
+
+  // Production Targets
+  getProductionTargets(planId?: number): Promise<ProductionTarget[]>;
+  getProductionTarget(id: number): Promise<ProductionTarget | undefined>;
+  createProductionTarget(target: InsertProductionTarget): Promise<ProductionTarget>;
+  updateProductionTarget(id: number, updates: Partial<InsertProductionTarget>): Promise<ProductionTarget | undefined>;
+  deleteProductionTarget(id: number): Promise<boolean>;
+
+  // Resource Allocations
+  getResourceAllocations(planId?: number): Promise<ResourceAllocation[]>;
+  getResourceAllocation(id: number): Promise<ResourceAllocation | undefined>;
+  createResourceAllocation(allocation: InsertResourceAllocation): Promise<ResourceAllocation>;
+  updateResourceAllocation(id: number, updates: Partial<InsertResourceAllocation>): Promise<ResourceAllocation | undefined>;
+  deleteResourceAllocation(id: number): Promise<boolean>;
+
+  // Production Milestones
+  getProductionMilestones(planId?: number): Promise<ProductionMilestone[]>;
+  getProductionMilestone(id: number): Promise<ProductionMilestone | undefined>;
+  createProductionMilestone(milestone: InsertProductionMilestone): Promise<ProductionMilestone>;
+  updateProductionMilestone(id: number, updates: Partial<InsertProductionMilestone>): Promise<ProductionMilestone | undefined>;
+  deleteProductionMilestone(id: number): Promise<boolean>;
+  markMilestoneComplete(id: number): Promise<ProductionMilestone | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -6076,6 +6110,172 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db.update(emailCampaigns)
       .set({ ...stats, updatedAt: new Date() })
       .where(eq(emailCampaigns.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Production Planning System Implementation
+  // Production Plans
+  async getProductionPlans(plantId?: number): Promise<ProductionPlan[]> {
+    let query = db.select().from(productionPlans);
+    
+    if (plantId) {
+      query = query.where(eq(productionPlans.plantId, plantId));
+    }
+    
+    return await query.orderBy(desc(productionPlans.createdAt));
+  }
+
+  async getProductionPlan(id: number): Promise<ProductionPlan | undefined> {
+    const [plan] = await db.select().from(productionPlans)
+      .where(eq(productionPlans.id, id));
+    return plan;
+  }
+
+  async createProductionPlan(plan: InsertProductionPlan): Promise<ProductionPlan> {
+    const [newPlan] = await db.insert(productionPlans).values(plan).returning();
+    return newPlan;
+  }
+
+  async updateProductionPlan(id: number, updates: Partial<InsertProductionPlan>): Promise<ProductionPlan | undefined> {
+    const [updated] = await db.update(productionPlans)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(productionPlans.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteProductionPlan(id: number): Promise<boolean> {
+    const result = await db.delete(productionPlans).where(eq(productionPlans.id, id));
+    return result.rowCount > 0;
+  }
+
+  async approveProductionPlan(id: number, approvedBy: string): Promise<ProductionPlan | undefined> {
+    const [updated] = await db.update(productionPlans)
+      .set({ 
+        status: 'approved',
+        approvedBy,
+        approvedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(productionPlans.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Production Targets
+  async getProductionTargets(planId?: number): Promise<ProductionTarget[]> {
+    let query = db.select().from(productionTargets);
+    
+    if (planId) {
+      query = query.where(eq(productionTargets.planId, planId));
+    }
+    
+    return await query.orderBy(asc(productionTargets.targetStartDate));
+  }
+
+  async getProductionTarget(id: number): Promise<ProductionTarget | undefined> {
+    const [target] = await db.select().from(productionTargets)
+      .where(eq(productionTargets.id, id));
+    return target;
+  }
+
+  async createProductionTarget(target: InsertProductionTarget): Promise<ProductionTarget> {
+    const [newTarget] = await db.insert(productionTargets).values(target).returning();
+    return newTarget;
+  }
+
+  async updateProductionTarget(id: number, updates: Partial<InsertProductionTarget>): Promise<ProductionTarget | undefined> {
+    const [updated] = await db.update(productionTargets)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(productionTargets.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteProductionTarget(id: number): Promise<boolean> {
+    const result = await db.delete(productionTargets).where(eq(productionTargets.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Resource Allocations
+  async getResourceAllocations(planId?: number): Promise<ResourceAllocation[]> {
+    let query = db.select().from(resourceAllocations);
+    
+    if (planId) {
+      query = query.where(eq(resourceAllocations.planId, planId));
+    }
+    
+    return await query.orderBy(asc(resourceAllocations.startDate));
+  }
+
+  async getResourceAllocation(id: number): Promise<ResourceAllocation | undefined> {
+    const [allocation] = await db.select().from(resourceAllocations)
+      .where(eq(resourceAllocations.id, id));
+    return allocation;
+  }
+
+  async createResourceAllocation(allocation: InsertResourceAllocation): Promise<ResourceAllocation> {
+    const [newAllocation] = await db.insert(resourceAllocations).values(allocation).returning();
+    return newAllocation;
+  }
+
+  async updateResourceAllocation(id: number, updates: Partial<InsertResourceAllocation>): Promise<ResourceAllocation | undefined> {
+    const [updated] = await db.update(resourceAllocations)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(resourceAllocations.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteResourceAllocation(id: number): Promise<boolean> {
+    const result = await db.delete(resourceAllocations).where(eq(resourceAllocations.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Production Milestones
+  async getProductionMilestones(planId?: number): Promise<ProductionMilestone[]> {
+    let query = db.select().from(productionMilestones);
+    
+    if (planId) {
+      query = query.where(eq(productionMilestones.planId, planId));
+    }
+    
+    return await query.orderBy(asc(productionMilestones.targetDate));
+  }
+
+  async getProductionMilestone(id: number): Promise<ProductionMilestone | undefined> {
+    const [milestone] = await db.select().from(productionMilestones)
+      .where(eq(productionMilestones.id, id));
+    return milestone;
+  }
+
+  async createProductionMilestone(milestone: InsertProductionMilestone): Promise<ProductionMilestone> {
+    const [newMilestone] = await db.insert(productionMilestones).values(milestone).returning();
+    return newMilestone;
+  }
+
+  async updateProductionMilestone(id: number, updates: Partial<InsertProductionMilestone>): Promise<ProductionMilestone | undefined> {
+    const [updated] = await db.update(productionMilestones)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(productionMilestones.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteProductionMilestone(id: number): Promise<boolean> {
+    const result = await db.delete(productionMilestones).where(eq(productionMilestones.id, id));
+    return result.rowCount > 0;
+  }
+
+  async markMilestoneComplete(id: number): Promise<ProductionMilestone | undefined> {
+    const [updated] = await db.update(productionMilestones)
+      .set({ 
+        status: 'completed',
+        actualDate: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(productionMilestones.id, id))
       .returning();
     return updated;
   }

@@ -56,6 +56,7 @@ import CanvasPage from "@/pages/canvas";
 import ErrorLogsPage from "@/pages/error-logs";
 import PresentationPage from "@/pages/presentation";
 import PresentationSystemPage from "@/pages/presentation-system";
+import ProductionPlanningPage from "@/pages/production-planning";
 import MarketingLandingPage from "@/pages/marketing-landing";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
@@ -329,6 +330,11 @@ function Router() {
           <Route path="/pricing" component={Pricing} />
           <Route path="/demo-tour" component={DemoTour} />
           <Route path="/presentation" component={PresentationPage} />
+          <Route path="/production-planning">
+            <ProtectedRoute feature="production-planning" action="view">
+              <ProductionPlanningPage />
+            </ProtectedRoute>
+          </Route>
           <Route path="/presentation-system">
             <ProtectedRoute feature="presentation-system" action="view">
               <PresentationSystemPage />

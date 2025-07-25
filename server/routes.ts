@@ -35,7 +35,8 @@ import {
   insertPresentationLibrarySchema, insertPresentationAnalyticsSchema, insertPresentationAIContentSchema,
   insertCustomerJourneyStageSchema, insertManufacturingSegmentSchema, insertBuyerPersonaSchema,
   insertMarketingPageSchema, insertContentBlockSchema, insertCustomerStorySchema,
-  insertLeadCaptureSchema, insertPageAnalyticsSchema, insertABTestSchema, insertEmailCampaignSchema
+  insertLeadCaptureSchema, insertPageAnalyticsSchema, insertABTestSchema, insertEmailCampaignSchema,
+  insertProductionPlanSchema, insertProductionTargetSchema, insertResourceAllocationSchema, insertProductionMilestoneSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -11312,6 +11313,217 @@ Create a natural, conversational voice script that explains this feature to some
     } catch (error) {
       console.error("Error updating email campaign stats:", error);
       res.status(500).json({ error: "Failed to update email campaign stats" });
+    }
+  });
+
+  // Production Planning API Routes
+  
+  // Production Plans
+  app.get("/api/production-plans", requireAuth, async (req, res) => {
+    try {
+      const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : undefined;
+      const plans = await storage.getProductionPlans(plantId);
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching production plans:", error);
+      res.status(500).json({ error: "Failed to fetch production plans" });
+    }
+  });
+
+  app.get("/api/production-plans/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const plan = await storage.getProductionPlan(id);
+      if (!plan) {
+        return res.status(404).json({ error: "Production plan not found" });
+      }
+      res.json(plan);
+    } catch (error) {
+      console.error("Error fetching production plan:", error);
+      res.status(500).json({ error: "Failed to fetch production plan" });
+    }
+  });
+
+  app.post("/api/production-plans", requireAuth, async (req, res) => {
+    try {
+      const planData = insertProductionPlanSchema.parse(req.body);
+      const plan = await storage.createProductionPlan(planData);
+      res.status(201).json(plan);
+    } catch (error) {
+      console.error("Error creating production plan:", error);
+      res.status(500).json({ error: "Failed to create production plan" });
+    }
+  });
+
+  app.patch("/api/production-plans/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const plan = await storage.updateProductionPlan(id, updates);
+      if (!plan) {
+        return res.status(404).json({ error: "Production plan not found" });
+      }
+      res.json(plan);
+    } catch (error) {
+      console.error("Error updating production plan:", error);
+      res.status(500).json({ error: "Failed to update production plan" });
+    }
+  });
+
+  app.patch("/api/production-plans/:id/approve", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { approvedBy } = req.body;
+      const plan = await storage.approveProductionPlan(id, approvedBy);
+      if (!plan) {
+        return res.status(404).json({ error: "Production plan not found" });
+      }
+      res.json(plan);
+    } catch (error) {
+      console.error("Error approving production plan:", error);
+      res.status(500).json({ error: "Failed to approve production plan" });
+    }
+  });
+
+  app.delete("/api/production-plans/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteProductionPlan(id);
+      if (!success) {
+        return res.status(404).json({ error: "Production plan not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting production plan:", error);
+      res.status(500).json({ error: "Failed to delete production plan" });
+    }
+  });
+
+  // Production Targets
+  app.get("/api/production-targets", requireAuth, async (req, res) => {
+    try {
+      const planId = req.query.planId ? parseInt(req.query.planId as string) : undefined;
+      const targets = await storage.getProductionTargets(planId);
+      res.json(targets);
+    } catch (error) {
+      console.error("Error fetching production targets:", error);
+      res.status(500).json({ error: "Failed to fetch production targets" });
+    }
+  });
+
+  app.post("/api/production-targets", requireAuth, async (req, res) => {
+    try {
+      const targetData = insertProductionTargetSchema.parse(req.body);
+      const target = await storage.createProductionTarget(targetData);
+      res.status(201).json(target);
+    } catch (error) {
+      console.error("Error creating production target:", error);
+      res.status(500).json({ error: "Failed to create production target" });
+    }
+  });
+
+  app.patch("/api/production-targets/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const target = await storage.updateProductionTarget(id, updates);
+      if (!target) {
+        return res.status(404).json({ error: "Production target not found" });
+      }
+      res.json(target);
+    } catch (error) {
+      console.error("Error updating production target:", error);
+      res.status(500).json({ error: "Failed to update production target" });
+    }
+  });
+
+  // Resource Allocations
+  app.get("/api/resource-allocations", requireAuth, async (req, res) => {
+    try {
+      const planId = req.query.planId ? parseInt(req.query.planId as string) : undefined;
+      const allocations = await storage.getResourceAllocations(planId);
+      res.json(allocations);
+    } catch (error) {
+      console.error("Error fetching resource allocations:", error);
+      res.status(500).json({ error: "Failed to fetch resource allocations" });
+    }
+  });
+
+  app.post("/api/resource-allocations", requireAuth, async (req, res) => {
+    try {
+      const allocationData = insertResourceAllocationSchema.parse(req.body);
+      const allocation = await storage.createResourceAllocation(allocationData);
+      res.status(201).json(allocation);
+    } catch (error) {
+      console.error("Error creating resource allocation:", error);
+      res.status(500).json({ error: "Failed to create resource allocation" });
+    }
+  });
+
+  app.patch("/api/resource-allocations/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const allocation = await storage.updateResourceAllocation(id, updates);
+      if (!allocation) {
+        return res.status(404).json({ error: "Resource allocation not found" });
+      }
+      res.json(allocation);
+    } catch (error) {
+      console.error("Error updating resource allocation:", error);
+      res.status(500).json({ error: "Failed to update resource allocation" });
+    }
+  });
+
+  // Production Milestones
+  app.get("/api/production-milestones", requireAuth, async (req, res) => {
+    try {
+      const planId = req.query.planId ? parseInt(req.query.planId as string) : undefined;
+      const milestones = await storage.getProductionMilestones(planId);
+      res.json(milestones);
+    } catch (error) {
+      console.error("Error fetching production milestones:", error);
+      res.status(500).json({ error: "Failed to fetch production milestones" });
+    }
+  });
+
+  app.post("/api/production-milestones", requireAuth, async (req, res) => {
+    try {
+      const milestoneData = insertProductionMilestoneSchema.parse(req.body);
+      const milestone = await storage.createProductionMilestone(milestoneData);
+      res.status(201).json(milestone);
+    } catch (error) {
+      console.error("Error creating production milestone:", error);
+      res.status(500).json({ error: "Failed to create production milestone" });
+    }
+  });
+
+  app.patch("/api/production-milestones/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      const milestone = await storage.updateProductionMilestone(id, updates);
+      if (!milestone) {
+        return res.status(404).json({ error: "Production milestone not found" });
+      }
+      res.json(milestone);
+    } catch (error) {
+      console.error("Error updating production milestone:", error);
+      res.status(500).json({ error: "Failed to update production milestone" });
+    }
+  });
+
+  app.patch("/api/production-milestones/:id/complete", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const milestone = await storage.markMilestoneComplete(id);
+      if (!milestone) {
+        return res.status(404).json({ error: "Production milestone not found" });
+      }
+      res.json(milestone);
+    } catch (error) {
+      console.error("Error completing production milestone:", error);
+      res.status(500).json({ error: "Failed to complete production milestone" });
     }
   });
 

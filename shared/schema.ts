@@ -3503,3 +3503,119 @@ export type InsertABTest = z.infer<typeof insertABTestSchema>;
 
 export type EmailCampaign = typeof emailCampaigns.$inferSelect;
 export type InsertEmailCampaign = z.infer<typeof insertEmailCampaignSchema>;
+
+// Production Planning Tables
+
+// Production plans contain overall planning information
+export const productionPlans = pgTable("production_plans", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  planType: text("plan_type").notNull().default("weekly"), // daily, weekly, monthly, custom
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  status: text("status").notNull().default("draft"), // draft, active, completed, cancelled
+  targetUnits: integer("target_units").notNull().default(0),
+  actualUnits: integer("actual_units").notNull().default(0),
+  efficiency: integer("efficiency").default(0), // percentage
+  priority: text("priority").notNull().default("medium"), // low, medium, high, critical
+  createdBy: text("created_by").notNull(),
+  approvedBy: text("approved_by"),
+  approvedAt: timestamp("approved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Production targets define specific goals for products/jobs
+export const productionTargets = pgTable("production_targets", {
+  id: serial("id").primaryKey(),
+  planId: integer("plan_id").references(() => productionPlans.id).notNull(),
+  jobId: integer("job_id").references(() => jobs.id).notNull(),
+  targetQuantity: integer("target_quantity").notNull(),
+  actualQuantity: integer("actual_quantity").notNull().default(0),
+  targetStartDate: timestamp("target_start_date").notNull(),
+  targetEndDate: timestamp("target_end_date").notNull(),
+  actualStartDate: timestamp("actual_start_date"),
+  actualEndDate: timestamp("actual_end_date"),
+  status: text("status").notNull().default("planned"), // planned, in_progress, completed, delayed, cancelled
+  priority: text("priority").notNull().default("medium"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Resource allocations for production planning
+export const resourceAllocations = pgTable("resource_allocations", {
+  id: serial("id").primaryKey(),
+  planId: integer("plan_id").references(() => productionPlans.id).notNull(),
+  resourceId: integer("resource_id").references(() => resources.id).notNull(),
+  allocationType: text("allocation_type").notNull(), // dedicated, shared, backup
+  allocatedHours: integer("allocated_hours").notNull(),
+  actualHours: integer("actual_hours").notNull().default(0),
+  utilizationTarget: integer("utilization_target").notNull().default(80), // percentage
+  actualUtilization: integer("actual_utilization").notNull().default(0), // percentage
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  cost: integer("cost").default(0), // cost in cents
+  status: text("status").notNull().default("planned"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Production milestones and checkpoints
+export const productionMilestones = pgTable("production_milestones", {
+  id: serial("id").primaryKey(),
+  planId: integer("plan_id").references(() => productionPlans.id).notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  targetDate: timestamp("target_date").notNull(),
+  actualDate: timestamp("actual_date"),
+  status: text("status").notNull().default("pending"), // pending, achieved, missed, cancelled
+  milestoneType: text("milestone_type").notNull(), // start, checkpoint, delivery, completion
+  targetValue: integer("target_value"), // units, percentage, etc.
+  actualValue: integer("actual_value"),
+  responsible: text("responsible"),
+  dependencies: jsonb("dependencies").$type<number[]>().default([]), // milestone IDs this depends on
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Production Planning Insert Schemas
+export const insertProductionPlanSchema = createInsertSchema(productionPlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertProductionTargetSchema = createInsertSchema(productionTargets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertResourceAllocationSchema = createInsertSchema(resourceAllocations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertProductionMilestoneSchema = createInsertSchema(productionMilestones).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Production Planning Types
+export type ProductionPlan = typeof productionPlans.$inferSelect;
+export type InsertProductionPlan = z.infer<typeof insertProductionPlanSchema>;
+
+export type ProductionTarget = typeof productionTargets.$inferSelect;
+export type InsertProductionTarget = z.infer<typeof insertProductionTargetSchema>;
+
+export type ResourceAllocation = typeof resourceAllocations.$inferSelect;
+export type InsertResourceAllocation = z.infer<typeof insertResourceAllocationSchema>;
+
+export type ProductionMilestone = typeof productionMilestones.$inferSelect;
+export type InsertProductionMilestone = z.infer<typeof insertProductionMilestoneSchema>;
