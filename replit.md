@@ -128,6 +128,13 @@ The application uses a modern full-stack architecture with strong typing through
 - Enhanced mobile menu touch event handling for hard press gesture isolation
 - UI state automatically restored when returning to shop floor page
 
+✓ **Mobile Canvas Display Fix (July 25, 2025)**:
+- Fixed canvas flashing and disappearing issue on Max window mobile canvas button
+- Replaced conditional rendering with opacity-based transitions for smooth canvas display
+- Canvas now shows properly on mobile with smooth fade-in/out animations
+- Enhanced split-pane layout to maintain component state during canvas visibility toggles
+- Improved mobile user experience with proper canvas mounting and unmounting behavior
+
 ## Recent Changes (July 25, 2025)
 
 ✓ **User Profile Click Enhancement (July 25, 2025)**:

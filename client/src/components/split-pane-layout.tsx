@@ -189,19 +189,23 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
             touchAction: 'pan-y pan-x' // Allow normal scrolling
           }}
         >
-          {isCanvasVisible ? (
-            <div className="h-full bg-gray-50 overflow-hidden">
-              <MaxCanvas 
-                isVisible={isCanvasVisible}
-                onClose={() => {}}
-                sessionId={`canvas_mobile_${Date.now()}`}
-              />
+          <div className="h-full relative">
+            {/* Always render both but use positioning to show the active one */}
+            <div className={`absolute inset-0 transition-opacity duration-300 ${isCanvasVisible ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+              <div className="h-full bg-gray-50 overflow-hidden">
+                <MaxCanvas 
+                  isVisible={isCanvasVisible}
+                  onClose={() => setCanvasVisible(false)}
+                  sessionId={`canvas_mobile_${Date.now()}`}
+                />
+              </div>
             </div>
-          ) : (
-            <div className="h-full overflow-auto">
-              {children}
+            <div className={`absolute inset-0 transition-opacity duration-300 ${!isCanvasVisible ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+              <div className="h-full overflow-auto">
+                {children}
+              </div>
             </div>
-          )}
+          </div>
         </div>
         
         {/* Resizer - Reverted to original thickness */}
@@ -251,19 +255,23 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
       
       {/* Main content area - show either canvas or regular content */}
       <div className="flex-1 overflow-hidden">
-        {isCanvasVisible ? (
-          <div className="h-full bg-gray-50 overflow-hidden">
-            <MaxCanvas 
-              isVisible={isCanvasVisible}
-              onClose={() => {}}
-              sessionId={`canvas_${Date.now()}`}
-            />
+        <div className="h-full relative">
+          {/* Always render both but use positioning to show the active one */}
+          <div className={`absolute inset-0 transition-opacity duration-300 ${isCanvasVisible ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+            <div className="h-full bg-gray-50 overflow-hidden">
+              <MaxCanvas 
+                isVisible={isCanvasVisible}
+                onClose={() => setCanvasVisible(false)}
+                sessionId={`canvas_desktop_${Date.now()}`}
+              />
+            </div>
           </div>
-        ) : (
-          <div className="h-full overflow-auto">
-            {children}
+          <div className={`absolute inset-0 transition-opacity duration-300 ${!isCanvasVisible ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+            <div className="h-full overflow-auto">
+              {children}
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
