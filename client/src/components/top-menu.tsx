@@ -7,7 +7,8 @@ import {
   DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, 
   Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, 
   Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, 
-  Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3 
+  Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, 
+  Eye 
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleSwitcher } from "./role-switcher";
@@ -25,6 +26,7 @@ const featureGroups = [
     features: [
       { icon: BarChart3, label: "Production Schedule", href: "/production-schedule", feature: "production-scheduling", action: "view", color: "bg-blue-500" },
       { icon: Factory, label: "Shop Floor", href: "/shop-floor", feature: "shop-floor", action: "view", color: "bg-orange-500" },
+      { icon: Eye, label: "Visual Factory", href: "/visual-factory", feature: "visual-factory", action: "view", color: "bg-indigo-500" },
       { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", feature: "capacity-planning", action: "view", color: "bg-purple-500" },
       { icon: Target, label: "Production Planning", href: "/production-planning", feature: "production-planning", action: "view", color: "bg-green-500" }
     ]
