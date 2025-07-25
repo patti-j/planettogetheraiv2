@@ -1347,6 +1347,16 @@ export default function ShopFloor() {
     return saved !== null ? JSON.parse(saved) : 'all';
   });
   const [resourcePhotos, setResourcePhotos] = useState<{ [key: number]: string }>({});
+  const [showAreaManager, setShowAreaManager] = useState(false);
+  const [showLayoutManager, setShowLayoutManager] = useState(false);
+  const [forceUpdate, setForceUpdate] = useState(0);
+  const [globalImageSize, setGlobalImageSize] = useState(100); // Global image size percentage
+  const [individualImageSizes, setIndividualImageSizes] = useState<{ [key: number]: number }>({}); // Individual resource image sizes
+  const [selectedPlantId, setSelectedPlantId] = useState<number | 'all'>('all'); // Multi-plant filtering
+  const [isEditMode, setIsEditMode] = useState(() => {
+    const saved = localStorage.getItem('shopFloor_editMode');
+    return saved !== null ? JSON.parse(saved) : false;
+  }); // Edit mode for dragging vs scrolling
 
   // Persist UI state changes to localStorage
   useEffect(() => {
@@ -1370,16 +1380,6 @@ export default function ShopFloor() {
   useEffect(() => {
     localStorage.setItem('shopFloor_editMode', JSON.stringify(isEditMode));
   }, [isEditMode]);
-  const [showAreaManager, setShowAreaManager] = useState(false);
-  const [showLayoutManager, setShowLayoutManager] = useState(false);
-  const [forceUpdate, setForceUpdate] = useState(0);
-  const [globalImageSize, setGlobalImageSize] = useState(100); // Global image size percentage
-  const [individualImageSizes, setIndividualImageSizes] = useState<{ [key: number]: number }>({}); // Individual resource image sizes
-  const [selectedPlantId, setSelectedPlantId] = useState<number | 'all'>('all'); // Multi-plant filtering
-  const [isEditMode, setIsEditMode] = useState(() => {
-    const saved = localStorage.getItem('shopFloor_editMode');
-    return saved !== null ? JSON.parse(saved) : false;
-  }); // Edit mode for dragging vs scrolling
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
