@@ -1321,6 +1321,17 @@ export default function ShopFloor() {
     const saved = localStorage.getItem('shopFloor_showLegend');
     return saved !== null ? JSON.parse(saved) : true;
   });
+  
+  // Initialize these before they're used in useEffect hooks
+  const [zoomLevel, setZoomLevel] = useState(() => {
+    const saved = localStorage.getItem('shopFloor_zoomLevel');
+    return saved !== null ? JSON.parse(saved) : 1;
+  });
+  const [currentArea, setCurrentArea] = useState<string>(() => {
+    const saved = localStorage.getItem('shopFloor_currentArea');
+    return saved !== null ? JSON.parse(saved) : 'all';
+  });
+  const [resourcePhotos, setResourcePhotos] = useState<{ [key: number]: string }>({});
 
   // Persist UI state changes to localStorage
   useEffect(() => {
@@ -1339,15 +1350,6 @@ export default function ShopFloor() {
   useEffect(() => {
     localStorage.setItem('shopFloor_currentArea', JSON.stringify(currentArea));
   }, [currentArea]);
-  const [resourcePhotos, setResourcePhotos] = useState<{ [key: number]: string }>({});
-  const [zoomLevel, setZoomLevel] = useState(() => {
-    const saved = localStorage.getItem('shopFloor_zoomLevel');
-    return saved !== null ? JSON.parse(saved) : 1;
-  });
-  const [currentArea, setCurrentArea] = useState<string>(() => {
-    const saved = localStorage.getItem('shopFloor_currentArea');
-    return saved !== null ? JSON.parse(saved) : 'all';
-  });
   const [areas, setAreas] = useState<{[key: string]: {name: string, resources: number[]}}>({
     all: { name: 'All Resources', resources: [] }
   });
