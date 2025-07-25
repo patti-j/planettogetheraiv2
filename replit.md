@@ -121,6 +121,11 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 25, 2025)
 
+✓ **Menu Section Title Update (July 25, 2025)**:
+- Renamed "Core Production" section title to "Planning & Scheduling" in the main menu for better clarity
+- Updated section title in top-menu.tsx to reflect the planning and scheduling focus of the grouped features
+- Section now more accurately describes the Production Schedule, Shop Floor, Visual Factory, Capacity Planning, and Production Planning features
+
 ✓ **Visual Factory Menu Reorganization (July 25, 2025)**:
 - Successfully moved Visual Factory menu item from Core Production section to Communication & Collaboration section
 - Visual Factory now appears alongside Chat and Boards in the Communication & Collaboration group

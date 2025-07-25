@@ -22,7 +22,7 @@ import { useAITheme } from "@/hooks/use-ai-theme";
 // Define feature groups with hierarchy and visual styling
 const featureGroups = [
   {
-    title: "Core Production",
+    title: "Planning & Scheduling",
     priority: "high", // large cards
     features: [
       { icon: BarChart3, label: "Production Schedule", href: "/production-schedule", feature: "production-scheduling", action: "view", color: "bg-blue-500" },
