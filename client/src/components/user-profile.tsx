@@ -58,7 +58,7 @@ interface UserProfileDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps) {
+function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -692,5 +692,24 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
         </Tabs>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// Main export component with trigger
+export function UserProfileDialog() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setOpen(true)}
+        className="p-1 rounded-full hover:bg-gray-100"
+      >
+        <Settings className="w-4 h-4 text-gray-600" />
+      </Button>
+      <UserProfileDialogContent open={open} onOpenChange={setOpen} />
+    </>
   );
 }
