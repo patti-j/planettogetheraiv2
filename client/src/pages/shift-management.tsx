@@ -55,25 +55,37 @@ export default function ShiftManagement() {
   
   const { data: assignments = [], isLoading: assignmentsLoading } = useQuery({
     queryKey: ['/api/resource-shift-assignments', format(weekStart, 'yyyy-MM-dd'), format(weekEnd, 'yyyy-MM-dd')],
-    queryFn: () => apiRequest(`/api/resource-shift-assignments?startDate=${format(weekStart, 'yyyy-MM-dd')}&endDate=${format(weekEnd, 'yyyy-MM-dd')}`),
+    queryFn: async () => {
+      const response = await fetch(`/api/resource-shift-assignments?startDate=${format(weekStart, 'yyyy-MM-dd')}&endDate=${format(weekEnd, 'yyyy-MM-dd')}`);
+      return response.json();
+    },
   });
 
   // Fetch holidays for current month
   const { data: holidays = [] } = useQuery({
     queryKey: ['/api/holidays', selectedDate.getFullYear(), selectedDate.getMonth() + 1],
-    queryFn: () => apiRequest(`/api/holidays?year=${selectedDate.getFullYear()}&month=${selectedDate.getMonth() + 1}`),
+    queryFn: async () => {
+      const response = await fetch(`/api/holidays?year=${selectedDate.getFullYear()}&month=${selectedDate.getMonth() + 1}`);
+      return response.json();
+    },
   });
 
   // Fetch absences for current week
   const { data: absences = [] } = useQuery({
     queryKey: ['/api/resource-absences', format(weekStart, 'yyyy-MM-dd'), format(weekEnd, 'yyyy-MM-dd')],
-    queryFn: () => apiRequest(`/api/resource-absences?startDate=${format(weekStart, 'yyyy-MM-dd')}&endDate=${format(weekEnd, 'yyyy-MM-dd')}`),
+    queryFn: async () => {
+      const response = await fetch(`/api/resource-absences?startDate=${format(weekStart, 'yyyy-MM-dd')}&endDate=${format(weekEnd, 'yyyy-MM-dd')}`);
+      return response.json();
+    },
   });
 
   // Fetch shift utilization metrics
   const { data: utilizationData = [] } = useQuery({
     queryKey: ['/api/shift-utilization', format(weekStart, 'yyyy-MM-dd'), format(weekEnd, 'yyyy-MM-dd')],
-    queryFn: () => apiRequest(`/api/shift-utilization?startDate=${format(weekStart, 'yyyy-MM-dd')}&endDate=${format(weekEnd, 'yyyy-MM-dd')}`),
+    queryFn: async () => {
+      const response = await fetch(`/api/shift-utilization?startDate=${format(weekStart, 'yyyy-MM-dd')}&endDate=${format(weekEnd, 'yyyy-MM-dd')}`);
+      return response.json();
+    },
   });
 
   return (
@@ -252,18 +264,20 @@ function ShiftTemplatesTab({ templates, loading, plants }: any) {
               Create Template
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create Shift Template</DialogTitle>
               <DialogDescription>
                 Define a new shift pattern for your resources
               </DialogDescription>
             </DialogHeader>
-            <CreateShiftTemplateForm 
-              plants={plants}
-              onSubmit={(data) => createTemplateMutation.mutate(data)}
-              isLoading={createTemplateMutation.isPending}
-            />
+            <div className="max-h-[70vh] overflow-y-auto pr-2">
+              <CreateShiftTemplateForm 
+                plants={plants}
+                onSubmit={(data) => createTemplateMutation.mutate(data)}
+                isLoading={createTemplateMutation.isPending}
+              />
+            </div>
           </DialogContent>
         </Dialog>
       </div>
