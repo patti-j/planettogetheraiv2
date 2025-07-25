@@ -37,7 +37,9 @@ import {
   insertCustomerJourneyStageSchema, insertManufacturingSegmentSchema, insertBuyerPersonaSchema,
   insertMarketingPageSchema, insertContentBlockSchema, insertCustomerStorySchema,
   insertLeadCaptureSchema, insertPageAnalyticsSchema, insertABTestSchema, insertEmailCampaignSchema,
-  insertProductionPlanSchema, insertProductionTargetSchema, insertResourceAllocationSchema, insertProductionMilestoneSchema
+  insertProductionPlanSchema, insertProductionTargetSchema, insertResourceAllocationSchema, insertProductionMilestoneSchema,
+  insertShiftTemplateSchema, insertResourceShiftAssignmentSchema, insertShiftScenarioSchema, 
+  insertHolidaySchema, insertResourceAbsenceSchema, insertShiftCoverageSchema, insertShiftUtilizationSchema
 } from "@shared/schema";
 import { processAICommand, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -11910,6 +11912,347 @@ Create a natural, conversational voice script that explains this feature to some
     } catch (error) {
       console.error("Error completing production milestone:", error);
       res.status(500).json({ error: "Failed to complete production milestone" });
+    }
+  });
+
+  // Shift Management System API Endpoints
+  
+  // Shift Templates
+  app.get("/api/shift-templates", async (req, res) => {
+    try {
+      const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : undefined;
+      const templates = await storage.getShiftTemplates(plantId);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching shift templates:", error);
+      res.status(500).json({ error: "Failed to fetch shift templates" });
+    }
+  });
+
+  app.get("/api/shift-templates/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid template ID" });
+      }
+      const template = await storage.getShiftTemplate(id);
+      if (!template) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching shift template:", error);
+      res.status(500).json({ error: "Failed to fetch shift template" });
+    }
+  });
+
+  app.post("/api/shift-templates", requireAuth, async (req, res) => {
+    try {
+      const templateData = insertShiftTemplateSchema.parse(req.body);
+      const template = await storage.createShiftTemplate(templateData);
+      res.status(201).json(template);
+    } catch (error) {
+      console.error("Error creating shift template:", error);
+      res.status(500).json({ error: "Failed to create shift template" });
+    }
+  });
+
+  app.put("/api/shift-templates/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid template ID" });
+      }
+      const updates = insertShiftTemplateSchema.partial().parse(req.body);
+      const template = await storage.updateShiftTemplate(id, updates);
+      if (!template) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error("Error updating shift template:", error);
+      res.status(500).json({ error: "Failed to update shift template" });
+    }
+  });
+
+  app.delete("/api/shift-templates/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid template ID" });
+      }
+      const success = await storage.deleteShiftTemplate(id);
+      if (!success) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting shift template:", error);
+      res.status(500).json({ error: "Failed to delete shift template" });
+    }
+  });
+
+  // Resource Shift Assignments
+  app.get("/api/resource-shift-assignments", async (req, res) => {
+    try {
+      const resourceId = req.query.resourceId ? parseInt(req.query.resourceId as string) : undefined;
+      const effectiveDate = req.query.effectiveDate ? new Date(req.query.effectiveDate as string) : undefined;
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      
+      let assignments;
+      if (startDate && endDate) {
+        // Get assignments in date range
+        assignments = await storage.getResourceShiftAssignments(resourceId, effectiveDate);
+        // Filter by date range in application logic for simplicity
+        assignments = assignments.filter(a => {
+          const aDate = new Date(a.effectiveDate);
+          return aDate >= startDate && aDate <= endDate;
+        });
+      } else {
+        assignments = await storage.getResourceShiftAssignments(resourceId, effectiveDate);
+      }
+      
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching resource shift assignments:", error);
+      res.status(500).json({ error: "Failed to fetch resource shift assignments" });
+    }
+  });
+
+  app.post("/api/resource-shift-assignments", requireAuth, async (req, res) => {
+    try {
+      const assignmentData = insertResourceShiftAssignmentSchema.parse(req.body);
+      const assignment = await storage.createResourceShiftAssignment(assignmentData);
+      res.status(201).json(assignment);
+    } catch (error) {
+      console.error("Error creating resource shift assignment:", error);
+      res.status(500).json({ error: "Failed to create resource shift assignment" });
+    }
+  });
+
+  app.put("/api/resource-shift-assignments/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid assignment ID" });
+      }
+      const updates = insertResourceShiftAssignmentSchema.partial().parse(req.body);
+      const assignment = await storage.updateResourceShiftAssignment(id, updates);
+      if (!assignment) {
+        return res.status(404).json({ error: "Assignment not found" });
+      }
+      res.json(assignment);
+    } catch (error) {
+      console.error("Error updating resource shift assignment:", error);
+      res.status(500).json({ error: "Failed to update resource shift assignment" });
+    }
+  });
+
+  // Holidays Management
+  app.get("/api/holidays", async (req, res) => {
+    try {
+      const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : undefined;
+      const year = req.query.year ? parseInt(req.query.year as string) : undefined;
+      const month = req.query.month ? parseInt(req.query.month as string) : undefined;
+      
+      let holidays;
+      if (year && month) {
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0);
+        holidays = await storage.getHolidaysInDateRange(startDate, endDate, plantId);
+      } else {
+        holidays = await storage.getHolidays(plantId, year);
+      }
+      
+      res.json(holidays);
+    } catch (error) {
+      console.error("Error fetching holidays:", error);
+      res.status(500).json({ error: "Failed to fetch holidays" });
+    }
+  });
+
+  app.post("/api/holidays", requireAuth, async (req, res) => {
+    try {
+      const holidayData = insertHolidaySchema.parse(req.body);
+      const holiday = await storage.createHoliday(holidayData);
+      res.status(201).json(holiday);
+    } catch (error) {
+      console.error("Error creating holiday:", error);
+      res.status(500).json({ error: "Failed to create holiday" });
+    }
+  });
+
+  app.put("/api/holidays/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid holiday ID" });
+      }
+      const updates = insertHolidaySchema.partial().parse(req.body);
+      const holiday = await storage.updateHoliday(id, updates);
+      if (!holiday) {
+        return res.status(404).json({ error: "Holiday not found" });
+      }
+      res.json(holiday);
+    } catch (error) {
+      console.error("Error updating holiday:", error);
+      res.status(500).json({ error: "Failed to update holiday" });
+    }
+  });
+
+  app.delete("/api/holidays/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid holiday ID" });
+      }
+      const success = await storage.deleteHoliday(id);
+      if (!success) {
+        return res.status(404).json({ error: "Holiday not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting holiday:", error);
+      res.status(500).json({ error: "Failed to delete holiday" });
+    }
+  });
+
+  // Resource Absences Management
+  app.get("/api/resource-absences", async (req, res) => {
+    try {
+      const resourceId = req.query.resourceId ? parseInt(req.query.resourceId as string) : undefined;
+      const status = req.query.status as string | undefined;
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      
+      let absences;
+      if (startDate && endDate) {
+        absences = await storage.getAbsencesInDateRange(startDate, endDate, resourceId);
+      } else {
+        absences = await storage.getResourceAbsences(resourceId, status);
+      }
+      
+      res.json(absences);
+    } catch (error) {
+      console.error("Error fetching resource absences:", error);
+      res.status(500).json({ error: "Failed to fetch resource absences" });
+    }
+  });
+
+  app.post("/api/resource-absences", requireAuth, async (req, res) => {
+    try {
+      const absenceData = insertResourceAbsenceSchema.parse(req.body);
+      const absence = await storage.createResourceAbsence(absenceData);
+      res.status(201).json(absence);
+    } catch (error) {
+      console.error("Error creating resource absence:", error);
+      res.status(500).json({ error: "Failed to create resource absence" });
+    }
+  });
+
+  app.patch("/api/resource-absences/:id/approve", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid absence ID" });
+      }
+      const approvedBy = req.user?.id || 1; // Default to user 1 if no auth
+      const absence = await storage.approveResourceAbsence(id, approvedBy);
+      if (!absence) {
+        return res.status(404).json({ error: "Absence not found" });
+      }
+      res.json(absence);
+    } catch (error) {
+      console.error("Error approving resource absence:", error);
+      res.status(500).json({ error: "Failed to approve resource absence" });
+    }
+  });
+
+  app.patch("/api/resource-absences/:id/deny", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid absence ID" });
+      }
+      const approvedBy = req.user?.id || 1;
+      const { reason } = req.body;
+      const absence = await storage.denyResourceAbsence(id, approvedBy, reason);
+      if (!absence) {
+        return res.status(404).json({ error: "Absence not found" });
+      }
+      res.json(absence);
+    } catch (error) {
+      console.error("Error denying resource absence:", error);
+      res.status(500).json({ error: "Failed to deny resource absence" });
+    }
+  });
+
+  // Shift Scenarios for Capacity Planning
+  app.get("/api/shift-scenarios", async (req, res) => {
+    try {
+      const capacityScenarioId = req.query.capacityScenarioId ? parseInt(req.query.capacityScenarioId as string) : undefined;
+      const scenarios = await storage.getShiftScenarios(capacityScenarioId);
+      res.json(scenarios);
+    } catch (error) {
+      console.error("Error fetching shift scenarios:", error);
+      res.status(500).json({ error: "Failed to fetch shift scenarios" });
+    }
+  });
+
+  app.post("/api/shift-scenarios", requireAuth, async (req, res) => {
+    try {
+      const scenarioData = insertShiftScenarioSchema.parse(req.body);
+      const scenario = await storage.createShiftScenario(scenarioData);
+      res.status(201).json(scenario);
+    } catch (error) {
+      console.error("Error creating shift scenario:", error);
+      res.status(500).json({ error: "Failed to create shift scenario" });
+    }
+  });
+
+  app.post("/api/shift-scenarios/:id/simulate", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid scenario ID" });
+      }
+      const scenario = await storage.runShiftScenarioSimulation(id);
+      res.json(scenario);
+    } catch (error) {
+      console.error("Error running shift scenario simulation:", error);
+      res.status(500).json({ error: "Failed to run shift scenario simulation" });
+    }
+  });
+
+  // Shift Utilization and Analytics
+  app.get("/api/shift-utilization", async (req, res) => {
+    try {
+      const shiftTemplateId = req.query.shiftTemplateId ? parseInt(req.query.shiftTemplateId as string) : undefined;
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      
+      const dateRange = startDate && endDate ? { start: startDate, end: endDate } : undefined;
+      const utilization = await storage.getShiftUtilization(shiftTemplateId, dateRange);
+      res.json(utilization);
+    } catch (error) {
+      console.error("Error fetching shift utilization:", error);
+      res.status(500).json({ error: "Failed to fetch shift utilization" });
+    }
+  });
+
+  app.get("/api/shift-utilization/summary", async (req, res) => {
+    try {
+      const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : undefined;
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      
+      const dateRange = startDate && endDate ? { start: startDate, end: endDate } : undefined;
+      const summary = await storage.getShiftUtilizationSummary(plantId, dateRange);
+      res.json(summary);
+    } catch (error) {
+      console.error("Error fetching shift utilization summary:", error);
+      res.status(500).json({ error: "Failed to fetch shift utilization summary" });
     }
   });
 

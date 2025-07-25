@@ -59,6 +59,7 @@ import PresentationSystemPage from "@/pages/presentation-system";
 import ProductionPlanningPage from "@/pages/production-planning";
 import OptimizationStudioPage from "@/pages/optimization-studio";
 import MarketingLandingPage from "@/pages/marketing-landing";
+import ShiftManagement from "@/pages/shift-management";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
@@ -349,6 +350,11 @@ function Router() {
           <Route path="/presentation-studio">
             <ProtectedRoute feature="presentation-system" action="view">
               <PresentationSystemPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/shift-management">
+            <ProtectedRoute feature="shift-management" action="view">
+              <ShiftManagement />
             </ProtectedRoute>
           </Route>
           <Route path="/" component={DashboardWithAutoTour} />

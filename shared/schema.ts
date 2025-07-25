@@ -751,6 +751,158 @@ export const capacityProjections = pgTable("capacity_projections", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Comprehensive Shift Management System
+// Resource shift templates - define standard shift patterns
+export const shiftTemplates = pgTable("shift_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // "Day Shift", "Night Shift", "Weekend", etc.
+  description: text("description"),
+  plantId: integer("plant_id").references(() => plants.id),
+  shiftType: text("shift_type").notNull(), // regular, overtime, split, rotating
+  startTime: text("start_time").notNull(), // HH:MM format (24-hour)
+  endTime: text("end_time").notNull(), // HH:MM format (24-hour)
+  duration: integer("duration").notNull(), // minutes
+  breakDuration: integer("break_duration").default(30), // minutes
+  lunchDuration: integer("lunch_duration").default(60), // minutes
+  daysOfWeek: jsonb("days_of_week").$type<number[]>().notNull(), // [1,2,3,4,5] = Mon-Fri
+  isActive: boolean("is_active").default(true),
+  premiumRate: integer("premium_rate").default(0), // percentage (150 = 1.5x pay)
+  minimumStaffing: integer("minimum_staffing").default(1),
+  maximumStaffing: integer("maximum_staffing"),
+  requiredCapabilities: jsonb("required_capabilities").$type<number[]>().default([]), // capability IDs
+  color: text("color").default("#3B82F6"), // for UI display
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Resource shift assignments - links resources to shifts for specific periods
+export const resourceShiftAssignments = pgTable("resource_shift_assignments", {
+  id: serial("id").primaryKey(),
+  resourceId: integer("resource_id").references(() => resources.id).notNull(),
+  shiftTemplateId: integer("shift_template_id").references(() => shiftTemplates.id).notNull(),
+  effectiveDate: timestamp("effective_date").notNull(),
+  endDate: timestamp("end_date"), // null = indefinite
+  status: text("status").notNull().default("active"), // active, suspended, ended
+  assignedBy: integer("assigned_by").references(() => users.id).notNull(),
+  notes: text("notes"),
+  isTemporary: boolean("is_temporary").default(false), // for overtime, vacation coverage
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Shift scenarios for capacity planning - test different shift configurations
+export const shiftScenarios = pgTable("shift_scenarios", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  capacityScenarioId: integer("capacity_scenario_id").references(() => capacityPlanningScenarios.id),
+  status: text("status").notNull().default("draft"), // draft, active, archived
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  simulationResults: jsonb("simulation_results").$type<{
+    totalCapacity: number; // units per day
+    laborCost: number; // per day
+    utilizationRate: number; // percentage
+    bottlenecks: Array<{
+      resourceType: string;
+      shiftName: string;
+      capacityGap: number;
+    }>;
+    recommendations: Array<{
+      type: "add_shift" | "extend_shift" | "add_resources" | "redistribute";
+      description: string;
+      estimatedImpact: number;
+      estimatedCost: number;
+    }>;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Company holidays and plant-specific closures
+export const holidays = pgTable("holidays", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // "New Year's Day", "Plant Maintenance Day"
+  date: timestamp("date").notNull(),
+  type: text("type").notNull(), // federal, state, company, plant_specific
+  plantId: integer("plant_id").references(() => plants.id), // null = all plants
+  isRecurring: boolean("is_recurring").default(false), // annual holidays
+  recurringType: text("recurring_type"), // "annual", "monthly", "custom"
+  recurringPattern: jsonb("recurring_pattern").$type<{
+    month?: number; // 1-12
+    day?: number; // 1-31
+    weekOfMonth?: number; // 1-5
+    dayOfWeek?: number; // 0-6
+  }>(),
+  operationalImpact: text("operational_impact").notNull(), // full_closure, reduced_staff, essential_only
+  plannedStaffing: integer("planned_staffing").default(0), // number of essential staff
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Resource absences - planned and unplanned time off
+export const resourceAbsences = pgTable("resource_absences", {
+  id: serial("id").primaryKey(),
+  resourceId: integer("resource_id").references(() => resources.id).notNull(),
+  type: text("type").notNull(), // vacation, sick, personal, training, maintenance, breakdown
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  status: text("status").notNull().default("pending"), // pending, approved, denied, active, completed
+  isPlanned: boolean("is_planned").default(true), // false for emergency absences
+  reason: text("reason"),
+  approvedBy: integer("approved_by").references(() => users.id),
+  replacementResourceId: integer("replacement_resource_id").references(() => resources.id),
+  impactOnSchedule: text("impact_on_schedule"), // none, minor, major, critical
+  operationsNotified: boolean("operations_notified").default(false),
+  reschedulingRequired: boolean("rescheduling_required").default(false),
+  notes: text("notes"),
+  requestedBy: integer("requested_by").references(() => users.id),
+  requestedAt: timestamp("requested_at").defaultNow(),
+  approvedAt: timestamp("approved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Shift coverage tracking - who's covering for absent resources
+export const shiftCoverage = pgTable("shift_coverage", {
+  id: serial("id").primaryKey(),
+  absenceId: integer("absence_id").references(() => resourceAbsences.id).notNull(),
+  coveringResourceId: integer("covering_resource_id").references(() => resources.id).notNull(),
+  shiftDate: timestamp("shift_date").notNull(),
+  shiftTemplateId: integer("shift_template_id").references(() => shiftTemplates.id).notNull(),
+  coverageType: text("coverage_type").notNull(), // full, partial, split
+  startTime: text("start_time"), // override shift template if partial
+  endTime: text("end_time"), // override shift template if partial
+  premiumPay: boolean("premium_pay").default(true), // overtime or premium rates
+  status: text("status").notNull().default("scheduled"), // scheduled, confirmed, completed, cancelled
+  efficiencyRating: integer("efficiency_rating"), // 1-5 after completion
+  notes: text("notes"),
+  arrangedBy: integer("arranged_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Shift utilization metrics - track actual vs planned utilization
+export const shiftUtilization = pgTable("shift_utilization", {
+  id: serial("id").primaryKey(),
+  shiftTemplateId: integer("shift_template_id").references(() => shiftTemplates.id).notNull(),
+  date: timestamp("date").notNull(),
+  plannedResources: integer("planned_resources").notNull(),
+  actualResources: integer("actual_resources").notNull(),
+  plannedOutput: integer("planned_output"), // units expected
+  actualOutput: integer("actual_output"), // units produced
+  utilizationRate: integer("utilization_rate").notNull(), // percentage
+  absenteeRate: integer("absentee_rate").notNull(), // percentage
+  overtimeHours: integer("overtime_hours").default(0),
+  downtimeMinutes: integer("downtime_minutes").default(0),
+  qualityScore: integer("quality_score"), // percentage
+  safetyIncidents: integer("safety_incidents").default(0),
+  notes: text("notes"),
+  recordedBy: integer("recorded_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Canvas Content Storage
 export const canvasContent = pgTable("canvas_content", {
   id: serial("id").primaryKey(),
@@ -3954,3 +4106,81 @@ export type InsertUserIndustryTemplate = z.infer<typeof insertUserIndustryTempla
 
 export type TemplateConfiguration = typeof templateConfigurations.$inferSelect;
 export type InsertTemplateConfiguration = z.infer<typeof insertTemplateConfigurationSchema>;
+
+// Shift Management System Insert Schemas
+export const insertShiftTemplateSchema = createInsertSchema(shiftTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertResourceShiftAssignmentSchema = createInsertSchema(resourceShiftAssignments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  effectiveDate: z.union([z.string().datetime(), z.date()]),
+  endDate: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertShiftScenarioSchema = createInsertSchema(shiftScenarios).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertHolidaySchema = createInsertSchema(holidays).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  date: z.union([z.string().datetime(), z.date()]),
+});
+
+export const insertResourceAbsenceSchema = createInsertSchema(resourceAbsences).omit({
+  id: true,
+  requestedAt: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  startDate: z.union([z.string().datetime(), z.date()]),
+  endDate: z.union([z.string().datetime(), z.date()]),
+  approvedAt: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertShiftCoverageSchema = createInsertSchema(shiftCoverage).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  shiftDate: z.union([z.string().datetime(), z.date()]),
+});
+
+export const insertShiftUtilizationSchema = createInsertSchema(shiftUtilization).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  date: z.union([z.string().datetime(), z.date()]),
+});
+
+// Shift Management System Types
+export type ShiftTemplate = typeof shiftTemplates.$inferSelect;
+export type InsertShiftTemplate = z.infer<typeof insertShiftTemplateSchema>;
+
+export type ResourceShiftAssignment = typeof resourceShiftAssignments.$inferSelect;
+export type InsertResourceShiftAssignment = z.infer<typeof insertResourceShiftAssignmentSchema>;
+
+export type ShiftScenario = typeof shiftScenarios.$inferSelect;
+export type InsertShiftScenario = z.infer<typeof insertShiftScenarioSchema>;
+
+export type Holiday = typeof holidays.$inferSelect;
+export type InsertHoliday = z.infer<typeof insertHolidaySchema>;
+
+export type ResourceAbsence = typeof resourceAbsences.$inferSelect;
+export type InsertResourceAbsence = z.infer<typeof insertResourceAbsenceSchema>;
+
+export type ShiftCoverage = typeof shiftCoverage.$inferSelect;
+export type InsertShiftCoverage = z.infer<typeof insertShiftCoverageSchema>;
+
+export type ShiftUtilization = typeof shiftUtilization.$inferSelect;
+export type InsertShiftUtilization = z.infer<typeof insertShiftUtilizationSchema>;
