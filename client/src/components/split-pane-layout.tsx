@@ -116,13 +116,17 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
     };
   }, []);
 
-  // Navigation detection: close canvas when route changes
+  // Navigation detection disabled temporarily - causing issues with canvas toggle
+  // TODO: Re-implement with proper navigation change detection
+  /*
   useEffect(() => {
-    if (isCanvasVisible) {
+    // Close canvas when navigating to different pages
+    if (isCanvasVisible && location !== '/') {
       console.log('Navigation detected, closing canvas. Current location:', location);
       setCanvasVisible(false);
     }
   }, [location, isCanvasVisible, setCanvasVisible]);
+  */
 
   // Add event listeners for dragging
   useEffect(() => {

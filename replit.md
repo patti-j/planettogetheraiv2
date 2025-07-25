@@ -134,6 +134,8 @@ The application uses a modern full-stack architecture with strong typing through
 - Canvas now shows properly on mobile with smooth fade-in/out animations
 - Enhanced split-pane layout to maintain component state during canvas visibility toggles
 - Improved mobile user experience with proper canvas mounting and unmounting behavior
+- **CRITICAL FIX**: Disabled problematic navigation detection that was immediately closing canvas after opening
+- Canvas toggle now works properly without automatic closure from false navigation detection
 
 ## Recent Changes (July 25, 2025)
 
