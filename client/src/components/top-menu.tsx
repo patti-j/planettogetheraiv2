@@ -155,35 +155,70 @@ export default function TopMenu() {
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-      <div className="flex items-center justify-between px-4 py-3">
-        {/* Logo and Company Name */}
-        <div className="flex items-center space-x-3">
-          <Factory className="w-8 h-8 text-blue-600" />
-          <h1 className="text-xl font-bold text-gray-900">PlanetTogether</h1>
-        </div>
-
-        {/* Main Menu Dropdown */}
-        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="flex items-center space-x-2">
-              <Grid3X3 className="w-5 h-5" />
-              <span>Menu</span>
-              <ChevronDown className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent 
-            className="w-[90vw] max-w-6xl p-6 bg-white border border-gray-200 shadow-lg"
-            align="end"
-            sideOffset={10}
+    <>
+      {/* Hamburger Menu Button - Only visible when menu is closed */}
+      {!menuOpen && (
+        <div className="fixed top-2 left-2 z-50">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setMenuOpen(true)}
+            className="p-2 bg-white shadow-md border border-gray-300 hover:bg-gray-50"
           >
-            <div className="space-y-8">
+            <Menu className="w-5 h-5" />
+          </Button>
+        </div>
+      )}
+
+      {/* Full Screen Dropdown Menu */}
+      {menuOpen && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-25">
+          <div className="bg-white border-b border-gray-200 shadow-lg min-h-[50vh] max-h-[80vh] overflow-y-auto">
+            {/* Menu Header with Logo and Controls */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center space-x-3">
+                <Factory className="w-8 h-8 text-blue-600" />
+                <h1 className="text-xl font-bold text-gray-900">PlanetTogether</h1>
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                {/* User Profile Section */}
+                <div className="flex items-center space-x-3">
+                  <TrainingModeExit />
+                  <RoleSwitcher userId={user?.id || 0} currentRole={user?.currentRole} />
+                  <div className="flex items-center space-x-2">
+                    <Avatar className="w-8 h-8">
+                      <AvatarFallback className="bg-blue-500 text-white text-sm">
+                        {user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="hidden md:block text-left">
+                      <p className="text-sm font-medium text-gray-900">{user?.username}</p>
+                      <p className="text-xs text-gray-500">{user?.currentRole?.name}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Close Button */}
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setMenuOpen(false)}
+                  className="p-2"
+                >
+                  <ChevronDown className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Menu Content */}
+            <div className="p-6 space-y-8">
               {getVisibleGroups().map((group, groupIndex) => (
                 <div key={groupIndex} className="space-y-4">
                   <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
                     {group.title}
                   </h3>
-                  <div className="grid grid-cols-6 gap-4 auto-rows-min">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                     {group.features.map((feature, featureIndex) => (
                       <Link 
                         key={featureIndex} 
@@ -192,14 +227,23 @@ export default function TopMenu() {
                       >
                         <div className={`
                           ${getCardSize(group.priority)}
-                          ${feature.color} 
-                          ${feature.isAI ? aiTheme.gradient : ''}
-                          rounded-lg p-4 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105
-                          flex flex-col items-center justify-center text-white text-center space-y-2
-                          ${location === feature.href ? 'ring-2 ring-white ring-offset-2 ring-offset-blue-500' : ''}
+                          bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md
+                          rounded-xl p-4 cursor-pointer transition-all duration-200 hover:scale-[1.02]
+                          flex flex-col items-center justify-center text-center space-y-3
+                          ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50' : ''}
+                          ${feature.isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
                         `}>
-                          <feature.icon className={getIconSize(group.priority)} />
-                          <span className={getTextSize(group.priority)}>
+                          <div className={`
+                            ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : 'bg-gray-100'}
+                            p-3 rounded-full flex items-center justify-center
+                          `}>
+                            <feature.icon 
+                              className={`${getIconSize(group.priority)} ${feature.isAI ? 'text-white' : feature.color.replace('bg-', 'text-').replace('-500', '-600')}`} 
+                              strokeWidth={1.5} 
+                              fill="none"
+                            />
+                          </div>
+                          <span className={`${getTextSize(group.priority)} text-gray-800 font-medium leading-tight`}>
                             {feature.label}
                           </span>
                         </div>
@@ -209,27 +253,15 @@ export default function TopMenu() {
                 </div>
               ))}
             </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* User Profile Section */}
-        <div className="flex items-center space-x-3">
-          <TrainingModeExit />
-          <RoleSwitcher userId={user?.id || 0} currentRole={user?.currentRole} />
-          <div className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded-lg p-2 transition-colors">
-            <Avatar className="w-8 h-8">
-              <AvatarFallback className="bg-blue-500 text-white text-sm">
-                {user?.username?.charAt(0)?.toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="hidden md:block text-left">
-              <p className="text-sm font-medium text-gray-900">{user?.username}</p>
-              <p className="text-xs text-gray-500">{user?.currentRole?.name}</p>
-            </div>
-            <User className="w-4 h-4 text-gray-500" />
           </div>
+          
+          {/* Click outside to close */}
+          <div 
+            className="absolute inset-0 -z-10" 
+            onClick={() => setMenuOpen(false)}
+          />
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }

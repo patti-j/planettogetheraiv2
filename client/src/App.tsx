@@ -160,7 +160,7 @@ function Router() {
   }
 
   return (
-    <div className="h-screen bg-gray-50 pt-16"> {/* Add top padding for fixed menu */}
+    <div className="h-screen bg-gray-50"> {/* No top padding needed */}
       <TopMenu />
       <SplitPaneLayout maxPanel={<MaxSidebar />}>
         <Switch>
