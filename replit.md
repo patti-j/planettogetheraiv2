@@ -121,6 +121,14 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 25, 2025)
 
+✓ **Shop Floor Edit Mode UX Fix (July 25, 2025)**:
+- Fixed critical issue where toggling edit mode was causing resource icons to move unexpectedly
+- Implemented stable position reference system to prevent unwanted resource movement during edit mode transitions
+- Enhanced DraggableResource component with persistent position tracking that maintains coordinates when switching between view and edit modes
+- Added stable position state management that only updates when actual layout changes occur, not on edit mode toggle
+- Fixed mobile drag implementation to use stable coordinates preventing position drift during mode changes
+- Edit mode toggle now preserves exact resource positions eliminating user frustration with unintended resource movement
+
 ✓ **Runtime Error Resolution & Industry Templates Restoration (July 25, 2025)**:
 - Fixed critical uninitialized variable error in shop-floor.tsx by adding missing areas state declaration
 - Completely restored Industry Templates page with comprehensive functionality including template library, search/filter controls, and detailed template management

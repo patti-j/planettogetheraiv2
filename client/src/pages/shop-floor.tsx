@@ -73,6 +73,7 @@ const useMobileDrag = (
   useEffect(() => {
     if (!isDragging) {
       setCurrentPosition({ x: item.x, y: item.y });
+      initialItemPosRef.current = { x: item.x, y: item.y };
     }
   }, [item.x, item.y, isDragging]);
 
@@ -231,9 +232,20 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo,
   // Calculate effective image size (individual override or global)
   const effectiveResourceSize = individualImageSizes[resource.id] || globalImageSize;
   
+  // Store stable position reference to prevent unwanted movement
+  const [stablePosition] = useState({ x: layout.x, y: layout.y });
+  
+  // Only update stable position when layout actually changes, not on edit mode toggle
+  useEffect(() => {
+    if (layout.x !== stablePosition.x || layout.y !== stablePosition.y) {
+      stablePosition.x = layout.x;
+      stablePosition.y = layout.y;
+    }
+  }, [layout.x, layout.y, stablePosition]);
+
   // Mobile-friendly drag implementation with immediate position updates
   const mobileDrag = useMobileDrag(
-    { x: layout.x, y: layout.y, id: layout.id },
+    { x: stablePosition.x, y: stablePosition.y, id: layout.id },
     (newX: number, newY: number) => {
       setHasDragged(true);
       setClickBlocked(true);
@@ -250,7 +262,7 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo,
     item: () => {
       if (!isEditMode) return null;
       setHasDragged(true);
-      return { id: layout.id, x: layout.x, y: layout.y };
+      return { id: layout.id, x: stablePosition.x, y: stablePosition.y };
     },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
@@ -262,8 +274,8 @@ const DraggableResource = ({ resource, layout, status, onMove, onDetails, photo,
     },
   });
 
-  // Use mobile drag position if dragging, otherwise use layout position
-  const currentPosition = mobileDrag.isDragging ? mobileDrag.position : { x: layout.x, y: layout.y };
+  // Use mobile drag position if dragging, otherwise use stable position
+  const currentPosition = mobileDrag.isDragging ? mobileDrag.position : { x: stablePosition.x, y: stablePosition.y };
   const isCurrentlyDragging = isDragging || mobileDrag.isDragging;
   
   // Handle click to prevent opening dialog after drag
