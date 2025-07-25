@@ -85,7 +85,7 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const updatePreferencesMutation = useMutation({
     mutationFn: (preferences: any) => 
-      apiRequest(`/api/user-preferences/${user?.id}`, 'PATCH', preferences),
+      apiRequest('PATCH', `/api/user-preferences/${user?.id}`, preferences),
   });
 
   // Detect mobile on mount and window resize

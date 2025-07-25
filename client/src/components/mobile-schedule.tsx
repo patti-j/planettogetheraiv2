@@ -396,7 +396,7 @@ export default function MobileSchedule({
     const job = jobs.find(j => j.id === operation.jobId);
     const resource = resources.find(r => r.id === operation.assignedResourceId);
     const requiredCapabilities = capabilities.filter(c => 
-      operation.requiredCapabilities.includes(c.id)
+      operation.requiredCapabilities && operation.requiredCapabilities.includes(c.id)
     );
 
     return { job, resource, requiredCapabilities };
