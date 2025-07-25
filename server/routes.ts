@@ -1343,6 +1343,8 @@ Provide the response as a JSON object with the following structure:
       res.json({ 
         message: agentResponse.message,
         canvasAction: agentResponse.canvasAction,
+        data: agentResponse.data,
+        actions: agentResponse.actions,
         insights,
         context: {
           page: context?.page,
