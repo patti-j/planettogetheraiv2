@@ -163,6 +163,15 @@ export default function TopMenu() {
             {/* Menu Header with Logo and Controls */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
               <div className="flex items-center space-x-3">
+                {/* Close Button - moved to left side */}
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setMenuOpen(false)}
+                  className="p-2 hover:bg-gray-200"
+                >
+                  <ChevronDown className="w-5 h-5" />
+                </Button>
                 <Factory className="w-8 h-8 text-blue-600" />
                 <h1 className="text-xl font-bold text-gray-900">PlanetTogether</h1>
               </div>
@@ -184,16 +193,6 @@ export default function TopMenu() {
                     </div>
                   </div>
                 </div>
-                
-                {/* Close Button */}
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setMenuOpen(false)}
-                  className="p-2"
-                >
-                  <ChevronDown className="w-5 h-5" />
-                </Button>
               </div>
             </div>
 
