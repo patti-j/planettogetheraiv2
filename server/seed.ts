@@ -2,7 +2,8 @@ import { db } from "./db";
 import { 
   capabilities, resources, jobs, operations, users, roles, permissions, userRoles, rolePermissions,
   customerStories, contentBlocks, marketingPages, leadCaptures, disruptions, disruptionActions,
-  businessGoals, goalProgress, goalRisks, goalIssues, dashboardConfigs, reportConfigs
+  businessGoals, goalProgress, goalRisks, goalIssues, dashboardConfigs, reportConfigs,
+  visualFactoryDisplays
 } from "@shared/schema";
 import { sql, eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -19,21 +20,23 @@ export async function seedDatabase() {
   const existingBusinessGoals = await db.select().from(businessGoals).limit(1);
   const existingDashboards = await db.select().from(dashboardConfigs).limit(1);
   const existingReports = await db.select().from(reportConfigs).limit(1);
+  const existingVisualFactoryDisplays = await db.select().from(visualFactoryDisplays).limit(1);
   
-  // Force re-seed if presentation permissions, disruptions, business goals, dashboards, or reports are missing
+  // Force re-seed if presentation permissions, disruptions, business goals, dashboards, reports, or visual factory displays are missing
   const shouldReseedPermissions = existingPresentationPermissions.length === 0;
   const shouldReseedDisruptions = existingDisruptions.length === 0;
   const shouldReseedBusinessGoals = existingBusinessGoals.length === 0;
   const shouldReseedDashboards = existingDashboards.length === 0;
   const shouldReseedReports = existingReports.length === 0;
+  const shouldReseedVisualFactory = existingVisualFactoryDisplays.length === 0;
   
-  if (existingCapabilities.length > 0 && existingUsers.length > 0 && existingDefaultRoles.length > 0 && !shouldReseedPermissions && !shouldReseedDisruptions && !shouldReseedBusinessGoals && !shouldReseedDashboards && !shouldReseedReports) {
+  if (existingCapabilities.length > 0 && existingUsers.length > 0 && existingDefaultRoles.length > 0 && !shouldReseedPermissions && !shouldReseedDisruptions && !shouldReseedBusinessGoals && !shouldReseedDashboards && !shouldReseedReports && !shouldReseedVisualFactory) {
     console.log("Database already seeded, skipping...");
     return;
   }
   
   // Skip production data seeding if it already exists but seed user management
-  const shouldSeedProduction = existingCapabilities.length === 0 || shouldReseedDisruptions || shouldReseedBusinessGoals || shouldReseedDashboards || shouldReseedReports;
+  const shouldSeedProduction = existingCapabilities.length === 0 || shouldReseedDisruptions || shouldReseedBusinessGoals || shouldReseedDashboards || shouldReseedReports || shouldReseedVisualFactory;
 
   if (shouldSeedProduction) {
     // Only insert capabilities if they don't exist
@@ -1399,6 +1402,415 @@ export async function seedDatabase() {
 
     await db.insert(reportConfigs).values(sampleReports);
     console.log("✅ Sample reports seeded successfully");
+  }
+
+  // Seed Visual Factory Displays
+  if (shouldReseedVisualFactory) {
+    const visualFactoryDisplaysData = [
+      {
+        name: "Shop Floor Production Dashboard",
+        description: "Real-time production metrics and status for operators and supervisors",
+        location: "Main Production Floor - Wall Display",
+        audience: "shop-floor",
+        autoRotationInterval: 15,
+        isActive: true,
+        useAiMode: false,
+        widgets: [
+          {
+            id: "production-status",
+            type: "metrics",
+            title: "Production Status",
+            position: { x: 0, y: 0, width: 6, height: 3 },
+            config: { 
+              showJobs: true, 
+              showUtilization: true, 
+              showOnTime: true,
+              fontSize: "2xl",
+              colorScheme: "production"
+            },
+            priority: 10,
+            audienceRelevance: { "shop-floor": 10, "management": 8, "general": 6 }
+          },
+          {
+            id: "active-operations",
+            type: "schedule",
+            title: "Active Operations",
+            position: { x: 6, y: 0, width: 6, height: 4 },
+            config: { 
+              showOnlyActive: true, 
+              showResourceAssignments: true,
+              showPriorities: true,
+              highlightOverdue: true
+            },
+            priority: 9,
+            audienceRelevance: { "shop-floor": 10, "management": 7, "general": 5 }
+          },
+          {
+            id: "safety-alerts",
+            type: "alerts",
+            title: "Safety & Quality Alerts",
+            position: { x: 0, y: 3, width: 6, height: 2 },
+            config: { 
+              showCritical: true, 
+              showSafety: true,
+              showQuality: true,
+              autoRefresh: 30
+            },
+            priority: 10,
+            audienceRelevance: { "shop-floor": 10, "management": 9, "general": 8 }
+          },
+          {
+            id: "efficiency-progress",
+            type: "progress",
+            title: "Today's Efficiency",
+            position: { x: 0, y: 5, width: 4, height: 2 },
+            config: { 
+              showTarget: true, 
+              showTrend: true,
+              targetValue: 85,
+              currentValue: 82.4,
+              unit: "%"
+            },
+            priority: 8,
+            audienceRelevance: { "shop-floor": 9, "management": 8, "general": 6 }
+          },
+          {
+            id: "shift-announcements",
+            type: "announcements",
+            title: "Shift Announcements",
+            position: { x: 4, y: 5, width: 8, height: 2 },
+            config: { 
+              showLatest: 5, 
+              autoScroll: true,
+              showTimestamp: true,
+              prioritizeUrgent: true
+            },
+            priority: 7,
+            audienceRelevance: { "shop-floor": 10, "management": 6, "general": 8 }
+          }
+        ]
+      },
+      {
+        name: "Executive Management Overview",
+        description: "High-level KPIs, business metrics, and strategic performance indicators",
+        location: "Executive Conference Room - 65\" Display",
+        audience: "management",
+        autoRotationInterval: 30,
+        isActive: true,
+        useAiMode: true,
+        widgets: [
+          {
+            id: "financial-kpis",
+            type: "metrics",
+            title: "Financial Performance",
+            position: { x: 0, y: 0, width: 4, height: 3 },
+            config: { 
+              showRevenue: true, 
+              showCosts: true, 
+              showMargin: true,
+              showTrends: true,
+              timeframe: "monthly"
+            },
+            priority: 10,
+            audienceRelevance: { "management": 10, "sales": 8, "general": 5 }
+          },
+          {
+            id: "production-summary",
+            type: "chart",
+            title: "Production Summary",
+            position: { x: 4, y: 0, width: 4, height: 3 },
+            config: { 
+              chartType: "bar",
+              showTargets: true,
+              showVariance: true,
+              timeframe: "weekly",
+              includeForecasts: true
+            },
+            priority: 9,
+            audienceRelevance: { "management": 10, "shop-floor": 7, "general": 6 }
+          },
+          {
+            id: "customer-metrics",
+            type: "metrics",
+            title: "Customer Satisfaction",
+            position: { x: 8, y: 0, width: 4, height: 3 },
+            config: { 
+              showOnTimeDelivery: true, 
+              showQualityScore: true,
+              showCustomerFeedback: true,
+              includeComparisons: true
+            },
+            priority: 9,
+            audienceRelevance: { "management": 10, "sales": 10, "customer-service": 9 }
+          },
+          {
+            id: "capacity-utilization",
+            type: "chart",
+            title: "Capacity Utilization",
+            position: { x: 0, y: 3, width: 6, height: 3 },
+            config: { 
+              chartType: "line",
+              showOptimalRange: true,
+              showBottlenecks: true,
+              predictiveAnalytics: true
+            },
+            priority: 8,
+            audienceRelevance: { "management": 10, "shop-floor": 8, "general": 6 }
+          },
+          {
+            id: "strategic-goals",
+            type: "progress",
+            title: "Strategic Goals Progress",
+            position: { x: 6, y: 3, width: 6, height: 3 },
+            config: { 
+              showQuarterly: true, 
+              showAnnual: true,
+              showMilestones: true,
+              includeRiskFactors: true
+            },
+            priority: 9,
+            audienceRelevance: { "management": 10, "general": 5 }
+          }
+        ]
+      },
+      {
+        name: "Customer Experience Display",
+        description: "Customer-facing metrics showcasing quality, delivery performance, and service excellence",
+        location: "Customer Waiting Area - Interactive Kiosk",
+        audience: "customer-service",
+        autoRotationInterval: 20,
+        isActive: true,
+        useAiMode: false,
+        widgets: [
+          {
+            id: "quality-excellence",
+            type: "metrics",
+            title: "Quality Excellence",
+            position: { x: 0, y: 0, width: 6, height: 3 },
+            config: { 
+              showQualityScore: true, 
+              showCertifications: true,
+              showAwards: true,
+              highlightAchievements: true
+            },
+            priority: 10,
+            audienceRelevance: { "customer-service": 10, "sales": 9, "management": 8 }
+          },
+          {
+            id: "delivery-performance",
+            type: "chart",
+            title: "On-Time Delivery Performance",
+            position: { x: 6, y: 0, width: 6, height: 3 },
+            config: { 
+              chartType: "gauge",
+              showTarget: true,
+              showTrend: true,
+              timeframe: "monthly",
+              targetValue: 95
+            },
+            priority: 9,
+            audienceRelevance: { "customer-service": 10, "sales": 10, "management": 8 }
+          },
+          {
+            id: "customer-testimonials",
+            type: "announcements",
+            title: "Customer Success Stories",
+            position: { x: 0, y: 3, width: 8, height: 3 },
+            config: { 
+              showTestimonials: true,
+              autoRotate: true,
+              showCompanyLogos: true,
+              highlightPositive: true
+            },
+            priority: 8,
+            audienceRelevance: { "customer-service": 10, "sales": 10, "management": 7 }
+          },
+          {
+            id: "sustainability-metrics",
+            type: "metrics",
+            title: "Environmental Impact",
+            position: { x: 8, y: 3, width: 4, height: 3 },
+            config: { 
+              showWasteReduction: true,
+              showEnergyEfficiency: true,
+              showRecycling: true,
+              showCarbonFootprint: true
+            },
+            priority: 7,
+            audienceRelevance: { "customer-service": 9, "management": 8, "general": 8 }
+          }
+        ]
+      },
+      {
+        name: "Sales Performance Center",
+        description: "Sales metrics, order pipeline, customer insights, and revenue tracking",
+        location: "Sales Department - Multi-Screen Setup",
+        audience: "sales",
+        autoRotationInterval: 25,
+        isActive: true,
+        useAiMode: true,
+        widgets: [
+          {
+            id: "sales-pipeline",
+            type: "chart",
+            title: "Sales Pipeline",
+            position: { x: 0, y: 0, width: 8, height: 4 },
+            config: { 
+              chartType: "funnel",
+              showConversion: true,
+              showTargets: true,
+              includeForecasts: true,
+              timeframe: "quarterly"
+            },
+            priority: 10,
+            audienceRelevance: { "sales": 10, "management": 9, "customer-service": 6 }
+          },
+          {
+            id: "revenue-metrics",
+            type: "metrics",
+            title: "Revenue Performance",
+            position: { x: 8, y: 0, width: 4, height: 2 },
+            config: { 
+              showRevenue: true, 
+              showGrowth: true,
+              showTargets: true,
+              showTrends: true,
+              timeframe: "monthly"
+            },
+            priority: 10,
+            audienceRelevance: { "sales": 10, "management": 10, "general": 5 }
+          },
+          {
+            id: "customer-acquisition",
+            type: "metrics",
+            title: "Customer Acquisition",
+            position: { x: 8, y: 2, width: 4, height: 2 },
+            config: { 
+              showNewCustomers: true,
+              showRetention: true,
+              showLifetimeValue: true,
+              compareToTarget: true
+            },
+            priority: 9,
+            audienceRelevance: { "sales": 10, "management": 9, "customer-service": 7 }
+          },
+          {
+            id: "order-fulfillment",
+            type: "chart",
+            title: "Order Fulfillment Status",
+            position: { x: 0, y: 4, width: 6, height: 3 },
+            config: { 
+              chartType: "bar",
+              showPending: true,
+              showInProgress: true,
+              showCompleted: true,
+              realTimeUpdates: true
+            },
+            priority: 8,
+            audienceRelevance: { "sales": 10, "customer-service": 9, "shop-floor": 7 }
+          },
+          {
+            id: "market-opportunities",
+            type: "announcements",
+            title: "Market Opportunities",
+            position: { x: 6, y: 4, width: 6, height: 3 },
+            config: { 
+              showLeads: true,
+              showProspects: true,
+              showMarketTrends: true,
+              prioritizeHotLeads: true
+            },
+            priority: 8,
+            audienceRelevance: { "sales": 10, "management": 8, "customer-service": 6 }
+          }
+        ]
+      },
+      {
+        name: "General Information Hub",
+        description: "Company updates, announcements, weather, and general information for all employees",
+        location: "Main Lobby - Large Format Display",
+        audience: "general",
+        autoRotationInterval: 45,
+        isActive: true,
+        useAiMode: false,
+        widgets: [
+          {
+            id: "company-news",
+            type: "announcements",
+            title: "Company News & Updates",
+            position: { x: 0, y: 0, width: 8, height: 4 },
+            config: { 
+              showLatest: 5,
+              autoScroll: true,
+              showImages: true,
+              prioritizeImportant: true,
+              includeEvents: true
+            },
+            priority: 8,
+            audienceRelevance: { "general": 10, "management": 7, "shop-floor": 8 }
+          },
+          {
+            id: "weather-info",
+            type: "weather",
+            title: "Weather & Conditions",
+            position: { x: 8, y: 0, width: 4, height: 2 },
+            config: { 
+              showCurrent: true,
+              showForecast: true,
+              showAlerts: true,
+              location: "local"
+            },
+            priority: 5,
+            audienceRelevance: { "general": 8, "shop-floor": 7, "management": 4 }
+          },
+          {
+            id: "safety-reminders",
+            type: "announcements",
+            title: "Safety Reminders",
+            position: { x: 8, y: 2, width: 4, height: 2 },
+            config: { 
+              showDailySafety: true,
+              rotateTips: true,
+              showIncidentFree: true,
+              highlightProtocols: true
+            },
+            priority: 9,
+            audienceRelevance: { "general": 10, "shop-floor": 10, "management": 8 }
+          },
+          {
+            id: "production-overview",
+            type: "metrics",
+            title: "Today's Production",
+            position: { x: 0, y: 4, width: 6, height: 2 },
+            config: { 
+              showBasicMetrics: true,
+              showProgress: true,
+              showAchievements: true,
+              simplifiedView: true
+            },
+            priority: 7,
+            audienceRelevance: { "general": 9, "shop-floor": 8, "management": 6 }
+          },
+          {
+            id: "employee-recognition",
+            type: "announcements",
+            title: "Employee Recognition",
+            position: { x: 6, y: 4, width: 6, height: 2 },
+            config: { 
+              showAchievements: true,
+              showMilestones: true,
+              showAnniversaries: true,
+              celebrateSuccess: true
+            },
+            priority: 6,
+            audienceRelevance: { "general": 10, "management": 7, "shop-floor": 9 }
+          }
+        ]
+      }
+    ];
+
+    await db.insert(visualFactoryDisplays).values(visualFactoryDisplaysData);
+    console.log("✅ Visual Factory displays seeded successfully");
   }
 
   // Seed User Management System (only if users don't exist)
