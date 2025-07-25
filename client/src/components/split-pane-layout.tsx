@@ -116,17 +116,33 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
     };
   }, []);
 
-  // Navigation detection disabled temporarily - causing issues with canvas toggle
-  // TODO: Re-implement with proper navigation change detection
-  /*
+  // Track previous location to detect actual navigation changes
+  const previousLocation = useRef(location);
+
+  // Navigation detection with canvas toggle protection
   useEffect(() => {
-    // Close canvas when navigating to different pages
-    if (isCanvasVisible && location !== '/') {
-      console.log('Navigation detected, closing canvas. Current location:', location);
+    // Only close canvas if:
+    // 1. Canvas is visible 
+    // 2. Location actually changed (not just initial load)
+    // 3. Enough time has passed since last canvas toggle (prevent interference)
+    // 4. Not navigating to root or canvas page
+    const lastToggleTime = (window as any).lastCanvasToggleTime || 0;
+    const timeSinceLastToggle = Date.now() - lastToggleTime;
+    const isLocationChange = previousLocation.current !== location;
+    const shouldCloseCanvas = isCanvasVisible && 
+                             isLocationChange && 
+                             timeSinceLastToggle > 500 && // 500ms buffer
+                             location !== '/' && 
+                             location !== '/canvas';
+
+    if (shouldCloseCanvas) {
+      console.log('Navigation detected, closing canvas. Previous:', previousLocation.current, 'Current:', location);
       setCanvasVisible(false);
     }
+    
+    // Update previous location after processing
+    previousLocation.current = location;
   }, [location, isCanvasVisible, setCanvasVisible]);
-  */
 
   // Add event listeners for dragging
   useEffect(() => {

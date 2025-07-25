@@ -599,6 +599,10 @@ export function MaxSidebar() {
   const toggleCanvas = () => {
     try {
       console.log('Canvas toggle clicked, current state:', isCanvasVisible);
+      
+      // Mark the toggle time to prevent navigation interference
+      (window as any).lastCanvasToggleTime = Date.now();
+      
       setCanvasVisible(!isCanvasVisible);
       console.log('Canvas toggle completed, new state should be:', !isCanvasVisible);
     } catch (error) {
