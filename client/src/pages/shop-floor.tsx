@@ -1312,11 +1312,42 @@ export default function ShopFloor() {
   const [selectedStatus, setSelectedStatus] = useState<ResourceStatus | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [shopFloorLayout, setShopFloorLayout] = useState<ShopFloorLayout[]>([]);
-  const [showHelp, setShowHelp] = useState(true);
-  const [showLegend, setShowLegend] = useState(true);
+  // Load UI state from localStorage with fallback defaults
+  const [showHelp, setShowHelp] = useState(() => {
+    const saved = localStorage.getItem('shopFloor_showHelp');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [showLegend, setShowLegend] = useState(() => {
+    const saved = localStorage.getItem('shopFloor_showLegend');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  // Persist UI state changes to localStorage
+  useEffect(() => {
+    localStorage.setItem('shopFloor_showHelp', JSON.stringify(showHelp));
+  }, [showHelp]);
+
+  useEffect(() => {
+    localStorage.setItem('shopFloor_showLegend', JSON.stringify(showLegend));
+  }, [showLegend]);
+
+  // Persist additional UI state
+  useEffect(() => {
+    localStorage.setItem('shopFloor_zoomLevel', JSON.stringify(zoomLevel));
+  }, [zoomLevel]);
+
+  useEffect(() => {
+    localStorage.setItem('shopFloor_currentArea', JSON.stringify(currentArea));
+  }, [currentArea]);
   const [resourcePhotos, setResourcePhotos] = useState<{ [key: number]: string }>({});
-  const [zoomLevel, setZoomLevel] = useState(1);
-  const [currentArea, setCurrentArea] = useState<string>('all');
+  const [zoomLevel, setZoomLevel] = useState(() => {
+    const saved = localStorage.getItem('shopFloor_zoomLevel');
+    return saved !== null ? JSON.parse(saved) : 1;
+  });
+  const [currentArea, setCurrentArea] = useState<string>(() => {
+    const saved = localStorage.getItem('shopFloor_currentArea');
+    return saved !== null ? JSON.parse(saved) : 'all';
+  });
   const [areas, setAreas] = useState<{[key: string]: {name: string, resources: number[]}}>({
     all: { name: 'All Resources', resources: [] }
   });

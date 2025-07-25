@@ -121,6 +121,15 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 25, 2025)
 
+✓ **Shop Floor UI State Persistence Implementation (July 25, 2025)**:
+- Added localStorage persistence for shop floor legend and controls window visibility
+- Users' UI preferences (show help, show legend, zoom level, current area) now remembered across sessions
+- Fixed authentication issue with correct login credentials (trainer / password123)
+- Enhanced mobile menu touch event handling for hard press gesture isolation
+- UI state automatically restored when returning to shop floor page
+
+## Recent Changes (July 25, 2025)
+
 ✓ **User Profile Click Enhancement (July 25, 2025)**:
 - Added click functionality to user avatar and username in hamburger menu to open user settings dialog
 - Enhanced UserProfileDialog component to support both internal and external state management
