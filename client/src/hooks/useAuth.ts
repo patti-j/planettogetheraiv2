@@ -152,7 +152,19 @@ export function usePermissions() {
       return false;
     }
 
-    console.log("hasPermission check:", { feature, action, user: { isDemo: (user as any).isDemo, role: (user as any).role, permissions: (user as any).permissions } });
+    console.log("hasPermission check:", { 
+      feature, 
+      action, 
+      user: { 
+        id: user.id,
+        username: user.username,
+        isDemo: (user as any).isDemo, 
+        role: (user as any).role, 
+        permissions: (user as any).permissions,
+        roles: user.roles ? user.roles.length : 'undefined',
+        rolesStructure: user.roles ? user.roles.map(r => ({ name: r.name, permissionCount: r.permissions?.length || 0 })) : 'no roles'
+      } 
+    });
 
     // Handle demo users from server who have permissions array directly on user object
     if ((user as any).isDemo && (user as any).permissions && Array.isArray((user as any).permissions)) {
@@ -170,13 +182,20 @@ export function usePermissions() {
     }
 
     // Handle regular users with roles array
-    if (!user.roles) return false;
+    if (!user.roles || !Array.isArray(user.roles)) {
+      console.log("No roles array found on user object");
+      return false;
+    }
 
-    return user.roles.some(role =>
+    const result = user.roles.some(role =>
       role.permissions?.some(permission =>
         permission.feature === feature && permission.action === action
       )
     );
+    
+    console.log("Regular user permission check result:", result, "for feature-action:", `${feature}-${action}`);
+    
+    return result;
   };
 
   const hasAnyPermission = (permissions: Array<{ feature: string; action: string }>): boolean => {
