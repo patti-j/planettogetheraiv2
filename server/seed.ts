@@ -2,7 +2,7 @@ import { db } from "./db";
 import { 
   capabilities, resources, jobs, operations, users, roles, permissions, userRoles, rolePermissions,
   customerStories, contentBlocks, marketingPages, leadCaptures, disruptions, disruptionActions,
-  businessGoals, goalProgress, goalRisks, goalIssues
+  businessGoals, goalProgress, goalRisks, goalIssues, dashboardConfigs
 } from "@shared/schema";
 import { sql, eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -17,19 +17,21 @@ export async function seedDatabase() {
   const existingPresentationPermissions = await db.select().from(permissions).where(eq(permissions.feature, "presentation-system")).limit(1);
   const existingDisruptions = await db.select().from(disruptions).limit(1);
   const existingBusinessGoals = await db.select().from(businessGoals).limit(1);
+  const existingDashboards = await db.select().from(dashboardConfigs).limit(1);
   
-  // Force re-seed if presentation permissions, disruptions, or business goals are missing
+  // Force re-seed if presentation permissions, disruptions, business goals, or dashboards are missing
   const shouldReseedPermissions = existingPresentationPermissions.length === 0;
   const shouldReseedDisruptions = existingDisruptions.length === 0;
   const shouldReseedBusinessGoals = existingBusinessGoals.length === 0;
+  const shouldReseedDashboards = existingDashboards.length === 0;
   
-  if (existingCapabilities.length > 0 && existingUsers.length > 0 && existingDefaultRoles.length > 0 && !shouldReseedPermissions && !shouldReseedDisruptions && !shouldReseedBusinessGoals) {
+  if (existingCapabilities.length > 0 && existingUsers.length > 0 && existingDefaultRoles.length > 0 && !shouldReseedPermissions && !shouldReseedDisruptions && !shouldReseedBusinessGoals && !shouldReseedDashboards) {
     console.log("Database already seeded, skipping...");
     return;
   }
   
   // Skip production data seeding if it already exists but seed user management
-  const shouldSeedProduction = existingCapabilities.length === 0 || shouldReseedDisruptions || shouldReseedBusinessGoals;
+  const shouldSeedProduction = existingCapabilities.length === 0 || shouldReseedDisruptions || shouldReseedBusinessGoals || shouldReseedDashboards;
 
   if (shouldSeedProduction) {
     // Only insert capabilities if they don't exist
@@ -626,6 +628,383 @@ export async function seedDatabase() {
     await db.insert(goalIssues).values(sampleGoalIssues);
 
     console.log("✅ Business goals sample data seeded successfully");
+  }
+
+  // Seed sample dashboards if missing
+  if (shouldReseedDashboards) {
+    console.log("Seeding sample dashboards...");
+    
+    const sampleDashboards = [
+      {
+        name: "Production Overview",
+        description: "Comprehensive view of manufacturing operations with key metrics and performance indicators",
+        isDefault: true,
+        configuration: {
+          standardWidgets: [],
+          customWidgets: [
+            {
+              id: "jobs-metric",
+              title: "Active Jobs",
+              type: "metric",
+              data: { value: 2, label: "Jobs", icon: "Briefcase", trend: "+1 from yesterday" },
+              visible: true,
+              position: { x: 20, y: 20 },
+              size: { width: 200, height: 120 },
+              config: { color: "blue", showTrend: true }
+            },
+            {
+              id: "utilization-metric",
+              title: "Resource Utilization",
+              type: "metric", 
+              data: { value: 85, label: "Utilization %", icon: "Activity", trend: "+5% from last week" },
+              visible: true,
+              position: { x: 240, y: 20 },
+              size: { width: 200, height: 120 },
+              config: { color: "green", showTrend: true }
+            },
+            {
+              id: "operations-chart",
+              title: "Operations Status",
+              type: "chart",
+              data: { 
+                chartType: "pie",
+                data: [
+                  { name: "Active", value: 3, color: "#22c55e" },
+                  { name: "Pending", value: 2, color: "#f59e0b" },
+                  { name: "Completed", value: 0, color: "#6b7280" }
+                ]
+              },
+              visible: true,
+              position: { x: 460, y: 20 },
+              size: { width: 280, height: 200 },
+              config: { showLegend: true, showValues: true }
+            },
+            {
+              id: "resources-table",
+              title: "Resource Status",
+              type: "table",
+              data: {
+                columns: ["Resource", "Type", "Status", "Utilization"],
+                rows: [
+                  ["CNC-001", "Machine", "Active", "90%"],
+                  ["CNC-002", "Machine", "Active", "75%"],
+                  ["Welder-001", "Operator", "Active", "95%"],
+                  ["Assembly-001", "Operator", "Active", "80%"]
+                ]
+              },
+              visible: true,
+              position: { x: 20, y: 160 },
+              size: { width: 420, height: 180 },
+              config: { striped: true, compact: false }
+            },
+            {
+              id: "efficiency-progress",
+              title: "Daily Efficiency Goal",
+              type: "progress",
+              data: { current: 87, target: 95, label: "87% of 95% target" },
+              visible: true,
+              position: { x: 460, y: 240 },
+              size: { width: 280, height: 100 },
+              config: { color: "blue", showPercentage: true }
+            }
+          ]
+        }
+      },
+      {
+        name: "Quality Control Dashboard",
+        description: "Real-time quality metrics and inspection status across all production lines",
+        isDefault: false,
+        configuration: {
+          standardWidgets: [],
+          customWidgets: [
+            {
+              id: "quality-score-metric",
+              title: "Overall Quality Score",
+              type: "metric",
+              data: { value: 94.2, label: "Quality Score", icon: "Shield", trend: "+1.2% improvement" },
+              visible: true,
+              position: { x: 20, y: 20 },
+              size: { width: 200, height: 120 },
+              config: { color: "green", showTrend: true }
+            },
+            {
+              id: "defect-rate-metric",
+              title: "Defect Rate",
+              type: "metric",
+              data: { value: 2.1, label: "Defect %", icon: "AlertTriangle", trend: "-0.3% improvement" },
+              visible: true,
+              position: { x: 240, y: 20 },
+              size: { width: 200, height: 120 },
+              config: { color: "red", showTrend: true }
+            },
+            {
+              id: "inspection-chart",
+              title: "Daily Inspections",
+              type: "chart",
+              data: {
+                chartType: "bar",
+                data: [
+                  { name: "Monday", passed: 45, failed: 2 },
+                  { name: "Tuesday", passed: 52, failed: 1 },
+                  { name: "Wednesday", passed: 48, failed: 3 },
+                  { name: "Thursday", passed: 51, failed: 1 },
+                  { name: "Friday", passed: 49, failed: 2 }
+                ]
+              },
+              visible: true,
+              position: { x: 460, y: 20 },
+              size: { width: 320, height: 220 },
+              config: { colors: ["#22c55e", "#ef4444"], showGrid: true }
+            },
+            {
+              id: "qc-operators-table",
+              title: "QC Operators Performance",
+              type: "table",
+              data: {
+                columns: ["Operator", "Inspections", "Pass Rate", "Efficiency"],
+                rows: [
+                  ["Sarah QC", "127", "97.6%", "Excellent"],
+                  ["Mike QC", "134", "96.3%", "Good"],
+                  ["Lisa QC", "119", "98.1%", "Excellent"],
+                  ["Tom QC", "142", "95.8%", "Good"]
+                ]
+              },
+              visible: true,
+              position: { x: 20, y: 160 },
+              size: { width: 420, height: 160 },
+              config: { striped: true, compact: true }
+            },
+            {
+              id: "quality-target-progress",
+              title: "Monthly Quality Target",
+              type: "progress",
+              data: { current: 94.2, target: 96.0, label: "94.2% of 96% target" },
+              visible: true,
+              position: { x: 460, y: 260 },
+              size: { width: 320, height: 100 },
+              config: { color: "green", showPercentage: true }
+            }
+          ]
+        }
+      },
+      {
+        name: "Resource Efficiency Analytics",
+        description: "Detailed analysis of resource utilization, performance trends, and optimization opportunities",
+        isDefault: false,
+        configuration: {
+          standardWidgets: [],
+          customWidgets: [
+            {
+              id: "overall-efficiency-metric",
+              title: "Overall Efficiency",
+              type: "metric",
+              data: { value: 82.4, label: "Efficiency %", icon: "Zap", trend: "+3.1% this month" },
+              visible: true,
+              position: { x: 20, y: 20 },
+              size: { width: 180, height: 120 },
+              config: { color: "blue", showTrend: true }
+            },
+            {
+              id: "downtime-metric",
+              title: "Total Downtime",
+              type: "metric",
+              data: { value: 4.2, label: "Hours Today", icon: "Clock", trend: "-1.3h vs yesterday" },
+              visible: true,
+              position: { x: 220, y: 20 },
+              size: { width: 180, height: 120 },
+              config: { color: "orange", showTrend: true }
+            },
+            {
+              id: "throughput-metric",
+              title: "Throughput",
+              type: "metric",
+              data: { value: 247, label: "Units/Hour", icon: "TrendingUp", trend: "+15 vs target" },
+              visible: true,
+              position: { x: 420, y: 20 },
+              size: { width: 180, height: 120 },
+              config: { color: "green", showTrend: true }
+            },
+            {
+              id: "efficiency-trend-chart",
+              title: "Weekly Efficiency Trend",
+              type: "chart",
+              data: {
+                chartType: "line",
+                data: [
+                  { day: "Mon", efficiency: 79.2 },
+                  { day: "Tue", efficiency: 81.5 },
+                  { day: "Wed", efficiency: 78.9 },
+                  { day: "Thu", efficiency: 84.1 },
+                  { day: "Fri", efficiency: 82.4 },
+                  { day: "Sat", efficiency: 80.7 },
+                  { day: "Sun", efficiency: 83.2 }
+                ]
+              },
+              visible: true,
+              position: { x: 620, y: 20 },
+              size: { width: 280, height: 200 },
+              config: { color: "#3b82f6", showGrid: true, showDots: true }
+            },
+            {
+              id: "machine-utilization-chart",
+              title: "Machine Utilization Comparison",
+              type: "chart",
+              data: {
+                chartType: "bar",
+                data: [
+                  { machine: "CNC-001", utilization: 89.5 },
+                  { machine: "CNC-002", utilization: 76.2 },
+                  { machine: "Welder-001", utilization: 94.1 },
+                  { machine: "Assembly-001", utilization: 78.6 },
+                  { machine: "QC-001", utilization: 85.3 }
+                ]
+              },
+              visible: true,
+              position: { x: 20, y: 160 },
+              size: { width: 380, height: 180 },
+              config: { color: "#10b981", showGrid: true, showValues: true }
+            },
+            {
+              id: "bottleneck-table",
+              title: "Current Bottlenecks",
+              type: "table",
+              data: {
+                columns: ["Resource", "Queue Time", "Impact", "Priority"],
+                rows: [
+                  ["CNC-002", "2.3 hours", "Medium", "High"],
+                  ["Assembly-001", "1.7 hours", "Low", "Medium"],
+                  ["Quality Check", "0.8 hours", "Low", "Low"]
+                ]
+              },
+              visible: true,
+              position: { x: 420, y: 160 },
+              size: { width: 300, height: 140 },
+              config: { striped: true, compact: true }
+            },
+            {
+              id: "efficiency-target-progress",
+              title: "Monthly Efficiency Target",
+              type: "progress",
+              data: { current: 82.4, target: 85.0, label: "82.4% of 85% target" },
+              visible: true,
+              position: { x: 740, y: 160 },
+              size: { width: 160, height: 140 },
+              config: { color: "blue", showPercentage: true, orientation: "vertical" }
+            }
+          ]
+        }
+      },
+      {
+        name: "Financial Performance",
+        description: "Cost analysis, budget tracking, and financial KPIs for manufacturing operations",
+        isDefault: false,
+        configuration: {
+          standardWidgets: [],
+          customWidgets: [
+            {
+              id: "daily-cost-metric",
+              title: "Daily Operating Cost",
+              type: "metric",
+              data: { value: 18750, label: "USD", icon: "DollarSign", trend: "-5.2% vs yesterday" },
+              visible: true,
+              position: { x: 20, y: 20 },
+              size: { width: 200, height: 120 },
+              config: { color: "green", showTrend: true, format: "currency" }
+            },
+            {
+              id: "cost-per-unit-metric",
+              title: "Cost per Unit",
+              type: "metric",
+              data: { value: 47.25, label: "USD/Unit", icon: "Calculator", trend: "-1.8% improvement" },
+              visible: true,
+              position: { x: 240, y: 20 },
+              size: { width: 200, height: 120 },
+              config: { color: "blue", showTrend: true, format: "currency" }
+            },
+            {
+              id: "budget-variance-metric",
+              title: "Budget Variance",
+              type: "metric",
+              data: { value: -3.2, label: "% Under Budget", icon: "Target", trend: "Improving" },
+              visible: true,
+              position: { x: 460, y: 20 },
+              size: { width: 200, height: 120 },
+              config: { color: "green", showTrend: true }
+            },
+            {
+              id: "cost-breakdown-chart",
+              title: "Cost Breakdown",
+              type: "chart",
+              data: {
+                chartType: "pie",
+                data: [
+                  { name: "Labor", value: 42, color: "#3b82f6" },
+                  { name: "Materials", value: 35, color: "#10b981" },
+                  { name: "Energy", value: 12, color: "#f59e0b" },
+                  { name: "Maintenance", value: 8, color: "#ef4444" },
+                  { name: "Other", value: 3, color: "#6b7280" }
+                ]
+              },
+              visible: true,
+              position: { x: 680, y: 20 },
+              size: { width: 260, height: 220 },
+              config: { showLegend: true, showPercentages: true }
+            },
+            {
+              id: "monthly-costs-chart",
+              title: "Monthly Cost Trend",
+              type: "chart",
+              data: {
+                chartType: "line",
+                data: [
+                  { month: "Jul", planned: 520000, actual: 498500 },
+                  { month: "Aug", planned: 530000, actual: 515200 },
+                  { month: "Sep", planned: 525000, actual: 521800 },
+                  { month: "Oct", planned: 535000, actual: 528900 },
+                  { month: "Nov", planned: 540000, actual: 535100 },
+                  { month: "Dec", planned: 545000, actual: 531200 }
+                ]
+              },
+              visible: true,
+              position: { x: 20, y: 160 },
+              size: { width: 420, height: 180 },
+              config: { colors: ["#6b7280", "#3b82f6"], showGrid: true, showLegend: true }
+            },
+            {
+              id: "savings-table",
+              title: "Cost Savings Initiatives",
+              type: "table",
+              data: {
+                columns: ["Initiative", "Savings/Month", "Status", "ROI"],
+                rows: [
+                  ["Energy Optimization", "$12,400", "Active", "8.2%"],
+                  ["Waste Reduction", "$8,750", "Active", "12.1%"],
+                  ["Process Automation", "$15,200", "Planning", "15.3%"],
+                  ["Supplier Negotiation", "$6,800", "Completed", "6.7%"]
+                ]
+              },
+              visible: true,
+              position: { x: 460, y: 160 },
+              size: { width: 400, height: 160 },
+              config: { striped: true, compact: false }
+            },
+            {
+              id: "budget-progress",
+              title: "Monthly Budget Usage",
+              type: "progress",
+              data: { current: 531200, target: 545000, label: "$531k of $545k budget" },
+              visible: true,
+              position: { x: 20, y: 360 },
+              size: { width: 420, height: 80 },
+              config: { color: "green", showPercentage: true, format: "currency" }
+            }
+          ]
+        }
+      }
+    ];
+
+    await db.insert(dashboardConfigs).values(sampleDashboards);
+    console.log("✅ Sample dashboards seeded successfully");
   }
 
   // Seed User Management System (only if users don't exist)
