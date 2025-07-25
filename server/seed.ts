@@ -2,7 +2,7 @@ import { db } from "./db";
 import { 
   capabilities, resources, jobs, operations, users, roles, permissions, userRoles, rolePermissions,
   customerStories, contentBlocks, marketingPages, leadCaptures, disruptions, disruptionActions,
-  businessGoals, goalProgress, goalRisks, goalIssues, dashboardConfigs
+  businessGoals, goalProgress, goalRisks, goalIssues, dashboardConfigs, reportConfigs
 } from "@shared/schema";
 import { sql, eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -18,20 +18,22 @@ export async function seedDatabase() {
   const existingDisruptions = await db.select().from(disruptions).limit(1);
   const existingBusinessGoals = await db.select().from(businessGoals).limit(1);
   const existingDashboards = await db.select().from(dashboardConfigs).limit(1);
+  const existingReports = await db.select().from(reportConfigs).limit(1);
   
-  // Force re-seed if presentation permissions, disruptions, business goals, or dashboards are missing
+  // Force re-seed if presentation permissions, disruptions, business goals, dashboards, or reports are missing
   const shouldReseedPermissions = existingPresentationPermissions.length === 0;
   const shouldReseedDisruptions = existingDisruptions.length === 0;
   const shouldReseedBusinessGoals = existingBusinessGoals.length === 0;
   const shouldReseedDashboards = existingDashboards.length === 0;
+  const shouldReseedReports = existingReports.length === 0;
   
-  if (existingCapabilities.length > 0 && existingUsers.length > 0 && existingDefaultRoles.length > 0 && !shouldReseedPermissions && !shouldReseedDisruptions && !shouldReseedBusinessGoals && !shouldReseedDashboards) {
+  if (existingCapabilities.length > 0 && existingUsers.length > 0 && existingDefaultRoles.length > 0 && !shouldReseedPermissions && !shouldReseedDisruptions && !shouldReseedBusinessGoals && !shouldReseedDashboards && !shouldReseedReports) {
     console.log("Database already seeded, skipping...");
     return;
   }
   
   // Skip production data seeding if it already exists but seed user management
-  const shouldSeedProduction = existingCapabilities.length === 0 || shouldReseedDisruptions || shouldReseedBusinessGoals || shouldReseedDashboards;
+  const shouldSeedProduction = existingCapabilities.length === 0 || shouldReseedDisruptions || shouldReseedBusinessGoals || shouldReseedDashboards || shouldReseedReports;
 
   if (shouldSeedProduction) {
     // Only insert capabilities if they don't exist
@@ -1005,6 +1007,398 @@ export async function seedDatabase() {
 
     await db.insert(dashboardConfigs).values(sampleDashboards);
     console.log("✅ Sample dashboards seeded successfully");
+  }
+
+  // Seed sample reports if missing
+  if (shouldReseedReports) {
+    console.log("Seeding sample reports...");
+    
+    const sampleReports = [
+      {
+        name: "Production Summary Report",
+        description: "Comprehensive overview of manufacturing operations, job status, and production metrics",
+        type: "summary",
+        isDefault: true,
+        configuration: {
+          fields: ["jobId", "jobName", "status", "priority", "customer", "dueDate", "progress"],
+          filters: { status: "all" },
+          sorting: { field: "dueDate", direction: "asc" as const },
+          chartType: "summary" as const,
+          widgets: [
+            {
+              id: "jobs-overview",
+              title: "Jobs Overview",
+              type: "metric",
+              data: { value: 2, label: "Active Jobs", icon: "Briefcase", trend: "+1 from yesterday" },
+              visible: true,
+              position: { x: 20, y: 20 },
+              size: { width: 200, height: 120 },
+              config: { color: "blue", showTrend: true }
+            },
+            {
+              id: "production-status",
+              title: "Production Status",
+              type: "chart",
+              data: { 
+                chartType: "pie",
+                data: [
+                  { name: "Active", value: 2, color: "#22c55e" },
+                  { name: "Pending", value: 3, color: "#f59e0b" },
+                  { name: "Completed", value: 5, color: "#6b7280" }
+                ]
+              },
+              visible: true,
+              position: { x: 240, y: 20 },
+              size: { width: 280, height: 200 },
+              config: { showLegend: true, showValues: true }
+            },
+            {
+              id: "jobs-table",
+              title: "Active Jobs Details",
+              type: "table",
+              data: {
+                columns: ["Job Name", "Customer", "Priority", "Due Date", "Status"],
+                rows: [
+                  ["Widget Assembly - Batch A", "Acme Corp", "High", "2025-01-30", "Active"],
+                  ["Component Manufacturing", "TechCorp", "Medium", "2025-02-05", "Active"]
+                ]
+              },
+              visible: true,
+              position: { x: 20, y: 160 },
+              size: { width: 500, height: 180 },
+              config: { striped: true, compact: false }
+            }
+          ]
+        }
+      },
+      {
+        name: "Resource Utilization Report",
+        description: "Detailed analysis of resource allocation, utilization rates, and capacity planning",
+        type: "resources",
+        isDefault: false,
+        configuration: {
+          fields: ["resourceId", "resourceName", "type", "status", "capabilities", "currentAssignment", "utilization"],
+          filters: { status: "active" },
+          sorting: { field: "utilization", direction: "desc" as const },
+          chartType: "chart" as const,
+          widgets: [
+            {
+              id: "resource-utilization-metric",
+              title: "Average Utilization",
+              type: "metric",
+              data: { value: 85.3, label: "Utilization %", icon: "Activity", trend: "+3.2% this week" },
+              visible: true,
+              position: { x: 20, y: 20 },
+              size: { width: 200, height: 120 },
+              config: { color: "green", showTrend: true }
+            },
+            {
+              id: "resource-status-metric",
+              title: "Active Resources",
+              type: "metric",
+              data: { value: 6, label: "Resources", icon: "Users", trend: "All operational" },
+              visible: true,
+              position: { x: 240, y: 20 },
+              size: { width: 200, height: 120 },
+              config: { color: "blue", showTrend: true }
+            },
+            {
+              id: "utilization-chart",
+              title: "Resource Utilization by Type",
+              type: "chart",
+              data: {
+                chartType: "bar",
+                data: [
+                  { name: "CNC Machines", utilization: 89.5 },
+                  { name: "Welders", utilization: 94.1 },
+                  { name: "Assembly", utilization: 78.6 },
+                  { name: "Quality Control", utilization: 85.3 },
+                  { name: "Packaging", utilization: 72.8 }
+                ]
+              },
+              visible: true,
+              position: { x: 460, y: 20 },
+              size: { width: 320, height: 200 },
+              config: { color: "#10b981", showGrid: true, showValues: true }
+            },
+            {
+              id: "resource-details-table",
+              title: "Resource Details",
+              type: "table",
+              data: {
+                columns: ["Resource", "Type", "Status", "Current Job", "Utilization"],
+                rows: [
+                  ["CNC-001", "Machine", "Active", "Widget Assembly", "89%"],
+                  ["CNC-002", "Machine", "Active", "Component Mfg", "76%"],
+                  ["Welder-001", "Operator", "Active", "Frame Welding", "94%"],
+                  ["Assembly-001", "Operator", "Active", "Final Assembly", "79%"],
+                  ["QC-001", "Operator", "Active", "Quality Check", "85%"],
+                  ["Packaging-001", "Operator", "Available", "None", "0%"]
+                ]
+              },
+              visible: true,
+              position: { x: 20, y: 160 },
+              size: { width: 760, height: 200 },
+              config: { striped: true, compact: true }
+            }
+          ]
+        }
+      },
+      {
+        name: "Quality Control Analysis",
+        description: "Quality metrics, defect analysis, and inspection performance tracking",
+        type: "custom",
+        isDefault: false,
+        configuration: {
+          fields: ["inspectionId", "operationId", "inspector", "result", "defectType", "timestamp"],
+          filters: { result: "all" },
+          sorting: { field: "timestamp", direction: "desc" as const },
+          chartType: "chart" as const,
+          widgets: [
+            {
+              id: "quality-score-metric",
+              title: "Quality Score",
+              type: "metric",
+              data: { value: 96.2, label: "Overall Score", icon: "Shield", trend: "+1.4% improvement" },
+              visible: true,
+              position: { x: 20, y: 20 },
+              size: { width: 200, height: 120 },
+              config: { color: "green", showTrend: true }
+            },
+            {
+              id: "defect-rate-metric",
+              title: "Defect Rate",
+              type: "metric",
+              data: { value: 1.8, label: "Defect %", icon: "AlertTriangle", trend: "-0.4% improvement" },
+              visible: true,
+              position: { x: 240, y: 20 },
+              size: { width: 200, height: 120 },
+              config: { color: "red", showTrend: true }
+            },
+            {
+              id: "inspections-metric",
+              title: "Daily Inspections",
+              type: "metric",
+              data: { value: 47, label: "Inspections", icon: "Search", trend: "+3 from yesterday" },
+              visible: true,
+              position: { x: 460, y: 20 },
+              size: { width: 200, height: 120 },
+              config: { color: "blue", showTrend: true }
+            },
+            {
+              id: "defect-types-chart",
+              title: "Defect Categories",
+              type: "chart",
+              data: {
+                chartType: "pie",
+                data: [
+                  { name: "Dimensional", value: 45, color: "#ef4444" },
+                  { name: "Surface Finish", value: 28, color: "#f59e0b" },
+                  { name: "Assembly", value: 18, color: "#3b82f6" },
+                  { name: "Material", value: 9, color: "#6b7280" }
+                ]
+              },
+              visible: true,
+              position: { x: 680, y: 20 },
+              size: { width: 260, height: 200 },
+              config: { showLegend: true, showPercentages: true }
+            },
+            {
+              id: "inspector-performance",
+              title: "Inspector Performance",
+              type: "table",
+              data: {
+                columns: ["Inspector", "Inspections", "Pass Rate", "Avg Time", "Efficiency"],
+                rows: [
+                  ["Sarah Miller", "127", "97.6%", "4.2 min", "Excellent"],
+                  ["Mike Johnson", "134", "96.3%", "3.8 min", "Good"],
+                  ["Lisa Chen", "119", "98.1%", "4.5 min", "Excellent"],
+                  ["Tom Wilson", "142", "95.8%", "4.1 min", "Good"]
+                ]
+              },
+              visible: true,
+              position: { x: 20, y: 160 },
+              size: { width: 620, height: 160 },
+              config: { striped: true, compact: true }
+            },
+            {
+              id: "quality-trend-chart",
+              title: "Weekly Quality Trend",
+              type: "chart",
+              data: {
+                chartType: "line",
+                data: [
+                  { week: "Week 1", score: 95.2 },
+                  { week: "Week 2", score: 94.8 },
+                  { week: "Week 3", score: 96.1 },
+                  { week: "Week 4", score: 96.2 }
+                ]
+              },
+              visible: true,
+              position: { x: 660, y: 160 },
+              size: { width: 280, height: 160 },
+              config: { color: "#22c55e", showGrid: true, showDots: true }
+            }
+          ]
+        }
+      },
+      {
+        name: "Operations Timeline Report",
+        description: "Detailed operations scheduling, progress tracking, and timeline analysis",
+        type: "operations",
+        isDefault: false,
+        configuration: {
+          fields: ["operationId", "operationName", "jobId", "resourceId", "status", "startTime", "endTime", "duration"],
+          filters: { status: "all" },
+          sorting: { field: "startTime", direction: "asc" as const },
+          chartType: "table" as const,
+          widgets: [
+            {
+              id: "operations-count-metric",
+              title: "Total Operations",
+              type: "metric",
+              data: { value: 5, label: "Operations", icon: "Settings", trend: "+2 from last week" },
+              visible: true,
+              position: { x: 20, y: 20 },
+              size: { width: 200, height: 120 },
+              config: { color: "blue", showTrend: true }
+            },
+            {
+              id: "completed-operations-metric",
+              title: "Completed Today",
+              type: "metric",
+              data: { value: 0, label: "Completed", icon: "CheckCircle", trend: "On schedule" },
+              visible: true,
+              position: { x: 240, y: 20 },
+              size: { width: 200, height: 120 },
+              config: { color: "green", showTrend: true }
+            },
+            {
+              id: "operations-by-status",
+              title: "Operations by Status",
+              type: "chart",
+              data: {
+                chartType: "bar",
+                data: [
+                  { status: "Active", count: 3 },
+                  { status: "Pending", count: 2 },
+                  { status: "Completed", count: 0 },
+                  { status: "On Hold", count: 0 }
+                ]
+              },
+              visible: true,
+              position: { x: 460, y: 20 },
+              size: { width: 300, height: 200 },
+              config: { color: "#3b82f6", showGrid: true, showValues: true }
+            },
+            {
+              id: "operations-timeline-table",
+              title: "Operations Timeline",
+              type: "table",
+              data: {
+                columns: ["Operation", "Job", "Resource", "Status", "Start Time", "Duration"],
+                rows: [
+                  ["CNC Machining", "Widget Assembly", "CNC-001", "Active", "2025-01-25 08:00", "4 hours"],
+                  ["Welding", "Widget Assembly", "Welder-001", "Pending", "2025-01-25 12:00", "2 hours"],
+                  ["Assembly", "Widget Assembly", "Assembly-001", "Pending", "2025-01-25 14:00", "3 hours"],
+                  ["Quality Control", "Widget Assembly", "QC-001", "Pending", "2025-01-25 17:00", "1 hour"],
+                  ["Packaging", "Widget Assembly", "Packaging-001", "Pending", "2025-01-26 08:00", "1 hour"]
+                ]
+              },
+              visible: true,
+              position: { x: 20, y: 160 },
+              size: { width: 740, height: 200 },
+              config: { striped: true, compact: false }
+            }
+          ]
+        }
+      },
+      {
+        name: "Performance KPI Dashboard",
+        description: "Key performance indicators and metrics for manufacturing efficiency and productivity",
+        type: "summary",
+        isDefault: false,
+        configuration: {
+          fields: ["kpi", "value", "target", "variance", "trend"],
+          filters: {},
+          sorting: { field: "kpi", direction: "asc" as const },
+          chartType: "summary" as const,
+          widgets: [
+            {
+              id: "oee-metric",
+              title: "Overall Equipment Effectiveness",
+              type: "metric",
+              data: { value: 84.2, label: "OEE %", icon: "Gauge", trend: "+2.1% this month" },
+              visible: true,
+              position: { x: 20, y: 20 },
+              size: { width: 220, height: 120 },
+              config: { color: "blue", showTrend: true }
+            },
+            {
+              id: "throughput-metric",
+              title: "Throughput",
+              type: "metric",
+              data: { value: 247, label: "Units/Hour", icon: "TrendingUp", trend: "+12 vs target" },
+              visible: true,
+              position: { x: 260, y: 20 },
+              size: { width: 220, height: 120 },
+              config: { color: "green", showTrend: true }
+            },
+            {
+              id: "first-pass-yield",
+              title: "First Pass Yield",
+              type: "metric",
+              data: { value: 96.8, label: "FPY %", icon: "Target", trend: "+0.8% improvement" },
+              visible: true,
+              position: { x: 500, y: 20 },
+              size: { width: 220, height: 120 },
+              config: { color: "green", showTrend: true }
+            },
+            {
+              id: "kpi-summary-table",
+              title: "KPI Summary",
+              type: "table",
+              data: {
+                columns: ["KPI", "Current", "Target", "Variance", "Status"],
+                rows: [
+                  ["Overall Equipment Effectiveness", "84.2%", "85.0%", "-0.8%", "Near Target"],
+                  ["Throughput (Units/Hour)", "247", "235", "+12", "Above Target"],
+                  ["First Pass Yield", "96.8%", "95.0%", "+1.8%", "Above Target"],
+                  ["On-Time Delivery", "94.5%", "95.0%", "-0.5%", "Near Target"],
+                  ["Resource Utilization", "85.3%", "80.0%", "+5.3%", "Above Target"],
+                  ["Quality Score", "96.2%", "95.0%", "+1.2%", "Above Target"]
+                ]
+              },
+              visible: true,
+              position: { x: 20, y: 160 },
+              size: { width: 700, height: 220 },
+              config: { striped: true, compact: false }
+            },
+            {
+              id: "monthly-trends",
+              title: "Monthly Performance Trends",
+              type: "chart",
+              data: {
+                chartType: "line",
+                data: [
+                  { month: "Sep", oee: 82.1, throughput: 230, quality: 95.2 },
+                  { month: "Oct", oee: 83.5, throughput: 238, quality: 95.8 },
+                  { month: "Nov", oee: 82.8, throughput: 242, quality: 96.1 },
+                  { month: "Dec", oee: 84.2, throughput: 247, quality: 96.2 }
+                ]
+              },
+              visible: true,
+              position: { x: 740, y: 160 },
+              size: { width: 280, height: 220 },
+              config: { colors: ["#3b82f6", "#10b981", "#f59e0b"], showGrid: true, showLegend: true }
+            }
+          ]
+        }
+      }
+    ];
+
+    await db.insert(reportConfigs).values(sampleReports);
+    console.log("✅ Sample reports seeded successfully");
   }
 
   // Seed User Management System (only if users don't exist)
