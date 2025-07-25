@@ -37,6 +37,108 @@ export interface SystemContext {
   plants: any[];
 }
 
+export async function processShiftAIRequest(request: any): Promise<AIAgentResponse> {
+  try {
+    // Get current system context for shift planning
+    const context = await getSystemContext();
+    const resources = await storage.getResources();
+    const shiftTemplates = await storage.getShiftTemplates();
+    
+    const systemPrompt = `You are an AI shift planning expert for a manufacturing facility. You have access to:
+
+AVAILABLE RESOURCES:
+${resources.map(r => `- ${r.name} (${r.type}): ${r.status}`).join('\n')}
+
+EXISTING SHIFT TEMPLATES:
+${shiftTemplates.map(t => `- ${t.name}: ${t.startTime}-${t.endTime}, ${t.shiftType} shift, Days: ${t.daysOfWeek?.join(',') || 'Not specified'}`).join('\n')}
+
+Your capabilities:
+1. CREATE SHIFTS: Generate optimized shift templates based on requirements
+2. ADJUST SHIFTS: Modify existing shifts for better efficiency or coverage
+3. OPTIMIZE SHIFTS: Balance workload, minimize costs, ensure coverage
+
+Response format: Always return JSON with:
+{
+  "success": true,
+  "message": "Description of changes made",
+  "shiftTemplates": [array of shift template objects],
+  "recommendations": [array of optimization suggestions],
+  "reasoning": "Explanation of AI decisions made"
+}
+
+Shift template format:
+{
+  "name": "string",
+  "description": "string", 
+  "plantId": number or null,
+  "shiftType": "regular|overtime|split|rotating",
+  "startTime": "HH:MM",
+  "endTime": "HH:MM", 
+  "daysOfWeek": [0-6 array],
+  "minimumStaffing": number,
+  "maximumStaffing": number,
+  "premiumRate": number,
+  "color": "hex color",
+  "isActive": true
+}`;
+
+    let userPrompt = '';
+    
+    if (request.type === 'create') {
+      userPrompt = `Create new shift templates based on these requirements:
+Requirements: ${request.requirements}
+Plant ID: ${request.plantId || 'All plants'}
+Available Resources: ${request.resources.length} resources
+Existing Shifts: ${request.existingShifts.length} templates
+
+Please create optimized shift templates that meet these requirements while considering resource availability and existing shift patterns.`;
+    } else if (request.type === 'adjust') {
+      userPrompt = `Adjust an existing shift template:
+Shift ID: ${request.shiftId}
+Requested Adjustments: ${request.adjustments}
+Requirements: ${request.requirements}
+Context: ${JSON.stringify(request.context)}
+
+Please modify the shift template to incorporate these adjustments while maintaining operational efficiency.`;
+    } else if (request.type === 'optimize') {
+      userPrompt = `Optimize shift scheduling:
+Current Shifts: ${JSON.stringify(request.shifts)}
+Constraints: ${JSON.stringify(request.constraints)}
+Objectives: ${JSON.stringify(request.objectives)}
+
+Please analyze and optimize the shift schedule to improve efficiency, reduce costs, and ensure proper coverage.`;
+    }
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.3
+    });
+
+    const aiResult = JSON.parse(response.choices[0].message.content || '{}');
+    
+    return {
+      success: aiResult.success || true,
+      message: aiResult.message || "AI shift processing completed",
+      data: {
+        shiftTemplates: aiResult.shiftTemplates || [],
+        recommendations: aiResult.recommendations || [],
+        reasoning: aiResult.reasoning || "AI analysis completed"
+      }
+    };
+  } catch (error) {
+    console.error("Error processing shift AI request:", error);
+    return {
+      success: false,
+      message: "Failed to process AI shift request: " + error.message
+    };
+  }
+}
+
 export async function processAICommand(command: string, attachments?: AttachmentFile[]): Promise<AIAgentResponse> {
   try {
     // Get current system context

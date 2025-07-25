@@ -17,7 +17,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format, parseISO, startOfWeek, endOfWeek, addDays, isSameDay } from "date-fns";
-import { CalendarIcon, Clock, Users, AlertTriangle, Plus, Settings, Calendar as CalendarIconLucide, UserX, UserCheck, BarChart3, TrendingUp, TrendingDown } from "lucide-react";
+import { CalendarIcon, Clock, Users, AlertTriangle, Plus, Settings, Calendar as CalendarIconLucide, UserX, UserCheck, BarChart3, TrendingUp, TrendingDown, Sparkles, Bot, Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -237,6 +237,11 @@ function ShiftTemplatesTab({ templates, loading, plants }: any) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch resources for AI shift creation
+  const { data: resources = [] } = useQuery({
+    queryKey: ['/api/resources'],
+  });
+
   const createTemplateMutation = useMutation({
     mutationFn: (data: any) => apiRequest('/api/shift-templates', { method: 'POST', body: data }),
     onSuccess: () => {
@@ -257,39 +262,49 @@ function ShiftTemplatesTab({ templates, loading, plants }: any) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold">Shift Templates</h2>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Template
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Create Shift Template</DialogTitle>
-              <DialogDescription>
-                Define a new shift pattern for your resources
-              </DialogDescription>
-            </DialogHeader>
-            <div className="max-h-[70vh] overflow-y-auto pr-2">
-              <CreateShiftTemplateForm 
-                plants={plants}
-                onSubmit={(data) => createTemplateMutation.mutate(data)}
-                isLoading={createTemplateMutation.isPending}
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+        <div className="flex gap-2">
+          <AIShiftCreationDialog 
+            plants={plants}
+            resources={resources}
+            existingShifts={templates}
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ['/api/shift-templates'] });
+              toast({ title: "Success", description: "AI shift templates created successfully" });
+            }}
+          />
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Plus className="mr-2 h-4 w-4" />
+                Create Template
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Create Shift Template</DialogTitle>
+                <DialogDescription>
+                  Define a new shift pattern for your resources
+                </DialogDescription>
+              </DialogHeader>
+              <div className="max-h-[70vh] overflow-y-auto pr-2">
+                <CreateShiftTemplateForm 
+                  plants={plants}
+                  onSubmit={(data) => createTemplateMutation.mutate(data)}
+                  isLoading={createTemplateMutation.isPending}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {templates.map((template: any) => (
-          <ShiftTemplateCard key={template.id} template={template} />
-        ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {templates.map((template: any) => (
+            <ShiftTemplateCard key={template.id} template={template} />
+          ))}
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
 // Individual Shift Template Card
 function ShiftTemplateCard({ template }: any) {
@@ -346,6 +361,288 @@ function ShiftTemplateCard({ template }: any) {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+// AI Shift Creation Dialog Component
+function AIShiftCreationDialog({ plants, resources, existingShifts, onSuccess }: any) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [aiResponse, setAiResponse] = useState<any>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const form = useForm({
+    resolver: zodResolver(z.object({
+      requirements: z.string().min(10, "Please provide detailed requirements (minimum 10 characters)"),
+      plantId: z.string().optional(),
+      shiftType: z.string().optional(),
+      objectives: z.string().optional(),
+    })),
+    defaultValues: {
+      requirements: "",
+      plantId: "",
+      shiftType: "regular",
+      objectives: "balanced_coverage",
+    },
+  });
+
+  const handleAICreation = async (data: any) => {
+    setIsLoading(true);
+    try {
+      const response = await apiRequest('/api/shifts/ai-create', {
+        method: 'POST',
+        body: {
+          requirements: data.requirements,
+          plantId: data.plantId ? parseInt(data.plantId) : null,
+          resources: resources || [],
+          existingShifts: existingShifts || []
+        }
+      });
+
+      setAiResponse(response);
+      
+      if (response.success) {
+        toast({ 
+          title: "AI Analysis Complete", 
+          description: "Review the AI-generated shift recommendations below" 
+        });
+      }
+    } catch (error: any) {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to generate AI shifts", 
+        variant: "destructive" 
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleImplementShifts = async () => {
+    if (!aiResponse?.data?.shiftTemplates?.length) return;
+    
+    setIsLoading(true);
+    try {
+      // Create each shift template suggested by AI
+      for (const template of aiResponse.data.shiftTemplates) {
+        await apiRequest('/api/shift-templates', {
+          method: 'POST',
+          body: template
+        });
+      }
+      
+      setIsOpen(false);
+      setAiResponse(null);
+      form.reset();
+      onSuccess();
+    } catch (error: any) {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to create shift templates", 
+        variant: "destructive" 
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+          <Sparkles className="mr-2 h-4 w-4" />
+          AI Create Shifts
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Bot className="w-5 h-5 text-blue-600" />
+            AI Shift Creation Assistant
+          </DialogTitle>
+          <DialogDescription>
+            Describe your shift requirements and let AI create optimized shift templates for your manufacturing operations.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          {!aiResponse ? (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleAICreation)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="requirements"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Shift Requirements</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Describe your shift needs... e.g., 'Need 24/7 coverage with 3 shifts, minimum 5 operators per shift, prefer 8-hour shifts, weekends need reduced staff'"
+                          className="min-h-[100px]"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="plantId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Target Plant (Optional)</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="All plants" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="">All plants</SelectItem>
+                            {plants?.map((plant: any) => (
+                              <SelectItem key={plant.id} value={plant.id.toString()}>
+                                {plant.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="objectives"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Primary Objective</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="balanced_coverage">Balanced Coverage</SelectItem>
+                            <SelectItem value="cost_minimization">Cost Minimization</SelectItem>
+                            <SelectItem value="productivity_maximization">Productivity Maximization</SelectItem>
+                            <SelectItem value="worker_satisfaction">Worker Satisfaction</SelectItem>
+                            <SelectItem value="flexibility">Maximum Flexibility</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Bot className="mr-2 h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="mr-2 h-4 w-4" />
+                        Generate AI Shifts
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          ) : (
+            <div className="space-y-6">
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h3 className="font-medium text-blue-900 mb-2">AI Analysis Results</h3>
+                <p className="text-blue-800">{aiResponse.message}</p>
+                {aiResponse.data?.reasoning && (
+                  <p className="text-sm text-blue-700 mt-2">
+                    <strong>Reasoning:</strong> {aiResponse.data.reasoning}
+                  </p>
+                )}
+              </div>
+
+              {aiResponse.data?.shiftTemplates?.length > 0 && (
+                <div>
+                  <h3 className="font-medium mb-3">Recommended Shift Templates</h3>
+                  <div className="space-y-3">
+                    {aiResponse.data.shiftTemplates.map((template: any, index: number) => (
+                      <Card key={index} className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">{template.name}</h4>
+                          <Badge style={{ backgroundColor: template.color }}>
+                            {template.shiftType}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">{template.description}</p>
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <span className="font-medium">Time:</span> {template.startTime} - {template.endTime}
+                          </div>
+                          <div>
+                            <span className="font-medium">Staff:</span> {template.minimumStaffing}-{template.maximumStaffing || '∞'}
+                          </div>
+                          <div>
+                            <span className="font-medium">Days:</span> {template.daysOfWeek?.join(', ') || 'All'}
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {aiResponse.data?.recommendations?.length > 0 && (
+                <div>
+                  <h3 className="font-medium mb-3">AI Recommendations</h3>
+                  <ul className="space-y-2">
+                    {aiResponse.data.recommendations.map((rec: string, index: number) => (
+                      <li key={index} className="flex items-start gap-2 text-sm">
+                        <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0" />
+                        {rec}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setAiResponse(null)}>
+                  Generate Again
+                </Button>
+                <Button 
+                  onClick={handleImplementShifts}
+                  disabled={isLoading || !aiResponse.data?.shiftTemplates?.length}
+                >
+                  {isLoading ? (
+                    <>
+                      <Clock className="mr-2 h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Implement Shifts
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

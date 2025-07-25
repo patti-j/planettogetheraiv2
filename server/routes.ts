@@ -41,7 +41,7 @@ import {
   insertShiftTemplateSchema, insertResourceShiftAssignmentSchema, insertShiftScenarioSchema, 
   insertHolidaySchema, insertResourceAbsenceSchema, insertShiftCoverageSchema, insertShiftUtilizationSchema
 } from "@shared/schema";
-import { processAICommand, transcribeAudio } from "./ai-agent";
+import { processAICommand, processShiftAIRequest, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
 import multer from "multer";
 import session from "express-session";
@@ -12115,6 +12115,63 @@ Create a natural, conversational voice script that explains this feature to some
     } catch (error) {
       console.error("Error deleting holiday:", error);
       res.status(500).json({ error: "Failed to delete holiday" });
+    }
+  });
+
+  // AI Shift Generation and Adjustment
+  app.post("/api/shifts/ai-create", requireAuth, async (req, res) => {
+    try {
+      const { requirements, plantId, resources, existingShifts } = req.body;
+      
+      const aiResponse = await processShiftAIRequest({
+        type: 'create',
+        requirements,
+        plantId,
+        resources: resources || [],
+        existingShifts: existingShifts || []
+      });
+      
+      res.json(aiResponse);
+    } catch (error) {
+      console.error("Error creating AI shift:", error);
+      res.status(500).json({ error: "Failed to create AI shift" });
+    }
+  });
+
+  app.post("/api/shifts/ai-adjust", requireAuth, async (req, res) => {
+    try {
+      const { shiftId, adjustments, requirements, context } = req.body;
+      
+      const aiResponse = await processShiftAIRequest({
+        type: 'adjust',
+        shiftId,
+        adjustments,
+        requirements,
+        context: context || {}
+      });
+      
+      res.json(aiResponse);
+    } catch (error) {
+      console.error("Error adjusting AI shift:", error);
+      res.status(500).json({ error: "Failed to adjust AI shift" });
+    }
+  });
+
+  app.post("/api/shifts/ai-optimize", requireAuth, async (req, res) => {
+    try {
+      const { shifts, constraints, objectives } = req.body;
+      
+      const aiResponse = await processShiftAIRequest({
+        type: 'optimize',
+        shifts: shifts || [],
+        constraints: constraints || {},
+        objectives: objectives || {}
+      });
+      
+      res.json(aiResponse);
+    } catch (error) {
+      console.error("Error optimizing AI shifts:", error);
+      res.status(500).json({ error: "Failed to optimize AI shifts" });
     }
   });
 
