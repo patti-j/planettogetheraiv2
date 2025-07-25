@@ -121,6 +121,14 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 25, 2025)
 
+✓ **Hamburger Menu Title Positioning Fix (July 25, 2025)**:
+- Fixed critical desktop UI issue where collapsed hamburger menu overlapped main page titles when Max panel was not showing
+- Added conditional margin logic using `${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12` for proper title positioning
+- Updated Production Schedule page headers (both normal and maximized views) to prevent hamburger menu overlap
+- Integrated useMaxDock context to detect Max panel visibility state for responsive title positioning
+- Desktop titles now shift right appropriately when Max is closed to prevent hamburger menu interference
+- Mobile titles maintain existing 48px left margin (ml-12) for proper hamburger menu clearance
+
 ✓ **Comprehensive System-Wide Error Handling Implementation (July 25, 2025)**:
 - Successfully implemented complete error handling infrastructure with comprehensive system-wide error protection
 - Enhanced server-side route protection with try-catch blocks across all critical API endpoints and routes

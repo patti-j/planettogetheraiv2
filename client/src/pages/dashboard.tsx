@@ -23,6 +23,7 @@ import ScheduleEvaluationSystem from "@/components/schedule-evaluation-system";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAITheme } from "@/hooks/use-ai-theme";
+import { useMaxDock } from "@/contexts/MaxDockContext";
 import { apiRequest } from "@/lib/queryClient";
 import type { Job, Operation, Resource, Capability } from "@shared/schema";
 
@@ -71,6 +72,7 @@ export default function Dashboard() {
   const [showEvaluationSystem, setShowEvaluationSystem] = useState(false);
   const { toast } = useToast();
   const { getThemeClasses } = useAITheme();
+  const { isMaxOpen } = useMaxDock();
   const queryClient = useQueryClient();
 
   const { data: jobs = [] } = useQuery<Job[]>({
@@ -325,7 +327,7 @@ export default function Dashboard() {
             {/* Header */}
             <header className="bg-white shadow-sm border-b border-gray-200 p-6">
               <div className="flex items-center justify-between mb-6">
-                <div className="md:ml-0 ml-12">
+                <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
                   <h2 className="text-2xl font-semibold text-gray-800">Production Schedule - Maximized</h2>
                   <p className="text-gray-600">Full dashboard view with metrics and Gantt chart</p>
                 </div>
@@ -734,7 +736,7 @@ export default function Dashboard() {
           <header className="bg-white shadow-sm border-b border-gray-200 p-3 sm:p-6">
             {/* Header with live indicator in top right */}
             <div className="relative">
-              <div className="md:ml-0 ml-12">
+              <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
                 <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
                   <BarChart3 className="w-6 h-6 mr-2" />
                   Production Schedule
