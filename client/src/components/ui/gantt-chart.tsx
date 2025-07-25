@@ -746,7 +746,7 @@ export default function GanttChart({
   const getTextLabelingDisplayName = (textLabeling: string) => {
     if (textLabeling?.startsWith("custom_")) {
       const customLabelId = parseInt(textLabeling.replace("custom_", ""));
-      const customLabel = customTextLabels.find(label => label.id === customLabelId);
+      const customLabel = customTextLabels.find((label: any) => label.id === customLabelId);
       return customLabel?.name || "Custom";
     }
     
@@ -1016,7 +1016,7 @@ export default function GanttChart({
     const [{ isDragging }, drag, preview] = useDrag({
       type: "resource-row",
       item: { resourceId: resource.id, index },
-      canDrag: canReorder,
+      canDrag: !!canReorder,
       collect: (monitor) => ({
         isDragging: monitor.isDragging(),
       }),
@@ -1294,7 +1294,7 @@ export default function GanttChart({
                         <OperationBlock
                           key={operation.id}
                           operation={operation}
-                          resourceName={resources.find(r => r.id === operation.assignedResourceId)?.name}
+                          resourceName={resources.find(r => r.id === operation.assignedResourceId)?.name || "Unassigned"}
                           jobName={job.name}
                           job={job}
                           timelineWidth={timelineWidth}
@@ -1379,7 +1379,7 @@ export default function GanttChart({
                           No custom labels - create one below
                         </SelectItem>
                       )}
-                      {customTextLabels.map((label) => (
+                      {customTextLabels.map((label: any) => (
                         <SelectItem key={label.id} value={`custom_${label.id}`}>
                           {label.name}
                         </SelectItem>
@@ -1542,7 +1542,7 @@ export default function GanttChart({
                         No custom labels - create one below
                       </SelectItem>
                     )}
-                    {customTextLabels.map((label) => (
+                    {customTextLabels.map((label: any) => (
                       <SelectItem key={label.id} value={`custom_${label.id}`}>
                         {label.name}
                       </SelectItem>

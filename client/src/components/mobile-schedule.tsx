@@ -12,6 +12,7 @@ import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { apiRequest } from "@/lib/queryClient";
 import type { Job, Operation, Resource, Capability } from "@shared/schema";
+import { safeCanDrop } from "@/lib/drag-drop-error-handler";
 
 interface MobileScheduleProps {
   jobs: Job[];

@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { Resource, Operation } from '@shared/schema';
+import { safeCanDrop, safeCanAssignOperation, logDragDropError } from '@/lib/drag-drop-error-handler';
 
 interface DragItem {
   operation: Operation;
@@ -81,18 +82,7 @@ export function useOperationDrop(
 
   const [{ isOver, canDrop }, drop] = useDrop<DragItem, void, { isOver: boolean; canDrop: boolean }>({
     accept: "operation",
-    canDrop: (item) => {
-      const operation = item.operation;
-      if (!operation || !operation.requiredCapabilities || operation.requiredCapabilities.length === 0) {
-        return true;
-      }
-      
-      const resourceCapabilities = resource.capabilities || [];
-      const operationCapabilities = operation.requiredCapabilities || [];
-      return operationCapabilities.every(reqCap => 
-        resourceCapabilities.includes(reqCap)
-      );
-    },
+    canDrop: (item) => safeCanDrop(item, resource, "gantt-chart"),
     drop: (item, monitor) => {
       const clientOffset = monitor.getClientOffset();
       
@@ -219,16 +209,7 @@ export function useTimelineDrop(
 
 export function useCapabilityValidation() {
   return {
-    canAssignOperation: (operation: Operation, resource: Resource) => {
-      if (!operation || !operation.requiredCapabilities || operation.requiredCapabilities.length === 0) {
-        return true;
-      }
-      
-      const resourceCapabilities = resource.capabilities || [];
-      const operationCapabilities = operation.requiredCapabilities || [];
-      return operationCapabilities.every(reqCap => 
-        resourceCapabilities.includes(reqCap)
-      );
-    }
+    canAssignOperation: (operation: Operation, resource: Resource) => 
+      safeCanAssignOperation(operation, resource, "capability-validation")
   };
 }
