@@ -121,6 +121,13 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 25, 2025)
 
+✓ **Sample Disruptions for Disruption Planning Implementation (July 25, 2025)**:
+- Successfully added comprehensive sample disruption data to database seed file for realistic testing and demonstration
+- Added 5 diverse disruption scenarios: CNC machine breakdown, material shortage, absent employee, quality issues, and power outage
+- Included realistic disruption actions with different statuses (pending, in-progress, completed) and assigned personnel
+- Sample data covers various disruption types, severity levels, impact assessments, and resolution workflows
+- Disruption management system now populated with realistic manufacturing scenarios for training and evaluation
+
 ✓ **Gantt Chart Zoom Persistence Implementation (July 25, 2025)**:
 - Successfully implemented localStorage persistence for Gantt chart zoom level between browser sessions
 - Users' selected zoom level (hour, shift, day, week, month, quarter, year, decade) now remembered across sessions

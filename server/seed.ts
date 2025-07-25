@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { 
   capabilities, resources, jobs, operations, users, roles, permissions, userRoles, rolePermissions,
-  customerStories, contentBlocks, marketingPages, leadCaptures
+  customerStories, contentBlocks, marketingPages, leadCaptures, disruptions, disruptionActions
 } from "@shared/schema";
 import { sql, eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -14,121 +14,315 @@ export async function seedDatabase() {
   const existingUsers = await db.select().from(users).limit(1);
   const existingDefaultRoles = await db.select().from(roles).where(eq(roles.name, "Administrator")).limit(1);
   const existingPresentationPermissions = await db.select().from(permissions).where(eq(permissions.feature, "presentation-system")).limit(1);
+  const existingDisruptions = await db.select().from(disruptions).limit(1);
   
-  // Force re-seed if presentation permissions are missing
+  // Force re-seed if presentation permissions or disruptions are missing
   const shouldReseedPermissions = existingPresentationPermissions.length === 0;
+  const shouldReseedDisruptions = existingDisruptions.length === 0;
   
-  if (existingCapabilities.length > 0 && existingUsers.length > 0 && existingDefaultRoles.length > 0 && !shouldReseedPermissions) {
+  if (existingCapabilities.length > 0 && existingUsers.length > 0 && existingDefaultRoles.length > 0 && !shouldReseedPermissions && !shouldReseedDisruptions) {
     console.log("Database already seeded, skipping...");
     return;
   }
   
   // Skip production data seeding if it already exists but seed user management
-  const shouldSeedProduction = existingCapabilities.length === 0;
+  const shouldSeedProduction = existingCapabilities.length === 0 || shouldReseedDisruptions;
 
   if (shouldSeedProduction) {
-    // Insert capabilities
-    const capabilityData = [
-      { name: "CNC Machining", description: "Computer numerical control machining operations" },
-      { name: "Welding", description: "Arc welding and metal joining processes" },
-      { name: "Assembly", description: "Component assembly and integration" },
-      { name: "Quality Control", description: "Inspection and testing procedures" },
-      { name: "Packaging", description: "Product packaging and labeling" }
-    ];
+    // Only insert capabilities if they don't exist
+    if (existingCapabilities.length === 0) {
+      const capabilityData = [
+        { name: "CNC Machining", description: "Computer numerical control machining operations" },
+        { name: "Welding", description: "Arc welding and metal joining processes" },
+        { name: "Assembly", description: "Component assembly and integration" },
+        { name: "Quality Control", description: "Inspection and testing procedures" },
+        { name: "Packaging", description: "Product packaging and labeling" }
+      ];
 
-    await db.insert(capabilities).values(capabilityData);
+      await db.insert(capabilities).values(capabilityData);
+    }
 
-    // Insert resources
-    const resourceData = [
-      { name: "CNC-001", type: "Machine", status: "active", capabilities: [1] },
-      { name: "CNC-002", type: "Machine", status: "active", capabilities: [1] },
-      { name: "Welder-001", type: "Operator", status: "active", capabilities: [2] },
-      { name: "Assembly-001", type: "Operator", status: "active", capabilities: [3] },
-      { name: "QC-001", type: "Operator", status: "active", capabilities: [4] },
-      { name: "Packaging-001", type: "Operator", status: "active", capabilities: [5] }
-    ];
+    // Only insert resources, jobs, and operations if capabilities were just created
+    if (existingCapabilities.length === 0) {
+      const resourceData = [
+        { name: "CNC-001", type: "Machine", status: "active", capabilities: [1] },
+        { name: "CNC-002", type: "Machine", status: "active", capabilities: [1] },
+        { name: "Welder-001", type: "Operator", status: "active", capabilities: [2] },
+        { name: "Assembly-001", type: "Operator", status: "active", capabilities: [3] },
+        { name: "QC-001", type: "Operator", status: "active", capabilities: [4] },
+        { name: "Packaging-001", type: "Operator", status: "active", capabilities: [5] }
+      ];
 
-    await db.insert(resources).values(resourceData);
+      await db.insert(resources).values(resourceData);
 
-    // Insert jobs
-    const jobData = [
-      { 
-        name: "Widget Assembly - Batch A", 
-        plantId: 1,
-        customer: "Tech Corp", 
-        priority: "high", 
-        dueDate: new Date("2024-12-31"), 
+      // Insert jobs
+      const jobData = [
+        { 
+          name: "Widget Assembly - Batch A", 
+          plantId: 1,
+          customer: "Tech Corp", 
+          priority: "high", 
+          dueDate: new Date("2024-12-31"), 
+          status: "active",
+          quantity: 100
+        },
+        { 
+          name: "Motor Housing Production", 
+          plantId: 1,
+          customer: "AutoParts Inc", 
+          priority: "medium", 
+          dueDate: new Date("2024-12-25"), 
+          status: "active",
+          quantity: 250
+        }
+      ];
+
+      await db.insert(jobs).values(jobData);
+
+      // Insert operations
+      const operationData = [
+        {
+          jobId: 1,
+          name: "CNC Machining",
+          description: "Machine widget base components",
+          duration: 4,
+          status: "active",
+          requiredCapabilities: [1],
+          order: 1,
+          assignedResourceId: 1
+        },
+        {
+          jobId: 1,
+          name: "Welding",
+          description: "Weld component joints",
+          duration: 2,
+          status: "pending",
+          requiredCapabilities: [2],
+          order: 2,
+          assignedResourceId: 3
+        },
+        {
+          jobId: 1,
+          name: "Assembly",
+          description: "Final widget assembly",
+          duration: 3,
+          status: "pending",
+          requiredCapabilities: [3],
+          order: 3,
+          assignedResourceId: 4
+        },
+        {
+          jobId: 2,
+          name: "Housing Machining",
+          description: "Machine motor housing",
+          duration: 6,
+          status: "active",
+          requiredCapabilities: [1],
+          order: 1,
+          assignedResourceId: 2
+        },
+        {
+          jobId: 2,
+          name: "Quality Check",
+          description: "Inspect housing dimensions",
+          duration: 1,
+          status: "pending",
+          requiredCapabilities: [4],
+          order: 2,
+          assignedResourceId: 5
+        }
+      ];
+
+      await db.insert(operations).values(operationData);
+    }
+
+    // Insert sample disruptions only if they don't exist
+    if (shouldReseedDisruptions) {
+      const disruptionData = [
+      {
+        title: "CNC-001 Machine Breakdown",
+        type: "machine_breakdown",
+        severity: "high",
         status: "active",
-        quantity: 100
+        description: "Primary CNC machine experiencing hydraulic system failure. Unable to continue machining operations.",
+        affectedResourceId: 1,
+        affectedJobId: 1,
+        affectedOperationId: 1,
+        startTime: new Date(new Date().getTime() - 2 * 60 * 60 * 1000), // 2 hours ago
+        estimatedDuration: 8, // 8 hours
+        reportedBy: "John Operator",
+        assignedTo: "Mike Maintenance",
+        impactAssessment: {
+          delayedOperations: 3,
+          affectedJobs: 2,
+          estimatedDelay: 6,
+          financialImpact: 15000,
+          customerImpact: "moderate"
+        },
+        resolutionPlan: "Replace hydraulic pump and test system. Order replacement parts immediately.",
+        preventiveMeasures: "Implement daily hydraulic pressure checks and monthly pump maintenance."
       },
-      { 
-        name: "Motor Housing Production", 
-        plantId: 1,
-        customer: "AutoParts Inc", 
-        priority: "medium", 
-        dueDate: new Date("2024-12-25"), 
+      {
+        title: "Material Shortage - Steel Plates",
+        type: "material_shortage",
+        severity: "medium",
+        status: "investigating",
+        description: "Unexpected shortage of 10mm steel plates needed for motor housing production. Supplier delivery delayed.",
+        affectedResourceId: 2,
+        affectedJobId: 2,
+        affectedOperationId: 4,
+        startTime: new Date(new Date().getTime() - 4 * 60 * 60 * 1000), // 4 hours ago
+        estimatedDuration: 24, // 24 hours
+        reportedBy: "Sarah Scheduler",
+        assignedTo: "Tom Procurement",
+        impactAssessment: {
+          delayedOperations: 2,
+          affectedJobs: 1,
+          estimatedDelay: 12,
+          financialImpact: 8000,
+          customerImpact: "low"
+        },
+        resolutionPlan: "Contact alternative suppliers for emergency delivery. Consider using 12mm plates and adjust machining parameters.",
+        preventiveMeasures: "Establish minimum stock levels and backup supplier agreements."
+      },
+      {
+        title: "Welder Absent - Medical Emergency",
+        type: "absent_employee",
+        severity: "medium",
+        status: "resolved",
+        description: "Primary welder called in sick with medical emergency. No qualified backup available for specialized welding operations.",
+        affectedResourceId: 3,
+        affectedJobId: 1,
+        affectedOperationId: 2,
+        startTime: new Date(new Date().getTime() - 8 * 60 * 60 * 1000), // 8 hours ago
+        estimatedDuration: 8,
+        actualEndTime: new Date(new Date().getTime() - 1 * 60 * 60 * 1000), // resolved 1 hour ago
+        reportedBy: "Linda Supervisor",
+        assignedTo: "HR Department",
+        impactAssessment: {
+          delayedOperations: 1,
+          affectedJobs: 1,
+          estimatedDelay: 4,
+          financialImpact: 2000,
+          customerImpact: "none"
+        },
+        resolutionPlan: "Temporary welder hired from staffing agency. Cross-train backup operators for future coverage.",
+        resolutionNotes: "Temporary welder successfully completed welding operations. Patient recovering well.",
+        preventiveMeasures: "Cross-train at least 2 backup welders and establish on-call staffing agreement."
+      },
+      {
+        title: "Quality Issue - Dimensional Variance",
+        type: "quality_issue",
+        severity: "critical",
         status: "active",
-        quantity: 250
+        description: "Quality inspection revealed dimensional variances in 15% of machined parts. Investigating root cause.",
+        affectedResourceId: 1,
+        affectedJobId: 1,
+        affectedOperationId: 1,
+        startTime: new Date(new Date().getTime() - 30 * 60 * 1000), // 30 minutes ago
+        estimatedDuration: 6,
+        reportedBy: "QC Inspector",
+        assignedTo: "Engineering Team",
+        impactAssessment: {
+          delayedOperations: 4,
+          affectedJobs: 2,
+          estimatedDelay: 8,
+          financialImpact: 25000,
+          customerImpact: "high"
+        },
+        resolutionPlan: "Stop production, recalibrate CNC machine, inspect all recent parts. Notify customer of potential delay.",
+        preventiveMeasures: "Implement real-time SPC monitoring and increase inspection frequency."
+      },
+      {
+        title: "Power Outage - Electrical Grid Issue",
+        type: "power_outage",
+        severity: "high",
+        status: "monitoring",
+        description: "Brief power outage caused CNC programs to reset. All machines need recalibration before resuming production.",
+        affectedResourceId: null,
+        affectedJobId: null,
+        affectedOperationId: null,
+        startTime: new Date(new Date().getTime() - 6 * 60 * 60 * 1000), // 6 hours ago
+        estimatedDuration: 4,
+        actualEndTime: new Date(new Date().getTime() - 3 * 60 * 60 * 1000), // resolved 3 hours ago
+        reportedBy: "Facility Manager",
+        assignedTo: "Maintenance Team",
+        impactAssessment: {
+          delayedOperations: 8,
+          affectedJobs: 2,
+          estimatedDelay: 3,
+          financialImpact: 12000,
+          customerImpact: "low"
+        },
+        resolutionPlan: "Recalibrate all CNC machines, verify program integrity, restart production in sequence.",
+        resolutionNotes: "All machines recalibrated successfully. Production resumed normal schedule.",
+        preventiveMeasures: "Install UPS backup systems for critical CNC controllers and implement automatic restart procedures."
       }
     ];
 
-    await db.insert(jobs).values(jobData);
+    await db.insert(disruptions).values(disruptionData);
 
-    // Insert operations
-    const operationData = [
+    // Insert sample disruption actions
+    const disruptionActionData = [
       {
-        jobId: 1,
-        name: "CNC Machining",
-        description: "Machine widget base components",
-        duration: 4,
-        status: "active",
-        requiredCapabilities: [1],
-        order: 1,
-        assignedResourceId: 1
+        disruptionId: 1, // CNC-001 Machine Breakdown
+        actionType: "repair_equipment",
+        description: "Order replacement hydraulic pump (Part #HP-2400X)",
+        targetId: 1,
+        targetType: "resource",
+        status: "in_progress",
+        assignedTo: "Mike Maintenance",
+        scheduledTime: new Date(new Date().getTime() + 2 * 60 * 60 * 1000), // in 2 hours
+        notes: "Emergency order placed with 24-hour delivery commitment"
       },
       {
-        jobId: 1,
-        name: "Welding",
-        description: "Weld component joints",
-        duration: 2,
+        disruptionId: 1,
+        actionType: "reschedule_operation",
+        description: "Reschedule CNC Machining operation to CNC-002",
+        targetId: 1,
+        targetType: "operation",
+        status: "completed",
+        assignedTo: "Sarah Scheduler",
+        completedTime: new Date(new Date().getTime() - 30 * 60 * 1000), // 30 minutes ago
+        notes: "Operation successfully moved to backup machine with minimal delay"
+      },
+      {
+        disruptionId: 2, // Material Shortage
+        actionType: "order_materials",
+        description: "Emergency order for 500kg steel plates from alternate supplier",
+        targetId: null,
+        targetType: null,
         status: "pending",
-        requiredCapabilities: [2],
-        order: 2,
-        assignedResourceId: 3
+        assignedTo: "Tom Procurement",
+        scheduledTime: new Date(new Date().getTime() + 1 * 60 * 60 * 1000), // in 1 hour
+        notes: "Contacted 3 suppliers, waiting for availability confirmation"
       },
       {
-        jobId: 1,
-        name: "Assembly",
-        description: "Final widget assembly",
-        duration: 3,
+        disruptionId: 3, // Welder Absent
+        actionType: "hire_temp_staff",
+        description: "Hire temporary certified welder from staffing agency",
+        targetId: 3,
+        targetType: "resource",
+        status: "completed",
+        assignedTo: "HR Department",
+        completedTime: new Date(new Date().getTime() - 2 * 60 * 60 * 1000), // 2 hours ago
+        notes: "Temporary welder arrived and passed qualification test"
+      },
+      {
+        disruptionId: 4, // Quality Issue
+        actionType: "notify_customer",
+        description: "Notify AutoParts Inc of potential delivery delay due to quality investigation",
+        targetId: 2,
+        targetType: "job",
         status: "pending",
-        requiredCapabilities: [3],
-        order: 3,
-        assignedResourceId: 4
-      },
-      {
-        jobId: 2,
-        name: "Housing Machining",
-        description: "Machine motor housing",
-        duration: 6,
-        status: "active",
-        requiredCapabilities: [1],
-        order: 1,
-        assignedResourceId: 2
-      },
-      {
-        jobId: 2,
-        name: "Quality Check",
-        description: "Inspect housing dimensions",
-        duration: 1,
-        status: "pending",
-        requiredCapabilities: [4],
-        order: 2,
-        assignedResourceId: 5
+        assignedTo: "Customer Service",
+        scheduledTime: new Date(new Date().getTime() + 30 * 60 * 1000), // in 30 minutes
+        notes: "Waiting for engineering assessment before customer notification"
       }
     ];
 
-    await db.insert(operations).values(operationData);
+      await db.insert(disruptionActions).values(disruptionActionData);
+    }
   }
 
   // Seed User Management System (only if users don't exist)
