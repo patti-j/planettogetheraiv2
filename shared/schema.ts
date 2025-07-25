@@ -2812,7 +2812,7 @@ export const optimizationAlgorithms = pgTable("optimization_algorithms", {
         description: string;
       }>;
     }>;
-  }>().default({}),
+  }>().default(sql`'{}'::jsonb`),
   algorithmCode: text("algorithm_code"), // AI-generated or custom algorithm logic
   uiComponents: jsonb("ui_components").$type<{
     settingsForm: Array<{
@@ -2827,7 +2827,7 @@ export const optimizationAlgorithms = pgTable("optimization_algorithms", {
       type: string; // chart, table, metric, summary
       config: Record<string, any>;
     }>;
-  }>().default({}),
+  }>().default(sql`'{}'::jsonb`),
   performance: jsonb("performance").$type<{
     averageExecutionTime: number; // milliseconds
     memoryUsage: number; // MB
@@ -2840,7 +2840,7 @@ export const optimizationAlgorithms = pgTable("optimization_algorithms", {
       metrics: Record<string, number>;
       executedAt: string;
     }>;
-  }>().default({}),
+  }>().default(sql`'{}'::jsonb`),
   approvals: jsonb("approvals").$type<{
     approved: boolean;
     approvedBy: number | null;
@@ -3305,16 +3305,6 @@ export type InsertPresentationAnalytics = z.infer<typeof insertPresentationAnaly
 export type PresentationAIContent = typeof presentationAIContent.$inferSelect;
 export type InsertPresentationAIContent = z.infer<typeof insertPresentationAIContentSchema>;
 
-// Presentation Studio Types
-export type PresentationMaterial = typeof presentationMaterials.$inferSelect;
-export type InsertPresentationMaterial = z.infer<typeof insertPresentationMaterialSchema>;
-
-export type PresentationContentSuggestion = typeof presentationContentSuggestions.$inferSelect;
-export type InsertPresentationContentSuggestion = z.infer<typeof insertPresentationContentSuggestionSchema>;
-
-export type PresentationProject = typeof presentationProjects.$inferSelect;
-export type InsertPresentationProject = z.infer<typeof insertPresentationProjectSchema>;
-
 // ===== CUSTOMER JOURNEY MARKETING SYSTEM =====
 
 // Customer journey stages and personas
@@ -3531,12 +3521,12 @@ export const pageAnalytics = pgTable("page_analytics", {
     email: number;
     referral: number;
     direct: number;
-  }>().default({}),
+  }>().default(sql`'{}'::jsonb`),
   deviceBreakdown: jsonb("device_breakdown").$type<{
     desktop: number;
     mobile: number;
     tablet: number;
-  }>().default({}),
+  }>().default(sql`'{}'::jsonb`),
   topCountries: jsonb("top_countries").$type<Array<{
     country: string;
     visitors: number;

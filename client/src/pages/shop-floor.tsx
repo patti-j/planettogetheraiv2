@@ -52,6 +52,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useDrag, useDrop } from "react-dnd";
+import type { Resource, Operation, Job } from "@shared/schema";
 
 // Optimized mobile-friendly drag and drop for smoother performance
 const useMobileDrag = (
