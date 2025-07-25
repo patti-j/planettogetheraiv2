@@ -619,7 +619,7 @@ export default function VisualFactory() {
 
                   <Dialog open={newDisplayDialogOpen} onOpenChange={setNewDisplayDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button className="text-xs sm:text-sm">
+                      <Button className="text-xs sm:text-sm" size="sm">
                         <Monitor className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                         <span className="hidden sm:inline">New Display</span>
                         <span className="sm:hidden">New Display</span>
