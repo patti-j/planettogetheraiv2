@@ -12,10 +12,11 @@ import {
   Maximize2, Minimize2, Sparkles, Brain, Target, Cpu, Play, 
   CheckCircle, Settings, Database, Monitor, TrendingUp, 
   Code, TestTube, Rocket, BarChart3, Layers, Package,
-  Plus, Search, Filter, Edit3, Trash2, Copy, Eye
+  Plus, Search, Filter, Edit3, Trash2, Copy, Eye, ArrowLeft, Clock
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import BackwardsSchedulingAlgorithm from "@/components/backwards-scheduling-algorithm";
 
 interface OptimizationAlgorithm {
   id: number;
@@ -69,6 +70,7 @@ export default function OptimizationStudio() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showAICreateDialog, setShowAICreateDialog] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
+  const [showBackwardsScheduling, setShowBackwardsScheduling] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -240,6 +242,34 @@ export default function OptimizationStudio() {
     </Card>
   );
 
+  // Show backwards scheduling algorithm if selected
+  if (showBackwardsScheduling) {
+    return (
+      <div className="relative min-h-screen bg-gray-50">
+        <Button
+          onClick={() => setIsMaximized(!isMaximized)}
+          className="fixed top-2 right-2 z-50"
+          size="icon"
+          variant="outline"
+        >
+          {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+        </Button>
+        
+        <div className={`p-3 sm:p-6 space-y-4 sm:space-y-6 ${isMaximized ? '' : ''}`}>
+          <Button 
+            onClick={() => setShowBackwardsScheduling(false)}
+            variant="outline"
+            className="mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Optimization Studio
+          </Button>
+          <BackwardsSchedulingAlgorithm />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative min-h-screen bg-gray-50">
       {/* Maximize/Minimize Button */}
@@ -395,6 +425,67 @@ export default function OptimizationStudio() {
                       <p className="text-xl font-bold">{algorithms.filter((a: OptimizationAlgorithm) => a.status === 'testing').length}</p>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Featured Algorithm - Backwards Scheduling */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-blue-500" />
+                <h2 className="text-lg font-semibold">Featured Algorithm</h2>
+                <Badge variant="outline">Production Scheduling</Badge>
+              </div>
+              <Card className="border-blue-200 bg-blue-50 hover:shadow-lg transition-shadow cursor-pointer"
+                    onClick={() => setShowBackwardsScheduling(true)}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg text-blue-900">Backwards Scheduling Algorithm</CardTitle>
+                      <CardDescription className="mt-1 text-blue-700">
+                        Advanced backwards scheduling that starts from job due dates and works backwards to optimize start times, 
+                        reducing WIP inventory and improving cash flow while ensuring due date compliance.
+                      </CardDescription>
+                    </div>
+                    <div className="flex flex-col gap-2 ml-4">
+                      <Badge className="bg-green-500 text-white">
+                        approved
+                      </Badge>
+                      <Badge variant="outline" className="text-xs border-blue-300 text-blue-700">
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        Standard
+                      </Badge>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between text-sm text-blue-700 mb-3">
+                    <span>Production Scheduling</span>
+                    <span>v1.0.0</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 text-xs text-blue-600">
+                    <div className="flex items-center gap-1">
+                      <Target className="w-3 h-3" />
+                      <span>Due Date Focus</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <TrendingUp className="w-3 h-3" />
+                      <span>Optimized Timing</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      <span>Backwards Logic</span>
+                    </div>
+                  </div>
+                  <Button 
+                    className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowBackwardsScheduling(true);
+                    }}
+                  >
+                    Configure & Run Algorithm
+                  </Button>
                 </CardContent>
               </Card>
             </div>

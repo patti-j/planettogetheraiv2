@@ -4754,6 +4754,108 @@ Provide the response as a JSON object with the following structure:
     }
   });
 
+  // Backwards Scheduling Algorithm
+  app.post("/api/optimization/algorithms/backwards-scheduling/run", requireAuth, async (req, res) => {
+    try {
+      const { parameters, jobs, resources, operations } = req.body;
+      
+      // Input validation
+      if (!parameters || !Array.isArray(jobs) || !Array.isArray(resources) || !Array.isArray(operations)) {
+        return res.status(400).json({ error: "Invalid input data" });
+      }
+
+      // Backwards scheduling algorithm implementation
+      const schedule = [];
+      
+      // 1. Sort jobs by priority and due date
+      const sortedJobs = [...jobs].sort((a, b) => {
+        const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+        const priorityDiff = (priorityOrder[a.priority] || 3) - (priorityOrder[b.priority] || 3);
+        if (priorityDiff !== 0) return priorityDiff;
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      });
+
+      // 2. Process each job
+      for (const job of sortedJobs) {
+        const jobOperations = operations.filter(op => op.jobId === job.id);
+        
+        // Sort operations by sequence (reverse for backwards scheduling)
+        const sortedOps = jobOperations.sort((a, b) => (b.sequence || 0) - (a.sequence || 0));
+        
+        let currentEndTime = new Date(job.dueDate);
+        
+        for (const operation of sortedOps) {
+          // Find suitable resource
+          const suitableResources = resources.filter(resource => {
+            const resourceCapabilities = resource.capabilities || [];
+            const requiredCapabilities = operation.requiredCapabilities || [];
+            return requiredCapabilities.every(reqCap => 
+              resourceCapabilities.some(resCap => resCap.id === reqCap.id || resCap.name === reqCap.name)
+            );
+          });
+
+          if (suitableResources.length > 0) {
+            // Select resource with lowest utilization
+            const selectedResource = suitableResources[0];
+            
+            // Calculate operation duration (default 4 hours if not specified)
+            const duration = operation.estimatedDuration || 4;
+            
+            // Calculate start time (end time minus duration)
+            const startTime = new Date(currentEndTime.getTime() - (duration * 60 * 60 * 1000));
+            
+            // Apply buffer time
+            const bufferHours = parameters.bufferTime || 0.5;
+            const bufferedStartTime = new Date(startTime.getTime() - (bufferHours * 60 * 60 * 1000));
+            
+            // Adjust for working hours if needed
+            let finalStartTime = bufferedStartTime;
+            let finalEndTime = startTime;
+            
+            if (!parameters.allowOvertime) {
+              // Adjust to working hours (simplified - just move to previous working day if needed)
+              const workStart = parameters.workingHoursStart || 8;
+              const workEnd = parameters.workingHoursEnd || 17;
+              
+              if (finalStartTime.getHours() < workStart) {
+                const prevDay = new Date(finalStartTime);
+                prevDay.setDate(prevDay.getDate() - 1);
+                prevDay.setHours(workEnd - duration);
+                finalStartTime = prevDay;
+                finalEndTime = new Date(prevDay.getTime() + (duration * 60 * 60 * 1000));
+              }
+            }
+            
+            schedule.push({
+              operationId: operation.id,
+              resourceId: selectedResource.id,
+              startTime: finalStartTime.toISOString(),
+              endTime: finalEndTime.toISOString(),
+              duration: duration
+            });
+            
+            // Update current end time for next operation
+            currentEndTime = finalStartTime;
+          }
+        }
+      }
+
+      res.json({
+        success: true,
+        schedule: schedule,
+        parameters: parameters,
+        stats: {
+          totalOperations: operations.length,
+          scheduledOperations: schedule.length,
+          jobsProcessed: sortedJobs.length
+        }
+      });
+    } catch (error) {
+      console.error("Error running backwards scheduling algorithm:", error);
+      res.status(500).json({ error: "Failed to run backwards scheduling algorithm" });
+    }
+  });
+
   // Algorithm Tests
   app.get("/api/optimization/tests", async (req, res) => {
     try {
