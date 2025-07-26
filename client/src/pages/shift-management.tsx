@@ -85,17 +85,19 @@ export default function ShiftManagement() {
               
               {/* Mobile Tabs */}
               <div className="block sm:hidden">
-                <div className="overflow-x-auto">
-                  <TabsList className="grid w-max grid-cols-8 gap-1">
-                    <TabsTrigger value="templates" className="text-xs px-2">Templates</TabsTrigger>
-                    <TabsTrigger value="assignments" className="text-xs px-2">Assign</TabsTrigger>
-                    <TabsTrigger value="downtime" className="text-xs px-2">Downtime</TabsTrigger>
-                    <TabsTrigger value="overtime" className="text-xs px-2">Overtime</TabsTrigger>
-                    <TabsTrigger value="holidays" className="text-xs px-2">Holidays</TabsTrigger>
-                    <TabsTrigger value="absences" className="text-xs px-2">Absences</TabsTrigger>
-                    <TabsTrigger value="scenarios" className="text-xs px-2">Scenarios</TabsTrigger>
-                    <TabsTrigger value="analytics" className="text-xs px-2">Analytics</TabsTrigger>
-                  </TabsList>
+                <div className="flex justify-center">
+                  <div className="overflow-x-auto">
+                    <TabsList className="flex w-max gap-1 justify-center">
+                      <TabsTrigger value="templates" className="text-xs px-2 flex-shrink-0">Templates</TabsTrigger>
+                      <TabsTrigger value="assignments" className="text-xs px-2 flex-shrink-0">Assign</TabsTrigger>
+                      <TabsTrigger value="downtime" className="text-xs px-2 flex-shrink-0">Downtime</TabsTrigger>
+                      <TabsTrigger value="overtime" className="text-xs px-2 flex-shrink-0">Overtime</TabsTrigger>
+                      <TabsTrigger value="holidays" className="text-xs px-2 flex-shrink-0">Holidays</TabsTrigger>
+                      <TabsTrigger value="absences" className="text-xs px-2 flex-shrink-0">Absences</TabsTrigger>
+                      <TabsTrigger value="scenarios" className="text-xs px-2 flex-shrink-0">Scenarios</TabsTrigger>
+                      <TabsTrigger value="analytics" className="text-xs px-2 flex-shrink-0">Analytics</TabsTrigger>
+                    </TabsList>
+                  </div>
                 </div>
               </div>
 
