@@ -1103,6 +1103,10 @@ export default function GanttChart({
                           rowHeight={rowHeight}
                           onHoverStart={setHoveredJobId}
                           onHoverEnd={() => setHoveredJobId(null)}
+                          onViewDetails={(operation) => {
+                            setSelectedOperation(operation);
+                            setOperationDialogOpen(true);
+                          }}
                         />
                       </div>
                     </div>
@@ -1253,6 +1257,10 @@ export default function GanttChart({
                   textLabeling={textLabeling}
                   customTextLabels={customTextLabels}
                   rowHeight={rowHeight}
+                  onViewDetails={(operation) => {
+                    setSelectedOperation(operation);
+                    setOperationDialogOpen(true);
+                  }}
                 />
               ))}
             </div>
@@ -1314,6 +1322,10 @@ export default function GanttChart({
                   textLabeling={textLabeling}
                   customTextLabels={customTextLabels}
                   rowHeight={rowHeight}
+                  onViewDetails={(operation) => {
+                    setSelectedOperation(operation);
+                    setOperationDialogOpen(true);
+                  }}
                 />
               ))}
               {resourceOperations.length === 0 && (
@@ -1437,6 +1449,10 @@ export default function GanttChart({
                           textLabeling={textLabeling}
                           customTextLabels={customTextLabels}
                           rowHeight={rowHeight}
+                          onViewDetails={(operation) => {
+                            setSelectedOperation(operation);
+                            setOperationDialogOpen(true);
+                          }}
                         />
                       ))
                     }

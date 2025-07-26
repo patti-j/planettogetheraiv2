@@ -2,6 +2,8 @@ import { type Operation, type Job } from "@shared/schema";
 import { useDrag } from "react-dnd";
 import { useEffect, useState, useMemo } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 
 interface OperationBlockProps {
@@ -19,6 +21,7 @@ interface OperationBlockProps {
   rowHeight?: number;
   onHoverStart?: (jobId: number) => void;
   onHoverEnd?: () => void;
+  onViewDetails?: (operation: Operation) => void;
 }
 
 export default function OperationBlock({
@@ -36,6 +39,7 @@ export default function OperationBlock({
   rowHeight = 60,
   onHoverStart,
   onHoverEnd,
+  onViewDetails,
 }: OperationBlockProps) {
   
   // Calculate operation block height with comfortable margins
@@ -391,10 +395,24 @@ export default function OperationBlock({
               onMouseEnter={() => onHoverStart?.(operation.jobId)}
               onMouseLeave={() => onHoverEnd?.()}
             >
-              <div className="h-full flex items-center justify-between text-white text-xs">
-                <div className="flex-1 truncate">
+              <div className="h-full flex items-center justify-between text-white text-xs relative">
+                <div className="flex-1 truncate pr-6">
                   <div className="font-medium truncate">{getBlockText()}</div>
                 </div>
+                {onViewDetails && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onViewDetails(operation);
+                    }}
+                    className="absolute bottom-1 right-1 h-4 w-4 p-0 hover:bg-white/20 z-20"
+                    title="View operation details"
+                  >
+                    <Eye className="w-3 h-3" />
+                  </Button>
+                )}
               </div>
             </div>
           </TooltipTrigger>
@@ -427,10 +445,24 @@ export default function OperationBlock({
             onMouseEnter={() => onHoverStart?.(operation.jobId)}
             onMouseLeave={() => onHoverEnd?.()}
           >
-            <div className="h-full flex items-center justify-between px-2 text-white text-xs">
-              <div className="flex-1 truncate">
+            <div className="h-full flex items-center justify-between px-2 text-white text-xs relative">
+              <div className="flex-1 truncate pr-6">
                 <div className="font-medium truncate">{getBlockText()}</div>
               </div>
+              {onViewDetails && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewDetails(operation);
+                  }}
+                  className="absolute bottom-1 right-1 h-4 w-4 p-0 hover:bg-white/20 z-20"
+                  title="View operation details"
+                >
+                  <Eye className="w-3 h-3" />
+                </Button>
+              )}
             </div>
           </div>
         </TooltipTrigger>
