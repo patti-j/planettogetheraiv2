@@ -4856,6 +4856,138 @@ Provide the response as a JSON object with the following structure:
     }
   });
 
+  // Optimization Execute Endpoint
+  app.post("/api/optimization/execute", requireAuth, async (req, res) => {
+    try {
+      const { algorithmId, parameters, scope } = req.body;
+      
+      if (!algorithmId) {
+        return res.status(400).json({ error: "Algorithm ID is required" });
+      }
+      
+      // Get algorithm details
+      const algorithm = await storage.getOptimizationAlgorithm(algorithmId);
+      if (!algorithm) {
+        return res.status(404).json({ error: "Algorithm not found" });
+      }
+      
+      if (algorithm.status !== 'approved') {
+        return res.status(400).json({ error: "Algorithm must be approved before execution" });
+      }
+      
+      // Get current jobs, operations, and resources for optimization
+      const jobs = await storage.getJobs();
+      const operations = await storage.getOperations();
+      const resources = await storage.getResources();
+      
+      // Filter by scope if provided
+      let filteredJobs = jobs;
+      let filteredOperations = operations;
+      let filteredResources = resources;
+      
+      if (scope?.jobIds && scope.jobIds.length > 0) {
+        filteredJobs = jobs.filter(j => scope.jobIds.includes(j.id));
+        filteredOperations = operations.filter(op => 
+          filteredJobs.some(j => j.id === op.jobId)
+        );
+      }
+      
+      if (scope?.resourceIds && scope.resourceIds.length > 0) {
+        filteredResources = resources.filter(r => scope.resourceIds.includes(r.id));
+      }
+      
+      // Execute the specific algorithm based on its name
+      let schedule = null;
+      
+      if (algorithm.name === 'backwards-scheduling-v1') {
+        // Call the backwards scheduling algorithm
+        const backwardsResponse = await fetch(`http://localhost:5000/api/optimization/algorithms/backwards-scheduling/run`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': req.headers.authorization || ''
+          },
+          body: JSON.stringify({
+            parameters: parameters || {},
+            jobs: filteredJobs,
+            resources: filteredResources,
+            operations: filteredOperations
+          })
+        });
+        
+        const backwardsResult = await backwardsResponse.json();
+        if (backwardsResult.success) {
+          schedule = backwardsResult.schedule;
+        } else {
+          throw new Error('Backwards scheduling failed');
+        }
+      } else {
+        return res.status(400).json({ error: "Unsupported algorithm type" });
+      }
+      
+      if (!schedule || schedule.length === 0) {
+        return res.status(400).json({ error: "No schedule generated" });
+      }
+      
+      // Update operations with scheduled start/end times
+      for (const scheduledOp of schedule) {
+        const operation = await storage.getOperation(scheduledOp.operationId);
+        if (operation) {
+          await storage.updateOperation(scheduledOp.operationId, {
+            scheduledStartDate: new Date(scheduledOp.startTime),
+            scheduledEndDate: new Date(scheduledOp.endTime),
+            assignedResourceId: scheduledOp.resourceId
+          });
+        }
+      }
+      
+      // Update jobs with calculated start/end dates
+      const jobSchedules = new Map();
+      for (const scheduledOp of schedule) {
+        const operation = await storage.getOperation(scheduledOp.operationId);
+        if (operation && operation.jobId) {
+          if (!jobSchedules.has(operation.jobId)) {
+            jobSchedules.set(operation.jobId, {
+              earliest: new Date(scheduledOp.startTime),
+              latest: new Date(scheduledOp.endTime)
+            });
+          } else {
+            const existing = jobSchedules.get(operation.jobId);
+            const startTime = new Date(scheduledOp.startTime);
+            const endTime = new Date(scheduledOp.endTime);
+            
+            if (startTime < existing.earliest) {
+              existing.earliest = startTime;
+            }
+            if (endTime > existing.latest) {
+              existing.latest = endTime;
+            }
+          }
+        }
+      }
+      
+      // Update jobs with scheduled dates
+      for (const [jobId, times] of jobSchedules.entries()) {
+        await storage.updateJob(jobId, {
+          scheduledStartDate: times.earliest,
+          scheduledEndDate: times.latest
+        });
+      }
+      
+      res.json({
+        success: true,
+        message: "Optimization completed successfully",
+        scheduledOperations: schedule.length,
+        updatedJobs: jobSchedules.size,
+        algorithm: algorithm.name,
+        executionTime: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error executing optimization:", error);
+      res.status(500).json({ error: "Failed to execute optimization" });
+    }
+  });
+
   // Algorithm Tests
   app.get("/api/optimization/tests", async (req, res) => {
     try {
