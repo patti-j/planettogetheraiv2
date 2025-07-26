@@ -147,9 +147,9 @@ export default function TopMenu() {
     setMenuOpen(false);
   };
 
-  // All cards are now uniform square size 
+  // All cards are now uniform square size with fixed height
   const getCardSize = (priority: string) => {
-    return "col-span-1 row-span-1 aspect-square"; // Square cards with equal width and height
+    return "col-span-1 row-span-1 aspect-square min-h-[120px] h-[120px]"; // Fixed height square cards
   };
 
   const getIconSize = (priority: string) => {
@@ -315,15 +315,15 @@ export default function TopMenu() {
                           href={page.path}
                           onClick={() => setMenuOpen(false)}
                         >
-                          <div className="col-span-1 row-span-1 aspect-square bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md rounded-xl p-3 cursor-pointer transition-all duration-200 hover:scale-[1.02] flex flex-col items-center justify-center text-center space-y-2">
+                          <div className="col-span-1 row-span-1 aspect-square min-h-[120px] h-[120px] bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md rounded-xl p-3 cursor-pointer transition-all duration-200 hover:scale-[1.02] flex flex-col items-center justify-center text-center space-y-2">
                             <div className="bg-gray-100 p-2 rounded-full flex items-center justify-center flex-shrink-0">
                               <IconComponent className={`w-5 h-5 ${iconColorClass}`} strokeWidth={1.5} fill="none" />
                             </div>
-                            <div className="flex flex-col items-center space-y-1">
-                              <span className="text-xs font-medium text-gray-800 leading-tight text-center line-clamp-2 flex-shrink-0">
+                            <div className="flex flex-col items-center space-y-1 min-h-0 flex-1">
+                              <span className="text-xs font-medium text-gray-800 leading-tight text-center line-clamp-2 overflow-hidden">
                                 {page.label}
                               </span>
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-gray-500 flex-shrink-0">
                                 {new Date(page.timestamp).toLocaleTimeString([], { 
                                   hour: '2-digit', 
                                   minute: '2-digit' 
@@ -368,7 +368,7 @@ export default function TopMenu() {
                               fill="none"
                             />
                           </div>
-                          <span className={`${getTextSize(group.priority)} text-gray-800 font-medium leading-tight text-center line-clamp-2 flex-shrink-0`}>
+                          <span className={`${getTextSize(group.priority)} text-gray-800 font-medium leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0`}>
                             {feature.label}
                           </span>
                         </div>
