@@ -1337,7 +1337,7 @@ export default function Dashboard() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   {param.options.map((option) => (
-                                    <SelectItem key={option} value={option}>{option}</SelectItem>
+                                    <SelectItem key={option} value={option || 'default'}>{option}</SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>

@@ -17,7 +17,7 @@ interface NavigationContextType {
 const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'navigation-recent-pages';
-const MAX_RECENT_PAGES = 8;
+const MAX_RECENT_PAGES = 6;
 
 // Page mapping for labels and icons
 const pageMapping: Record<string, { label: string; icon: string }> = {
@@ -86,23 +86,41 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
 
   const addRecentPage = (path: string, label: string, icon?: string) => {
     setRecentPages(current => {
-      // Remove if already exists
-      const filtered = current.filter(page => page.path !== path);
+      // Check if the page already exists in the recent list
+      const existingIndex = current.findIndex(page => page.path === path);
       
-      // Add to beginning
-      const updated = [
-        { path, label, icon: icon || 'FileText', timestamp: Date.now() },
-        ...filtered
-      ].slice(0, MAX_RECENT_PAGES);
+      if (existingIndex !== -1) {
+        // If page already exists, don't change the order - just update timestamp
+        const updated = [...current];
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          timestamp: Date.now()
+        };
+        
+        // Save to localStorage
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        } catch (error) {
+          console.warn('Failed to save recent pages to localStorage:', error);
+        }
+        
+        return updated;
+      } else {
+        // New page - add to the far left (beginning) and limit to MAX_RECENT_PAGES
+        const updated = [
+          { path, label, icon: icon || 'FileText', timestamp: Date.now() },
+          ...current
+        ].slice(0, MAX_RECENT_PAGES);
 
-      // Save to localStorage
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      } catch (error) {
-        console.warn('Failed to save recent pages to localStorage:', error);
+        // Save to localStorage
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        } catch (error) {
+          console.warn('Failed to save recent pages to localStorage:', error);
+        }
+
+        return updated;
       }
-
-      return updated;
     });
   };
 
