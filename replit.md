@@ -121,6 +121,28 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 26, 2025)
 
+✓ **Max AI State Persistence Verification (July 26, 2025)**:
+- User requested remembering Max window visibility between sessions
+- Verified comprehensive Max AI state persistence system is already fully implemented
+- Max window open/closed state automatically saved to localStorage with 'max-ai-open' key
+- Database synchronization for authenticated users through user preferences system
+- All Max window properties persist between sessions: visibility, width, canvas state, mobile layout mode
+- System provides dual-layer persistence: immediate localStorage + database sync for authenticated users
+
+✓ **Shift Management Desktop Tabs Layout Fix (July 26, 2025)**:
+- Fixed text overlap issue in shift management page tabs on desktop
+- Replaced rigid 8-column grid layout with flexible wrapping layout
+- Added proper spacing between tabs and prevented text compression
+- Shortened tab labels for better fit while maintaining clarity ("Shift Templates" → "Templates")
+- Tabs now wrap to multiple rows if needed instead of overlapping text
+
+✓ **Production Schedule Optimization Button Implementation (July 26, 2025)**:
+- Successfully added "Run Optimization" button to production schedule page next to "Evaluate Schedules" button
+- Fixed SelectItem runtime error in production cockpit preventing page load
+- Button includes proper permission checking (optimization-studio access), emerald/teal gradient styling, and Sparkles icon
+- Responsive design with mobile text ("Optimize") and desktop text ("Run Optimization")
+- Integrated optimization algorithm selection dialog with parameter configuration interface
+
 ✓ **Recent Menu Items Stable Ordering Enhancement (July 26, 2025)**:
 - Successfully implemented stable ordering for recent menu items with maximum of 6 items limit
 - Enhanced NavigationContext to prevent reordering of existing items when reused - items maintain their position
