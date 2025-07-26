@@ -101,15 +101,15 @@ export default function ShiftManagement() {
 
               {/* Desktop Tabs */}
               <div className="hidden sm:block">
-                <TabsList className="grid w-full grid-cols-8">
-                  <TabsTrigger value="templates">Shift Templates</TabsTrigger>
-                  <TabsTrigger value="assignments">Assignments</TabsTrigger>
-                  <TabsTrigger value="downtime">Unplanned Downtime</TabsTrigger>
-                  <TabsTrigger value="overtime">Overtime Shifts</TabsTrigger>
-                  <TabsTrigger value="holidays">Holidays</TabsTrigger>
-                  <TabsTrigger value="absences">Absences</TabsTrigger>
-                  <TabsTrigger value="scenarios">Scenarios</TabsTrigger>
-                  <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                <TabsList className="flex flex-wrap w-full gap-1 h-auto p-2">
+                  <TabsTrigger value="templates" className="flex-shrink-0">Templates</TabsTrigger>
+                  <TabsTrigger value="assignments" className="flex-shrink-0">Assignments</TabsTrigger>
+                  <TabsTrigger value="downtime" className="flex-shrink-0">Downtime</TabsTrigger>
+                  <TabsTrigger value="overtime" className="flex-shrink-0">Overtime</TabsTrigger>
+                  <TabsTrigger value="holidays" className="flex-shrink-0">Holidays</TabsTrigger>
+                  <TabsTrigger value="absences" className="flex-shrink-0">Absences</TabsTrigger>
+                  <TabsTrigger value="scenarios" className="flex-shrink-0">Scenarios</TabsTrigger>
+                  <TabsTrigger value="analytics" className="flex-shrink-0">Analytics</TabsTrigger>
                 </TabsList>
               </div>
 
