@@ -8,7 +8,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Calendar, Clock, User, Wrench, AlertCircle, CheckCircle2, PlayCircle, PauseCircle, GripVertical, Save, RefreshCw, LayoutGrid, List, Columns, Plus, X, TrendingUp, TrendingDown, Zap, Flag, Timer } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Calendar, Clock, User, Wrench, AlertCircle, CheckCircle2, PlayCircle, PauseCircle, GripVertical, Save, RefreshCw, LayoutGrid, List, Columns, Plus, X, TrendingUp, TrendingDown, Zap, Flag, Timer, Info, Brain } from "lucide-react";
 import { format } from "date-fns";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -90,6 +92,127 @@ const OptimizationIndicators = ({ operation }: { operation: Operation }) => {
     <div className="flex flex-wrap gap-1 mb-2">
       {indicators}
     </div>
+  );
+};
+
+// Component for optimization details dialog
+const OptimizationDetailsDialog = ({ operation }: { operation: Operation }) => {
+  const hasOptimizationData = operation.isBottleneck || operation.isEarly || operation.isLate || 
+                             operation.criticality || operation.optimizationNotes;
+
+  if (!hasOptimizationData) return null;
+
+  return (
+    <TooltipProvider>
+      <Dialog>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 flex-shrink-0 hover:bg-blue-100 hover:text-blue-600"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Brain className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>View optimization details</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5 text-blue-600" />
+              Optimization Analysis
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Operation Info */}
+            <div className="bg-gray-50 rounded-lg p-3">
+              <h4 className="font-medium text-gray-900 mb-1">{operation.name}</h4>
+              <p className="text-sm text-gray-600">Duration: {operation.duration} hours</p>
+            </div>
+
+            {/* Optimization Flags */}
+            <div className="space-y-3">
+              {operation.isBottleneck && (
+                <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <Zap className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h5 className="font-medium text-red-900">Bottleneck Operation</h5>
+                    <p className="text-sm text-red-700 mt-1">
+                      This operation is identified as a bottleneck that constrains overall system throughput.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {operation.isEarly && (
+                <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <TrendingUp className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h5 className="font-medium text-green-900">Early Scheduling</h5>
+                    <p className="text-sm text-green-700 mt-1">
+                      This operation can be scheduled earlier than currently planned.
+                      {operation.timeVarianceHours && (
+                        <span className="font-medium"> Potential improvement: {operation.timeVarianceHours} hours earlier.</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {operation.isLate && (
+                <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <TrendingDown className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h5 className="font-medium text-red-900">Behind Schedule</h5>
+                    <p className="text-sm text-red-700 mt-1">
+                      This operation is running behind the optimal schedule.
+                      {operation.timeVarianceHours && (
+                        <span className="font-medium"> Current delay: {Math.abs(operation.timeVarianceHours)} hours.</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {operation.criticality && operation.criticality !== 'normal' && (
+                <div className="flex items-start gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <Flag className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h5 className="font-medium text-yellow-900 capitalize">
+                      {operation.criticality} Priority
+                    </h5>
+                    <p className="text-sm text-yellow-700 mt-1">
+                      This operation has been flagged with {operation.criticality} priority level for special attention.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Algorithm Notes */}
+            {operation.optimizationNotes && (
+              <div className="border-t pt-4">
+                <h5 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                  <Info className="h-4 w-4" />
+                  Algorithm Notes
+                </h5>
+                <p className="text-sm text-gray-700 bg-blue-50 p-3 rounded-lg">
+                  {operation.optimizationNotes}
+                </p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </TooltipProvider>
   );
 };
 
@@ -185,6 +308,7 @@ const DraggableOperationCard = ({
                 </div>
               </div>
               <div className="flex items-center space-x-1 ml-1 flex-shrink-0">
+                <OptimizationDetailsDialog operation={operation} />
                 <StatusIcon className="w-4 h-4 flex-shrink-0" style={{ color: statusInfo.color.replace('bg-', '#') }} />
                 {job && (
                   <Badge 
@@ -221,6 +345,7 @@ const DraggableOperationCard = ({
               </div>
             </div>
             <div className="flex items-center space-x-2">
+              <OptimizationDetailsDialog operation={operation} />
               <Badge className={`${statusInfo.color} text-white`}>
                 <StatusIcon className="w-3 h-3 mr-1" />
                 {statusInfo.label}

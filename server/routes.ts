@@ -4888,13 +4888,55 @@ Provide the response as a JSON object with the following structure:
               }
             }
             
+            // Calculate optimization insights for this operation
+            const dueDate = new Date(job.dueDate);
+            const timeToDeadline = (dueDate.getTime() - finalEndTime.getTime()) / (1000 * 60 * 60); // hours
+            const scheduleDeviation = Math.round(timeToDeadline);
+            
+            // Determine optimization flags
+            let isEarly = false;
+            let isLate = false;
+            let isBottleneck = false;
+            let criticality = 'normal';
+            let optimizationNotes = '';
+            
+            // Early/Late detection
+            if (timeToDeadline > 24) {
+              isEarly = true;
+              optimizationNotes = `Operation scheduled ${Math.round(timeToDeadline)} hours before job due date. Consider moving closer to deadline to reduce WIP inventory.`;
+            } else if (timeToDeadline < 0) {
+              isLate = true;
+              optimizationNotes = `Operation scheduled ${Math.abs(Math.round(timeToDeadline))} hours after job due date. Requires immediate attention to meet delivery commitments.`;
+            }
+            
+            // Bottleneck detection (simplified - based on resource utilization)
+            const resourceScheduleCount = schedule.filter(s => s.resourceId === selectedResource.id).length;
+            if (resourceScheduleCount >= 3) {
+              isBottleneck = true;
+              optimizationNotes += ` Resource ${selectedResource.name} is heavily utilized and may become a bottleneck.`;
+            }
+            
+            // Criticality assessment
+            if (job.priority === 'critical' || job.priority === 'high') {
+              criticality = job.priority;
+              optimizationNotes += ` High priority job requires careful monitoring and expedited processing.`;
+            }
+            
             schedule.push({
               operationId: operation.id,
               resourceId: selectedResource.id,
               startTime: finalStartTime.toISOString(),
               endTime: finalEndTime.toISOString(),
               duration: duration,
-              frozen: false
+              frozen: false,
+              optimizationFlags: {
+                isEarly,
+                isLate,
+                isBottleneck,
+                criticality,
+                scheduleDeviation,
+                optimizationNotes: optimizationNotes.trim()
+              }
             });
             
             // Update current end time for next operation
@@ -4998,15 +5040,27 @@ Provide the response as a JSON object with the following structure:
         return res.status(400).json({ error: "No schedule generated" });
       }
       
-      // Update operations with scheduled start/end times
+      // Update operations with scheduled start/end times and optimization flags
       for (const scheduledOp of schedule) {
         const operation = await storage.getOperation(scheduledOp.operationId);
         if (operation) {
-          await storage.updateOperation(scheduledOp.operationId, {
+          const updateData = {
             scheduledStartDate: new Date(scheduledOp.startTime),
             scheduledEndDate: new Date(scheduledOp.endTime),
             assignedResourceId: scheduledOp.resourceId
-          });
+          };
+          
+          // Add optimization flags if present
+          if (scheduledOp.optimizationFlags) {
+            updateData.isEarly = scheduledOp.optimizationFlags.isEarly;
+            updateData.isLate = scheduledOp.optimizationFlags.isLate;
+            updateData.isBottleneck = scheduledOp.optimizationFlags.isBottleneck;
+            updateData.criticality = scheduledOp.optimizationFlags.criticality;
+            updateData.timeVarianceHours = scheduledOp.optimizationFlags.scheduleDeviation;
+            updateData.optimizationNotes = scheduledOp.optimizationFlags.optimizationNotes;
+          }
+          
+          await storage.updateOperation(scheduledOp.operationId, updateData);
         }
       }
       
