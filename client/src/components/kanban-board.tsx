@@ -1331,80 +1331,59 @@ function KanbanBoard({
             </div>
           ) : (
             <div className="h-full relative">
-              {/* Mobile view - force horizontal scrolling */}
-              <div className="block md:hidden absolute inset-0 overflow-hidden">
-                <div 
-                  className="h-full w-full overflow-x-scroll overflow-y-hidden"
-                  style={{ 
-                    WebkitOverflowScrolling: 'touch',
-                    scrollbarWidth: 'auto',
-                    scrollBehavior: 'smooth'
-                  }}
-                >
-                  <div 
-                    className="flex h-full p-2 gap-3"
-                    style={{ 
-                      width: `${columns.length * 300}px`,
-                      minWidth: `${columns.length * 300}px`
-                    }}
-                  >
-                    {columns.map((column) => (
-                      <div 
-                        key={column.id}
-                        className="bg-gray-50 rounded-lg p-3"
-                        style={{ 
-                          width: '280px',
-                          height: 'calc(100vh - 200px)',
-                          minWidth: '280px',
-                          flexShrink: 0
-                        }}
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-sm font-medium text-gray-900 capitalize">
-                            {column.title}
-                          </h3>
-                          <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full">
-                            {column.items.length}
-                          </span>
-                        </div>
-                        
-                        <div 
-                          className="flex flex-col gap-2 overflow-y-auto"
-                          style={{ 
-                            height: 'calc(100vh - 280px)',
-                            WebkitOverflowScrolling: 'touch'
-                          }}
-                        >
-                          {view === "jobs" ? (
-                            column.items.map((item, index) => (
-                              <JobCard
-                                key={item.id}
-                                job={item as Job}
-                                onEdit={handleEditJob}
-                                onViewDetails={handleViewJobDetails}
-                                swimLaneField={swimLaneField}
-                                index={index}
-                              />
-                            ))
-                          ) : (
-                            column.items.map((item, index) => (
-                              <OperationCard
-                                key={item.id}
-                                operation={item as Operation}
-                                job={jobs.find(j => j.id === (item as Operation).jobId)}
-                                jobs={jobs}
-                                resources={resources}
-                                onEdit={handleEditOperation}
-                                onViewDetails={handleViewOperationDetails}
-                                swimLaneField={swimLaneField}
-                                index={index}
-                              />
-                            ))
-                          )}
-                        </div>
+              {/* Mobile view - simplified horizontal scrolling */}
+              <div className="block md:hidden h-full overflow-x-auto overflow-y-hidden">
+                <div className="flex gap-4 h-full p-4" style={{ minWidth: `${columns.length * 300}px` }}>
+                  {columns.map((column) => (
+                    <div 
+                      key={column.id}
+                      className="bg-gray-50 rounded-lg p-3 flex flex-col"
+                      style={{ 
+                        width: '280px',
+                        minWidth: '280px',
+                        height: '100%',
+                        flexShrink: 0
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-3 flex-shrink-0">
+                        <h3 className="text-sm font-medium text-gray-900 capitalize">
+                          {column.title}
+                        </h3>
+                        <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full">
+                          {column.items.length}
+                        </span>
                       </div>
-                    ))}
-                  </div>
+                      
+                      <div className="flex flex-col gap-2 overflow-y-auto flex-1">
+                        {view === "jobs" ? (
+                          column.items.map((item, index) => (
+                            <JobCard
+                              key={item.id}
+                              job={item as Job}
+                              onEdit={handleEditJob}
+                              onViewDetails={handleViewJobDetails}
+                              swimLaneField={swimLaneField}
+                              index={index}
+                            />
+                          ))
+                        ) : (
+                          column.items.map((item, index) => (
+                            <OperationCard
+                              key={item.id}
+                              operation={item as Operation}
+                              job={jobs.find(j => j.id === (item as Operation).jobId)}
+                              jobs={jobs}
+                              resources={resources}
+                              onEdit={handleEditOperation}
+                              onViewDetails={handleViewOperationDetails}
+                              swimLaneField={swimLaneField}
+                              index={index}
+                            />
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
               
