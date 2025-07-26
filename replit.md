@@ -136,6 +136,19 @@ The application uses a modern full-stack architecture with strong typing through
 - All dashboard sections now use responsive grid layouts that stack vertically on mobile and display side-by-side on desktop
 - Production cockpit now provides professional mobile experience with touch-friendly controls and optimized information density
 
+✓ **Detailed Scheduling Results Enhancement (July 26, 2025)**:
+- Added job identification column to detailed scheduling results panels in both optimization summary dialog and backwards scheduling algorithm
+- Scheduling results tables now display Job ID alongside operation information for better tracking and identification
+- Enhanced table layout shows job context making it easier to understand which operations belong to which jobs
+- Improved scheduling visibility helps users correlate operations with their parent jobs during optimization analysis
+
+✓ **Menu Timestamp Positioning Fix (July 26, 2025)**:
+- Fixed timestamp display in recent menu items where timestamps were partially covering icon labels
+- Reduced timestamp font size from text-xs (12px) to text-[10px] (10px) for less visual prominence
+- Changed timestamp color from gray-500 to gray-400 for reduced visual interference with main labels
+- Enhanced spacing with mt-auto positioning to place timestamps at bottom of menu cards without overlapping content
+- Recent menu items now display cleanly with proper label visibility and subtle timestamp information
+
 ✓ **Max Window Persistence & Mobile Responsiveness Fixes (July 26, 2025)**:
 - Fixed Max window default state from always opening to properly remembering closed state between sessions
 - Resolved all runtime errors in Product Development page by adding array safety checks for API data

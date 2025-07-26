@@ -290,6 +290,7 @@ export const OptimizationSummaryDialog: React.FC<OptimizationSummaryDialogProps>
                   <thead>
                     <tr className="border-b">
                       <th className="text-left p-2">Status</th>
+                      <th className="text-left p-2">Job</th>
                       <th className="text-left p-2">Operation</th>
                       <th className="text-left p-2">Resource</th>
                       <th className="text-left p-2">Start Time</th>
@@ -308,6 +309,10 @@ export const OptimizationSummaryDialog: React.FC<OptimizationSummaryDialogProps>
                               {result.status}
                             </Badge>
                           </div>
+                        </td>
+                        <td className="p-2">
+                          <div className="text-sm font-medium">{(result as any).jobName || 'Unknown Job'}</div>
+                          <div className="text-xs text-gray-500">ID: {(result as any).jobId || 'N/A'}</div>
                         </td>
                         <td className="p-2 font-medium">{result.operationName}</td>
                         <td className="p-2">{result.resourceName}</td>

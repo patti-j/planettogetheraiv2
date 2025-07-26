@@ -662,6 +662,7 @@ export default function BackwardsSchedulingAlgorithm() {
                     <table className="w-full border-collapse border border-gray-200">
                       <thead>
                         <tr className="bg-gray-50">
+                          <th className="border border-gray-200 px-4 py-2 text-left">Job ID</th>
                           <th className="border border-gray-200 px-4 py-2 text-left">Operation ID</th>
                           <th className="border border-gray-200 px-4 py-2 text-left">Resource ID</th>
                           <th className="border border-gray-200 px-4 py-2 text-left">Start Time</th>
@@ -670,19 +671,24 @@ export default function BackwardsSchedulingAlgorithm() {
                         </tr>
                       </thead>
                       <tbody>
-                        {scheduleResults.map((result, index) => (
-                          <tr key={index} className="hover:bg-gray-50">
-                            <td className="border border-gray-200 px-4 py-2">{result.operationId}</td>
-                            <td className="border border-gray-200 px-4 py-2">{result.resourceId}</td>
-                            <td className="border border-gray-200 px-4 py-2">
-                              {new Date(result.startTime).toLocaleString()}
-                            </td>
-                            <td className="border border-gray-200 px-4 py-2">
-                              {new Date(result.endTime).toLocaleString()}
-                            </td>
-                            <td className="border border-gray-200 px-4 py-2">{result.duration}</td>
-                          </tr>
-                        ))}
+                        {scheduleResults.map((result, index) => {
+                          // Find the operation to get job ID
+                          const operation = operations.find((op: Operation) => op.id === result.operationId);
+                          return (
+                            <tr key={index} className="hover:bg-gray-50">
+                              <td className="border border-gray-200 px-4 py-2">{operation?.jobId || 'N/A'}</td>
+                              <td className="border border-gray-200 px-4 py-2">{result.operationId}</td>
+                              <td className="border border-gray-200 px-4 py-2">{result.resourceId}</td>
+                              <td className="border border-gray-200 px-4 py-2">
+                                {new Date(result.startTime).toLocaleString()}
+                              </td>
+                              <td className="border border-gray-200 px-4 py-2">
+                                {new Date(result.endTime).toLocaleString()}
+                              </td>
+                              <td className="border border-gray-200 px-4 py-2">{result.duration}</td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
