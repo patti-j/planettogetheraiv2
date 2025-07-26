@@ -165,6 +165,14 @@ export default function Dashboard() {
     },
     enabled: hasPermission('optimization-studio', 'view'),
   });
+  
+  // Debug logging for optimization button visibility
+  console.log('Optimization debug:', {
+    hasPermission: hasPermission('optimization-studio', 'view'),
+    algorithmsLength: optimizationAlgorithms.length,
+    algorithms: optimizationAlgorithms,
+    shouldShowButton: hasPermission('optimization-studio', 'view') && optimizationAlgorithms.length > 0
+  });
 
   // Dashboard toggle visibility function
   const handleToggleDashboardVisibility = (dashboardId: number) => {
@@ -989,6 +997,25 @@ export default function Dashboard() {
                     <p>Compare and evaluate production schedules</p>
                   </TooltipContent>
                 </Tooltip>
+
+                {/* Run Optimization Button */}
+                {hasPermission('optimization-studio', 'view') && optimizationAlgorithms.length > 0 && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        onClick={() => setShowOptimizationDialog(true)}
+                        className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white border-0"
+                      >
+                        <Sparkles className="w-4 h-4 mr-1" />
+                        {isMobile ? "Optimize" : "Run Optimization"}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Execute approved optimization algorithms on production schedule</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
 
                 {/* Dashboard Manager button next to dropdown */}
                 <Tooltip>
