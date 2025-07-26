@@ -180,18 +180,67 @@ const DraggableOperationCard = ({
               </p>
             )}
 
-            {/* Time and Duration */}
-            <div className="flex items-center space-x-4 text-sm text-gray-500">
-              {operation.startTime && (
-                <div className="flex items-center">
-                  <Calendar className="w-4 h-4 mr-1" />
-                  {format(new Date(operation.startTime), "MMM d, h:mm a")}
+            {/* Schedule and Duration */}
+            <div className="space-y-2 text-sm">
+              {operation.startTime && operation.endTime ? (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center text-blue-700">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        <span className="font-medium">Start</span>
+                      </div>
+                      <div className="text-blue-600">
+                        {format(new Date(operation.startTime), "MMM d, yyyy")}
+                      </div>
+                      <div className="text-blue-600 font-mono">
+                        {format(new Date(operation.startTime), "h:mm a")}
+                      </div>
+                    </div>
+                    <div className="space-y-1 text-right">
+                      <div className="flex items-center justify-end text-blue-700">
+                        <span className="font-medium">End</span>
+                        <Calendar className="w-4 h-4 ml-2" />
+                      </div>
+                      <div className="text-blue-600">
+                        {format(new Date(operation.endTime), "MMM d, yyyy")}
+                      </div>
+                      <div className="text-blue-600 font-mono">
+                        {format(new Date(operation.endTime), "h:mm a")}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-center mt-2 pt-2 border-t border-blue-200">
+                    <Clock className="w-4 h-4 mr-1 text-blue-600" />
+                    <span className="text-blue-700 font-medium">{operation.duration}h duration</span>
+                  </div>
+                </div>
+              ) : operation.startTime ? (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <div className="flex items-center text-yellow-700 mb-1">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    <span className="font-medium">Scheduled Start</span>
+                  </div>
+                  <div className="text-yellow-600">
+                    {format(new Date(operation.startTime), "MMM d, yyyy")}
+                  </div>
+                  <div className="text-yellow-600 font-mono">
+                    {format(new Date(operation.startTime), "h:mm a")}
+                  </div>
+                  <div className="flex items-center mt-2 pt-2 border-t border-yellow-200">
+                    <Clock className="w-4 h-4 mr-1 text-yellow-600" />
+                    <span className="text-yellow-700">{operation.duration}h duration</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  <div className="flex items-center text-gray-600">
+                    <Clock className="w-4 h-4 mr-2" />
+                    <span>Duration: {operation.duration}h</span>
+                  </div>
+                  <div className="text-gray-500 text-xs mt-1">Not scheduled</div>
                 </div>
               )}
-              <div className="flex items-center">
-                <Clock className="w-4 h-4 mr-1" />
-                {operation.duration}h
-              </div>
             </div>
 
             {/* Resource and Capabilities */}
