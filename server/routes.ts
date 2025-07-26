@@ -4832,9 +4832,14 @@ Provide the response as a JSON object with the following structure:
             const operationStartDate = new Date(operation.scheduledStartDate);
             if (operationStartDate <= frozenHorizonDate) {
               // Operation is within frozen horizon - keep existing schedule
+              const assignedResource = resources.find(r => r.id === operation.resourceId) || resources[0];
               schedule.push({
                 operationId: operation.id,
+                jobId: job.id,
+                jobName: job.name,
+                operationName: operation.name,
                 resourceId: operation.resourceId || resources[0]?.id,
+                resourceName: assignedResource?.name || 'Unknown Resource',
                 startTime: operation.scheduledStartDate,
                 endTime: operation.scheduledEndDate || new Date(operationStartDate.getTime() + (operation.estimatedDuration || 4) * 60 * 60 * 1000).toISOString(),
                 duration: operation.estimatedDuration || 4,
@@ -4924,7 +4929,11 @@ Provide the response as a JSON object with the following structure:
             
             schedule.push({
               operationId: operation.id,
+              jobId: job.id,
+              jobName: job.name,
+              operationName: operation.name,
               resourceId: selectedResource.id,
+              resourceName: selectedResource.name,
               startTime: finalStartTime.toISOString(),
               endTime: finalEndTime.toISOString(),
               duration: duration,

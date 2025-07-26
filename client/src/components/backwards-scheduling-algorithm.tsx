@@ -36,10 +36,23 @@ interface BackwardsSchedulingParams {
 
 interface ScheduleResult {
   operationId: number;
+  jobId: number;
+  jobName: string;
+  operationName: string;
   resourceId: number;
+  resourceName: string;
   startTime: string;
   endTime: string;
   duration: number;
+  frozen?: boolean;
+  optimizationFlags?: {
+    isEarly: boolean;
+    isLate: boolean;
+    isBottleneck: boolean;
+    criticality: string;
+    scheduleDeviation: number;
+    optimizationNotes: string;
+  };
 }
 
 export default function BackwardsSchedulingAlgorithm() {
@@ -662,33 +675,56 @@ export default function BackwardsSchedulingAlgorithm() {
                     <table className="w-full border-collapse border border-gray-200">
                       <thead>
                         <tr className="bg-gray-50">
-                          <th className="border border-gray-200 px-4 py-2 text-left">Job ID</th>
-                          <th className="border border-gray-200 px-4 py-2 text-left">Operation ID</th>
-                          <th className="border border-gray-200 px-4 py-2 text-left">Resource ID</th>
+                          <th className="border border-gray-200 px-4 py-2 text-left">Job</th>
+                          <th className="border border-gray-200 px-4 py-2 text-left">Operation</th>
+                          <th className="border border-gray-200 px-4 py-2 text-left">Resource</th>
                           <th className="border border-gray-200 px-4 py-2 text-left">Start Time</th>
                           <th className="border border-gray-200 px-4 py-2 text-left">End Time</th>
                           <th className="border border-gray-200 px-4 py-2 text-left">Duration (hrs)</th>
+                          <th className="border border-gray-200 px-4 py-2 text-left">Status</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {scheduleResults.map((result, index) => {
-                          // Find the operation to get job ID
-                          const operation = operations.find((op: Operation) => op.id === result.operationId);
-                          return (
-                            <tr key={index} className="hover:bg-gray-50">
-                              <td className="border border-gray-200 px-4 py-2">{operation?.jobId || 'N/A'}</td>
-                              <td className="border border-gray-200 px-4 py-2">{result.operationId}</td>
-                              <td className="border border-gray-200 px-4 py-2">{result.resourceId}</td>
-                              <td className="border border-gray-200 px-4 py-2">
-                                {new Date(result.startTime).toLocaleString()}
-                              </td>
-                              <td className="border border-gray-200 px-4 py-2">
-                                {new Date(result.endTime).toLocaleString()}
-                              </td>
-                              <td className="border border-gray-200 px-4 py-2">{result.duration}</td>
-                            </tr>
-                          );
-                        })}
+                        {scheduleResults.map((result, index) => (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="border border-gray-200 px-4 py-2">
+                              <div>
+                                <div className="font-medium">{result.jobName}</div>
+                                <div className="text-sm text-gray-500">ID: {result.jobId}</div>
+                              </div>
+                            </td>
+                            <td className="border border-gray-200 px-4 py-2">
+                              <div>
+                                <div className="font-medium">{result.operationName}</div>
+                                <div className="text-sm text-gray-500">ID: {result.operationId}</div>
+                              </div>
+                            </td>
+                            <td className="border border-gray-200 px-4 py-2">
+                              <div>
+                                <div className="font-medium">{result.resourceName}</div>
+                                <div className="text-sm text-gray-500">ID: {result.resourceId}</div>
+                              </div>
+                            </td>
+                            <td className="border border-gray-200 px-4 py-2">
+                              {new Date(result.startTime).toLocaleString()}
+                            </td>
+                            <td className="border border-gray-200 px-4 py-2">
+                              {new Date(result.endTime).toLocaleString()}
+                            </td>
+                            <td className="border border-gray-200 px-4 py-2">{result.duration}</td>
+                            <td className="border border-gray-200 px-4 py-2">
+                              {result.frozen ? (
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                  Frozen
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                  Scheduled
+                                </Badge>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
                   </div>
