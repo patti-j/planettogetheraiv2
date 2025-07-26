@@ -121,6 +121,14 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 26, 2025)
 
+✓ **Gantt Chart Tooltips Implementation (July 26, 2025)**:
+- Successfully added comprehensive hover tooltips to all Gantt chart operation blocks
+- Tooltips display detailed job and operation information including job name, customer, priority, status, duration, and resource assignment
+- Enhanced user experience with scheduling information showing formatted start/end times
+- Added descriptions for both operations and jobs when available
+- Tooltips appear on hover for both scheduled (positioned) and unscheduled (draggable) operation blocks
+- Professional tooltip design with organized sections and clear visual hierarchy
+
 ✓ **Operation Sequencer Default Sorting Enhancement (July 26, 2025)**:
 - Successfully implemented ascending scheduled start time as default sort order for operation sequencer
 - Operations with scheduled start times now appear first, sorted chronologically

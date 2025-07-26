@@ -1,6 +1,7 @@
 import { type Operation, type Job } from "@shared/schema";
 import { useDrag } from "react-dnd";
 import { useEffect, useState, useMemo } from "react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
 interface OperationBlockProps {
@@ -331,50 +332,102 @@ export default function OperationBlock({
     return operation.name;
   };
 
+  const getTooltipContent = () => {
+    const formatDate = (dateStr: string | null) => {
+      if (!dateStr) return "Not scheduled";
+      return new Date(dateStr).toLocaleString();
+    };
+
+    return (
+      <div className="space-y-2 text-sm">
+        <div className="font-semibold border-b border-gray-200 pb-1">
+          {operation.name}
+        </div>
+        <div className="space-y-1">
+          <div><strong>Job:</strong> {jobName || `Job ${operation.jobId}`}</div>
+          {job?.customer && <div><strong>Customer:</strong> {job.customer}</div>}
+          {job?.priority && <div><strong>Priority:</strong> {job.priority}</div>}
+          <div><strong>Status:</strong> {operation.status}</div>
+          {operation.duration && <div><strong>Duration:</strong> {operation.duration}h</div>}
+          <div><strong>Resource:</strong> {resourceName || "Unassigned"}</div>
+        </div>
+        {(operation.startTime || operation.endTime) && (
+          <div className="space-y-1 border-t border-gray-200 pt-1">
+            <div><strong>Start:</strong> {formatDate(operation.startTime)}</div>
+            <div><strong>End:</strong> {formatDate(operation.endTime)}</div>
+          </div>
+        )}
+        {(operation.description || job?.description) && (
+          <div className="border-t border-gray-200 pt-1">
+            <strong>Description:</strong> {operation.description || job?.description}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // If this is an unscheduled operation, render it as a draggable block without position
   if (!operation.startTime || !operation.endTime) {
     return (
-      <div
-        ref={drag}
-        data-operation-block
-        className={`inline-block mr-2 mb-2 rounded-md border-2 border-white shadow-sm cursor-move transition-all duration-200 ${
-          isDragging ? "opacity-50 scale-95" : "opacity-100 scale-100"
-        } ${getBlockColor()}`}
-        style={{
-          height: `${blockHeight}px`,
-          minWidth: "120px",
-          padding: "0 8px",
-        }}
-      >
-        <div className="h-full flex items-center justify-between text-white text-xs">
-          <div className="flex-1 truncate">
-            <div className="font-medium truncate">{getBlockText()}</div>
-          </div>
-        </div>
-      </div>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              ref={drag}
+              data-operation-block
+              className={`inline-block mr-2 mb-2 rounded-md border-2 border-white shadow-sm cursor-move transition-all duration-200 ${
+                isDragging ? "opacity-50 scale-95" : "opacity-100 scale-100"
+              } ${getBlockColor()}`}
+              style={{
+                height: `${blockHeight}px`,
+                minWidth: "120px",
+                padding: "0 8px",
+              }}
+            >
+              <div className="h-full flex items-center justify-between text-white text-xs">
+                <div className="flex-1 truncate">
+                  <div className="font-medium truncate">{getBlockText()}</div>
+                </div>
+              </div>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs">
+            {getTooltipContent()}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   }
 
   return (
-    <div
-      ref={drag}
-      data-operation-block
-      className={`absolute z-10 rounded-md border-2 border-white shadow-md cursor-move transition-all duration-200 ${
-        isDragging ? "opacity-50 scale-95" : "opacity-100 scale-100"
-      } ${getBlockColor()}`}
-      style={{
-        left: `${position.left}px`,
-        width: `${position.width}px`,
-        height: `${blockHeight}px`,
-        minWidth: "80px",
-        top: "8px", // Center vertically with 8px margin
-      }}
-    >
-      <div className="h-full flex items-center justify-between px-2 text-white text-xs">
-        <div className="flex-1 truncate">
-          <div className="font-medium truncate">{getBlockText()}</div>
-        </div>
-      </div>
-    </div>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div
+            ref={drag}
+            data-operation-block
+            className={`absolute z-10 rounded-md border-2 border-white shadow-md cursor-move transition-all duration-200 ${
+              isDragging ? "opacity-50 scale-95" : "opacity-100 scale-100"
+            } ${getBlockColor()}`}
+            style={{
+              left: `${position.left}px`,
+              width: `${position.width}px`,
+              height: `${blockHeight}px`,
+              minWidth: "80px",
+              top: "8px", // Center vertically with 8px margin
+            }}
+          >
+            <div className="h-full flex items-center justify-between px-2 text-white text-xs">
+              <div className="flex-1 truncate">
+                <div className="font-medium truncate">{getBlockText()}</div>
+              </div>
+            </div>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs">
+          {getTooltipContent()}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
