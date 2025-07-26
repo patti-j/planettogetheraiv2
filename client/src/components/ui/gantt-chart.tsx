@@ -68,6 +68,7 @@ export default function GanttChart({
   const [customTextLabelManagerOpen, setCustomTextLabelManagerOpen] = useState(false);
   const [defaultColorScheme, setDefaultColorScheme] = useState("priority");
   const [defaultTextLabeling, setDefaultTextLabeling] = useState("");
+  const [hoveredJobId, setHoveredJobId] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -807,6 +808,99 @@ export default function GanttChart({
     return resources;
   };
 
+  // State to track connection line positions
+  const [connectionLines, setConnectionLines] = useState<JSX.Element[]>([]);
+
+  // Effect to update connection lines when hoveredJobId changes
+  useEffect(() => {
+    if (!hoveredJobId) {
+      setConnectionLines([]);
+      return;
+    }
+
+    // Small delay to ensure DOM elements are rendered
+    const updateConnections = () => {
+      const jobOperations = getOperationsByJob(hoveredJobId)
+        .filter(op => op.startTime && op.endTime && op.assignedResourceId)
+        .sort((a, b) => new Date(a.startTime!).getTime() - new Date(b.startTime!).getTime());
+
+      if (jobOperations.length < 2) {
+        setConnectionLines([]);
+        return;
+      }
+
+      const connections = [];
+      const containerRect = resourceListRef.current?.getBoundingClientRect();
+      
+      if (!containerRect) {
+        setConnectionLines([]);
+        return;
+      }
+
+      for (let i = 0; i < jobOperations.length - 1; i++) {
+        const currentOp = jobOperations[i];
+        const nextOp = jobOperations[i + 1];
+
+        const currentOpElement = document.querySelector(`[data-operation-id="${currentOp.id}"]`);
+        const nextOpElement = document.querySelector(`[data-operation-id="${nextOp.id}"]`);
+
+        if (currentOpElement && nextOpElement) {
+          const currentRect = currentOpElement.getBoundingClientRect();
+          const nextRect = nextOpElement.getBoundingClientRect();
+
+          const startX = currentRect.right - containerRect.left;
+          const startY = currentRect.top + currentRect.height / 2 - containerRect.top;
+          const endX = nextRect.left - containerRect.left;
+          const endY = nextRect.top + nextRect.height / 2 - containerRect.top;
+
+          connections.push(
+            <svg
+              key={`connection-${currentOp.id}-${nextOp.id}`}
+              className="absolute top-0 left-0 pointer-events-none"
+              style={{
+                width: '100%',
+                height: '100%',
+                zIndex: 25
+              }}
+            >
+              <defs>
+                <marker
+                  id={`arrowhead-${currentOp.id}-${nextOp.id}`}
+                  markerWidth="10"
+                  markerHeight="7"
+                  refX="9"
+                  refY="3.5"
+                  orient="auto"
+                >
+                  <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" />
+                </marker>
+              </defs>
+              <line
+                x1={startX}
+                y1={startY}
+                x2={endX}
+                y2={endY}
+                stroke="#3b82f6"
+                strokeWidth="2"
+                strokeDasharray="5,5"
+                markerEnd={`url(#arrowhead-${currentOp.id}-${nextOp.id})`}
+              />
+            </svg>
+          );
+        }
+      }
+
+      setConnectionLines(connections);
+    };
+
+    // Use requestAnimationFrame to ensure DOM is updated
+    requestAnimationFrame(updateConnections);
+  }, [hoveredJobId, operations]);
+
+  const renderOperationConnections = () => {
+    return connectionLines;
+  };
+
   const unscheduledOperations = operations.filter(op => !op.assignedResourceId);
 
   const handleViewSettingChange = async (newValue: string, settingType: "colorScheme" | "textLabeling") => {
@@ -899,7 +993,7 @@ export default function GanttChart({
         </div>
 
       {/* Scrollable Content - Operations */}
-      <div className="flex-1 overflow-y-auto cursor-grab active:cursor-grabbing" 
+      <div className="flex-1 overflow-y-auto cursor-grab active:cursor-grabbing relative" 
            onMouseDown={handleResourceListMouseDown}
            onScroll={handleResourceListScroll}
            ref={resourceListRef}>
@@ -1002,7 +1096,10 @@ export default function GanttChart({
                           timelineBaseDate={timeScale.minDate}
                           colorScheme={colorScheme}
                           textLabeling={textLabeling}
+                          customTextLabels={customTextLabels.data || []}
                           rowHeight={rowHeight}
+                          onHoverStart={setHoveredJobId}
+                          onHoverEnd={() => setHoveredJobId(null)}
                         />
                       </div>
                     </div>
@@ -1012,6 +1109,12 @@ export default function GanttChart({
             </div>
           );
         })}
+        {/* Connection lines overlay */}
+        {hoveredJobId && (
+          <div className="absolute inset-0 pointer-events-none z-30">
+            {renderOperationConnections()}
+          </div>
+        )}
       </div>
     </div>
     );

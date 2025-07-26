@@ -17,6 +17,8 @@ interface OperationBlockProps {
   textLabeling?: string;
   customTextLabels?: any[];
   rowHeight?: number;
+  onHoverStart?: (jobId: number) => void;
+  onHoverEnd?: () => void;
 }
 
 export default function OperationBlock({
@@ -32,6 +34,8 @@ export default function OperationBlock({
   textLabeling = "operation_name",
   customTextLabels = [],
   rowHeight = 60,
+  onHoverStart,
+  onHoverEnd,
 }: OperationBlockProps) {
   
   // Calculate operation block height with comfortable margins
@@ -375,6 +379,7 @@ export default function OperationBlock({
             <div
               ref={drag}
               data-operation-block
+              data-operation-id={operation.id}
               className={`inline-block mr-2 mb-2 rounded-md border-2 border-white shadow-sm cursor-move transition-all duration-200 ${
                 isDragging ? "opacity-50 scale-95" : "opacity-100 scale-100"
               } ${getBlockColor()}`}
@@ -383,6 +388,8 @@ export default function OperationBlock({
                 minWidth: "120px",
                 padding: "0 8px",
               }}
+              onMouseEnter={() => onHoverStart?.(operation.jobId)}
+              onMouseLeave={() => onHoverEnd?.()}
             >
               <div className="h-full flex items-center justify-between text-white text-xs">
                 <div className="flex-1 truncate">
@@ -406,6 +413,7 @@ export default function OperationBlock({
           <div
             ref={drag}
             data-operation-block
+            data-operation-id={operation.id}
             className={`absolute z-10 rounded-md border-2 border-white shadow-md cursor-move transition-all duration-200 ${
               isDragging ? "opacity-50 scale-95" : "opacity-100 scale-100"
             } ${getBlockColor()}`}
@@ -416,6 +424,8 @@ export default function OperationBlock({
               minWidth: "80px",
               top: "8px", // Center vertically with 8px margin
             }}
+            onMouseEnter={() => onHoverStart?.(operation.jobId)}
+            onMouseLeave={() => onHoverEnd?.()}
           >
             <div className="h-full flex items-center justify-between px-2 text-white text-xs">
               <div className="flex-1 truncate">
