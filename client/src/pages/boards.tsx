@@ -133,7 +133,7 @@ export default function Boards() {
     onSuccess: (data) => {
       toast({
         title: "AI Board Creation",
-        description: data.message || "Board configurations created successfully",
+        description: "Board configurations created successfully",
       });
       setAiDialogOpen(false);
       setAiPrompt("");
@@ -156,7 +156,18 @@ export default function Boards() {
   };
 
   const PageContent = () => (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col relative">
+      {/* Maximize/Minimize button - Fixed position in top-right corner */}
+      {!isMobile && (
+        <button
+          onClick={handleToggleMaximize}
+          className="fixed top-2 right-2 z-10 bg-white shadow-md hover:shadow-lg border border-gray-200 rounded-md p-2 transition-all duration-200"
+          title={isMaximized ? "Exit fullscreen" : "Enter fullscreen"}
+        >
+          {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+        </button>
+      )}
+
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200 p-3 sm:p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -180,7 +191,6 @@ export default function Boards() {
           onConfigChange={handleConfigSelect}
           kanbanConfigs={kanbanConfigs}
           isMaximized={isMaximized}
-          onToggleMaximize={handleToggleMaximize}
           onCreateJob={() => setJobDialogOpen(true)}
           onCreateResource={() => setResourceDialogOpen(true)}
           onConfigureBoards={() => setShowConfigManager(true)}
@@ -211,7 +221,10 @@ export default function Boards() {
               <DialogHeader>
                 <DialogTitle>New Resource</DialogTitle>
               </DialogHeader>
-              <ResourceForm onSuccess={() => setResourceDialogOpen(false)} />
+              <ResourceForm 
+                capabilities={capabilities}
+                onSuccess={() => setResourceDialogOpen(false)} 
+              />
             </DialogContent>
           </Dialog>
 

@@ -27,7 +27,6 @@ interface KanbanBoardProps {
   onConfigChange?: (configId: number) => void;
   kanbanConfigs?: KanbanConfig[];
   isMaximized?: boolean;
-  onToggleMaximize?: () => void;
   onCreateJob?: () => void;
   onCreateResource?: () => void;
   onConfigureBoards?: () => void;
@@ -392,7 +391,6 @@ function KanbanBoard({
   onConfigChange,
   kanbanConfigs: parentKanbanConfigs,
   isMaximized = false,
-  onToggleMaximize,
   onCreateJob,
   onCreateResource,
   onConfigureBoards,
@@ -833,39 +831,11 @@ function KanbanBoard({
               )}
             </div>
             
-            {onToggleMaximize && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={onToggleMaximize}
-                  >
-                    {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{isMaximized ? "Exit full screen" : "Maximize board view"}</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
+
           </div>
 
           {/* Mobile header */}
           <div className="md:hidden">
-            <div className="flex items-center justify-between mb-2">
-              {/* Hide maximize button on mobile since it's automatically maximized */}
-              {onToggleMaximize && !isMobile && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onToggleMaximize}
-                >
-                  {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                </Button>
-              )}
-            </div>
-            
             {/* Mobile controls - stacked layout */}
             <div className="space-y-1.5">
               {/* Board dropdown first */}
