@@ -12756,6 +12756,170 @@ Create a natural, conversational voice script that explains this feature to some
     }
   });
 
+  // Production Scheduler's Cockpit API Routes
+  app.get("/api/cockpit/layouts", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const layouts = await storage.getCockpitLayouts(userId);
+      res.json(layouts);
+    } catch (error) {
+      console.error("Error fetching cockpit layouts:", error);
+      res.status(500).json({ error: "Failed to fetch cockpit layouts" });
+    }
+  });
+
+  app.get("/api/cockpit/layouts/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid layout ID" });
+      }
+      const layout = await storage.getCockpitLayout(id);
+      if (!layout) {
+        return res.status(404).json({ error: "Layout not found" });
+      }
+      res.json(layout);
+    } catch (error) {
+      console.error("Error fetching cockpit layout:", error);
+      res.status(500).json({ error: "Failed to fetch cockpit layout" });
+    }
+  });
+
+  app.post("/api/cockpit/layouts", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const layoutData = { ...req.body, user_id: userId };
+      const layout = await storage.createCockpitLayout(layoutData);
+      res.status(201).json(layout);
+    } catch (error) {
+      console.error("Error creating cockpit layout:", error);
+      res.status(500).json({ error: "Failed to create cockpit layout" });
+    }
+  });
+
+  app.put("/api/cockpit/layouts/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid layout ID" });
+      }
+      const layout = await storage.updateCockpitLayout(id, req.body);
+      if (!layout) {
+        return res.status(404).json({ error: "Layout not found" });
+      }
+      res.json(layout);
+    } catch (error) {
+      console.error("Error updating cockpit layout:", error);
+      res.status(500).json({ error: "Failed to update cockpit layout" });
+    }
+  });
+
+  app.delete("/api/cockpit/layouts/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid layout ID" });
+      }
+      const success = await storage.deleteCockpitLayout(id);
+      if (!success) {
+        return res.status(404).json({ error: "Layout not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting cockpit layout:", error);
+      res.status(500).json({ error: "Failed to delete cockpit layout" });
+    }
+  });
+
+  app.get("/api/cockpit/widgets/:layoutId", requireAuth, async (req, res) => {
+    try {
+      const layoutId = parseInt(req.params.layoutId);
+      if (isNaN(layoutId)) {
+        return res.status(400).json({ error: "Invalid layout ID" });
+      }
+      const widgets = await storage.getCockpitWidgets(layoutId);
+      res.json(widgets);
+    } catch (error) {
+      console.error("Error fetching cockpit widgets:", error);
+      res.status(500).json({ error: "Failed to fetch cockpit widgets" });
+    }
+  });
+
+  app.post("/api/cockpit/widgets", requireAuth, async (req, res) => {
+    try {
+      const widget = await storage.createCockpitWidget(req.body);
+      res.status(201).json(widget);
+    } catch (error) {
+      console.error("Error creating cockpit widget:", error);
+      res.status(500).json({ error: "Failed to create cockpit widget" });
+    }
+  });
+
+  app.put("/api/cockpit/widgets/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid widget ID" });
+      }
+      const widget = await storage.updateCockpitWidget(id, req.body);
+      if (!widget) {
+        return res.status(404).json({ error: "Widget not found" });
+      }
+      res.json(widget);
+    } catch (error) {
+      console.error("Error updating cockpit widget:", error);
+      res.status(500).json({ error: "Failed to update cockpit widget" });
+    }
+  });
+
+  app.delete("/api/cockpit/widgets/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid widget ID" });
+      }
+      const success = await storage.deleteCockpitWidget(id);
+      if (!success) {
+        return res.status(404).json({ error: "Widget not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting cockpit widget:", error);
+      res.status(500).json({ error: "Failed to delete cockpit widget" });
+    }
+  });
+
+  app.get("/api/cockpit/alerts", requireAuth, async (req, res) => {
+    try {
+      const widgetId = req.query.widgetId ? parseInt(req.query.widgetId as string) : undefined;
+      const alerts = await storage.getCockpitAlerts(widgetId);
+      res.json(alerts);
+    } catch (error) {
+      console.error("Error fetching cockpit alerts:", error);
+      res.status(500).json({ error: "Failed to fetch cockpit alerts" });
+    }
+  });
+
+  app.post("/api/cockpit/alerts", requireAuth, async (req, res) => {
+    try {
+      const alert = await storage.createCockpitAlert(req.body);
+      res.status(201).json(alert);
+    } catch (error) {
+      console.error("Error creating cockpit alert:", error);
+      res.status(500).json({ error: "Failed to create cockpit alert" });
+    }
+  });
+
+  app.get("/api/cockpit/templates", async (req, res) => {
+    try {
+      const templates = await storage.getCockpitTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching cockpit templates:", error);
+      res.status(500).json({ error: "Failed to fetch cockpit templates" });
+    }
+  });
+
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
   app.use(errorMiddleware);

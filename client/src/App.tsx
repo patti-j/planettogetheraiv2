@@ -60,6 +60,7 @@ import ProductionPlanningPage from "@/pages/production-planning";
 import OptimizationStudioPage from "@/pages/optimization-studio";
 import MarketingLandingPage from "@/pages/marketing-landing";
 import ShiftManagement from "@/pages/shift-management";
+import ProductionCockpit from "@/pages/production-cockpit";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
@@ -350,6 +351,11 @@ function Router() {
           <Route path="/presentation-studio">
             <ProtectedRoute feature="presentation-system" action="view">
               <PresentationSystemPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/production-cockpit">
+            <ProtectedRoute feature="production-cockpit" action="view">
+              <ProductionCockpit />
             </ProtectedRoute>
           </Route>
           <Route path="/shift-management">

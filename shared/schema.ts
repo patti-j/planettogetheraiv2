@@ -903,6 +903,126 @@ export const shiftUtilization = pgTable("shift_utilization", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Production Scheduler's Cockpit Configuration
+export const cockpitLayouts = pgTable("cockpit_layouts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  isDefault: boolean("is_default").default(false),
+  isShared: boolean("is_shared").default(false), // Can be shared with other users
+  sharedWithRoles: jsonb("shared_with_roles").$type<string[]>().default([]), // Role IDs that can access
+  gridLayout: jsonb("grid_layout").$type<{
+    cols: number; // 12, 16, 20, 24
+    rows: number; // 8, 12, 16, 20
+    compactType: 'vertical' | 'horizontal' | null;
+    margin: [number, number];
+    containerPadding: [number, number];
+  }>().notNull(),
+  theme: text("theme").notNull().default("professional"), // professional, dark, light, custom
+  refreshInterval: integer("refresh_interval").notNull().default(30), // seconds
+  autoRefresh: boolean("auto_refresh").default(true),
+  customStyles: jsonb("custom_styles").$type<{
+    backgroundColor?: string;
+    textColor?: string;
+    accentColor?: string;
+    borderColor?: string;
+    cardStyle?: 'modern' | 'classic' | 'minimal';
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const cockpitWidgets = pgTable("cockpit_widgets", {
+  id: serial("id").primaryKey(),
+  layoutId: integer("layout_id").references(() => cockpitLayouts.id).notNull(),
+  type: text("type").notNull(), // kpi, chart, table, alert, gantt, resource_status, schedule_overview
+  title: text("title").notNull(),
+  subTitle: text("sub_title"),
+  position: jsonb("position").$type<{
+    x: number; y: number; w: number; h: number;
+  }>().notNull(),
+  configuration: jsonb("configuration").$type<{
+    dataSource: string; // jobs, operations, resources, metrics, alerts
+    filters?: {
+      plantId?: number;
+      priority?: string[];
+      status?: string[];
+      dateRange?: { start: string; end: string };
+      resourceTypes?: string[];
+    };
+    chartType?: 'line' | 'bar' | 'pie' | 'gauge' | 'number' | 'progress';
+    metrics?: string[]; // which metrics to display
+    aggregation?: 'sum' | 'avg' | 'count' | 'max' | 'min';
+    groupBy?: string; // field to group data by
+    sortBy?: { field: string; direction: 'asc' | 'desc' };
+    limit?: number; // max records to show
+    colors?: string[];
+    thresholds?: Array<{ value: number; color: string; label?: string }>;
+    drillDownTarget?: string; // page to navigate to on click
+    drillDownParams?: Record<string, any>;
+    refreshInterval?: number; // override layout refresh
+    alerts?: {
+      enabled: boolean;
+      conditions: Array<{
+        field: string;
+        operator: '>' | '<' | '=' | '!=' | 'contains';
+        value: any;
+        severity: 'info' | 'warning' | 'error' | 'critical';
+      }>;
+    };
+  }>().notNull(),
+  isVisible: boolean("is_visible").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const cockpitAlerts = pgTable("cockpit_alerts", {
+  id: serial("id").primaryKey(),
+  widgetId: integer("widget_id").references(() => cockpitWidgets.id).notNull(),
+  severity: text("severity").notNull(), // info, warning, error, critical
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  source: text("source").notNull(), // system, user, ai
+  status: text("status").notNull().default("active"), // active, acknowledged, resolved
+  triggerCondition: jsonb("trigger_condition").$type<{
+    field: string;
+    operator: string;
+    value: any;
+    actualValue: any;
+  }>(),
+  acknowledgedBy: integer("acknowledged_by").references(() => users.id),
+  acknowledgedAt: timestamp("acknowledged_at"),
+  resolvedBy: integer("resolved_by").references(() => users.id),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const cockpitTemplates = pgTable("cockpit_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category").notNull(), // production, quality, maintenance, management
+  industryType: text("industry_type"), // automotive, aerospace, electronics, general
+  targetRole: text("target_role"), // scheduler, manager, supervisor, operator
+  layout: jsonb("layout").$type<{
+    gridLayout: any;
+    widgets: Array<{
+      type: string;
+      title: string;
+      position: { x: number; y: number; w: number; h: number };
+      configuration: any;
+    }>;
+  }>().notNull(),
+  tags: jsonb("tags").$type<string[]>().default([]),
+  usageCount: integer("usage_count").default(0),
+  rating: integer("rating").default(0), // 1-5 stars
+  isOfficial: boolean("is_official").default(false), // created by system vs user
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Canvas Content Storage
 export const canvasContent = pgTable("canvas_content", {
   id: serial("id").primaryKey(),
@@ -1285,6 +1405,43 @@ export const insertCanvasSettingsSchema = createInsertSchema(canvasSettings).omi
   createdAt: true,
   updatedAt: true,
 });
+
+// Cockpit Insert Schemas
+export const insertCockpitLayoutSchema = createInsertSchema(cockpitLayouts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCockpitWidgetSchema = createInsertSchema(cockpitWidgets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCockpitAlertSchema = createInsertSchema(cockpitAlerts).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertCockpitTemplateSchema = createInsertSchema(cockpitTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Cockpit Types
+export type InsertCockpitLayout = z.infer<typeof insertCockpitLayoutSchema>;
+export type CockpitLayout = typeof cockpitLayouts.$inferSelect;
+
+export type InsertCockpitWidget = z.infer<typeof insertCockpitWidgetSchema>;
+export type CockpitWidget = typeof cockpitWidgets.$inferSelect;
+
+export type InsertCockpitAlert = z.infer<typeof insertCockpitAlertSchema>;
+export type CockpitAlert = typeof cockpitAlerts.$inferSelect;
+
+export type InsertCockpitTemplate = z.infer<typeof insertCockpitTemplateSchema>;
+export type CockpitTemplate = typeof cockpitTemplates.$inferSelect;
 
 // Inventory Management Tables
 export const inventoryItems = pgTable("inventory_items", {
