@@ -40,6 +40,8 @@ export const jobs = pgTable("jobs", {
   status: text("status").notNull().default("planned"),
   quantity: integer("quantity").notNull().default(1), // Number of units/items in this job
   dueDate: timestamp("due_date"),
+  scheduledStartDate: timestamp("scheduled_start_date"),
+  scheduledEndDate: timestamp("scheduled_end_date"),
   createdAt: timestamp("created_at").defaultNow(),
   plantId: integer("plant_id").references(() => plants.id).notNull(), // Jobs are assigned to specific plants
 });
@@ -55,6 +57,8 @@ export const operations = pgTable("operations", {
   assignedResourceId: integer("assigned_resource_id").references(() => resources.id),
   startTime: timestamp("start_time"),
   endTime: timestamp("end_time"),
+  scheduledStartDate: timestamp("scheduled_start_date"),
+  scheduledEndDate: timestamp("scheduled_end_date"),
   order: integer("order").notNull().default(0),
 });
 

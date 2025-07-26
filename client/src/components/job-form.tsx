@@ -20,6 +20,8 @@ import OperationForm from "./operation-form";
 
 const jobFormSchema = insertJobSchema.extend({
   dueDate: z.string().optional(),
+  scheduledStartDate: z.string().optional(),
+  scheduledEndDate: z.string().optional(),
 });
 
 type JobFormData = z.infer<typeof jobFormSchema>;
@@ -45,6 +47,8 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
       status: job?.status || "planned",
       quantity: job?.quantity || 1,
       dueDate: job?.dueDate ? new Date(job.dueDate).toISOString().split('T')[0] : "",
+      scheduledStartDate: job?.scheduledStartDate ? new Date(job.scheduledStartDate).toISOString().slice(0, 16) : "",
+      scheduledEndDate: job?.scheduledEndDate ? new Date(job.scheduledEndDate).toISOString().slice(0, 16) : "",
     },
   });
 
@@ -73,6 +77,8 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
     mutationFn: async (data: JobFormData) => {
       const jobData = {
         ...data,
+        scheduledStartDate: data.scheduledStartDate ? new Date(data.scheduledStartDate) : undefined,
+        scheduledEndDate: data.scheduledEndDate ? new Date(data.scheduledEndDate) : undefined,
         dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
       };
       const url = job ? `/api/jobs/${job.id}` : "/api/jobs";
@@ -228,6 +234,36 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
             </FormItem>
           )}
         />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="scheduledStartDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Scheduled Start Date/Time</FormLabel>
+                <FormControl>
+                  <Input type="datetime-local" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="scheduledEndDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Scheduled End Date/Time</FormLabel>
+                <FormControl>
+                  <Input type="datetime-local" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <FormField
           control={form.control}

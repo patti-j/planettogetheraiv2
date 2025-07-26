@@ -17,6 +17,8 @@ import type { Operation, Job, Capability, Resource } from "@shared/schema";
 const operationFormSchema = insertOperationSchema.extend({
   startTime: z.string().optional(),
   endTime: z.string().optional(),
+  scheduledStartDate: z.string().optional(),
+  scheduledEndDate: z.string().optional(),
 });
 
 type OperationFormData = z.infer<typeof operationFormSchema>;
@@ -53,6 +55,8 @@ export default function OperationForm({
       order: operation?.order || 0,
       startTime: operation?.startTime ? new Date(operation.startTime).toISOString().slice(0, 16) : "",
       endTime: operation?.endTime ? new Date(operation.endTime).toISOString().slice(0, 16) : "",
+      scheduledStartDate: operation?.scheduledStartDate ? new Date(operation.scheduledStartDate).toISOString().slice(0, 16) : "",
+      scheduledEndDate: operation?.scheduledEndDate ? new Date(operation.scheduledEndDate).toISOString().slice(0, 16) : "",
     },
   });
 
@@ -62,6 +66,8 @@ export default function OperationForm({
         ...data,
         startTime: data.startTime ? new Date(data.startTime) : undefined,
         endTime: data.endTime ? new Date(data.endTime) : undefined,
+        scheduledStartDate: data.scheduledStartDate ? new Date(data.scheduledStartDate) : undefined,
+        scheduledEndDate: data.scheduledEndDate ? new Date(data.scheduledEndDate) : undefined,
       };
       const response = await apiRequest("POST", "/api/operations", operationData);
       return response.json();
@@ -84,6 +90,8 @@ export default function OperationForm({
         ...data,
         startTime: data.startTime ? new Date(data.startTime) : undefined,
         endTime: data.endTime ? new Date(data.endTime) : undefined,
+        scheduledStartDate: data.scheduledStartDate ? new Date(data.scheduledStartDate) : undefined,
+        scheduledEndDate: data.scheduledEndDate ? new Date(data.scheduledEndDate) : undefined,
       };
       const response = await apiRequest("PUT", `/api/operations/${operation!.id}`, operationData);
       return response.json();
@@ -251,6 +259,36 @@ export default function OperationForm({
             </FormItem>
           )}
         />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="scheduledStartDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Scheduled Start Date/Time</FormLabel>
+                <FormControl>
+                  <Input type="datetime-local" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="scheduledEndDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Scheduled End Date/Time</FormLabel>
+                <FormControl>
+                  <Input type="datetime-local" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <FormField
           control={form.control}
