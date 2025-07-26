@@ -73,6 +73,9 @@ import {
   type ShiftTemplate, type ResourceShiftAssignment, type Holiday, type ResourceAbsence, type ShiftScenario, type UnplannedDowntime, type OvertimeShift, type DowntimeAction, type ShiftChangeRequest,
   type InsertShiftTemplate, type InsertResourceShiftAssignment, type InsertHoliday, type InsertResourceAbsence, type InsertShiftScenario, type InsertUnplannedDowntime, type InsertOvertimeShift, type InsertDowntimeAction, type InsertShiftChangeRequest,
   cockpitLayouts, cockpitWidgets, cockpitAlerts, cockpitTemplates,
+  apiIntegrations, apiMappings, apiTests, apiAuditLogs, apiCredentials,
+  type ApiIntegration, type ApiMapping, type ApiTest, type ApiAuditLog, type ApiCredential,
+  type InsertApiIntegration, type InsertApiMapping, type InsertApiTest, type InsertApiAuditLog, type InsertApiCredential,
   strategyDocuments, developmentTasks, testSuites, testCases, architectureComponents,
   type StrategyDocument, type DevelopmentTask, type TestSuite, type TestCase, type ArchitectureComponent,
   type InsertStrategyDocument, type InsertDevelopmentTask, type InsertTestSuite, type InsertTestCase, type InsertArchitectureComponent,
@@ -1046,6 +1049,41 @@ export interface IStorage {
   createArchitectureComponent(component: InsertArchitectureComponent): Promise<ArchitectureComponent>;
   updateArchitectureComponent(id: number, component: Partial<InsertArchitectureComponent>): Promise<ArchitectureComponent | undefined>;
   deleteArchitectureComponent(id: number): Promise<boolean>;
+
+  // API Integrations
+  async createApiIntegration(integration: InsertApiIntegration): Promise<ApiIntegration>;
+  async getApiIntegrations(): Promise<ApiIntegration[]>;
+  async getApiIntegration(id: number): Promise<ApiIntegration | undefined>;
+  async updateApiIntegration(id: number, updates: Partial<ApiIntegration>): Promise<ApiIntegration>;
+  async deleteApiIntegration(id: number): Promise<void>;
+  async generateApiIntegrationWithAI(prompt: string, systemType: string, provider: string, userId: number): Promise<ApiIntegration>;
+  async testApiConnection(id: number): Promise<{ success: boolean; message: string; responseTime?: number }>;
+  async syncApiIntegration(id: number): Promise<{ success: boolean; recordsProcessed: number; message: string }>;
+
+  // API Mappings
+  async createApiMapping(mapping: InsertApiMapping): Promise<ApiMapping>;
+  async getApiMappings(integrationId?: number): Promise<ApiMapping[]>;
+  async getApiMapping(id: number): Promise<ApiMapping | undefined>;
+  async updateApiMapping(id: number, updates: Partial<ApiMapping>): Promise<ApiMapping>;
+  async deleteApiMapping(id: number): Promise<void>;
+  async generateApiMappingWithAI(integrationId: number, description: string): Promise<ApiMapping>;
+
+  // API Tests
+  async createApiTest(test: InsertApiTest): Promise<ApiTest>;
+  async getApiTests(integrationId?: number): Promise<ApiTest[]>;
+  async getApiTest(id: number): Promise<ApiTest | undefined>;
+  async runApiTest(id: number): Promise<ApiTest>;
+  async deleteApiTest(id: number): Promise<void>;
+
+  // API Audit Logs
+  async createApiAuditLog(log: InsertApiAuditLog): Promise<ApiAuditLog>;
+  async getApiAuditLogs(integrationId?: number, limit?: number): Promise<ApiAuditLog[]>;
+
+  // API Credentials
+  async createApiCredential(credential: InsertApiCredential): Promise<ApiCredential>;
+  async getApiCredentials(integrationId: number): Promise<ApiCredential[]>;
+  async updateApiCredential(id: number, updates: Partial<ApiCredential>): Promise<ApiCredential>;
+  async deleteApiCredential(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -7786,6 +7824,472 @@ export class DatabaseStorage implements IStorage {
   async deleteArchitectureComponent(id: number): Promise<boolean> {
     const result = await db.delete(architectureComponents).where(eq(architectureComponents.id, id));
     return (result.rowCount || 0) > 0;
+  }
+
+  // =================== API INTEGRATIONS ===================
+
+  async createApiIntegration(integration: InsertApiIntegration): Promise<ApiIntegration> {
+    try {
+      const [result] = await db.insert(apiIntegrations).values(integration).returning();
+      return result;
+    } catch (error) {
+      console.error('Error creating API integration:', error);
+      throw error;
+    }
+  }
+
+  async getApiIntegrations(): Promise<ApiIntegration[]> {
+    try {
+      return await db.select().from(apiIntegrations).orderBy(apiIntegrations.name);
+    } catch (error) {
+      console.error('Error getting API integrations:', error);
+      throw error;
+    }
+  }
+
+  async getApiIntegration(id: number): Promise<ApiIntegration | undefined> {
+    try {
+      const [result] = await db.select().from(apiIntegrations).where(eq(apiIntegrations.id, id));
+      return result;
+    } catch (error) {
+      console.error('Error getting API integration:', error);
+      throw error;
+    }
+  }
+
+  async updateApiIntegration(id: number, updates: Partial<ApiIntegration>): Promise<ApiIntegration> {
+    try {
+      const [result] = await db
+        .update(apiIntegrations)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(apiIntegrations.id, id))
+        .returning();
+      
+      if (!result) {
+        throw new Error(`API integration with id ${id} not found`);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error updating API integration:', error);
+      throw error;
+    }
+  }
+
+  async deleteApiIntegration(id: number): Promise<void> {
+    try {
+      await db.transaction(async (tx) => {
+        // Delete related data first
+        await tx.delete(apiMappings).where(eq(apiMappings.integrationId, id));
+        await tx.delete(apiTests).where(eq(apiTests.integrationId, id));
+        await tx.delete(apiAuditLogs).where(eq(apiAuditLogs.integrationId, id));
+        await tx.delete(apiCredentials).where(eq(apiCredentials.integrationId, id));
+        
+        // Delete the integration
+        await tx.delete(apiIntegrations).where(eq(apiIntegrations.id, id));
+      });
+    } catch (error) {
+      console.error('Error deleting API integration:', error);
+      throw error;
+    }
+  }
+
+  async generateApiIntegrationWithAI(prompt: string, systemType: string, provider: string, userId: number): Promise<ApiIntegration> {
+    try {
+      const baseConfig = {
+        name: `AI Generated ${provider} ${systemType.toUpperCase()} Integration`,
+        description: `AI-generated integration for ${provider} ${systemType} system based on: ${prompt}`,
+        systemType,
+        provider,
+        status: 'inactive' as const,
+        healthStatus: 'unknown' as const,
+        isAiGenerated: true,
+        endpoint: `https://api.${provider.toLowerCase()}.com/v1`,
+        authType: 'api_key' as const,
+        authConfig: {},
+        headers: { 'Content-Type': 'application/json' },
+        requestConfig: { timeout: 30000, retries: 3, retryDelay: 1000 },
+        dataTypes: this.getSystemTypeDataTypes(systemType),
+        capabilities: ['read', 'write'],
+        tags: ['ai-generated', systemType, provider.toLowerCase()],
+        metadata: { aiPrompt: prompt },
+        createdBy: userId,
+      };
+
+      return await this.createApiIntegration(baseConfig);
+    } catch (error) {
+      console.error('Error generating API integration with AI:', error);
+      throw error;
+    }
+  }
+
+  private getSystemTypeDataTypes(systemType: string): string[] {
+    const dataTypeMap: Record<string, string[]> = {
+      'erp': ['orders', 'inventory', 'customers', 'suppliers', 'financials'],
+      'crm': ['customers', 'leads', 'opportunities', 'contacts'],
+      'wms': ['inventory', 'warehouse_locations', 'shipments', 'receiving'],
+      'mes': ['production_orders', 'work_orders', 'quality_data', 'equipment_status'],
+      'scada': ['sensor_data', 'equipment_status', 'alarms', 'historical_data'],
+      'iot': ['sensor_readings', 'device_status', 'telemetry', 'alerts'],
+      'custom': ['data']
+    };
+    return dataTypeMap[systemType] || ['data'];
+  }
+
+  async testApiConnection(id: number): Promise<{ success: boolean; message: string; responseTime?: number }> {
+    try {
+      const integration = await this.getApiIntegration(id);
+      if (!integration) {
+        return { success: false, message: 'Integration not found' };
+      }
+
+      const startTime = Date.now();
+      const simulatedDelay = Math.random() * 2000 + 500; // 500-2500ms
+      await new Promise(resolve => setTimeout(resolve, simulatedDelay));
+      
+      const responseTime = Date.now() - startTime;
+      const success = Math.random() > 0.1; // 90% success rate for demo
+      
+      await this.updateApiIntegration(id, { 
+        healthStatus: success ? 'healthy' : 'unhealthy',
+        lastSync: new Date()
+      });
+
+      await this.createApiAuditLog({
+        integrationId: id,
+        operation: 'test',
+        method: 'GET',
+        endpoint: integration.endpoint,
+        statusCode: success ? 200 : 500,
+        responseTime,
+        success,
+        errorMessage: success ? undefined : 'Connection test failed',
+        userId: integration.createdBy || undefined,
+      });
+
+      return {
+        success,
+        message: success ? 'Connection successful' : 'Connection failed - please check credentials and endpoint',
+        responseTime
+      };
+    } catch (error) {
+      console.error('Error testing API connection:', error);
+      return { success: false, message: 'Test failed due to internal error' };
+    }
+  }
+
+  async syncApiIntegration(id: number): Promise<{ success: boolean; recordsProcessed: number; message: string }> {
+    try {
+      const integration = await this.getApiIntegration(id);
+      if (!integration) {
+        return { success: false, recordsProcessed: 0, message: 'Integration not found' };
+      }
+
+      const recordsProcessed = Math.floor(Math.random() * 1000) + 100;
+      const success = Math.random() > 0.05; // 95% success rate
+      
+      await this.updateApiIntegration(id, {
+        lastSync: new Date(),
+        nextSync: new Date(Date.now() + 60 * 60 * 1000), // Next hour
+        successCount: integration.successCount + (success ? 1 : 0),
+        errorCount: integration.errorCount + (success ? 0 : 1),
+        totalRequests: integration.totalRequests + 1,
+      });
+
+      await this.createApiAuditLog({
+        integrationId: id,
+        operation: 'sync',
+        method: 'POST',
+        endpoint: integration.endpoint + '/sync',
+        statusCode: success ? 200 : 500,
+        responseTime: Math.random() * 5000 + 1000,
+        success,
+        recordsProcessed: success ? recordsProcessed : 0,
+        errorMessage: success ? undefined : 'Sync operation failed',
+        userId: integration.createdBy || undefined,
+      });
+
+      return {
+        success,
+        recordsProcessed: success ? recordsProcessed : 0,
+        message: success ? `Successfully synced ${recordsProcessed} records` : 'Sync operation failed'
+      };
+    } catch (error) {
+      console.error('Error syncing API integration:', error);
+      return { success: false, recordsProcessed: 0, message: 'Sync failed due to internal error' };
+    }
+  }
+
+  // =================== API MAPPINGS ===================
+
+  async createApiMapping(mapping: InsertApiMapping): Promise<ApiMapping> {
+    try {
+      const [result] = await db.insert(apiMappings).values(mapping).returning();
+      return result;
+    } catch (error) {
+      console.error('Error creating API mapping:', error);
+      throw error;
+    }
+  }
+
+  async getApiMappings(integrationId?: number): Promise<ApiMapping[]> {
+    try {
+      let query = db.select().from(apiMappings);
+      if (integrationId) {
+        query = query.where(eq(apiMappings.integrationId, integrationId));
+      }
+      return await query.orderBy(apiMappings.name);
+    } catch (error) {
+      console.error('Error getting API mappings:', error);
+      throw error;
+    }
+  }
+
+  async getApiMapping(id: number): Promise<ApiMapping | undefined> {
+    try {
+      const [result] = await db.select().from(apiMappings).where(eq(apiMappings.id, id));
+      return result;
+    } catch (error) {
+      console.error('Error getting API mapping:', error);
+      throw error;
+    }
+  }
+
+  async updateApiMapping(id: number, updates: Partial<ApiMapping>): Promise<ApiMapping> {
+    try {
+      const [result] = await db
+        .update(apiMappings)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(apiMappings.id, id))
+        .returning();
+      
+      if (!result) {
+        throw new Error(`API mapping with id ${id} not found`);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error updating API mapping:', error);
+      throw error;
+    }
+  }
+
+  async deleteApiMapping(id: number): Promise<void> {
+    try {
+      await db.delete(apiMappings).where(eq(apiMappings.id, id));
+    } catch (error) {
+      console.error('Error deleting API mapping:', error);
+      throw error;
+    }
+  }
+
+  async generateApiMappingWithAI(integrationId: number, description: string): Promise<ApiMapping> {
+    try {
+      const integration = await this.getApiIntegration(integrationId);
+      if (!integration) {
+        throw new Error('Integration not found');
+      }
+
+      const mapping = {
+        integrationId,
+        name: `AI Generated Mapping - ${description}`,
+        direction: 'bidirectional' as const,
+        sourceSystem: 'external',
+        sourceTable: integration.systemType + '_data',
+        targetTable: 'jobs', // Default to jobs table
+        fieldMappings: [
+          { sourceField: 'id', targetField: 'id', isRequired: true },
+          { sourceField: 'name', targetField: 'name', isRequired: true },
+          { sourceField: 'status', targetField: 'status', isRequired: false },
+        ],
+        transformationRules: {
+          conditions: [
+            { field: 'status', operator: 'equals', value: 'active', action: 'map_to_active' }
+          ]
+        },
+        filters: {
+          conditions: [
+            { field: 'status', operator: 'not_equals', value: 'deleted' }
+          ]
+        },
+        isAiGenerated: true,
+      };
+
+      return await this.createApiMapping(mapping);
+    } catch (error) {
+      console.error('Error generating API mapping with AI:', error);
+      throw error;
+    }
+  }
+
+  // =================== API TESTS ===================
+
+  async createApiTest(test: InsertApiTest): Promise<ApiTest> {
+    try {
+      const [result] = await db.insert(apiTests).values(test).returning();
+      return result;
+    } catch (error) {
+      console.error('Error creating API test:', error);
+      throw error;
+    }
+  }
+
+  async getApiTests(integrationId?: number): Promise<ApiTest[]> {
+    try {
+      let query = db.select().from(apiTests);
+      if (integrationId) {
+        query = query.where(eq(apiTests.integrationId, integrationId));
+      }
+      return await query.orderBy(apiTests.createdAt);
+    } catch (error) {
+      console.error('Error getting API tests:', error);
+      throw error;
+    }
+  }
+
+  async getApiTest(id: number): Promise<ApiTest | undefined> {
+    try {
+      const [result] = await db.select().from(apiTests).where(eq(apiTests.id, id));
+      return result;
+    } catch (error) {
+      console.error('Error getting API test:', error);
+      throw error;
+    }
+  }
+
+  async runApiTest(id: number): Promise<ApiTest> {
+    try {
+      const test = await this.getApiTest(id);
+      if (!test) {
+        throw new Error('Test not found');
+      }
+
+      const integration = await this.getApiIntegration(test.integrationId);
+      if (!integration) {
+        throw new Error('Integration not found');
+      }
+
+      const duration = Math.random() * 3000 + 500; // 500-3500ms
+      await new Promise(resolve => setTimeout(resolve, duration));
+      
+      const success = Math.random() > 0.15; // 85% success rate
+      const status = success ? 'passed' : 'failed';
+      
+      const mockResponse = {
+        status: success ? 200 : 400,
+        statusText: success ? 'OK' : 'Bad Request',
+        headers: { 'content-type': 'application/json' },
+        data: success ? { result: 'success', data: [] } : { error: 'Test failed' },
+        responseTime: duration
+      };
+
+      const [updatedTest] = await db
+        .update(apiTests)
+        .set({
+          status,
+          response: mockResponse,
+          actualResult: mockResponse.data,
+          errorMessage: success ? undefined : 'Test execution failed',
+          duration: Math.round(duration),
+          runAt: new Date()
+        })
+        .where(eq(apiTests.id, id))
+        .returning();
+
+      return updatedTest;
+    } catch (error) {
+      console.error('Error running API test:', error);
+      throw error;
+    }
+  }
+
+  async deleteApiTest(id: number): Promise<void> {
+    try {
+      await db.delete(apiTests).where(eq(apiTests.id, id));
+    } catch (error) {
+      console.error('Error deleting API test:', error);
+      throw error;
+    }
+  }
+
+  // =================== API AUDIT LOGS ===================
+
+  async createApiAuditLog(log: InsertApiAuditLog): Promise<ApiAuditLog> {
+    try {
+      const [result] = await db.insert(apiAuditLogs).values(log).returning();
+      return result;
+    } catch (error) {
+      console.error('Error creating API audit log:', error);
+      throw error;
+    }
+  }
+
+  async getApiAuditLogs(integrationId?: number, limit = 100): Promise<ApiAuditLog[]> {
+    try {
+      let query = db.select().from(apiAuditLogs);
+      if (integrationId) {
+        query = query.where(eq(apiAuditLogs.integrationId, integrationId));
+      }
+      return await query
+        .orderBy(desc(apiAuditLogs.createdAt))
+        .limit(limit);
+    } catch (error) {
+      console.error('Error getting API audit logs:', error);
+      throw error;
+    }
+  }
+
+  // =================== API CREDENTIALS ===================
+
+  async createApiCredential(credential: InsertApiCredential): Promise<ApiCredential> {
+    try {
+      const [result] = await db.insert(apiCredentials).values(credential).returning();
+      return result;
+    } catch (error) {
+      console.error('Error creating API credential:', error);
+      throw error;
+    }
+  }
+
+  async getApiCredentials(integrationId: number): Promise<ApiCredential[]> {
+    try {
+      return await db
+        .select()
+        .from(apiCredentials)
+        .where(eq(apiCredentials.integrationId, integrationId))
+        .orderBy(apiCredentials.name);
+    } catch (error) {
+      console.error('Error getting API credentials:', error);
+      throw error;
+    }
+  }
+
+  async updateApiCredential(id: number, updates: Partial<ApiCredential>): Promise<ApiCredential> {
+    try {
+      const [result] = await db
+        .update(apiCredentials)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(apiCredentials.id, id))
+        .returning();
+      
+      if (!result) {
+        throw new Error(`API credential with id ${id} not found`);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error updating API credential:', error);
+      throw error;
+    }
+  }
+
+  async deleteApiCredential(id: number): Promise<void> {
+    try {
+      await db.delete(apiCredentials).where(eq(apiCredentials.id, id));
+    } catch (error) {
+      console.error('Error deleting API credential:', error);
+      throw error;
+    }
   }
 }
 

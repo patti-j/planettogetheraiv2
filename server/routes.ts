@@ -41,7 +41,8 @@ import {
   insertShiftTemplateSchema, insertResourceShiftAssignmentSchema, insertShiftScenarioSchema, 
   insertHolidaySchema, insertResourceAbsenceSchema, insertShiftCoverageSchema, insertShiftUtilizationSchema,
   insertUnplannedDowntimeSchema, insertOvertimeShiftSchema, insertDowntimeActionSchema, insertShiftChangeRequestSchema,
-  insertStrategyDocumentSchema, insertDevelopmentTaskSchema, insertTestSuiteSchema, insertTestCaseSchema, insertArchitectureComponentSchema
+  insertStrategyDocumentSchema, insertDevelopmentTaskSchema, insertTestSuiteSchema, insertTestCaseSchema, insertArchitectureComponentSchema,
+  insertApiIntegrationSchema, insertApiMappingSchema, insertApiTestSchema, insertApiCredentialSchema, insertApiAuditLogSchema
 } from "@shared/schema";
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -13779,6 +13780,281 @@ Response must be valid JSON:
       res.status(500).json({ error: "Failed to delete architecture component" });
     }
   });
+
+  // =================== API INTEGRATIONS ===================
+
+  // API Integrations
+  app.get("/api/integrations", createSafeHandler(async (req, res) => {
+    const integrations = await storage.getApiIntegrations();
+    res.json(integrations);
+  }));
+
+  app.get("/api/integrations/:id", createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new ValidationError("Invalid integration ID");
+    }
+
+    const integration = await storage.getApiIntegration(id);
+    if (!integration) {
+      throw new NotFoundError("Integration not found");
+    }
+    res.json(integration);
+  }));
+
+  app.post("/api/integrations", requireAuth, createSafeHandler(async (req, res) => {
+    const validation = insertApiIntegrationSchema.safeParse(req.body);
+    if (!validation.success) {
+      throw new ValidationError("Invalid integration data", validation.error.errors);
+    }
+
+    const integration = await storage.createApiIntegration(validation.data);
+    res.status(201).json(integration);
+  }));
+
+  app.put("/api/integrations/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new ValidationError("Invalid integration ID");
+    }
+
+    const validation = insertApiIntegrationSchema.partial().safeParse(req.body);
+    if (!validation.success) {
+      throw new ValidationError("Invalid integration data", validation.error.errors);
+    }
+
+    const integration = await storage.updateApiIntegration(id, validation.data);
+    res.json(integration);
+  }));
+
+  app.delete("/api/integrations/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new ValidationError("Invalid integration ID");
+    }
+
+    await storage.deleteApiIntegration(id);
+    res.json({ success: true });
+  }));
+
+  // AI Integration Generation
+  app.post("/api/integrations/ai-generate", requireAuth, createSafeHandler(async (req, res) => {
+    const { prompt, systemType, provider } = req.body;
+    
+    if (!prompt || !systemType || !provider) {
+      throw new ValidationError("Missing required fields: prompt, systemType, provider");
+    }
+
+    const userId = req.session?.userId || req.user?.id;
+    if (!userId) {
+      throw new AuthenticationError("User not authenticated");
+    }
+
+    const integration = await storage.generateApiIntegrationWithAI(prompt, systemType, provider, userId);
+    res.status(201).json(integration);
+  }));
+
+  // Connection Testing
+  app.post("/api/integrations/:id/test", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new ValidationError("Invalid integration ID");
+    }
+
+    const result = await storage.testApiConnection(id);
+    res.json(result);
+  }));
+
+  // Data Synchronization
+  app.post("/api/integrations/:id/sync", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new ValidationError("Invalid integration ID");
+    }
+
+    const result = await storage.syncApiIntegration(id);
+    res.json(result);
+  }));
+
+  // API Mappings
+  app.get("/api/mappings", createSafeHandler(async (req, res) => {
+    const integrationId = req.query.integrationId ? parseInt(req.query.integrationId as string) : undefined;
+    const mappings = await storage.getApiMappings(integrationId);
+    res.json(mappings);
+  }));
+
+  app.get("/api/mappings/:id", createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new ValidationError("Invalid mapping ID");
+    }
+
+    const mapping = await storage.getApiMapping(id);
+    if (!mapping) {
+      throw new NotFoundError("Mapping not found");
+    }
+    res.json(mapping);
+  }));
+
+  app.post("/api/mappings", requireAuth, createSafeHandler(async (req, res) => {
+    const validation = insertApiMappingSchema.safeParse(req.body);
+    if (!validation.success) {
+      throw new ValidationError("Invalid mapping data", validation.error.errors);
+    }
+
+    const mapping = await storage.createApiMapping(validation.data);
+    res.status(201).json(mapping);
+  }));
+
+  app.put("/api/mappings/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new ValidationError("Invalid mapping ID");
+    }
+
+    const validation = insertApiMappingSchema.partial().safeParse(req.body);
+    if (!validation.success) {
+      throw new ValidationError("Invalid mapping data", validation.error.errors);
+    }
+
+    const mapping = await storage.updateApiMapping(id, validation.data);
+    res.json(mapping);
+  }));
+
+  app.delete("/api/mappings/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new ValidationError("Invalid mapping ID");
+    }
+
+    await storage.deleteApiMapping(id);
+    res.json({ success: true });
+  }));
+
+  // AI Mapping Generation
+  app.post("/api/mappings/ai-generate", requireAuth, createSafeHandler(async (req, res) => {
+    const { integrationId, description } = req.body;
+    
+    if (!integrationId || !description) {
+      throw new ValidationError("Missing required fields: integrationId, description");
+    }
+
+    const mapping = await storage.generateApiMappingWithAI(integrationId, description);
+    res.status(201).json(mapping);
+  }));
+
+  // API Tests
+  app.get("/api/tests", createSafeHandler(async (req, res) => {
+    const integrationId = req.query.integrationId ? parseInt(req.query.integrationId as string) : undefined;
+    const tests = await storage.getApiTests(integrationId);
+    res.json(tests);
+  }));
+
+  app.get("/api/tests/:id", createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new ValidationError("Invalid test ID");
+    }
+
+    const test = await storage.getApiTest(id);
+    if (!test) {
+      throw new NotFoundError("Test not found");
+    }
+    res.json(test);
+  }));
+
+  app.post("/api/tests", requireAuth, createSafeHandler(async (req, res) => {
+    const validation = insertApiTestSchema.safeParse(req.body);
+    if (!validation.success) {
+      throw new ValidationError("Invalid test data", validation.error.errors);
+    }
+
+    const test = await storage.createApiTest(validation.data);
+    res.status(201).json(test);
+  }));
+
+  app.post("/api/tests/:id/run", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new ValidationError("Invalid test ID");
+    }
+
+    const test = await storage.runApiTest(id);
+    res.json(test);
+  }));
+
+  app.delete("/api/tests/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new ValidationError("Invalid test ID");
+    }
+
+    await storage.deleteApiTest(id);
+    res.json({ success: true });
+  }));
+
+  // API Audit Logs
+  app.get("/api/audit-logs", createSafeHandler(async (req, res) => {
+    const integrationId = req.query.integrationId ? parseInt(req.query.integrationId as string) : undefined;
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 100;
+    
+    const logs = await storage.getApiAuditLogs(integrationId, limit);
+    res.json(logs);
+  }));
+
+  // API Credentials
+  app.get("/api/integrations/:integrationId/credentials", requireAuth, createSafeHandler(async (req, res) => {
+    const integrationId = parseInt(req.params.integrationId);
+    if (isNaN(integrationId)) {
+      throw new ValidationError("Invalid integration ID");
+    }
+
+    const credentials = await storage.getApiCredentials(integrationId);
+    res.json(credentials);
+  }));
+
+  app.post("/api/integrations/:integrationId/credentials", requireAuth, createSafeHandler(async (req, res) => {
+    const integrationId = parseInt(req.params.integrationId);
+    if (isNaN(integrationId)) {
+      throw new ValidationError("Invalid integration ID");
+    }
+
+    const validation = insertApiCredentialSchema.safeParse({
+      ...req.body,
+      integrationId
+    });
+    if (!validation.success) {
+      throw new ValidationError("Invalid credential data", validation.error.errors);
+    }
+
+    const credential = await storage.createApiCredential(validation.data);
+    res.status(201).json(credential);
+  }));
+
+  app.put("/api/credentials/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new ValidationError("Invalid credential ID");
+    }
+
+    const validation = insertApiCredentialSchema.partial().safeParse(req.body);
+    if (!validation.success) {
+      throw new ValidationError("Invalid credential data", validation.error.errors);
+    }
+
+    const credential = await storage.updateApiCredential(id, validation.data);
+    res.json(credential);
+  }));
+
+  app.delete("/api/credentials/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new ValidationError("Invalid credential ID");
+    }
+
+    await storage.deleteApiCredential(id);
+    res.json({ success: true });
+  }));
 
   const httpServer = createServer(app);
   // Add global error handling middleware at the end

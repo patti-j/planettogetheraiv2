@@ -36,6 +36,7 @@ import InventoryOptimization from "@/pages/inventory-optimization";
 import DemandForecasting from "@/pages/demand-forecasting";
 import ERPImport from "@/pages/erp-import";
 import SystemIntegrationsPage from "@/pages/system-integrations";
+import ApiIntegrationsPage from "@/pages/api-integrations";
 import PlantManager from "@/pages/plant-manager";
 import SystemsManagement from "@/pages/systems-management";
 import CapacityPlanning from "@/pages/capacity-planning";
@@ -314,6 +315,11 @@ function Router() {
           <Route path="/system-integrations">
             <ProtectedRoute feature="system-integrations" action="view">
               <SystemIntegrationsPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/api-integrations">
+            <ProtectedRoute feature="systems-integration" action="view">
+              <ApiIntegrationsPage />
             </ProtectedRoute>
           </Route>
           <Route path="/plants-management">

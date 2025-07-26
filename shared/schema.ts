@@ -4643,3 +4643,182 @@ export type InsertDowntimeAction = z.infer<typeof insertDowntimeActionSchema>;
 
 export type ShiftChangeRequest = typeof shiftChangeRequests.$inferSelect;
 export type InsertShiftChangeRequest = z.infer<typeof insertShiftChangeRequestSchema>;
+
+// Third-party API Integration System
+export const apiIntegrations = pgTable("api_integrations", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  systemType: varchar("system_type", { length: 100 }).notNull(), // 'erp', 'crm', 'wms', 'mes', 'scada', 'iot', 'custom'
+  provider: varchar("provider", { length: 100 }).notNull(), // 'SAP', 'Salesforce', 'Oracle', 'Microsoft', 'Custom'
+  status: varchar("status", { length: 20 }).notNull().default('inactive'), // 'active', 'inactive', 'testing', 'error', 'pending'
+  healthStatus: varchar("health_status", { length: 20 }).notNull().default('unknown'), // 'healthy', 'degraded', 'unhealthy', 'unknown'
+  isAiGenerated: boolean("is_ai_generated").default(false),
+  endpoint: text("endpoint").notNull(),
+  apiVersion: varchar("api_version", { length: 50 }),
+  authType: varchar("auth_type", { length: 50 }).notNull(), // 'oauth2', 'api_key', 'basic', 'bearer', 'custom'
+  authConfig: jsonb("auth_config").$type<Record<string, any>>().default({}), // Encrypted auth details
+  headers: jsonb("headers").$type<Record<string, string>>().default({}),
+  requestConfig: jsonb("request_config").$type<{
+    timeout: number;
+    retries: number;
+    retryDelay: number;
+    rateLimit?: { requests: number; period: number };
+  }>().default({ timeout: 30000, retries: 3, retryDelay: 1000 }),
+  syncFrequency: varchar("sync_frequency", { length: 50 }).default('manual'), // 'manual', 'realtime', '15min', '30min', '1hour', '6hour', '12hour', '24hour'
+  lastSync: timestamp("last_sync"),
+  nextSync: timestamp("next_sync"),
+  successCount: integer("success_count").default(0),
+  errorCount: integer("error_count").default(0),
+  totalRequests: integer("total_requests").default(0),
+  avgResponseTime: integer("avg_response_time").default(0), // milliseconds
+  dataTypes: jsonb("data_types").$type<string[]>().default([]), // ['orders', 'inventory', 'customers', 'production_plans']
+  capabilities: jsonb("capabilities").$type<string[]>().default([]), // ['read', 'write', 'realtime', 'batch', 'webhook']
+  tags: jsonb("tags").$type<string[]>().default([]),
+  metadata: jsonb("metadata").$type<Record<string, any>>().default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: integer("created_by").references(() => users.id),
+});
+
+export const apiMappings = pgTable("api_mappings", {
+  id: serial("id").primaryKey(),
+  integrationId: integer("integration_id").references(() => apiIntegrations.id).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  direction: varchar("direction", { length: 15 }).notNull(), // 'inbound', 'outbound', 'bidirectional'
+  sourceSystem: varchar("source_system", { length: 100 }).notNull(), // 'external' or 'planettogether'
+  sourceTable: varchar("source_table", { length: 100 }).notNull(),
+  targetTable: varchar("target_table", { length: 100 }).notNull(),
+  fieldMappings: jsonb("field_mappings").$type<{
+    sourceField: string;
+    targetField: string;
+    transformation?: string;
+    isRequired: boolean;
+    defaultValue?: any;
+  }[]>().notNull(),
+  transformationRules: jsonb("transformation_rules").$type<{
+    script?: string;
+    conditions?: Array<{ field: string; operator: string; value: any; action: string }>;
+    validations?: Array<{ field: string; rule: string; message: string }>;
+  }>().default({}),
+  filters: jsonb("filters").$type<{
+    conditions?: Array<{ field: string; operator: string; value: any }>;
+    dateRange?: { field: string; from?: string; to?: string };
+  }>().default({}),
+  isActive: boolean("is_active").default(true),
+  isAiGenerated: boolean("is_ai_generated").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const apiTests = pgTable("api_tests", {
+  id: serial("id").primaryKey(),
+  integrationId: integer("integration_id").references(() => apiIntegrations.id).notNull(),
+  testType: varchar("test_type", { length: 50 }).notNull(), // 'connection', 'authentication', 'data_flow', 'performance', 'mapping'
+  testName: varchar("test_name", { length: 255 }).notNull(),
+  status: varchar("status", { length: 20 }).notNull(), // 'passed', 'failed', 'running', 'pending'
+  request: jsonb("request").$type<{
+    method: string;
+    endpoint: string;
+    headers?: Record<string, string>;
+    body?: any;
+    params?: Record<string, any>;
+  }>(),
+  response: jsonb("response").$type<{
+    status: number;
+    statusText: string;
+    headers: Record<string, string>;
+    data: any;
+    responseTime: number;
+  }>(),
+  expectedResult: jsonb("expected_result").$type<any>(),
+  actualResult: jsonb("actual_result").$type<any>(),
+  errorMessage: text("error_message"),
+  duration: integer("duration"), // milliseconds
+  automatedTest: boolean("automated_test").default(false),
+  schedule: varchar("schedule", { length: 50 }), // 'manual', 'continuous', 'daily', 'weekly'
+  createdAt: timestamp("created_at").defaultNow(),
+  runAt: timestamp("run_at").defaultNow(),
+});
+
+export const apiAuditLogs = pgTable("api_audit_logs", {
+  id: serial("id").primaryKey(),
+  integrationId: integer("integration_id").references(() => apiIntegrations.id).notNull(),
+  operation: varchar("operation", { length: 100 }).notNull(), // 'sync', 'test', 'configure', 'authenticate'
+  method: varchar("method", { length: 10 }).notNull(), // 'GET', 'POST', 'PUT', 'DELETE'
+  endpoint: text("endpoint").notNull(),
+  requestData: jsonb("request_data").$type<any>(),
+  responseData: jsonb("response_data").$type<any>(),
+  statusCode: integer("status_code"),
+  responseTime: integer("response_time"), // milliseconds
+  success: boolean("success").notNull(),
+  errorMessage: text("error_message"),
+  recordsProcessed: integer("records_processed").default(0),
+  dataSize: integer("data_size").default(0), // bytes
+  userId: integer("user_id").references(() => users.id),
+  userAgent: text("user_agent"),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const apiCredentials = pgTable("api_credentials", {
+  id: serial("id").primaryKey(),
+  integrationId: integer("integration_id").references(() => apiIntegrations.id).notNull(),
+  credentialType: varchar("credential_type", { length: 50 }).notNull(), // 'oauth2', 'api_key', 'certificate', 'basic_auth'
+  name: varchar("name", { length: 255 }).notNull(),
+  encryptedValue: text("encrypted_value").notNull(), // Encrypted credential data
+  expiresAt: timestamp("expires_at"),
+  isActive: boolean("is_active").default(true),
+  refreshToken: text("refresh_token"), // For OAuth2
+  scope: text("scope"), // OAuth2 scopes
+  lastUsed: timestamp("last_used"),
+  usageCount: integer("usage_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// API Integration Insert Schemas
+export const insertApiIntegrationSchema = createInsertSchema(apiIntegrations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertApiMappingSchema = createInsertSchema(apiMappings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertApiTestSchema = createInsertSchema(apiTests).omit({
+  id: true,
+  createdAt: true,
+  runAt: true,
+});
+
+export const insertApiAuditLogSchema = createInsertSchema(apiAuditLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertApiCredentialSchema = createInsertSchema(apiCredentials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// API Integration Types
+export type ApiIntegration = typeof apiIntegrations.$inferSelect;
+export type InsertApiIntegration = z.infer<typeof insertApiIntegrationSchema>;
+
+export type ApiMapping = typeof apiMappings.$inferSelect;
+export type InsertApiMapping = z.infer<typeof insertApiMappingSchema>;
+
+export type ApiTest = typeof apiTests.$inferSelect;
+export type InsertApiTest = z.infer<typeof insertApiTestSchema>;
+
+export type ApiAuditLog = typeof apiAuditLogs.$inferSelect;
+export type InsertApiAuditLog = z.infer<typeof insertApiAuditLogSchema>;
+
+export type ApiCredential = typeof apiCredentials.$inferSelect;
+export type InsertApiCredential = z.infer<typeof insertApiCredentialSchema>;
