@@ -384,10 +384,8 @@ const SchedulingOptimizer: React.FC = () => {
   const [showEvaluationSystem, setShowEvaluationSystem] = useState(false);
   const evaluationSystemRef = useRef<HTMLDivElement>(null);
 
-  // Optimization states
-  const [showOptimizationDialog, setShowOptimizationDialog] = useState(false);
-  const [selectedAlgorithm, setSelectedAlgorithm] = useState<any>(null);
-  const [optimizationParameters, setOptimizationParameters] = useState<Record<string, any>>({});
+
+
   const { hasPermission } = usePermissions();
 
   // Auto-scroll to evaluation system when it becomes visible
@@ -424,17 +422,7 @@ const SchedulingOptimizer: React.FC = () => {
     refetchInterval: false
   });
 
-  // Optimization algorithms query
-  const { data: algorithms } = useQuery({
-    queryKey: ['/api/optimization/algorithms'],
-    staleTime: 5 * 60 * 1000,
-  });
 
-  // Filter approved algorithms for production scheduling
-  const approvedAlgorithms = algorithms?.filter((alg: any) => 
-    alg.status === 'approved' && 
-    (alg.category === 'production-scheduling' || alg.category === 'scheduling')
-  ) || [];
 
 
 
@@ -948,35 +936,7 @@ const SchedulingOptimizer: React.FC = () => {
             <span className="sm:hidden">Evaluate</span>
           </Button>
           
-          {/* Run Optimization Button */}
-          {hasPermission('optimization-studio', 'view') && approvedAlgorithms.length > 0 && (
-            <Dialog open={showOptimizationDialog} onOpenChange={setShowOptimizationDialog}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-1 md:gap-2 text-xs md:text-sm bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white border-0"
-                >
-                  <Sparkles className="w-3 h-3 md:w-4 md:h-4" />
-                  <span className="hidden sm:inline">Run Optimization</span>
-                  <span className="sm:hidden">Optimize</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-emerald-600" />
-                    Execute Production Schedule Optimization
-                  </DialogTitle>
-                </DialogHeader>
-                
-                {/* Optimization Dialog Content - will add this next */}
-                <div className="p-4">
-                  <p className="text-gray-600">Select and configure optimization algorithm...</p>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
+
         </div>
       </div>
 

@@ -182,6 +182,10 @@ export default function ProductionCockpit() {
     dataSource: "jobs",
     visualizationType: "chart"
   });
+  const [optimizationDialog, setOptimizationDialog] = useState(false);
+  const [optimizationHistoryDialog, setOptimizationHistoryDialog] = useState(false);
+  const [selectedAlgorithm, setSelectedAlgorithm] = useState<any>(null);
+  const [algorithmParameters, setAlgorithmParameters] = useState<any>({});
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -233,6 +237,16 @@ export default function ProductionCockpit() {
   const { data: capabilities = [] } = useQuery<any[]>({
     queryKey: ["/api/capabilities"],
     refetchInterval: autoRefresh ? refreshInterval * 1000 : false
+  });
+
+  // Fetch optimization algorithms
+  const { data: algorithms = [] } = useQuery<any[]>({
+    queryKey: ["/api/optimization/algorithms"],
+  });
+
+  // Fetch scheduling history
+  const { data: schedulingHistory = [] } = useQuery<any[]>({
+    queryKey: ["/api/scheduling-history"],
   });
 
   // Prepare system data for widgets
@@ -343,6 +357,34 @@ export default function ProductionCockpit() {
     onError: (error: any) => {
       toast({ 
         title: "Failed to generate AI widget", 
+        description: error.message || "Please try again",
+        variant: "destructive" 
+      });
+    }
+  });
+
+  // Optimization execution mutation
+  const optimizationMutation = useMutation({
+    mutationFn: (data: { algorithmId: number; parameters: any }) =>
+      fetch("/api/optimization/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      }).then(res => res.json()),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/scheduling-history"] });
+      setOptimizationDialog(false);
+      setSelectedAlgorithm(null);
+      setAlgorithmParameters({});
+      toast({ 
+        title: "Optimization completed successfully",
+        description: `${result.optimizedOperations || 0} operations optimized`
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Optimization failed", 
         description: error.message || "Please try again",
         variant: "destructive" 
       });
@@ -577,6 +619,137 @@ export default function ProductionCockpit() {
                   <Button onClick={handleCreateLayout} className="w-full">
                     Create Layout
                   </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Optimization Dialog */}
+            <Dialog open={optimizationDialog} onOpenChange={setOptimizationDialog}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs sm:text-sm">
+                  <Zap className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Run Optimization</span>
+                  <span className="sm:hidden">Optimize</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-emerald-500" />
+                    Run Optimization Algorithm
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="algorithm-select">Select Algorithm</Label>
+                    <Select
+                      value={selectedAlgorithm?.id?.toString()}
+                      onValueChange={(value) => {
+                        const algorithm = algorithms.find(a => a.id === parseInt(value));
+                        setSelectedAlgorithm(algorithm);
+                        setAlgorithmParameters({});
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose optimization algorithm..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {algorithms.filter(a => a.status === 'approved').map((algorithm) => (
+                          <SelectItem key={algorithm.id.toString()} value={algorithm.id.toString()}>
+                            {algorithm.displayName || algorithm.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {selectedAlgorithm && (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {selectedAlgorithm.description}
+                      </p>
+                      <div className="bg-muted p-3 rounded-lg">
+                        <p className="text-sm font-medium mb-2">Execution Scope:</p>
+                        <p className="text-xs text-muted-foreground">
+                          • {jobs.length} active jobs will be optimized
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          • {operations.length} operations will be analyzed
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          • {resources.length} resources available for assignment
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <Button 
+                    onClick={() => {
+                      if (selectedAlgorithm) {
+                        optimizationMutation.mutate({
+                          algorithmId: selectedAlgorithm.id,
+                          parameters: algorithmParameters
+                        });
+                      }
+                    }}
+                    disabled={!selectedAlgorithm || optimizationMutation.isPending}
+                    className="w-full"
+                  >
+                    {optimizationMutation.isPending ? "Running..." : "Execute Optimization"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Optimization History Dialog */}
+            <Dialog open={optimizationHistoryDialog} onOpenChange={setOptimizationHistoryDialog}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline" className="text-xs sm:text-sm">
+                  <BarChart3 className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Optimization History</span>
+                  <span className="sm:hidden">History</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-blue-500" />
+                    Optimization History & Results
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  {schedulingHistory.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No optimization history available</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {schedulingHistory.slice(0, 10).map((entry: any) => (
+                        <Card key={entry.id} className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Badge variant={entry.status === 'completed' ? 'default' : 'secondary'}>
+                                {entry.status}
+                              </Badge>
+                              <span className="font-medium">{entry.algorithmName}</span>
+                            </div>
+                            <span className="text-sm text-muted-foreground">
+                              {new Date(entry.executedAt).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="text-sm space-y-1">
+                            <p><strong>Operations Optimized:</strong> {entry.operationsCount || 0}</p>
+                            <p><strong>Execution Time:</strong> {entry.executionTime || 'N/A'}ms</p>
+                            <p><strong>Performance Score:</strong> {entry.performanceScore || 'N/A'}</p>
+                            {entry.summary && (
+                              <p className="text-muted-foreground mt-2">{entry.summary}</p>
+                            )}
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </DialogContent>
             </Dialog>
