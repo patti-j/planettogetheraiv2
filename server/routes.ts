@@ -1492,6 +1492,106 @@ Provide the response as a JSON object with the following structure:
     }
   });
 
+  // Enhanced AI collaborative algorithm development endpoint
+  app.post('/api/ai-agent/collaborative-algorithm-development', requireAuth, async (req, res) => {
+    try {
+      const { message, sessionMessages, currentDraft, step } = req.body;
+
+      const OpenAI = (await import('openai')).default;
+      const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+
+      // Build comprehensive context for AI collaboration
+      const systemPrompt = `You are an expert AI optimization algorithm development assistant. Your role is to collaboratively work with users to develop sophisticated manufacturing optimization algorithms through a structured 5-step process:
+
+**Step 1: Problem Definition** - Understand the specific optimization challenge
+**Step 2: Objective Clarification** - Define what metrics to optimize for
+**Step 3: Constraint Analysis** - Identify limitations and requirements 
+**Step 4: Algorithm Design** - Create the optimization logic and parameters
+**Step 5: Testing Strategy** - Plan validation and performance testing
+
+Current Step: ${step}/5
+
+CONVERSATION GUIDELINES:
+- Ask detailed, probing questions to understand requirements
+- Be conversational and encouraging, but professional
+- Guide the user through each step methodically
+- Build upon previous responses in the conversation
+- When moving to a new step, clearly indicate the transition
+- Create algorithm drafts progressively as information is gathered
+- Suggest specific optimization approaches based on the problem type
+
+CURRENT CONTEXT:
+${currentDraft ? `Current Algorithm Draft: ${JSON.stringify(currentDraft, null, 2)}` : 'No draft created yet'}
+
+Previous conversation:
+${sessionMessages.map((msg: any) => `${msg.role}: ${msg.content}`).join('\n')}
+
+RESPONSE FORMAT:
+Respond naturally in conversation, then include a JSON object at the end with:
+{
+  "nextStep": number (1-5, current step or next step),
+  "algorithmDraft": { object with current algorithm being developed },
+  "readyToFinalize": boolean (true when all 5 steps complete)
+}
+
+Manufacturing Context Available:
+- Production scheduling algorithms
+- Resource allocation optimization  
+- Inventory management optimization
+- Quality control optimization
+- Capacity planning algorithms
+- Setup time minimization
+- Throughput maximization
+- Cost optimization strategies`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: message }
+        ],
+        temperature: 0.7,
+        max_tokens: 1500
+      });
+
+      const aiResponse = response.choices[0].message.content;
+      
+      // Try to extract JSON from response
+      let responseData = {
+        response: aiResponse,
+        nextStep: step,
+        algorithmDraft: currentDraft,
+        readyToFinalize: false
+      };
+
+      try {
+        // Look for JSON in the response
+        const jsonMatch = aiResponse?.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const jsonData = JSON.parse(jsonMatch[0]);
+          const textResponse = aiResponse?.replace(jsonMatch[0], '').trim();
+          
+          responseData = {
+            response: textResponse || aiResponse || "",
+            nextStep: jsonData.nextStep || step,
+            algorithmDraft: jsonData.algorithmDraft || currentDraft,
+            readyToFinalize: jsonData.readyToFinalize || false
+          };
+        }
+      } catch (parseError) {
+        console.log('No JSON found in AI response, using text only');
+      }
+
+      res.json(responseData);
+
+    } catch (error) {
+      console.error('AI collaboration error:', error);
+      res.status(500).json({ error: 'Failed to process AI collaboration request', details: error.message });
+    }
+  });
+
   app.post("/api/ai-agent/voice", requireAuth, upload.single("audio"), async (req, res) => {
     try {
       if (!req.file) {

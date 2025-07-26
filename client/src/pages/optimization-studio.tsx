@@ -71,6 +71,10 @@ export default function OptimizationStudio() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showAICreateDialog, setShowAICreateDialog] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
+  const [aiSessionMessages, setAiSessionMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
+  const [aiSessionActive, setAiSessionActive] = useState(false);
+  const [currentAlgorithmDraft, setCurrentAlgorithmDraft] = useState<any>(null);
+  const [aiSessionStep, setAiSessionStep] = useState(1);
   const [showBackwardsScheduling, setShowBackwardsScheduling] = useState(false);
   const [showArchitectureView, setShowArchitectureView] = useState(false);
   const [architectureAlgorithmName, setArchitectureAlgorithmName] = useState("");
@@ -139,44 +143,84 @@ export default function OptimizationStudio() {
     }
   });
 
-  // AI algorithm creation mutation
-  const createAIAlgorithmMutation = useMutation({
-    mutationFn: async (prompt: string) => {
-      // This would integrate with the AI agent to generate algorithm code
-      const algorithmData = {
-        name: `ai_generated_${Date.now()}`,
-        displayName: "AI Generated Algorithm",
-        description: `Algorithm generated from prompt: ${prompt}`,
-        category: "production_scheduling",
-        type: "standard",
-        version: "1.0.0",
-        status: "draft",
-        isStandard: true,
-        configuration: { aiGenerated: true, prompt },
-        algorithmCode: `// AI Generated Algorithm\n// Prompt: ${prompt}\n\nfunction optimizeProduction(data) {\n  // AI implementation would go here\n  return data;\n}`,
-        uiComponents: {},
-        performance: {},
-        approvals: { approved: false }
-      };
+  // AI collaborative session mutation
+  const aiCollaborateSession = useMutation({
+    mutationFn: async ({ message, sessionData }: { message: string; sessionData: any }) => {
+      const response = await fetch('/api/ai-agent/collaborative-algorithm-development', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          sessionMessages: aiSessionMessages,
+          currentDraft: currentAlgorithmDraft,
+          step: aiSessionStep,
+          ...sessionData
+        })
+      });
+      if (!response.ok) throw new Error('Failed to process AI collaboration');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setAiSessionMessages(prev => [...prev, 
+        { role: 'user', content: aiPrompt },
+        { role: 'assistant', content: data.response }
+      ]);
       
+      if (data.algorithmDraft) {
+        setCurrentAlgorithmDraft(data.algorithmDraft);
+      }
+      
+      if (data.nextStep) {
+        setAiSessionStep(data.nextStep);
+      }
+      
+      setAiPrompt("");
+    },
+    onError: (error: any) => {
+      toast({ title: "AI collaboration error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  // Finalize AI algorithm creation
+  const finalizeAIAlgorithmMutation = useMutation({
+    mutationFn: async (finalAlgorithm: any) => {
       const response = await fetch('/api/optimization/algorithms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(algorithmData)
+        body: JSON.stringify(finalAlgorithm)
       });
-      if (!response.ok) throw new Error('Failed to create AI algorithm');
+      if (!response.ok) throw new Error('Failed to create final algorithm');
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/optimization/algorithms'] });
       setShowAICreateDialog(false);
-      setAiPrompt("");
-      toast({ title: "AI algorithm generated successfully" });
+      resetAISession();
+      toast({ title: "Algorithm created successfully", description: "Your AI-developed algorithm is ready for testing!" });
     },
     onError: (error: any) => {
-      toast({ title: "Error generating AI algorithm", description: error.message, variant: "destructive" });
+      toast({ title: "Error creating algorithm", description: error.message, variant: "destructive" });
     }
   });
+
+  // Reset AI session
+  const resetAISession = () => {
+    setAiSessionMessages([]);
+    setAiSessionActive(false);
+    setCurrentAlgorithmDraft(null);
+    setAiSessionStep(1);
+    setAiPrompt("");
+  };
+
+  // Start AI collaboration session
+  const startAISession = () => {
+    setAiSessionActive(true);
+    setAiSessionMessages([{
+      role: 'assistant',
+      content: "Hello! I'm here to help you develop a custom optimization algorithm step by step. Let's start by understanding your specific requirements.\n\n**Step 1: Problem Definition**\n\nCould you describe the optimization problem you're trying to solve? For example:\n- What type of manufacturing process needs optimization?\n- What are your main objectives (minimize cost, maximize throughput, reduce setup times, etc.)?\n- Are there any specific constraints or limitations I should know about?"
+    }]);
+    setAiSessionStep(1);
+  };
 
   // Filter algorithms based on category and search
   const filteredAlgorithms = algorithms.filter((algo: OptimizationAlgorithm) => {
@@ -351,43 +395,181 @@ export default function OptimizationStudio() {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 lg:flex-shrink-0">
-            <Dialog open={showAICreateDialog} onOpenChange={setShowAICreateDialog}>
+            <Dialog open={showAICreateDialog} onOpenChange={(open) => {
+              setShowAICreateDialog(open);
+              if (!open) resetAISession();
+            }}>
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700">
                   <Brain className="w-4 h-4 mr-2" />
-                  AI Create
+                  AI Collaborate
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
                 <DialogHeader>
-                  <DialogTitle>AI Algorithm Generator</DialogTitle>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Brain className="w-5 h-5" />
+                    AI Algorithm Development Assistant
+                    {aiSessionActive && (
+                      <Badge variant="outline" className="ml-2">
+                        Step {aiSessionStep}/5
+                      </Badge>
+                    )}
+                  </DialogTitle>
                   <DialogDescription>
-                    Describe the optimization problem you want to solve, and AI will generate a custom algorithm
+                    Work collaboratively with AI to develop a sophisticated optimization algorithm tailored to your specific needs
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="ai-prompt">Optimization Requirements</Label>
-                    <Textarea
-                      id="ai-prompt"
-                      placeholder="E.g., 'Create a production scheduling algorithm that minimizes setup times while maximizing throughput for automotive parts manufacturing'"
-                      value={aiPrompt}
-                      onChange={(e) => setAiPrompt(e.target.value)}
-                      rows={4}
-                    />
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setShowAICreateDialog(false)}>
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={() => createAIAlgorithmMutation.mutate(aiPrompt)}
-                      disabled={!aiPrompt.trim() || createAIAlgorithmMutation.isPending}
-                      className="bg-gradient-to-r from-purple-500 to-pink-600"
-                    >
-                      {createAIAlgorithmMutation.isPending ? "Generating..." : "Generate Algorithm"}
-                    </Button>
-                  </div>
+                
+                <div className="flex-1 overflow-hidden flex flex-col space-y-4">
+                  {!aiSessionActive ? (
+                    /* Initial Introduction */
+                    <div className="space-y-4">
+                      <Card className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+                        <div className="flex items-start gap-4">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center flex-shrink-0">
+                            <Brain className="w-5 h-5 text-white" />
+                          </div>
+                          <div className="space-y-2">
+                            <h3 className="font-semibold text-lg">Let's Build Your Algorithm Together</h3>
+                            <p className="text-gray-700">
+                              I'll guide you through a step-by-step process to understand your requirements and develop a custom optimization algorithm. This includes:
+                            </p>
+                            <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 ml-4">
+                              <li><strong>Problem Analysis:</strong> Understanding your specific optimization challenges</li>
+                              <li><strong>Objective Definition:</strong> Clarifying what you want to optimize for</li>
+                              <li><strong>Constraint Identification:</strong> Mapping out limitations and requirements</li>
+                              <li><strong>Algorithm Design:</strong> Creating the optimization logic and parameters</li>
+                              <li><strong>Testing Strategy:</strong> Planning how to validate the algorithm performance</li>
+                            </ul>
+                            <p className="text-sm text-gray-600 mt-3">
+                              The process typically takes 10-15 minutes and results in a production-ready algorithm.
+                            </p>
+                          </div>
+                        </div>
+                      </Card>
+                      
+                      <div className="flex justify-center">
+                        <Button 
+                          onClick={startAISession}
+                          className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 px-8 py-2"
+                        >
+                          <Brain className="w-4 h-4 mr-2" />
+                          Start Collaborative Development
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Active Session Interface */
+                    <>
+                      {/* Progress Indicator */}
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">Development Progress</span>
+                          <span className="text-sm text-gray-600">{aiSessionStep}/5 Steps Complete</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-purple-500 to-pink-600 h-2 rounded-full transition-all"
+                            style={{ width: `${(aiSessionStep / 5) * 100}%` }}
+                          ></div>
+                        </div>
+                      </div>
+
+                      {/* Conversation Area */}
+                      <div className="flex-1 overflow-y-auto border rounded-lg p-4 space-y-4 bg-gray-50">
+                        {aiSessionMessages.map((message, index) => (
+                          <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[80%] p-3 rounded-lg ${
+                              message.role === 'user' 
+                                ? 'bg-blue-500 text-white' 
+                                : 'bg-white border shadow-sm'
+                            }`}>
+                              <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+                            </div>
+                          </div>
+                        ))}
+                        {aiCollaborateSession.isPending && (
+                          <div className="flex justify-start">
+                            <div className="bg-white border shadow-sm p-3 rounded-lg">
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
+                                AI is thinking...
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Current Algorithm Draft Preview */}
+                      {currentAlgorithmDraft && (
+                        <Card className="p-4 bg-green-50 border-green-200">
+                          <h4 className="font-medium text-green-800 mb-2 flex items-center gap-2">
+                            <Target className="w-4 h-4" />
+                            Current Algorithm Draft
+                          </h4>
+                          <div className="text-sm space-y-1">
+                            <div><strong>Name:</strong> {currentAlgorithmDraft.name}</div>
+                            <div><strong>Objective:</strong> {currentAlgorithmDraft.objective}</div>
+                            <div><strong>Category:</strong> {currentAlgorithmDraft.category}</div>
+                            {currentAlgorithmDraft.parameters && (
+                              <div><strong>Parameters:</strong> {Object.keys(currentAlgorithmDraft.parameters).length} configured</div>
+                            )}
+                          </div>
+                        </Card>
+                      )}
+
+                      {/* Input Area */}
+                      <div className="space-y-3">
+                        <Textarea
+                          placeholder="Type your response or ask questions about the algorithm development..."
+                          value={aiPrompt}
+                          onChange={(e) => setAiPrompt(e.target.value)}
+                          rows={3}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              if (aiPrompt.trim()) {
+                                aiCollaborateSession.mutate({ message: aiPrompt, sessionData: {} });
+                              }
+                            }
+                          }}
+                        />
+                        <div className="flex justify-between items-center">
+                          <div className="text-xs text-gray-500">
+                            Press Enter to send, Shift+Enter for new line
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={resetAISession}
+                            >
+                              Start Over
+                            </Button>
+                            <Button 
+                              size="sm"
+                              onClick={() => aiCollaborateSession.mutate({ message: aiPrompt, sessionData: {} })}
+                              disabled={!aiPrompt.trim() || aiCollaborateSession.isPending}
+                              className="bg-gradient-to-r from-purple-500 to-pink-600"
+                            >
+                              Send
+                            </Button>
+                            {aiSessionStep >= 5 && currentAlgorithmDraft && (
+                              <Button 
+                                size="sm"
+                                onClick={() => finalizeAIAlgorithmMutation.mutate(currentAlgorithmDraft)}
+                                disabled={finalizeAIAlgorithmMutation.isPending}
+                                className="bg-gradient-to-r from-green-500 to-emerald-600"
+                              >
+                                {finalizeAIAlgorithmMutation.isPending ? "Creating..." : "Create Algorithm"}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </DialogContent>
             </Dialog>
