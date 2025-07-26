@@ -282,11 +282,30 @@ const OperationCard = ({ operation, job, jobs, resources, onEdit, onViewDetails,
 };
 
 // Job Details Dialog Component
-const JobDetailsDialog = ({ job, open, onOpenChange }: { job: Job | null; open: boolean; onOpenChange: (open: boolean) => void }) => {
+const JobDetailsDialog = ({ job, operations, resources, capabilities, open, onOpenChange }: { 
+  job: Job | null; 
+  operations: Operation[];
+  resources: Resource[];
+  capabilities: Capability[];
+  open: boolean; 
+  onOpenChange: (open: boolean) => void 
+}) => {
   if (!job) return null;
+
+  // Filter operations for this job
+  const jobOperations = operations.filter(op => op.jobId === job.id);
 
   const formatDate = (date: Date | null) => {
     return date ? new Date(date).toLocaleString() : "Not set";
+  };
+
+  const getResourceIcon = (resourceType: string) => {
+    switch (resourceType) {
+      case "Machine": return <Wrench className="w-4 h-4" />;
+      case "Operator": return <User className="w-4 h-4" />;
+      case "Facility": return <Building2 className="w-4 h-4" />;
+      default: return <User className="w-4 h-4" />;
+    }
   };
 
   return (
@@ -363,6 +382,102 @@ const JobDetailsDialog = ({ job, open, onOpenChange }: { job: Job | null; open: 
               </div>
             </div>
           )}
+
+          {/* Operations */}
+          <div className="space-y-2">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              Operations ({jobOperations.length})
+            </h3>
+            {jobOperations.length === 0 ? (
+              <div className="bg-gray-50 p-3 rounded-lg text-center text-gray-500">
+                No operations defined for this job
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {jobOperations.map((operation) => {
+                  const assignedResource = resources.find(r => r.id === operation.assignedResourceId);
+                  const requiredCapNames = operation.requiredCapabilities?.map(capId => 
+                    capabilities.find(c => c.id === capId)?.name || `Capability ${capId}`
+                  ) || [];
+                  
+                  return (
+                    <div key={operation.id} className="bg-gray-50 p-3 rounded-lg border-l-4 border-blue-500">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900">{operation.name}</h4>
+                          {operation.description && (
+                            <p className="text-sm text-gray-600 mt-1">{operation.description}</p>
+                          )}
+                        </div>
+                        <Badge variant="outline" className="ml-2">
+                          {operation.status}
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-gray-500" />
+                          <span className="text-gray-600">Duration:</span>
+                          <span className="font-medium">{operation.duration}h</span>
+                        </div>
+                        
+                        {assignedResource && (
+                          <div className="flex items-center gap-2">
+                            {getResourceIcon(assignedResource.type)}
+                            <span className="text-gray-600">Resource:</span>
+                            <span className="font-medium truncate">{assignedResource.name}</span>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-gray-500" />
+                          <span className="text-gray-600">Order:</span>
+                          <span className="font-medium">{operation.orderIndex + 1}</span>
+                        </div>
+                      </div>
+                      
+                      {requiredCapNames.length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-gray-200">
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="text-gray-600">Required Capabilities:</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {requiredCapNames.map((capName, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {capName}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {(operation.scheduledStartDate || operation.scheduledEndDate) && (
+                        <div className="mt-2 pt-2 border-t border-gray-200">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                            {operation.scheduledStartDate && (
+                              <div className="flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-green-600" />
+                                <span className="text-gray-600">Scheduled Start:</span>
+                                <span className="font-medium">{formatDate(operation.scheduledStartDate)}</span>
+                              </div>
+                            )}
+                            {operation.scheduledEndDate && (
+                              <div className="flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-red-600" />
+                                <span className="text-gray-600">Scheduled End:</span>
+                                <span className="font-medium">{formatDate(operation.scheduledEndDate)}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           {/* Metadata */}
           <div className="space-y-2">
@@ -1472,6 +1587,9 @@ function KanbanBoard({
       {/* Job Details Dialog */}
       <JobDetailsDialog
         job={jobForDetails}
+        operations={operations}
+        resources={resources}
+        capabilities={capabilities}
         open={jobDetailsOpen}
         onOpenChange={setJobDetailsOpen}
       />

@@ -121,6 +121,30 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 26, 2025)
 
+✓ **Job Operations Viewing Enhancement (July 26, 2025)**:
+- Successfully implemented comprehensive operations display within job details dialog
+- Enhanced JobDetailsDialog component to show all operations associated with each job
+- Added detailed operation information including duration, assigned resources, required capabilities, and scheduling dates
+- Operations display shows status badges, resource assignments with icons, and order sequence
+- Each operation card includes comprehensive details: description, required capabilities as badges, scheduled start/end times
+- Users can now view complete job workflow including all operations directly from job details
+- Enhanced dialog with proper TypeScript interfaces and parameter passing for operations, resources, and capabilities data
+- Operations section shows count and provides "No operations defined" message when empty
+
+✓ **Shift Management Margin Balance Fix (July 26, 2025)**:
+- Fixed asymmetric margin issue in shift management screen by adding symmetric right margins
+- Added consistent margin logic for both Max AI open/closed states with proper left/right balance
+- Applied `ml-12 mr-12` for mobile and `md:ml-12 md:mr-12` for desktop layouts
+- When Max is open, both margins are removed (`md:ml-0 md:mr-0`), when closed, both are applied
+- Shift management screen now has perfectly balanced spacing on all screen sizes
+
+✓ **Shift Management Mobile Controls Centering Fix (July 26, 2025)**:
+- Fixed mobile tab controls centering issue by replacing rigid grid layout with flexible centered layout
+- Changed from `grid w-max grid-cols-8 gap-1` to `flex w-max gap-1 justify-center` for proper centering
+- Added centering wrapper with `flex justify-center` container around tabs
+- Enhanced tab layout with `flex-shrink-0` to prevent text compression while maintaining horizontal scroll capability
+- Mobile tabs now properly centered and responsive on all device sizes
+
 ✓ **Mobile Menu Card Size Consistency Fix (July 26, 2025)**:
 - Fixed mobile main menu card sizing inconsistencies that were causing different card sizes
 - Simplified grid layout from responsive breakpoints to consistent 3-column grid (grid-cols-3) on all screen sizes
