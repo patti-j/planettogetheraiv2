@@ -64,7 +64,7 @@ export default function ShiftManagement() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12 transition-all duration-200`}>
+      <div className={`${isMaxOpen ? 'md:ml-0 md:mr-0' : 'md:ml-12 md:mr-12'} ml-12 mr-12 transition-all duration-200`}>
         <div className="p-4 md:p-6 space-y-6">
           
           {/* Header */}
