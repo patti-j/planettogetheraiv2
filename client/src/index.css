@@ -58,6 +58,63 @@
   --error: hsl(0, 77%, 55%);
 }
 
+/* Tooltip overflow fixes */
+.tooltip-content {
+  max-height: none !important;
+  white-space: normal !important;
+  word-wrap: break-word;
+  overflow: visible !important;
+  position: fixed !important;
+  pointer-events: none;
+}
+
+/* Ensure Gantt chart rows allow tooltip overflow */
+[data-timeline-content] {
+  overflow: visible !important;
+}
+
+/* Allow tooltip to render above row boundaries */
+.gantt-row {
+  overflow: visible !important;
+  position: relative;
+}
+
+/* Specific Gantt chart timeline container overflow fixes */
+.flex-1.relative.p-2.min-h-\\[60px\\] {
+  overflow: visible !important;
+}
+
+/* Remove overflow constraints from operation containers */
+.flex-1.relative.p-2 {
+  overflow: visible !important;
+}
+
+/* Ensure operation timeline containers allow tooltip overflow */
+div[style*="width"][data-timeline-content] {
+  overflow: visible !important;
+}
+
+/* Fix specific timeline container that's constraining tooltips */
+.flex-1.bg-blue-50.border-r.border-gray-100.overflow-x-hidden {
+  overflow: visible !important;
+}
+
+/* Comprehensive Gantt chart overflow fixes for tooltips */
+[data-testid="gantt-timeline-container"] {
+  overflow: visible !important;
+}
+
+/* Fix all potential timeline row containers */
+[style*="minHeight: '60px'"] {
+  overflow: visible !important;
+}
+
+/* Fix parent containers that might clip tooltips */
+.gantt-chart-container,
+.gantt-timeline-wrapper {
+  overflow: visible !important;
+}
+
 .dark {
   --background: hsl(240, 10%, 3.9%);
   --foreground: hsl(0, 0%, 98%);

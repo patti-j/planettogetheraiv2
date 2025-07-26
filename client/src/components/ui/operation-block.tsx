@@ -416,7 +416,14 @@ export default function OperationBlock({
               </div>
             </div>
           </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-lg z-[2147483647] tooltip-content p-4 min-w-80">
+          <TooltipContent 
+            side="top" 
+            className="max-w-lg z-[2147483647] tooltip-content p-4 min-w-80"
+            sideOffset={15}
+            avoidCollisions={true}
+            collisionPadding={30}
+            sticky="always"
+          >
             {getTooltipContent()}
           </TooltipContent>
         </Tooltip>
@@ -466,7 +473,14 @@ export default function OperationBlock({
             </div>
           </div>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-lg z-[2147483647] tooltip-content p-4 min-w-80">
+        <TooltipContent 
+          side="top" 
+          className="max-w-lg z-[2147483647] tooltip-content p-4 min-w-80"
+          sideOffset={15}
+          avoidCollisions={true}
+          collisionPadding={30}
+          sticky="always"
+        >
           {getTooltipContent()}
         </TooltipContent>
       </Tooltip>
