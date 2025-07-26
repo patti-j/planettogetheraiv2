@@ -121,6 +121,15 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 26, 2025)
 
+✓ **Mobile Menu Card Size Consistency Fix (July 26, 2025)**:
+- Fixed mobile main menu card sizing inconsistencies that were causing different card sizes
+- Simplified grid layout from responsive breakpoints to consistent 3-column grid (grid-cols-3) on all screen sizes
+- Added fixed dimensions (120px height, min-width) to all menu cards for uniform appearance
+- Enhanced text overflow handling with proper line-clamp and overflow:hidden classes
+- Applied consistent sizing to both recent pages cards and main feature cards
+- Removed responsive grid breakpoints that were causing visual inconsistencies on different screen sizes
+- All menu cards now have identical square dimensions and uniform sizing on mobile devices
+
 ✓ **Max AI State Persistence Verification (July 26, 2025)**:
 - User requested remembering Max window visibility between sessions
 - Verified comprehensive Max AI state persistence system is already fully implemented

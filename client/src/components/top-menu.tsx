@@ -147,9 +147,9 @@ export default function TopMenu() {
     setMenuOpen(false);
   };
 
-  // All cards are now uniform square size with fixed height
+  // All cards are now uniform square size with fixed dimensions
   const getCardSize = (priority: string) => {
-    return "col-span-1 row-span-1 aspect-square min-h-[120px] h-[120px]"; // Fixed height square cards
+    return "w-full aspect-square min-h-[120px] h-[120px] min-w-[120px]"; // Fixed dimensions for consistency
   };
 
   const getIconSize = (priority: string) => {
@@ -293,7 +293,7 @@ export default function TopMenu() {
                       Clear
                     </Button>
                   </div>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                  <div className="grid grid-cols-3 gap-4 auto-rows-fr">
                     {recentPages.map((page, index) => {
                       // Map page paths to their original icons and colors
                       const getIconAndColorForPage = (path: string) => {
@@ -315,7 +315,7 @@ export default function TopMenu() {
                           href={page.path}
                           onClick={() => setMenuOpen(false)}
                         >
-                          <div className="col-span-1 row-span-1 aspect-square min-h-[120px] h-[120px] bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md rounded-xl p-3 cursor-pointer transition-all duration-200 hover:scale-[1.02] flex flex-col items-center justify-center text-center space-y-2">
+                          <div className="w-full aspect-square min-h-[120px] h-[120px] min-w-[120px] bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md rounded-xl p-3 cursor-pointer transition-all duration-200 hover:scale-[1.02] flex flex-col items-center justify-center text-center space-y-2">
                             <div className="bg-gray-100 p-2 rounded-full flex items-center justify-center flex-shrink-0">
                               <IconComponent className={`w-5 h-5 ${iconColorClass}`} strokeWidth={1.5} fill="none" />
                             </div>
@@ -343,7 +343,7 @@ export default function TopMenu() {
                   <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
                     {group.title}
                   </h3>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                  <div className="grid grid-cols-3 gap-4 auto-rows-fr">
                     {group.features.map((feature, featureIndex) => (
                       <Link 
                         key={featureIndex} 
