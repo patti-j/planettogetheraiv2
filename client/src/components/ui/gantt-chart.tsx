@@ -827,7 +827,15 @@ export default function GanttChart({
         .filter(op => op.startTime && op.endTime && op.assignedResourceId)
         .sort((a, b) => new Date(a.startTime!).getTime() - new Date(b.startTime!).getTime());
 
+      console.log('Connection lines debug:', {
+        hoveredJobId,
+        totalOperations: getOperationsByJob(hoveredJobId).length,
+        scheduledOperations: jobOperations.length,
+        operations: jobOperations.map(op => ({ id: op.id, name: op.name, hasTime: !!op.startTime && !!op.endTime, hasResource: !!op.assignedResourceId }))
+      });
+
       if (jobOperations.length < 2) {
+        console.log('Not enough scheduled operations for connections:', jobOperations.length);
         setConnectionLines([]);
         return;
       }
