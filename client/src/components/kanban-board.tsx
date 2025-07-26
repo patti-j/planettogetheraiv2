@@ -94,12 +94,22 @@ const JobCard = ({ job, onEdit, onViewDetails, swimLaneField, index }: { job: Jo
     >
       <div className="flex items-start justify-between mb-2">
         <h4 className="font-medium text-gray-900 text-sm flex-1">{job.name}</h4>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-              <MoreHorizontal className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
+        <div className="flex items-center gap-1">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 w-6 p-0 hover:bg-blue-50 hover:text-blue-600" 
+            onClick={() => onViewDetails(job)}
+            title="View Details"
+          >
+            <Eye className="w-4 h-4" />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onViewDetails(job)}>
               <Eye className="w-4 h-4 mr-2" />
@@ -116,6 +126,7 @@ const JobCard = ({ job, onEdit, onViewDetails, swimLaneField, index }: { job: Jo
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
       </div>
       
       <div className="space-y-2">
@@ -201,12 +212,22 @@ const OperationCard = ({ operation, job, jobs, resources, onEdit, onViewDetails,
     >
       <div className="flex items-start justify-between mb-2">
         <h4 className="font-medium text-gray-900 text-sm flex-1">{operation.name}</h4>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-              <MoreHorizontal className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
+        <div className="flex items-center gap-1">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 w-6 p-0 hover:bg-blue-50 hover:text-blue-600" 
+            onClick={() => onViewDetails(operation)}
+            title="View Details"
+          >
+            <Eye className="w-4 h-4" />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onViewDetails(operation)}>
               <Eye className="w-4 h-4 mr-2" />
@@ -223,6 +244,7 @@ const OperationCard = ({ operation, job, jobs, resources, onEdit, onViewDetails,
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
       </div>
       
       <div className="space-y-2">
