@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, User, Wrench, AlertCircle, CheckCircle2, PlayCircle, PauseCircle, GripVertical, Save, RefreshCw, LayoutGrid, List } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Calendar, Clock, User, Wrench, AlertCircle, CheckCircle2, PlayCircle, PauseCircle, GripVertical, Save, RefreshCw, LayoutGrid, List, Columns, Plus, X } from "lucide-react";
 import { format } from "date-fns";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -302,6 +304,8 @@ export default function MobileSchedule({
   const [hasReorder, setHasReorder] = useState(false);
   const [isCompactView, setIsCompactView] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isMultiResourceView, setIsMultiResourceView] = useState(false);
+  const [selectedResources, setSelectedResources] = useState<string[]>([]);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -333,8 +337,8 @@ export default function MobileSchedule({
     let filtered = hasReorder && orderedOperations.length > 0 ? [...orderedOperations] : [...operations];
     console.log(`Filtering operations: hasReorder=${hasReorder}, orderedOperations.length=${orderedOperations.length}, using ${hasReorder && orderedOperations.length > 0 ? 'orderedOperations' : 'operations'}`);
 
-    // Filter by resource
-    if (selectedResource !== "all") {
+    // Filter by resource (only for single resource view)
+    if (!isMultiResourceView && selectedResource !== "all") {
       filtered = filtered.filter(op => op.assignedResourceId === parseInt(selectedResource));
     }
 
@@ -381,7 +385,35 @@ export default function MobileSchedule({
     }
     
     return filtered;
-  }, [hasReorder, orderedOperations, operations, selectedResource, selectedStatus, selectedTab]);
+  }, [hasReorder, orderedOperations, operations, selectedResource, selectedStatus, selectedTab, isMultiResourceView]);
+
+  // Get operations grouped by resource for multi-resource view
+  const operationsByResource = useMemo(() => {
+    if (!isMultiResourceView) return {};
+    
+    const resourceIds = selectedResources.length > 0 ? selectedResources : resources.map(r => r.id.toString());
+    const grouped: Record<string, Operation[]> = {};
+    
+    resourceIds.forEach(resourceId => {
+      const resourceOperations = filteredOperations.filter(op => 
+        op.assignedResourceId === parseInt(resourceId)
+      );
+      
+      // Sort operations by scheduled start time (ascending)
+      resourceOperations.sort((a, b) => {
+        if (a.startTime && !b.startTime) return -1;
+        if (!a.startTime && b.startTime) return 1;
+        if (a.startTime && b.startTime) {
+          return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+        }
+        return 0;
+      });
+      
+      grouped[resourceId] = resourceOperations;
+    });
+    
+    return grouped;
+  }, [isMultiResourceView, selectedResources, resources, filteredOperations]);
 
   // Initialize ordered operations when operations change (but not during reorder)
   useEffect(() => {
@@ -514,6 +546,21 @@ export default function MobileSchedule({
     }
   };
 
+  // Handle adding a resource to the multi-resource view
+  const handleAddResource = (resourceId: string) => {
+    if (!selectedResources.includes(resourceId)) {
+      setSelectedResources(prev => [...prev, resourceId]);
+    }
+  };
+
+  // Handle removing a resource from the multi-resource view
+  const handleRemoveResource = (resourceId: string) => {
+    setSelectedResources(prev => prev.filter(id => id !== resourceId));
+  };
+
+  // Get available resources not already selected
+  const availableResources = resources.filter(r => !selectedResources.includes(r.id.toString()));
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="flex flex-col h-full bg-gray-50">
@@ -522,6 +569,16 @@ export default function MobileSchedule({
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-xl font-semibold text-gray-800">Op Sequencer</h1>
             <div className="flex items-center space-x-2">
+              {/* Multi-Resource View Toggle */}
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="multi-resource-toggle" className="text-sm">Multi-Resource</Label>
+                <Switch
+                  id="multi-resource-toggle"
+                  checked={isMultiResourceView}
+                  onCheckedChange={setIsMultiResourceView}
+                />
+              </div>
+              
               {/* View Toggle */}
               <div className="flex items-center border rounded-lg p-1">
                 <Button
@@ -529,6 +586,7 @@ export default function MobileSchedule({
                   size="sm"
                   onClick={() => setIsCompactView(false)}
                   className="h-7 px-2"
+                  title="Expanded view"
                 >
                   <LayoutGrid className="w-4 h-4" />
                 </Button>
@@ -537,10 +595,12 @@ export default function MobileSchedule({
                   size="sm"
                   onClick={() => setIsCompactView(true)}
                   className="h-7 px-2"
+                  title="Compact view"
                 >
                   <List className="w-4 h-4" />
                 </Button>
               </div>
+              
               {hasReorder && (
                 <Button
                   onClick={handleReschedule}
@@ -561,33 +621,99 @@ export default function MobileSchedule({
         
         {/* Filters */}
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <Select value={selectedResource} onValueChange={setSelectedResource}>
-              <SelectTrigger className="text-sm">
-                <SelectValue placeholder="All Resources" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Resources</SelectItem>
-                {resources.map(resource => (
-                  <SelectItem key={resource.id} value={resource.id.toString()}>
-                    {resource.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {isMultiResourceView ? (
+            /* Multi-Resource Management */
+            <div className="space-y-3">
+              {/* Selected Resources */}
+              {selectedResources.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Selected Resources</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedResources.map(resourceId => {
+                      const resource = resources.find(r => r.id.toString() === resourceId);
+                      return resource ? (
+                        <Badge key={resourceId} variant="secondary" className="text-xs">
+                          {resource.name}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveResource(resourceId)}
+                            className="ml-1 h-4 w-4 p-0 hover:bg-red-100"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </Badge>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              )}
+              
+              {/* Add Resource */}
+              {availableResources.length > 0 && (
+                <div className="flex items-center space-x-2">
+                  <Select onValueChange={handleAddResource}>
+                    <SelectTrigger className="text-sm">
+                      <SelectValue placeholder="Add Resource" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableResources.map(resource => (
+                        <SelectItem key={resource.id} value={resource.id.toString()}>
+                          <div className="flex items-center space-x-2">
+                            <Wrench className="w-4 h-4" />
+                            <span>{resource.name}</span>
+                            <Badge variant="outline" className="text-xs">{resource.type}</Badge>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
+              {/* Status Filter */}
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="text-sm">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            /* Single Resource View Filters */
+            <div className="grid grid-cols-2 gap-3">
+              <Select value={selectedResource} onValueChange={setSelectedResource}>
+                <SelectTrigger className="text-sm">
+                  <SelectValue placeholder="All Resources" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Resources</SelectItem>
+                  {resources.map(resource => (
+                    <SelectItem key={resource.id} value={resource.id.toString()}>
+                      {resource.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger className="text-sm">
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="text-sm">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
       </div>
 
@@ -600,7 +726,83 @@ export default function MobileSchedule({
         </TabsList>
 
         <TabsContent value={selectedTab} className="flex-1 overflow-y-auto min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
-          <div className="space-y-3 p-4 pb-8">
+          {isMultiResourceView ? (
+            /* Multi-Resource Side-by-Side View */
+            <div className="flex h-full min-h-0">
+              {selectedResources.length === 0 ? (
+                <div className="flex-1 p-4">
+                  <Card>
+                    <CardContent className="p-6 text-center">
+                      <Columns className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-500 mb-2">No resources selected</p>
+                      <p className="text-sm text-gray-400">Add resources above to see operations side by side</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                selectedResources.map(resourceId => {
+                  const resource = resources.find(r => r.id.toString() === resourceId);
+                  const resourceOperations = operationsByResource[resourceId] || [];
+                  
+                  return (
+                    <div key={resourceId} className="flex-1 min-w-0 border-r border-gray-200 last:border-r-0">
+                      {/* Resource Header */}
+                      <div className="bg-gray-50 border-b border-gray-200 p-3 sticky top-0 z-10">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2 min-w-0">
+                            <Wrench className="w-4 h-4 text-gray-600 flex-shrink-0" />
+                            <div className="min-w-0">
+                              <h3 className="font-medium text-sm text-gray-900 truncate">
+                                {resource?.name || `Resource ${resourceId}`}
+                              </h3>
+                              {resource && (
+                                <p className="text-xs text-gray-500">{resource.type}</p>
+                              )}
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="text-xs flex-shrink-0">
+                            {resourceOperations.length} ops
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      {/* Resource Operations */}
+                      <div className="p-3 space-y-3 h-full overflow-y-auto">
+                        {resourceOperations.length === 0 ? (
+                          <div className="text-center py-8">
+                            <AlertCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                            <p className="text-sm text-gray-500">No operations</p>
+                          </div>
+                        ) : (
+                          resourceOperations.map((operation, index) => {
+                            const { job, resource, requiredCapabilities } = getOperationDetails(operation);
+                            const statusInfo = getStatusInfo(operation.status);
+
+                            return (
+                              <DraggableOperationCard
+                                key={operation.id}
+                                operation={operation}
+                                index={index}
+                                job={job}
+                                resource={resource}
+                                requiredCapabilities={requiredCapabilities}
+                                statusInfo={statusInfo}
+                                getPriorityColor={getPriorityColor}
+                                onMove={handleMoveOperation}
+                                isCompact={isCompactView}
+                              />
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          ) : (
+            /* Single Resource View */
+            <div className="space-y-3 p-4 pb-8">
               {filteredOperations.length === 0 ? (
                 <Card>
                   <CardContent className="p-6 text-center">
@@ -630,6 +832,7 @@ export default function MobileSchedule({
                 })
               )}
             </div>
+          )}
         </TabsContent>
       </Tabs>
       </div>
