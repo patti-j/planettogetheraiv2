@@ -9,6 +9,7 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { TourProvider, useTour } from "@/contexts/TourContext";
 import { MaxDockProvider } from "@/contexts/MaxDockContext";
+import { NavigationProvider } from "@/contexts/NavigationContext";
 import { SplitPaneLayout } from "@/components/split-pane-layout";
 import { MaxSidebar } from "@/components/max-sidebar";
 import { useAuth } from "@/hooks/useAuth";
@@ -378,14 +379,16 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <DndProvider backend={HTML5Backend}>
           <TooltipProvider>
-            <TourProvider>
-              <MaxDockProvider>
+            <NavigationProvider>
+              <TourProvider>
+                <MaxDockProvider>
                 <Router />
                 <OnboardingWizard />
                 <ResumeTourButton />
                 <Toaster />
-              </MaxDockProvider>
-            </TourProvider>
+                </MaxDockProvider>
+              </TourProvider>
+            </NavigationProvider>
           </TooltipProvider>
         </DndProvider>
       </QueryClientProvider>

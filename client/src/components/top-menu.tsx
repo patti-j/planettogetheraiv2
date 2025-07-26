@@ -2,14 +2,14 @@ import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { 
   Factory, Briefcase, BarChart3, FileText, Bot, Columns3, Menu, Smartphone, 
   DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, 
   Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, 
   Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, 
   Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, 
-  Eye, FileX, Clock, Monitor 
+  Eye, FileX, Clock, Monitor, History, X
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleSwitcher } from "./role-switcher";
@@ -18,6 +18,7 @@ import { UserProfileDialog } from "./user-profile";
 import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { useMaxDock } from "@/contexts/MaxDockContext";
 import { useAITheme } from "@/hooks/use-ai-theme";
+import { useNavigation } from "@/contexts/NavigationContext";
 
 // Define feature groups with hierarchy and visual styling
 const featureGroups = [
@@ -104,6 +105,7 @@ export default function TopMenu() {
   const { hasPermission } = usePermissions();
   const { isMaxOpen, setMaxOpen } = useMaxDock();
   const { aiTheme } = useAITheme();
+  const { recentPages, clearRecentPages } = useNavigation();
 
   // Derive current role from user data if not provided
   const currentRole = user?.currentRole || (user?.activeRoleId && user?.roles ? 
@@ -160,9 +162,9 @@ export default function TopMenu() {
 
   return (
     <>
-      {/* Hamburger Menu Button - Only visible when menu is closed */}
+      {/* Hamburger Menu Button and Recent Pages - Only visible when menu is closed */}
       {!menuOpen && (
-        <div className="fixed top-2 left-2 z-50">
+        <div className="fixed top-2 left-2 z-50 flex space-x-2">
           <Button 
             variant="outline" 
             size="sm"
@@ -171,6 +173,66 @@ export default function TopMenu() {
           >
             <Menu className="w-5 h-5" />
           </Button>
+          
+          {/* Recent Pages Dropdown */}
+          {recentPages.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="p-2 bg-white shadow-md border border-gray-300 hover:bg-gray-50"
+                  title="Recent Pages"
+                >
+                  <History className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-64">
+                <div className="px-2 py-1.5 text-sm font-medium text-gray-900 border-b">
+                  Recently Visited
+                </div>
+                {recentPages.map((page, index) => {
+                  // Dynamically get the icon component
+                  const IconComponent = {
+                    BarChart3, Factory, Briefcase, FileText, Bot, Columns3, 
+                    Smartphone, DollarSign, Headphones, Settings, Wrench, 
+                    MessageSquare, MessageCircle, Truck, Target, Database, 
+                    Building, Server, TrendingUp, Shield, GraduationCap, 
+                    UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, 
+                    Brain, User, Code, Layers, Presentation, Sparkles, 
+                    Grid3X3, Eye, FileX, Clock, Monitor
+                  }[page.icon as keyof typeof import('lucide-react')] || FileText;
+                  
+                  return (
+                    <DropdownMenuItem key={`${page.path}-${index}`} asChild>
+                      <Link 
+                        href={page.path}
+                        className="flex items-center space-x-3 px-2 py-2 hover:bg-gray-50 cursor-pointer"
+                      >
+                        <IconComponent className="w-4 h-4 text-gray-500" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-gray-900 truncate">
+                            {page.label}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {new Date(page.timestamp).toLocaleTimeString([], { 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </div>
+                        </div>
+                      </Link>
+                    </DropdownMenuItem>
+                  );
+                })}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={clearRecentPages}>
+                  <X className="w-4 h-4 mr-2" />
+                  Clear Recent Pages
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       )}
 
