@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -9,7 +9,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, BarChart3, Wrench, Calendar, User, Smartphone, Monitor, ChevronDown, Play, Pause, PlayCircle, PauseCircle, Settings, GitCompare } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Factory, Maximize2, Minimize2, Bot, Send, Sparkles, BarChart3, Wrench, Calendar, User, Smartphone, Monitor, ChevronDown, Play, Pause, PlayCircle, PauseCircle, Settings, GitCompare, Zap, CheckCircle, AlertCircle } from "lucide-react";
 
 import GanttChart from "@/components/ui/gantt-chart";
 import MobileSchedule from "@/components/mobile-schedule";
@@ -24,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { useMaxDock } from "@/contexts/MaxDockContext";
+import { usePermissions } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import type { Job, Operation, Resource, Capability } from "@shared/schema";
 
@@ -55,6 +57,50 @@ interface DashboardConfig {
   updatedAt: string;
 }
 
+interface OptimizationAlgorithm {
+  id: number;
+  name: string;
+  displayName: string;
+  description: string;
+  category: string;
+  type: string;
+  version: string;
+  status: string;
+  configuration: {
+    parameters: Record<string, {
+      type: string;
+      default: any;
+      min?: number;
+      max?: number;
+      options?: string[];
+      description: string;
+      required: boolean;
+    }>;
+    objectives: Array<{
+      name: string;
+      type: string;
+      weight: number;
+      description: string;
+    }>;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface OptimizationExecution {
+  algorithmId: number;
+  parameters: Record<string, any>;
+  scope: {
+    plantIds?: number[];
+    jobIds?: number[];
+    resourceIds?: number[];
+    dateRange?: {
+      start: string;
+      end: string;
+    };
+  };
+}
+
 export default function Dashboard() {
   const [currentView, setCurrentView] = useState<"operations" | "resources" | "customers">("resources");
   const [jobDialogOpen, setJobDialogOpen] = useState(false);
@@ -73,9 +119,14 @@ export default function Dashboard() {
   const [customWidgets, setCustomWidgets] = useState<AnalyticsWidget[]>([]);
   const showCustomWidgets = true;
   const [showEvaluationSystem, setShowEvaluationSystem] = useState(false);
+  const [showOptimizationDialog, setShowOptimizationDialog] = useState(false);
+  const [selectedAlgorithm, setSelectedAlgorithm] = useState<OptimizationAlgorithm | null>(null);
+  const [optimizationParameters, setOptimizationParameters] = useState<Record<string, any>>({});
+  const [optimizationScope, setOptimizationScope] = useState<OptimizationExecution['scope']>({});
   const { toast } = useToast();
   const { getThemeClasses } = useAITheme();
   const { isMaxOpen } = useMaxDock();
+  const { hasPermission } = usePermissions();
   const queryClient = useQueryClient();
 
   const { data: jobs = [] } = useQuery<Job[]>({
@@ -102,6 +153,17 @@ export default function Dashboard() {
   // Load dashboard configurations
   const { data: dashboards = [] } = useQuery<DashboardConfig[]>({
     queryKey: ["/api/dashboard-configs"],
+  });
+
+  // Load approved optimization algorithms for production scheduling
+  const { data: optimizationAlgorithms = [] } = useQuery<OptimizationAlgorithm[]>({
+    queryKey: ["/api/optimization/algorithms"],
+    queryFn: async () => {
+      const response = await fetch("/api/optimization/algorithms?status=approved&category=production_scheduling");
+      if (!response.ok) throw new Error("Failed to fetch algorithms");
+      return response.json();
+    },
+    enabled: hasPermission('optimization-studio', 'view'),
   });
 
   // Dashboard toggle visibility function
@@ -304,13 +366,71 @@ export default function Dashboard() {
     }
   };
 
+  // Optimization execution mutation
+  const optimizationMutation = useMutation({
+    mutationFn: async (execution: OptimizationExecution) => {
+      return apiRequest("POST", "/api/optimization/execute", execution);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Optimization Complete",
+        description: "The optimization algorithm has been executed successfully. Schedule has been updated.",
+      });
+      setShowOptimizationDialog(false);
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Optimization Failed",
+        description: error.message || "Failed to execute optimization algorithm",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleOptimizationSubmit = () => {
+    if (!selectedAlgorithm) return;
+
+    const execution: OptimizationExecution = {
+      algorithmId: selectedAlgorithm.id,
+      parameters: optimizationParameters,
+      scope: optimizationScope,
+    };
+
+    optimizationMutation.mutate(execution);
+  };
+
+  const handleAlgorithmSelect = (algorithmId: string) => {
+    const algorithm = optimizationAlgorithms.find(a => a.id === parseInt(algorithmId));
+    setSelectedAlgorithm(algorithm || null);
+    
+    // Initialize parameters with defaults
+    if (algorithm?.configuration.parameters) {
+      const defaultParams: Record<string, any> = {};
+      Object.entries(algorithm.configuration.parameters).forEach(([key, param]) => {
+        defaultParams[key] = param.default;
+      });
+      setOptimizationParameters(defaultParams);
+    }
+  };
+
+  const updateParameter = (paramName: string, value: any) => {
+    setOptimizationParameters(prev => ({
+      ...prev,
+      [paramName]: value
+    }));
+  };
+
   // Generate widget data for analytics
   const generateWidgetData = () => ({
     jobs,
     operations,
     resources,
     metrics,
-    overdueJobs: jobs.filter(job => new Date(job.dueDate) < new Date() && job.status !== 'completed'),
+    overdueJobs: jobs.filter(job => job.dueDate && new Date(job.dueDate) < new Date() && job.status !== 'completed'),
     resourceUtilization: operations.length > 0 ? (operations.filter(op => op.assignedResourceId).length / operations.length * 100) : 0,
     jobsByStatus: jobs.reduce((acc, job) => {
       acc[job.status] = (acc[job.status] || 0) + 1;
@@ -452,6 +572,25 @@ export default function Dashboard() {
                         <p>Compare and evaluate production schedules</p>
                       </TooltipContent>
                     </Tooltip>
+
+                    {/* Optimization Algorithm Execution Button */}
+                    {hasPermission('optimization-studio', 'view') && optimizationAlgorithms.length > 0 && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            onClick={() => setShowOptimizationDialog(true)}
+                            className="bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 text-white border-0"
+                          >
+                            <Zap className="w-4 h-4 mr-1" />
+                            {isMobile ? "Optimize" : "Run Optimization"}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Execute approved optimization algorithms on production schedule</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
                     
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -525,7 +664,7 @@ export default function Dashboard() {
                           operations,
                           resources,
                           metrics,
-                          overdueJobs: jobs.filter(job => new Date(job.dueDate) < new Date() && job.status !== 'completed'),
+                          overdueJobs: jobs.filter(job => job.dueDate && new Date(job.dueDate) < new Date() && job.status !== 'completed'),
                           resourceUtilization: operations.filter(op => op.assignedResourceId).length / operations.length * 100,
                           jobsByStatus: jobs.reduce((acc, job) => {
                             acc[job.status] = (acc[job.status] || 0) + 1;
@@ -1105,6 +1244,187 @@ export default function Dashboard() {
             customWidgets={customWidgets}
           />
         )}
+
+        {/* Optimization Algorithm Execution Dialog */}
+        <Dialog open={showOptimizationDialog} onOpenChange={setShowOptimizationDialog}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Zap className="w-5 h-5 text-purple-600" />
+                Execute Optimization Algorithm
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-6">
+              {/* Algorithm Selection */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Select Algorithm</Label>
+                <Select onValueChange={handleAlgorithmSelect}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose an approved optimization algorithm..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {optimizationAlgorithms.map((algorithm) => (
+                      <SelectItem key={algorithm.id} value={algorithm.id.toString()}>
+                        <div className="flex items-center justify-between w-full">
+                          <div>
+                            <div className="font-medium">{algorithm.displayName || algorithm.name}</div>
+                            <div className="text-xs text-gray-500">{algorithm.description}</div>
+                          </div>
+                          <Badge variant={algorithm.status === 'approved' ? 'default' : 'secondary'} className="ml-2">
+                            {algorithm.status}
+                          </Badge>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Algorithm Details */}
+              {selectedAlgorithm && (
+                <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-medium text-gray-900">{selectedAlgorithm.displayName || selectedAlgorithm.name}</h4>
+                      <p className="text-sm text-gray-600 mt-1">{selectedAlgorithm.description}</p>
+                      <div className="flex items-center gap-4 mt-2">
+                        <Badge variant="outline">{selectedAlgorithm.category}</Badge>
+                        <Badge variant="outline">v{selectedAlgorithm.version}</Badge>
+                        <div className="flex items-center gap-1">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          <span className="text-sm text-green-600">Approved</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Objectives */}
+                  {selectedAlgorithm.configuration.objectives?.length > 0 && (
+                    <div>
+                      <h5 className="font-medium text-sm text-gray-700 mb-2">Optimization Objectives</h5>
+                      <div className="grid gap-2">
+                        {selectedAlgorithm.configuration.objectives.map((objective, index) => (
+                          <div key={index} className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">{objective.description}</span>
+                            <Badge variant="secondary">Weight: {objective.weight}%</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Parameters */}
+                  {Object.keys(selectedAlgorithm.configuration.parameters || {}).length > 0 && (
+                    <div>
+                      <h5 className="font-medium text-sm text-gray-700 mb-3">Algorithm Parameters</h5>
+                      <div className="grid gap-4">
+                        {Object.entries(selectedAlgorithm.configuration.parameters).map(([paramName, param]) => (
+                          <div key={paramName} className="space-y-2">
+                            <Label className="text-sm font-medium flex items-center gap-1">
+                              {paramName.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                              {param.required && <span className="text-red-500">*</span>}
+                            </Label>
+                            <div className="text-xs text-gray-500 mb-1">{param.description}</div>
+                            
+                            {param.type === 'select' && param.options ? (
+                              <Select
+                                value={optimizationParameters[paramName]?.toString() || param.default?.toString()}
+                                onValueChange={(value) => updateParameter(paramName, value)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {param.options.map((option) => (
+                                    <SelectItem key={option} value={option}>{option}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : param.type === 'number' ? (
+                              <Input
+                                type="number"
+                                value={optimizationParameters[paramName] || param.default || ''}
+                                onChange={(e) => updateParameter(paramName, parseFloat(e.target.value) || param.default)}
+                                min={param.min}
+                                max={param.max}
+                                step="0.01"
+                              />
+                            ) : param.type === 'boolean' ? (
+                              <div className="flex items-center space-x-2">
+                                <Checkbox
+                                  checked={optimizationParameters[paramName] ?? param.default ?? false}
+                                  onCheckedChange={(checked) => updateParameter(paramName, checked)}
+                                />
+                                <Label className="text-sm">Enable {paramName.toLowerCase()}</Label>
+                              </div>
+                            ) : (
+                              <Input
+                                value={optimizationParameters[paramName] || param.default || ''}
+                                onChange={(e) => updateParameter(paramName, e.target.value)}
+                                placeholder={`Enter ${paramName.toLowerCase()}...`}
+                              />
+                            )}
+                            
+                            {param.min !== undefined && param.max !== undefined && (
+                              <div className="text-xs text-gray-400">
+                                Range: {param.min} - {param.max}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Execution Scope */}
+                  <div>
+                    <h5 className="font-medium text-sm text-gray-700 mb-3">Execution Scope</h5>
+                    <div className="grid gap-3">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <AlertCircle className="w-4 h-4" />
+                        <span>This optimization will be applied to all active jobs and operations in the current production schedule.</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium">Jobs to optimize:</span>
+                          <div className="text-gray-600">{jobs?.filter(j => j.status === 'active').length || 0} active jobs</div>
+                        </div>
+                        <div>
+                          <span className="font-medium">Operations to optimize:</span>
+                          <div className="text-gray-600">{operations?.filter(op => op.status !== 'completed').length || 0} pending operations</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowOptimizationDialog(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleOptimizationSubmit}
+                disabled={!selectedAlgorithm || optimizationMutation.isPending}
+                className="bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 text-white border-0"
+              >
+                {optimizationMutation.isPending ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Executing...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4 mr-2" />
+                    Execute Optimization
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </TooltipProvider>
   );
