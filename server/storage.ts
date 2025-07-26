@@ -125,6 +125,15 @@ export interface IStorage {
   createOperation(operation: InsertOperation): Promise<Operation>;
   updateOperation(id: number, operation: Partial<InsertOperation>): Promise<Operation | undefined>;
   deleteOperation(id: number): Promise<boolean>;
+  // Optimization flags
+  updateOperationOptimizationFlags(id: number, flags: {
+    isBottleneck?: boolean;
+    isEarly?: boolean;
+    isLate?: boolean;
+    timeVarianceHours?: number;
+    criticality?: string;
+    optimizationNotes?: string;
+  }): Promise<Operation | undefined>;
   
   // Dependencies
   getDependencies(): Promise<Dependency[]>;
@@ -1626,6 +1635,22 @@ export class DatabaseStorage implements IStorage {
     const [updatedOperation] = await db
       .update(operations)
       .set(operation)
+      .where(eq(operations.id, id))
+      .returning();
+    return updatedOperation || undefined;
+  }
+
+  async updateOperationOptimizationFlags(id: number, flags: {
+    isBottleneck?: boolean;
+    isEarly?: boolean;
+    isLate?: boolean;
+    timeVarianceHours?: number;
+    criticality?: string;
+    optimizationNotes?: string;
+  }): Promise<Operation | undefined> {
+    const [updatedOperation] = await db
+      .update(operations)
+      .set(flags)
       .where(eq(operations.id, id))
       .returning();
     return updatedOperation || undefined;

@@ -60,6 +60,13 @@ export const operations = pgTable("operations", {
   scheduledStartDate: timestamp("scheduled_start_date"),
   scheduledEndDate: timestamp("scheduled_end_date"),
   order: integer("order").notNull().default(0),
+  // Optimization algorithm flags
+  isBottleneck: boolean("is_bottleneck").default(false),
+  isEarly: boolean("is_early").default(false),
+  isLate: boolean("is_late").default(false),
+  timeVarianceHours: integer("time_variance_hours").default(0), // Positive = early, negative = late
+  criticality: text("criticality").default("normal"), // "low", "normal", "high", "critical"
+  optimizationNotes: text("optimization_notes"), // Notes from optimization algorithms
 });
 
 export const dependencies = pgTable("dependencies", {

@@ -875,6 +875,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Optimization flags for operations
+  app.patch("/api/operations/:id/optimization-flags", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const flags = req.body;
+      
+      // Validate the optimization flags
+      const validFlags = {
+        isBottleneck: typeof flags.isBottleneck === 'boolean' ? flags.isBottleneck : undefined,
+        isEarly: typeof flags.isEarly === 'boolean' ? flags.isEarly : undefined,
+        isLate: typeof flags.isLate === 'boolean' ? flags.isLate : undefined,
+        timeVarianceHours: typeof flags.timeVarianceHours === 'number' ? flags.timeVarianceHours : undefined,
+        criticality: typeof flags.criticality === 'string' ? flags.criticality : undefined,
+        optimizationNotes: typeof flags.optimizationNotes === 'string' ? flags.optimizationNotes : undefined,
+      };
+
+      // Remove undefined values
+      Object.keys(validFlags).forEach(key => 
+        validFlags[key as keyof typeof validFlags] === undefined && delete validFlags[key as keyof typeof validFlags]
+      );
+
+      const updatedOperation = await storage.updateOperationOptimizationFlags(id, validFlags);
+      if (!updatedOperation) {
+        return res.status(404).json({ message: "Operation not found" });
+      }
+      res.json(updatedOperation);
+    } catch (error: any) {
+      console.error('Optimization flags update error:', error);
+      res.status(400).json({ message: "Invalid optimization flags data", error: error.message });
+    }
+  });
+
   // Dependencies
   app.get("/api/dependencies", async (req, res) => {
     try {

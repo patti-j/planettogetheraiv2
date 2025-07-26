@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Calendar, Clock, User, Wrench, AlertCircle, CheckCircle2, PlayCircle, PauseCircle, GripVertical, Save, RefreshCw, LayoutGrid, List, Columns, Plus, X } from "lucide-react";
+import { Calendar, Clock, User, Wrench, AlertCircle, CheckCircle2, PlayCircle, PauseCircle, GripVertical, Save, RefreshCw, LayoutGrid, List, Columns, Plus, X, TrendingUp, TrendingDown, Zap, Flag, Timer } from "lucide-react";
 import { format } from "date-fns";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -34,6 +34,64 @@ interface DraggableOperationCardProps {
   onMove: (dragIndex: number, hoverIndex: number) => void;
   isCompact?: boolean;
 }
+
+// Component for optimization indicators
+const OptimizationIndicators = ({ operation }: { operation: Operation }) => {
+  const indicators = [];
+
+  // Bottleneck indicator
+  if (operation.isBottleneck) {
+    indicators.push(
+      <Badge key="bottleneck" variant="destructive" className="flex items-center gap-1 text-xs">
+        <Zap className="w-3 h-3" />
+        Bottleneck
+      </Badge>
+    );
+  }
+
+  // Early/Late timing indicators
+  if (operation.isEarly) {
+    indicators.push(
+      <Badge key="early" variant="secondary" className="flex items-center gap-1 text-xs bg-green-100 text-green-800 border-green-200">
+        <TrendingUp className="w-3 h-3" />
+        Early {operation.timeVarianceHours && operation.timeVarianceHours > 0 ? `(+${operation.timeVarianceHours}h)` : ''}
+      </Badge>
+    );
+  }
+
+  if (operation.isLate) {
+    indicators.push(
+      <Badge key="late" variant="destructive" className="flex items-center gap-1 text-xs">
+        <TrendingDown className="w-3 h-3" />
+        Late {operation.timeVarianceHours && operation.timeVarianceHours < 0 ? `(${operation.timeVarianceHours}h)` : ''}
+      </Badge>
+    );
+  }
+
+  // Criticality indicator
+  if (operation.criticality && operation.criticality !== 'normal') {
+    const criticalityColors = {
+      low: "bg-blue-100 text-blue-800 border-blue-200",
+      high: "bg-orange-100 text-orange-800 border-orange-200", 
+      critical: "bg-red-100 text-red-800 border-red-200"
+    };
+
+    indicators.push(
+      <Badge key="criticality" variant="secondary" className={`flex items-center gap-1 text-xs ${criticalityColors[operation.criticality as keyof typeof criticalityColors]}`}>
+        <Flag className="w-3 h-3" />
+        {operation.criticality.charAt(0).toUpperCase() + operation.criticality.slice(1)}
+      </Badge>
+    );
+  }
+
+  if (indicators.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1 mb-2">
+      {indicators}
+    </div>
+  );
+};
 
 const DraggableOperationCard = ({ 
   operation, 
@@ -96,6 +154,9 @@ const DraggableOperationCard = ({
       >
         <Card className="border-l-4 cursor-move hover:bg-gray-50 transition-colors" style={{ borderLeftColor: statusInfo.color.replace('bg-', '#') }}>
           <CardContent className="p-3">
+            {/* Optimization Indicators for compact view */}
+            <OptimizationIndicators operation={operation} />
+            
             <div className="flex items-center justify-between min-w-0 overflow-hidden">
               <div className="flex items-center space-x-2 flex-1 min-w-0 overflow-hidden">
                 <div className="cursor-grab active:cursor-grabbing p-1 -m-1 hover:bg-gray-100 rounded flex-shrink-0">
@@ -175,6 +236,9 @@ const DraggableOperationCard = ({
 
         <CardContent className="pt-0">
           <div className="space-y-3">
+            {/* Optimization Indicators */}
+            <OptimizationIndicators operation={operation} />
+
             {/* Description */}
             {operation.description && (
               <p className="text-sm text-gray-600">
