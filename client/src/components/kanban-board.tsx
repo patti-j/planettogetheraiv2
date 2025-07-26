@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { MoreHorizontal, Plus, Settings, Calendar, User, Building2, Wrench, ChevronDown, Maximize2, Minimize2, Briefcase, Users, Sparkles } from "lucide-react";
+import { MoreHorizontal, Plus, Settings, Calendar, User, Building2, Wrench, ChevronDown, Maximize2, Minimize2, Briefcase, Users, Sparkles, Eye, Clock, MapPin, AlertCircle } from "lucide-react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -48,7 +48,7 @@ interface DragItem {
   index: number;
 }
 
-const JobCard = ({ job, onEdit, swimLaneField, index }: { job: Job; onEdit: (job: Job) => void; swimLaneField: string; index: number }) => {
+const JobCard = ({ job, onEdit, onViewDetails, swimLaneField, index }: { job: Job; onEdit: (job: Job) => void; onViewDetails: (job: Job) => void; swimLaneField: string; index: number }) => {
   const getSourceColumnId = () => {
     switch (swimLaneField) {
       case "status":
@@ -101,6 +101,10 @@ const JobCard = ({ job, onEdit, swimLaneField, index }: { job: Job; onEdit: (job
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onViewDetails(job)}>
+              <Eye className="w-4 h-4 mr-2" />
+              View Details
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEdit(job)}>
               Edit Job
             </DropdownMenuItem>
@@ -137,12 +141,13 @@ const JobCard = ({ job, onEdit, swimLaneField, index }: { job: Job; onEdit: (job
   );
 };
 
-const OperationCard = ({ operation, job, jobs, resources, onEdit, swimLaneField, index }: { 
+const OperationCard = ({ operation, job, jobs, resources, onEdit, onViewDetails, swimLaneField, index }: { 
   operation: Operation; 
   job?: Job; 
   jobs: Job[];
   resources: Resource[];
   onEdit: (operation: Operation) => void;
+  onViewDetails: (operation: Operation) => void;
   swimLaneField: string;
   index: number;
 }) => {
@@ -203,6 +208,10 @@ const OperationCard = ({ operation, job, jobs, resources, onEdit, swimLaneField,
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onViewDetails(operation)}>
+              <Eye className="w-4 h-4 mr-2" />
+              View Details
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEdit(operation)}>
               Edit Operation
             </DropdownMenuItem>
@@ -247,6 +256,268 @@ const OperationCard = ({ operation, job, jobs, resources, onEdit, swimLaneField,
         )}
       </div>
     </div>
+  );
+};
+
+// Job Details Dialog Component
+const JobDetailsDialog = ({ job, open, onOpenChange }: { job: Job | null; open: boolean; onOpenChange: (open: boolean) => void }) => {
+  if (!job) return null;
+
+  const formatDate = (date: Date | null) => {
+    return date ? new Date(date).toLocaleString() : "Not set";
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Briefcase className="w-5 h-5" />
+            Job Details: {job.name}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          {/* Basic Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <h3 className="font-semibold text-gray-900">Basic Information</h3>
+              <div className="bg-gray-50 p-3 rounded-lg space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Job ID:</span>
+                  <span className="font-medium">#{job.id}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Customer:</span>
+                  <span className="font-medium">{job.customer}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Priority:</span>
+                  <Badge className={`${job.priority === 'high' ? 'bg-red-500' : job.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'} text-white`}>
+                    {job.priority}
+                  </Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Status:</span>
+                  <Badge variant="outline">{job.status}</Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Quantity:</span>
+                  <span className="font-medium">{job.quantity} units</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="font-semibold text-gray-900">Timeline</h3>
+              <div className="bg-gray-50 p-3 rounded-lg space-y-2">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-gray-500" />
+                  <span className="text-gray-600">Due Date:</span>
+                </div>
+                <span className="font-medium">{formatDate(job.dueDate)}</span>
+                
+                <div className="flex items-center gap-2 mt-2">
+                  <Clock className="w-4 h-4 text-gray-500" />
+                  <span className="text-gray-600">Scheduled Start:</span>
+                </div>
+                <span className="font-medium">{formatDate(job.scheduledStartDate)}</span>
+                
+                <div className="flex items-center gap-2 mt-2">
+                  <Clock className="w-4 h-4 text-gray-500" />
+                  <span className="text-gray-600">Scheduled End:</span>
+                </div>
+                <span className="font-medium">{formatDate(job.scheduledEndDate)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Description */}
+          {job.description && (
+            <div className="space-y-2">
+              <h3 className="font-semibold text-gray-900">Description</h3>
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="text-gray-700">{job.description}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Metadata */}
+          <div className="space-y-2">
+            <h3 className="font-semibold text-gray-900">Metadata</h3>
+            <div className="bg-gray-50 p-3 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Plant ID:</span>
+                <span className="font-medium">{job.plantId}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Created:</span>
+                <span className="font-medium">{formatDate(job.createdAt)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Operation Details Dialog Component
+const OperationDetailsDialog = ({ operation, job, resources, capabilities, open, onOpenChange }: { 
+  operation: Operation | null; 
+  job: Job | null;
+  resources: Resource[];
+  capabilities: Capability[];
+  open: boolean; 
+  onOpenChange: (open: boolean) => void 
+}) => {
+  if (!operation) return null;
+
+  const assignedResource = resources.find(r => r.id === operation.assignedResourceId);
+  const requiredCapNames = operation.requiredCapabilities?.map(capId => 
+    capabilities.find(c => c.id === capId)?.name || `Capability ${capId}`
+  ) || [];
+
+  const formatDate = (date: Date | null) => {
+    return date ? new Date(date).toLocaleString() : "Not set";
+  };
+
+  const getResourceIcon = (resourceType: string) => {
+    switch (resourceType) {
+      case "Machine": return <Wrench className="w-4 h-4" />;
+      case "Operator": return <User className="w-4 h-4" />;
+      case "Facility": return <Building2 className="w-4 h-4" />;
+      default: return <User className="w-4 h-4" />;
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Settings className="w-5 h-5" />
+            Operation Details: {operation.name}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          {/* Basic Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <h3 className="font-semibold text-gray-900">Basic Information</h3>
+              <div className="bg-gray-50 p-3 rounded-lg space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Operation ID:</span>
+                  <span className="font-medium">#{operation.id}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Parent Job:</span>
+                  <span className="font-medium">{job?.name || `Job #${operation.jobId}`}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Status:</span>
+                  <Badge variant="outline">{operation.status}</Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Duration:</span>
+                  <span className="font-medium">{operation.duration} hours</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Order:</span>
+                  <span className="font-medium">#{operation.order}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="font-semibold text-gray-900">Resource Assignment</h3>
+              <div className="bg-gray-50 p-3 rounded-lg">
+                {assignedResource ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      {getResourceIcon(assignedResource.type)}
+                      <span className="font-medium">{assignedResource.name}</span>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      Type: {assignedResource.type}
+                    </div>
+                    {assignedResource.description && (
+                      <div className="text-sm text-gray-600">
+                        {assignedResource.description}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>No resource assigned</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Required Capabilities */}
+          {requiredCapNames.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="font-semibold text-gray-900">Required Capabilities</h3>
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="flex flex-wrap gap-2">
+                  {requiredCapNames.map((capName, index) => (
+                    <Badge key={index} variant="secondary">
+                      {capName}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Timeline */}
+          <div className="space-y-2">
+            <h3 className="font-semibold text-gray-900">Timeline</h3>
+            <div className="bg-gray-50 p-3 rounded-lg space-y-3">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Clock className="w-4 h-4 text-gray-500" />
+                  <span className="text-gray-600">Scheduled Start:</span>
+                </div>
+                <span className="font-medium">{formatDate(operation.scheduledStartDate)}</span>
+              </div>
+              
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Clock className="w-4 h-4 text-gray-500" />
+                  <span className="text-gray-600">Scheduled End:</span>
+                </div>
+                <span className="font-medium">{formatDate(operation.scheduledEndDate)}</span>
+              </div>
+
+              {operation.startTime && (
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Calendar className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-600">Actual Start:</span>
+                  </div>
+                  <span className="font-medium">{formatDate(operation.startTime)}</span>
+                </div>
+              )}
+
+              {operation.endTime && (
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Calendar className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-600">Actual End:</span>
+                  </div>
+                  <span className="font-medium">{formatDate(operation.endTime)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -405,6 +676,12 @@ function KanbanBoard({
   const [selectedOperation, setSelectedOperation] = useState<Operation | undefined>();
   const [configManagerOpen, setConfigManagerOpen] = useState(false);
   const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
+  
+  // Details dialog state
+  const [jobDetailsOpen, setJobDetailsOpen] = useState(false);
+  const [operationDetailsOpen, setOperationDetailsOpen] = useState(false);
+  const [jobForDetails, setJobForDetails] = useState<Job | null>(null);
+  const [operationForDetails, setOperationForDetails] = useState<Operation | null>(null);
 
   // Use parent configs if available, otherwise fetch
   const { data: fetchedKanbanConfigs = [], isLoading: configsLoading } = useQuery<KanbanConfig[]>({
@@ -761,6 +1038,16 @@ function KanbanBoard({
     setOperationDialogOpen(true);
   };
 
+  const handleViewJobDetails = (job: Job) => {
+    setJobForDetails(job);
+    setJobDetailsOpen(true);
+  };
+
+  const handleViewOperationDetails = (operation: Operation) => {
+    setOperationForDetails(operation);
+    setOperationDetailsOpen(true);
+  };
+
   const handleAddJob = () => {
     setSelectedJob(undefined);
     setJobDialogOpen(true);
@@ -1072,6 +1359,7 @@ function KanbanBoard({
                                 key={item.id}
                                 job={item as Job}
                                 onEdit={handleEditJob}
+                                onViewDetails={handleViewJobDetails}
                                 swimLaneField={swimLaneField}
                                 index={index}
                               />
@@ -1085,6 +1373,7 @@ function KanbanBoard({
                                 jobs={jobs}
                                 resources={resources}
                                 onEdit={handleEditOperation}
+                                onViewDetails={handleViewOperationDetails}
                                 swimLaneField={swimLaneField}
                                 index={index}
                               />
@@ -1112,6 +1401,7 @@ function KanbanBoard({
                             key={item.id}
                             job={item as Job}
                             onEdit={handleEditJob}
+                            onViewDetails={handleViewJobDetails}
                             swimLaneField={swimLaneField}
                             index={index}
                           />
@@ -1125,6 +1415,7 @@ function KanbanBoard({
                             jobs={jobs}
                             resources={resources}
                             onEdit={handleEditOperation}
+                            onViewDetails={handleViewOperationDetails}
                             swimLaneField={swimLaneField}
                             index={index}
                           />
@@ -1175,6 +1466,23 @@ function KanbanBoard({
         jobs={jobs}
         resources={resources}
         capabilities={capabilities}
+      />
+
+      {/* Job Details Dialog */}
+      <JobDetailsDialog
+        job={jobForDetails}
+        open={jobDetailsOpen}
+        onOpenChange={setJobDetailsOpen}
+      />
+
+      {/* Operation Details Dialog */}
+      <OperationDetailsDialog
+        operation={operationForDetails}
+        job={operationForDetails ? jobs.find(j => j.id === operationForDetails.jobId) : null}
+        resources={resources}
+        capabilities={capabilities}
+        open={operationDetailsOpen}
+        onOpenChange={setOperationDetailsOpen}
       />
     </DndProvider>
   );
