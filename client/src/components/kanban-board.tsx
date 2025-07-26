@@ -1618,3 +1618,4 @@ function KanbanBoard({
 }
 
 export default KanbanBoard;
+export { JobDetailsDialog };

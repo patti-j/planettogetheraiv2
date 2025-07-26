@@ -13,6 +13,7 @@ import ResourceForm from "../resource-form";
 import ResourceViewManager from "../resource-view-manager";
 import TextLabelConfigDialog from "../text-label-config-dialog";
 import CustomTextLabelManager from "../custom-text-label-manager";
+import { JobDetailsDialog } from "../kanban-board";
 import { useOperationDrop } from "@/hooks/use-drag-drop-fixed";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -52,6 +53,8 @@ export default function GanttChart({
   const [operationDialogOpen, setOperationDialogOpen] = useState(false);
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [resourceDialogOpen, setResourceDialogOpen] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [jobDialogOpen, setJobDialogOpen] = useState(false);
   // Load zoom level from localStorage or default to "day"
   const [timeUnit, setTimeUnit] = useState<TimeUnit>(() => {
     const savedZoomLevel = localStorage.getItem('gantt-zoom-level');
@@ -1388,14 +1391,28 @@ export default function GanttChart({
           {/* Customer Jobs (when expanded) */}
           {isExpanded && customerJobs.map(job => (
             <div key={job.id} className="flex border-b border-gray-200" style={{ height: `${rowHeight}px` }}>
-              <div className="w-80 px-4 py-2 border-r border-gray-200 flex items-center">
-                <div className="ml-6 flex items-center space-x-2">
+              <div className="w-80 px-4 py-2 border-r border-gray-200 flex items-center relative">
+                <div className="ml-6 flex items-center space-x-2 flex-1 pr-8">
                   <Calendar className="w-4 h-4 text-green-600" />
                   <span className="font-medium text-gray-800">{job.name}</span>
                   <Badge variant="outline" className="text-xs">
                     {job.priority}
                   </Badge>
                 </div>
+                {/* Job Details Eyeball Icon */}
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="absolute bottom-2 right-2 h-6 w-6 p-0 hover:bg-blue-50 hover:text-blue-600 z-10" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedJob(job);
+                    setJobDialogOpen(true);
+                  }}
+                  title="View Job Details"
+                >
+                  <Eye className="w-4 h-4" />
+                </Button>
               </div>
               <div className="flex-1 relative overflow-hidden">
                 <div
@@ -1837,6 +1854,52 @@ export default function GanttChart({
     <TooltipProvider>
       <div className="h-full">
         {view === "operations" ? renderOperationsView() : view === "customers" ? renderCustomersView() : renderResourcesView()}
+        
+        {/* Operation Dialog */}
+        <Dialog open={operationDialogOpen} onOpenChange={setOperationDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Edit Operation</DialogTitle>
+            </DialogHeader>
+            {selectedOperation && (
+              <OperationForm
+                operation={selectedOperation}
+                jobs={jobs}
+                resources={resources}
+                capabilities={capabilities}
+                onCancel={() => setOperationDialogOpen(false)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Resource Dialog */}
+        <Dialog open={resourceDialogOpen} onOpenChange={setResourceDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Edit Resource</DialogTitle>
+            </DialogHeader>
+            {selectedResource && (
+              <ResourceForm
+                resource={selectedResource}
+                capabilities={capabilities}
+                onCancel={() => setResourceDialogOpen(false)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Job Details Dialog */}
+        {selectedJob && (
+          <JobDetailsDialog
+            job={selectedJob}
+            operations={operations.filter(op => op.jobId === selectedJob.id)}
+            resources={resources}
+            capabilities={capabilities}
+            open={jobDialogOpen}
+            onOpenChange={setJobDialogOpen}
+          />
+        )}
       </div>
     </TooltipProvider>
   );
