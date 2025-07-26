@@ -121,6 +121,13 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 26, 2025)
 
+✓ **Operation Sequencer Default Sorting Enhancement (July 26, 2025)**:
+- Successfully implemented ascending scheduled start time as default sort order for operation sequencer
+- Operations with scheduled start times now appear first, sorted chronologically
+- Operations without scheduled start times appear after scheduled ones in original order
+- Enhanced both initial operation loading and filtered operations display with consistent sorting logic
+- Users now see operations in logical time-based sequence by default for better workflow planning
+
 ✓ **Board Card UX Improvement (July 26, 2025)**:
 - Successfully moved eyeball (view details) icon to bottom right corner of board cards for better user experience
 - Repositioned icon to prevent accidental menu clicks while improving touch target accessibility

@@ -319,8 +319,15 @@ export default function MobileSchedule({
     // If we're in reorder mode, preserve the order; otherwise sort by start time
     if (!hasReorder) {
       return filtered.sort((a, b) => {
-        if (!a.startTime || !b.startTime) return 0;
-        return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+        // Operations with scheduled start times come first
+        if (a.startTime && !b.startTime) return -1;
+        if (!a.startTime && b.startTime) return 1;
+        // If both have start times, sort by start time (ascending)
+        if (a.startTime && b.startTime) {
+          return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+        }
+        // If neither has start time, maintain original order
+        return 0;
       });
     }
     
@@ -331,7 +338,19 @@ export default function MobileSchedule({
   useEffect(() => {
     if (operations.length > 0 && !hasReorder && orderedOperations.length === 0) {
       console.log(`Setting ordered operations to original operations (hasReorder=${hasReorder})`);
-      setOrderedOperations(operations);
+      // Sort operations by scheduled start time (ascending) before setting as ordered operations
+      const sortedOperations = [...operations].sort((a, b) => {
+        // Operations with scheduled start times come first
+        if (a.startTime && !b.startTime) return -1;
+        if (!a.startTime && b.startTime) return 1;
+        // If both have start times, sort by start time (ascending)
+        if (a.startTime && b.startTime) {
+          return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+        }
+        // If neither has start time, maintain original order
+        return 0;
+      });
+      setOrderedOperations(sortedOperations);
     }
   }, [operations, hasReorder, orderedOperations.length]);
 
