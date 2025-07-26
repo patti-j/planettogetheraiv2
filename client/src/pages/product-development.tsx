@@ -64,6 +64,38 @@ interface TestCase {
   lastRun?: string;
 }
 
+interface RoadmapPhase {
+  id: number;
+  name: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  status: 'upcoming' | 'in-progress' | 'completed' | 'delayed';
+  progress: number;
+  milestones: RoadmapMilestone[];
+  features: RoadmapFeature[];
+  dependencies?: number[];
+}
+
+interface RoadmapMilestone {
+  id: number;
+  name: string;
+  description: string;
+  targetDate: string;
+  status: 'pending' | 'in-progress' | 'completed' | 'at-risk';
+  completionDate?: string;
+}
+
+interface RoadmapFeature {
+  id: number;
+  name: string;
+  description: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  effort: 'small' | 'medium' | 'large' | 'xl';
+  status: 'backlog' | 'planned' | 'in-progress' | 'testing' | 'done';
+  assignedTeam?: string;
+}
+
 export default function ProductDevelopment() {
   const [selectedTab, setSelectedTab] = useState("strategy");
   const [showStrategyDialog, setShowStrategyDialog] = useState(false);
@@ -77,6 +109,209 @@ export default function ProductDevelopment() {
   const queryClient = useQueryClient();
 
   // Mock data for development - in real implementation, these would come from API
+  const roadmapPhases: RoadmapPhase[] = [
+    {
+      id: 1,
+      name: "Foundation & Core Infrastructure",
+      description: "Establish robust foundation with essential manufacturing management capabilities",
+      startDate: "2024-12-01",
+      endDate: "2025-02-28",
+      status: 'completed',
+      progress: 100,
+      milestones: [
+        {
+          id: 1,
+          name: "Database Schema Complete",
+          description: "All core tables and relationships established",
+          targetDate: "2024-12-15",
+          status: 'completed',
+          completionDate: "2024-12-14"
+        },
+        {
+          id: 2,
+          name: "Authentication System",
+          description: "User management and role-based access control",
+          targetDate: "2025-01-15",
+          status: 'completed',
+          completionDate: "2025-01-12"
+        },
+        {
+          id: 3,
+          name: "Basic UI Framework",
+          description: "Component library and layout system",
+          targetDate: "2025-02-01",
+          status: 'completed',
+          completionDate: "2025-01-28"
+        }
+      ],
+      features: [
+        { id: 1, name: "User Authentication", description: "Secure login and session management", priority: 'critical', effort: 'medium', status: 'done', assignedTeam: 'Backend Team' },
+        { id: 2, name: "Role Management", description: "Flexible role and permission system", priority: 'high', effort: 'large', status: 'done', assignedTeam: 'Backend Team' },
+        { id: 3, name: "Basic Dashboard", description: "Initial dashboard with key metrics", priority: 'high', effort: 'medium', status: 'done', assignedTeam: 'Frontend Team' },
+        { id: 4, name: "Job Management", description: "Create and manage production jobs", priority: 'critical', effort: 'large', status: 'done', assignedTeam: 'Full Stack' }
+      ]
+    },
+    {
+      id: 2,
+      name: "Production Scheduling Core",
+      description: "Advanced scheduling capabilities with drag-and-drop Gantt charts and optimization",
+      startDate: "2025-01-15",
+      endDate: "2025-04-30",
+      status: 'in-progress',
+      progress: 85,
+      milestones: [
+        {
+          id: 4,
+          name: "Gantt Chart Implementation",
+          description: "Interactive drag-and-drop scheduling interface",
+          targetDate: "2025-02-28",
+          status: 'completed',
+          completionDate: "2025-02-25"
+        },
+        {
+          id: 5,
+          name: "Optimization Engine",
+          description: "Core scheduling optimization algorithms",
+          targetDate: "2025-03-31",
+          status: 'completed',
+          completionDate: "2025-03-28"
+        },
+        {
+          id: 6,
+          name: "Frozen Horizon",
+          description: "Prevent rescheduling within specified time periods",
+          targetDate: "2025-04-15",
+          status: 'completed',
+          completionDate: "2025-04-12"
+        }
+      ],
+      features: [
+        { id: 5, name: "Interactive Gantt Chart", description: "Drag-and-drop operation scheduling", priority: 'critical', effort: 'xl', status: 'done', assignedTeam: 'Frontend Team' },
+        { id: 6, name: "Resource Management", description: "Define and manage manufacturing resources", priority: 'critical', effort: 'large', status: 'done', assignedTeam: 'Full Stack' },
+        { id: 7, name: "Capacity Planning", description: "Resource capacity analysis and planning", priority: 'high', effort: 'large', status: 'done', assignedTeam: 'Analytics Team' },
+        { id: 8, name: "Optimization Algorithms", description: "AI-powered scheduling optimization", priority: 'high', effort: 'xl', status: 'in-progress', assignedTeam: 'AI Team' }
+      ],
+      dependencies: [1]
+    },
+    {
+      id: 3,
+      name: "AI & Intelligence Platform",
+      description: "Comprehensive AI assistant and intelligent optimization capabilities",
+      startDate: "2025-03-01",
+      endDate: "2025-06-30",
+      status: 'in-progress',
+      progress: 60,
+      milestones: [
+        {
+          id: 7,
+          name: "Max AI Assistant Launch",
+          description: "Conversational AI assistant with voice capabilities",
+          targetDate: "2025-04-30",
+          status: 'completed',
+          completionDate: "2025-04-28"
+        },
+        {
+          id: 8,
+          name: "Optimization Studio",
+          description: "Algorithm development and deployment platform",
+          targetDate: "2025-05-31",
+          status: 'in-progress'
+        },
+        {
+          id: 9,
+          name: "Predictive Analytics",
+          description: "Machine learning for demand forecasting and optimization",
+          targetDate: "2025-06-15",
+          status: 'pending'
+        }
+      ],
+      features: [
+        { id: 9, name: "Max AI Assistant", description: "Conversational AI with manufacturing domain knowledge", priority: 'critical', effort: 'xl', status: 'done', assignedTeam: 'AI Team' },
+        { id: 10, name: "Voice Interface", description: "Speech-to-text and text-to-speech capabilities", priority: 'medium', effort: 'large', status: 'done', assignedTeam: 'AI Team' },
+        { id: 11, name: "Algorithm Studio", description: "Create and deploy custom optimization algorithms", priority: 'high', effort: 'xl', status: 'in-progress', assignedTeam: 'AI Team' },
+        { id: 12, name: "Demand Forecasting", description: "AI-powered demand prediction models", priority: 'medium', effort: 'large', status: 'planned', assignedTeam: 'Analytics Team' }
+      ],
+      dependencies: [2]
+    },
+    {
+      id: 4,
+      name: "Enterprise & Scale",
+      description: "Multi-plant management, advanced analytics, and enterprise integrations",
+      startDate: "2025-05-01",
+      endDate: "2025-08-31",
+      status: 'upcoming',
+      progress: 15,
+      milestones: [
+        {
+          id: 10,
+          name: "Multi-Plant Architecture",
+          description: "Support for multiple manufacturing facilities",
+          targetDate: "2025-06-30",
+          status: 'pending'
+        },
+        {
+          id: 11,
+          name: "Advanced Analytics",
+          description: "Comprehensive reporting and business intelligence",
+          targetDate: "2025-07-31",
+          status: 'pending'
+        },
+        {
+          id: 12,
+          name: "ERP Integration",
+          description: "Seamless integration with major ERP systems",
+          targetDate: "2025-08-15",
+          status: 'pending'
+        }
+      ],
+      features: [
+        { id: 13, name: "Multi-Plant Management", description: "Centralized management of multiple facilities", priority: 'high', effort: 'xl', status: 'planned', assignedTeam: 'Backend Team' },
+        { id: 14, name: "Advanced Reporting", description: "Custom reports and business intelligence", priority: 'high', effort: 'large', status: 'planned', assignedTeam: 'Analytics Team' },
+        { id: 15, name: "ERP Connectors", description: "Pre-built integrations with SAP, Oracle, etc.", priority: 'medium', effort: 'xl', status: 'backlog', assignedTeam: 'Integration Team' },
+        { id: 16, name: "Mobile Apps", description: "Native mobile applications for operators", priority: 'medium', effort: 'large', status: 'backlog', assignedTeam: 'Mobile Team' }
+      ],
+      dependencies: [3]
+    },
+    {
+      id: 5,
+      name: "Innovation & Future",
+      description: "Next-generation features including IoT integration and advanced AI capabilities",
+      startDate: "2025-07-01",
+      endDate: "2025-12-31",
+      status: 'upcoming',
+      progress: 5,
+      milestones: [
+        {
+          id: 13,
+          name: "IoT Platform",
+          description: "Real-time data collection from manufacturing equipment",
+          targetDate: "2025-09-30",
+          status: 'pending'
+        },
+        {
+          id: 14,
+          name: "Digital Twin",
+          description: "Virtual representation of manufacturing processes",
+          targetDate: "2025-11-30",
+          status: 'pending'
+        },
+        {
+          id: 15,
+          name: "Autonomous Operations",
+          description: "Self-optimizing manufacturing processes",
+          targetDate: "2025-12-31",
+          status: 'pending'
+        }
+      ],
+      features: [
+        { id: 17, name: "IoT Integration", description: "Connect and monitor manufacturing equipment", priority: 'medium', effort: 'xl', status: 'backlog', assignedTeam: 'IoT Team' },
+        { id: 18, name: "Digital Twin", description: "Virtual manufacturing environment simulation", priority: 'low', effort: 'xl', status: 'backlog', assignedTeam: 'AI Team' },
+        { id: 19, name: "Predictive Maintenance", description: "AI-powered equipment maintenance scheduling", priority: 'medium', effort: 'large', status: 'backlog', assignedTeam: 'AI Team' },
+        { id: 20, name: "Autonomous Optimization", description: "Self-learning optimization algorithms", priority: 'low', effort: 'xl', status: 'backlog', assignedTeam: 'AI Team' }
+      ],
+      dependencies: [4]
+    }
+  ];
   const strategies: StrategyDocument[] = [
     {
       id: 1,
@@ -279,8 +514,9 @@ export default function ProductDevelopment() {
       </div>
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="strategy">Strategy</TabsTrigger>
+          <TabsTrigger value="roadmap">Roadmap</TabsTrigger>
           <TabsTrigger value="architecture">Architecture</TabsTrigger>
           <TabsTrigger value="development">Development</TabsTrigger>
           <TabsTrigger value="progress">Progress</TabsTrigger>
@@ -325,6 +561,222 @@ export default function ProductDevelopment() {
                 <CardContent>
                   <p className="text-gray-700">{strategy.content}</p>
                 </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        {/* Roadmap Tab */}
+        <TabsContent value="roadmap" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-semibold">Product Development Roadmap</h2>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm">
+                <Calendar className="w-4 h-4 mr-2" />
+                Export Timeline
+              </Button>
+              <Button variant="outline" size="sm">
+                <Settings className="w-4 h-4 mr-2" />
+                Configure View
+              </Button>
+            </div>
+          </div>
+
+          {/* Roadmap Overview Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-green-600">{roadmapPhases.filter(p => p.status === 'completed').length}</p>
+                  <p className="text-sm text-gray-600">Completed Phases</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-blue-600">{roadmapPhases.filter(p => p.status === 'in-progress').length}</p>
+                  <p className="text-sm text-gray-600">Active Phases</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-gray-600">{roadmapPhases.filter(p => p.status === 'upcoming').length}</p>
+                  <p className="text-sm text-gray-600">Upcoming Phases</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-purple-600">
+                    {Math.round(roadmapPhases.reduce((acc, p) => acc + p.progress, 0) / roadmapPhases.length)}%
+                  </p>
+                  <p className="text-sm text-gray-600">Overall Progress</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Timeline View */}
+          <div className="space-y-6">
+            {roadmapPhases.map((phase, index) => (
+              <Card key={phase.id} className={`relative overflow-hidden ${
+                phase.status === 'completed' ? 'border-green-200 bg-green-50' :
+                phase.status === 'in-progress' ? 'border-blue-200 bg-blue-50' :
+                phase.status === 'delayed' ? 'border-red-200 bg-red-50' :
+                'border-gray-200'
+              }`}>
+                {/* Phase Header */}
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={`flex items-center justify-center w-10 h-10 rounded-full text-white font-bold ${
+                        phase.status === 'completed' ? 'bg-green-500' :
+                        phase.status === 'in-progress' ? 'bg-blue-500' :
+                        phase.status === 'delayed' ? 'bg-red-500' :
+                        'bg-gray-400'
+                      }`}>
+                        {index + 1}
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl">{phase.name}</CardTitle>
+                        <CardDescription className="text-base mt-1">{phase.description}</CardDescription>
+                        <div className="flex items-center gap-4 mt-2">
+                          <Badge variant={
+                            phase.status === 'completed' ? 'default' :
+                            phase.status === 'in-progress' ? 'secondary' :
+                            phase.status === 'delayed' ? 'destructive' : 'outline'
+                          }>
+                            {phase.status.replace('-', ' ')}
+                          </Badge>
+                          <span className="text-sm text-gray-600">
+                            {new Date(phase.startDate).toLocaleDateString()} - {new Date(phase.endDate).toLocaleDateString()}
+                          </span>
+                          {phase.dependencies && phase.dependencies.length > 0 && (
+                            <span className="text-xs text-gray-500">
+                              Depends on Phase {phase.dependencies.join(', ')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-gray-800">{phase.progress}%</div>
+                      <Progress value={phase.progress} className="w-24 mt-1" />
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="space-y-6">
+                  {/* Milestones */}
+                  <div>
+                    <h4 className="font-semibold mb-3 flex items-center gap-2">
+                      <Target className="w-4 h-4" />
+                      Key Milestones ({phase.milestones.length})
+                    </h4>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {phase.milestones.map((milestone) => (
+                        <div key={milestone.id} className={`p-3 rounded-lg border ${
+                          milestone.status === 'completed' ? 'border-green-200 bg-green-50' :
+                          milestone.status === 'in-progress' ? 'border-blue-200 bg-blue-50' :
+                          milestone.status === 'at-risk' ? 'border-red-200 bg-red-50' :
+                          'border-gray-200 bg-gray-50'
+                        }`}>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h5 className="font-medium text-sm">{milestone.name}</h5>
+                              <p className="text-xs text-gray-600 mt-1">{milestone.description}</p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge size="sm" variant={
+                                  milestone.status === 'completed' ? 'default' :
+                                  milestone.status === 'in-progress' ? 'secondary' :
+                                  milestone.status === 'at-risk' ? 'destructive' : 'outline'
+                                }>
+                                  {milestone.status.replace('-', ' ')}
+                                </Badge>
+                                <span className="text-xs text-gray-500">
+                                  {milestone.completionDate ? 
+                                    `✓ ${new Date(milestone.completionDate).toLocaleDateString()}` :
+                                    `Target: ${new Date(milestone.targetDate).toLocaleDateString()}`
+                                  }
+                                </span>
+                              </div>
+                            </div>
+                            <div className={`w-3 h-3 rounded-full ml-2 ${
+                              milestone.status === 'completed' ? 'bg-green-500' :
+                              milestone.status === 'in-progress' ? 'bg-blue-500' :
+                              milestone.status === 'at-risk' ? 'bg-red-500' :
+                              'bg-gray-300'
+                            }`} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Features */}
+                  <div>
+                    <h4 className="font-semibold mb-3 flex items-center gap-2">
+                      <Lightbulb className="w-4 h-4" />
+                      Key Features ({phase.features.length})
+                    </h4>
+                    <div className="grid md:grid-cols-2 gap-3">
+                      {phase.features.map((feature) => (
+                        <div key={feature.id} className="p-3 rounded-lg border border-gray-200 bg-white">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h5 className="font-medium text-sm">{feature.name}</h5>
+                              <p className="text-xs text-gray-600 mt-1">{feature.description}</p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge size="sm" variant={
+                                  feature.priority === 'critical' ? 'destructive' :
+                                  feature.priority === 'high' ? 'default' :
+                                  feature.priority === 'medium' ? 'secondary' : 'outline'
+                                }>
+                                  {feature.priority}
+                                </Badge>
+                                <Badge size="sm" variant="outline">
+                                  {feature.effort}
+                                </Badge>
+                                <Badge size="sm" variant={
+                                  feature.status === 'done' ? 'default' :
+                                  feature.status === 'in-progress' ? 'secondary' :
+                                  feature.status === 'testing' ? 'secondary' : 'outline'
+                                }>
+                                  {feature.status.replace('-', ' ')}
+                                </Badge>
+                              </div>
+                              {feature.assignedTeam && (
+                                <div className="flex items-center gap-1 mt-1">
+                                  <Users className="w-3 h-3 text-gray-400" />
+                                  <span className="text-xs text-gray-500">{feature.assignedTeam}</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className={`w-3 h-3 rounded-full ml-2 ${
+                              feature.status === 'done' ? 'bg-green-500' :
+                              feature.status === 'in-progress' ? 'bg-blue-500' :
+                              feature.status === 'testing' ? 'bg-yellow-500' :
+                              feature.status === 'planned' ? 'bg-purple-500' :
+                              'bg-gray-300'
+                            }`} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+
+                {/* Phase Connection Line */}
+                {index < roadmapPhases.length - 1 && (
+                  <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2">
+                    <div className="w-1 h-6 bg-gray-300"></div>
+                    <div className="w-3 h-3 bg-gray-300 rounded-full -ml-1"></div>
+                  </div>
+                )}
               </Card>
             ))}
           </div>
