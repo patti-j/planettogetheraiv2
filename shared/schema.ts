@@ -2503,6 +2503,144 @@ export const chatReactionsRelations = relations(chatReactions, ({ one }) => ({
   }),
 }));
 
+// Product Development Tables
+export const strategyDocuments = pgTable("strategy_documents", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  category: text("category").notNull(), // 'architecture', 'technical', 'business', 'roadmap'
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const developmentTasks = pgTable("development_tasks", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  status: text("status").notNull().default("backlog"), // 'backlog', 'planned', 'in-progress', 'testing', 'done'
+  priority: text("priority").notNull().default("medium"), // 'low', 'medium', 'high', 'critical'
+  phase: text("phase").notNull(),
+  estimatedHours: integer("estimated_hours").default(0),
+  assignedTo: text("assigned_to"),
+  dependencies: jsonb("dependencies").$type<number[]>().default([]),
+  dueDate: timestamp("due_date"),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const testSuites = pgTable("test_suites", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: text("type").notNull(), // 'unit', 'integration', 'e2e', 'performance', 'security'
+  status: text("status").notNull().default("draft"), // 'draft', 'active', 'archived'
+  lastRun: timestamp("last_run"),
+  passRate: integer("pass_rate"), // percentage 0-100
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const testCases = pgTable("test_cases", {
+  id: serial("id").primaryKey(),
+  suiteId: integer("suite_id").references(() => testSuites.id).notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  steps: jsonb("steps").$type<string[]>().default([]),
+  expectedResult: text("expected_result").notNull(),
+  status: text("status").notNull().default("pending"), // 'pass', 'fail', 'pending', 'skipped'
+  lastRun: timestamp("last_run"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const architectureComponents = pgTable("architecture_components", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  technology: text("technology").notNull(),
+  description: text("description"),
+  health: text("health").notNull().default("good"), // 'excellent', 'good', 'fair', 'poor'
+  coverage: integer("coverage").default(0), // percentage 0-100
+  dependencies: jsonb("dependencies").$type<string[]>().default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Product Development Relations
+export const strategyDocumentsRelations = relations(strategyDocuments, ({ one }) => ({
+  creator: one(users, {
+    fields: [strategyDocuments.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const developmentTasksRelations = relations(developmentTasks, ({ one }) => ({
+  creator: one(users, {
+    fields: [developmentTasks.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const testSuitesRelations = relations(testSuites, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [testSuites.createdBy],
+    references: [users.id],
+  }),
+  testCases: many(testCases),
+}));
+
+export const testCasesRelations = relations(testCases, ({ one }) => ({
+  suite: one(testSuites, {
+    fields: [testCases.suiteId],
+    references: [testSuites.id],
+  }),
+}));
+
+// Product Development Insert Schemas
+export const insertStrategyDocumentSchema = createInsertSchema(strategyDocuments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDevelopmentTaskSchema = createInsertSchema(developmentTasks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTestSuiteSchema = createInsertSchema(testSuites).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTestCaseSchema = createInsertSchema(testCases).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertArchitectureComponentSchema = createInsertSchema(architectureComponents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Product Development Types
+export type StrategyDocument = typeof strategyDocuments.$inferSelect;
+export type InsertStrategyDocument = z.infer<typeof insertStrategyDocumentSchema>;
+export type DevelopmentTask = typeof developmentTasks.$inferSelect;
+export type InsertDevelopmentTask = z.infer<typeof insertDevelopmentTaskSchema>;
+export type TestSuite = typeof testSuites.$inferSelect;
+export type InsertTestSuite = z.infer<typeof insertTestSuiteSchema>;
+export type TestCase = typeof testCases.$inferSelect;
+export type InsertTestCase = z.infer<typeof insertTestCaseSchema>;
+export type ArchitectureComponent = typeof architectureComponents.$inferSelect;
+export type InsertArchitectureComponent = z.infer<typeof insertArchitectureComponentSchema>;
+
 // Chat Insert Schemas
 export const insertChatChannelSchema = createInsertSchema(chatChannels).omit({
   id: true,

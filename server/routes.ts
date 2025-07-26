@@ -13421,6 +13421,22 @@ Response must be valid JSON:
     }
   });
 
+  // Simple Product Development endpoint for testing
+  app.get("/api/product-development", requireAuth, async (req, res) => {
+    try {
+      res.json({ 
+        message: "Product Development API is working",
+        strategies: [],
+        components: [],
+        tasks: [],
+        tests: []
+      });
+    } catch (error) {
+      console.error("Error in product development endpoint:", error);
+      res.status(500).json({ error: "Failed to fetch product development data" });
+    }
+  });
+
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
   app.use(errorMiddleware);

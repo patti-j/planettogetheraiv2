@@ -73,6 +73,7 @@ const featureGroups = [
       { icon: Shield, label: "Role Management", href: "/role-management", feature: "user-management", action: "view", color: "bg-amber-600" },
       { icon: Code, label: "Extension Studio", href: "/extension-studio", feature: "systems-management", action: "view", color: "bg-violet-500" },
       { icon: Building, label: "Industry Templates", href: "/industry-templates", feature: "industry-templates", action: "view", color: "bg-cyan-600" },
+      { icon: Layers, label: "Product Development", href: "/product-development", feature: "systems-management", action: "view", color: "bg-blue-600" },
       { icon: FileX, label: "Logs", href: "/error-logs", feature: "systems-management", action: "view", color: "bg-red-500" }
     ]
   },
