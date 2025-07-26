@@ -2996,6 +2996,127 @@ export const integrationTemplates = pgTable("integration_templates", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Scheduling History System - Track algorithm execution results
+export const schedulingHistory = pgTable("scheduling_history", {
+  id: serial("id").primaryKey(),
+  algorithmName: text("algorithm_name").notNull(),
+  algorithmType: text("algorithm_type").notNull(), // backwards_scheduling, forward_scheduling, constraint_based, ai_optimized
+  algorithmVersion: text("algorithm_version").notNull().default("1.0.0"),
+  executionMode: text("execution_mode").notNull().default("production"), // production, simulation, test
+  triggeredBy: integer("triggered_by").references(() => users.id).notNull(),
+  triggerMethod: text("trigger_method").notNull().default("manual"), // manual, automated, scheduled, api
+  plantId: integer("plant_id").references(() => plants.id),
+  status: text("status").notNull().default("running"), // running, completed, failed, cancelled
+  startTime: timestamp("start_time").defaultNow(),
+  endTime: timestamp("end_time"),
+  executionDuration: integer("execution_duration"), // milliseconds
+  inputData: jsonb("input_data").$type<{
+    jobs: any[];
+    resources: any[];
+    operations: any[];
+    parameters: Record<string, any>;
+    constraints: Record<string, any>;
+  }>().notNull(),
+  outputData: jsonb("output_data").$type<{
+    schedule: any[];
+    metrics: Record<string, any>;
+    warnings: string[];
+    errors: string[];
+    recommendations: string[];
+  }>(),
+  performanceMetrics: jsonb("performance_metrics").$type<{
+    operationsScheduled: number;
+    resourceUtilization: number;
+    onTimeDelivery: number;
+    totalCost: number;
+    bottlenecks: string[];
+    efficiency: number;
+    qualityScore: number;
+  }>(),
+  comparisonBaseline: integer("comparison_baseline").references(() => schedulingHistory.id), // Compare against previous run
+  improvementMetrics: jsonb("improvement_metrics").$type<{
+    durationImprovement: number; // percentage
+    utilizationImprovement: number;
+    costImprovement: number;
+    deliveryImprovement: number;
+  }>(),
+  notes: text("notes"),
+  tags: jsonb("tags").$type<string[]>().default([]),
+  isBookmarked: boolean("is_bookmarked").default(false),
+  shareLevel: text("share_level").notNull().default("team"), // private, team, plant, organization
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Detailed scheduling results for each operation
+export const schedulingResults = pgTable("scheduling_results", {
+  id: serial("id").primaryKey(),
+  historyId: integer("history_id").references(() => schedulingHistory.id).notNull(),
+  operationId: integer("operation_id").references(() => operations.id).notNull(),
+  jobId: integer("job_id").references(() => jobs.id).notNull(),
+  resourceId: integer("resource_id").references(() => resources.id),
+  originalStartTime: timestamp("original_start_time"),
+  originalEndTime: timestamp("original_end_time"),
+  newStartTime: timestamp("new_start_time"),
+  newEndTime: timestamp("new_end_time"),
+  duration: integer("duration").notNull(), // hours
+  status: text("status").notNull().default("scheduled"), // scheduled, delayed, conflict, cancelled
+  priority: integer("priority").default(5),
+  resourceUtilization: integer("resource_utilization"), // percentage
+  constraintsViolated: jsonb("constraints_violated").$type<string[]>().default([]),
+  optimizationScore: integer("optimization_score"), // 1-100
+  conflicts: jsonb("conflicts").$type<Array<{
+    type: string;
+    description: string;
+    severity: "low" | "medium" | "high";
+    affectedOperations: number[];
+  }>>().default([]),
+  alternatives: jsonb("alternatives").$type<Array<{
+    resourceId: number;
+    startTime: string;
+    endTime: string;
+    score: number;
+    reason: string;
+  }>>().default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Algorithm performance tracking
+export const algorithmPerformance = pgTable("algorithm_performance", {
+  id: serial("id").primaryKey(),
+  algorithmName: text("algorithm_name").notNull(),
+  algorithmType: text("algorithm_type").notNull(),
+  plantId: integer("plant_id").references(() => plants.id),
+  periodStart: timestamp("period_start").notNull(),
+  periodEnd: timestamp("period_end").notNull(),
+  executionCount: integer("execution_count").default(0),
+  successCount: integer("success_count").default(0),
+  averageExecutionTime: integer("average_execution_time").default(0), // milliseconds
+  averageImprovement: integer("average_improvement").default(0), // percentage
+  averageUtilization: integer("average_utilization").default(0), // percentage
+  bestPerformanceHistoryId: integer("best_performance_history_id").references(() => schedulingHistory.id),
+  worstPerformanceHistoryId: integer("worst_performance_history_id").references(() => schedulingHistory.id),
+  trends: jsonb("trends").$type<{
+    utilizationTrend: "improving" | "declining" | "stable";
+    executionTimeTrend: "improving" | "declining" | "stable";
+    qualityTrend: "improving" | "declining" | "stable";
+    monthlyStats: Array<{
+      month: string;
+      executions: number;
+      avgUtilization: number;
+      avgDuration: number;
+    }>;
+  }>(),
+  recommendations: jsonb("recommendations").$type<Array<{
+    type: "parameter_adjustment" | "algorithm_change" | "resource_addition" | "process_improvement";
+    description: string;
+    priority: "low" | "medium" | "high";
+    estimatedImpact: number;
+  }>>().default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Systems Integration Insert Schemas
 export const insertSystemIntegrationSchema = createInsertSchema(systemIntegrations).omit({
   id: true,
@@ -3012,6 +3133,32 @@ export const insertIntegrationEventSchema = createInsertSchema(integrationEvents
   id: true,
   createdAt: true,
 });
+
+// Scheduling History Insert Schemas
+export const insertSchedulingHistorySchema = createInsertSchema(schedulingHistory).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSchedulingResultSchema = createInsertSchema(schedulingResults).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAlgorithmPerformanceSchema = createInsertSchema(algorithmPerformance).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// TypeScript types for scheduling history
+export type SchedulingHistory = typeof schedulingHistory.$inferSelect;
+export type InsertSchedulingHistory = z.infer<typeof insertSchedulingHistorySchema>;
+export type SchedulingResult = typeof schedulingResults.$inferSelect;
+export type InsertSchedulingResult = z.infer<typeof insertSchedulingResultSchema>;
+export type AlgorithmPerformance = typeof algorithmPerformance.$inferSelect;
+export type InsertAlgorithmPerformance = z.infer<typeof insertAlgorithmPerformanceSchema>;
 
 export const insertIntegrationMappingSchema = createInsertSchema(integrationMappings).omit({
   id: true,
@@ -4822,3 +4969,54 @@ export type InsertApiAuditLog = z.infer<typeof insertApiAuditLogSchema>;
 
 export type ApiCredential = typeof apiCredentials.$inferSelect;
 export type InsertApiCredential = z.infer<typeof insertApiCredentialSchema>;
+
+// Scheduling History Relations
+export const schedulingHistoryRelations = relations(schedulingHistory, ({ one, many }) => ({
+  triggeredByUser: one(users, {
+    fields: [schedulingHistory.triggeredBy],
+    references: [users.id],
+  }),
+  plant: one(plants, {
+    fields: [schedulingHistory.plantId],
+    references: [plants.id],
+  }),
+  comparisonBaselineHistory: one(schedulingHistory, {
+    fields: [schedulingHistory.comparisonBaseline],
+    references: [schedulingHistory.id],
+  }),
+  schedulingResults: many(schedulingResults),
+}));
+
+export const schedulingResultsRelations = relations(schedulingResults, ({ one }) => ({
+  history: one(schedulingHistory, {
+    fields: [schedulingResults.historyId],
+    references: [schedulingHistory.id],
+  }),
+  operation: one(operations, {
+    fields: [schedulingResults.operationId],
+    references: [operations.id],
+  }),
+  job: one(jobs, {
+    fields: [schedulingResults.jobId],
+    references: [jobs.id],
+  }),
+  resource: one(resources, {
+    fields: [schedulingResults.resourceId],
+    references: [resources.id],
+  }),
+}));
+
+export const algorithmPerformanceRelations = relations(algorithmPerformance, ({ one }) => ({
+  plant: one(plants, {
+    fields: [algorithmPerformance.plantId],
+    references: [plants.id],
+  }),
+  bestPerformanceHistory: one(schedulingHistory, {
+    fields: [algorithmPerformance.bestPerformanceHistoryId],
+    references: [schedulingHistory.id],
+  }),
+  worstPerformanceHistory: one(schedulingHistory, {
+    fields: [algorithmPerformance.worstPerformanceHistoryId],
+    references: [schedulingHistory.id],
+  }),
+}));

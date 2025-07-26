@@ -42,7 +42,8 @@ import {
   insertHolidaySchema, insertResourceAbsenceSchema, insertShiftCoverageSchema, insertShiftUtilizationSchema,
   insertUnplannedDowntimeSchema, insertOvertimeShiftSchema, insertDowntimeActionSchema, insertShiftChangeRequestSchema,
   insertStrategyDocumentSchema, insertDevelopmentTaskSchema, insertTestSuiteSchema, insertTestCaseSchema, insertArchitectureComponentSchema,
-  insertApiIntegrationSchema, insertApiMappingSchema, insertApiTestSchema, insertApiCredentialSchema, insertApiAuditLogSchema
+  insertApiIntegrationSchema, insertApiMappingSchema, insertApiTestSchema, insertApiCredentialSchema, insertApiAuditLogSchema,
+  insertSchedulingHistorySchema, insertSchedulingResultSchema, insertAlgorithmPerformanceSchema
 } from "@shared/schema";
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -14054,6 +14055,204 @@ Response must be valid JSON:
 
     await storage.deleteApiCredential(id);
     res.json({ success: true });
+  }));
+
+  // Scheduling History Routes
+  app.get("/api/scheduling-history", requireAuth, createSafeHandler(async (req, res) => {
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+    const algorithmType = req.query.algorithmType as string;
+    const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : undefined;
+    
+    const history = await storage.getSchedulingHistory(limit, algorithmType, plantId);
+    res.json(history);
+  }));
+
+  app.get("/api/scheduling-history/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new ValidationError("Invalid scheduling history ID");
+    }
+
+    const history = await storage.getSchedulingHistoryById(id);
+    if (!history) {
+      throw new NotFoundError("Scheduling history not found");
+    }
+    res.json(history);
+  }));
+
+  app.post("/api/scheduling-history", requireAuth, createSafeHandler(async (req, res) => {
+    const validation = insertSchedulingHistorySchema.safeParse(req.body);
+    if (!validation.success) {
+      throw new ValidationError("Invalid scheduling history data", validation.error.errors);
+    }
+
+    const history = await storage.createSchedulingHistory(validation.data);
+    res.status(201).json(history);
+  }));
+
+  app.put("/api/scheduling-history/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new ValidationError("Invalid scheduling history ID");
+    }
+
+    const validation = insertSchedulingHistorySchema.partial().safeParse(req.body);
+    if (!validation.success) {
+      throw new ValidationError("Invalid scheduling history data", validation.error.errors);
+    }
+
+    const history = await storage.updateSchedulingHistory(id, validation.data);
+    if (!history) {
+      throw new NotFoundError("Scheduling history not found");
+    }
+    res.json(history);
+  }));
+
+  app.delete("/api/scheduling-history/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new ValidationError("Invalid scheduling history ID");
+    }
+
+    const success = await storage.deleteSchedulingHistory(id);
+    if (!success) {
+      throw new NotFoundError("Scheduling history not found");
+    }
+    res.json({ success: true });
+  }));
+
+  app.get("/api/scheduling-history/user/:userId", requireAuth, createSafeHandler(async (req, res) => {
+    const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) {
+      throw new ValidationError("Invalid user ID");
+    }
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+
+    const history = await storage.getSchedulingHistoryByUser(userId, limit);
+    res.json(history);
+  }));
+
+  app.get("/api/scheduling-history/:baselineId/compare/:comparisonId", requireAuth, createSafeHandler(async (req, res) => {
+    const baselineId = parseInt(req.params.baselineId);
+    const comparisonId = parseInt(req.params.comparisonId);
+    
+    if (isNaN(baselineId) || isNaN(comparisonId)) {
+      throw new ValidationError("Invalid scheduling history IDs");
+    }
+
+    const comparison = await storage.getSchedulingHistoryComparison(baselineId, comparisonId);
+    res.json(comparison);
+  }));
+
+  // Scheduling Results Routes
+  app.get("/api/scheduling-history/:historyId/results", requireAuth, createSafeHandler(async (req, res) => {
+    const historyId = parseInt(req.params.historyId);
+    if (isNaN(historyId)) {
+      throw new ValidationError("Invalid history ID");
+    }
+
+    const detailed = req.query.detailed === 'true';
+    let results;
+    
+    if (detailed) {
+      results = await storage.getSchedulingResultsWithDetails(historyId);
+    } else {
+      results = await storage.getSchedulingResults(historyId);
+    }
+    
+    res.json(results);
+  }));
+
+  app.post("/api/scheduling-results", requireAuth, createSafeHandler(async (req, res) => {
+    const validation = insertSchedulingResultSchema.safeParse(req.body);
+    if (!validation.success) {
+      throw new ValidationError("Invalid scheduling result data", validation.error.errors);
+    }
+
+    const result = await storage.createSchedulingResult(validation.data);
+    res.status(201).json(result);
+  }));
+
+  app.get("/api/operations/:operationId/scheduling-results", requireAuth, createSafeHandler(async (req, res) => {
+    const operationId = parseInt(req.params.operationId);
+    if (isNaN(operationId)) {
+      throw new ValidationError("Invalid operation ID");
+    }
+
+    const results = await storage.getSchedulingResultsByOperation(operationId);
+    res.json(results);
+  }));
+
+  // Algorithm Performance Routes
+  app.get("/api/algorithm-performance", requireAuth, createSafeHandler(async (req, res) => {
+    const algorithmName = req.query.algorithmName as string;
+    const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : undefined;
+    
+    const performance = await storage.getAlgorithmPerformance(algorithmName, plantId);
+    res.json(performance);
+  }));
+
+  app.get("/api/algorithm-performance/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new ValidationError("Invalid algorithm performance ID");
+    }
+
+    const performance = await storage.getAlgorithmPerformanceById(id);
+    if (!performance) {
+      throw new NotFoundError("Algorithm performance not found");
+    }
+    res.json(performance);
+  }));
+
+  app.post("/api/algorithm-performance", requireAuth, createSafeHandler(async (req, res) => {
+    const validation = insertAlgorithmPerformanceSchema.safeParse(req.body);
+    if (!validation.success) {
+      throw new ValidationError("Invalid algorithm performance data", validation.error.errors);
+    }
+
+    const performance = await storage.createAlgorithmPerformance(validation.data);
+    res.status(201).json(performance);
+  }));
+
+  app.put("/api/algorithm-performance/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new ValidationError("Invalid algorithm performance ID");
+    }
+
+    const validation = insertAlgorithmPerformanceSchema.partial().safeParse(req.body);
+    if (!validation.success) {
+      throw new ValidationError("Invalid algorithm performance data", validation.error.errors);
+    }
+
+    const performance = await storage.updateAlgorithmPerformance(id, validation.data);
+    if (!performance) {
+      throw new NotFoundError("Algorithm performance not found");
+    }
+    res.json(performance);
+  }));
+
+  app.delete("/api/algorithm-performance/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new ValidationError("Invalid algorithm performance ID");
+    }
+
+    const success = await storage.deleteAlgorithmPerformance(id);
+    if (!success) {
+      throw new NotFoundError("Algorithm performance not found");
+    }
+    res.json({ success: true });
+  }));
+
+  app.get("/api/algorithm-performance/:algorithmName/trends", requireAuth, createSafeHandler(async (req, res) => {
+    const algorithmName = req.params.algorithmName;
+    const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : undefined;
+    const months = req.query.months ? parseInt(req.query.months as string) : 6;
+
+    const trends = await storage.getAlgorithmPerformanceTrends(algorithmName, plantId, months);
+    res.json(trends);
   }));
 
   const httpServer = createServer(app);

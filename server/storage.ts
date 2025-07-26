@@ -76,6 +76,9 @@ import {
   apiIntegrations, apiMappings, apiTests, apiAuditLogs, apiCredentials,
   type ApiIntegration, type ApiMapping, type ApiTest, type ApiAuditLog, type ApiCredential,
   type InsertApiIntegration, type InsertApiMapping, type InsertApiTest, type InsertApiAuditLog, type InsertApiCredential,
+  schedulingHistory, schedulingResults, algorithmPerformance,
+  type SchedulingHistory, type SchedulingResult, type AlgorithmPerformance,
+  type InsertSchedulingHistory, type InsertSchedulingResult, type InsertAlgorithmPerformance,
   strategyDocuments, developmentTasks, testSuites, testCases, architectureComponents,
   type StrategyDocument, type DevelopmentTask, type TestSuite, type TestCase, type ArchitectureComponent,
   type InsertStrategyDocument, type InsertDevelopmentTask, type InsertTestSuite, type InsertTestCase, type InsertArchitectureComponent,
@@ -1084,6 +1087,29 @@ export interface IStorage {
   async getApiCredentials(integrationId: number): Promise<ApiCredential[]>;
   async updateApiCredential(id: number, updates: Partial<ApiCredential>): Promise<ApiCredential>;
   async deleteApiCredential(id: number): Promise<void>;
+
+  // Scheduling History
+  getSchedulingHistory(limit?: number, algorithmType?: string, plantId?: number): Promise<SchedulingHistory[]>;
+  getSchedulingHistoryById(id: number): Promise<SchedulingHistory | undefined>;
+  createSchedulingHistory(history: InsertSchedulingHistory): Promise<SchedulingHistory>;
+  updateSchedulingHistory(id: number, updates: Partial<InsertSchedulingHistory>): Promise<SchedulingHistory | undefined>;
+  deleteSchedulingHistory(id: number): Promise<boolean>;
+  getSchedulingHistoryByUser(userId: number, limit?: number): Promise<SchedulingHistory[]>;
+  getSchedulingHistoryComparison(baselineId: number, comparisonId: number): Promise<{ baseline: SchedulingHistory; comparison: SchedulingHistory; improvements: any }>;
+
+  // Scheduling Results
+  getSchedulingResults(historyId: number): Promise<SchedulingResult[]>;
+  createSchedulingResult(result: InsertSchedulingResult): Promise<SchedulingResult>;
+  getSchedulingResultsByOperation(operationId: number): Promise<SchedulingResult[]>;
+  getSchedulingResultsWithDetails(historyId: number): Promise<(SchedulingResult & { jobName?: string; operationName?: string; resourceName?: string })[]>;
+
+  // Algorithm Performance
+  getAlgorithmPerformance(algorithmName?: string, plantId?: number): Promise<AlgorithmPerformance[]>;
+  getAlgorithmPerformanceById(id: number): Promise<AlgorithmPerformance | undefined>;
+  createAlgorithmPerformance(performance: InsertAlgorithmPerformance): Promise<AlgorithmPerformance>;
+  updateAlgorithmPerformance(id: number, updates: Partial<InsertAlgorithmPerformance>): Promise<AlgorithmPerformance | undefined>;
+  deleteAlgorithmPerformance(id: number): Promise<boolean>;
+  getAlgorithmPerformanceTrends(algorithmName: string, plantId?: number, months?: number): Promise<AlgorithmPerformance[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -8288,6 +8314,324 @@ export class DatabaseStorage implements IStorage {
       await db.delete(apiCredentials).where(eq(apiCredentials.id, id));
     } catch (error) {
       console.error('Error deleting API credential:', error);
+      throw error;
+    }
+  }
+
+  // Scheduling History Methods
+  async getSchedulingHistory(limit = 50, algorithmType?: string, plantId?: number): Promise<SchedulingHistory[]> {
+    try {
+      let query = db.select().from(schedulingHistory);
+      
+      const conditions = [];
+      if (algorithmType) {
+        conditions.push(eq(schedulingHistory.algorithmName, algorithmType));
+      }
+      if (plantId) {
+        conditions.push(eq(schedulingHistory.plantId, plantId));
+      }
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      return await query
+        .orderBy(desc(schedulingHistory.executionStartTime))
+        .limit(limit);
+    } catch (error) {
+      console.error('Error getting scheduling history:', error);
+      throw error;
+    }
+  }
+
+  async getSchedulingHistoryById(id: number): Promise<SchedulingHistory | undefined> {
+    try {
+      const [result] = await db
+        .select()
+        .from(schedulingHistory)
+        .where(eq(schedulingHistory.id, id));
+      return result;
+    } catch (error) {
+      console.error('Error getting scheduling history by id:', error);
+      throw error;
+    }
+  }
+
+  async createSchedulingHistory(history: InsertSchedulingHistory): Promise<SchedulingHistory> {
+    try {
+      const [result] = await db
+        .insert(schedulingHistory)
+        .values(history)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error('Error creating scheduling history:', error);
+      throw error;
+    }
+  }
+
+  async updateSchedulingHistory(id: number, updates: Partial<InsertSchedulingHistory>): Promise<SchedulingHistory | undefined> {
+    try {
+      const [result] = await db
+        .update(schedulingHistory)
+        .set(updates)
+        .where(eq(schedulingHistory.id, id))
+        .returning();
+      return result;
+    } catch (error) {
+      console.error('Error updating scheduling history:', error);
+      throw error;
+    }
+  }
+
+  async deleteSchedulingHistory(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(schedulingHistory)
+        .where(eq(schedulingHistory.id, id));
+      return result.rowCount ? result.rowCount > 0 : false;
+    } catch (error) {
+      console.error('Error deleting scheduling history:', error);
+      throw error;
+    }
+  }
+
+  async getSchedulingHistoryByUser(userId: number, limit = 20): Promise<SchedulingHistory[]> {
+    try {
+      return await db
+        .select()
+        .from(schedulingHistory)
+        .where(eq(schedulingHistory.triggeredBy, userId))
+        .orderBy(desc(schedulingHistory.executionStartTime))
+        .limit(limit);
+    } catch (error) {
+      console.error('Error getting scheduling history by user:', error);
+      throw error;
+    }
+  }
+
+  async getSchedulingHistoryComparison(baselineId: number, comparisonId: number): Promise<{ baseline: SchedulingHistory; comparison: SchedulingHistory; improvements: any }> {
+    try {
+      const [baseline] = await db
+        .select()
+        .from(schedulingHistory)
+        .where(eq(schedulingHistory.id, baselineId));
+      
+      const [comparison] = await db
+        .select()
+        .from(schedulingHistory)
+        .where(eq(schedulingHistory.id, comparisonId));
+      
+      if (!baseline || !comparison) {
+        throw new Error('One or both scheduling history records not found');
+      }
+
+      // Calculate improvements
+      const improvements = {
+        makespanImprovement: baseline.makespan && comparison.makespan 
+          ? ((baseline.makespan - comparison.makespan) / baseline.makespan) * 100 
+          : null,
+        utilizationImprovement: baseline.resourceUtilization && comparison.resourceUtilization
+          ? comparison.resourceUtilization - baseline.resourceUtilization
+          : null,
+        onTimeDeliveryImprovement: baseline.onTimeDeliveryRate && comparison.onTimeDeliveryRate
+          ? comparison.onTimeDeliveryRate - baseline.onTimeDeliveryRate
+          : null,
+        executionTimeComparison: baseline.executionDuration && comparison.executionDuration
+          ? comparison.executionDuration - baseline.executionDuration
+          : null
+      };
+
+      return { baseline, comparison, improvements };
+    } catch (error) {
+      console.error('Error getting scheduling history comparison:', error);
+      throw error;
+    }
+  }
+
+  // Scheduling Results Methods
+  async getSchedulingResults(historyId: number): Promise<SchedulingResult[]> {
+    try {
+      return await db
+        .select()
+        .from(schedulingResults)
+        .where(eq(schedulingResults.historyId, historyId))
+        .orderBy(schedulingResults.scheduledStartTime);
+    } catch (error) {
+      console.error('Error getting scheduling results:', error);
+      throw error;
+    }
+  }
+
+  async createSchedulingResult(result: InsertSchedulingResult): Promise<SchedulingResult> {
+    try {
+      const [created] = await db
+        .insert(schedulingResults)
+        .values(result)
+        .returning();
+      return created;
+    } catch (error) {
+      console.error('Error creating scheduling result:', error);
+      throw error;
+    }
+  }
+
+  async getSchedulingResultsByOperation(operationId: number): Promise<SchedulingResult[]> {
+    try {
+      return await db
+        .select()
+        .from(schedulingResults)
+        .where(eq(schedulingResults.operationId, operationId))
+        .orderBy(desc(schedulingResults.id));
+    } catch (error) {
+      console.error('Error getting scheduling results by operation:', error);
+      throw error;
+    }
+  }
+
+  async getSchedulingResultsWithDetails(historyId: number): Promise<(SchedulingResult & { jobName?: string; operationName?: string; resourceName?: string })[]> {
+    try {
+      const results = await db
+        .select({
+          id: schedulingResults.id,
+          historyId: schedulingResults.historyId,
+          operationId: schedulingResults.operationId,
+          jobId: schedulingResults.jobId,
+          resourceId: schedulingResults.resourceId,
+          scheduledStartTime: schedulingResults.scheduledStartTime,
+          scheduledEndTime: schedulingResults.scheduledEndTime,
+          originalStartTime: schedulingResults.originalStartTime,
+          originalEndTime: schedulingResults.originalEndTime,
+          setupTime: schedulingResults.setupTime,
+          processTime: schedulingResults.processTime,
+          queueTime: schedulingResults.queueTime,
+          moveTime: schedulingResults.moveTime,
+          waitTime: schedulingResults.waitTime,
+          utilizationImprovement: schedulingResults.utilizationImprovement,
+          costImpact: schedulingResults.costImpact,
+          qualityImpact: schedulingResults.qualityImpact,
+          jobName: jobs.name,
+          operationName: operations.name,
+          resourceName: resources.name,
+        })
+        .from(schedulingResults)
+        .leftJoin(jobs, eq(schedulingResults.jobId, jobs.id))
+        .leftJoin(operations, eq(schedulingResults.operationId, operations.id))
+        .leftJoin(resources, eq(schedulingResults.resourceId, resources.id))
+        .where(eq(schedulingResults.historyId, historyId))
+        .orderBy(schedulingResults.scheduledStartTime);
+
+      return results;
+    } catch (error) {
+      console.error('Error getting scheduling results with details:', error);
+      throw error;
+    }
+  }
+
+  // Algorithm Performance Methods
+  async getAlgorithmPerformance(algorithmName?: string, plantId?: number): Promise<AlgorithmPerformance[]> {
+    try {
+      let query = db.select().from(algorithmPerformance);
+      
+      const conditions = [];
+      if (algorithmName) {
+        conditions.push(eq(algorithmPerformance.algorithmName, algorithmName));
+      }
+      if (plantId) {
+        conditions.push(eq(algorithmPerformance.plantId, plantId));
+      }
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      return await query.orderBy(desc(algorithmPerformance.lastUpdated));
+    } catch (error) {
+      console.error('Error getting algorithm performance:', error);
+      throw error;
+    }
+  }
+
+  async getAlgorithmPerformanceById(id: number): Promise<AlgorithmPerformance | undefined> {
+    try {
+      const [result] = await db
+        .select()
+        .from(algorithmPerformance)
+        .where(eq(algorithmPerformance.id, id));
+      return result;
+    } catch (error) {
+      console.error('Error getting algorithm performance by id:', error);
+      throw error;
+    }
+  }
+
+  async createAlgorithmPerformance(performance: InsertAlgorithmPerformance): Promise<AlgorithmPerformance> {
+    try {
+      const [result] = await db
+        .insert(algorithmPerformance)
+        .values(performance)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error('Error creating algorithm performance:', error);
+      throw error;
+    }
+  }
+
+  async updateAlgorithmPerformance(id: number, updates: Partial<InsertAlgorithmPerformance>): Promise<AlgorithmPerformance | undefined> {
+    try {
+      const [result] = await db
+        .update(algorithmPerformance)
+        .set({ ...updates, lastUpdated: new Date() })
+        .where(eq(algorithmPerformance.id, id))
+        .returning();
+      return result;
+    } catch (error) {
+      console.error('Error updating algorithm performance:', error);
+      throw error;
+    }
+  }
+
+  async deleteAlgorithmPerformance(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(algorithmPerformance)
+        .where(eq(algorithmPerformance.id, id));
+      return result.rowCount ? result.rowCount > 0 : false;
+    } catch (error) {
+      console.error('Error deleting algorithm performance:', error);
+      throw error;
+    }
+  }
+
+  async getAlgorithmPerformanceTrends(algorithmName: string, plantId?: number, months = 6): Promise<AlgorithmPerformance[]> {
+    try {
+      const cutoffDate = new Date();
+      cutoffDate.setMonth(cutoffDate.getMonth() - months);
+      
+      let query = db
+        .select()
+        .from(algorithmPerformance)
+        .where(
+          and(
+            eq(algorithmPerformance.algorithmName, algorithmName),
+            gte(algorithmPerformance.lastUpdated, cutoffDate)
+          )
+        );
+      
+      if (plantId) {
+        query = query.where(
+          and(
+            eq(algorithmPerformance.algorithmName, algorithmName),
+            eq(algorithmPerformance.plantId, plantId),
+            gte(algorithmPerformance.lastUpdated, cutoffDate)
+          )
+        );
+      }
+      
+      return await query.orderBy(algorithmPerformance.lastUpdated);
+    } catch (error) {
+      console.error('Error getting algorithm performance trends:', error);
       throw error;
     }
   }
