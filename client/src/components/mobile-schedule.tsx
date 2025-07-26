@@ -369,6 +369,13 @@ export default function MobileSchedule({
         const startTime = new Date(op.startTime);
         return startTime >= today && startTime < weekFromNow;
       });
+    } else if (selectedTab === "past") {
+      filtered = filtered.filter(op => {
+        // Show operations that have no scheduled end date OR have end date before today
+        if (!op.endTime) return true; // Include operations without end dates
+        const endTime = new Date(op.endTime);
+        return endTime < today; // End date is before today
+      });
     }
 
 
@@ -722,9 +729,10 @@ export default function MobileSchedule({
 
       {/* Time Period Tabs */}
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="flex-1 flex flex-col min-h-0">
-        <TabsList className="grid w-full grid-cols-3 mx-4 mt-4 flex-shrink-0">
+        <TabsList className="grid w-full grid-cols-4 mx-4 mt-4 flex-shrink-0">
           <TabsTrigger value="today">Today</TabsTrigger>
-          <TabsTrigger value="week">This Week</TabsTrigger>
+          <TabsTrigger value="week">Week</TabsTrigger>
+          <TabsTrigger value="past">Past</TabsTrigger>
           <TabsTrigger value="all">All</TabsTrigger>
         </TabsList>
 
