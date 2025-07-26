@@ -73,15 +73,17 @@ export default function BackwardsSchedulingAlgorithm() {
   // Run backwards scheduling algorithm
   const runSchedulingMutation = useMutation({
     mutationFn: async (params: BackwardsSchedulingParams) => {
-      return await apiRequest('/api/optimization/algorithms/backwards-scheduling/run', {
-        method: 'POST',
-        body: JSON.stringify({
+      const response = await apiRequest(
+        'POST',
+        '/api/optimization/algorithms/backwards-scheduling/run',
+        {
           parameters: params,
           jobs,
           resources,
           operations
-        })
-      });
+        }
+      );
+      return response.json();
     },
     onSuccess: (result) => {
       setScheduleResults(result.schedule || []);
