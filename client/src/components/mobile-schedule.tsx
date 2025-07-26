@@ -70,7 +70,7 @@ const OptimizationIndicators = ({ operation }: { operation: Operation }) => {
     );
   }
 
-  // Criticality indicator
+  // Criticality indicator (only show if different from job priority to avoid duplicates)
   if (operation.criticality && operation.criticality !== 'normal') {
     const criticalityColors = {
       low: "bg-blue-100 text-blue-800 border-blue-200",
@@ -81,7 +81,7 @@ const OptimizationIndicators = ({ operation }: { operation: Operation }) => {
     indicators.push(
       <Badge key="criticality" variant="secondary" className={`flex items-center gap-1 text-xs ${criticalityColors[operation.criticality as keyof typeof criticalityColors]}`}>
         <Flag className="w-3 h-3" />
-        {operation.criticality.charAt(0).toUpperCase() + operation.criticality.slice(1)}
+        {operation.criticality.charAt(0).toUpperCase() + operation.criticality.slice(1)} Criticality
       </Badge>
     );
   }
