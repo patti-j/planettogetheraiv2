@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 interface BackwardsSchedulingParams {
   bufferTime: number;
@@ -72,9 +73,8 @@ export default function BackwardsSchedulingAlgorithm() {
   // Run backwards scheduling algorithm
   const runSchedulingMutation = useMutation({
     mutationFn: async (params: BackwardsSchedulingParams) => {
-      const response = await fetch('/api/optimization/algorithms/backwards-scheduling/run', {
+      return await apiRequest('/api/optimization/algorithms/backwards-scheduling/run', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           parameters: params,
           jobs,
@@ -82,8 +82,6 @@ export default function BackwardsSchedulingAlgorithm() {
           operations
         })
       });
-      if (!response.ok) throw new Error('Failed to run scheduling algorithm');
-      return response.json();
     },
     onSuccess: (result) => {
       setScheduleResults(result.schedule || []);
