@@ -423,7 +423,7 @@ export default function MobileSchedule({
     });
     
     return grouped;
-  }, [isMultiResourceView, selectedResources, resources, filteredOperations]);
+  }, [isMultiResourceView, selectedResources, resources, filteredOperations, operations]);
 
   // Initialize ordered operations when operations change (but not during reorder)
   useEffect(() => {
