@@ -4767,6 +4767,13 @@ Provide the response as a JSON object with the following structure:
       // Backwards scheduling algorithm implementation
       const schedule = [];
       
+      // Calculate frozen horizon date if enabled
+      let frozenHorizonDate = null;
+      if (parameters.frozenHorizonEnabled && parameters.frozenHorizonDays > 0) {
+        frozenHorizonDate = new Date();
+        frozenHorizonDate.setDate(frozenHorizonDate.getDate() + parameters.frozenHorizonDays);
+      }
+      
       // 1. Sort jobs by priority and due date
       const sortedJobs = [...jobs].sort((a, b) => {
         const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
@@ -4785,6 +4792,26 @@ Provide the response as a JSON object with the following structure:
         let currentEndTime = new Date(job.dueDate);
         
         for (const operation of sortedOps) {
+          // Check if operation is within frozen horizon
+          if (frozenHorizonDate && operation.scheduledStartDate) {
+            const operationStartDate = new Date(operation.scheduledStartDate);
+            if (operationStartDate <= frozenHorizonDate) {
+              // Operation is within frozen horizon - keep existing schedule
+              schedule.push({
+                operationId: operation.id,
+                resourceId: operation.resourceId || resources[0]?.id,
+                startTime: operation.scheduledStartDate,
+                endTime: operation.scheduledEndDate || new Date(operationStartDate.getTime() + (operation.estimatedDuration || 4) * 60 * 60 * 1000).toISOString(),
+                duration: operation.estimatedDuration || 4,
+                frozen: true
+              });
+              
+              // Update current end time based on frozen operation
+              currentEndTime = new Date(operation.scheduledStartDate);
+              continue;
+            }
+          }
+          
           // Find suitable resource
           const suitableResources = resources.filter(resource => {
             const resourceCapabilities = resource.capabilities || [];
@@ -4831,7 +4858,8 @@ Provide the response as a JSON object with the following structure:
               resourceId: selectedResource.id,
               startTime: finalStartTime.toISOString(),
               endTime: finalEndTime.toISOString(),
-              duration: duration
+              duration: duration,
+              frozen: false
             });
             
             // Update current end time for next operation
@@ -4840,6 +4868,10 @@ Provide the response as a JSON object with the following structure:
         }
       }
 
+      // Calculate statistics
+      const frozenOperations = schedule.filter(op => op.frozen).length;
+      const rescheduledOperations = schedule.filter(op => !op.frozen).length;
+      
       res.json({
         success: true,
         schedule: schedule,
@@ -4847,7 +4879,9 @@ Provide the response as a JSON object with the following structure:
         stats: {
           totalOperations: operations.length,
           scheduledOperations: schedule.length,
-          jobsProcessed: sortedJobs.length
+          jobsProcessed: sortedJobs.length,
+          frozenOperations: frozenOperations,
+          rescheduledOperations: rescheduledOperations
         }
       });
     } catch (error) {

@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { OptimizationSummaryDialog } from "./optimization-summary-dialog";
 import { addDays, format } from "date-fns";
+import type { Job, Operation, Resource } from "@shared/schema";
 
 interface BackwardsSchedulingParams {
   bufferTime: number;
@@ -29,6 +30,8 @@ interface BackwardsSchedulingParams {
   workingHoursStart: number;
   workingHoursEnd: number;
   workingDays: number[];
+  frozenHorizonEnabled: boolean;
+  frozenHorizonDays: number;
 }
 
 interface ScheduleResult {
@@ -52,24 +55,26 @@ export default function BackwardsSchedulingAlgorithm() {
     allowOvertime: false,
     workingHoursStart: 8,
     workingHoursEnd: 17,
-    workingDays: [1, 2, 3, 4, 5]
+    workingDays: [1, 2, 3, 4, 5],
+    frozenHorizonEnabled: true,
+    frozenHorizonDays: 3
   });
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Fetch jobs and resources for scheduling
-  const { data: jobs = [] } = useQuery({
+  const { data: jobs = [] } = useQuery<Job[]>({
     queryKey: ['/api/jobs'],
     refetchOnWindowFocus: false
   });
 
-  const { data: resources = [] } = useQuery({
+  const { data: resources = [] } = useQuery<Resource[]>({
     queryKey: ['/api/resources'],
     refetchOnWindowFocus: false
   });
 
-  const { data: operations = [] } = useQuery({
+  const { data: operations = [] } = useQuery<Operation[]>({
     queryKey: ['/api/operations'],
     refetchOnWindowFocus: false
   });
@@ -196,7 +201,7 @@ export default function BackwardsSchedulingAlgorithm() {
     // Calculate statistics
     const completionDates = scheduleResults.map((r: ScheduleResult) => new Date(r.endTime));
     const latestCompletion = completionDates.length > 0 ? 
-      new Date(Math.max(...completionDates.map(d => d.getTime()))) : 
+      new Date(Math.max(...completionDates.map((d: Date) => d.getTime()))) : 
       addDays(currentDate, 7);
 
     const summary = {
@@ -594,6 +599,46 @@ export default function BackwardsSchedulingAlgorithm() {
                     </Button>
                   ))}
                 </div>
+              </div>
+
+              {/* Frozen Horizon */}
+              <div className="space-y-4 p-4 border border-blue-200 bg-blue-50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-blue-500" />
+                    <Label className="text-base font-semibold text-blue-900">Frozen Horizon Control</Label>
+                  </div>
+                  <Switch
+                    id="frozenHorizon"
+                    checked={parameters.frozenHorizonEnabled}
+                    onCheckedChange={(checked) => updateParameter('frozenHorizonEnabled', checked)}
+                  />
+                </div>
+                
+                <p className="text-sm text-blue-700">
+                  Prevents rescheduling of operations that are scheduled to start within the frozen horizon period. 
+                  This protects near-term schedules from disruption.
+                </p>
+
+                {parameters.frozenHorizonEnabled && (
+                  <div className="space-y-2">
+                    <Label>Frozen Horizon Period (days): {parameters.frozenHorizonDays}</Label>
+                    <Slider
+                      value={[parameters.frozenHorizonDays]}
+                      onValueChange={([value]) => updateParameter('frozenHorizonDays', value)}
+                      max={14}
+                      min={1}
+                      step={1}
+                      className="w-full"
+                    />
+                    <div className="text-xs text-blue-600">
+                      Operations scheduled to start within {parameters.frozenHorizonDays} day{parameters.frozenHorizonDays !== 1 ? 's' : ''} from today will not be rescheduled.
+                    </div>
+                    <div className="text-xs text-blue-500">
+                      Frozen until: {format(addDays(new Date(), parameters.frozenHorizonDays), 'MMM dd, yyyy')}
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
