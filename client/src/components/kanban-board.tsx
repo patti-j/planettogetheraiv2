@@ -138,9 +138,10 @@ const JobCard = ({ job, onEdit, swimLaneField, index }: { job: Job; onEdit: (job
   );
 };
 
-const OperationCard = ({ operation, job, resources, onEdit, swimLaneField, index }: { 
+const OperationCard = ({ operation, job, jobs, resources, onEdit, swimLaneField, index }: { 
   operation: Operation; 
   job?: Job; 
+  jobs: Job[];
   resources: Resource[];
   onEdit: (operation: Operation) => void;
   swimLaneField: string;
@@ -151,7 +152,9 @@ const OperationCard = ({ operation, job, resources, onEdit, swimLaneField, index
       case "status":
         return operation.status;
       case "priority":
-        return operation.priority;
+        // Operations inherit priority from their parent job
+        const parentJob = job || jobs.find((j: Job) => j.id === operation.jobId);
+        return parentJob?.priority || "medium";
       case "assignedResourceId":
         const resource = resources.find(r => r.id === operation.assignedResourceId);
         return resource?.name || "Unassigned";
@@ -448,15 +451,15 @@ function KanbanBoard({
     if (field === "status") {
       // Get actual status values from jobs and operations
       const items = view === "jobs" ? jobs : operations;
-      const statusValues = [...new Set(items.map(item => item.status).filter(Boolean))];
+      const statusValues = Array.from(new Set(items.map(item => item.status).filter(Boolean)));
       // If no status values found, use defaults
       return statusValues.length > 0 ? statusValues : ["planned", "In-Progress", "completed", "cancelled"];
     } else if (field === "priority") {
       return ["low", "medium", "high"];
     } else if (field === "customer") {
-      return [...new Set(jobs.map(job => job.customer).filter(Boolean))];
+      return Array.from(new Set(jobs.map(job => job.customer).filter(Boolean)));
     } else if (field === "assignedResourceId") {
-      return [...new Set(resources.map(r => r.name).filter(Boolean))];
+      return Array.from(new Set(resources.map(r => r.name).filter(Boolean)));
     }
     return [];
   };
@@ -1109,6 +1112,7 @@ function KanbanBoard({
                                 key={item.id}
                                 operation={item as Operation}
                                 job={jobs.find(j => j.id === (item as Operation).jobId)}
+                                jobs={jobs}
                                 resources={resources}
                                 onEdit={handleEditOperation}
                                 swimLaneField={swimLaneField}
@@ -1148,6 +1152,7 @@ function KanbanBoard({
                             key={item.id}
                             operation={item as Operation}
                             job={jobs.find(j => j.id === (item as Operation).jobId)}
+                            jobs={jobs}
                             resources={resources}
                             onEdit={handleEditOperation}
                             swimLaneField={swimLaneField}
