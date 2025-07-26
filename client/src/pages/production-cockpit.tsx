@@ -261,7 +261,7 @@ export default function ProductionCockpit() {
     }
   };
 
-  const currentLayout = layouts.find((layout: CockpitLayout) => layout.id === selectedLayout);
+  const currentLayout = layouts?.find((layout: CockpitLayout) => layout?.id === selectedLayout);
 
   return (
     <div className={`min-h-screen bg-background ${maximized ? 'fixed inset-0 z-50' : ''}`}>
@@ -282,14 +282,14 @@ export default function ProductionCockpit() {
               <SelectValue placeholder="Select layout..." />
             </SelectTrigger>
             <SelectContent>
-              {layouts.map((layout: CockpitLayout) => (
-                <SelectItem key={layout.id} value={layout.id.toString()}>
+              {layouts?.map((layout: CockpitLayout) => layout ? (
+                <SelectItem key={layout.id?.toString() || 'unknown'} value={layout.id?.toString() || ''}>
                   <div className="flex items-center gap-2">
-                    <span>{layout.name}</span>
+                    <span>{layout.name || 'Unknown Layout'}</span>
                     {layout.is_default && <Badge variant="secondary" className="text-xs">Default</Badge>}
                   </div>
                 </SelectItem>
-              ))}
+              ) : null)}
             </SelectContent>
           </Select>
         </div>
