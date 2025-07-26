@@ -13154,6 +13154,239 @@ Create a natural, conversational voice script that explains this feature to some
     }
   });
 
+  // AI-powered cockpit layout generation
+  app.post("/api/cockpit/ai-generate-layout", requireAuth, async (req, res) => {
+    try {
+      const { description, role, industry, goals } = req.body;
+      const userId = req.user!.id;
+
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ error: "OpenAI API key not configured" });
+      }
+
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      // Get current system data for context
+      const jobs = await storage.getJobs();
+      const resources = await storage.getResources();
+      const metrics = {
+        totalJobs: jobs.length,
+        activeJobs: jobs.filter(j => j.status === 'active' || j.status === 'In-Progress').length,
+        totalResources: resources.length,
+        availableResources: resources.filter(r => r.status === 'active').length
+      };
+
+      const systemPrompt = `You are an expert production scheduler dashboard designer. Generate a comprehensive cockpit layout optimized for manufacturing production scheduling.
+
+User Requirements:
+- Description: ${description}
+- Role: ${role}
+- Industry: ${industry || 'Manufacturing'}
+- Goals: ${goals}
+
+Current System Context:
+- Total Jobs: ${metrics.totalJobs}
+- Active Jobs: ${metrics.activeJobs}
+- Total Resources: ${metrics.totalResources}
+- Available Resources: ${metrics.availableResources}
+
+Generate a professional dashboard layout with 6-12 widgets optimized for production scheduling. Include widgets for:
+1. Key production metrics (OEE, utilization, efficiency)
+2. Job status overview (planned, active, completed, overdue)
+3. Resource utilization charts
+4. Schedule timeline view
+5. Critical alerts and notifications
+6. Real-time production targets vs actuals
+7. Capacity planning indicators
+8. Quality metrics dashboard
+
+For each widget, specify:
+- type: "metrics", "chart", "alerts", "schedule", "resources", "production", "kpi", or "activity"
+- title: descriptive title
+- sub_title: brief description
+- position: {x, y, w, h} where x,y are grid coordinates, w,h are width/height in grid units
+- configuration: widget-specific settings
+
+Response must be valid JSON with this structure:
+{
+  "name": "Layout name",
+  "description": "Layout description", 
+  "theme": "professional",
+  "widgets": [
+    {
+      "type": "metrics",
+      "title": "Production KPIs",
+      "sub_title": "Real-time performance indicators",
+      "position": {"x": 0, "y": 0, "w": 4, "h": 3},
+      "configuration": {"metrics": ["oee", "utilization", "efficiency"], "refreshRate": 30}
+    }
+  ]
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Generate a cockpit layout for: ${description}` }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000
+      });
+
+      const aiResult = JSON.parse(response.choices[0].message.content || "{}");
+
+      // Create the layout with AI-generated data
+      const layoutData = {
+        name: aiResult.name || `AI Generated Layout - ${new Date().toLocaleDateString()}`,
+        description: aiResult.description || description,
+        theme: aiResult.theme || "professional",
+        auto_refresh: true,
+        refresh_interval: 30,
+        grid_layout: {
+          widgets: aiResult.widgets || []
+        },
+        user_id: userId,
+        is_ai_generated: true
+      };
+
+      const layout = await storage.createCockpitLayout(layoutData);
+
+      // Create individual widgets for the layout
+      if (aiResult.widgets && Array.isArray(aiResult.widgets)) {
+        const widgets = await Promise.all(
+          aiResult.widgets.map(async (widget: any) => {
+            const widgetData = {
+              layout_id: layout.id,
+              type: widget.type,
+              title: widget.title,
+              sub_title: widget.sub_title,
+              position: JSON.stringify(widget.position),
+              configuration: JSON.stringify(widget.configuration || {}),
+              is_visible: true
+            };
+            return await storage.createCockpitWidget(widgetData);
+          })
+        );
+        
+        res.status(201).json({ layout, widgets });
+      } else {
+        res.status(201).json({ layout, widgets: [] });
+      }
+
+    } catch (error) {
+      console.error("Error generating AI cockpit layout:", error);
+      res.status(500).json({ error: "Failed to generate AI cockpit layout" });
+    }
+  });
+
+  // AI-powered widget generation
+  app.post("/api/cockpit/ai-generate-widget", requireAuth, async (req, res) => {
+    try {
+      const { layoutId, description, dataSource, visualizationType } = req.body;
+
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ error: "OpenAI API key not configured" });
+      }
+
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      // Get layout context
+      const layout = await storage.getCockpitLayout(layoutId);
+      const existingWidgets = await storage.getCockpitWidgets(layoutId);
+
+      const systemPrompt = `You are an expert dashboard widget designer for manufacturing production systems. Generate a specific widget configuration based on user requirements.
+
+Current Layout Context:
+- Layout: ${layout?.name || 'Unknown'}
+- Theme: ${layout?.theme || 'professional'}
+- Existing Widgets: ${existingWidgets.length}
+
+Widget Types Available:
+- metrics: Key performance indicators and numerical data
+- chart: Visual charts (pie, bar, line, gauge)
+- alerts: Notifications and alert panels
+- schedule: Timeline and scheduling views
+- resources: Resource status and utilization
+- production: Production status and progress
+- kpi: KPI dashboards with targets
+- activity: Activity feeds and logs
+
+Generate a widget configuration that complements existing widgets and provides value for production scheduling.
+
+Response must be valid JSON:
+{
+  "type": "chart",
+  "title": "Widget Title",
+  "sub_title": "Brief description",
+  "position": {"x": 0, "y": 0, "w": 4, "h": 3},
+  "configuration": {
+    "chartType": "bar",
+    "dataSource": "jobs",
+    "metrics": ["count", "status"],
+    "refreshRate": 30,
+    "colors": ["#3b82f6", "#10b981", "#f59e0b"]
+  }
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", 
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Generate a widget for: ${description}. Data source: ${dataSource}. Visualization: ${visualizationType}` }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000
+      });
+
+      const aiResult = JSON.parse(response.choices[0].message.content || "{}");
+
+      // Find optimal position for new widget
+      const gridWidth = 12;
+      let bestPosition = { x: 0, y: 0, w: aiResult.position?.w || 4, h: aiResult.position?.h || 3 };
+      
+      // Simple grid placement logic
+      const occupiedPositions = existingWidgets.map(w => {
+        try {
+          return typeof w.position === 'string' ? JSON.parse(w.position) : w.position;
+        } catch {
+          return { x: 0, y: 0, w: 4, h: 3 };
+        }
+      });
+
+      let placed = false;
+      for (let y = 0; y < 20 && !placed; y++) {
+        for (let x = 0; x <= gridWidth - bestPosition.w && !placed; x++) {
+          const conflicts = occupiedPositions.some(pos => 
+            x < pos.x + pos.w && x + bestPosition.w > pos.x &&
+            y < pos.y + pos.h && y + bestPosition.h > pos.y
+          );
+          if (!conflicts) {
+            bestPosition.x = x;
+            bestPosition.y = y;
+            placed = true;
+          }
+        }
+      }
+
+      const widgetData = {
+        layout_id: layoutId,
+        type: aiResult.type || 'metrics',
+        title: aiResult.title || 'AI Generated Widget',
+        sub_title: aiResult.sub_title || description,
+        position: JSON.stringify(bestPosition),
+        configuration: JSON.stringify(aiResult.configuration || {}),
+        is_visible: true
+      };
+
+      const widget = await storage.createCockpitWidget(widgetData);
+      res.status(201).json(widget);
+
+    } catch (error) {
+      console.error("Error generating AI widget:", error);
+      res.status(500).json({ error: "Failed to generate AI widget" });
+    }
+  });
+
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
   app.use(errorMiddleware);

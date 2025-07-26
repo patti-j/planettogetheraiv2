@@ -34,7 +34,11 @@ import {
   PieChart,
   LineChart,
   Calendar,
-  MapPin
+  MapPin,
+  Sparkles,
+  Wand2,
+  Brain,
+  Zap
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Maximize } from "lucide-react";
@@ -103,6 +107,8 @@ export default function ProductionCockpit() {
   const [refreshInterval, setRefreshInterval] = useState(30);
   const [newLayoutDialog, setNewLayoutDialog] = useState(false);
   const [newWidgetDialog, setNewWidgetDialog] = useState(false);
+  const [aiLayoutDialog, setAiLayoutDialog] = useState(false);
+  const [aiWidgetDialog, setAiWidgetDialog] = useState(false);
   const [newLayoutData, setNewLayoutData] = useState({
     name: "",
     description: "",
@@ -115,6 +121,17 @@ export default function ProductionCockpit() {
     title: "",
     sub_title: "",
     position: { x: 0, y: 0, w: 4, h: 3 }
+  });
+  const [aiLayoutData, setAiLayoutData] = useState({
+    description: "",
+    role: "Production Scheduler",
+    industry: "Manufacturing",
+    goals: ""
+  });
+  const [aiWidgetData, setAiWidgetData] = useState({
+    description: "",
+    dataSource: "jobs",
+    visualizationType: "chart"
   });
 
   const { toast } = useToast();
@@ -197,6 +214,67 @@ export default function ProductionCockpit() {
         position: { x: 0, y: 0, w: 4, h: 3 }
       });
       toast({ title: "Widget added successfully" });
+    }
+  });
+
+  // AI layout generation mutation
+  const aiLayoutMutation = useMutation({
+    mutationFn: (aiData: any) =>
+      fetch("/api/cockpit/ai-generate-layout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(aiData)
+      }).then(res => res.json()),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cockpit/layouts"] });
+      setAiLayoutDialog(false);
+      setAiLayoutData({
+        description: "",
+        role: "Production Scheduler",
+        industry: "Manufacturing",
+        goals: ""
+      });
+      if (result.layout) {
+        setSelectedLayout(result.layout.id);
+        toast({ title: `AI layout "${result.layout.name}" created with ${result.widgets?.length || 0} widgets` });
+      }
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to generate AI layout", 
+        description: error.message || "Please try again",
+        variant: "destructive" 
+      });
+    }
+  });
+
+  // AI widget generation mutation
+  const aiWidgetMutation = useMutation({
+    mutationFn: (aiData: any) =>
+      fetch("/api/cockpit/ai-generate-widget", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...aiData,
+          layoutId: selectedLayout
+        })
+      }).then(res => res.json()),
+    onSuccess: (widget) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cockpit/widgets", selectedLayout] });
+      setAiWidgetDialog(false);
+      setAiWidgetData({
+        description: "",
+        dataSource: "jobs",
+        visualizationType: "chart"
+      });
+      toast({ title: `AI widget "${widget.title}" added successfully` });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to generate AI widget", 
+        description: error.message || "Please try again",
+        variant: "destructive" 
+      });
     }
   });
 
@@ -360,7 +438,7 @@ export default function ProductionCockpit() {
           <div className="flex items-center gap-2">
             <Dialog open={newLayoutDialog} onOpenChange={setNewLayoutDialog}>
               <DialogTrigger asChild>
-                <Button size="sm">
+                <Button size="sm" variant="outline">
                   <Plus className="h-4 w-4 mr-2" />
                   New Layout
                 </Button>
@@ -408,6 +486,103 @@ export default function ProductionCockpit() {
                   </div>
                   <Button onClick={handleCreateLayout} className="w-full">
                     Create Layout
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* AI Layout Generation Dialog */}
+            <Dialog open={aiLayoutDialog} onOpenChange={setAiLayoutDialog}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  AI Layout
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Brain className="h-5 w-5 text-blue-500" />
+                    AI-Powered Layout Creation
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="ai-description">Describe your ideal cockpit layout</Label>
+                    <Textarea
+                      id="ai-description"
+                      value={aiLayoutData.description}
+                      onChange={(e) => setAiLayoutData({ ...aiLayoutData, description: e.target.value })}
+                      placeholder="e.g., I need a layout focused on real-time production monitoring with KPI dashboards, resource utilization charts, and alert panels for quality issues..."
+                      rows={3}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="ai-role">Your Role</Label>
+                      <Select
+                        value={aiLayoutData.role}
+                        onValueChange={(value) => setAiLayoutData({ ...aiLayoutData, role: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Production Scheduler">Production Scheduler</SelectItem>
+                          <SelectItem value="Plant Manager">Plant Manager</SelectItem>
+                          <SelectItem value="Operations Manager">Operations Manager</SelectItem>
+                          <SelectItem value="Quality Manager">Quality Manager</SelectItem>
+                          <SelectItem value="Maintenance Manager">Maintenance Manager</SelectItem>
+                          <SelectItem value="Shift Supervisor">Shift Supervisor</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="ai-industry">Industry</Label>
+                      <Select
+                        value={aiLayoutData.industry}
+                        onValueChange={(value) => setAiLayoutData({ ...aiLayoutData, industry: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Manufacturing">Manufacturing</SelectItem>
+                          <SelectItem value="Automotive">Automotive</SelectItem>
+                          <SelectItem value="Aerospace">Aerospace</SelectItem>
+                          <SelectItem value="Electronics">Electronics</SelectItem>
+                          <SelectItem value="Pharmaceutical">Pharmaceutical</SelectItem>
+                          <SelectItem value="Food & Beverage">Food & Beverage</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="ai-goals">Key Goals & Priorities</Label>
+                    <Textarea
+                      id="ai-goals"
+                      value={aiLayoutData.goals}
+                      onChange={(e) => setAiLayoutData({ ...aiLayoutData, goals: e.target.value })}
+                      placeholder="e.g., Improve OEE, reduce downtime, optimize resource utilization, ensure on-time delivery..."
+                      rows={2}
+                    />
+                  </div>
+                  <Button 
+                    onClick={() => aiLayoutMutation.mutate(aiLayoutData)} 
+                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                    disabled={aiLayoutMutation.isPending || !aiLayoutData.description}
+                  >
+                    {aiLayoutMutation.isPending ? (
+                      <>
+                        <Zap className="h-4 w-4 mr-2 animate-pulse" />
+                        Generating AI Layout...
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="h-4 w-4 mr-2" />
+                        Generate AI Layout
+                      </>
+                    )}
                   </Button>
                 </div>
               </DialogContent>
@@ -466,6 +641,102 @@ export default function ProductionCockpit() {
                   </div>
                   <Button onClick={handleCreateWidget} className="w-full">
                     Add Widget
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* AI Widget Generation Dialog */}
+            <Dialog open={aiWidgetDialog} onOpenChange={setAiWidgetDialog}>
+              <DialogTrigger asChild>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  disabled={!selectedLayout}
+                  className="border-blue-500 text-blue-600 hover:bg-blue-50"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  AI Widget
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Brain className="h-5 w-5 text-blue-500" />
+                    AI-Powered Widget Creation
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="ai-widget-description">Describe the widget you need</Label>
+                    <Textarea
+                      id="ai-widget-description"
+                      value={aiWidgetData.description}
+                      onChange={(e) => setAiWidgetData({ ...aiWidgetData, description: e.target.value })}
+                      placeholder="e.g., A real-time chart showing resource utilization by department, or a KPI dashboard tracking production targets vs actuals..."
+                      rows={3}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="ai-data-source">Primary Data Source</Label>
+                      <Select
+                        value={aiWidgetData.dataSource}
+                        onValueChange={(value) => setAiWidgetData({ ...aiWidgetData, dataSource: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="jobs">Jobs & Orders</SelectItem>
+                          <SelectItem value="resources">Resources & Equipment</SelectItem>
+                          <SelectItem value="operations">Operations & Tasks</SelectItem>
+                          <SelectItem value="metrics">Production Metrics</SelectItem>
+                          <SelectItem value="alerts">Alerts & Issues</SelectItem>
+                          <SelectItem value="schedule">Schedule & Timeline</SelectItem>
+                          <SelectItem value="quality">Quality Metrics</SelectItem>
+                          <SelectItem value="capacity">Capacity & Utilization</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="ai-visualization">Visualization Type</Label>
+                      <Select
+                        value={aiWidgetData.visualizationType}
+                        onValueChange={(value) => setAiWidgetData({ ...aiWidgetData, visualizationType: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="chart">Chart (Bar/Line/Pie)</SelectItem>
+                          <SelectItem value="metrics">KPI Metrics</SelectItem>
+                          <SelectItem value="table">Data Table</SelectItem>
+                          <SelectItem value="gauge">Gauge/Progress</SelectItem>
+                          <SelectItem value="timeline">Timeline View</SelectItem>
+                          <SelectItem value="map">Resource Map</SelectItem>
+                          <SelectItem value="alerts">Alert Panel</SelectItem>
+                          <SelectItem value="activity">Activity Feed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => aiWidgetMutation.mutate(aiWidgetData)} 
+                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                    disabled={aiWidgetMutation.isPending || !aiWidgetData.description}
+                  >
+                    {aiWidgetMutation.isPending ? (
+                      <>
+                        <Zap className="h-4 w-4 mr-2 animate-pulse" />
+                        Generating AI Widget...
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="h-4 w-4 mr-2" />
+                        Generate AI Widget
+                      </>
+                    )}
                   </Button>
                 </div>
               </DialogContent>
