@@ -321,11 +321,11 @@ export default function TopMenu() {
                             <div className="bg-gray-100 p-2 rounded-full flex items-center justify-center flex-shrink-0">
                               <IconComponent className={`w-4 h-4 ${iconColorClass}`} strokeWidth={1.5} fill="none" />
                             </div>
-                            <div className="flex flex-col items-center space-y-1 min-h-0 flex-1">
-                              <span className="text-xs font-medium text-gray-800 leading-tight text-center line-clamp-2 overflow-hidden">
+                            <div className="flex flex-col items-center min-h-0 flex-1">
+                              <span className="text-xs font-medium text-gray-800 leading-tight text-center line-clamp-2 overflow-hidden mb-1">
                                 {page.label}
                               </span>
-                              <span className="text-xs text-gray-500 flex-shrink-0">
+                              <span className="text-[10px] text-gray-400 flex-shrink-0 mt-auto">
                                 {new Date(page.timestamp).toLocaleTimeString([], { 
                                   hour: '2-digit', 
                                   minute: '2-digit' 
