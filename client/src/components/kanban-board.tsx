@@ -425,7 +425,14 @@ function KanbanBoard({
       case "status":
         return item.status;
       case "priority":
-        return item.priority;
+        // Operations inherit priority from their parent job
+        if ('priority' in item) {
+          return item.priority;
+        } else {
+          const operation = item as Operation;
+          const parentJob = jobs.find(j => j.id === operation.jobId);
+          return parentJob?.priority || "medium";
+        }
       case "customer":
         return (item as Job).customer || "Unknown";
       case "assignedResourceId":
@@ -1087,16 +1094,17 @@ function KanbanBoard({
                           }}
                         >
                           {view === "jobs" ? (
-                            column.items.map((item) => (
+                            column.items.map((item, index) => (
                               <JobCard
                                 key={item.id}
                                 job={item as Job}
                                 onEdit={handleEditJob}
                                 swimLaneField={swimLaneField}
+                                index={index}
                               />
                             ))
                           ) : (
-                            column.items.map((item) => (
+                            column.items.map((item, index) => (
                               <OperationCard
                                 key={item.id}
                                 operation={item as Operation}
@@ -1104,6 +1112,7 @@ function KanbanBoard({
                                 resources={resources}
                                 onEdit={handleEditOperation}
                                 swimLaneField={swimLaneField}
+                                index={index}
                               />
                             ))
                           )}
@@ -1124,16 +1133,17 @@ function KanbanBoard({
                       onDrop={handleDrop}
                     >
                       {view === "jobs" ? (
-                        column.items.map((item) => (
+                        column.items.map((item, index) => (
                           <JobCard
                             key={item.id}
                             job={item as Job}
                             onEdit={handleEditJob}
                             swimLaneField={swimLaneField}
+                            index={index}
                           />
                         ))
                       ) : (
-                        column.items.map((item) => (
+                        column.items.map((item, index) => (
                           <OperationCard
                             key={item.id}
                             operation={item as Operation}
@@ -1141,6 +1151,7 @@ function KanbanBoard({
                             resources={resources}
                             onEdit={handleEditOperation}
                             swimLaneField={swimLaneField}
+                            index={index}
                           />
                         ))
                       )}
