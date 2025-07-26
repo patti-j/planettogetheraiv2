@@ -295,8 +295,18 @@ export default function TopMenu() {
                   </div>
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
                     {recentPages.map((page, index) => {
-                      // Use a simple fallback for icons to avoid TypeScript errors
-                      const IconComponent = History;
+                      // Map page paths to their original icons
+                      const getIconForPage = (path: string) => {
+                        // Find the icon from the feature groups
+                        for (const group of featureGroups) {
+                          const feature = group.features.find(f => f.href === path);
+                          if (feature) return feature.icon;
+                        }
+                        // Default fallback
+                        return FileText;
+                      };
+                      
+                      const IconComponent = getIconForPage(page.path);
                       
                       return (
                         <Link 
