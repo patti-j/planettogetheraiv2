@@ -96,39 +96,39 @@ const DraggableOperationCard = ({
       >
         <Card className="border-l-4 cursor-move hover:bg-gray-50 transition-colors" style={{ borderLeftColor: statusInfo.color.replace('bg-', '#') }}>
           <CardContent className="p-3">
-            <div className="flex items-center justify-between min-w-0">
-              <div className="flex items-center space-x-3 flex-1 min-w-0">
+            <div className="flex items-center justify-between min-w-0 overflow-hidden">
+              <div className="flex items-center space-x-2 flex-1 min-w-0 overflow-hidden">
                 <div className="cursor-grab active:cursor-grabbing p-1 -m-1 hover:bg-gray-100 rounded flex-shrink-0">
                   <GripVertical className="w-4 h-4 text-gray-400" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2 min-w-0">
-                    <h3 className="font-medium text-sm text-gray-900 truncate">{operation.name}</h3>
-                    <Badge variant="outline" className="text-xs px-1 py-0 flex-shrink-0">{operation.status}</Badge>
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  <div className="flex items-center space-x-2 min-w-0 overflow-hidden">
+                    <h3 className="font-medium text-sm text-gray-900 truncate flex-1 min-w-0">{operation.name}</h3>
+                    <Badge variant="outline" className="text-xs px-1 py-0 flex-shrink-0 whitespace-nowrap">{operation.status}</Badge>
                   </div>
-                  <div className="flex items-center space-x-3 text-xs text-gray-500 mt-1 min-w-0">
+                  <div className="flex items-center space-x-2 text-xs text-gray-500 mt-1 min-w-0 overflow-hidden">
                     {job && (
-                      <span className="truncate flex-shrink">{job.name}</span>
+                      <span className="truncate max-w-20 sm:max-w-32">{job.name}</span>
                     )}
-                    <span className="flex items-center flex-shrink-0">
+                    <span className="flex items-center flex-shrink-0 whitespace-nowrap">
                       <Clock className="w-3 h-3 mr-1" />
                       {operation.duration}h
                     </span>
                     {resource && (
-                      <span className="flex items-center truncate">
+                      <span className="flex items-center min-w-0 overflow-hidden">
                         <Wrench className="w-3 h-3 mr-1 flex-shrink-0" />
-                        <span className="truncate">{resource.name}</span>
+                        <span className="truncate max-w-16 sm:max-w-24">{resource.name}</span>
                       </span>
                     )}
                   </div>
                 </div>
               </div>
-              <div className="flex items-center space-x-1 ml-2 flex-shrink-0">
-                <StatusIcon className="w-4 h-4" style={{ color: statusInfo.color.replace('bg-', '#') }} />
+              <div className="flex items-center space-x-1 ml-1 flex-shrink-0">
+                <StatusIcon className="w-4 h-4 flex-shrink-0" style={{ color: statusInfo.color.replace('bg-', '#') }} />
                 {job && (
                   <Badge 
                     variant="outline" 
-                    className={`text-xs px-1 py-0 ${getPriorityColor(job.priority)}`}
+                    className={`text-xs px-1 py-0 flex-shrink-0 whitespace-nowrap ${getPriorityColor(job.priority)}`}
                   >
                     {job.priority}
                   </Badge>
