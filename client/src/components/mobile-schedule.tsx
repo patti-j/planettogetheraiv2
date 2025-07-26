@@ -632,13 +632,13 @@ export default function MobileSchedule({
                     {selectedResources.map(resourceId => {
                       const resource = resources.find(r => r.id.toString() === resourceId);
                       return resource ? (
-                        <Badge key={resourceId} variant="secondary" className="text-xs">
-                          {resource.name}
+                        <Badge key={resourceId} variant="secondary" className="text-xs max-w-32 flex items-center">
+                          <span className="truncate">{resource.name}</span>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleRemoveResource(resourceId)}
-                            className="ml-1 h-4 w-4 p-0 hover:bg-red-100"
+                            className="ml-1 h-4 w-4 p-0 hover:bg-red-100 flex-shrink-0"
                           >
                             <X className="w-3 h-3" />
                           </Button>
@@ -745,29 +745,29 @@ export default function MobileSchedule({
                   const resourceOperations = operationsByResource[resourceId] || [];
                   
                   return (
-                    <div key={resourceId} className="flex-1 min-w-0 border-r border-gray-200 last:border-r-0">
+                    <div key={resourceId} className="flex-1 min-w-48 border-r border-gray-200 last:border-r-0">
                       {/* Resource Header */}
-                      <div className="bg-gray-50 border-b border-gray-200 p-3 sticky top-0 z-10">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2 min-w-0">
+                      <div className="bg-gray-50 border-b border-gray-200 p-2 sticky top-0 z-10">
+                        <div className="flex items-center justify-between min-w-0 overflow-hidden">
+                          <div className="flex items-center space-x-1 min-w-0 overflow-hidden flex-1">
                             <Wrench className="w-4 h-4 text-gray-600 flex-shrink-0" />
-                            <div className="min-w-0">
-                              <h3 className="font-medium text-sm text-gray-900 truncate">
+                            <div className="min-w-0 overflow-hidden flex-1">
+                              <h3 className="font-medium text-xs text-gray-900 truncate">
                                 {resource?.name || `Resource ${resourceId}`}
                               </h3>
                               {resource && (
-                                <p className="text-xs text-gray-500">{resource.type}</p>
+                                <p className="text-xs text-gray-500 truncate">{resource.type}</p>
                               )}
                             </div>
                           </div>
-                          <Badge variant="outline" className="text-xs flex-shrink-0">
+                          <Badge variant="outline" className="text-xs flex-shrink-0 whitespace-nowrap ml-1">
                             {resourceOperations.length} ops
                           </Badge>
                         </div>
                       </div>
                       
                       {/* Resource Operations */}
-                      <div className="p-3 space-y-3 h-full overflow-y-auto">
+                      <div className="p-2 space-y-2 h-full overflow-y-auto">
                         {resourceOperations.length === 0 ? (
                           <div className="text-center py-8">
                             <AlertCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
