@@ -368,35 +368,182 @@ export default function ProductDevelopment() {
       dependencies: [4]
     }
   ];
-  // Mock data removed - using API data above
+  const strategies: StrategyDocument[] = [
+    {
+      id: 1,
+      title: "System Architecture Strategy",
+      content: "Focus on modular, microservices architecture with clear separation of concerns. Frontend: React with TypeScript, Backend: Express.js with PostgreSQL, Real-time: WebSockets...",
+      category: 'architecture',
+      createdAt: '2025-01-01',
+      updatedAt: '2025-01-15'
+    },
+    {
+      id: 2,
+      title: "AI Integration Roadmap",
+      content: "Integrate AI capabilities throughout the platform: 1) Max AI Assistant for user interaction, 2) Optimization algorithms for production scheduling, 3) Predictive analytics...",
+      category: 'technical',
+      createdAt: '2025-01-05',
+      updatedAt: '2025-01-20'
+    }
+  ];
+
+  const tasks: DevelopmentTask[] = [
+    {
+      id: 1,
+      title: "Frozen Horizon Implementation",
+      description: "Add frozen horizon functionality to prevent rescheduling of operations within specified time period",
+      status: 'done',
+      priority: 'high',
+      phase: 'Phase 2 - Core Features',
+      estimatedHours: 16,
+      assignedTo: 'Development Team',
+      dependencies: [],
+      createdAt: '2025-01-20',
+      dueDate: '2025-01-26'
+    },
+    {
+      id: 2,
+      title: "Advanced Analytics Dashboard",
+      description: "Create comprehensive analytics with predictive insights and performance metrics",
+      status: 'in-progress',
+      priority: 'medium',
+      phase: 'Phase 3 - Analytics',
+      estimatedHours: 32,
+      assignedTo: 'Analytics Team',
+      dependencies: [1],
+      createdAt: '2025-01-22'
+    },
+    {
+      id: 3,
+      title: "Mobile Optimization",
+      description: "Optimize all interfaces for mobile devices with responsive design improvements",
+      status: 'planned',
+      priority: 'high',
+      phase: 'Phase 4 - UX Enhancement',
+      estimatedHours: 24,
+      dependencies: [2],
+      createdAt: '2025-01-25'
+    }
+  ];
+
+  const testSuites: TestSuite[] = [
+    {
+      id: 1,
+      name: "Optimization Algorithm Tests",
+      description: "Test suite for backwards scheduling and optimization features",
+      type: 'integration',
+      status: 'active',
+      lastRun: '2025-01-26T10:30:00Z',
+      passRate: 92,
+      testCases: [
+        {
+          id: 1,
+          name: "Frozen Horizon Validation",
+          description: "Test that operations within frozen horizon are not rescheduled",
+          steps: ["Enable frozen horizon", "Set 3-day period", "Run optimization", "Verify no changes to near-term operations"],
+          expectedResult: "Operations within 3 days remain unchanged",
+          status: 'pass',
+          lastRun: '2025-01-26T10:30:00Z'
+        },
+        {
+          id: 2,
+          name: "Resource Constraint Handling",
+          description: "Test algorithm behavior with limited resources",
+          steps: ["Create high-demand scenario", "Run optimization", "Check resource allocation"],
+          expectedResult: "Optimal resource utilization without conflicts",
+          status: 'pass',
+          lastRun: '2025-01-26T10:30:00Z'
+        }
+      ]
+    },
+    {
+      id: 2,
+      name: "UI/UX Tests",
+      description: "End-to-end testing of user interface components",
+      type: 'e2e',
+      status: 'active',
+      lastRun: '2025-01-25T15:45:00Z',
+      passRate: 88,
+      testCases: [
+        {
+          id: 3,
+          name: "Navigation Flow",
+          description: "Test navigation between main application sections",
+          steps: ["Login", "Navigate to each section", "Verify page loads", "Check responsive design"],
+          expectedResult: "All pages load correctly on desktop and mobile",
+          status: 'fail',
+          lastRun: '2025-01-25T15:45:00Z'
+        }
+      ]
+    }
+  ];
+
   const phases = [
     {
       name: "Phase 1 - Foundation",
-      description: "Core system architecture and basic features", 
+      description: "Core system architecture and basic features",
       progress: 95,
-      tasks: developmentTasks.filter(t => t.phase?.includes('Phase 1')).length || 8,
+      tasks: tasks.filter(t => t.phase.includes('Phase 1')).length || 8,
       completed: 8
     },
     {
-      name: "Phase 2 - Core Features", 
+      name: "Phase 2 - Core Features",
       description: "Production scheduling and optimization capabilities",
       progress: 80,
-      tasks: developmentTasks.filter(t => t.phase?.includes('Phase 2')).length || 12,
+      tasks: tasks.filter(t => t.phase.includes('Phase 2')).length || 12,
       completed: 10
     },
     {
       name: "Phase 3 - Analytics",
       description: "Advanced analytics and reporting features",
       progress: 45,
-      tasks: developmentTasks.filter(t => t.phase?.includes('Phase 3')).length || 8,
+      tasks: tasks.filter(t => t.phase.includes('Phase 3')).length || 8,
       completed: 3
     },
     {
-      name: "Phase 4 - UX Enhancement",
+      name: "Phase 4 - UX Enhancement", 
       description: "User experience improvements and mobile optimization",
-      progress: 10, 
-      tasks: developmentTasks.filter(t => t.phase?.includes('Phase 4')).length || 6,
+      progress: 10,
+      tasks: tasks.filter(t => t.phase.includes('Phase 4')).length || 6,
       completed: 1
+    }
+  ];
+
+  const architectureComponents = [
+    {
+      name: "Frontend Layer",
+      technology: "React + TypeScript",
+      description: "User interface with responsive design and real-time updates",
+      health: "Excellent",
+      coverage: 85
+    },
+    {
+      name: "Backend API",
+      technology: "Express.js + Node.js",
+      description: "RESTful API with authentication and business logic",
+      health: "Good",
+      coverage: 78
+    },
+    {
+      name: "Database",
+      technology: "PostgreSQL + Drizzle ORM",
+      description: "Relational database with optimized schema and indexing",
+      health: "Excellent",
+      coverage: 92
+    },
+    {
+      name: "AI Services",
+      technology: "OpenAI GPT-4o + Custom Algorithms",
+      description: "AI assistant and optimization algorithms",
+      health: "Good",
+      coverage: 70
+    },
+    {
+      name: "Real-time Communication",
+      technology: "WebSockets",
+      description: "Live updates and real-time collaboration features",
+      health: "Fair",
+      coverage: 60
     }
   ];
 

@@ -40,7 +40,8 @@ import {
   insertProductionPlanSchema, insertProductionTargetSchema, insertResourceAllocationSchema, insertProductionMilestoneSchema,
   insertShiftTemplateSchema, insertResourceShiftAssignmentSchema, insertShiftScenarioSchema, 
   insertHolidaySchema, insertResourceAbsenceSchema, insertShiftCoverageSchema, insertShiftUtilizationSchema,
-  insertUnplannedDowntimeSchema, insertOvertimeShiftSchema, insertDowntimeActionSchema, insertShiftChangeRequestSchema
+  insertUnplannedDowntimeSchema, insertOvertimeShiftSchema, insertDowntimeActionSchema, insertShiftChangeRequestSchema,
+  insertStrategyDocumentSchema, insertDevelopmentTaskSchema, insertTestSuiteSchema, insertTestCaseSchema, insertArchitectureComponentSchema
 } from "@shared/schema";
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -13421,19 +13422,359 @@ Response must be valid JSON:
     }
   });
 
-  // Simple Product Development endpoint for testing
-  app.get("/api/product-development", requireAuth, async (req, res) => {
+  // Product Development API Endpoints
+  
+  // Strategy Documents
+  app.get("/api/strategy-documents", requireAuth, async (req, res) => {
     try {
-      res.json({ 
-        message: "Product Development API is working",
-        strategies: [],
-        components: [],
-        tasks: [],
-        tests: []
-      });
+      const category = req.query.category as string;
+      const documents = await storage.getStrategyDocuments(category);
+      res.json(documents);
     } catch (error) {
-      console.error("Error in product development endpoint:", error);
-      res.status(500).json({ error: "Failed to fetch product development data" });
+      console.error("Error fetching strategy documents:", error);
+      res.status(500).json({ error: "Failed to fetch strategy documents" });
+    }
+  });
+
+  app.get("/api/strategy-documents/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const document = await storage.getStrategyDocument(id);
+      if (!document) {
+        return res.status(404).json({ error: "Strategy document not found" });
+      }
+      res.json(document);
+    } catch (error) {
+      console.error("Error fetching strategy document:", error);
+      res.status(500).json({ error: "Failed to fetch strategy document" });
+    }
+  });
+
+  app.post("/api/strategy-documents", requireAuth, async (req, res) => {
+    try {
+      const documentData = insertStrategyDocumentSchema.parse({
+        ...req.body,
+        createdBy: req.session.userId
+      });
+      const document = await storage.createStrategyDocument(documentData);
+      res.status(201).json(document);
+    } catch (error) {
+      console.error("Error creating strategy document:", error);
+      res.status(500).json({ error: "Failed to create strategy document" });
+    }
+  });
+
+  app.put("/api/strategy-documents/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updateData = req.body;
+      const document = await storage.updateStrategyDocument(id, updateData);
+      if (!document) {
+        return res.status(404).json({ error: "Strategy document not found" });
+      }
+      res.json(document);
+    } catch (error) {
+      console.error("Error updating strategy document:", error);
+      res.status(500).json({ error: "Failed to update strategy document" });
+    }
+  });
+
+  app.delete("/api/strategy-documents/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteStrategyDocument(id);
+      if (!success) {
+        return res.status(404).json({ error: "Strategy document not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting strategy document:", error);
+      res.status(500).json({ error: "Failed to delete strategy document" });
+    }
+  });
+
+  // Development Tasks
+  app.get("/api/development-tasks", requireAuth, async (req, res) => {
+    try {
+      const status = req.query.status as string;
+      const phase = req.query.phase as string;
+      const tasks = await storage.getDevelopmentTasks(status, phase);
+      res.json(tasks);
+    } catch (error) {
+      console.error("Error fetching development tasks:", error);
+      res.status(500).json({ error: "Failed to fetch development tasks" });
+    }
+  });
+
+  app.get("/api/development-tasks/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const task = await storage.getDevelopmentTask(id);
+      if (!task) {
+        return res.status(404).json({ error: "Development task not found" });
+      }
+      res.json(task);
+    } catch (error) {
+      console.error("Error fetching development task:", error);
+      res.status(500).json({ error: "Failed to fetch development task" });
+    }
+  });
+
+  app.post("/api/development-tasks", requireAuth, async (req, res) => {
+    try {
+      const taskData = insertDevelopmentTaskSchema.parse({
+        ...req.body,
+        createdBy: req.session.userId
+      });
+      const task = await storage.createDevelopmentTask(taskData);
+      res.status(201).json(task);
+    } catch (error) {
+      console.error("Error creating development task:", error);
+      res.status(500).json({ error: "Failed to create development task" });
+    }
+  });
+
+  app.put("/api/development-tasks/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updateData = req.body;
+      const task = await storage.updateDevelopmentTask(id, updateData);
+      if (!task) {
+        return res.status(404).json({ error: "Development task not found" });
+      }
+      res.json(task);
+    } catch (error) {
+      console.error("Error updating development task:", error);
+      res.status(500).json({ error: "Failed to update development task" });
+    }
+  });
+
+  app.delete("/api/development-tasks/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteDevelopmentTask(id);
+      if (!success) {
+        return res.status(404).json({ error: "Development task not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting development task:", error);
+      res.status(500).json({ error: "Failed to delete development task" });
+    }
+  });
+
+  // Test Suites
+  app.get("/api/test-suites", requireAuth, async (req, res) => {
+    try {
+      const type = req.query.type as string;
+      const status = req.query.status as string;
+      const suites = await storage.getTestSuites(type, status);
+      res.json(suites);
+    } catch (error) {
+      console.error("Error fetching test suites:", error);
+      res.status(500).json({ error: "Failed to fetch test suites" });
+    }
+  });
+
+  app.get("/api/test-suites/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const suite = await storage.getTestSuite(id);
+      if (!suite) {
+        return res.status(404).json({ error: "Test suite not found" });
+      }
+      res.json(suite);
+    } catch (error) {
+      console.error("Error fetching test suite:", error);
+      res.status(500).json({ error: "Failed to fetch test suite" });
+    }
+  });
+
+  app.post("/api/test-suites", requireAuth, async (req, res) => {
+    try {
+      const suiteData = insertTestSuiteSchema.parse({
+        ...req.body,
+        createdBy: req.session.userId
+      });
+      const suite = await storage.createTestSuite(suiteData);
+      res.status(201).json(suite);
+    } catch (error) {
+      console.error("Error creating test suite:", error);
+      res.status(500).json({ error: "Failed to create test suite" });
+    }
+  });
+
+  app.put("/api/test-suites/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updateData = req.body;
+      const suite = await storage.updateTestSuite(id, updateData);
+      if (!suite) {
+        return res.status(404).json({ error: "Test suite not found" });
+      }
+      res.json(suite);
+    } catch (error) {
+      console.error("Error updating test suite:", error);
+      res.status(500).json({ error: "Failed to update test suite" });
+    }
+  });
+
+  app.delete("/api/test-suites/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteTestSuite(id);
+      if (!success) {
+        return res.status(404).json({ error: "Test suite not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting test suite:", error);
+      res.status(500).json({ error: "Failed to delete test suite" });
+    }
+  });
+
+  // Test Cases
+  app.get("/api/test-cases", requireAuth, async (req, res) => {
+    try {
+      const suiteId = req.query.suiteId ? parseInt(req.query.suiteId as string) : undefined;
+      const testCases = await storage.getTestCases(suiteId);
+      res.json(testCases);
+    } catch (error) {
+      console.error("Error fetching test cases:", error);
+      res.status(500).json({ error: "Failed to fetch test cases" });
+    }
+  });
+
+  app.get("/api/test-cases/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const testCase = await storage.getTestCase(id);
+      if (!testCase) {
+        return res.status(404).json({ error: "Test case not found" });
+      }
+      res.json(testCase);
+    } catch (error) {
+      console.error("Error fetching test case:", error);
+      res.status(500).json({ error: "Failed to fetch test case" });
+    }
+  });
+
+  app.post("/api/test-cases", requireAuth, async (req, res) => {
+    try {
+      const testCaseData = insertTestCaseSchema.parse(req.body);
+      const testCase = await storage.createTestCase(testCaseData);
+      res.status(201).json(testCase);
+    } catch (error) {
+      console.error("Error creating test case:", error);
+      res.status(500).json({ error: "Failed to create test case" });
+    }
+  });
+
+  app.put("/api/test-cases/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updateData = req.body;
+      const testCase = await storage.updateTestCase(id, updateData);
+      if (!testCase) {
+        return res.status(404).json({ error: "Test case not found" });
+      }
+      res.json(testCase);
+    } catch (error) {
+      console.error("Error updating test case:", error);
+      res.status(500).json({ error: "Failed to update test case" });
+    }
+  });
+
+  app.delete("/api/test-cases/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteTestCase(id);
+      if (!success) {
+        return res.status(404).json({ error: "Test case not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting test case:", error);
+      res.status(500).json({ error: "Failed to delete test case" });
+    }
+  });
+
+  app.post("/api/test-cases/:id/run", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const testCase = await storage.runTestCase(id);
+      if (!testCase) {
+        return res.status(404).json({ error: "Test case not found" });
+      }
+      res.json(testCase);
+    } catch (error) {
+      console.error("Error running test case:", error);
+      res.status(500).json({ error: "Failed to run test case" });
+    }
+  });
+
+  // Architecture Components
+  app.get("/api/architecture-components", requireAuth, async (req, res) => {
+    try {
+      const components = await storage.getArchitectureComponents();
+      res.json(components);
+    } catch (error) {
+      console.error("Error fetching architecture components:", error);
+      res.status(500).json({ error: "Failed to fetch architecture components" });
+    }
+  });
+
+  app.get("/api/architecture-components/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const component = await storage.getArchitectureComponent(id);
+      if (!component) {
+        return res.status(404).json({ error: "Architecture component not found" });
+      }
+      res.json(component);
+    } catch (error) {
+      console.error("Error fetching architecture component:", error);
+      res.status(500).json({ error: "Failed to fetch architecture component" });
+    }
+  });
+
+  app.post("/api/architecture-components", requireAuth, async (req, res) => {
+    try {
+      const componentData = insertArchitectureComponentSchema.parse(req.body);
+      const component = await storage.createArchitectureComponent(componentData);
+      res.status(201).json(component);
+    } catch (error) {
+      console.error("Error creating architecture component:", error);
+      res.status(500).json({ error: "Failed to create architecture component" });
+    }
+  });
+
+  app.put("/api/architecture-components/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updateData = req.body;
+      const component = await storage.updateArchitectureComponent(id, updateData);
+      if (!component) {
+        return res.status(404).json({ error: "Architecture component not found" });
+      }
+      res.json(component);
+    } catch (error) {
+      console.error("Error updating architecture component:", error);
+      res.status(500).json({ error: "Failed to update architecture component" });
+    }
+  });
+
+  app.delete("/api/architecture-components/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteArchitectureComponent(id);
+      if (!success) {
+        return res.status(404).json({ error: "Architecture component not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting architecture component:", error);
+      res.status(500).json({ error: "Failed to delete architecture component" });
     }
   });
 

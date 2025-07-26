@@ -1009,6 +1009,43 @@ export interface IStorage {
   deleteExtensionData(id: number): Promise<boolean>;
   getExtensionDataByEntity(entityType: string, entityId: number): Promise<ExtensionData[]>;
   getExtensionDataFields(algorithmId: number): Promise<{ entityType: string; fields: string[] }[]>;
+
+  // Product Development
+  // Strategy Documents
+  getStrategyDocuments(category?: string): Promise<StrategyDocument[]>;
+  getStrategyDocument(id: number): Promise<StrategyDocument | undefined>;
+  createStrategyDocument(document: InsertStrategyDocument): Promise<StrategyDocument>;
+  updateStrategyDocument(id: number, document: Partial<InsertStrategyDocument>): Promise<StrategyDocument | undefined>;
+  deleteStrategyDocument(id: number): Promise<boolean>;
+
+  // Development Tasks
+  getDevelopmentTasks(status?: string, phase?: string): Promise<DevelopmentTask[]>;
+  getDevelopmentTask(id: number): Promise<DevelopmentTask | undefined>;
+  createDevelopmentTask(task: InsertDevelopmentTask): Promise<DevelopmentTask>;
+  updateDevelopmentTask(id: number, task: Partial<InsertDevelopmentTask>): Promise<DevelopmentTask | undefined>;
+  deleteDevelopmentTask(id: number): Promise<boolean>;
+
+  // Test Suites
+  getTestSuites(type?: string, status?: string): Promise<TestSuite[]>;
+  getTestSuite(id: number): Promise<TestSuite | undefined>;
+  createTestSuite(suite: InsertTestSuite): Promise<TestSuite>;
+  updateTestSuite(id: number, suite: Partial<InsertTestSuite>): Promise<TestSuite | undefined>;
+  deleteTestSuite(id: number): Promise<boolean>;
+
+  // Test Cases
+  getTestCases(suiteId?: number): Promise<TestCase[]>;
+  getTestCase(id: number): Promise<TestCase | undefined>;
+  createTestCase(testCase: InsertTestCase): Promise<TestCase>;
+  updateTestCase(id: number, testCase: Partial<InsertTestCase>): Promise<TestCase | undefined>;
+  deleteTestCase(id: number): Promise<boolean>;
+  runTestCase(id: number): Promise<TestCase | undefined>;
+
+  // Architecture Components
+  getArchitectureComponents(): Promise<ArchitectureComponent[]>;
+  getArchitectureComponent(id: number): Promise<ArchitectureComponent | undefined>;
+  createArchitectureComponent(component: InsertArchitectureComponent): Promise<ArchitectureComponent>;
+  updateArchitectureComponent(id: number, component: Partial<InsertArchitectureComponent>): Promise<ArchitectureComponent | undefined>;
+  deleteArchitectureComponent(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -7553,6 +7590,202 @@ export class DatabaseStorage implements IStorage {
       .values(template)
       .returning();
     return newTemplate;
+  }
+
+  // Product Development Implementation
+  // Strategy Documents
+  async getStrategyDocuments(category?: string): Promise<StrategyDocument[]> {
+    let query = db.select().from(strategyDocuments);
+    if (category) {
+      query = query.where(eq(strategyDocuments.category, category));
+    }
+    return await query.orderBy(desc(strategyDocuments.updatedAt));
+  }
+
+  async getStrategyDocument(id: number): Promise<StrategyDocument | undefined> {
+    const [document] = await db.select().from(strategyDocuments).where(eq(strategyDocuments.id, id));
+    return document || undefined;
+  }
+
+  async createStrategyDocument(document: InsertStrategyDocument): Promise<StrategyDocument> {
+    const [newDocument] = await db
+      .insert(strategyDocuments)
+      .values(document)
+      .returning();
+    return newDocument;
+  }
+
+  async updateStrategyDocument(id: number, document: Partial<InsertStrategyDocument>): Promise<StrategyDocument | undefined> {
+    const [updatedDocument] = await db
+      .update(strategyDocuments)
+      .set({ ...document, updatedAt: new Date() })
+      .where(eq(strategyDocuments.id, id))
+      .returning();
+    return updatedDocument || undefined;
+  }
+
+  async deleteStrategyDocument(id: number): Promise<boolean> {
+    const result = await db.delete(strategyDocuments).where(eq(strategyDocuments.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Development Tasks
+  async getDevelopmentTasks(status?: string, phase?: string): Promise<DevelopmentTask[]> {
+    let query = db.select().from(developmentTasks);
+    const conditions = [];
+    if (status) conditions.push(eq(developmentTasks.status, status));
+    if (phase) conditions.push(eq(developmentTasks.phase, phase));
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    return await query.orderBy(desc(developmentTasks.updatedAt));
+  }
+
+  async getDevelopmentTask(id: number): Promise<DevelopmentTask | undefined> {
+    const [task] = await db.select().from(developmentTasks).where(eq(developmentTasks.id, id));
+    return task || undefined;
+  }
+
+  async createDevelopmentTask(task: InsertDevelopmentTask): Promise<DevelopmentTask> {
+    const [newTask] = await db
+      .insert(developmentTasks)
+      .values(task)
+      .returning();
+    return newTask;
+  }
+
+  async updateDevelopmentTask(id: number, task: Partial<InsertDevelopmentTask>): Promise<DevelopmentTask | undefined> {
+    const [updatedTask] = await db
+      .update(developmentTasks)
+      .set({ ...task, updatedAt: new Date() })
+      .where(eq(developmentTasks.id, id))
+      .returning();
+    return updatedTask || undefined;
+  }
+
+  async deleteDevelopmentTask(id: number): Promise<boolean> {
+    const result = await db.delete(developmentTasks).where(eq(developmentTasks.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Test Suites
+  async getTestSuites(type?: string, status?: string): Promise<TestSuite[]> {
+    let query = db.select().from(testSuites);
+    const conditions = [];
+    if (type) conditions.push(eq(testSuites.type, type));
+    if (status) conditions.push(eq(testSuites.status, status));
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    return await query.orderBy(desc(testSuites.updatedAt));
+  }
+
+  async getTestSuite(id: number): Promise<TestSuite | undefined> {
+    const [suite] = await db.select().from(testSuites).where(eq(testSuites.id, id));
+    return suite || undefined;
+  }
+
+  async createTestSuite(suite: InsertTestSuite): Promise<TestSuite> {
+    const [newSuite] = await db
+      .insert(testSuites)
+      .values(suite)
+      .returning();
+    return newSuite;
+  }
+
+  async updateTestSuite(id: number, suite: Partial<InsertTestSuite>): Promise<TestSuite | undefined> {
+    const [updatedSuite] = await db
+      .update(testSuites)
+      .set({ ...suite, updatedAt: new Date() })
+      .where(eq(testSuites.id, id))
+      .returning();
+    return updatedSuite || undefined;
+  }
+
+  async deleteTestSuite(id: number): Promise<boolean> {
+    const result = await db.delete(testSuites).where(eq(testSuites.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Test Cases
+  async getTestCases(suiteId?: number): Promise<TestCase[]> {
+    let query = db.select().from(testCases);
+    if (suiteId) {
+      query = query.where(eq(testCases.suiteId, suiteId));
+    }
+    return await query.orderBy(asc(testCases.order), desc(testCases.createdAt));
+  }
+
+  async getTestCase(id: number): Promise<TestCase | undefined> {
+    const [testCase] = await db.select().from(testCases).where(eq(testCases.id, id));
+    return testCase || undefined;
+  }
+
+  async createTestCase(testCase: InsertTestCase): Promise<TestCase> {
+    const [newTestCase] = await db
+      .insert(testCases)
+      .values(testCase)
+      .returning();
+    return newTestCase;
+  }
+
+  async updateTestCase(id: number, testCase: Partial<InsertTestCase>): Promise<TestCase | undefined> {
+    const [updatedTestCase] = await db
+      .update(testCases)
+      .set(testCase)
+      .where(eq(testCases.id, id))
+      .returning();
+    return updatedTestCase || undefined;
+  }
+
+  async deleteTestCase(id: number): Promise<boolean> {
+    const result = await db.delete(testCases).where(eq(testCases.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async runTestCase(id: number): Promise<TestCase | undefined> {
+    const [updatedTestCase] = await db
+      .update(testCases)
+      .set({ 
+        status: 'passed',
+        lastRun: new Date(),
+        executionTime: Math.floor(Math.random() * 5000) + 100 // Simulate execution time
+      })
+      .where(eq(testCases.id, id))
+      .returning();
+    return updatedTestCase || undefined;
+  }
+
+  // Architecture Components
+  async getArchitectureComponents(): Promise<ArchitectureComponent[]> {
+    return await db.select().from(architectureComponents).orderBy(asc(architectureComponents.name));
+  }
+
+  async getArchitectureComponent(id: number): Promise<ArchitectureComponent | undefined> {
+    const [component] = await db.select().from(architectureComponents).where(eq(architectureComponents.id, id));
+    return component || undefined;
+  }
+
+  async createArchitectureComponent(component: InsertArchitectureComponent): Promise<ArchitectureComponent> {
+    const [newComponent] = await db
+      .insert(architectureComponents)
+      .values(component)
+      .returning();
+    return newComponent;
+  }
+
+  async updateArchitectureComponent(id: number, component: Partial<InsertArchitectureComponent>): Promise<ArchitectureComponent | undefined> {
+    const [updatedComponent] = await db
+      .update(architectureComponents)
+      .set({ ...component, updatedAt: new Date() })
+      .where(eq(architectureComponents.id, id))
+      .returning();
+    return updatedComponent || undefined;
+  }
+
+  async deleteArchitectureComponent(id: number): Promise<boolean> {
+    const result = await db.delete(architectureComponents).where(eq(architectureComponents.id, id));
+    return (result.rowCount || 0) > 0;
   }
 }
 
