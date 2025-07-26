@@ -147,17 +147,17 @@ export default function TopMenu() {
     setMenuOpen(false);
   };
 
-  // All cards are now uniform square size with fixed dimensions
+  // Smaller, more compact cards for desktop
   const getCardSize = (priority: string) => {
-    return "w-full aspect-square min-h-[120px] h-[120px] min-w-[120px]"; // Fixed dimensions for consistency
+    return "w-full aspect-square min-h-[100px] h-[100px] min-w-[100px]"; // Smaller for more compact layout
   };
 
   const getIconSize = (priority: string) => {
-    return "w-5 h-5"; // Uniform icon size (about 30% smaller than previous large)
+    return "w-4 h-4"; // Smaller icons for compact design
   };
 
   const getTextSize = (priority: string) => {
-    return "text-xs font-medium"; // Smaller text to fit square cards
+    return "text-xs font-medium"; // Smaller text to fit compact cards
   };
 
   return (
@@ -293,7 +293,8 @@ export default function TopMenu() {
                       Clear
                     </Button>
                   </div>
-                  <div className="grid grid-cols-3 gap-4 auto-rows-fr">
+                  {/* Mobile: 3 columns, Desktop: 6 columns for more compact layout */}
+                  <div className="grid grid-cols-3 md:grid-cols-6 gap-3 auto-rows-fr">
                     {recentPages.map((page, index) => {
                       // Map page paths to their original icons and colors
                       const getIconAndColorForPage = (path: string) => {
@@ -315,9 +316,9 @@ export default function TopMenu() {
                           href={page.path}
                           onClick={() => setMenuOpen(false)}
                         >
-                          <div className="w-full aspect-square min-h-[120px] h-[120px] min-w-[120px] bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md rounded-xl p-3 cursor-pointer transition-all duration-200 hover:scale-[1.02] flex flex-col items-center justify-center text-center space-y-2">
+                          <div className="w-full aspect-square min-h-[100px] h-[100px] min-w-[100px] md:min-h-[90px] md:h-[90px] md:min-w-[90px] bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] flex flex-col items-center justify-center text-center space-y-1">
                             <div className="bg-gray-100 p-2 rounded-full flex items-center justify-center flex-shrink-0">
-                              <IconComponent className={`w-5 h-5 ${iconColorClass}`} strokeWidth={1.5} fill="none" />
+                              <IconComponent className={`w-4 h-4 ${iconColorClass}`} strokeWidth={1.5} fill="none" />
                             </div>
                             <div className="flex flex-col items-center space-y-1 min-h-0 flex-1">
                               <span className="text-xs font-medium text-gray-800 leading-tight text-center line-clamp-2 overflow-hidden">
@@ -338,45 +339,95 @@ export default function TopMenu() {
                 </div>
               )}
               
-              {getVisibleGroups().map((group, groupIndex) => (
-                <div key={groupIndex} className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
-                    {group.title}
-                  </h3>
-                  <div className="grid grid-cols-3 gap-4 auto-rows-fr">
-                    {group.features.map((feature, featureIndex) => (
-                      <Link 
-                        key={featureIndex} 
-                        href={feature.href === "#max" ? "#" : feature.href}
-                        onClick={() => handleFeatureClick(feature)}
-                      >
-                        <div className={`
-                          ${getCardSize(group.priority)}
-                          bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md
-                          rounded-xl p-3 cursor-pointer transition-all duration-200 hover:scale-[1.02]
-                          flex flex-col items-center justify-center text-center space-y-2
-                          ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50' : ''}
-                          ${feature.isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
-                        `}>
-                          <div className={`
-                            ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : 'bg-gray-100'}
-                            p-2 rounded-full flex items-center justify-center flex-shrink-0
-                          `}>
-                            <feature.icon 
-                              className={`${getIconSize(group.priority)} ${feature.isAI ? 'text-white' : feature.color.replace('bg-', 'text-').replace('-500', '-600')}`} 
-                              strokeWidth={1.5} 
-                              fill="none"
-                            />
-                          </div>
-                          <span className={`${getTextSize(group.priority)} text-gray-800 font-medium leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0`}>
-                            {feature.label}
-                          </span>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
+              {/* Two-column layout for desktop, single column for mobile */}
+              <div className="md:grid md:grid-cols-2 md:gap-8 space-y-8 md:space-y-0">
+                {/* Left Column */}
+                <div className="space-y-6">
+                  {getVisibleGroups().slice(0, Math.ceil(getVisibleGroups().length / 2)).map((group, groupIndex) => (
+                    <div key={groupIndex} className="space-y-3">
+                      <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
+                        {group.title}
+                      </h3>
+                      {/* Mobile: 3 columns, Desktop: 4 columns for compact layout */}
+                      <div className="grid grid-cols-3 md:grid-cols-4 gap-3 auto-rows-fr">
+                        {group.features.map((feature, featureIndex) => (
+                          <Link 
+                            key={featureIndex} 
+                            href={feature.href === "#max" ? "#" : feature.href}
+                            onClick={() => handleFeatureClick(feature)}
+                          >
+                            <div className={`
+                              ${getCardSize(group.priority)}
+                              bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md
+                              rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02]
+                              flex flex-col items-center justify-center text-center space-y-1
+                              ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50' : ''}
+                              ${feature.isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
+                            `}>
+                              <div className={`
+                                ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : 'bg-gray-100'}
+                                p-1.5 rounded-full flex items-center justify-center flex-shrink-0
+                              `}>
+                                <feature.icon 
+                                  className={`${getIconSize(group.priority)} ${feature.isAI ? 'text-white' : feature.color.replace('bg-', 'text-').replace('-500', '-600')}`} 
+                                  strokeWidth={1.5} 
+                                  fill="none"
+                                />
+                              </div>
+                              <span className={`${getTextSize(group.priority)} text-gray-800 font-medium leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0`}>
+                                {feature.label}
+                              </span>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+                
+                {/* Right Column - only visible on desktop */}
+                <div className="hidden md:block space-y-6">
+                  {getVisibleGroups().slice(Math.ceil(getVisibleGroups().length / 2)).map((group, groupIndex) => (
+                    <div key={groupIndex + Math.ceil(getVisibleGroups().length / 2)} className="space-y-3">
+                      <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
+                        {group.title}
+                      </h3>
+                      <div className="grid grid-cols-4 gap-3 auto-rows-fr">
+                        {group.features.map((feature, featureIndex) => (
+                          <Link 
+                            key={featureIndex} 
+                            href={feature.href === "#max" ? "#" : feature.href}
+                            onClick={() => handleFeatureClick(feature)}
+                          >
+                            <div className={`
+                              ${getCardSize(group.priority)}
+                              bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md
+                              rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02]
+                              flex flex-col items-center justify-center text-center space-y-1
+                              ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50' : ''}
+                              ${feature.isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
+                            `}>
+                              <div className={`
+                                ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : 'bg-gray-100'}
+                                p-1.5 rounded-full flex items-center justify-center flex-shrink-0
+                              `}>
+                                <feature.icon 
+                                  className={`${getIconSize(group.priority)} ${feature.isAI ? 'text-white' : feature.color.replace('bg-', 'text-').replace('-500', '-600')}`} 
+                                  strokeWidth={1.5} 
+                                  fill="none"
+                                />
+                              </div>
+                              <span className={`${getTextSize(group.priority)} text-gray-800 font-medium leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0`}>
+                                {feature.label}
+                              </span>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
           
