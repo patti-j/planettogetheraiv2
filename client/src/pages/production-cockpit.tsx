@@ -344,11 +344,15 @@ export default function ProductionCockpit() {
   return (
     <div className={`min-h-screen bg-background ${maximized ? 'fixed inset-0 z-50' : ''}`}>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b bg-card">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Monitor className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold">Production Scheduler's Cockpit</h1>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between p-3 lg:p-4 border-b bg-card gap-3 lg:gap-4">
+        {/* Title and Layout Selector Row */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 min-w-0 flex-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <Monitor className="h-5 w-5 lg:h-6 lg:w-6 text-primary flex-shrink-0" />
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold truncate">
+              <span className="hidden sm:inline">Production Scheduler's Cockpit</span>
+              <span className="sm:hidden">Cockpit</span>
+            </h1>
           </div>
           
           {/* Layout Selector */}
@@ -356,14 +360,14 @@ export default function ProductionCockpit() {
             value={selectedLayout?.toString()}
             onValueChange={(value) => setSelectedLayout(parseInt(value))}
           >
-            <SelectTrigger className="w-64">
+            <SelectTrigger className="w-full sm:w-48 lg:w-64">
               <SelectValue placeholder="Select layout..." />
             </SelectTrigger>
             <SelectContent>
               {layouts?.map((layout: CockpitLayout) => layout && layout.id ? (
                 <SelectItem key={layout.id.toString()} value={layout.id.toString()}>
                   <div className="flex items-center gap-2">
-                    <span>{layout.name || 'Unknown Layout'}</span>
+                    <span className="truncate">{layout.name || 'Unknown Layout'}</span>
                     {layout.is_default && <Badge variant="secondary" className="text-xs">Default</Badge>}
                   </div>
                 </SelectItem>
@@ -372,75 +376,90 @@ export default function ProductionCockpit() {
           </Select>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Auto Refresh Toggle */}
+        {/* Controls Row */}
+        <div className="flex items-center justify-between lg:justify-end gap-2 lg:gap-2">
+          {/* Auto Refresh Toggle - Hide label on mobile */}
           <div className="flex items-center gap-2">
             <Switch
               checked={autoRefresh}
               onCheckedChange={setAutoRefresh}
               id="auto-refresh"
             />
-            <Label htmlFor="auto-refresh" className="text-sm">Auto Refresh</Label>
+            <Label htmlFor="auto-refresh" className="text-xs sm:text-sm hidden sm:inline">
+              Auto Refresh
+            </Label>
+            <Label htmlFor="auto-refresh" className="text-xs sm:hidden">
+              Auto
+            </Label>
           </div>
 
-          {/* Refresh Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => queryClient.invalidateQueries()}
-            disabled={metricsLoading}
-          >
-            <RefreshCw className={`h-4 w-4 ${metricsLoading ? 'animate-spin' : ''}`} />
-          </Button>
+          {/* Action Buttons */}
+          <div className="flex items-center gap-1 lg:gap-2">
+            {/* Refresh Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => queryClient.invalidateQueries()}
+              disabled={metricsLoading}
+              className="p-2 lg:px-3"
+            >
+              <RefreshCw className={`h-4 w-4 ${metricsLoading ? 'animate-spin' : ''}`} />
+              <span className="hidden lg:inline ml-2">Refresh</span>
+            </Button>
 
-          {/* Settings */}
-          <Dialog open={showSettings} onOpenChange={setShowSettings}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Settings className="h-4 w-4" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Cockpit Settings</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="refresh-interval">Refresh Interval (seconds)</Label>
-                  <Input
-                    id="refresh-interval"
-                    type="number"
-                    value={refreshInterval}
-                    onChange={(e) => setRefreshInterval(parseInt(e.target.value))}
-                    min="5"
-                    max="300"
-                  />
+            {/* Settings */}
+            <Dialog open={showSettings} onOpenChange={setShowSettings}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="p-2 lg:px-3">
+                  <Settings className="h-4 w-4" />
+                  <span className="hidden lg:inline ml-2">Settings</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md mx-4">
+                <DialogHeader>
+                  <DialogTitle>Cockpit Settings</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="refresh-interval">Refresh Interval (seconds)</Label>
+                    <Input
+                      id="refresh-interval"
+                      type="number"
+                      value={refreshInterval}
+                      onChange={(e) => setRefreshInterval(parseInt(e.target.value))}
+                      min="5"
+                      max="300"
+                    />
+                  </div>
                 </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogContent>
+            </Dialog>
 
-          {/* Maximize */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setMaximized(!maximized)}
-          >
-            <Maximize2 className="h-4 w-4" />
-          </Button>
+            {/* Maximize */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setMaximized(!maximized)}
+              className="p-2 lg:px-3"
+            >
+              <Maximize2 className="h-4 w-4" />
+              <span className="hidden lg:inline ml-2">Maximize</span>
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="p-4 space-y-4">
+      <div className="p-2 sm:p-4 space-y-3 sm:space-y-4">
         {/* Quick Actions Bar */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex flex-wrap items-center gap-2">
             <Dialog open={newLayoutDialog} onOpenChange={setNewLayoutDialog}>
               <DialogTrigger asChild>
-                <Button size="sm" variant="outline">
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Layout
+                <Button size="sm" variant="outline" className="text-xs sm:text-sm">
+                  <Plus className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">New Layout</span>
+                  <span className="sm:hidden">Layout</span>
                 </Button>
               </DialogTrigger>
               <DialogContent>
@@ -494,9 +513,10 @@ export default function ProductionCockpit() {
             {/* AI Layout Generation Dialog */}
             <Dialog open={aiLayoutDialog} onOpenChange={setAiLayoutDialog}>
               <DialogTrigger asChild>
-                <Button size="sm" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white">
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  AI Layout
+                <Button size="sm" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-xs sm:text-sm">
+                  <Sparkles className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">AI Layout</span>
+                  <span className="sm:hidden">AI</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-lg">
@@ -590,9 +610,10 @@ export default function ProductionCockpit() {
 
             <Dialog open={newWidgetDialog} onOpenChange={setNewWidgetDialog}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm" disabled={!selectedLayout}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Widget
+                <Button variant="outline" size="sm" disabled={!selectedLayout} className="text-xs sm:text-sm">
+                  <Plus className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Add Widget</span>
+                  <span className="sm:hidden">Widget</span>
                 </Button>
               </DialogTrigger>
               <DialogContent>
@@ -653,10 +674,11 @@ export default function ProductionCockpit() {
                   size="sm" 
                   variant="outline" 
                   disabled={!selectedLayout}
-                  className="border-blue-500 text-blue-600 hover:bg-blue-50"
+                  className="border-blue-500 text-blue-600 hover:bg-blue-50 text-xs sm:text-sm"
                 >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  AI Widget
+                  <Sparkles className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">AI Widget</span>
+                  <span className="sm:hidden">AI+</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-lg">
@@ -744,14 +766,18 @@ export default function ProductionCockpit() {
           </div>
 
           {/* Quick Status */}
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span>System Online</span>
+              <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+              <span className="whitespace-nowrap">System Online</span>
             </div>
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              <span>Last Updated: {new Date().toLocaleTimeString()}</span>
+              <Clock className="h-4 w-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">
+                <span className="hidden sm:inline">Last Updated: </span>
+                <span className="sm:hidden">Updated: </span>
+                {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
             </div>
           </div>
         </div>
@@ -773,82 +799,82 @@ export default function ProductionCockpit() {
 
         {/* Main Dashboard Grid */}
         {selectedLayout ? (
-          <div className="grid grid-cols-12 gap-4 min-h-[600px]">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 min-h-[400px] sm:min-h-[600px]">
             {/* Key Metrics */}
-            <Card className="col-span-12 lg:col-span-8">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
+            <Card className="col-span-1 lg:col-span-8">
+              <CardHeader className="pb-3 sm:pb-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />
                   Production Overview
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">
+                    <div className="text-xl sm:text-2xl font-bold text-green-600">
                       {metricsLoading ? "..." : metrics?.activeJobs || 0}
                     </div>
-                    <div className="text-sm text-muted-foreground">Active Jobs</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Active Jobs</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">
+                    <div className="text-xl sm:text-2xl font-bold text-blue-600">
                       {metricsLoading ? "..." : `${metrics?.utilization || 0}%`}
                     </div>
-                    <div className="text-sm text-muted-foreground">Utilization</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Utilization</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-orange-600">
+                    <div className="text-xl sm:text-2xl font-bold text-orange-600">
                       {metricsLoading ? "..." : metrics?.overdueOperations || 0}
                     </div>
-                    <div className="text-sm text-muted-foreground">Overdue</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Overdue</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-600">
+                    <div className="text-xl sm:text-2xl font-bold text-purple-600">
                       {resourcesLoading ? "..." : resources.length}
                     </div>
-                    <div className="text-sm text-muted-foreground">Resources</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">Resources</div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Alerts Panel */}
-            <Card className="col-span-12 lg:col-span-4">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5" />
+            <Card className="col-span-1 lg:col-span-4">
+              <CardHeader className="pb-3 sm:pb-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
                   Active Alerts
                   {alerts.length > 0 && (
-                    <Badge variant="secondary">{alerts.length}</Badge>
+                    <Badge variant="secondary" className="text-xs">{alerts.length}</Badge>
                   )}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
+              <CardContent className="pt-0">
+                <div className="space-y-2 max-h-48 sm:max-h-64 overflow-y-auto">
                   {alertsLoading ? (
-                    <div>Loading alerts...</div>
+                    <div className="text-sm">Loading alerts...</div>
                   ) : alerts.length === 0 ? (
                     <div className="text-center text-muted-foreground py-4">
-                      <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
-                      No active alerts
+                      <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-green-500" />
+                      <div className="text-xs sm:text-sm">No active alerts</div>
                     </div>
                   ) : (
                     alerts.map((alert: CockpitAlert) => (
                       <div key={alert.id} className="flex items-start gap-2 p-2 rounded border">
-                        <AlertTriangle className={`h-4 w-4 mt-0.5 ${
+                        <AlertTriangle className={`h-4 w-4 mt-0.5 flex-shrink-0 ${
                           alert.severity === 'critical' ? 'text-red-500' :
                           alert.severity === 'warning' ? 'text-orange-500' : 'text-blue-500'
                         }`} />
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm">{alert.title}</div>
-                          <div className="text-xs text-muted-foreground truncate">
+                          <div className="font-medium text-sm truncate">{alert.title}</div>
+                          <div className="text-xs text-muted-foreground line-clamp-2">
                             {alert.message}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {new Date(alert.created_at).toLocaleTimeString()}
+                            {new Date(alert.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         </div>
-                        <Badge variant={getSeverityColor(alert.severity) as any} className="text-xs">
+                        <Badge variant={getSeverityColor(alert.severity) as any} className="text-xs flex-shrink-0">
                           {alert.severity}
                         </Badge>
                       </div>
@@ -859,35 +885,35 @@ export default function ProductionCockpit() {
             </Card>
 
             {/* Job Status */}
-            <Card className="col-span-12 lg:col-span-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Factory className="h-5 w-5" />
+            <Card className="col-span-1 lg:col-span-6">
+              <CardHeader className="pb-3 sm:pb-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Factory className="h-4 w-4 sm:h-5 sm:w-5" />
                   Job Status
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
+              <CardContent className="pt-0">
+                <div className="space-y-2 max-h-48 sm:max-h-64 overflow-y-auto">
                   {jobsLoading ? (
-                    <div>Loading jobs...</div>
+                    <div className="text-sm">Loading jobs...</div>
                   ) : (
                     jobs.slice(0, 5).map((job: any) => (
-                      <div key={job.id} className="flex items-center justify-between p-2 rounded border">
-                        <div>
-                          <div className="font-medium">{job.name}</div>
-                          <div className="text-sm text-muted-foreground">
+                      <div key={job.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded border gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-sm truncate">{job.name}</div>
+                          <div className="text-xs text-muted-foreground truncate">
                             Customer: {job.customer}
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="flex items-center justify-between sm:flex-col sm:items-end gap-2">
                           <Badge variant={
                             job.status === 'active' ? 'default' :
                             job.status === 'completed' ? 'secondary' :
                             job.status === 'overdue' ? 'destructive' : 'secondary'
-                          }>
+                          } className="text-xs">
                             {job.status}
                           </Badge>
-                          <div className="text-xs text-muted-foreground mt-1">
+                          <div className="text-xs text-muted-foreground">
                             Priority: {job.priority}
                           </div>
                         </div>
@@ -899,23 +925,23 @@ export default function ProductionCockpit() {
             </Card>
 
             {/* Resource Utilization */}
-            <Card className="col-span-12 lg:col-span-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
+            <Card className="col-span-1 lg:col-span-6">
+              <CardHeader className="pb-3 sm:pb-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Users className="h-4 w-4 sm:h-5 sm:w-5" />
                   Resource Utilization
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
+              <CardContent className="pt-0">
+                <div className="space-y-3 max-h-48 sm:max-h-64 overflow-y-auto">
                   {resourcesLoading ? (
-                    <div>Loading resources...</div>
+                    <div className="text-sm">Loading resources...</div>
                   ) : (
                     resources.slice(0, 4).map((resource: any) => (
-                      <div key={resource.id} className="space-y-1">
+                      <div key={resource.id} className="space-y-2">
                         <div className="flex justify-between text-sm">
-                          <span className="font-medium">{resource.name}</span>
-                          <span className="text-muted-foreground">
+                          <span className="font-medium truncate flex-1 mr-2">{resource.name}</span>
+                          <span className="text-muted-foreground flex-shrink-0">
                             {Math.floor(Math.random() * 40 + 60)}%
                           </span>
                         </div>
@@ -923,7 +949,7 @@ export default function ProductionCockpit() {
                           value={Math.floor(Math.random() * 40 + 60)} 
                           className="h-2"
                         />
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-xs text-muted-foreground truncate">
                           Type: {resource.type}
                         </div>
                       </div>
@@ -935,16 +961,16 @@ export default function ProductionCockpit() {
 
             {/* Custom Widgets */}
             {widgets.map((widget: CockpitWidget) => (
-              <Card key={widget.id} className="col-span-12 lg:col-span-4">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>{widget.title}</span>
-                    <Button variant="ghost" size="sm">
+              <Card key={widget.id} className="col-span-1 lg:col-span-4">
+                <CardHeader className="pb-3 sm:pb-6">
+                  <CardTitle className="flex items-center justify-between text-base sm:text-lg">
+                    <span className="truncate flex-1 mr-2">{widget.title}</span>
+                    <Button variant="ghost" size="sm" className="p-1 sm:p-2">
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </CardTitle>
                   {widget.sub_title && (
-                    <p className="text-sm text-muted-foreground">{widget.sub_title}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">{widget.sub_title}</p>
                   )}
                 </CardHeader>
                 <CardContent>
