@@ -21,7 +21,9 @@ import {
 import { 
   Clock, Users, Calendar, Settings, BarChart3, 
   Plus, Building2, Brain, ChevronLeft, Trash2, UserCheck, 
-  ArrowRight, CheckCircle, AlertCircle, Edit
+  ArrowRight, CheckCircle, AlertCircle, Edit, AlertTriangle,
+  Wrench, Timer, DollarSign, User, MapPin, FileText,
+  PlayCircle, PauseCircle, StopCircle, Activity
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useMaxDock } from '@/contexts/MaxDockContext';
@@ -48,6 +50,18 @@ export default function ShiftManagement() {
     queryKey: ['/api/resource-shift-assignments'],
   });
 
+  const { data: unplannedDowntime = [], isLoading: downtimeLoading } = useQuery({
+    queryKey: ['/api/unplanned-downtime'],
+  });
+
+  const { data: overtimeShifts = [], isLoading: overtimeLoading } = useQuery({
+    queryKey: ['/api/overtime-shifts'],
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['/api/users'],
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12 transition-all duration-200`}>
@@ -72,9 +86,11 @@ export default function ShiftManagement() {
               {/* Mobile Tabs */}
               <div className="block sm:hidden">
                 <div className="overflow-x-auto">
-                  <TabsList className="grid w-max grid-cols-6 gap-1">
+                  <TabsList className="grid w-max grid-cols-8 gap-1">
                     <TabsTrigger value="templates" className="text-xs px-2">Templates</TabsTrigger>
                     <TabsTrigger value="assignments" className="text-xs px-2">Assign</TabsTrigger>
+                    <TabsTrigger value="downtime" className="text-xs px-2">Downtime</TabsTrigger>
+                    <TabsTrigger value="overtime" className="text-xs px-2">Overtime</TabsTrigger>
                     <TabsTrigger value="holidays" className="text-xs px-2">Holidays</TabsTrigger>
                     <TabsTrigger value="absences" className="text-xs px-2">Absences</TabsTrigger>
                     <TabsTrigger value="scenarios" className="text-xs px-2">Scenarios</TabsTrigger>
@@ -85,9 +101,11 @@ export default function ShiftManagement() {
 
               {/* Desktop Tabs */}
               <div className="hidden sm:block">
-                <TabsList className="grid w-full grid-cols-6">
+                <TabsList className="grid w-full grid-cols-8">
                   <TabsTrigger value="templates">Shift Templates</TabsTrigger>
                   <TabsTrigger value="assignments">Assignments</TabsTrigger>
+                  <TabsTrigger value="downtime">Unplanned Downtime</TabsTrigger>
+                  <TabsTrigger value="overtime">Overtime Shifts</TabsTrigger>
                   <TabsTrigger value="holidays">Holidays</TabsTrigger>
                   <TabsTrigger value="absences">Absences</TabsTrigger>
                   <TabsTrigger value="scenarios">Scenarios</TabsTrigger>
@@ -111,6 +129,27 @@ export default function ShiftManagement() {
                   loading={assignmentsLoading}
                   templates={templates}
                   resources={resources}
+                  plants={plants}
+                />
+              </TabsContent>
+
+              <TabsContent value="downtime" className="space-y-6">
+                <UnplannedDowntimeTab 
+                  downtime={unplannedDowntime}
+                  loading={downtimeLoading}
+                  resources={resources}
+                  users={users}
+                  plants={plants}
+                />
+              </TabsContent>
+
+              <TabsContent value="overtime" className="space-y-6">
+                <OvertimeShiftsTab 
+                  overtimeShifts={overtimeShifts}
+                  loading={overtimeLoading}
+                  resources={resources}
+                  templates={templates}
+                  users={users}
                   plants={plants}
                 />
               </TabsContent>
@@ -147,7 +186,12 @@ function ShiftTemplatesTab({ templates, loading, plants, resources }: any) {
   const queryClient = useQueryClient();
 
   const createTemplateMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/shift-templates', { method: 'POST', body: data }),
+    mutationFn: async (data: any) => {
+      return await apiRequest('/api/shift-templates', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/shift-templates'] });
       toast({ title: "Success", description: "Shift template created successfully" });
@@ -1324,5 +1368,624 @@ function AnalyticsTab() {
         Analyze shift performance and utilization metrics
       </p>
     </div>
+  );
+}
+
+// Unplanned Downtime Tab Component
+function UnplannedDowntimeTab({ downtime, loading, resources, users, plants }: any) {
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const createDowntimeMutation = useMutation({
+    mutationFn: (data: any) => apiRequest('/api/unplanned-downtime', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/unplanned-downtime'] });
+      setIsCreateDialogOpen(false);
+      toast({
+        title: "Downtime reported",
+        description: "Unplanned downtime event has been created successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create downtime event. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'critical': return 'bg-red-100 text-red-800';
+      case 'high': return 'bg-orange-100 text-orange-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-red-100 text-red-800';
+      case 'in_progress': return 'bg-yellow-100 text-yellow-800';
+      case 'resolved': return 'bg-green-100 text-green-800';
+      case 'scheduled': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading downtime events...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold">Unplanned Downtime Management</h2>
+          <p className="text-muted-foreground">
+            Track equipment failures, maintenance, and disruption coverage
+          </p>
+        </div>
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Report Downtime
+        </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Active Events</p>
+                <p className="text-xl font-semibold">
+                  {downtime.filter((d: any) => d.status === 'active').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <Wrench className="h-5 w-5 text-yellow-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">In Progress</p>
+                <p className="text-xl font-semibold">
+                  {downtime.filter((d: any) => d.status === 'in_progress').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Resolved Today</p>
+                <p className="text-xl font-semibold">
+                  {downtime.filter((d: any) => d.status === 'resolved' && 
+                    new Date(d.actualEndTime).toDateString() === new Date().toDateString()).length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Timer className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Avg Duration</p>
+                <p className="text-xl font-semibold">
+                  {downtime.length > 0 ? 
+                    Math.round(downtime.reduce((sum: number, d: any) => sum + (d.downtimeMinutes || 0), 0) / downtime.length) 
+                    : 0} min
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Downtime Events List */}
+      <div className="space-y-4">
+        {downtime.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <AlertTriangle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Downtime Events</h3>
+              <p className="text-muted-foreground">
+                Great! No unplanned downtime events are currently recorded.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          downtime.map((event: any) => (
+            <DowntimeEventCard 
+              key={event.id} 
+              event={event} 
+              resources={resources}
+              users={users}
+              getSeverityColor={getSeverityColor}
+              getStatusColor={getStatusColor}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Create Downtime Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Report Unplanned Downtime</DialogTitle>
+            <DialogDescription>
+              Report equipment failure, maintenance issue, or unexpected disruption
+            </DialogDescription>
+          </DialogHeader>
+          <CreateDowntimeForm 
+            resources={resources}
+            users={users}
+            plants={plants}
+            onSubmit={(data: any) => createDowntimeMutation.mutate(data)}
+            isLoading={createDowntimeMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// Overtime Shifts Tab Component
+function OvertimeShiftsTab({ overtimeShifts, loading, resources, templates, users, plants }: any) {
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const createOvertimeMutation = useMutation({
+    mutationFn: (data: any) => apiRequest('/api/overtime-shifts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/overtime-shifts'] });
+      setIsCreateDialogOpen(false);
+      toast({
+        title: "Overtime scheduled",
+        description: "Overtime shift has been created successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create overtime shift. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const getOvertimeTypeColor = (type: string) => {
+    switch (type) {
+      case 'emergency': return 'bg-red-100 text-red-800';
+      case 'coverage': return 'bg-orange-100 text-orange-800';
+      case 'project': return 'bg-blue-100 text-blue-800';
+      case 'maintenance': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'requested': return 'bg-yellow-100 text-yellow-800';
+      case 'approved': return 'bg-green-100 text-green-800';
+      case 'active': return 'bg-blue-100 text-blue-800';
+      case 'completed': return 'bg-gray-100 text-gray-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading overtime shifts...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold">Overtime Shift Management</h2>
+          <p className="text-muted-foreground">
+            Schedule emergency coverage, project overtime, and maintenance shifts
+          </p>
+        </div>
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Schedule Overtime
+        </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Activity className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Active Shifts</p>
+                <p className="text-xl font-semibold">
+                  {overtimeShifts.filter((s: any) => s.status === 'active').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <Clock className="h-5 w-5 text-yellow-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Pending Approval</p>
+                <p className="text-xl font-semibold">
+                  {overtimeShifts.filter((s: any) => s.status === 'requested').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <DollarSign className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">This Week Cost</p>
+                <p className="text-xl font-semibold">
+                  ${overtimeShifts.reduce((sum: number, s: any) => sum + (s.actualCost || s.estimatedCost || 0), 0).toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Emergency</p>
+                <p className="text-xl font-semibold">
+                  {overtimeShifts.filter((s: any) => s.isEmergency).length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Overtime Shifts List */}
+      <div className="space-y-4">
+        {overtimeShifts.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Clock className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Overtime Shifts</h3>
+              <p className="text-muted-foreground">
+                No overtime shifts are currently scheduled.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          overtimeShifts.map((shift: any) => (
+            <OvertimeShiftCard 
+              key={shift.id} 
+              shift={shift} 
+              resources={resources}
+              templates={templates}
+              users={users}
+              getOvertimeTypeColor={getOvertimeTypeColor}
+              getStatusColor={getStatusColor}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Create Overtime Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Schedule Overtime Shift</DialogTitle>
+            <DialogDescription>
+              Create emergency coverage, project overtime, or maintenance shift
+            </DialogDescription>
+          </DialogHeader>
+          <CreateOvertimeForm 
+            resources={resources}
+            templates={templates}
+            users={users}
+            plants={plants}
+            onSubmit={(data: any) => createOvertimeMutation.mutate(data)}
+            isLoading={createOvertimeMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+// Missing Component Definitions
+function DowntimeEventCard({ event, resources, users, getStatusColor, getSeverityColor }: any) {
+  const resource = resources.find((r: any) => r.id === event.resourceId);
+  const reporter = users.find((u: any) => u.id === event.reportedBy);
+
+  return (
+    <Card className="cursor-pointer hover:shadow-md transition-shadow">
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start">
+          <div className="space-y-2 flex-1">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-orange-500" />
+              <h3 className="font-medium">{event.title}</h3>
+              <Badge className={getSeverityColor(event.severity)}>
+                {event.severity}
+              </Badge>
+              <Badge className={getStatusColor(event.status)}>
+                {event.status}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {event.description}
+            </p>
+          </div>
+          <div className="text-right">
+            {event.downtimeMinutes > 0 && (
+              <div className="text-sm font-medium text-red-600">
+                {Math.round(event.downtimeMinutes / 60)}h downtime
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CreateDowntimeForm({ resources, users, plants, onSubmit, isLoading }: any) {
+  const [formData, setFormData] = useState({
+    resourceId: '',
+    downtimeType: 'equipment_failure',
+    severity: 'medium',
+    title: '',
+    description: '',
+    reportedBy: users[0]?.id || '',
+    plantId: plants[0]?.id || '',
+  });
+
+  const handleSubmit = (e: any) => {
+    e.preventDefault();
+    onSubmit({
+      ...formData,
+      resourceId: parseInt(formData.resourceId),
+      reportedBy: parseInt(formData.reportedBy),
+      plantId: parseInt(formData.plantId),
+      startTime: new Date().toISOString(),
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="resource">Resource</Label>
+        <Select value={formData.resourceId} onValueChange={(value) => setFormData({...formData, resourceId: value})}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select resource" />
+          </SelectTrigger>
+          <SelectContent>
+            {resources.map((resource: any) => (
+              <SelectItem key={resource.id} value={resource.id.toString()}>
+                {resource.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="title">Title</Label>
+        <Input
+          id="title"
+          value={formData.title}
+          onChange={(e) => setFormData({...formData, title: e.target.value})}
+          placeholder="Brief description of the issue"
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          value={formData.description}
+          onChange={(e) => setFormData({...formData, description: e.target.value})}
+          placeholder="Detailed description of the downtime event"
+          required
+        />
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? 'Creating...' : 'Report Downtime'}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function OvertimeShiftCard({ shift, resources, templates, users, getOvertimeTypeColor, getStatusColor }: any) {
+  const resource = resources.find((r: any) => r.id === shift.resourceId);
+  const requester = users.find((u: any) => u.id === shift.requestedBy);
+
+  const formatCurrency = (cents: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(cents / 100);
+  };
+
+  return (
+    <Card className="cursor-pointer hover:shadow-md transition-shadow">
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start">
+          <div className="space-y-2 flex-1">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-blue-500" />
+              <h3 className="font-medium">{shift.overtimeType.replace('_', ' ')}</h3>
+              <Badge className={getStatusColor(shift.status)}>
+                {shift.status}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {shift.reason}
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="text-sm font-medium text-green-600">
+              {formatCurrency(shift.estimatedCost)}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CreateOvertimeForm({ resources, templates, users, plants, onSubmit, isLoading }: any) {
+  const [formData, setFormData] = useState({
+    resourceId: '',
+    overtimeType: 'planned_overtime',
+    reason: '',
+    startTime: '',
+    endTime: '',
+    requestedBy: users[0]?.id || '',
+    premiumMultiplier: 150,
+    plantId: plants[0]?.id || '',
+    isEmergency: false,
+  });
+
+  const handleSubmit = (e: any) => {
+    e.preventDefault();
+    onSubmit({
+      ...formData,
+      resourceId: parseInt(formData.resourceId),
+      requestedBy: parseInt(formData.requestedBy),
+      plantId: parseInt(formData.plantId),
+      estimatedCost: 5000, // $50 placeholder
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="resource">Resource</Label>
+        <Select value={formData.resourceId} onValueChange={(value) => setFormData({...formData, resourceId: value})}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select resource" />
+          </SelectTrigger>
+          <SelectContent>
+            {resources.map((resource: any) => (
+              <SelectItem key={resource.id} value={resource.id.toString()}>
+                {resource.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="reason">Reason</Label>
+        <Textarea
+          id="reason"
+          value={formData.reason}
+          onChange={(e) => setFormData({...formData, reason: e.target.value})}
+          placeholder="Reason for overtime shift"
+          required
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="startTime">Start Time</Label>
+          <Input
+            id="startTime"
+            type="datetime-local"
+            value={formData.startTime}
+            onChange={(e) => setFormData({...formData, startTime: e.target.value})}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="endTime">End Time</Label>
+          <Input
+            id="endTime"
+            type="datetime-local"
+            value={formData.endTime}
+            onChange={(e) => setFormData({...formData, endTime: e.target.value})}
+            required
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? 'Creating...' : 'Request Overtime'}
+        </Button>
+      </div>
+    </form>
   );
 }

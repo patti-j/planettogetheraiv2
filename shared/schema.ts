@@ -4184,3 +4184,162 @@ export type InsertShiftCoverage = z.infer<typeof insertShiftCoverageSchema>;
 
 export type ShiftUtilization = typeof shiftUtilization.$inferSelect;
 export type InsertShiftUtilization = z.infer<typeof insertShiftUtilizationSchema>;
+
+// Unplanned Downtime Management Tables
+export const unplannedDowntime = pgTable("unplanned_downtime", {
+  id: serial("id").primaryKey(),
+  resourceId: integer("resource_id").references(() => resources.id).notNull(),
+  downtimeType: text("downtime_type").notNull(), // equipment_failure, emergency_maintenance, power_outage, quality_issue, accident, breakdown
+  severity: text("severity").notNull().default("medium"), // low, medium, high, critical
+  status: text("status").notNull().default("active"), // active, resolved, investigating, pending_parts
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  startTime: timestamp("start_time").notNull(),
+  estimatedEndTime: timestamp("estimated_end_time"),
+  actualEndTime: timestamp("actual_end_time"),
+  reportedBy: integer("reported_by").references(() => users.id).notNull(),
+  assignedTo: integer("assigned_to").references(() => users.id),
+  estimatedCost: integer("estimated_cost").default(0), // in cents
+  actualCost: integer("actual_cost").default(0), // in cents
+  impactedOperations: jsonb("impacted_operations").$type<number[]>().default([]),
+  rootCause: text("root_cause"),
+  resolution: text("resolution"),
+  preventiveMeasures: text("preventive_measures"),
+  partsRequired: jsonb("parts_required").$type<{name: string, quantity: number, cost?: number}[]>().default([]),
+  laborHours: integer("labor_hours").default(0), // in minutes
+  downtimeMinutes: integer("downtime_minutes").default(0),
+  isRecurring: boolean("is_recurring").default(false),
+  lastOccurrence: timestamp("last_occurrence"),
+  priority: text("priority").notNull().default("medium"), // low, medium, high, urgent
+  plantId: integer("plant_id").references(() => plants.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Overtime Shift Management Tables
+export const overtimeShifts = pgTable("overtime_shifts", {
+  id: serial("id").primaryKey(),
+  resourceId: integer("resource_id").references(() => resources.id).notNull(),
+  shiftTemplateId: integer("shift_template_id").references(() => shiftTemplates.id),
+  overtimeType: text("overtime_type").notNull(), // emergency_coverage, planned_overtime, maintenance_window, production_push, disruption_coverage
+  reason: text("reason").notNull(),
+  status: text("status").notNull().default("pending"), // pending, approved, active, completed, cancelled
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  actualStartTime: timestamp("actual_start_time"),
+  actualEndTime: timestamp("actual_end_time"),
+  approvedBy: integer("approved_by").references(() => users.id),
+  requestedBy: integer("requested_by").references(() => users.id).notNull(),
+  hourlyRate: integer("hourly_rate").notNull(), // in cents
+  premiumMultiplier: integer("premium_multiplier").notNull().default(150), // 150 = 1.5x normal rate
+  estimatedCost: integer("estimated_cost").notNull(), // in cents
+  actualCost: integer("actual_cost").default(0), // in cents
+  assignedOperations: jsonb("assigned_operations").$type<number[]>().default([]),
+  coveringFor: integer("covering_for").references(() => resources.id), // if covering for another resource
+  downtimeId: integer("downtime_id").references(() => unplannedDowntime.id), // if related to downtime
+  notes: text("notes"),
+  isEmergency: boolean("is_emergency").default(false),
+  autoApproved: boolean("auto_approved").default(false),
+  plantId: integer("plant_id").references(() => plants.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Downtime Actions and Response Tracking
+export const downtimeActions = pgTable("downtime_actions", {
+  id: serial("id").primaryKey(),
+  downtimeId: integer("downtime_id").references(() => unplannedDowntime.id).notNull(),
+  actionType: text("action_type").notNull(), // immediate_response, investigation, repair, testing, follow_up, documentation
+  actionTitle: text("action_title").notNull(),
+  description: text("description").notNull(),
+  assignedTo: integer("assigned_to").references(() => users.id).notNull(),
+  status: text("status").notNull().default("pending"), // pending, in_progress, completed, cancelled, blocked
+  priority: text("priority").notNull().default("medium"), // low, medium, high, urgent
+  estimatedDuration: integer("estimated_duration").default(0), // in minutes
+  actualDuration: integer("actual_duration").default(0), // in minutes
+  dueDate: timestamp("due_date"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  notes: text("notes"),
+  skillsRequired: jsonb("skills_required").$type<string[]>().default([]),
+  toolsRequired: jsonb("tools_required").$type<string[]>().default([]),
+  cost: integer("cost").default(0), // in cents
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Shift Change Requests for Emergency Coverage
+export const shiftChangeRequests = pgTable("shift_change_requests", {
+  id: serial("id").primaryKey(),
+  originalResourceId: integer("original_resource_id").references(() => resources.id).notNull(),
+  replacementResourceId: integer("replacement_resource_id").references(() => resources.id),
+  shiftDate: timestamp("shift_date").notNull(),
+  shiftTemplateId: integer("shift_template_id").references(() => shiftTemplates.id).notNull(),
+  requestType: text("request_type").notNull(), // emergency_coverage, planned_absence, illness, overtime_needed, shift_swap
+  reason: text("reason").notNull(),
+  status: text("status").notNull().default("pending"), // pending, approved, denied, fulfilled, cancelled
+  urgency: text("urgency").notNull().default("normal"), // low, normal, high, critical
+  requestedBy: integer("requested_by").references(() => users.id).notNull(),
+  approvedBy: integer("approved_by").references(() => users.id),
+  downtimeId: integer("downtime_id").references(() => unplannedDowntime.id), // if related to downtime
+  estimatedCoverage: integer("estimated_coverage").default(100), // percentage coverage needed
+  skillsRequired: jsonb("skills_required").$type<string[]>().default([]),
+  notes: text("notes"),
+  plantId: integer("plant_id").references(() => plants.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Unplanned Downtime Insert Schemas
+export const insertUnplannedDowntimeSchema = createInsertSchema(unplannedDowntime).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  startTime: z.union([z.string().datetime(), z.date()]),
+  estimatedEndTime: z.union([z.string().datetime(), z.date()]).optional(),
+  actualEndTime: z.union([z.string().datetime(), z.date()]).optional(),
+  lastOccurrence: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertOvertimeShiftSchema = createInsertSchema(overtimeShifts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  startTime: z.union([z.string().datetime(), z.date()]),
+  endTime: z.union([z.string().datetime(), z.date()]),
+  actualStartTime: z.union([z.string().datetime(), z.date()]).optional(),
+  actualEndTime: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertDowntimeActionSchema = createInsertSchema(downtimeActions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  dueDate: z.union([z.string().datetime(), z.date()]).optional(),
+  startedAt: z.union([z.string().datetime(), z.date()]).optional(),
+  completedAt: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertShiftChangeRequestSchema = createInsertSchema(shiftChangeRequests).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  shiftDate: z.union([z.string().datetime(), z.date()]),
+});
+
+// Unplanned Downtime and Overtime Types
+export type UnplannedDowntime = typeof unplannedDowntime.$inferSelect;
+export type InsertUnplannedDowntime = z.infer<typeof insertUnplannedDowntimeSchema>;
+
+export type OvertimeShift = typeof overtimeShifts.$inferSelect;
+export type InsertOvertimeShift = z.infer<typeof insertOvertimeShiftSchema>;
+
+export type DowntimeAction = typeof downtimeActions.$inferSelect;
+export type InsertDowntimeAction = z.infer<typeof insertDowntimeActionSchema>;
+
+export type ShiftChangeRequest = typeof shiftChangeRequests.$inferSelect;
+export type InsertShiftChangeRequest = z.infer<typeof insertShiftChangeRequestSchema>;

@@ -39,7 +39,8 @@ import {
   insertLeadCaptureSchema, insertPageAnalyticsSchema, insertABTestSchema, insertEmailCampaignSchema,
   insertProductionPlanSchema, insertProductionTargetSchema, insertResourceAllocationSchema, insertProductionMilestoneSchema,
   insertShiftTemplateSchema, insertResourceShiftAssignmentSchema, insertShiftScenarioSchema, 
-  insertHolidaySchema, insertResourceAbsenceSchema, insertShiftCoverageSchema, insertShiftUtilizationSchema
+  insertHolidaySchema, insertResourceAbsenceSchema, insertShiftCoverageSchema, insertShiftUtilizationSchema,
+  insertUnplannedDowntimeSchema, insertOvertimeShiftSchema, insertDowntimeActionSchema, insertShiftChangeRequestSchema
 } from "@shared/schema";
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -12197,6 +12198,165 @@ Create a natural, conversational voice script that explains this feature to some
     }
   });
 
+  // Unplanned Downtime Management
+  app.get("/api/unplanned-downtime", async (req, res) => {
+    try {
+      const resourceId = req.query.resourceId ? parseInt(req.query.resourceId as string) : undefined;
+      const status = req.query.status as string;
+      const downtime = await storage.getUnplannedDowntime(resourceId, status);
+      res.json(downtime);
+    } catch (error) {
+      console.error("Error fetching unplanned downtime:", error);
+      res.status(500).json({ error: "Failed to fetch unplanned downtime" });
+    }
+  });
+
+  app.post("/api/unplanned-downtime", requireAuth, async (req, res) => {
+    try {
+      const downtimeData = req.body;
+      const downtime = await storage.createUnplannedDowntime(downtimeData);
+      res.status(201).json(downtime);
+    } catch (error) {
+      console.error("Error creating unplanned downtime:", error);
+      res.status(500).json({ error: "Failed to create unplanned downtime" });
+    }
+  });
+
+  app.put("/api/unplanned-downtime/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid downtime ID" });
+      }
+      const updates = req.body;
+      const downtime = await storage.updateUnplannedDowntime(id, updates);
+      if (!downtime) {
+        return res.status(404).json({ error: "Downtime not found" });
+      }
+      res.json(downtime);
+    } catch (error) {
+      console.error("Error updating unplanned downtime:", error);
+      res.status(500).json({ error: "Failed to update unplanned downtime" });
+    }
+  });
+
+  app.delete("/api/unplanned-downtime/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid downtime ID" });
+      }
+      const success = await storage.deleteUnplannedDowntime(id);
+      if (!success) {
+        return res.status(404).json({ error: "Downtime not found" });
+      }
+      res.json({ message: "Downtime deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting unplanned downtime:", error);
+      res.status(500).json({ error: "Failed to delete unplanned downtime" });
+    }
+  });
+
+  // Overtime Shifts Management
+  app.get("/api/overtime-shifts", async (req, res) => {
+    try {
+      const resourceId = req.query.resourceId ? parseInt(req.query.resourceId as string) : undefined;
+      const status = req.query.status as string;
+      const overtimeShifts = await storage.getOvertimeShifts(resourceId, status);
+      res.json(overtimeShifts);
+    } catch (error) {
+      console.error("Error fetching overtime shifts:", error);
+      res.status(500).json({ error: "Failed to fetch overtime shifts" });
+    }
+  });
+
+  app.post("/api/overtime-shifts", requireAuth, async (req, res) => {
+    try {
+      const overtimeData = req.body;
+      const overtime = await storage.createOvertimeShift(overtimeData);
+      res.status(201).json(overtime);
+    } catch (error) {
+      console.error("Error creating overtime shift:", error);
+      res.status(500).json({ error: "Failed to create overtime shift" });
+    }
+  });
+
+  app.put("/api/overtime-shifts/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid overtime shift ID" });
+      }
+      const updates = req.body;
+      const overtime = await storage.updateOvertimeShift(id, updates);
+      if (!overtime) {
+        return res.status(404).json({ error: "Overtime shift not found" });
+      }
+      res.json(overtime);
+    } catch (error) {
+      console.error("Error updating overtime shift:", error);
+      res.status(500).json({ error: "Failed to update overtime shift" });
+    }
+  });
+
+  app.delete("/api/overtime-shifts/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid overtime shift ID" });
+      }
+      const success = await storage.deleteOvertimeShift(id);
+      if (!success) {
+        return res.status(404).json({ error: "Overtime shift not found" });
+      }
+      res.json({ message: "Overtime shift deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting overtime shift:", error);
+      res.status(500).json({ error: "Failed to delete overtime shift" });
+    }
+  });
+
+  // Downtime Actions Management
+  app.get("/api/downtime-actions", async (req, res) => {
+    try {
+      const downtimeId = req.query.downtimeId ? parseInt(req.query.downtimeId as string) : undefined;
+      const actions = await storage.getDowntimeActions(downtimeId);
+      res.json(actions);
+    } catch (error) {
+      console.error("Error fetching downtime actions:", error);
+      res.status(500).json({ error: "Failed to fetch downtime actions" });
+    }
+  });
+
+  app.post("/api/downtime-actions", requireAuth, async (req, res) => {
+    try {
+      const actionData = req.body;
+      const action = await storage.createDowntimeAction(actionData);
+      res.status(201).json(action);
+    } catch (error) {
+      console.error("Error creating downtime action:", error);
+      res.status(500).json({ error: "Failed to create downtime action" });
+    }
+  });
+
+  app.put("/api/downtime-actions/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid action ID" });
+      }
+      const updates = req.body;
+      const action = await storage.updateDowntimeAction(id, updates);
+      if (!action) {
+        return res.status(404).json({ error: "Action not found" });
+      }
+      res.json(action);
+    } catch (error) {
+      console.error("Error updating downtime action:", error);
+      res.status(500).json({ error: "Failed to update downtime action" });
+    }
+  });
+
   app.post("/api/shifts/ai-optimize", requireAuth, async (req, res) => {
     try {
       const { shifts, constraints, objectives } = req.body;
@@ -12350,6 +12510,249 @@ Create a natural, conversational voice script that explains this feature to some
     } catch (error) {
       console.error("Error fetching shift utilization summary:", error);
       res.status(500).json({ error: "Failed to fetch shift utilization summary" });
+    }
+  });
+
+  // Unplanned Downtime Management
+  app.get("/api/unplanned-downtime", async (req, res) => {
+    try {
+      const resourceId = req.query.resourceId ? parseInt(req.query.resourceId as string) : undefined;
+      const status = req.query.status as string | undefined;
+      const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : undefined;
+      
+      const downtimes = await storage.getUnplannedDowntime(resourceId, status, plantId);
+      res.json(downtimes);
+    } catch (error) {
+      console.error("Error fetching unplanned downtime:", error);
+      res.status(500).json({ error: "Failed to fetch unplanned downtime" });
+    }
+  });
+
+  app.post("/api/unplanned-downtime", requireAuth, async (req, res) => {
+    try {
+      const downtimeData = insertUnplannedDowntimeSchema.parse(req.body);
+      const downtime = await storage.createUnplannedDowntime(downtimeData);
+      res.status(201).json(downtime);
+    } catch (error) {
+      console.error("Error creating unplanned downtime:", error);
+      res.status(500).json({ error: "Failed to create unplanned downtime" });
+    }
+  });
+
+  app.put("/api/unplanned-downtime/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid downtime ID" });
+      }
+      const updates = insertUnplannedDowntimeSchema.partial().parse(req.body);
+      const downtime = await storage.updateUnplannedDowntime(id, updates);
+      if (!downtime) {
+        return res.status(404).json({ error: "Downtime not found" });
+      }
+      res.json(downtime);
+    } catch (error) {
+      console.error("Error updating unplanned downtime:", error);
+      res.status(500).json({ error: "Failed to update unplanned downtime" });
+    }
+  });
+
+  app.delete("/api/unplanned-downtime/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid downtime ID" });
+      }
+      const success = await storage.deleteUnplannedDowntime(id);
+      if (!success) {
+        return res.status(404).json({ error: "Downtime not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting unplanned downtime:", error);
+      res.status(500).json({ error: "Failed to delete unplanned downtime" });
+    }
+  });
+
+  // Overtime Shift Management
+  app.get("/api/overtime-shifts", async (req, res) => {
+    try {
+      const resourceId = req.query.resourceId ? parseInt(req.query.resourceId as string) : undefined;
+      const status = req.query.status as string | undefined;
+      const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : undefined;
+      
+      const overtimeShifts = await storage.getOvertimeShifts(resourceId, status, plantId);
+      res.json(overtimeShifts);
+    } catch (error) {
+      console.error("Error fetching overtime shifts:", error);
+      res.status(500).json({ error: "Failed to fetch overtime shifts" });
+    }
+  });
+
+  app.post("/api/overtime-shifts", requireAuth, async (req, res) => {
+    try {
+      const overtimeData = insertOvertimeShiftSchema.parse(req.body);
+      const overtime = await storage.createOvertimeShift(overtimeData);
+      res.status(201).json(overtime);
+    } catch (error) {
+      console.error("Error creating overtime shift:", error);
+      res.status(500).json({ error: "Failed to create overtime shift" });
+    }
+  });
+
+  app.put("/api/overtime-shifts/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid overtime shift ID" });
+      }
+      const updates = insertOvertimeShiftSchema.partial().parse(req.body);
+      const overtime = await storage.updateOvertimeShift(id, updates);
+      if (!overtime) {
+        return res.status(404).json({ error: "Overtime shift not found" });
+      }
+      res.json(overtime);
+    } catch (error) {
+      console.error("Error updating overtime shift:", error);
+      res.status(500).json({ error: "Failed to update overtime shift" });
+    }
+  });
+
+  app.delete("/api/overtime-shifts/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid overtime shift ID" });
+      }
+      const success = await storage.deleteOvertimeShift(id);
+      if (!success) {
+        return res.status(404).json({ error: "Overtime shift not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting overtime shift:", error);
+      res.status(500).json({ error: "Failed to delete overtime shift" });
+    }
+  });
+
+  // Downtime Actions Management
+  app.get("/api/downtime-actions", async (req, res) => {
+    try {
+      const downtimeId = req.query.downtimeId ? parseInt(req.query.downtimeId as string) : undefined;
+      const assignedTo = req.query.assignedTo ? parseInt(req.query.assignedTo as string) : undefined;
+      
+      const actions = await storage.getDowntimeActions(downtimeId, assignedTo);
+      res.json(actions);
+    } catch (error) {
+      console.error("Error fetching downtime actions:", error);
+      res.status(500).json({ error: "Failed to fetch downtime actions" });
+    }
+  });
+
+  app.post("/api/downtime-actions", requireAuth, async (req, res) => {
+    try {
+      const actionData = insertDowntimeActionSchema.parse(req.body);
+      const action = await storage.createDowntimeAction(actionData);
+      res.status(201).json(action);
+    } catch (error) {
+      console.error("Error creating downtime action:", error);
+      res.status(500).json({ error: "Failed to create downtime action" });
+    }
+  });
+
+  app.put("/api/downtime-actions/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid action ID" });
+      }
+      const updates = insertDowntimeActionSchema.partial().parse(req.body);
+      const action = await storage.updateDowntimeAction(id, updates);
+      if (!action) {
+        return res.status(404).json({ error: "Downtime action not found" });
+      }
+      res.json(action);
+    } catch (error) {
+      console.error("Error updating downtime action:", error);
+      res.status(500).json({ error: "Failed to update downtime action" });
+    }
+  });
+
+  app.delete("/api/downtime-actions/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid action ID" });
+      }
+      const success = await storage.deleteDowntimeAction(id);
+      if (!success) {
+        return res.status(404).json({ error: "Downtime action not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting downtime action:", error);
+      res.status(500).json({ error: "Failed to delete downtime action" });
+    }
+  });
+
+  // Shift Change Requests Management
+  app.get("/api/shift-change-requests", async (req, res) => {
+    try {
+      const status = req.query.status as string | undefined;
+      const urgency = req.query.urgency as string | undefined;
+      const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : undefined;
+      
+      const requests = await storage.getShiftChangeRequests(status, urgency, plantId);
+      res.json(requests);
+    } catch (error) {
+      console.error("Error fetching shift change requests:", error);
+      res.status(500).json({ error: "Failed to fetch shift change requests" });
+    }
+  });
+
+  app.post("/api/shift-change-requests", requireAuth, async (req, res) => {
+    try {
+      const requestData = insertShiftChangeRequestSchema.parse(req.body);
+      const request = await storage.createShiftChangeRequest(requestData);
+      res.status(201).json(request);
+    } catch (error) {
+      console.error("Error creating shift change request:", error);
+      res.status(500).json({ error: "Failed to create shift change request" });
+    }
+  });
+
+  app.put("/api/shift-change-requests/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid request ID" });
+      }
+      const updates = insertShiftChangeRequestSchema.partial().parse(req.body);
+      const request = await storage.updateShiftChangeRequest(id, updates);
+      if (!request) {
+        return res.status(404).json({ error: "Shift change request not found" });
+      }
+      res.json(request);
+    } catch (error) {
+      console.error("Error updating shift change request:", error);
+      res.status(500).json({ error: "Failed to update shift change request" });
+    }
+  });
+
+  app.delete("/api/shift-change-requests/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid request ID" });
+      }
+      const success = await storage.deleteShiftChangeRequest(id);
+      if (!success) {
+        return res.status(404).json({ error: "Shift change request not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting shift change request:", error);
+      res.status(500).json({ error: "Failed to delete shift change request" });
     }
   });
 

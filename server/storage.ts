@@ -69,9 +69,9 @@ import {
   industryTemplates, userIndustryTemplates, templateConfigurations,
   type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
   type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration,
-  shiftTemplates, resourceShiftAssignments, holidays, resourceAbsences, shiftScenarios,
-  type ShiftTemplate, type ResourceShiftAssignment, type Holiday, type ResourceAbsence, type ShiftScenario,
-  type InsertShiftTemplate, type InsertResourceShiftAssignment, type InsertHoliday, type InsertResourceAbsence, type InsertShiftScenario,
+  shiftTemplates, resourceShiftAssignments, holidays, resourceAbsences, shiftScenarios, unplannedDowntime, overtimeShifts, downtimeActions, shiftChangeRequests,
+  type ShiftTemplate, type ResourceShiftAssignment, type Holiday, type ResourceAbsence, type ShiftScenario, type UnplannedDowntime, type OvertimeShift, type DowntimeAction, type ShiftChangeRequest,
+  type InsertShiftTemplate, type InsertResourceShiftAssignment, type InsertHoliday, type InsertResourceAbsence, type InsertShiftScenario, type InsertUnplannedDowntime, type InsertOvertimeShift, type InsertDowntimeAction, type InsertShiftChangeRequest,
   // accountInfo, billingHistory, usageMetrics,
   // type AccountInfo, type BillingHistory, type UsageMetrics,
   // type InsertAccountInfo, type InsertBillingHistory, type InsertUsageMetrics
@@ -7054,6 +7054,390 @@ export class DatabaseStorage implements IStorage {
       totalResources: 20,
       period: dateRange ? `${dateRange.start.toDateString()} to ${dateRange.end.toDateString()}` : 'Current week'
     };
+  }
+
+  // Unplanned Downtime Management
+  async getUnplannedDowntime(resourceId?: number, status?: string, plantId?: number): Promise<UnplannedDowntime[]> {
+    let query = db
+      .select({
+        id: unplannedDowntime.id,
+        resourceId: unplannedDowntime.resourceId,
+        downtimeType: unplannedDowntime.downtimeType,
+        severity: unplannedDowntime.severity,
+        status: unplannedDowntime.status,
+        title: unplannedDowntime.title,
+        description: unplannedDowntime.description,
+        startTime: unplannedDowntime.startTime,
+        estimatedEndTime: unplannedDowntime.estimatedEndTime,
+        actualEndTime: unplannedDowntime.actualEndTime,
+        reportedBy: unplannedDowntime.reportedBy,
+        assignedTo: unplannedDowntime.assignedTo,
+        estimatedCost: unplannedDowntime.estimatedCost,
+        actualCost: unplannedDowntime.actualCost,
+        impactedOperations: unplannedDowntime.impactedOperations,
+        rootCause: unplannedDowntime.rootCause,
+        resolution: unplannedDowntime.resolution,
+        preventiveMeasures: unplannedDowntime.preventiveMeasures,
+        partsRequired: unplannedDowntime.partsRequired,
+        laborHours: unplannedDowntime.laborHours,
+        downtimeMinutes: unplannedDowntime.downtimeMinutes,
+        isRecurring: unplannedDowntime.isRecurring,
+        lastOccurrence: unplannedDowntime.lastOccurrence,
+        priority: unplannedDowntime.priority,
+        plantId: unplannedDowntime.plantId,
+        createdAt: unplannedDowntime.createdAt,
+        updatedAt: unplannedDowntime.updatedAt,
+        // Include resource and user names
+        resourceName: resources.name,
+        reportedByName: sql<string>`reported_user.first_name || ' ' || reported_user.last_name`,
+        assignedToName: sql<string>`assigned_user.first_name || ' ' || assigned_user.last_name`
+      })
+      .from(unplannedDowntime)
+      .leftJoin(resources, eq(unplannedDowntime.resourceId, resources.id))
+      .leftJoin(users.as('reported_user'), eq(unplannedDowntime.reportedBy, users.id))
+      .leftJoin(users.as('assigned_user'), eq(unplannedDowntime.assignedTo, users.id));
+    
+    const conditions = [];
+    if (resourceId) conditions.push(eq(unplannedDowntime.resourceId, resourceId));
+    if (status) conditions.push(eq(unplannedDowntime.status, status));
+    if (plantId) conditions.push(eq(unplannedDowntime.plantId, plantId));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(unplannedDowntime.createdAt));
+  }
+
+  async createUnplannedDowntime(downtimeData: InsertUnplannedDowntime): Promise<UnplannedDowntime> {
+    const [downtime] = await db
+      .insert(unplannedDowntime)
+      .values(downtimeData)
+      .returning();
+    return downtime;
+  }
+
+  async updateUnplannedDowntime(id: number, updates: Partial<InsertUnplannedDowntime>): Promise<UnplannedDowntime | undefined> {
+    const [downtime] = await db
+      .update(unplannedDowntime)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(unplannedDowntime.id, id))
+      .returning();
+    return downtime;
+  }
+
+  async deleteUnplannedDowntime(id: number): Promise<boolean> {
+    const result = await db.delete(unplannedDowntime).where(eq(unplannedDowntime.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Overtime Shift Management
+  async getOvertimeShifts(resourceId?: number, status?: string, plantId?: number): Promise<OvertimeShift[]> {
+    let query = db
+      .select({
+        id: overtimeShifts.id,
+        resourceId: overtimeShifts.resourceId,
+        shiftTemplateId: overtimeShifts.shiftTemplateId,
+        overtimeType: overtimeShifts.overtimeType,
+        reason: overtimeShifts.reason,
+        status: overtimeShifts.status,
+        startTime: overtimeShifts.startTime,
+        endTime: overtimeShifts.endTime,
+        actualStartTime: overtimeShifts.actualStartTime,
+        actualEndTime: overtimeShifts.actualEndTime,
+        approvedBy: overtimeShifts.approvedBy,
+        requestedBy: overtimeShifts.requestedBy,
+        hourlyRate: overtimeShifts.hourlyRate,
+        premiumMultiplier: overtimeShifts.premiumMultiplier,
+        estimatedCost: overtimeShifts.estimatedCost,
+        actualCost: overtimeShifts.actualCost,
+        assignedOperations: overtimeShifts.assignedOperations,
+        coveringFor: overtimeShifts.coveringFor,
+        downtimeId: overtimeShifts.downtimeId,
+        notes: overtimeShifts.notes,
+        isEmergency: overtimeShifts.isEmergency,
+        autoApproved: overtimeShifts.autoApproved,
+        plantId: overtimeShifts.plantId,
+        createdAt: overtimeShifts.createdAt,
+        updatedAt: overtimeShifts.updatedAt,
+        // Include resource and user names
+        resourceName: resources.name,
+        shiftTemplateName: shiftTemplates.name,
+        requestedByName: sql<string>`requested_user.first_name || ' ' || requested_user.last_name`,
+        approvedByName: sql<string>`approved_user.first_name || ' ' || approved_user.last_name`
+      })
+      .from(overtimeShifts)
+      .leftJoin(resources, eq(overtimeShifts.resourceId, resources.id))
+      .leftJoin(shiftTemplates, eq(overtimeShifts.shiftTemplateId, shiftTemplates.id))
+      .leftJoin(users.as('requested_user'), eq(overtimeShifts.requestedBy, users.id))
+      .leftJoin(users.as('approved_user'), eq(overtimeShifts.approvedBy, users.id));
+    
+    const conditions = [];
+    if (resourceId) conditions.push(eq(overtimeShifts.resourceId, resourceId));
+    if (status) conditions.push(eq(overtimeShifts.status, status));
+    if (plantId) conditions.push(eq(overtimeShifts.plantId, plantId));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(overtimeShifts.createdAt));
+  }
+
+  async createOvertimeShift(overtimeData: InsertOvertimeShift): Promise<OvertimeShift> {
+    const [overtime] = await db
+      .insert(overtimeShifts)
+      .values(overtimeData)
+      .returning();
+    return overtime;
+  }
+
+  async updateOvertimeShift(id: number, updates: Partial<InsertOvertimeShift>): Promise<OvertimeShift | undefined> {
+    const [overtime] = await db
+      .update(overtimeShifts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(overtimeShifts.id, id))
+      .returning();
+    return overtime;
+  }
+
+  async deleteOvertimeShift(id: number): Promise<boolean> {
+    const result = await db.delete(overtimeShifts).where(eq(overtimeShifts.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Downtime Actions Management
+  async getDowntimeActions(downtimeId?: number, assignedTo?: number): Promise<DowntimeAction[]> {
+    let query = db
+      .select({
+        id: downtimeActions.id,
+        downtimeId: downtimeActions.downtimeId,
+        actionType: downtimeActions.actionType,
+        actionTitle: downtimeActions.actionTitle,
+        description: downtimeActions.description,
+        assignedTo: downtimeActions.assignedTo,
+        status: downtimeActions.status,
+        priority: downtimeActions.priority,
+        estimatedDuration: downtimeActions.estimatedDuration,
+        actualDuration: downtimeActions.actualDuration,
+        dueDate: downtimeActions.dueDate,
+        startedAt: downtimeActions.startedAt,
+        completedAt: downtimeActions.completedAt,
+        notes: downtimeActions.notes,
+        skillsRequired: downtimeActions.skillsRequired,
+        toolsRequired: downtimeActions.toolsRequired,
+        cost: downtimeActions.cost,
+        createdAt: downtimeActions.createdAt,
+        updatedAt: downtimeActions.updatedAt,
+        // Include user name
+        assignedToName: sql<string>`users.first_name || ' ' || users.last_name`
+      })
+      .from(downtimeActions)
+      .leftJoin(users, eq(downtimeActions.assignedTo, users.id));
+    
+    const conditions = [];
+    if (downtimeId) conditions.push(eq(downtimeActions.downtimeId, downtimeId));
+    if (assignedTo) conditions.push(eq(downtimeActions.assignedTo, assignedTo));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(asc(downtimeActions.dueDate));
+  }
+
+  async createDowntimeAction(actionData: InsertDowntimeAction): Promise<DowntimeAction> {
+    const [action] = await db
+      .insert(downtimeActions)
+      .values(actionData)
+      .returning();
+    return action;
+  }
+
+  async updateDowntimeAction(id: number, updates: Partial<InsertDowntimeAction>): Promise<DowntimeAction | undefined> {
+    const [action] = await db
+      .update(downtimeActions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(downtimeActions.id, id))
+      .returning();
+    return action;
+  }
+
+  async deleteDowntimeAction(id: number): Promise<boolean> {
+    const result = await db.delete(downtimeActions).where(eq(downtimeActions.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Shift Change Requests Management
+  async getShiftChangeRequests(status?: string, urgency?: string, plantId?: number): Promise<ShiftChangeRequest[]> {
+    let query = db
+      .select({
+        id: shiftChangeRequests.id,
+        originalResourceId: shiftChangeRequests.originalResourceId,
+        replacementResourceId: shiftChangeRequests.replacementResourceId,
+        shiftDate: shiftChangeRequests.shiftDate,
+        shiftTemplateId: shiftChangeRequests.shiftTemplateId,
+        requestType: shiftChangeRequests.requestType,
+        reason: shiftChangeRequests.reason,
+        status: shiftChangeRequests.status,
+        urgency: shiftChangeRequests.urgency,
+        requestedBy: shiftChangeRequests.requestedBy,
+        approvedBy: shiftChangeRequests.approvedBy,
+        downtimeId: shiftChangeRequests.downtimeId,
+        estimatedCoverage: shiftChangeRequests.estimatedCoverage,
+        skillsRequired: shiftChangeRequests.skillsRequired,
+        notes: shiftChangeRequests.notes,
+        plantId: shiftChangeRequests.plantId,
+        createdAt: shiftChangeRequests.createdAt,
+        updatedAt: shiftChangeRequests.updatedAt,
+        // Include resource and user names
+        originalResourceName: sql<string>`original_resource.name`,
+        replacementResourceName: sql<string>`replacement_resource.name`,
+        shiftTemplateName: shiftTemplates.name,
+        requestedByName: sql<string>`requested_user.first_name || ' ' || requested_user.last_name`,
+        approvedByName: sql<string>`approved_user.first_name || ' ' || approved_user.last_name`
+      })
+      .from(shiftChangeRequests)
+      .leftJoin(resources.as('original_resource'), eq(shiftChangeRequests.originalResourceId, resources.id))
+      .leftJoin(resources.as('replacement_resource'), eq(shiftChangeRequests.replacementResourceId, resources.id))
+      .leftJoin(shiftTemplates, eq(shiftChangeRequests.shiftTemplateId, shiftTemplates.id))
+      .leftJoin(users.as('requested_user'), eq(shiftChangeRequests.requestedBy, users.id))
+      .leftJoin(users.as('approved_user'), eq(shiftChangeRequests.approvedBy, users.id));
+    
+    const conditions = [];
+    if (status) conditions.push(eq(shiftChangeRequests.status, status));
+    if (urgency) conditions.push(eq(shiftChangeRequests.urgency, urgency));
+    if (plantId) conditions.push(eq(shiftChangeRequests.plantId, plantId));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(shiftChangeRequests.createdAt));
+  }
+
+  async createShiftChangeRequest(requestData: InsertShiftChangeRequest): Promise<ShiftChangeRequest> {
+    const [request] = await db
+      .insert(shiftChangeRequests)
+      .values(requestData)
+      .returning();
+    return request;
+  }
+
+  async updateShiftChangeRequest(id: number, updates: Partial<InsertShiftChangeRequest>): Promise<ShiftChangeRequest | undefined> {
+    const [request] = await db
+      .update(shiftChangeRequests)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(shiftChangeRequests.id, id))
+      .returning();
+    return request;
+  }
+
+  async deleteShiftChangeRequest(id: number): Promise<boolean> {
+    const result = await db.delete(shiftChangeRequests).where(eq(shiftChangeRequests.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Unplanned Downtime Management
+  async getUnplannedDowntime(resourceId?: number, status?: string): Promise<UnplannedDowntime[]> {
+    let query = db.select().from(unplannedDowntime);
+    
+    if (resourceId) {
+      query = query.where(eq(unplannedDowntime.resourceId, resourceId));
+    }
+    
+    if (status) {
+      query = query.where(eq(unplannedDowntime.status, status));
+    }
+    
+    return await query.orderBy(desc(unplannedDowntime.startTime));
+  }
+
+  async createUnplannedDowntime(downtimeData: InsertUnplannedDowntime): Promise<UnplannedDowntime> {
+    const [downtime] = await db
+      .insert(unplannedDowntime)
+      .values(downtimeData)
+      .returning();
+    return downtime;
+  }
+
+  async updateUnplannedDowntime(id: number, updates: Partial<InsertUnplannedDowntime>): Promise<UnplannedDowntime | undefined> {
+    const [downtime] = await db
+      .update(unplannedDowntime)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(unplannedDowntime.id, id))
+      .returning();
+    return downtime;
+  }
+
+  async deleteUnplannedDowntime(id: number): Promise<boolean> {
+    const result = await db.delete(unplannedDowntime).where(eq(unplannedDowntime.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Overtime Shifts Management
+  async getOvertimeShifts(resourceId?: number, status?: string): Promise<OvertimeShift[]> {
+    let query = db.select().from(overtimeShifts);
+    
+    if (resourceId) {
+      query = query.where(eq(overtimeShifts.resourceId, resourceId));
+    }
+    
+    if (status) {
+      query = query.where(eq(overtimeShifts.status, status));
+    }
+    
+    return await query.orderBy(desc(overtimeShifts.startTime));
+  }
+
+  async createOvertimeShift(overtimeData: InsertOvertimeShift): Promise<OvertimeShift> {
+    const [overtime] = await db
+      .insert(overtimeShifts)
+      .values(overtimeData)
+      .returning();
+    return overtime;
+  }
+
+  async updateOvertimeShift(id: number, updates: Partial<InsertOvertimeShift>): Promise<OvertimeShift | undefined> {
+    const [overtime] = await db
+      .update(overtimeShifts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(overtimeShifts.id, id))
+      .returning();
+    return overtime;
+  }
+
+  async deleteOvertimeShift(id: number): Promise<boolean> {
+    const result = await db.delete(overtimeShifts).where(eq(overtimeShifts.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Downtime Actions Management
+  async getDowntimeActions(downtimeId?: number): Promise<DowntimeAction[]> {
+    let query = db.select().from(downtimeActions);
+    
+    if (downtimeId) {
+      query = query.where(eq(downtimeActions.downtimeId, downtimeId));
+    }
+    
+    return await query.orderBy(desc(downtimeActions.createdAt));
+  }
+
+  async createDowntimeAction(actionData: InsertDowntimeAction): Promise<DowntimeAction> {
+    const [action] = await db
+      .insert(downtimeActions)
+      .values(actionData)
+      .returning();
+    return action;
+  }
+
+  async updateDowntimeAction(id: number, updates: Partial<InsertDowntimeAction>): Promise<DowntimeAction | undefined> {
+    const [action] = await db
+      .update(downtimeActions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(downtimeActions.id, id))
+      .returning();
+    return action;
   }
 }
 
