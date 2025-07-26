@@ -165,14 +165,6 @@ export default function Dashboard() {
     },
     enabled: hasPermission('optimization-studio', 'view'),
   });
-  
-  // Debug logging for optimization button visibility
-  console.log('Optimization debug:', {
-    hasPermission: hasPermission('optimization-studio', 'view'),
-    algorithmsLength: optimizationAlgorithms.length,
-    algorithms: optimizationAlgorithms,
-    shouldShowButton: hasPermission('optimization-studio', 'view') && optimizationAlgorithms.length > 0
-  });
 
   // Dashboard toggle visibility function
   const handleToggleDashboardVisibility = (dashboardId: number) => {
@@ -932,18 +924,18 @@ export default function Dashboard() {
             </div>
 
           {/* Analytics Controls */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between mt-6 space-y-2 md:space-y-0">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mt-6 space-y-3 md:space-y-0">
             <div className="flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-gray-500" />
               <span className="text-sm font-medium text-gray-700">Analytics Dashboard</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
-                      className="flex items-center gap-2 min-w-[160px] justify-between text-sm"
+                      className="flex items-center gap-2 w-full sm:min-w-[160px] justify-between text-sm"
                     >
                       <span>
                         {visibleDashboards.size === 0 
@@ -987,10 +979,10 @@ export default function Dashboard() {
                       variant="outline"
                       size="sm"
                       onClick={() => setShowEvaluationSystem(true)}
-                      className={`${getThemeClasses()} border-0`}
+                      className={`${getThemeClasses()} border-0 w-full sm:w-auto`}
                     >
                       <GitCompare className="w-4 h-4 mr-1" />
-                      Evaluate Schedules
+                      {isMobile ? "Evaluate" : "Evaluate Schedules"}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -1005,7 +997,7 @@ export default function Dashboard() {
                       <Button
                         size="sm"
                         onClick={() => setShowOptimizationDialog(true)}
-                        className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white border-0"
+                        className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white border-0 w-full sm:w-auto"
                       >
                         <Sparkles className="w-4 h-4 mr-1" />
                         {isMobile ? "Optimize" : "Run Optimization"}
@@ -1024,9 +1016,10 @@ export default function Dashboard() {
                       variant="outline"
                       size="sm"
                       onClick={() => setAnalyticsManagerOpen(true)}
+                      className="w-full sm:w-auto"
                     >
                       <Settings className="w-4 h-4 mr-1" />
-                      Dashboard Manager
+                      {isMobile ? "Manager" : "Dashboard Manager"}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -1036,20 +1029,22 @@ export default function Dashboard() {
               </div>
               
               {!isMobile && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsMaximized(!isMaximized)}
-                    >
-                      {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Maximize entire production schedule view</p>
-                  </TooltipContent>
-                </Tooltip>
+                <div className="flex-shrink-0">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsMaximized(!isMaximized)}
+                      >
+                        {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Maximize entire production schedule view</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
               )}
             </div>
           </div>
