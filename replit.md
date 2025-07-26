@@ -121,6 +121,14 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 26, 2025)
 
+✓ **Board Card UX Improvement (July 26, 2025)**:
+- Successfully moved eyeball (view details) icon to bottom right corner of board cards for better user experience
+- Repositioned icon to prevent accidental menu clicks while improving touch target accessibility
+- Added z-index and stopPropagation to ensure proper click handling without interference
+- Enhanced both job cards and operation cards with consistent icon positioning
+- Cards now have relative positioning with absolutely positioned view details button
+- Added padding-right to card titles to prevent text overlap with repositioned icons
+
 ✓ **Job Operations Viewing Enhancement (July 26, 2025)**:
 - Successfully implemented comprehensive operations display within job details dialog
 - Enhanced JobDetailsDialog component to show all operations associated with each job
