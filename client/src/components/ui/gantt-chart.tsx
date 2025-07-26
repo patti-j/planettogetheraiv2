@@ -1449,6 +1449,8 @@ export default function GanttChart({
                           textLabeling={textLabeling}
                           customTextLabels={customTextLabels}
                           rowHeight={rowHeight}
+                          onHoverStart={setHoveredJobId}
+                          onHoverEnd={() => setHoveredJobId(null)}
                           onViewDetails={(operation) => {
                             setSelectedOperation(operation);
                             setOperationDialogOpen(true);
@@ -1597,6 +1599,12 @@ export default function GanttChart({
         <div className="flex-1 overflow-y-auto" ref={resourceListRef}>
           {Object.entries(customerGroups).map(([customer, customerJobs]) => 
             renderCustomerRow(customer, customerJobs)
+          )}
+          {/* Connection lines overlay */}
+          {hoveredJobId && (
+            <div className="absolute inset-0 pointer-events-none z-30">
+              {renderOperationConnections()}
+            </div>
           )}
         </div>
       </div>
