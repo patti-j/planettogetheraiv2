@@ -169,9 +169,9 @@ export default function TopMenu() {
             variant="outline" 
             size="sm"
             onClick={() => setMenuOpen(true)}
-            className="p-2 bg-white shadow-md border border-gray-300 hover:bg-gray-50"
+            className="p-2 bg-white shadow-lg border-2 border-gray-400 hover:bg-gray-50 hover:border-gray-500"
           >
-            <Menu className="w-5 h-5" />
+            <Menu className="w-5 h-5 text-gray-800 stroke-2" />
           </Button>
         </div>
       )}
