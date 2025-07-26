@@ -162,9 +162,9 @@ export default function TopMenu() {
 
   return (
     <>
-      {/* Hamburger Menu Button and Recent Pages - Only visible when menu is closed */}
+      {/* Hamburger Menu Button - Only visible when menu is closed */}
       {!menuOpen && (
-        <div className="fixed top-2 left-2 z-50 flex space-x-2">
+        <div className="fixed top-2 left-2 z-50">
           <Button 
             variant="outline" 
             size="sm"
@@ -173,66 +173,6 @@ export default function TopMenu() {
           >
             <Menu className="w-5 h-5" />
           </Button>
-          
-          {/* Recent Pages Dropdown */}
-          {recentPages.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="p-2 bg-white shadow-md border border-gray-300 hover:bg-gray-50"
-                  title="Recent Pages"
-                >
-                  <History className="w-5 h-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-64">
-                <div className="px-2 py-1.5 text-sm font-medium text-gray-900 border-b">
-                  Recently Visited
-                </div>
-                {recentPages.map((page, index) => {
-                  // Dynamically get the icon component
-                  const IconComponent = {
-                    BarChart3, Factory, Briefcase, FileText, Bot, Columns3, 
-                    Smartphone, DollarSign, Headphones, Settings, Wrench, 
-                    MessageSquare, MessageCircle, Truck, Target, Database, 
-                    Building, Server, TrendingUp, Shield, GraduationCap, 
-                    UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, 
-                    Brain, User, Code, Layers, Presentation, Sparkles, 
-                    Grid3X3, Eye, FileX, Clock, Monitor
-                  }[page.icon as keyof typeof import('lucide-react')] || FileText;
-                  
-                  return (
-                    <DropdownMenuItem key={`${page.path}-${index}`} asChild>
-                      <Link 
-                        href={page.path}
-                        className="flex items-center space-x-3 px-2 py-2 hover:bg-gray-50 cursor-pointer"
-                      >
-                        <IconComponent className="w-4 h-4 text-gray-500" />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-gray-900 truncate">
-                            {page.label}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {new Date(page.timestamp).toLocaleTimeString([], { 
-                              hour: '2-digit', 
-                              minute: '2-digit' 
-                            })}
-                          </div>
-                        </div>
-                      </Link>
-                    </DropdownMenuItem>
-                  );
-                })}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={clearRecentPages}>
-                  <X className="w-4 h-4 mr-2" />
-                  Clear Recent Pages
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
         </div>
       )}
 
@@ -337,6 +277,64 @@ export default function TopMenu() {
 
             {/* Menu Content */}
             <div className="p-6 space-y-8">
+              {/* Recent Pages Section */}
+              {recentPages.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2 flex-1">
+                      Recent Pages
+                    </h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearRecentPages}
+                      className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 h-auto"
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                    {recentPages.map((page, index) => {
+                      // Dynamically get the icon component
+                      const IconComponent = {
+                        BarChart3, Factory, Briefcase, FileText, Bot, Columns3, 
+                        Smartphone, DollarSign, Headphones, Settings, Wrench, 
+                        MessageSquare, MessageCircle, Truck, Target, Database, 
+                        Building, Server, TrendingUp, Shield, GraduationCap, 
+                        UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, 
+                        Brain, User, Code, Layers, Presentation, Sparkles, 
+                        Grid3X3, Eye, FileX, Clock, Monitor
+                      }[page.icon as keyof typeof import('lucide-react')] || FileText;
+                      
+                      return (
+                        <Link 
+                          key={`${page.path}-${index}`}
+                          href={page.path}
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          <div className="col-span-1 row-span-1 aspect-square bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md rounded-xl p-3 cursor-pointer transition-all duration-200 hover:scale-[1.02] flex flex-col items-center justify-center text-center space-y-2">
+                            <div className="bg-gray-100 p-2 rounded-full flex items-center justify-center flex-shrink-0">
+                              <IconComponent className="w-5 h-5 text-gray-600" strokeWidth={1.5} fill="none" />
+                            </div>
+                            <div className="flex flex-col items-center space-y-1">
+                              <span className="text-xs font-medium text-gray-800 leading-tight text-center line-clamp-2 flex-shrink-0">
+                                {page.label}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {new Date(page.timestamp).toLocaleTimeString([], { 
+                                  hour: '2-digit', 
+                                  minute: '2-digit' 
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
               {getVisibleGroups().map((group, groupIndex) => (
                 <div key={groupIndex} className="space-y-4">
                   <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
