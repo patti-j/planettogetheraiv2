@@ -320,15 +320,15 @@ const JobDetailsDialog = ({ job, operations, resources, capabilities, open, onOp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Briefcase className="w-5 h-5" />
             Job Details: {job.name}
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto space-y-6 pr-2">
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -443,7 +443,7 @@ const JobDetailsDialog = ({ job, operations, resources, capabilities, open, onOp
                         <div className="flex items-center gap-2">
                           <AlertCircle className="w-4 h-4 text-gray-500" />
                           <span className="text-gray-600">Order:</span>
-                          <span className="font-medium">{operation.orderIndex + 1}</span>
+                          <span className="font-medium">{operation.order}</span>
                         </div>
                       </div>
                       
@@ -540,15 +540,15 @@ const OperationDetailsDialog = ({ operation, job, resources, capabilities, open,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Settings className="w-5 h-5" />
             Operation Details: {operation.name}
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto space-y-6 pr-2">
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -589,11 +589,6 @@ const OperationDetailsDialog = ({ operation, job, resources, capabilities, open,
                     <div className="text-sm text-gray-600">
                       Type: {assignedResource.type}
                     </div>
-                    {assignedResource.description && (
-                      <div className="text-sm text-gray-600">
-                        {assignedResource.description}
-                      </div>
-                    )}
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 text-gray-500">
