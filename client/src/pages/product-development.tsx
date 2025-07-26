@@ -415,10 +415,11 @@ export default function ProductDevelopment() {
         </div>
         <Button 
           onClick={() => setShowAIDialog(true)}
-          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm sm:text-base px-3 sm:px-4"
         >
-          <Sparkles className="w-4 h-4 mr-2" />
-          AI Assistant
+          <Sparkles className="w-4 h-4 mr-1 sm:mr-2" />
+          <span className="hidden sm:inline">AI Assistant</span>
+          <span className="sm:hidden">AI</span>
         </Button>
       </div>
 
@@ -453,11 +454,12 @@ export default function ProductDevelopment() {
 
         {/* Strategy Tab */}
         <TabsContent value="strategy" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">Strategic Documentation</h2>
-            <Button onClick={() => setShowStrategyDialog(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              New Strategy Doc
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-xl sm:text-2xl font-semibold">Strategic Documentation</h2>
+            <Button onClick={() => setShowStrategyDialog(true)} className="text-sm px-3 flex-shrink-0">
+              <Plus className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">New Strategy Doc</span>
+              <span className="sm:hidden">New</span>
             </Button>
           </div>
 
@@ -465,7 +467,7 @@ export default function ProductDevelopment() {
             <div className="text-center py-8">Loading strategy documents...</div>
           ) : (
             <div className="grid gap-4">
-              {strategyDocuments.map((strategy) => (
+              {Array.isArray(strategyDocuments) && strategyDocuments.map((strategy) => (
                 <Card key={strategy.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -483,11 +485,11 @@ export default function ProductDevelopment() {
                           </span>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
+                      <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+                        <Button variant="outline" size="sm" className="p-2">
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" className="p-2">
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -498,7 +500,7 @@ export default function ProductDevelopment() {
                   </CardContent>
                 </Card>
               ))}
-              {strategyDocuments.length === 0 && (
+              {(!Array.isArray(strategyDocuments) || strategyDocuments.length === 0) && (
                 <div className="text-center py-8 text-gray-500">
                   No strategy documents found. Create your first one above.
                 </div>
@@ -734,7 +736,7 @@ export default function ProductDevelopment() {
           </div>
 
           <div className="grid gap-4">
-            {architectureComponents.map((component, index) => (
+            {Array.isArray(architectureComponents) && architectureComponents.map((component, index) => (
               <Card key={index}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -767,11 +769,12 @@ export default function ProductDevelopment() {
 
         {/* Development Tab */}
         <TabsContent value="development" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">Development Planning</h2>
-            <Button onClick={() => setShowTaskDialog(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              New Task
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-xl sm:text-2xl font-semibold">Development Planning</h2>
+            <Button onClick={() => setShowTaskDialog(true)} className="text-sm px-3 flex-shrink-0">
+              <Plus className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">New Task</span>
+              <span className="sm:hidden">New</span>
             </Button>
           </div>
 
@@ -779,7 +782,7 @@ export default function ProductDevelopment() {
             <div className="text-center py-8">Loading development tasks...</div>
           ) : (
             <div className="grid gap-4">
-              {developmentTasks.map((task) => (
+              {Array.isArray(developmentTasks) && developmentTasks.map((task) => (
                 <Card key={task.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -832,7 +835,7 @@ export default function ProductDevelopment() {
                   </CardContent>
                 </Card>
               ))}
-              {developmentTasks.length === 0 && (
+              {(!Array.isArray(developmentTasks) || developmentTasks.length === 0) && !(tasksLoading) && (
                 <div className="text-center py-8 text-gray-500">
                   No development tasks found. Create your first one above.
                 </div>
@@ -904,11 +907,12 @@ export default function ProductDevelopment() {
 
         {/* Testing Tab */}
         <TabsContent value="testing" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">System Testing</h2>
-            <Button onClick={() => setShowTestDialog(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              New Test Suite
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-xl sm:text-2xl font-semibold">System Testing</h2>
+            <Button onClick={() => setShowTestDialog(true)} className="text-sm px-3 flex-shrink-0">
+              <Plus className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">New Test Suite</span>
+              <span className="sm:hidden">New</span>
             </Button>
           </div>
 
@@ -916,7 +920,7 @@ export default function ProductDevelopment() {
             <div className="text-center py-8">Loading test suites...</div>
           ) : (
             <div className="grid gap-4">
-              {testSuites.map((suite) => (
+              {Array.isArray(testSuites) && testSuites.map((suite) => (
                 <Card key={suite.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -937,15 +941,16 @@ export default function ProductDevelopment() {
                           </span>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          <Play className="w-4 h-4" />
-                          Run Tests
+                      <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+                        <Button variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-3">
+                          <Play className="w-4 h-4 mr-1" />
+                          <span className="hidden sm:inline">Run Tests</span>
+                          <span className="sm:hidden">Run</span>
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" className="p-2">
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" className="p-2">
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -975,7 +980,7 @@ export default function ProductDevelopment() {
                   </CardContent>
                 </Card>
               ))}
-              {testSuites.length === 0 && (
+              {(!Array.isArray(testSuites) || testSuites.length === 0) && (
                 <div className="text-center py-8 text-gray-500">
                   No test suites found. Create your first one above.
                 </div>
