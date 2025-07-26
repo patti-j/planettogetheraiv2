@@ -398,7 +398,7 @@ export default function OperationBlock({
               </div>
             </div>
           </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-xs">
+          <TooltipContent side="top" className="max-w-xs z-[50]">
             {getTooltipContent()}
           </TooltipContent>
         </Tooltip>
@@ -434,7 +434,7 @@ export default function OperationBlock({
             </div>
           </div>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs">
+        <TooltipContent side="top" className="max-w-xs z-[50]">
           {getTooltipContent()}
         </TooltipContent>
       </Tooltip>
