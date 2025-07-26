@@ -297,7 +297,7 @@ export default function MobileSchedule({
   resources, 
   capabilities 
 }: MobileScheduleProps) {
-  const [selectedTab, setSelectedTab] = useState("today");
+  const [selectedTab, setSelectedTab] = useState("all");
   const [selectedResource, setSelectedResource] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [orderedOperations, setOrderedOperations] = useState<Operation[]>([]);
@@ -357,17 +357,20 @@ export default function MobileSchedule({
 
     if (selectedTab === "today") {
       filtered = filtered.filter(op => {
-        if (!op.startTime) return false;
+        // Show operations that are either unscheduled OR scheduled for today
+        if (!op.startTime) return true; // Include unscheduled operations
         const startTime = new Date(op.startTime);
         return startTime >= today && startTime < tomorrow;
       });
     } else if (selectedTab === "week") {
       filtered = filtered.filter(op => {
-        if (!op.startTime) return false;
+        // Show operations that are either unscheduled OR scheduled within the week
+        if (!op.startTime) return true; // Include unscheduled operations
         const startTime = new Date(op.startTime);
         return startTime >= today && startTime < weekFromNow;
       });
     }
+
 
     // If we're in reorder mode, preserve the order; otherwise sort by start time
     if (!hasReorder) {
