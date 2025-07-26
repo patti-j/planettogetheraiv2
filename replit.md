@@ -121,6 +121,14 @@ The application uses a modern full-stack architecture with strong typing through
 
 ## Recent Changes (July 26, 2025)
 
+✓ **Navigation Menu Clarification & Universal Widget System Completion (July 26, 2025)**:
+- Clarified that "Training & Support" section exists in the hamburger menu (☰ icon) at the top of the page, not in the sidebar navigation
+- Hamburger menu contains organized sections: Planning & Scheduling, AI & Optimization, Operations, Management, System Administration, Communication & Collaboration, and Training & Support
+- Training & Support section includes: Getting Started, Training, and Presentation System pages accessible to trainer role
+- Completed universal widget system with comprehensive widget library, Chart.js integration, and universal widget renderer
+- Added Widget Showcase page demonstrating all widget types with real manufacturing data (accessible via Systems Management menu)
+- Universal widgets now work across both Production Cockpit and Analytics pages with interchangeable components
+
 ✓ **Production Cockpit Mobile Responsiveness Enhancement (July 26, 2025)**:
 - Completely redesigned production scheduler's cockpit for optimal mobile experience with responsive layouts and touch-friendly interfaces
 - Enhanced header layout with collapsible title ("Production Scheduler's Cockpit" → "Cockpit" on mobile) and responsive layout selector

@@ -131,6 +131,17 @@ export default function TopMenu() {
     return features.filter(feature => {
       if (feature.href === "#max") return !isMaxOpen; // Only show Max AI when closed
       if (!feature.feature) return true; // Always show items without permission requirements
+      
+      // Debug logging for training features
+      if (feature.feature === "training" || feature.feature === "getting-started") {
+        console.log(`Training feature check for ${feature.label}:`, {
+          feature: feature.feature,
+          action: feature.action,
+          hasPermission: hasPermission(feature.feature, feature.action),
+          userRole: user?.currentRole?.name || 'No role'
+        });
+      }
+      
       return hasPermission(feature.feature, feature.action);
     });
   };
