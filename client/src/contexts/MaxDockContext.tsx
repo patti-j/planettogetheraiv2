@@ -42,7 +42,7 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
   // Initialize states with localStorage persistence
   const [isMaxOpen, setIsMaxOpen] = useState(() => {
     const saved = localStorage.getItem('max-ai-open');
-    return saved !== null ? JSON.parse(saved) : true;
+    return saved !== null ? JSON.parse(saved) : false;
   });
   
   const [maxWidth, setMaxWidth] = useState(() => {

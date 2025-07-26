@@ -374,28 +374,28 @@ export default function ProductDevelopment() {
       name: "Phase 1 - Foundation",
       description: "Core system architecture and basic features", 
       progress: 95,
-      tasks: developmentTasks.filter(t => t.phase?.includes('Phase 1')).length || 8,
+      tasks: Array.isArray(developmentTasks) ? developmentTasks.filter(t => t.phase?.includes('Phase 1')).length : 8,
       completed: 8
     },
     {
       name: "Phase 2 - Core Features", 
       description: "Production scheduling and optimization capabilities",
       progress: 80,
-      tasks: developmentTasks.filter(t => t.phase?.includes('Phase 2')).length || 12,
+      tasks: Array.isArray(developmentTasks) ? developmentTasks.filter(t => t.phase?.includes('Phase 2')).length : 12,
       completed: 10
     },
     {
       name: "Phase 3 - Analytics",
       description: "Advanced analytics and reporting features",
       progress: 45,
-      tasks: developmentTasks.filter(t => t.phase?.includes('Phase 3')).length || 8,
+      tasks: Array.isArray(developmentTasks) ? developmentTasks.filter(t => t.phase?.includes('Phase 3')).length : 8,
       completed: 3
     },
     {
       name: "Phase 4 - UX Enhancement",
       description: "User experience improvements and mobile optimization",
       progress: 10, 
-      tasks: developmentTasks.filter(t => t.phase?.includes('Phase 4')).length || 6,
+      tasks: Array.isArray(developmentTasks) ? developmentTasks.filter(t => t.phase?.includes('Phase 4')).length : 6,
       completed: 1
     }
   ];
@@ -912,11 +912,11 @@ export default function ProductDevelopment() {
             </Button>
           </div>
 
-          {testSuitesLoading ? (
+          {testsLoading ? (
             <div className="text-center py-8">Loading test suites...</div>
           ) : (
             <div className="grid gap-4">
-              {allTestSuites.map((suite) => (
+              {testSuites.map((suite) => (
                 <Card key={suite.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -975,7 +975,7 @@ export default function ProductDevelopment() {
                   </CardContent>
                 </Card>
               ))}
-              {allTestSuites.length === 0 && (
+              {testSuites.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
                   No test suites found. Create your first one above.
                 </div>
