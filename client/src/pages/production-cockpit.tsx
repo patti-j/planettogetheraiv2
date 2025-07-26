@@ -282,8 +282,8 @@ export default function ProductionCockpit() {
               <SelectValue placeholder="Select layout..." />
             </SelectTrigger>
             <SelectContent>
-              {layouts?.map((layout: CockpitLayout) => layout ? (
-                <SelectItem key={layout.id?.toString() || 'unknown'} value={layout.id?.toString() || ''}>
+              {layouts?.map((layout: CockpitLayout) => layout && layout.id ? (
+                <SelectItem key={layout.id.toString()} value={layout.id.toString()}>
                   <div className="flex items-center gap-2">
                     <span>{layout.name || 'Unknown Layout'}</span>
                     {layout.is_default && <Badge variant="secondary" className="text-xs">Default</Badge>}
