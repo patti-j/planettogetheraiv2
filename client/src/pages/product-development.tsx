@@ -514,15 +514,33 @@ export default function ProductDevelopment() {
       </div>
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7">
-          <TabsTrigger value="strategy">Strategy</TabsTrigger>
-          <TabsTrigger value="roadmap">Roadmap</TabsTrigger>
-          <TabsTrigger value="architecture">Architecture</TabsTrigger>
-          <TabsTrigger value="development">Development</TabsTrigger>
-          <TabsTrigger value="progress">Progress</TabsTrigger>
-          <TabsTrigger value="testing">Testing</TabsTrigger>
-          <TabsTrigger value="insights">Insights</TabsTrigger>
-        </TabsList>
+        {/* Mobile: Horizontal scrolling tabs */}
+        <div className="sm:hidden">
+          <div className="flex overflow-x-auto pb-2 space-x-1">
+            <TabsList className="flex w-max gap-1">
+              <TabsTrigger value="strategy" className="flex-shrink-0 text-sm px-3">Strategy</TabsTrigger>
+              <TabsTrigger value="roadmap" className="flex-shrink-0 text-sm px-3">Roadmap</TabsTrigger>
+              <TabsTrigger value="architecture" className="flex-shrink-0 text-sm px-3">Arch</TabsTrigger>
+              <TabsTrigger value="development" className="flex-shrink-0 text-sm px-3">Dev</TabsTrigger>
+              <TabsTrigger value="progress" className="flex-shrink-0 text-sm px-3">Progress</TabsTrigger>
+              <TabsTrigger value="testing" className="flex-shrink-0 text-sm px-3">Testing</TabsTrigger>
+              <TabsTrigger value="insights" className="flex-shrink-0 text-sm px-3">Insights</TabsTrigger>
+            </TabsList>
+          </div>
+        </div>
+        
+        {/* Desktop: Grid layout */}
+        <div className="hidden sm:block">
+          <TabsList className="grid w-full grid-cols-7">
+            <TabsTrigger value="strategy">Strategy</TabsTrigger>
+            <TabsTrigger value="roadmap">Roadmap</TabsTrigger>
+            <TabsTrigger value="architecture">Architecture</TabsTrigger>
+            <TabsTrigger value="development">Development</TabsTrigger>
+            <TabsTrigger value="progress">Progress</TabsTrigger>
+            <TabsTrigger value="testing">Testing</TabsTrigger>
+            <TabsTrigger value="insights">Insights</TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Strategy Tab */}
         <TabsContent value="strategy" className="space-y-6">
@@ -690,7 +708,7 @@ export default function ProductDevelopment() {
                               <h5 className="font-medium text-sm">{milestone.name}</h5>
                               <p className="text-xs text-gray-600 mt-1">{milestone.description}</p>
                               <div className="flex items-center gap-2 mt-2">
-                                <Badge size="sm" variant={
+                                <Badge variant={
                                   milestone.status === 'completed' ? 'default' :
                                   milestone.status === 'in-progress' ? 'secondary' :
                                   milestone.status === 'at-risk' ? 'destructive' : 'outline'
@@ -731,17 +749,17 @@ export default function ProductDevelopment() {
                               <h5 className="font-medium text-sm">{feature.name}</h5>
                               <p className="text-xs text-gray-600 mt-1">{feature.description}</p>
                               <div className="flex items-center gap-2 mt-2">
-                                <Badge size="sm" variant={
+                                <Badge variant={
                                   feature.priority === 'critical' ? 'destructive' :
                                   feature.priority === 'high' ? 'default' :
                                   feature.priority === 'medium' ? 'secondary' : 'outline'
                                 }>
                                   {feature.priority}
                                 </Badge>
-                                <Badge size="sm" variant="outline">
+                                <Badge variant="outline">
                                   {feature.effort}
                                 </Badge>
-                                <Badge size="sm" variant={
+                                <Badge variant={
                                   feature.status === 'done' ? 'default' :
                                   feature.status === 'in-progress' ? 'secondary' :
                                   feature.status === 'testing' ? 'secondary' : 'outline'
