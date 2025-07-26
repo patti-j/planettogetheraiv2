@@ -106,7 +106,7 @@
 [data-radix-tooltip-content],
 [role="tooltip"]:not([data-radix-select-content]),
 .tooltip-content {
-  z-index: var(--tooltip-z-index) !important;
+  z-index: 2147483647 !important;
   position: fixed !important;
   isolation: isolate !important;
   transform: translateZ(0) !important;
@@ -114,12 +114,12 @@
 
 /* Target tooltip portals but not dropdown portals */
 div[data-radix-portal][data-radix-tooltip-portal] {
-  z-index: var(--tooltip-z-index) !important;
+  z-index: 2147483647 !important;
 }
 
 /* Force portal containers to highest z-index */
 body > div[data-radix-portal] {
-  z-index: var(--tooltip-z-index) !important;
+  z-index: 2147483647 !important;
 }
 
 /* Ensure tooltip portal appears above everything */
@@ -141,6 +141,17 @@ div[data-radix-portal]:has([data-radix-tooltip-content]) {
   position: fixed !important;
   isolation: isolate !important;
   transform: translateZ(0) !important;
+}
+
+/* Ensure Gantt chart containers don't interfere with tooltips */
+[data-timeline-content] {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.gantt-scrollable {
+  position: relative !important;
+  z-index: 1 !important;
 }
 
 /* Force tooltip above resource containers */
