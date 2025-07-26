@@ -295,18 +295,19 @@ export default function TopMenu() {
                   </div>
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
                     {recentPages.map((page, index) => {
-                      // Map page paths to their original icons
-                      const getIconForPage = (path: string) => {
-                        // Find the icon from the feature groups
+                      // Map page paths to their original icons and colors
+                      const getIconAndColorForPage = (path: string) => {
+                        // Find the icon and color from the feature groups
                         for (const group of featureGroups) {
                           const feature = group.features.find(f => f.href === path);
-                          if (feature) return feature.icon;
+                          if (feature) return { icon: feature.icon, color: feature.color };
                         }
                         // Default fallback
-                        return FileText;
+                        return { icon: FileText, color: "bg-gray-500" };
                       };
                       
-                      const IconComponent = getIconForPage(page.path);
+                      const { icon: IconComponent, color } = getIconAndColorForPage(page.path);
+                      const iconColorClass = color.replace('bg-', 'text-').replace('-500', '-600');
                       
                       return (
                         <Link 
@@ -316,7 +317,7 @@ export default function TopMenu() {
                         >
                           <div className="col-span-1 row-span-1 aspect-square bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md rounded-xl p-3 cursor-pointer transition-all duration-200 hover:scale-[1.02] flex flex-col items-center justify-center text-center space-y-2">
                             <div className="bg-gray-100 p-2 rounded-full flex items-center justify-center flex-shrink-0">
-                              <IconComponent className="w-5 h-5 text-gray-600" strokeWidth={1.5} fill="none" />
+                              <IconComponent className={`w-5 h-5 ${iconColorClass}`} strokeWidth={1.5} fill="none" />
                             </div>
                             <div className="flex flex-col items-center space-y-1">
                               <span className="text-xs font-medium text-gray-800 leading-tight text-center line-clamp-2 flex-shrink-0">
