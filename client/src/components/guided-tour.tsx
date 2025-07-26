@@ -280,8 +280,10 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     staleTime: 0,
   });
 
-  // Get tour steps
+  // Get tour steps and current tour data
   const tourSteps = toursLoading ? [] : getTourStepsFromDatabase(roleId, toursFromAPI);
+  const currentTourData = toursFromAPI.find(tour => tour.roleId === roleId);
+  const allowSystemInteraction = currentTourData?.allowSystemInteraction ?? true;
   const progress = tourSteps.length > 0 ? ((currentStep + 1) / tourSteps.length) * 100 : 0;
 
   // Update window height based on minimize state
@@ -1091,6 +1093,26 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
 
   return (
     <>
+      {/* System interaction overlay - blocks interaction when disabled */}
+      {!allowSystemInteraction && (
+        <div 
+          className="fixed inset-0 z-30 bg-black bg-opacity-50 backdrop-blur-sm cursor-not-allowed"
+          onClick={(e) => {
+            e.stopPropagation();
+            // Show toast to inform user
+            return false;
+          }}
+          title="System interaction is disabled during this tour. Use the tour window to navigate."
+        >
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="bg-white/90 rounded-lg p-4 shadow-lg max-w-sm mx-4 text-center">
+              <p className="text-sm text-gray-700 font-medium">Tour Mode Active</p>
+              <p className="text-xs text-gray-600 mt-1">Use the tour window to navigate. System interaction is restricted during this guided tour.</p>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Light backdrop */}
       <div className="fixed inset-0 bg-black bg-opacity-20 z-40 pointer-events-none"></div>
       

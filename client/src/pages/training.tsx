@@ -256,6 +256,7 @@ export default function Training() {
     const [editingStep, setEditingStep] = useState<{role: string, stepId: string} | null>(null);
     const [showAIGuidanceDialog, setShowAIGuidanceDialog] = useState(false);
     const [aiGuidance, setAiGuidance] = useState("");
+    const [allowSystemInteraction, setAllowSystemInteraction] = useState(true);
     const [pendingAction, setPendingAction] = useState<{ type: 'selected' | 'all' | 'missing', roles?: string[] } | null>(null);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [tourToDelete, setTourToDelete] = useState<any>(null);
@@ -284,7 +285,7 @@ export default function Training() {
 
     // Generate Tours for Selected Roles mutation
     const generateSelectedToursMutation = useMutation({
-      mutationFn: (data: { roles: string[], guidance?: string }) => 
+      mutationFn: (data: { roles: string[], guidance?: string, allowSystemInteraction?: boolean }) => 
         apiRequest('POST', '/api/ai/generate-tour', data),
       onSuccess: () => {
         toast({
@@ -354,10 +355,15 @@ export default function Training() {
       if (!pendingAction) return;
       
       const roles = pendingAction.roles || [];
-      generateSelectedToursMutation.mutate({ roles, guidance });
+      generateSelectedToursMutation.mutate({ 
+        roles, 
+        guidance, 
+        allowSystemInteraction 
+      });
       setShowAIGuidanceDialog(false);
       setPendingAction(null);
       setAiGuidance("");
+      setAllowSystemInteraction(true); // Reset to default
       setSelectedRoles([]);
       setSelectedMissingRoles([]);
     };
@@ -755,6 +761,22 @@ export default function Training() {
                       rows={4}
                     />
                   </div>
+                  
+                  <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
+                    <Checkbox
+                      id="allow-system-interaction"
+                      checked={allowSystemInteraction}
+                      onCheckedChange={(checked) => setAllowSystemInteraction(!!checked)}
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor="allow-system-interaction" className="text-sm font-medium">
+                        Allow System Interaction During Tour
+                      </Label>
+                      <p className="text-xs text-gray-600 mt-1">
+                        When enabled, users can interact with the rest of the system during the tour. When disabled, the tour will block system interaction to focus attention on the guided steps.
+                      </p>
+                    </div>
+                  </div>
                   <div className="flex justify-end gap-2">
                     <Button
                       variant="outline"
@@ -762,6 +784,7 @@ export default function Training() {
                         setShowAIGuidanceDialog(false);
                         setPendingAction(null);
                         setAiGuidance("");
+                        setAllowSystemInteraction(true); // Reset to default
                       }}
                     >
                       Cancel

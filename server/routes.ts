@@ -6089,7 +6089,7 @@ Return a JSON response with this structure:
   // AI Tour Generation endpoint
   app.post("/api/ai/generate-tour", async (req, res) => {
     try {
-      const { roles, guidance, contentOnly } = req.body;
+      const { roles, guidance, contentOnly, allowSystemInteraction = true } = req.body;
       if (!roles || !Array.isArray(roles)) {
         return res.status(400).json({ message: "Roles array is required" });
       }
@@ -6404,6 +6404,7 @@ Return JSON format with each role as a top-level key containing tourSteps array.
                 voiceScriptCount: steps.filter((s: any) => s.voiceScript).length
               },
               isGenerated: true,
+              allowSystemInteraction: allowSystemInteraction,
               createdBy: req.user?.id || 'system'
             });
             savedTours.push(tourRecord);
@@ -6458,7 +6459,7 @@ Return JSON format with each role as a top-level key containing tourSteps array.
   // Save tour content with voice generation endpoint
   app.post("/api/tours", async (req, res) => {
     try {
-      const { tourData, roleId, generateVoice } = req.body;
+      const { tourData, roleId, generateVoice, allowSystemInteraction = true } = req.body;
       
       if (!tourData || !roleId) {
         return res.status(400).json({ message: "Tour data and role ID are required" });
@@ -6481,6 +6482,7 @@ Return JSON format with each role as a top-level key containing tourSteps array.
           voiceScriptCount: tourData.steps?.filter((s: any) => s.voiceScript).length || 0
         },
         isGenerated: true,
+        allowSystemInteraction: allowSystemInteraction,
         createdBy: req.user?.id || 'system'
       });
 

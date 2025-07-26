@@ -2358,6 +2358,7 @@ export const tours = pgTable("tours", {
     voiceScriptCount: number;
   }>().notNull(),
   isGenerated: boolean("is_generated").default(true), // true if AI generated, false if manually created
+  allowSystemInteraction: boolean("allow_system_interaction").default(true), // Controls whether users can interact with the rest of the system during the tour
   generatedAt: timestamp("generated_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   createdBy: varchar("created_by", { length: 100 }), // user who generated/created the tour
