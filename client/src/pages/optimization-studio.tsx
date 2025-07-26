@@ -17,6 +17,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import BackwardsSchedulingAlgorithm from "@/components/backwards-scheduling-algorithm";
+import AlgorithmArchitectureView from "@/components/algorithm-architecture-view";
 
 interface OptimizationAlgorithm {
   id: number;
@@ -71,6 +72,8 @@ export default function OptimizationStudio() {
   const [showAICreateDialog, setShowAICreateDialog] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [showBackwardsScheduling, setShowBackwardsScheduling] = useState(false);
+  const [showArchitectureView, setShowArchitectureView] = useState(false);
+  const [architectureAlgorithmName, setArchitectureAlgorithmName] = useState("");
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -204,8 +207,7 @@ export default function OptimizationStudio() {
   };
 
   const AlgorithmCard = ({ algorithm }: { algorithm: OptimizationAlgorithm }) => (
-    <Card className="hover:shadow-md transition-shadow cursor-pointer"
-          onClick={() => setSelectedAlgorithm(algorithm)}>
+    <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -226,21 +228,75 @@ export default function OptimizationStudio() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center justify-between text-sm text-gray-600">
+        <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
           <span className="capitalize">{algorithm.category.replace('_', ' ')}</span>
           <span>v{algorithm.version}</span>
         </div>
         {algorithm.performance && Object.keys(algorithm.performance).length > 0 && (
-          <div className="mt-3 flex gap-4 text-xs">
+          <div className="mb-3 flex gap-4 text-xs">
             <div className="flex items-center gap-1">
               <TrendingUp className="w-3 h-3" />
               <span>Performance: {algorithm.performance.score || 'N/A'}</span>
             </div>
           </div>
         )}
+        
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="flex-1"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedAlgorithm(algorithm);
+            }}
+          >
+            <Eye className="w-3 h-3 mr-1" />
+            Details
+          </Button>
+          {algorithm.name === 'backwards-scheduling' && (
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="flex-1"
+              onClick={(e) => {
+                e.stopPropagation();
+                setArchitectureAlgorithmName(algorithm.displayName);
+                setShowArchitectureView(true);
+              }}
+            >
+              <Cpu className="w-3 h-3 mr-1" />
+              Architecture
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
+
+  // Show algorithm architecture view if selected
+  if (showArchitectureView) {
+    return (
+      <div className="relative min-h-screen bg-gray-50">
+        <Button
+          onClick={() => setIsMaximized(!isMaximized)}
+          className="fixed top-2 right-2 z-50"
+          size="icon"
+          variant="outline"
+        >
+          {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+        </Button>
+        
+        <div className={`p-3 sm:p-6 space-y-4 sm:space-y-6 ${isMaximized ? '' : ''}`}>
+          <AlgorithmArchitectureView 
+            algorithmName={architectureAlgorithmName}
+            onClose={() => setShowArchitectureView(false)}
+          />
+        </div>
+      </div>
+    );
+  }
 
   // Show backwards scheduling algorithm if selected
   if (showBackwardsScheduling) {
