@@ -72,6 +72,9 @@ import {
   shiftTemplates, resourceShiftAssignments, holidays, resourceAbsences, shiftScenarios, unplannedDowntime, overtimeShifts, downtimeActions, shiftChangeRequests,
   type ShiftTemplate, type ResourceShiftAssignment, type Holiday, type ResourceAbsence, type ShiftScenario, type UnplannedDowntime, type OvertimeShift, type DowntimeAction, type ShiftChangeRequest,
   type InsertShiftTemplate, type InsertResourceShiftAssignment, type InsertHoliday, type InsertResourceAbsence, type InsertShiftScenario, type InsertUnplannedDowntime, type InsertOvertimeShift, type InsertDowntimeAction, type InsertShiftChangeRequest,
+  cockpitLayouts, cockpitWidgets, cockpitAlerts, cockpitTemplates,
+  type CockpitLayout, type CockpitWidget, type CockpitAlert, type CockpitTemplate,
+  type InsertCockpitLayout, type InsertCockpitWidget, type InsertCockpitAlert, type InsertCockpitTemplate,
   // accountInfo, billingHistory, usageMetrics,
   // type AccountInfo, type BillingHistory, type UsageMetrics,
   // type InsertAccountInfo, type InsertBillingHistory, type InsertUsageMetrics
@@ -7444,22 +7447,22 @@ export class DatabaseStorage implements IStorage {
   async getCockpitLayouts(userId: number): Promise<any[]> {
     return await db
       .select()
-      .from(sql`cockpit_layouts`)
-      .where(sql`user_id = ${userId} OR is_shared = true`)
-      .orderBy(sql`is_default DESC, name ASC`);
+      .from(cockpitLayouts)
+      .where(or(eq(cockpitLayouts.userId, userId), eq(cockpitLayouts.isShared, true)))
+      .orderBy(desc(cockpitLayouts.isDefault), asc(cockpitLayouts.name));
   }
 
   async getCockpitLayout(id: number): Promise<any | undefined> {
     const [layout] = await db
       .select()
-      .from(sql`cockpit_layouts`)
-      .where(sql`id = ${id}`);
+      .from(cockpitLayouts)
+      .where(eq(cockpitLayouts.id, id));
     return layout || undefined;
   }
 
   async createCockpitLayout(layout: any): Promise<any> {
     const [newLayout] = await db
-      .insert(sql`cockpit_layouts`)
+      .insert(cockpitLayouts)
       .values(layout)
       .returning();
     return newLayout;
@@ -7467,29 +7470,29 @@ export class DatabaseStorage implements IStorage {
 
   async updateCockpitLayout(id: number, layout: any): Promise<any | undefined> {
     const [updatedLayout] = await db
-      .update(sql`cockpit_layouts`)
-      .set({ ...layout, updated_at: new Date() })
-      .where(sql`id = ${id}`)
+      .update(cockpitLayouts)
+      .set({ ...layout, updatedAt: new Date() })
+      .where(eq(cockpitLayouts.id, id))
       .returning();
     return updatedLayout || undefined;
   }
 
   async deleteCockpitLayout(id: number): Promise<boolean> {
-    const result = await db.delete(sql`cockpit_layouts`).where(sql`id = ${id}`);
+    const result = await db.delete(cockpitLayouts).where(eq(cockpitLayouts.id, id));
     return (result.rowCount || 0) > 0;
   }
 
   async getCockpitWidgets(layoutId: number): Promise<any[]> {
     return await db
       .select()
-      .from(sql`cockpit_widgets`)
-      .where(sql`layout_id = ${layoutId} AND is_visible = true`)
-      .orderBy(sql`created_at ASC`);
+      .from(cockpitWidgets)
+      .where(and(eq(cockpitWidgets.layoutId, layoutId), eq(cockpitWidgets.isVisible, true)))
+      .orderBy(asc(cockpitWidgets.createdAt));
   }
 
   async createCockpitWidget(widget: any): Promise<any> {
     const [newWidget] = await db
-      .insert(sql`cockpit_widgets`)
+      .insert(cockpitWidgets)
       .values(widget)
       .returning();
     return newWidget;
@@ -7497,29 +7500,29 @@ export class DatabaseStorage implements IStorage {
 
   async updateCockpitWidget(id: number, widget: any): Promise<any | undefined> {
     const [updatedWidget] = await db
-      .update(sql`cockpit_widgets`)
-      .set({ ...widget, updated_at: new Date() })
-      .where(sql`id = ${id}`)
+      .update(cockpitWidgets)
+      .set({ ...widget, updatedAt: new Date() })
+      .where(eq(cockpitWidgets.id, id))
       .returning();
     return updatedWidget || undefined;
   }
 
   async deleteCockpitWidget(id: number): Promise<boolean> {
-    const result = await db.delete(sql`cockpit_widgets`).where(sql`id = ${id}`);
+    const result = await db.delete(cockpitWidgets).where(eq(cockpitWidgets.id, id));
     return (result.rowCount || 0) > 0;
   }
 
   async getCockpitAlerts(widgetId?: number): Promise<any[]> {
-    let query = db.select().from(sql`cockpit_alerts`);
+    let query = db.select().from(cockpitAlerts);
     if (widgetId) {
-      query = query.where(sql`widget_id = ${widgetId}`);
+      query = query.where(eq(cockpitAlerts.widgetId, widgetId));
     }
-    return await query.orderBy(sql`created_at DESC`);
+    return await query.orderBy(desc(cockpitAlerts.createdAt));
   }
 
   async createCockpitAlert(alert: any): Promise<any> {
     const [newAlert] = await db
-      .insert(sql`cockpit_alerts`)
+      .insert(cockpitAlerts)
       .values(alert)
       .returning();
     return newAlert;
@@ -7527,9 +7530,9 @@ export class DatabaseStorage implements IStorage {
 
   async updateCockpitAlert(id: number, alert: any): Promise<any | undefined> {
     const [updatedAlert] = await db
-      .update(sql`cockpit_alerts`)
+      .update(cockpitAlerts)
       .set(alert)
-      .where(sql`id = ${id}`)
+      .where(eq(cockpitAlerts.id, id))
       .returning();
     return updatedAlert || undefined;
   }
@@ -7537,13 +7540,13 @@ export class DatabaseStorage implements IStorage {
   async getCockpitTemplates(): Promise<any[]> {
     return await db
       .select()
-      .from(sql`cockpit_templates`)
-      .orderBy(sql`is_official DESC, usage_count DESC, name ASC`);
+      .from(cockpitTemplates)
+      .orderBy(desc(cockpitTemplates.isOfficial), desc(cockpitTemplates.usageCount), asc(cockpitTemplates.name));
   }
 
   async createCockpitTemplate(template: any): Promise<any> {
     const [newTemplate] = await db
-      .insert(sql`cockpit_templates`)
+      .insert(cockpitTemplates)
       .values(template)
       .returning();
     return newTemplate;
