@@ -108,6 +108,7 @@ export default function Sidebar() {
     { icon: Server, label: "Systems Management", href: "/systems-management-dashboard", active: location === "/systems-management-dashboard", feature: "systems-management", action: "view" },
     { icon: Building, label: "Plants Management", href: "/plants-management", active: location === "/plants-management", feature: "systems-management", action: "view" },
     { icon: Code, label: "Extension Studio", href: "/extension-studio", active: location === "/extension-studio", feature: "systems-management", action: "view" },
+    { icon: Grid3X3, label: "Widget Showcase", href: "/widget-showcase", active: location === "/widget-showcase", feature: "systems-management", action: "view" },
     { icon: FileSearch, label: "Logs", href: "/error-logs", active: location === "/error-logs", feature: "systems-management", action: "view" },
     { icon: Layers, label: "Canvas", href: "/canvas", active: location === "/canvas", feature: "", action: "" },
     { icon: Shield, label: "Role Management", href: "/role-management", active: location === "/role-management", feature: "user-management", action: "view" },

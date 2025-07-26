@@ -42,6 +42,12 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Maximize } from "lucide-react";
+import { useMobile } from "@/hooks/use-mobile";
+import { useMaxDock } from "@/contexts/MaxDockContext";
+import { useAITheme } from "@/hooks/use-ai-theme";
+import UniversalWidget from "@/components/universal-widget";
+import { WidgetConfig, WidgetDataProcessor, SystemData, WIDGET_TEMPLATES } from "@/lib/widget-library";
+import { apiRequest } from "@/lib/queryClient";
 
 interface CockpitLayout {
   id: number;
@@ -98,6 +104,49 @@ const themes = [
   { value: "manufacturing", label: "Manufacturing" },
   { value: "modern", label: "Modern" }
 ];
+
+// Helper functions for widget type mapping
+function mapCockpitTypeToUniversalType(cockpitType: string): 'kpi' | 'chart' | 'table' | 'alert' | 'progress' | 'gauge' | 'list' {
+  switch (cockpitType) {
+    case 'metrics':
+    case 'kpi':
+      return 'kpi';
+    case 'chart':
+      return 'chart';
+    case 'alerts':
+      return 'alert';
+    case 'schedule':
+    case 'production':
+      return 'table';
+    case 'resources':
+      return 'gauge';
+    case 'activity':
+      return 'list';
+    default:
+      return 'kpi';
+  }
+}
+
+function getDefaultDataSource(cockpitType: string): string {
+  switch (cockpitType) {
+    case 'metrics':
+    case 'kpi':
+      return 'jobs';
+    case 'chart':
+      return 'jobs';
+    case 'alerts':
+      return 'alerts';
+    case 'schedule':
+    case 'production':
+      return 'operations';
+    case 'resources':
+      return 'resources';
+    case 'activity':
+      return 'jobs';
+    default:
+      return 'jobs';
+  }
+}
 
 export default function ProductionCockpit() {
   const [maximized, setMaximized] = useState(false);
@@ -173,6 +222,28 @@ export default function ProductionCockpit() {
     queryKey: ["/api/resources"],
     refetchInterval: autoRefresh ? refreshInterval * 1000 : false
   });
+
+  // Fetch operations
+  const { data: operations = [] } = useQuery<any[]>({
+    queryKey: ["/api/operations"],
+    refetchInterval: autoRefresh ? refreshInterval * 1000 : false
+  });
+
+  // Fetch capabilities
+  const { data: capabilities = [] } = useQuery<any[]>({
+    queryKey: ["/api/capabilities"],
+    refetchInterval: autoRefresh ? refreshInterval * 1000 : false
+  });
+
+  // Prepare system data for widgets
+  const systemData: SystemData = {
+    jobs,
+    operations,
+    resources,
+    capabilities,
+    metrics,
+    alerts
+  };
 
   // Create layout mutation
   const createLayoutMutation = useMutation({
@@ -960,26 +1031,45 @@ export default function ProductionCockpit() {
             </Card>
 
             {/* Custom Widgets */}
-            {widgets.map((widget: CockpitWidget) => (
-              <Card key={widget.id} className="col-span-1 lg:col-span-4">
-                <CardHeader className="pb-3 sm:pb-6">
-                  <CardTitle className="flex items-center justify-between text-base sm:text-lg">
-                    <span className="truncate flex-1 mr-2">{widget.title}</span>
-                    <Button variant="ghost" size="sm" className="p-1 sm:p-2">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </CardTitle>
-                  {widget.sub_title && (
-                    <p className="text-xs sm:text-sm text-muted-foreground truncate">{widget.sub_title}</p>
-                  )}
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center text-muted-foreground py-8">
-                    Widget content for {widget.type}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {widgets.map((widget: CockpitWidget) => {
+              // Convert cockpit widget to universal widget config
+              const widgetConfig: WidgetConfig = {
+                id: widget.id.toString(),
+                type: mapCockpitTypeToUniversalType(widget.type),
+                title: widget.title,
+                subtitle: widget.sub_title,
+                dataSource: widget.configuration?.dataSource || getDefaultDataSource(widget.type),
+                chartType: widget.configuration?.chartType || 'bar',
+                aggregation: widget.configuration?.aggregation || 'count',
+                groupBy: widget.configuration?.groupBy || 'status',
+                filters: widget.configuration?.filters,
+                colors: widget.configuration?.colors,
+                thresholds: widget.configuration?.thresholds,
+                size: { width: 400, height: 300 },
+                position: widget.position || { x: 0, y: 0 }
+              };
+
+              return (
+                <div key={widget.id} className="col-span-1 lg:col-span-4">
+                  <UniversalWidget 
+                    config={widgetConfig}
+                    data={systemData}
+                    onEdit={(id) => {
+                      // Handle widget editing
+                      toast({ title: "Edit widget functionality coming soon" });
+                    }}
+                    onRemove={(id) => {
+                      // Handle widget removal
+                      toast({ title: "Remove widget functionality coming soon" });
+                    }}
+                    onRefresh={(id) => {
+                      queryClient.invalidateQueries({ queryKey: ["/api/cockpit/widgets", selectedLayout] });
+                    }}
+                    showControls={true}
+                  />
+                </div>
+              );
+            })}
           </div>
         ) : (
           <Card>

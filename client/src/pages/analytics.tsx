@@ -14,6 +14,8 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
 import { EnhancedDashboardManager } from "@/components/dashboard-manager-enhanced";
 import AnalyticsWidget from "@/components/analytics-widget";
+import UniversalWidget from "@/components/universal-widget";
+import { WidgetConfig, WidgetDataProcessor, SystemData, WIDGET_TEMPLATES } from "@/lib/widget-library";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useMobile } from "@/hooks/use-mobile";
@@ -479,11 +481,28 @@ export default function Analytics() {
     refetchInterval: isLivePaused ? false : 30000, // Refresh every 30 seconds when not paused
   });
 
-  const { data: metrics } = useQuery<Metrics>({
-    queryKey: ["/api/metrics"],
-    refetchInterval: isLivePaused ? false : 30000, // Refresh every 30 seconds when not paused
+  // Fetch alerts and metrics for universal widgets
+  const { data: alerts = [] } = useQuery<any[]>({
+    queryKey: ["/api/cockpit/alerts"],
     enabled: visibleDashboards.size > 0,
+    refetchInterval: isLivePaused ? false : 30000,
   });
+
+  const { data: metrics } = useQuery<any>({
+    queryKey: ["/api/metrics"],
+    enabled: visibleDashboards.size > 0,
+    refetchInterval: isLivePaused ? false : 30000,
+  });
+
+  // Prepare system data for universal widgets
+  const systemData: SystemData = {
+    jobs,
+    operations,
+    resources,
+    capabilities,
+    metrics,
+    alerts
+  };
 
 
 
