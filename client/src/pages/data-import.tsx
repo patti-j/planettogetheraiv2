@@ -1778,29 +1778,29 @@ Focus on creating authentic, interconnected data that would be typical for ${com
               </CardHeader>
               <CardContent>
                 <Tabs defaultValue="manage" className="w-full">{/* disabled={!isReady} */}
-                <div className="w-full overflow-x-auto">
-                  <TabsList className="flex w-max gap-1 md:grid md:w-full md:grid-cols-5">
-                    <TabsTrigger value="manage" className="flex-shrink-0 whitespace-nowrap">
-                      <Edit2 className="h-4 w-4 mr-1" />
-                      <span className="hidden sm:inline">Manage Data</span>
-                      <span className="sm:hidden">Manage</span>
+                <div className="w-full overflow-x-auto pb-2">
+                  <TabsList className="flex w-max gap-1 lg:grid lg:w-full lg:grid-cols-5 p-1">
+                    <TabsTrigger value="manage" className="flex-shrink-0 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
+                      <Edit2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      <span className="hidden lg:inline">Manage Data</span>
+                      <span className="lg:hidden">Manage</span>
                     </TabsTrigger>
-                    <TabsTrigger value="upload" className="flex-shrink-0 whitespace-nowrap">
-                      <span className="hidden sm:inline">Upload File</span>
-                      <span className="sm:hidden">Upload</span>
+                    <TabsTrigger value="upload" className="flex-shrink-0 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
+                      <span className="hidden lg:inline">Upload File</span>
+                      <span className="lg:hidden">Upload</span>
                     </TabsTrigger>
-                    <TabsTrigger value="template" className="flex-shrink-0 whitespace-nowrap">
-                      <span className="hidden sm:inline">Template Format</span>
-                      <span className="sm:hidden">Template</span>
+                    <TabsTrigger value="template" className="flex-shrink-0 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
+                      <span className="hidden lg:inline">Template Format</span>
+                      <span className="lg:hidden">Template</span>
                     </TabsTrigger>
-                    <TabsTrigger value="structured" className="flex-shrink-0 whitespace-nowrap">
-                      <Grid3X3 className="h-4 w-4 mr-1" />
-                      <span className="hidden sm:inline">Spreadsheet</span>
-                      <span className="sm:hidden">Sheet</span>
+                    <TabsTrigger value="structured" className="flex-shrink-0 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
+                      <Grid3X3 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      <span className="hidden lg:inline">Spreadsheet</span>
+                      <span className="lg:hidden">Sheet</span>
                     </TabsTrigger>
-                    <TabsTrigger value="manual" className="flex-shrink-0 whitespace-nowrap">
-                      <span className="hidden sm:inline">Text Entry</span>
-                      <span className="sm:hidden">Text</span>
+                    <TabsTrigger value="manual" className="flex-shrink-0 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
+                      <span className="hidden lg:inline">Text Entry</span>
+                      <span className="lg:hidden">Text</span>
                     </TabsTrigger>
                   </TabsList>
                 </div>
