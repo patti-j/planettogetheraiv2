@@ -505,7 +505,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return {
             small: { plants: { min: 1, max: 2 }, resourcesPerPlant: { min: 8, max: 12 }, capabilities: { min: 15, max: 20 }, ordersPerPlant: { min: 25, max: 40 }, operationsPerOrder: { min: 4, max: 7 } },
             medium: { plants: { min: 2, max: 4 }, resourcesPerPlant: { min: 12, max: 18 }, capabilities: { min: 25, max: 35 }, ordersPerPlant: { min: 40, max: 65 }, operationsPerOrder: { min: 5, max: 8 } },
-            large: { plants: { min: 4, max: 8 }, resourcesPerPlant: { min: 18, max: 25 }, capabilities: { min: 40, max: 60 }, ordersPerPlant: { min: 65, max: 100 }, operationsPerOrder: { min: 6, max: 10 } }
+            large: { plants: { min: 4, max: 8 }, resourcesPerPlant: { min: 18, max: 25 }, capabilities: { min: 40, max: 60 }, ordersPerPlant: { min: 65, max: 100 }, operationsPerOrder: { min: 6, max: 10 } },
+            enterprise: { plants: { min: 5, max: 15 }, resourcesPerPlant: { min: 20, max: 30 }, capabilities: { min: 50, max: 80 }, ordersPerPlant: { min: 80, max: 120 }, operationsPerOrder: { min: 8, max: 12 } }
           };
         } else if (industryLower.includes('electronics') || industryLower.includes('semiconductor')) {
           return {
@@ -530,15 +531,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const industryConfig = getIndustryTypicalSizes(companyInfo.industry || 'General Manufacturing');
-      const config = industryConfig[sampleSize as keyof typeof industryConfig] || industryConfig.medium;
+      
+      // Use company size if available, otherwise use sampleSize
+      const configSize = (companyInfo.size && industryConfig[companyInfo.size as keyof typeof industryConfig]) 
+        ? companyInfo.size 
+        : sampleSize;
+      const config = industryConfig[configSize as keyof typeof industryConfig] || industryConfig.large;
 
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-      // Calculate actual record counts based on scaling
-      const plantsCount = Math.floor((config.plants.min + config.plants.max) / 2);
-      const resourcesTotal = plantsCount * Math.floor((config.resourcesPerPlant.min + config.resourcesPerPlant.max) / 2);
-      const ordersTotal = plantsCount * Math.floor((config.ordersPerPlant.min + config.ordersPerPlant.max) / 2);
-      const operationsTotal = ordersTotal * Math.floor((config.operationsPerOrder.min + config.operationsPerOrder.max) / 2);
+      // Use actual number of plants from company info, or calculate from config
+      const actualPlantsCount = parseInt(companyInfo.numberOfPlants) || Math.floor((config.plants.min + config.plants.max) / 2);
+      const resourcesPerPlant = Math.floor((config.resourcesPerPlant.min + config.resourcesPerPlant.max) / 2);
+      const ordersPerPlant = Math.floor((config.ordersPerPlant.min + config.ordersPerPlant.max) / 2);
+      const operationsPerOrder = Math.floor((config.operationsPerOrder.min + config.operationsPerOrder.max) / 2);
+      
+      const resourcesTotal = actualPlantsCount * resourcesPerPlant;
+      const ordersTotal = actualPlantsCount * ordersPerPlant;
+      const operationsTotal = ordersTotal * operationsPerOrder;
 
       const systemPrompt = `You are an expert manufacturing data specialist with deep knowledge of industry-specific production processes. Generate realistic sample data for a manufacturing ERP system based on the company information and requirements provided.
 

@@ -2,6 +2,16 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Critical AI Generation Scaling Fix for Enterprise Pharmaceutical Manufacturing (July 27, 2025)**:
+- Fixed fundamental scaling issue where AI generation was only creating 22 records instead of expected 325-500+ records for pharmaceutical enterprise operations
+- Added missing "enterprise" configuration tier to pharmaceutical industry with proper high-volume scaling: 80-120 orders per plant, 20-30 resources per plant, 8-12 operations per order
+- Fixed company size detection logic to use actual company size ("enterprise") instead of defaulting to "medium" sample size
+- Updated scaling calculation to use actual numberOfPlants from company info (5 plants) instead of config averages (3 plants)
+- Enhanced calculation precision: 5 plants × 100 orders/plant × 10 operations/order = ~5,000 operations total for realistic pharmaceutical manufacturing volumes
+- Fixed industry template API endpoint error by correcting URL from `/api/generate-industry-template` to `/api/industry-templates/generate` and adding required `createdBy` parameter
+- AI generation now properly scales to enterprise pharmaceutical manufacturing volumes with explicit mathematical calculations in prompts
+- Pharmaceutical enterprise configuration: 5-15 plants, 20-30 resources/plant, 50-80 capabilities, 80-120 orders/plant, 8-12 operations/order for realistic high-volume production
+
 ✓ **AI Generation Per-Plant Scaling Enhancement & Operations Foreign Key Fix (July 27, 2025)**:
 - Fixed critical operations table foreign key constraint error by dropping invalid `operations_job_id_jobs_id_fk` and adding proper `operations_production_order_id_production_orders_id_fk`
 - Resolved operations creation failures that were preventing operations from being generated during AI sample data generation
