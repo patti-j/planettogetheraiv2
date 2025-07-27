@@ -155,6 +155,7 @@ export default function Pricing() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
+  const [numberOfPlants, setNumberOfPlants] = useState<number>(1);
   const { toast } = useToast();
 
   const toggleModule = (moduleId: string) => {
@@ -180,7 +181,8 @@ export default function Pricing() {
     return selectedModules.reduce((total, moduleId) => {
       const module = functionalModules.find(m => m.id === moduleId);
       if (!module) return total;
-      return total + (billingCycle === "monthly" ? module.monthlyPrice : module.yearlyPrice);
+      const modulePrice = billingCycle === "monthly" ? module.monthlyPrice : module.yearlyPrice;
+      return total + (modulePrice * numberOfPlants);
     }, 0);
   };
 
@@ -645,9 +647,25 @@ export default function Pricing() {
         <div className="bg-white rounded-lg border border-gray-200 p-8 mb-12">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Functional Module Add-ons</h2>
-            <p className="text-lg text-gray-600 max-w-4xl mx-auto">
-              Scale your capabilities with specialized modules. Each module works independently and can be added to any plan. Build the perfect solution for your manufacturing needs.
+            <p className="text-lg text-gray-600 max-w-4xl mx-auto mb-6">
+              Scale your capabilities with specialized modules. Each module works independently and can be added to any plan. Pricing is per plant per month for multi-location operations.
             </p>
+            
+            {/* Plant Count Selector */}
+            <div className="flex items-center justify-center gap-4 bg-gray-50 rounded-lg p-4 max-w-md mx-auto">
+              <label className="text-sm font-medium text-gray-700">Number of Plants:</label>
+              <select 
+                value={numberOfPlants} 
+                onChange={(e) => setNumberOfPlants(parseInt(e.target.value))}
+                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30].map(count => (
+                  <option key={count} value={count}>
+                    {count} {count === 1 ? 'plant' : 'plants'}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Module Selection Grid */}
@@ -686,9 +704,14 @@ export default function Pricing() {
                           <div className="text-2xl font-bold text-blue-600 mt-1">
                             ${billingCycle === "monthly" ? module.monthlyPrice : module.yearlyPrice}
                             <span className="text-sm font-normal text-gray-500">
-                              /{billingCycle === "monthly" ? "mo" : "yr"}
+                              /plant/{billingCycle === "monthly" ? "mo" : "yr"}
                             </span>
                           </div>
+                          {numberOfPlants > 1 && (
+                            <div className="text-lg font-semibold text-gray-700 mt-1">
+                              ${(billingCycle === "monthly" ? module.monthlyPrice : module.yearlyPrice) * numberOfPlants} total
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
@@ -740,7 +763,7 @@ export default function Pricing() {
                 <div>
                   <h3 className="text-xl font-bold text-gray-900">Selected Modules Total</h3>
                   <p className="text-gray-600 mt-1">
-                    {selectedModules.length} module{selectedModules.length !== 1 ? 's' : ''} selected
+                    {selectedModules.length} module{selectedModules.length !== 1 ? 's' : ''} selected for {numberOfPlants} {numberOfPlants === 1 ? 'plant' : 'plants'}
                   </p>
                 </div>
                 <div className="text-right">
@@ -751,7 +774,7 @@ export default function Pricing() {
                     </span>
                   </div>
                   <div className="text-sm text-gray-600">
-                    Add to any plan above
+                    {numberOfPlants > 1 ? `Total for ${numberOfPlants} plants • ` : ''}Add to any plan above
                   </div>
                 </div>
               </div>

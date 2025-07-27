@@ -16,15 +16,17 @@
 ✓ **Module-Based Pricing System Implementation (July 27, 2025)**:
 - Successfully enhanced pricing structure with comprehensive functional module add-ons in addition to existing user-level tiers
 - Added four major functional modules: Production Scheduling ($25-250), Capacity Planning ($35-350), Inventory Optimization ($30-300), Demand Planning ($40-400)
+- Implemented per-plant pricing structure where functional modules are charged per plant per month for multi-location operations
+- Added plant count selector (1-30 plants) with real-time pricing calculation showing individual plant cost and total cost across all plants
 - Implemented smart module dependency system where advanced modules require core modules (Production Scheduling is foundation)
-- Created interactive module selection interface with real-time total calculation and visual feedback
+- Created interactive module selection interface with real-time total calculation and visual feedback including plant-specific totals
 - Added complexity badges (core, advanced, premium) to help customers understand module sophistication levels
 - Implemented automatic dependency resolution - selecting advanced modules auto-includes required foundation modules
 - Built comprehensive module features display with detailed capability descriptions for each specialized area
 - Added module removal functionality with smart cascade removal of dependent modules when foundation modules removed
 - Created pricing calculator showing combined user-level + module-level costs with monthly/yearly billing cycle support
 - Enhanced customer flexibility by allowing any plan tier to be enhanced with any combination of functional modules
-- Module-based pricing provides granular cost control and scalability for manufacturing operations of all sizes
+- Module-based pricing provides granular cost control and scalability for manufacturing operations of all sizes with transparent per-plant scaling
 
 ✓ **Smart Navigation Auto-Pinning System Implementation (July 27, 2025)**:
 - Successfully implemented intelligent auto-pinning system for "Getting Started" menu item until onboarding completion
