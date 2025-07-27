@@ -2388,9 +2388,9 @@ Focus on creating authentic, interconnected data that would be typical for ${com
                       };
                     } else if (industry.includes('pharmaceutical')) {
                       return {
-                        small: { records: '1-2 plants, 3-5 resources per plant, 5-10 orders per plant, 2-5 operations per order', description: 'Small pharma production setup' },
-                        medium: { records: '2-3 plants, 5-8 resources per plant, 10-17 orders per plant, 3-6 operations per order', description: 'Mid-scale pharmaceutical production' },
-                        large: { records: '3-6 plants, 6-10 resources per plant, 13-20 orders per plant, 4-8 operations per order', description: 'Enterprise pharmaceutical operations' }
+                        small: { records: '1-2 plants, 8-12 resources per plant, 25-40 orders per plant, 4-7 operations per order', description: 'Small pharma production setup' },
+                        medium: { records: '2-4 plants, 12-18 resources per plant, 40-65 orders per plant, 5-8 operations per order', description: 'Mid-scale pharmaceutical production' },
+                        large: { records: '5-15 plants, 20-30 resources per plant, 80-120 orders per plant, 8-12 operations per order', description: 'Enterprise pharmaceutical operations' }
                       };
                     } else if (industry.includes('electronics')) {
                       return {

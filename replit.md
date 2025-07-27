@@ -9,6 +9,7 @@
 - Updated scaling calculation to use actual numberOfPlants from company info (5 plants) instead of config averages (3 plants)
 - Enhanced calculation precision: 5 plants × 100 orders/plant × 10 operations/order = ~5,000 operations total for realistic pharmaceutical manufacturing volumes
 - Fixed industry template API endpoint error by correcting URL from `/api/generate-industry-template` to `/api/industry-templates/generate` and adding required `createdBy` parameter
+- Updated frontend sample size descriptions to match backend enterprise scaling: "Large Sample" now shows "5-15 plants, 20-30 resources per plant, 80-120 orders per plant, 8-12 operations per order"
 - AI generation now properly scales to enterprise pharmaceutical manufacturing volumes with explicit mathematical calculations in prompts
 - Pharmaceutical enterprise configuration: 5-15 plants, 20-30 resources/plant, 50-80 capabilities, 80-120 orders/plant, 8-12 operations/order for realistic high-volume production
 
