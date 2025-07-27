@@ -2,6 +2,18 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Complete Warehouse-to-Storage-Location Terminology Migration (July 27, 2025)**:
+- Successfully completed comprehensive warehouse-to-storage-location renaming across entire codebase
+- Updated database schema: warehouses → storageLocations, warehouseId → storageLocationId, all foreign key references and relations updated
+- Migrated all CSV templates and data import references to use "Storage Location" terminology
+- Updated frontend data import page: "Warehouses" → "Storage Locations", template filenames to storage_locations_template.csv
+- Fixed storage layer integration mapping to reference 'storage_locations' instead of 'warehouse_locations'
+- Updated CSV headers from "Warehouse Code" to "Storage Location Code" across inventory and lot tracking templates
+- Corrected site type designations from "warehouse" to "storage" for consistency with storage location terminology
+- Database migration ready - no existing warehouse tables found, clean schema migration confirmed
+- System now uses consistent "storage location" terminology across backend schema, API endpoints, and frontend interfaces
+- Manufacturing management platform storage terminology aligned with modern warehouse management practices
+
 ✓ **Complete Inventory-to-Stock Terminology Migration (July 27, 2025)**:
 - Successfully completed comprehensive inventory-to-stock renaming across entire codebase
 - Updated database schema tables: inventoryItems → stockItems, inventoryTransactions → stockTransactions, inventoryBalances → stockBalances

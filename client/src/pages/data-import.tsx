@@ -601,12 +601,12 @@ export default function DataImport() {
       // Products & Inventory
       case 'items':
         return 'Item Number,Name,Description,Item Type,Unit of Measure\nWIDG-001,Widget Assembly,Standard widget product,finished_good,EA';
-      case 'warehouses':
-        return 'Name,Code,Description,Site,Warehouse Type\nMain Warehouse,WH-MAIN,Primary storage facility,Main Manufacturing,general';
+      case 'storageLocations':
+        return 'Name,Code,Description,Site,Location Type\nMain Storage,SL-MAIN,Primary storage facility,Main Manufacturing,general';
       case 'inventory':
-        return 'Item Number,Warehouse Code,Location,On Hand Quantity\nWIDG-001,WH-MAIN,A1-B2,150';
+        return 'Item Number,Storage Location Code,Location,On Hand Quantity\nWIDG-001,SL-MAIN,A1-B2,150';
       case 'inventoryLots':
-        return 'Lot Number,Item Number,Warehouse Code,Quantity,Status\nLOT001,COMP-001,WH-MAIN,100,available';
+        return 'Lot Number,Item Number,Storage Location Code,Quantity,Status\nLOT001,COMP-001,SL-MAIN,100,available';
       
       // Sales & Orders
       case 'salesOrders':
@@ -692,7 +692,7 @@ export default function DataImport() {
 
       // Organizational Structure
       case 'sites':
-        return 'Name,Code,Street,City,State,Postal Code,Country,Timezone,Currency,Site Type\nMain Manufacturing,MAIN,123 Industrial Blvd,Chicago,IL,60601,USA,America/Chicago,USD,manufacturing\nWarehouse Site,WH01,456 Storage Dr,Dallas,TX,75201,USA,America/Chicago,USD,warehouse';
+        return 'Name,Code,Street,City,State,Postal Code,Country,Timezone,Currency,Site Type\nMain Manufacturing,MAIN,123 Industrial Blvd,Chicago,IL,60601,USA,America/Chicago,USD,manufacturing\nStorage Site,ST01,456 Storage Dr,Dallas,TX,75201,USA,America/Chicago,USD,storage';
       case 'departments':
         return 'Name,Code,Description,Plant,Cost Center,Budget Amount\nProduction,PROD,Manufacturing operations department,Main Plant,CC001,500000\nQuality Control,QC,Quality assurance department,Main Plant,CC002,150000';
       case 'workCenters':
@@ -703,12 +703,12 @@ export default function DataImport() {
       // Products & Inventory
       case 'items':
         return 'Item Number,Name,Description,Item Type,Unit of Measure,Weight,Standard Cost,List Price,Lead Time,Safety Stock\nWIDG-001,Widget Assembly,Standard widget product,finished_good,EA,1500,2500,5000,7,50\nCOMP-001,Widget Component,Main widget component,component,EA,200,500,0,3,100';
-      case 'warehouses':
-        return 'Name,Code,Description,Site,Warehouse Type,Total Capacity,Used Capacity\nMain Warehouse,WH-MAIN,Primary storage facility,Main Manufacturing,general,10000,6500\nFinished Goods,WH-FG,Finished products storage,Main Manufacturing,finished_goods,5000,2800';
+      case 'storageLocations':
+        return 'Name,Code,Description,Site,Location Type,Total Capacity,Used Capacity\nMain Storage,SL-MAIN,Primary storage facility,Main Manufacturing,general,10000,6500\nFinished Goods,SL-FG,Finished products storage,Main Manufacturing,finished_goods,5000,2800';
       case 'inventory':
-        return 'Item Number,Warehouse Code,Location,On Hand Quantity,Allocated Quantity,Available Quantity,Average Cost\nWIDG-001,WH-MAIN,A1-B2,150,25,125,2500\nCOMP-001,WH-MAIN,B3-C4,500,100,400,500';
+        return 'Item Number,Storage Location Code,Location,On Hand Quantity,Allocated Quantity,Available Quantity,Average Cost\nWIDG-001,SL-MAIN,A1-B2,150,25,125,2500\nCOMP-001,SL-MAIN,B3-C4,500,100,400,500';
       case 'inventoryLots':
-        return 'Lot Number,Item Number,Warehouse Code,Quantity,Expiration Date,Received Date,Status\nLOT001,COMP-001,WH-MAIN,100,2025-12-31,2025-01-15,available\nLOT002,COMP-001,WH-MAIN,75,,2025-01-20,available';
+        return 'Lot Number,Item Number,Storage Location Code,Quantity,Expiration Date,Received Date,Status\nLOT001,COMP-001,SL-MAIN,100,2025-12-31,2025-01-15,available\nLOT002,COMP-001,SL-MAIN,75,,2025-01-20,available';
 
       // Sales & Orders
       case 'salesOrders':
@@ -767,7 +767,7 @@ export default function DataImport() {
 
       // Organizational Structure
       case 'sites':
-        csvContent = 'Name,Code,Street,City,State,Postal Code,Country,Timezone,Currency,Site Type\nMain Manufacturing,MAIN,123 Industrial Blvd,Chicago,IL,60601,USA,America/Chicago,USD,manufacturing\nWarehouse Site,WH01,456 Storage Dr,Dallas,TX,75201,USA,America/Chicago,USD,warehouse';
+        csvContent = 'Name,Code,Street,City,State,Postal Code,Country,Timezone,Currency,Site Type\nMain Manufacturing,MAIN,123 Industrial Blvd,Chicago,IL,60601,USA,America/Chicago,USD,manufacturing\nStorage Site,ST01,456 Storage Dr,Dallas,TX,75201,USA,America/Chicago,USD,storage';
         filename = 'sites_template.csv';
         break;
       case 'departments':
@@ -788,16 +788,16 @@ export default function DataImport() {
         csvContent = 'Item Number,Name,Description,Item Type,Unit of Measure,Weight,Standard Cost,List Price,Lead Time,Safety Stock\nWIDG-001,Widget Assembly,Standard widget product,finished_good,EA,1500,2500,5000,7,50\nCOMP-001,Widget Component,Main widget component,component,EA,200,500,0,3,100';
         filename = 'items_template.csv';
         break;
-      case 'warehouses':
-        csvContent = 'Name,Code,Description,Site,Warehouse Type,Total Capacity,Used Capacity\nMain Warehouse,WH-MAIN,Primary storage facility,Main Manufacturing,general,10000,6500\nFinished Goods,WH-FG,Finished products storage,Main Manufacturing,finished_goods,5000,2800';
-        filename = 'warehouses_template.csv';
+      case 'storageLocations':
+        csvContent = 'Name,Code,Description,Site,Location Type,Total Capacity,Used Capacity\nMain Storage,SL-MAIN,Primary storage facility,Main Manufacturing,general,10000,6500\nFinished Goods,SL-FG,Finished products storage,Main Manufacturing,finished_goods,5000,2800';
+        filename = 'storage_locations_template.csv';
         break;
       case 'inventory':
-        csvContent = 'Item Number,Warehouse Code,Location,On Hand Quantity,Allocated Quantity,Available Quantity,Average Cost\nWIDG-001,WH-MAIN,A1-B2,150,25,125,2500\nCOMP-001,WH-MAIN,B3-C4,500,100,400,500';
+        csvContent = 'Item Number,Storage Location Code,Location,On Hand Quantity,Allocated Quantity,Available Quantity,Average Cost\nWIDG-001,SL-MAIN,A1-B2,150,25,125,2500\nCOMP-001,SL-MAIN,B3-C4,500,100,400,500';
         filename = 'inventory_template.csv';
         break;
       case 'inventoryLots':
-        csvContent = 'Lot Number,Item Number,Warehouse Code,Quantity,Expiration Date,Received Date,Status\nLOT001,COMP-001,WH-MAIN,100,2025-12-31,2025-01-15,available\nLOT002,COMP-001,WH-MAIN,75,,2025-01-20,available';
+        csvContent = 'Lot Number,Item Number,Storage Location Code,Quantity,Expiration Date,Received Date,Status\nLOT001,COMP-001,SL-MAIN,100,2025-12-31,2025-01-15,available\nLOT002,COMP-001,SL-MAIN,75,,2025-01-20,available';
         filename = 'inventory_lots_template.csv';
         break;
 
@@ -855,14 +855,14 @@ export default function DataImport() {
     
     // Products & Inventory
     { key: 'items', label: 'Items', icon: Package, description: 'Products, components, and materials' },
-    { key: 'warehouses', label: 'Warehouses', icon: Warehouse, description: 'Storage facilities and locations' },
+    { key: 'storageLocations', label: 'Storage Locations', icon: Warehouse, description: 'Storage facilities and locations' },
     { key: 'inventory', label: 'Inventory', icon: Package2, description: 'Current stock levels and quantities' },
     { key: 'inventoryLots', label: 'Inventory Lots', icon: Hash, description: 'Lot-controlled inventory tracking' },
     
     // Sales & Orders
     { key: 'salesOrders', label: 'Sales Orders', icon: ShoppingCart, description: 'Customer orders and sales' },
     { key: 'purchaseOrders', label: 'Purchase Orders', icon: FileText, description: 'Supplier purchase orders' },
-    { key: 'transferOrders', label: 'Transfer Orders', icon: ArrowLeftRight, description: 'Inter-warehouse transfers' },
+    { key: 'transferOrders', label: 'Transfer Orders', icon: ArrowLeftRight, description: 'Inter-location transfers' },
     
     // Manufacturing Planning
     { key: 'billsOfMaterial', label: 'Bills of Material', icon: List, description: 'Product recipes and formulas' },

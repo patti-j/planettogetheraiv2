@@ -8060,7 +8060,7 @@ export class DatabaseStorage implements IStorage {
     const dataTypeMap: Record<string, string[]> = {
       'erp': ['orders', 'inventory', 'customers', 'suppliers', 'financials'],
       'crm': ['customers', 'leads', 'opportunities', 'contacts'],
-      'wms': ['inventory', 'warehouse_locations', 'shipments', 'receiving'],
+      'wms': ['inventory', 'storage_locations', 'shipments', 'receiving'],
       'mes': ['production_orders', 'work_orders', 'quality_data', 'equipment_status'],
       'scada': ['sensor_data', 'equipment_status', 'alarms', 'historical_data'],
       'iot': ['sensor_readings', 'device_status', 'telemetry', 'alerts'],

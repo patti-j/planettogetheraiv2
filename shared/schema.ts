@@ -5552,14 +5552,14 @@ export const items = pgTable("items", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Warehouses - storage locations
-export const warehouses = pgTable("warehouses", {
+// Storage Locations - warehouses and storage areas
+export const storageLocations = pgTable("storage_locations", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   code: text("code").notNull().unique(),
   description: text("description"),
   siteId: integer("site_id").references(() => sites.id).notNull(),
-  warehouseType: text("warehouse_type").notNull().default("general"), // general, finished_goods, raw_materials, work_in_process
+  locationType: text("location_type").notNull().default("general"), // general, finished_goods, raw_materials, work_in_process
   address: jsonb("address").$type<{
     street?: string;
     city?: string;
@@ -5577,7 +5577,7 @@ export const warehouses = pgTable("warehouses", {
 export const inventory = pgTable("inventory", {
   id: serial("id").primaryKey(),
   itemId: integer("item_id").references(() => items.id).notNull(),
-  warehouseId: integer("warehouse_id").references(() => warehouses.id).notNull(),
+  storageLocationId: integer("storage_location_id").references(() => storageLocations.id).notNull(),
   location: text("location"), // bin, shelf, etc.
   onHandQuantity: integer("on_hand_quantity").notNull().default(0),
   allocatedQuantity: integer("allocated_quantity").notNull().default(0),
@@ -5590,7 +5590,7 @@ export const inventory = pgTable("inventory", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  itemWarehouseIdx: unique().on(table.itemId, table.warehouseId),
+  itemStorageLocationIdx: unique().on(table.itemId, table.storageLocationId),
 }));
 
 // Inventory lots for lot-controlled items
@@ -5598,7 +5598,7 @@ export const inventoryLots = pgTable("inventory_lots", {
   id: serial("id").primaryKey(),
   lotNumber: text("lot_number").notNull(),
   itemId: integer("item_id").references(() => items.id).notNull(),
-  warehouseId: integer("warehouse_id").references(() => warehouses.id).notNull(),
+  storageLocationId: integer("storage_location_id").references(() => storageLocations.id).notNull(),
   quantity: integer("quantity").notNull().default(0),
   expirationDate: timestamp("expiration_date"),
   receivedDate: timestamp("received_date").notNull(),
@@ -5607,7 +5607,7 @@ export const inventoryLots = pgTable("inventory_lots", {
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
-  lotItemWarehouseIdx: unique().on(table.lotNumber, table.itemId, table.warehouseId),
+  lotItemStorageLocationIdx: unique().on(table.lotNumber, table.itemId, table.storageLocationId),
 }));
 
 // Sales orders from customers
@@ -5707,12 +5707,12 @@ export const purchaseOrderLines = pgTable("purchase_order_lines", {
   purchaseOrderLineIdx: unique().on(table.purchaseOrderId, table.lineNumber),
 }));
 
-// Transfer orders between warehouses/sites
+// Transfer orders between storage locations/sites
 export const transferOrders = pgTable("transfer_orders", {
   id: serial("id").primaryKey(),
   orderNumber: text("order_number").notNull().unique(),
-  fromWarehouseId: integer("from_warehouse_id").references(() => warehouses.id).notNull(),
-  toWarehouseId: integer("to_warehouse_id").references(() => warehouses.id).notNull(),
+  fromStorageLocationId: integer("from_storage_location_id").references(() => storageLocations.id).notNull(),
+  toStorageLocationId: integer("to_storage_location_id").references(() => storageLocations.id).notNull(),
   requestedDate: timestamp("requested_date").notNull(),
   shippedDate: timestamp("shipped_date"),
   receivedDate: timestamp("received_date"),
@@ -5872,7 +5872,7 @@ export const sitesRelations = relations(sites, ({ one, many }) => ({
     fields: [sites.parentSiteId],
     references: [sites.id],
   }),
-  warehouses: many(warehouses),
+  storageLocations: many(storageLocations),
   salesOrders: many(salesOrders),
   purchaseOrders: many(purchaseOrders),
   forecasts: many(forecasts),
@@ -5890,15 +5890,15 @@ export const itemsRelations = relations(items, ({ many }) => ({
   forecasts: many(forecasts),
 }));
 
-export const warehousesRelations = relations(warehouses, ({ one, many }) => ({
+export const storageLocationsRelations = relations(storageLocations, ({ one, many }) => ({
   site: one(sites, {
-    fields: [warehouses.siteId],
+    fields: [storageLocations.siteId],
     references: [sites.id],
   }),
   inventory: many(inventory),
   inventoryLots: many(inventoryLots),
-  transferOrdersFrom: many(transferOrders, { relationName: "fromWarehouse" }),
-  transferOrdersTo: many(transferOrders, { relationName: "toWarehouse" }),
+  transferOrdersFrom: many(transferOrders, { relationName: "fromStorageLocation" }),
+  transferOrdersTo: many(transferOrders, { relationName: "toStorageLocation" }),
 }));
 
 export const inventoryRelations = relations(inventory, ({ one }) => ({
@@ -5906,9 +5906,9 @@ export const inventoryRelations = relations(inventory, ({ one }) => ({
     fields: [inventory.itemId],
     references: [items.id],
   }),
-  warehouse: one(warehouses, {
-    fields: [inventory.warehouseId],
-    references: [warehouses.id],
+  storageLocation: one(storageLocations, {
+    fields: [inventory.storageLocationId],
+    references: [storageLocations.id],
   }),
 }));
 
@@ -5917,9 +5917,9 @@ export const inventoryLotsRelations = relations(inventoryLots, ({ one }) => ({
     fields: [inventoryLots.itemId],
     references: [items.id],
   }),
-  warehouse: one(warehouses, {
-    fields: [inventoryLots.warehouseId],
-    references: [warehouses.id],
+  storageLocation: one(storageLocations, {
+    fields: [inventoryLots.storageLocationId],
+    references: [storageLocations.id],
   }),
 }));
 
@@ -5962,15 +5962,15 @@ export const purchaseOrderLinesRelations = relations(purchaseOrderLines, ({ one 
 }));
 
 export const transferOrdersRelations = relations(transferOrders, ({ one, many }) => ({
-  fromWarehouse: one(warehouses, {
-    fields: [transferOrders.fromWarehouseId],
-    references: [warehouses.id],
-    relationName: "fromWarehouse",
+  fromStorageLocation: one(storageLocations, {
+    fields: [transferOrders.fromStorageLocationId],
+    references: [storageLocations.id],
+    relationName: "fromStorageLocation",
   }),
-  toWarehouse: one(warehouses, {
-    fields: [transferOrders.toWarehouseId],
-    references: [warehouses.id],
-    relationName: "toWarehouse",
+  toStorageLocation: one(storageLocations, {
+    fields: [transferOrders.toStorageLocationId],
+    references: [storageLocations.id],
+    relationName: "toStorageLocation",
   }),
   lines: many(transferOrderLines),
 }));
@@ -6065,7 +6065,7 @@ export const insertItemSchema = createInsertSchema(items).omit({
   createdAt: true,
 });
 
-export const insertWarehouseSchema = createInsertSchema(warehouses).omit({
+export const insertStorageLocationSchema = createInsertSchema(storageLocations).omit({
   id: true,
   createdAt: true,
 });
@@ -6190,8 +6190,8 @@ export type InsertSite = z.infer<typeof insertSiteSchema>;
 export type Item = typeof items.$inferSelect;
 export type InsertItem = z.infer<typeof insertItemSchema>;
 
-export type Warehouse = typeof warehouses.$inferSelect;
-export type InsertWarehouse = z.infer<typeof insertWarehouseSchema>;
+export type StorageLocation = typeof storageLocations.$inferSelect;
+export type InsertStorageLocation = z.infer<typeof insertStorageLocationSchema>;
 
 export type Inventory = typeof inventory.$inferSelect;
 export type InsertInventory = z.infer<typeof insertInventorySchema>;
