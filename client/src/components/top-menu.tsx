@@ -346,12 +346,12 @@ export default function TopMenu() {
                                   togglePinPage(page.path);
                                 }}
                                 className={`
-                                  absolute bottom-1 right-1 h-4 w-4 p-0 rounded-full shadow-sm transition-all
-                                  ${page.isPinned ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-gray-300 hover:bg-gray-400 text-gray-600'}
+                                  absolute bottom-1 right-1 h-4 w-4 p-0 transition-all
+                                  ${page.isPinned ? 'text-emerald-600 hover:text-emerald-700' : 'text-gray-400 hover:text-gray-600'}
                                 `}
                                 title={page.isPinned ? 'Unpin from favorites' : 'Pin to favorites'}
                               >
-                                {page.isPinned ? <Pin className="h-2 w-2" /> : <PinOff className="h-2 w-2" />}
+                                {page.isPinned ? <Pin className="h-2.5 w-2.5" strokeWidth={2} /> : <Pin className="h-2.5 w-2.5" strokeWidth={1} />}
                               </Button>
                             </div>
                           </Link>

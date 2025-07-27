@@ -17,9 +17,10 @@
 - Changed pin mechanism from dynamic hover top-right corner to permanent bottom-right corner placement
 - Updated pin button to always be visible with smaller size (4x4px) positioned at `bottom-1 right-1`
 - Removed hover-only visibility in favor of permanent pin display for better user accessibility
-- Pin button now uses emerald styling for pinned items and gray styling for unpinned items
-- Smaller pin icon (2x2px) provides subtle visual indicator without overwhelming the menu item design
-- Enhanced user experience by making pin functionality immediately discoverable and accessible
+- Enhanced pin icons to use subtle outline style instead of filled circles for less visual intrusion
+- Pin styling: emerald outline for pinned items (strokeWidth=2), light gray outline for unpinned (strokeWidth=1)
+- Removed background circles to create cleaner, more minimal appearance that blends with menu design
+- Enhanced user experience by making pin functionality immediately discoverable without overwhelming visual design
 
 ✓ **Menu Navigation Recent & Favorites Enhancement with Pinning Functionality (July 27, 2025)**:
 - Successfully renamed "Recent Pages" section to "Recent & Favorites" in the hamburger menu
