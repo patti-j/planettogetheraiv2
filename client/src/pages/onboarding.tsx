@@ -190,7 +190,7 @@ export default function OnboardingPage() {
   const { data: existingOnboarding } = useQuery({
     queryKey: ['/api/onboarding/status'],
     enabled: !!user
-  });
+  }) as { data: CompanyOnboarding | undefined };
 
   const createOnboardingMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -524,10 +524,10 @@ export default function OnboardingPage() {
                     <div>
                       <p className="text-sm text-green-700">
                         Data requirements: {
-                          [...new Set(
+                          Array.from(new Set(
                             getSelectedFeatureModules()
                               .flatMap(module => module.dataRequirements)
-                          )].join(', ')
+                          )).join(', ')
                         }
                       </p>
                     </div>
@@ -576,7 +576,7 @@ export default function OnboardingPage() {
                 <div className="space-y-4">
                   <h3 className="font-semibold">Required Data for Your Features</h3>
                   <div className="space-y-2">
-                    {[...new Set(getSelectedFeatureModules().flatMap(module => module.dataRequirements))].map((req, index) => (
+                    {Array.from(new Set(getSelectedFeatureModules().flatMap(module => module.dataRequirements))).map((req, index) => (
                       <div key={index} className="flex items-center gap-2 text-sm">
                         <CheckCircle2 className="w-4 h-4 text-green-500" />
                         {req}

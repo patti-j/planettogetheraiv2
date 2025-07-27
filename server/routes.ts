@@ -14734,6 +14734,18 @@ Response must be valid JSON:
     }
   }));
 
+  // Add missing onboarding status endpoint that frontend expects
+  app.get("/api/onboarding/status", requireAuth, createSafeHandler(async (req, res) => {
+    const userId = req.user!.id;
+    const onboarding = await storage.getCompanyOnboarding(userId);
+    
+    if (!onboarding) {
+      res.json(null);
+      return;
+    }
+    res.json(onboarding);
+  }));
+
   app.get("/api/onboarding/company/:userId", requireAuth, createSafeHandler(async (req, res) => {
     const userId = parseInt(req.params.userId);
     if (isNaN(userId)) {
@@ -14748,12 +14760,53 @@ Response must be valid JSON:
     res.json(onboarding);
   }));
 
+  // Add initialize endpoint that frontend expects
+  app.post("/api/onboarding/initialize", requireAuth, createSafeHandler(async (req, res) => {
+    // Basic validation for required fields
+    const { companyName, industry, size, description } = req.body;
+    
+    if (!companyName || !industry) {
+      throw new ValidationError("Company name and industry are required", {
+        operation: 'onboarding-initialize',
+        endpoint: 'POST /api/onboarding/initialize',
+        userId: req.user?.id,
+        requestData: req.body,
+        additionalInfo: { missingFields: ["companyName", "industry"] }
+      });
+    }
+
+    const onboardingData = {
+      companyName,
+      industry,
+      size: size || 'small',
+      description: description || '',
+      primaryGoal: 'improve-efficiency', // Default goal
+      features: [],
+      completedSteps: [],
+      currentStep: 'welcome',
+      teamMembers: 1,
+      isCompleted: false,
+      createdBy: req.user!.id,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    const onboarding = await storage.createCompanyOnboarding(onboardingData);
+    res.status(201).json(onboarding);
+  }));
+
   app.post("/api/onboarding/company", requireAuth, createSafeHandler(async (req, res) => {
     // Basic validation for required fields
     const { companyName, industry, size, primaryGoal, features } = req.body;
     
     if (!companyName || !industry || !size || !primaryGoal || !features) {
-      throw new ValidationError("Missing required onboarding fields");
+      throw new ValidationError("Missing required onboarding fields", {
+        operation: 'onboarding-company-create',
+        endpoint: 'POST /api/onboarding/company',
+        userId: req.user?.id,
+        requestData: req.body,
+        additionalInfo: { missingFields: ["companyName", "industry", "size", "primaryGoal", "features"] }
+      });
     }
 
     const onboardingData = {
@@ -14764,6 +14817,8 @@ Response must be valid JSON:
       features: Array.isArray(features) ? features : [],
       completedSteps: [],
       currentStep: 'welcome',
+      teamMembers: 1,
+      isCompleted: false,
       createdBy: req.user!.id,
       createdAt: new Date(),
       updatedAt: new Date()
