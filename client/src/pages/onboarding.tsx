@@ -533,12 +533,12 @@ export default function OnboardingPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Link href="/production-schedule">
+              <Link to="/production-schedule">
                 <Button size="lg" className="mr-4">
                   Go to Dashboard
                 </Button>
               </Link>
-              <Link href="/onboarding">
+              <Link to="/onboarding">
                 <Button variant="outline" size="lg">
                   Review Setup
                 </Button>
