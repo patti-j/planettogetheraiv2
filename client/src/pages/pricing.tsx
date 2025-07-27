@@ -392,7 +392,7 @@ export default function Pricing() {
         { name: "AI Optimization Studio", starter: false, professional: false, enterprise: true },
         { name: "Custom AI Model Training", starter: false, professional: false, enterprise: true },
         { name: "AI-Powered Capacity Planning", starter: false, professional: true, enterprise: true },
-        { name: "Inventory Optimization AI", starter: false, professional: true, enterprise: true },
+        { name: "Inventory Planning AI", starter: false, professional: true, enterprise: true },
         { name: "Demand Forecasting AI", starter: false, professional: true, enterprise: true },
         { name: "Disruption Management AI", starter: false, professional: true, enterprise: true }
       ]
