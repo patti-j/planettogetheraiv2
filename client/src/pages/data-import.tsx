@@ -1863,32 +1863,7 @@ Focus on creating authentic, interconnected data that would be typical for ${com
               </p>
             </div>
 
-            {/* Data Types for Generation */}
-            {(() => {
-              const dataTypesToShow = selectedDataTypes.length > 0 ? selectedDataTypes : recommendedDataTypes;
-              return dataTypesToShow.length > 0 && (
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">
-                    {selectedDataTypes.length > 0 ? 'Selected Data Types for Generation' : 'Recommended Data Types for Generation'}
-                  </Label>
-                  <div className="flex flex-wrap gap-2">
-                    {dataTypesToShow.map(key => {
-                      const dataType = dataTypes.find(dt => dt.key === key);
-                      return (
-                        <Badge key={key} variant="outline" className="text-xs">
-                          {dataType?.label}
-                        </Badge>
-                      );
-                    })}
-                  </div>
-                  {selectedDataTypes.length === 0 && recommendedDataTypes.length > 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      These data types are recommended based on your selected features: {onboardingFeatures.join(', ')}.
-                    </p>
-                  )}
-                </div>
-              );
-            })()}
+
           </div>
 
           <div className="flex items-center justify-between pt-6 border-t">
