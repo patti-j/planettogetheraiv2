@@ -2,6 +2,17 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Master Data Setup Vendors and Customers Integration (July 27, 2025)**:
+- Successfully added vendors and customers to Master Data Setup screen bringing total available data types from 19 to 21
+- Implemented comprehensive CSV template support for both vendors and customers with realistic sample data
+- Added structured data entry support with proper field definitions and validation for spreadsheet-like interface
+- Integrated manual text entry parsing for vendors and customers with line-by-line CSV format support
+- Enhanced Business Partners section in Master Data Setup with vendor and customer management capabilities
+- Vendor templates include contact information, payment terms, certifications, performance ratings, and qualification levels
+- Customer templates include billing details, credit management, sales representatives, and tier classification
+- Complete data import workflow now supports all core manufacturing master data objects including business partner relationships
+- Master Data Setup now provides comprehensive coverage of all implemented ERP manufacturing data structures
+
 ✓ **Complete Warehouse-to-Storage-Location Terminology Migration (July 27, 2025)**:
 - Successfully completed comprehensive warehouse-to-storage-location renaming across entire codebase
 - Updated database schema: warehouses → storageLocations, warehouseId → storageLocationId, all foreign key references and relations updated

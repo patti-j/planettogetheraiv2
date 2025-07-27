@@ -52,7 +52,9 @@ export default function DataImport() {
     plannedOrders: '',
     users: '',
     capabilities: '',
-    plants: ''
+    plants: '',
+    vendors: '',
+    customers: ''
   });
 
   // Data dependency hierarchy - defines what must be created first
@@ -72,7 +74,9 @@ export default function DataImport() {
     users: [{ username: '', email: '', firstName: '', lastName: '', role: 'operator' }],
     resources: [{ name: '', type: 'Equipment', description: '', status: 'active', capabilities: [], plantId: '' }],
     productionOrders: [{ name: '', customer: '', priority: 'medium', dueDate: '', quantity: 1, description: '', status: 'pending' }],
-    plannedOrders: [{ name: '', customer: '', priority: 'medium', dueDate: '', quantity: 1, description: '', planType: 'forecast' }]
+    plannedOrders: [{ name: '', customer: '', priority: 'medium', dueDate: '', quantity: 1, description: '', planType: 'forecast' }],
+    vendors: [{ vendorNumber: '', vendorName: '', vendorType: 'supplier', contactName: '', contactEmail: '', contactPhone: '', address: '', city: '', state: '', zipCode: '', country: 'US', paymentTerms: 'net30', status: 'active' }],
+    customers: [{ customerNumber: '', customerName: '', contactName: '', contactEmail: '', contactPhone: '', address: '', city: '', state: '', zipCode: '', country: 'US', customerTier: 'standard', status: 'active' }]
   });
 
   const importMutation = useMutation({
@@ -544,6 +548,10 @@ export default function DataImport() {
               return { name: parts[0], description: parts[1] || '', category: parts[2] || 'general' };
             case 'plants':
               return { name: parts[0], location: parts[1] || '', address: parts[2] || '' };
+            case 'vendors':
+              return { vendorNumber: parts[0], vendorName: parts[1] || '', vendorType: parts[2] || 'supplier', contactName: parts[3] || '', contactEmail: parts[4] || '' };
+            case 'customers':
+              return { customerNumber: parts[0], customerName: parts[1] || '', contactName: parts[2] || '', contactEmail: parts[3] || '', customerTier: parts[4] || 'standard' };
             default:
               return { name: parts[0] };
           }
@@ -726,6 +734,12 @@ export default function DataImport() {
       case 'forecasts':
         return 'Item Number,Site,Forecast Date,Forecast Quantity,Forecast Type,Forecast Method,Confidence,Planner Name\nWIDG-001,Main Manufacturing,2025-02-01,100,demand,manual,80,Production Planner\nCOMP-001,Main Manufacturing,2025-02-01,250,demand,statistical,70,Production Planner';
 
+      // Business Partners
+      case 'vendors':
+        return 'Vendor Number,Vendor Name,Vendor Type,Contact Name,Contact Email,Contact Phone,Address,City,State,Zip Code,Country,Payment Terms\nVND-001,ChemSupply Industries,supplier,Sarah Williams,sarah@chemsupply.com,555-123-4567,1234 Industrial Blvd,Cleveland,OH,44101,US,net30';
+      case 'customers':
+        return 'Customer Number,Customer Name,Contact Name,Contact Email,Contact Phone,Address,City,State,Zip Code,Country,Customer Tier\nCUST-001,ACME Corporation,John Manager,john@acme.com,555-987-6543,789 Business Ave,Chicago,IL,60601,US,preferred';
+      
       // System Users
       case 'users':
         return 'Username,Email,First Name,Last Name,Role\njohn.doe,john@company.com,John,Doe,operator\njane.smith,jane@company.com,Jane,Smith,supervisor';
@@ -828,6 +842,16 @@ export default function DataImport() {
         csvContent = 'Item Number,Site,Forecast Date,Forecast Quantity,Forecast Type,Forecast Method,Confidence,Planner Name\nWIDG-001,Main Manufacturing,2025-02-01,100,demand,manual,80,Production Planner\nCOMP-001,Main Manufacturing,2025-02-01,250,demand,statistical,70,Production Planner';
         filename = 'forecasts_template.csv';
         break;
+
+      // Business Partners
+      case 'vendors':
+        csvContent = 'Vendor Number,Vendor Name,Vendor Type,Contact Name,Contact Email,Contact Phone,Address,City,State,Zip Code,Country,Tax ID,Payment Terms,Currency,Preferred Vendor,Qualification Level,Performance Rating,Status\nVND-001,ChemSupply Industries,supplier,Sarah Williams,sarah@chemsupply.com,555-123-4567,1234 Industrial Blvd,Cleveland,OH,44101,US,12-3456789,net30,USD,true,preferred,9,active\nVND-002,PackageCorp Solutions,supplier,Mike Johnson,mike@packagecorp.com,555-234-5678,789 Supply Chain Ave,Dallas,TX,75201,US,45-6789012,net30,USD,true,approved,8,active';
+        filename = 'vendors_template.csv';
+        break;
+      case 'customers':
+        csvContent = 'Customer Number,Customer Name,Contact Name,Contact Email,Contact Phone,Address,City,State,Zip Code,Country,Customer Tier,Credit Limit,Payment Terms,Tax ID,Sales Rep,Status\nCUST-001,ACME Corporation,John Manager,john@acme.com,555-987-6543,789 Business Ave,Chicago,IL,60601,US,preferred,100000,net30,98-7654321,Sales Rep 1,active\nCUST-002,TechCorp Industries,Sarah Director,sarah@techcorp.com,555-876-5432,456 Technology Blvd,Austin,TX,73301,US,standard,50000,net15,87-6543210,Sales Rep 2,active';
+        filename = 'customers_template.csv';
+        break;
     }
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -858,6 +882,10 @@ export default function DataImport() {
     { key: 'storageLocations', label: 'Storage Locations', icon: Warehouse, description: 'Storage facilities and locations' },
     { key: 'inventory', label: 'Inventory', icon: Package2, description: 'Current stock levels and quantities' },
     { key: 'inventoryLots', label: 'Inventory Lots', icon: Hash, description: 'Lot-controlled inventory tracking' },
+    
+    // Business Partners
+    { key: 'vendors', label: 'Vendors', icon: Building2, description: 'Suppliers and vendor information' },
+    { key: 'customers', label: 'Customers', icon: Users, description: 'Customer accounts and information' },
     
     // Sales & Orders
     { key: 'salesOrders', label: 'Sales Orders', icon: ShoppingCart, description: 'Customer orders and sales' },
