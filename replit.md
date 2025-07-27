@@ -2,6 +2,13 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Master Data Setup Menu Rename & Onboarding API Fix (July 27, 2025)**:
+- Renamed "Data Import" menu item to "Master Data Setup" to better reflect manual entry capabilities alongside file import
+- Updated page title and description to emphasize both import and manual entry options  
+- Fixed onboarding API initialization error by adding required error context parameters to ValidationError and DatabaseError calls
+- Resolved "Processing" stuck state in onboarding system caused by missing error context parameters
+- Menu now accurately represents that users can upload files, enter data in spreadsheet format, use text input, or download templates
+
 ✓ **Complete Guided Onboarding System Integration (July 27, 2025)**:
 - Successfully completed full integration of comprehensive guided onboarding system into the main application
 - Added onboarding route to App.tsx with proper import and routing structure

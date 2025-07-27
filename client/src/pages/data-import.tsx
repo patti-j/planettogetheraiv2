@@ -419,10 +419,10 @@ export default function DataImport() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Master Data Import</h1>
+        <h1 className="text-3xl font-bold mb-2">Master Data Setup</h1>
         <p className="text-muted-foreground">
-          Import your company's core manufacturing data quickly and easily. 
-          Use file uploads, structured spreadsheet-like entry, text input, or download templates to get started.
+          Set up your company's core manufacturing data quickly and easily. 
+          Upload files, enter data in spreadsheet format, use text input, or download templates to get started.
         </p>
       </div>
 
