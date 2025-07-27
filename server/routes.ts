@@ -844,6 +844,259 @@ Focus on manufacturing-relevant data that would be realistic for a ${companyInfo
     }
   });
 
+  // AI-powered master data modification
+  app.post('/api/data-import/modify-data', requireAuth, async (req, res) => {
+    try {
+      const { modificationPrompt } = req.body;
+      
+      if (!modificationPrompt) {
+        return res.status(400).json({ error: 'Missing required field: modificationPrompt' });
+      }
+
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      // Fetch current master data for analysis
+      const [plants, resources, capabilities, jobs, operations] = await Promise.all([
+        storage.getPlants(),
+        storage.getResources(),
+        storage.getCapabilities(),
+        storage.getJobs(),
+        storage.getOperations()
+      ]);
+
+      const currentData = {
+        plants: plants.slice(0, 20), // Limit for context
+        resources: resources.slice(0, 30),
+        capabilities: capabilities.slice(0, 25),
+        productionOrders: jobs.slice(0, 25),
+        operations: operations.slice(0, 40)
+      };
+
+      const systemPrompt = `You are an expert manufacturing data analyst. Analyze the current master data and generate specific modifications based on the user's request.
+
+Current Master Data Overview:
+- Plants: ${plants.length} total (${plants.map(p => p.name).join(', ')})
+- Resources: ${resources.length} total (types: ${[...new Set(resources.map(r => r.type))].join(', ')})
+- Capabilities: ${capabilities.length} total (${capabilities.map(c => c.name).join(', ')})
+- Production Orders: ${jobs.length} total (statuses: ${[...new Set(jobs.map(j => j.status))].join(', ')})
+- Operations: ${operations.length} total
+
+Current Data Sample:
+${JSON.stringify(currentData, null, 2)}
+
+Generate ONLY the specific modifications requested, preserving existing data relationships and integrity. Return the result in this exact JSON format:
+
+{
+  "modifications": [
+    {
+      "type": "plants|resources|capabilities|productionOrders|operations",
+      "action": "create|update|delete",
+      "records": [/* array of records to create/update with complete data */],
+      "criteria": {/* for updates/deletes, specify matching criteria */},
+      "description": "Human readable description of what was changed"
+    }
+  ],
+  "summary": "Overall summary of all modifications",
+  "affectedRecords": 0,
+  "preservedData": true
+}
+
+Rules:
+1. For CREATE: provide complete record data following existing schema
+2. For UPDATE: provide partial records with id/criteria and fields to change
+3. For DELETE: provide criteria to match records for deletion
+4. Preserve all foreign key relationships and dependencies
+5. Use realistic manufacturing data that fits the existing context
+6. Be specific about quantities, priorities, statuses, and other business-relevant fields`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: modificationPrompt }
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 3000
+      });
+
+      const modificationPlan = JSON.parse(response.choices[0].message.content);
+      
+      // Execute the modifications
+      const modificationResults = [];
+      let totalModified = 0;
+
+      for (const modification of modificationPlan.modifications) {
+        try {
+          let results = [];
+          
+          switch (modification.type) {
+            case 'plants':
+              if (modification.action === 'create') {
+                for (const record of modification.records) {
+                  const insertPlant = insertPlantSchema.parse({
+                    name: record.name,
+                    location: record.location || '',
+                    address: record.address || record.location || '',
+                    timezone: record.timezone || 'UTC'
+                  });
+                  const plant = await storage.createPlant(insertPlant);
+                  results.push(plant);
+                }
+              } else if (modification.action === 'update') {
+                // Implementation for plant updates would go here
+                console.log('Plant updates not yet implemented');
+              }
+              break;
+
+            case 'resources':
+              if (modification.action === 'create') {
+                for (const record of modification.records) {
+                  const insertResource = insertResourceSchema.parse({
+                    name: record.name,
+                    type: record.type || 'Equipment',
+                    description: record.description || '',
+                    status: record.status || 'active'
+                  });
+                  const resource = await storage.createResource(insertResource);
+                  results.push(resource);
+                }
+              }
+              break;
+
+            case 'capabilities':
+              if (modification.action === 'create') {
+                for (const record of modification.records) {
+                  const insertCapability = insertCapabilitySchema.parse({
+                    name: record.name,
+                    description: record.description || '',
+                    category: record.category || 'manufacturing'
+                  });
+                  try {
+                    const capability = await storage.createCapability(insertCapability);
+                    results.push(capability);
+                  } catch (capabilityError: any) {
+                    if (capabilityError.constraint === 'capabilities_name_unique') {
+                      console.log(`Skipping duplicate capability: ${insertCapability.name}`);
+                      continue;
+                    }
+                    throw capabilityError;
+                  }
+                }
+              }
+              break;
+
+            case 'productionOrders':
+              if (modification.action === 'create') {
+                for (const record of modification.records) {
+                  const insertJob = insertProductionOrderSchema.parse({
+                    orderNumber: record.orderNumber || `PO-MOD-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                    name: record.name,
+                    customer: record.customer || '',
+                    priority: record.priority || 'medium',
+                    status: record.status || 'released',
+                    dueDate: record.dueDate ? new Date(record.dueDate) : null,
+                    quantity: record.quantity || 1,
+                    description: record.description || '',
+                    plantId: record.plantId || 1
+                  });
+                  const job = await storage.createProductionOrder(insertJob);
+                  results.push(job);
+                }
+              } else if (modification.action === 'update') {
+                // Update existing production orders based on criteria
+                const existingJobs = await storage.getJobs();
+                for (const record of modification.records) {
+                  const jobsToUpdate = existingJobs.filter(job => {
+                    if (modification.criteria?.status && job.status !== modification.criteria.status) return false;
+                    if (modification.criteria?.priority && job.priority !== modification.criteria.priority) return false;
+                    if (modification.criteria?.customer && job.customer !== modification.criteria.customer) return false;
+                    return true;
+                  });
+
+                  for (const job of jobsToUpdate) {
+                    const updateData: any = { ...job };
+                    if (record.priority !== undefined) updateData.priority = record.priority;
+                    if (record.status !== undefined) updateData.status = record.status;
+                    if (record.quantity !== undefined) updateData.quantity = record.quantity;
+                    if (record.dueDate !== undefined) updateData.dueDate = record.dueDate ? new Date(record.dueDate) : null;
+                    
+                    const updatedJob = await storage.updateProductionOrder(job.id, updateData);
+                    results.push(updatedJob);
+                  }
+                }
+              }
+              break;
+
+            case 'operations':
+              if (modification.action === 'create') {
+                for (const record of modification.records) {
+                  // Find appropriate production order
+                  const existingJobs = await storage.getJobs();
+                  const targetJob = record.productionOrderId 
+                    ? existingJobs.find(j => j.id === record.productionOrderId)
+                    : existingJobs[Math.floor(Math.random() * existingJobs.length)];
+                  
+                  if (targetJob) {
+                    const insertOperation = insertOperationSchema.parse({
+                      productionOrderId: targetJob.id,
+                      name: record.name,
+                      description: record.description || '',
+                      duration: record.duration || 8,
+                      requiredCapabilities: record.requiredCapabilities || []
+                    });
+                    const operation = await storage.createOperation(insertOperation);
+                    results.push(operation);
+                  }
+                }
+              }
+              break;
+
+            default:
+              console.log(`Unsupported modification type: ${modification.type}`);
+              continue;
+          }
+
+          if (results.length > 0) {
+            modificationResults.push({
+              type: modification.type,
+              action: modification.action,
+              count: results.length,
+              description: modification.description,
+              status: 'success'
+            });
+            totalModified += results.length;
+          }
+        } catch (modError) {
+          console.error(`Error executing modification for ${modification.type}:`, modError);
+          modificationResults.push({
+            type: modification.type,
+            action: modification.action,
+            count: 0,
+            description: modification.description,
+            status: 'error',
+            error: modError.message
+          });
+        }
+      }
+
+      res.json({
+        success: true,
+        summary: modificationPlan.summary || 'Data modifications completed successfully',
+        modifiedRecords: totalModified,
+        modifiedTypes: [...new Set(modificationResults.map(r => r.type))],
+        modifications: modificationResults,
+        originalPlan: modificationPlan
+      });
+
+    } catch (error) {
+      console.error('AI data modification error:', error);
+      res.status(500).json({ 
+        error: 'Failed to modify data',
+        details: error.message 
+      });
+    }
+  });
+
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {

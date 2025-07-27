@@ -397,6 +397,12 @@ export default function DataImport() {
   const [aiGenerationResult, setAiGenerationResult] = useState<any>(null);
   const [deleteExistingData, setDeleteExistingData] = useState(false);
 
+  // AI Modification state
+  const [showAIModifyDialog, setShowAIModifyDialog] = useState(false);
+  const [aiModifyPrompt, setAiModifyPrompt] = useState('');
+  const [aiModifyResult, setAiModifyResult] = useState<any>(null);
+  const [showAIModifySummary, setShowAIModifySummary] = useState(false);
+
   // Feature to data requirements mapping
   const featureDataRequirements = {
     'production-scheduling': ['plants', 'resources', 'capabilities', 'productionOrders', 'operations'],
@@ -571,6 +577,36 @@ export default function DataImport() {
       toast({
         title: "AI Generation Failed",
         description: "There was an error generating sample data. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const aiModificationMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest('POST', '/api/data-import/modify-data', data);
+      return await response.json();
+    },
+    onSuccess: (result: any) => {
+      console.log('AI Modification Success Result:', result);
+      setAiModifyResult(result);
+      setShowAIModifyDialog(false);
+      setShowAIModifySummary(true);
+      queryClient.invalidateQueries();
+      
+      const modifiedCount = result.modifiedRecords || 0;
+      const modifiedTypes = result.modifiedTypes || [];
+      
+      toast({
+        title: "AI Data Modification Complete",
+        description: `Successfully modified ${modifiedCount} records across ${modifiedTypes.length} data types.`,
+      });
+    },
+    onError: (error) => {
+      console.error('AI Modification Error:', error);
+      toast({
+        title: "AI Modification Failed",
+        description: "There was an error modifying the data. Please try again.",
         variant: "destructive",
       });
     }
@@ -1004,6 +1040,21 @@ Focus on creating authentic, interconnected data that would be typical for ${com
       selectedDataTypes: dataTypesToGenerate,
       sampleSize: aiSampleSize,
       deleteExistingData
+    });
+  };
+
+  const executeAIModification = () => {
+    if (!aiModifyPrompt.trim()) {
+      toast({
+        title: "Prompt Required",
+        description: "Please describe what changes you want to make to your master data.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    aiModificationMutation.mutate({
+      modificationPrompt: aiModifyPrompt
     });
   };
 
@@ -1616,6 +1667,14 @@ Focus on creating authentic, interconnected data that would be typical for ${com
             <Sparkles className="h-4 w-4" />
             <span className="hidden sm:inline">AI Sample Data</span>
             <span className="sm:hidden">AI Data</span>
+          </Button>
+          <Button 
+            onClick={() => setShowAIModifyDialog(true)}
+            className="gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+          >
+            <Edit2 className="h-4 w-4" />
+            <span className="hidden sm:inline">AI Modify Data</span>
+            <span className="sm:hidden">AI Modify</span>
           </Button>
           <Button 
             onClick={() => setShowConsolidatedDialog(true)}
@@ -2687,6 +2746,144 @@ Focus on creating authentic, interconnected data that would be typical for ${com
             <Button
               onClick={() => setShowAISummary(false)}
               className="bg-green-600 hover:bg-green-700"
+            >
+              Continue
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Data Modification Dialog */}
+      <Dialog open={showAIModifyDialog} onOpenChange={setShowAIModifyDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit2 className="h-5 w-5 text-emerald-600" />
+              AI Master Data Modification
+            </DialogTitle>
+            <DialogDescription>
+              Describe the specific changes you want to make to your existing master data. AI will analyze your current data and apply the requested modifications.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Modification Instructions */}
+            <div className="space-y-3">
+              <Label htmlFor="ai-modify-prompt" className="text-base font-medium">
+                Modification Instructions
+              </Label>
+              <Textarea
+                id="ai-modify-prompt"
+                value={aiModifyPrompt}
+                onChange={(e) => setAiModifyPrompt(e.target.value)}
+                placeholder="Describe what changes you want to make to your master data. Examples:&#10;- Add 3 new CNC machines to Plant A&#10;- Update all high priority production orders to critical&#10;- Add quality control capability to all assembly resources&#10;- Change plant timezone from UTC to America/Chicago&#10;- Increase production order quantities by 25%"
+                className="min-h-[150px] text-sm"
+                autoFocus={false}
+              />
+              <p className="text-xs text-muted-foreground">
+                Be specific about what you want to modify. AI will analyze your existing data and apply only the changes you request without affecting other data.
+              </p>
+            </div>
+
+            {/* Information Box */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex gap-3">
+                <Lightbulb className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="space-y-2">
+                  <h4 className="font-medium text-blue-900">How AI Modification Works</h4>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• AI analyzes your current master data (plants, resources, production orders, etc.)</li>
+                    <li>• Applies only the specific changes you request</li>
+                    <li>• Preserves existing relationships and data integrity</li>
+                    <li>• Shows you exactly what was modified before saving</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-6 border-t">
+            <Button
+              variant="outline"
+              onClick={() => setShowAIModifyDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={executeAIModification}
+              disabled={aiModificationMutation.isPending}
+              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+            >
+              {aiModificationMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Analyzing & Modifying...
+                </>
+              ) : (
+                <>
+                  <Edit2 className="h-4 w-4 mr-2" />
+                  Modify Master Data
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Modification Summary Dialog */}
+      <Dialog open={showAIModifySummary} onOpenChange={setShowAIModifySummary}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-emerald-600" />
+              AI Data Modification Complete
+            </DialogTitle>
+            <DialogDescription>
+              Your master data has been successfully modified according to your instructions.
+            </DialogDescription>
+          </DialogHeader>
+
+          {aiModifyResult && (
+            <div className="space-y-6">
+              {/* Modification Summary */}
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                <h3 className="font-medium text-emerald-900 mb-2">Modification Summary</h3>
+                <p className="text-sm text-emerald-800">{aiModifyResult.summary || 'Data modification completed successfully'}</p>
+                <div className="mt-3 flex items-center gap-4 text-sm">
+                  <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">
+                    {aiModifyResult.modifiedRecords || 0} records modified
+                  </Badge>
+                  <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">
+                    {aiModifyResult.modifiedTypes?.length || 0} data types affected
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Modified Data Details */}
+              {aiModifyResult.modifications && aiModifyResult.modifications.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-medium">Modification Details</h3>
+                  <div className="space-y-2">
+                    {aiModifyResult.modifications.map((mod: any, index: number) => (
+                      <div key={index} className="flex items-start gap-3 p-3 bg-white border border-gray-200 rounded-lg">
+                        <CheckCircle className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900">{mod.type}</div>
+                          <div className="text-sm text-gray-600">{mod.description}</div>
+                          <div className="text-xs text-gray-500 mt-1">{mod.count} records affected</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex items-center justify-end pt-6 border-t">
+            <Button
+              onClick={() => setShowAIModifySummary(false)}
+              className="bg-emerald-600 hover:bg-emerald-700"
             >
               Continue
             </Button>
