@@ -1093,10 +1093,15 @@ export default function GanttChart({
                       </div>
                     </div>
                     <div 
-                      className="flex-1 relative p-2 min-h-[60px] overflow-hidden"
+                      className="flex-1 relative overflow-hidden"
+                      style={{ minHeight: `${rowHeight}px` }}
                     >
-                      <div data-timeline-content style={{ width: `${timelineWidth}px` }}>
-                        <OperationBlock
+                      <div
+                        className="absolute inset-0 p-2"
+                        style={{ transform: `translateX(-${timelineScrollLeft}px)` }}
+                      >
+                        <div data-timeline-content style={{ width: `${timelineWidth}px` }}>
+                          <OperationBlock
                           operation={operation}
                           resourceName={getResourceName(operation.assignedResourceId || 0)}
                           jobName={jobs.find(job => job.id === operation.jobId)?.name}
@@ -1116,6 +1121,7 @@ export default function GanttChart({
                             setOperationDialogOpen(true);
                           }}
                         />
+                        </div>
                       </div>
                     </div>
                   </div>
