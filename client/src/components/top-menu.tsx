@@ -355,14 +355,12 @@ export default function TopMenu() {
                               flex flex-col items-center justify-center text-center space-y-1 relative
                               ${page.isPinned ? 'border-emerald-300 bg-emerald-50' : 'border-gray-200'}
                             `}>
-                              <div className="bg-gray-100 p-2 rounded-full flex items-center justify-center flex-shrink-0">
+                              <div className="bg-gray-100 p-1.5 rounded-full flex items-center justify-center flex-shrink-0">
                                 <IconComponent className={`w-4 h-4 ${iconColorClass}`} strokeWidth={1.5} fill="none" />
                               </div>
-                              <div className="flex flex-col items-center min-h-0 flex-1">
-                                <span className="text-xs font-medium text-gray-800 leading-tight text-center line-clamp-2 overflow-hidden">
-                                  {page.label}
-                                </span>
-                              </div>
+                              <span className="text-xs font-medium text-gray-800 leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0">
+                                {page.label}
+                              </span>
                               {/* Pin/Unpin Button - Bottom Right Corner */}
                               <Button
                                 variant="ghost"
