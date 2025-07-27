@@ -17,6 +17,8 @@ interface NavigationContextType {
   addRecentPage: (path: string, label: string, icon?: string) => void;
   clearRecentPages: () => void;
   togglePinPage: (path: string) => void;
+  lastVisitedRoute: string | null;
+  setLastVisitedRoute: (route: string) => void;
 }
 
 const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
@@ -63,6 +65,7 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
 
 export function NavigationProvider({ children }: { children: ReactNode }) {
   const [recentPages, setRecentPages] = useState<RecentPage[]>([]);
+  const [lastVisitedRoute, setLastVisitedRouteState] = useState<string | null>(null);
   const [location] = useLocation();
   const { user, isAuthenticated } = useAuth();
 
@@ -111,6 +114,12 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
           const response = await apiRequest('GET', `/api/user-preferences/${user.id}`);
           const preferences = await response.json();
           const savedRecentPages = preferences?.dashboardLayout?.recentPages || [];
+          
+          // Load last visited route
+          const savedLastVisitedRoute = preferences?.dashboardLayout?.lastVisitedRoute;
+          if (savedLastVisitedRoute) {
+            setLastVisitedRouteState(savedLastVisitedRoute);
+          }
           
           // If no recent pages exist, initialize with default pinned "Getting Started"
           if (!Array.isArray(savedRecentPages) || savedRecentPages.length === 0) {
@@ -166,10 +175,15 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     }
   }, [onboardingStatus?.isCompleted]);
 
-  // Track current page when location changes
+  // Track current page when location changes and save last visited route
   useEffect(() => {
     const currentPath = location;
     const pageInfo = pageMapping[currentPath];
+    
+    // Always save the last visited route for session persistence (excluding login)
+    if (currentPath !== '/login' && currentPath !== '/') {
+      setLastVisitedRoute(currentPath);
+    }
     
     if (pageInfo && currentPath !== '/') { // Don't track home page visits
       addRecentPage(currentPath, pageInfo.label, pageInfo.icon);
@@ -222,10 +236,11 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
         const response = await apiRequest('GET', `/api/user-preferences/${user.id}`);
         const currentPreferences = await response.json();
         
-        // Merge recent pages with existing dashboard layout
+        // Merge recent pages and last visited route with existing dashboard layout
         const updatedDashboardLayout = {
           ...currentPreferences.dashboardLayout,
-          recentPages: pages
+          recentPages: pages,
+          lastVisitedRoute: lastVisitedRoute
         };
         
         // Save to user preferences with merged data
@@ -285,12 +300,40 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     // Only clear for authenticated users - no localStorage fallback
   };
 
+  // Function to set last visited route and save to database
+  const setLastVisitedRoute = async (route: string) => {
+    setLastVisitedRouteState(route);
+    
+    if (isAuthenticated && user?.id) {
+      try {
+        // First get current preferences to merge
+        const response = await apiRequest('GET', `/api/user-preferences/${user.id}`);
+        const currentPreferences = await response.json();
+        
+        // Merge last visited route with existing dashboard layout
+        const updatedDashboardLayout = {
+          ...currentPreferences.dashboardLayout,
+          lastVisitedRoute: route
+        };
+        
+        // Save to user preferences with merged data
+        await apiRequest('PUT', `/api/user-preferences`, {
+          dashboardLayout: updatedDashboardLayout
+        });
+      } catch (error) {
+        console.warn('Failed to save last visited route to database:', error);
+      }
+    }
+  };
+
   return (
     <NavigationContext.Provider value={{
       recentPages,
       addRecentPage,
       clearRecentPages,
-      togglePinPage
+      togglePinPage,
+      lastVisitedRoute,
+      setLastVisitedRoute
     }}>
       {children}
     </NavigationContext.Provider>

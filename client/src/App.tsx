@@ -9,7 +9,7 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { TourProvider, useTour } from "@/contexts/TourContext";
 import { MaxDockProvider } from "@/contexts/MaxDockContext";
-import { NavigationProvider } from "@/contexts/NavigationContext";
+import { NavigationProvider, useNavigation } from "@/contexts/NavigationContext";
 import { SplitPaneLayout } from "@/components/split-pane-layout";
 import { MaxSidebar } from "@/components/max-sidebar";
 import { useAuth } from "@/hooks/useAuth";
@@ -142,9 +142,29 @@ function DashboardWithAutoTour() {
 
 // MainContentArea is now replaced by SplitPaneLayout
 
+// Hook for handling session persistence redirection
+function useSessionPersistence() {
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const { lastVisitedRoute } = useNavigation();
+  const [location, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user && lastVisitedRoute) {
+      // Only redirect if user is on root page and has a saved last visited route
+      if (location === '/' && lastVisitedRoute !== '/' && lastVisitedRoute !== '/login') {
+        console.log('Redirecting to last visited route:', lastVisitedRoute);
+        setLocation(lastVisitedRoute);
+      }
+    }
+  }, [isAuthenticated, isLoading, user, lastVisitedRoute, location, setLocation]);
+}
+
 function Router() {
   const { isAuthenticated, isLoading, user, loginError } = useAuth();
   const { isActive: isTourActive } = useTour();
+  
+  // Use session persistence for authenticated users
+  useSessionPersistence();
 
   if (isLoading && !isTourActive) {
     return (
