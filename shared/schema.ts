@@ -7,6 +7,7 @@ import { relations } from "drizzle-orm";
 export const plants = pgTable("plants", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  location: text("location"),
   address: text("address"),
   timezone: text("timezone").notNull().default("UTC"),
   isActive: boolean("is_active").default(true),

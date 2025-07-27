@@ -241,8 +241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               name: item.name,
               location: item.location || '',
               address: item.address || '',
-              timezone: item.timezone || 'UTC',
-              status: 'active'
+              timezone: item.timezone || 'UTC'
             });
             const plant = await storage.createPlant(insertPlant);
             results.push(plant);
@@ -269,6 +268,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           break;
           
+        case 'productionOrders':
+          for (const item of data) {
+            // Convert production orders from simplified import format
+            const insertOrder = {
+              orderNumber: item.orderNumber || `PO-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+              name: item.name,
+              description: item.description || '',
+              customer: item.customer,
+              priority: item.priority || 'medium',
+              status: item.status || 'released',
+              quantity: parseInt(item.quantity) || 1,
+              dueDate: item.dueDate ? new Date(item.dueDate) : null,
+              plantId: 1 // Default to first plant for import
+            };
+            const order = await storage.createProductionOrder(insertOrder);
+            results.push(order);
+          }
+          break;
+
+        case 'plannedOrders':
+          for (const item of data) {
+            // Convert planned orders from simplified import format
+            const insertPlannedOrder = {
+              plannedOrderNumber: item.plannedOrderNumber || `PLN-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+              itemNumber: item.itemNumber || item.name || 'ITEM-001',
+              quantity: parseInt(item.quantity) || 1,
+              requiredDate: item.requiredDate ? new Date(item.requiredDate) : new Date(),
+              orderType: item.orderType || 'production',
+              source: item.source || 'manual',
+              status: item.status || 'firm',
+              priority: item.priority || 'medium',
+              plantId: 1 // Default to first plant for import
+            };
+            const plannedOrder = await storage.createPlannedOrder(insertPlannedOrder);
+            results.push(plannedOrder);
+          }
+          break;
+
+        case 'vendors':
+          // Simple vendor storage for import (would need proper vendor table implementation)
+          for (const item of data) {
+            const vendor = {
+              id: Date.now() + Math.floor(Math.random() * 1000),
+              vendorNumber: item.vendorNumber || `V${Date.now()}`,
+              vendorName: item.vendorName,
+              vendorType: item.vendorType || 'supplier',
+              contactName: item.contactName || '',
+              contactEmail: item.contactEmail || '',
+              contactPhone: item.contactPhone || '',
+              address: item.address || '',
+              city: item.city || '',
+              state: item.state || '',
+              zipCode: item.zipCode || '',
+              country: item.country || 'US',
+              paymentTerms: item.paymentTerms || 'net30',
+              status: item.status || 'active'
+            };
+            results.push(vendor);
+          }
+          break;
+
+        case 'customers':
+          // Simple customer storage for import (would need proper customer table implementation)
+          for (const item of data) {
+            const customer = {
+              id: Date.now() + Math.floor(Math.random() * 1000),
+              customerNumber: item.customerNumber || `C${Date.now()}`,
+              customerName: item.customerName,
+              contactName: item.contactName || '',
+              contactEmail: item.contactEmail || '',
+              contactPhone: item.contactPhone || '',
+              address: item.address || '',
+              city: item.city || '',
+              state: item.state || '',
+              zipCode: item.zipCode || '',
+              country: item.country || 'US',
+              customerTier: item.customerTier || 'standard',
+              status: item.status || 'active'
+            };
+            results.push(customer);
+          }
+          break;
+
         default:
           return res.status(400).json({ message: `Unsupported import type: ${type}` });
       }
