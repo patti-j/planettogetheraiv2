@@ -7,7 +7,7 @@ import {
   businessGoals, goalProgress, goalRisks, goalIssues, goalKpis, goalActions,
   users, roles, permissions, userRoles, rolePermissions, visualFactoryDisplays,
   disruptions, disruptionActions, disruptionEscalations,
-  inventoryItems, inventoryTransactions, inventoryBalances, demandForecasts, demandDrivers, demandHistory, inventoryOptimizationScenarios, optimizationRecommendations,
+  stockItems, stockTransactions, stockBalances, demandForecasts, demandDrivers, demandHistory, stockOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
   type Plant, type Capability, type Resource, type ProductionOrder, type PlannedOrder, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
   type Recipe, type RecipePhase, type RecipeFormula, type RecipeEquipment, type Vendor, type Customer,
@@ -17,7 +17,7 @@ import {
   type BusinessGoal, type GoalProgress, type GoalRisk, type GoalIssue, type GoalKpi, type GoalAction,
   type User, type Role, type Permission, type UserRole, type RolePermission, type UserWithRoles,
   type Disruption, type DisruptionAction, type DisruptionEscalation,
-  type InventoryItem, type InventoryTransaction, type InventoryBalance, type DemandForecast, type DemandDriver, type DemandHistory, type InventoryOptimizationScenario, type OptimizationRecommendation,
+  type StockItem, type StockTransaction, type StockBalance, type DemandForecast, type DemandDriver, type DemandHistory, type StockOptimizationScenario, type OptimizationRecommendation,
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
   type InsertPlant, type InsertCapability, type InsertResource, type InsertProductionOrder, type InsertPlannedOrder, 
   type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
@@ -29,7 +29,7 @@ import {
   type InsertUser, type InsertRole, type InsertPermission, type InsertUserRole, type InsertRolePermission,
   type VisualFactoryDisplay, type InsertVisualFactoryDisplay,
   type InsertDisruption, type InsertDisruptionAction, type InsertDisruptionEscalation,
-  type InsertInventoryItem, type InsertInventoryTransaction, type InsertInventoryBalance, type InsertDemandForecast, type InsertDemandDriver, type InsertDemandHistory, type InsertInventoryOptimizationScenario, type InsertOptimizationRecommendation,
+  type InsertStockItem, type InsertStockTransaction, type InsertStockBalance, type InsertDemandForecast, type InsertDemandDriver, type InsertDemandHistory, type InsertStockOptimizationScenario, type InsertOptimizationRecommendation,
   type InsertSystemIntegration, type InsertIntegrationJob, type InsertIntegrationEvent, type InsertIntegrationMapping, type InsertIntegrationTemplate,
   demoTourParticipants, type DemoTourParticipant, type InsertDemoTourParticipant,
   voiceRecordingsCache, type VoiceRecordingsCache, type InsertVoiceRecordingsCache,
@@ -511,20 +511,20 @@ export interface IStorage {
   getContextualChannel(contextType: string, contextId: number): Promise<ChatChannel | undefined>;
   createContextualChannel(contextType: string, contextId: number, name: string, createdBy: number): Promise<ChatChannel>;
 
-  // Inventory Management
-  getInventoryItems(): Promise<InventoryItem[]>;
-  getInventoryItem(id: number): Promise<InventoryItem | undefined>;
-  getInventoryItemBySku(sku: string): Promise<InventoryItem | undefined>;
-  createInventoryItem(item: InsertInventoryItem): Promise<InventoryItem>;
-  updateInventoryItem(id: number, item: Partial<InsertInventoryItem>): Promise<InventoryItem | undefined>;
-  deleteInventoryItem(id: number): Promise<boolean>;
+  // Stock Management
+  getStockItems(): Promise<StockItem[]>;
+  getStockItem(id: number): Promise<StockItem | undefined>;
+  getStockItemBySku(sku: string): Promise<StockItem | undefined>;
+  createStockItem(item: InsertStockItem): Promise<StockItem>;
+  updateStockItem(id: number, item: Partial<InsertStockItem>): Promise<StockItem | undefined>;
+  deleteStockItem(id: number): Promise<boolean>;
   
-  getInventoryTransactions(itemId?: number): Promise<InventoryTransaction[]>;
-  createInventoryTransaction(transaction: InsertInventoryTransaction): Promise<InventoryTransaction>;
+  getStockTransactions(itemId?: number): Promise<StockTransaction[]>;
+  createStockTransaction(transaction: InsertStockTransaction): Promise<StockTransaction>;
   
-  getInventoryBalances(): Promise<InventoryBalance[]>;
-  getInventoryBalance(itemId: number, location?: string): Promise<InventoryBalance | undefined>;
-  updateInventoryBalance(itemId: number, location: string, balance: Partial<InsertInventoryBalance>): Promise<InventoryBalance | undefined>;
+  getStockBalances(): Promise<StockBalance[]>;
+  getStockBalance(itemId: number, location?: string): Promise<StockBalance | undefined>;
+  updateStockBalance(itemId: number, location: string, balance: Partial<InsertStockBalance>): Promise<StockBalance | undefined>;
   
   // Demand Forecasting
   getDemandForecasts(itemId?: number): Promise<DemandForecast[]>;
@@ -540,12 +540,12 @@ export interface IStorage {
   getDemandHistory(itemId?: number): Promise<DemandHistory[]>;
   createDemandHistory(history: InsertDemandHistory): Promise<DemandHistory>;
   
-  // Inventory Optimization
-  getInventoryOptimizationScenarios(): Promise<InventoryOptimizationScenario[]>;
-  getInventoryOptimizationScenario(id: number): Promise<InventoryOptimizationScenario | undefined>;
-  createInventoryOptimizationScenario(scenario: InsertInventoryOptimizationScenario): Promise<InventoryOptimizationScenario>;
-  updateInventoryOptimizationScenario(id: number, scenario: Partial<InsertInventoryOptimizationScenario>): Promise<InventoryOptimizationScenario | undefined>;
-  deleteInventoryOptimizationScenario(id: number): Promise<boolean>;
+  // Stock Optimization
+  getStockOptimizationScenarios(): Promise<StockOptimizationScenario[]>;
+  getStockOptimizationScenario(id: number): Promise<StockOptimizationScenario | undefined>;
+  createStockOptimizationScenario(scenario: InsertStockOptimizationScenario): Promise<StockOptimizationScenario>;
+  updateStockOptimizationScenario(id: number, scenario: Partial<InsertStockOptimizationScenario>): Promise<StockOptimizationScenario | undefined>;
+  deleteStockOptimizationScenario(id: number): Promise<boolean>;
   
   getOptimizationRecommendations(scenarioId?: number): Promise<OptimizationRecommendation[]>;
   createOptimizationRecommendation(recommendation: InsertOptimizationRecommendation): Promise<OptimizationRecommendation>;
@@ -4265,72 +4265,72 @@ export class DatabaseStorage implements IStorage {
     return newChannel;
   }
 
-  // Inventory Management
-  async getInventoryItems(): Promise<InventoryItem[]> {
-    return await db.select().from(inventoryItems).orderBy(asc(inventoryItems.name));
+  // Stock Management
+  async getStockItems(): Promise<StockItem[]> {
+    return await db.select().from(stockItems).orderBy(asc(stockItems.name));
   }
 
-  async getInventoryItem(id: number): Promise<InventoryItem | undefined> {
-    const [item] = await db.select().from(inventoryItems).where(eq(inventoryItems.id, id));
+  async getStockItem(id: number): Promise<StockItem | undefined> {
+    const [item] = await db.select().from(stockItems).where(eq(stockItems.id, id));
     return item || undefined;
   }
 
-  async getInventoryItemBySku(sku: string): Promise<InventoryItem | undefined> {
-    const [item] = await db.select().from(inventoryItems).where(eq(inventoryItems.sku, sku));
+  async getStockItemBySku(sku: string): Promise<StockItem | undefined> {
+    const [item] = await db.select().from(stockItems).where(eq(stockItems.sku, sku));
     return item || undefined;
   }
 
-  async createInventoryItem(item: InsertInventoryItem): Promise<InventoryItem> {
-    const [newItem] = await db.insert(inventoryItems).values(item).returning();
+  async createStockItem(item: InsertStockItem): Promise<StockItem> {
+    const [newItem] = await db.insert(stockItems).values(item).returning();
     return newItem;
   }
 
-  async updateInventoryItem(id: number, item: Partial<InsertInventoryItem>): Promise<InventoryItem | undefined> {
+  async updateStockItem(id: number, item: Partial<InsertStockItem>): Promise<StockItem | undefined> {
     const [updatedItem] = await db
-      .update(inventoryItems)
+      .update(stockItems)
       .set({ ...item, updatedAt: new Date() })
-      .where(eq(inventoryItems.id, id))
+      .where(eq(stockItems.id, id))
       .returning();
     return updatedItem || undefined;
   }
 
-  async deleteInventoryItem(id: number): Promise<boolean> {
-    const result = await db.delete(inventoryItems).where(eq(inventoryItems.id, id));
+  async deleteStockItem(id: number): Promise<boolean> {
+    const result = await db.delete(stockItems).where(eq(stockItems.id, id));
     return result.rowCount! > 0;
   }
 
-  async getInventoryTransactions(itemId?: number): Promise<InventoryTransaction[]> {
+  async getStockTransactions(itemId?: number): Promise<StockTransaction[]> {
     if (itemId) {
-      return await db.select().from(inventoryTransactions)
-        .where(eq(inventoryTransactions.itemId, itemId))
-        .orderBy(desc(inventoryTransactions.createdAt));
+      return await db.select().from(stockTransactions)
+        .where(eq(stockTransactions.itemId, itemId))
+        .orderBy(desc(stockTransactions.createdAt));
     }
-    return await db.select().from(inventoryTransactions).orderBy(desc(inventoryTransactions.createdAt));
+    return await db.select().from(stockTransactions).orderBy(desc(stockTransactions.createdAt));
   }
 
-  async createInventoryTransaction(transaction: InsertInventoryTransaction): Promise<InventoryTransaction> {
-    const [newTransaction] = await db.insert(inventoryTransactions).values(transaction).returning();
+  async createStockTransaction(transaction: InsertStockTransaction): Promise<StockTransaction> {
+    const [newTransaction] = await db.insert(stockTransactions).values(transaction).returning();
     return newTransaction;
   }
 
-  async getInventoryBalances(): Promise<InventoryBalance[]> {
-    return await db.select().from(inventoryBalances).orderBy(asc(inventoryBalances.itemId));
+  async getStockBalances(): Promise<StockBalance[]> {
+    return await db.select().from(stockBalances).orderBy(asc(stockBalances.itemId));
   }
 
-  async getInventoryBalance(itemId: number, location?: string): Promise<InventoryBalance | undefined> {
-    let query = db.select().from(inventoryBalances).where(eq(inventoryBalances.itemId, itemId));
+  async getStockBalance(itemId: number, location?: string): Promise<StockBalance | undefined> {
+    let query = db.select().from(stockBalances).where(eq(stockBalances.itemId, itemId));
     if (location) {
-      query = query.where(eq(inventoryBalances.location, location));
+      query = query.where(eq(stockBalances.location, location));
     }
     const [balance] = await query;
     return balance || undefined;
   }
 
-  async updateInventoryBalance(itemId: number, location: string, balance: Partial<InsertInventoryBalance>): Promise<InventoryBalance | undefined> {
+  async updateStockBalance(itemId: number, location: string, balance: Partial<InsertStockBalance>): Promise<StockBalance | undefined> {
     const [updatedBalance] = await db
-      .update(inventoryBalances)
+      .update(stockBalances)
       .set({ ...balance, updatedAt: new Date() })
-      .where(and(eq(inventoryBalances.itemId, itemId), eq(inventoryBalances.location, location)))
+      .where(and(eq(stockBalances.itemId, itemId), eq(stockBalances.location, location)))
       .returning();
     return updatedBalance || undefined;
   }
@@ -4401,32 +4401,32 @@ export class DatabaseStorage implements IStorage {
     return newHistory;
   }
 
-  // Inventory Optimization
-  async getInventoryOptimizationScenarios(): Promise<InventoryOptimizationScenario[]> {
-    return await db.select().from(inventoryOptimizationScenarios).orderBy(desc(inventoryOptimizationScenarios.createdAt));
+  // Stock Optimization
+  async getStockOptimizationScenarios(): Promise<StockOptimizationScenario[]> {
+    return await db.select().from(stockOptimizationScenarios).orderBy(desc(stockOptimizationScenarios.createdAt));
   }
 
-  async getInventoryOptimizationScenario(id: number): Promise<InventoryOptimizationScenario | undefined> {
-    const [scenario] = await db.select().from(inventoryOptimizationScenarios).where(eq(inventoryOptimizationScenarios.id, id));
+  async getStockOptimizationScenario(id: number): Promise<StockOptimizationScenario | undefined> {
+    const [scenario] = await db.select().from(stockOptimizationScenarios).where(eq(stockOptimizationScenarios.id, id));
     return scenario || undefined;
   }
 
-  async createInventoryOptimizationScenario(scenario: InsertInventoryOptimizationScenario): Promise<InventoryOptimizationScenario> {
-    const [newScenario] = await db.insert(inventoryOptimizationScenarios).values(scenario).returning();
+  async createStockOptimizationScenario(scenario: InsertStockOptimizationScenario): Promise<StockOptimizationScenario> {
+    const [newScenario] = await db.insert(stockOptimizationScenarios).values(scenario).returning();
     return newScenario;
   }
 
-  async updateInventoryOptimizationScenario(id: number, scenario: Partial<InsertInventoryOptimizationScenario>): Promise<InventoryOptimizationScenario | undefined> {
+  async updateStockOptimizationScenario(id: number, scenario: Partial<InsertStockOptimizationScenario>): Promise<StockOptimizationScenario | undefined> {
     const [updatedScenario] = await db
-      .update(inventoryOptimizationScenarios)
+      .update(stockOptimizationScenarios)
       .set({ ...scenario, updatedAt: new Date() })
-      .where(eq(inventoryOptimizationScenarios.id, id))
+      .where(eq(stockOptimizationScenarios.id, id))
       .returning();
     return updatedScenario || undefined;
   }
 
-  async deleteInventoryOptimizationScenario(id: number): Promise<boolean> {
-    const result = await db.delete(inventoryOptimizationScenarios).where(eq(inventoryOptimizationScenarios.id, id));
+  async deleteStockOptimizationScenario(id: number): Promise<boolean> {
+    const result = await db.delete(stockOptimizationScenarios).where(eq(stockOptimizationScenarios.id, id));
     return result.rowCount! > 0;
   }
 

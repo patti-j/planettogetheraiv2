@@ -446,7 +446,7 @@ export async function seedDatabase() {
       },
       {
         title: "Inventory Optimization",
-        description: "Reduce inventory carrying costs by 15% while maintaining 99.5% stockout prevention through advanced forecasting.",
+        description: "Reduce stock carrying costs by 15% while maintaining 99.5% stockout prevention through advanced forecasting.",
         category: "operational",
         goalType: "cost_reduction",
         targetValue: 1500, // 15% reduction
@@ -547,7 +547,7 @@ export async function seedDatabase() {
         riskType: "external",
         probability: "medium",
         impact: "high",
-        mitigationPlan: "Diversify supplier base and increase strategic inventory buffers for critical materials.",
+        mitigationPlan: "Diversify supplier base and increase strategic stock buffers for critical materials.",
         mitigationOwner: "Supply Chain Team",
         mitigationDeadline: new Date("2025-02-15"),
         status: "active",
@@ -619,7 +619,7 @@ export async function seedDatabase() {
       {
         goalId: 7, // Inventory Optimization
         title: "Forecasting Model Accuracy",
-        description: "Current demand forecasting model showing decreased accuracy, affecting inventory optimization efforts.",
+        description: "Current demand forecasting model showing decreased accuracy, affecting stock optimization efforts.",
         issueType: "risk",
         severity: "medium",
         impact: "cost",
@@ -2635,7 +2635,7 @@ async function seedMarketingData() {
             textColor: "#1e293b"
           }
         },
-        features: ["production_scheduling", "quality_control", "maintenance_management", "inventory_tracking", "lean_manufacturing"],
+        features: ["production_scheduling", "quality_control", "maintenance_management", "stock_tracking", "lean_manufacturing"],
         prerequisites: ["ERP_integration", "quality_systems", "maintenance_planning"],
         setupInstructions: "1. Configure production lines and work centers\n2. Set up quality checkpoints and inspection protocols\n3. Integrate with existing ERP and MES systems\n4. Train operators on lean manufacturing principles\n5. Establish preventive maintenance schedules",
         benefits: ["Improved OEE by 15-25%", "Reduced quality defects by 30%", "Faster changeover times", "Better supplier quality management", "Real-time production visibility"],
@@ -2830,9 +2830,9 @@ async function seedMarketingData() {
             textColor: "#1e293b"
           }
         },
-        features: ["production_planning", "quality_control", "efficiency_tracking", "inventory_management", "maintenance_scheduling"],
+        features: ["production_planning", "quality_control", "efficiency_tracking", "stock_management", "maintenance_scheduling"],
         prerequisites: ["production_systems", "quality_processes", "maintenance_planning"],
-        setupInstructions: "1. Configure production planning workflows\n2. Set up quality control checkpoints\n3. Implement efficiency tracking and OEE calculation\n4. Establish inventory management processes\n5. Create maintenance scheduling system",
+        setupInstructions: "1. Configure production planning workflows\n2. Set up quality control checkpoints\n3. Implement efficiency tracking and OEE calculation\n4. Establish stock management processes\n5. Create maintenance scheduling system",
         benefits: ["Improved operational efficiency", "Better production visibility", "Enhanced quality control", "Reduced downtime", "Streamlined workflows"],
         tags: ["general", "manufacturing", "oee", "quality", "efficiency"],
         aiPrompt: "Create a general manufacturing template with core production planning, quality control, and efficiency tracking suitable for various industries."

@@ -1699,8 +1699,8 @@ export type CockpitAlert = typeof cockpitAlerts.$inferSelect;
 export type InsertCockpitTemplate = z.infer<typeof insertCockpitTemplateSchema>;
 export type CockpitTemplate = typeof cockpitTemplates.$inferSelect;
 
-// Inventory Management Tables
-export const inventoryItems = pgTable("inventory_items", {
+// Stock Management Tables
+export const stockItems = pgTable("stock_items", {
   id: serial("id").primaryKey(),
   sku: text("sku").notNull().unique(),
   name: text("name").notNull(),
@@ -1723,9 +1723,9 @@ export const inventoryItems = pgTable("inventory_items", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const inventoryTransactions = pgTable("inventory_transactions", {
+export const stockTransactions = pgTable("stock_transactions", {
   id: serial("id").primaryKey(),
-  itemId: integer("item_id").references(() => inventoryItems.id).notNull(),
+  itemId: integer("item_id").references(() => stockItems.id).notNull(),
   transactionType: text("transaction_type").notNull(), // receipt, issue, adjustment, transfer, scrap, return
   quantity: integer("quantity").notNull(),
   unitCost: integer("unit_cost").default(0), // in cents
@@ -1737,9 +1737,9 @@ export const inventoryTransactions = pgTable("inventory_transactions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const inventoryBalances = pgTable("inventory_balances", {
+export const stockBalances = pgTable("stock_balances", {
   id: serial("id").primaryKey(),
-  itemId: integer("item_id").references(() => inventoryItems.id).notNull(),
+  itemId: integer("item_id").references(() => stockItems.id).notNull(),
   location: text("location").notNull().default("main_warehouse"),
   quantityOnHand: integer("quantity_on_hand").notNull().default(0),
   quantityAllocated: integer("quantity_allocated").notNull().default(0),
@@ -1754,7 +1754,7 @@ export const inventoryBalances = pgTable("inventory_balances", {
 // Demand Forecasting Tables
 export const demandForecasts = pgTable("demand_forecasts", {
   id: serial("id").primaryKey(),
-  itemId: integer("item_id").references(() => inventoryItems.id).notNull(),
+  itemId: integer("item_id").references(() => stockItems.id).notNull(),
   forecastPeriod: text("forecast_period").notNull(), // daily, weekly, monthly, quarterly
   forecastDate: timestamp("forecast_date").notNull(),
   forecastQuantity: integer("forecast_quantity").notNull(),
@@ -1791,7 +1791,7 @@ export const demandDrivers = pgTable("demand_drivers", {
 
 export const demandHistory = pgTable("demand_history", {
   id: serial("id").primaryKey(),
-  itemId: integer("item_id").references(() => inventoryItems.id).notNull(),
+  itemId: integer("item_id").references(() => stockItems.id).notNull(),
   period: timestamp("period").notNull(),
   actualDemand: integer("actual_demand").notNull(),
   salesQuantity: integer("sales_quantity").default(0),
@@ -1810,7 +1810,7 @@ export const demandHistory = pgTable("demand_history", {
   itemPeriodIdx: unique().on(table.itemId, table.period),
 }));
 
-export const inventoryOptimizationScenarios = pgTable("inventory_optimization_scenarios", {
+export const stockOptimizationScenarios = pgTable("stock_optimization_scenarios", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
@@ -1843,8 +1843,8 @@ export const inventoryOptimizationScenarios = pgTable("inventory_optimization_sc
 
 export const optimizationRecommendations = pgTable("optimization_recommendations", {
   id: serial("id").primaryKey(),
-  scenarioId: integer("scenario_id").references(() => inventoryOptimizationScenarios.id).notNull(),
-  itemId: integer("item_id").references(() => inventoryItems.id).notNull(),
+  scenarioId: integer("scenario_id").references(() => stockOptimizationScenarios.id).notNull(),
+  itemId: integer("item_id").references(() => stockItems.id).notNull(),
   recommendationType: text("recommendation_type").notNull(), // reorder_point, safety_stock, order_quantity, abc_classification
   currentValue: integer("current_value").notNull(),
   recommendedValue: integer("recommended_value").notNull(),
@@ -2927,19 +2927,19 @@ export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type ChatReaction = typeof chatReactions.$inferSelect;
 export type InsertChatReaction = z.infer<typeof insertChatReactionSchema>;
 
-// Inventory and Demand Forecasting Insert Schemas
-export const insertInventoryItemSchema = createInsertSchema(inventoryItems).omit({
+// Stock and Demand Forecasting Insert Schemas
+export const insertStockItemSchema = createInsertSchema(stockItems).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
 
-export const insertInventoryTransactionSchema = createInsertSchema(inventoryTransactions).omit({
+export const insertStockTransactionSchema = createInsertSchema(stockTransactions).omit({
   id: true,
   createdAt: true,
 });
 
-export const insertInventoryBalanceSchema = createInsertSchema(inventoryBalances).omit({
+export const insertStockBalanceSchema = createInsertSchema(stockBalances).omit({
   id: true,
   updatedAt: true,
 });
@@ -2964,7 +2964,7 @@ export const insertDemandHistorySchema = createInsertSchema(demandHistory).omit(
   period: z.union([z.string().datetime(), z.date()]),
 });
 
-export const insertInventoryOptimizationScenarioSchema = createInsertSchema(inventoryOptimizationScenarios).omit({
+export const insertStockOptimizationScenarioSchema = createInsertSchema(stockOptimizationScenarios).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -2975,15 +2975,15 @@ export const insertOptimizationRecommendationSchema = createInsertSchema(optimiz
   createdAt: true,
 });
 
-// Inventory and Demand Forecasting Types
-export type InventoryItem = typeof inventoryItems.$inferSelect;
-export type InsertInventoryItem = z.infer<typeof insertInventoryItemSchema>;
+// Stock and Demand Forecasting Types
+export type StockItem = typeof stockItems.$inferSelect;
+export type InsertStockItem = z.infer<typeof insertStockItemSchema>;
 
-export type InventoryTransaction = typeof inventoryTransactions.$inferSelect;
-export type InsertInventoryTransaction = z.infer<typeof insertInventoryTransactionSchema>;
+export type StockTransaction = typeof stockTransactions.$inferSelect;
+export type InsertStockTransaction = z.infer<typeof insertStockTransactionSchema>;
 
-export type InventoryBalance = typeof inventoryBalances.$inferSelect;
-export type InsertInventoryBalance = z.infer<typeof insertInventoryBalanceSchema>;
+export type StockBalance = typeof stockBalances.$inferSelect;
+export type InsertStockBalance = z.infer<typeof insertStockBalanceSchema>;
 
 export type DemandForecast = typeof demandForecasts.$inferSelect;
 export type InsertDemandForecast = z.infer<typeof insertDemandForecastSchema>;
@@ -2994,8 +2994,8 @@ export type InsertDemandDriver = z.infer<typeof insertDemandDriverSchema>;
 export type DemandHistory = typeof demandHistory.$inferSelect;
 export type InsertDemandHistory = z.infer<typeof insertDemandHistorySchema>;
 
-export type InventoryOptimizationScenario = typeof inventoryOptimizationScenarios.$inferSelect;
-export type InsertInventoryOptimizationScenario = z.infer<typeof insertInventoryOptimizationScenarioSchema>;
+export type StockOptimizationScenario = typeof stockOptimizationScenarios.$inferSelect;
+export type InsertStockOptimizationScenario = z.infer<typeof insertStockOptimizationScenarioSchema>;
 
 export type OptimizationRecommendation = typeof optimizationRecommendations.$inferSelect;
 export type InsertOptimizationRecommendation = z.infer<typeof insertOptimizationRecommendationSchema>;

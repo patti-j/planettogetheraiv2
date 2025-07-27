@@ -20,9 +20,9 @@ import {
   insertVoiceRecordingsCacheSchema,
   insertDisruptionSchema, insertDisruptionActionSchema, insertDisruptionEscalationSchema,
   insertChatChannelSchema, insertChatMemberSchema, insertChatMessageSchema, insertChatReactionSchema,
-  insertInventoryItemSchema, insertInventoryTransactionSchema, insertInventoryBalanceSchema,
+  insertStockItemSchema, insertStockTransactionSchema, insertStockBalanceSchema,
   insertDemandForecastSchema, insertDemandDriverSchema, insertDemandHistorySchema,
-  insertInventoryOptimizationScenarioSchema, insertOptimizationRecommendationSchema,
+  insertStockOptimizationScenarioSchema, insertOptimizationRecommendationSchema,
   insertFeedbackSchema, insertFeedbackCommentSchema, insertFeedbackVoteSchema,
   insertSystemIntegrationSchema, insertIntegrationJobSchema, insertIntegrationEventSchema,
   insertIntegrationMappingSchema, insertIntegrationTemplateSchema,
@@ -8675,102 +8675,102 @@ Create a natural, conversational voice script that explains this feature to some
     }
   });
 
-  // Inventory Management Routes
-  app.get("/api/inventory-items", requireAuth, async (req, res) => {
+  // Stock Management Routes
+  app.get("/api/stock-items", requireAuth, async (req, res) => {
     try {
-      const items = await storage.getInventoryItems();
+      const items = await storage.getStockItems();
       res.json(items);
     } catch (error) {
-      console.error("Error fetching inventory items:", error);
-      res.status(500).json({ error: "Failed to fetch inventory items" });
+      console.error("Error fetching stock items:", error);
+      res.status(500).json({ error: "Failed to fetch stock items" });
     }
   });
 
-  app.get("/api/inventory-items/:id", requireAuth, async (req, res) => {
+  app.get("/api/stock-items/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const item = await storage.getInventoryItem(id);
+      const item = await storage.getStockItem(id);
       if (!item) {
-        return res.status(404).json({ error: "Inventory item not found" });
+        return res.status(404).json({ error: "Stock item not found" });
       }
       res.json(item);
     } catch (error) {
-      console.error("Error fetching inventory item:", error);
-      res.status(500).json({ error: "Failed to fetch inventory item" });
+      console.error("Error fetching stock item:", error);
+      res.status(500).json({ error: "Failed to fetch stock item" });
     }
   });
 
-  app.post("/api/inventory-items", requireAuth, async (req, res) => {
+  app.post("/api/stock-items", requireAuth, async (req, res) => {
     try {
-      const data = insertInventoryItemSchema.parse(req.body);
-      const item = await storage.createInventoryItem(data);
+      const data = insertStockItemSchema.parse(req.body);
+      const item = await storage.createStockItem(data);
       res.json(item);
     } catch (error: any) {
-      console.error("Error creating inventory item:", error);
+      console.error("Error creating stock item:", error);
       res.status(400).json({ error: error.message });
     }
   });
 
-  app.put("/api/inventory-items/:id", requireAuth, async (req, res) => {
+  app.put("/api/stock-items/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const data = insertInventoryItemSchema.partial().parse(req.body);
-      const item = await storage.updateInventoryItem(id, data);
+      const data = insertStockItemSchema.partial().parse(req.body);
+      const item = await storage.updateStockItem(id, data);
       if (!item) {
-        return res.status(404).json({ error: "Inventory item not found" });
+        return res.status(404).json({ error: "Stock item not found" });
       }
       res.json(item);
     } catch (error: any) {
-      console.error("Error updating inventory item:", error);
+      console.error("Error updating stock item:", error);
       res.status(400).json({ error: error.message });
     }
   });
 
-  app.delete("/api/inventory-items/:id", requireAuth, async (req, res) => {
+  app.delete("/api/stock-items/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const success = await storage.deleteInventoryItem(id);
+      const success = await storage.deleteStockItem(id);
       if (!success) {
-        return res.status(404).json({ error: "Inventory item not found" });
+        return res.status(404).json({ error: "Stock item not found" });
       }
       res.json({ success: true });
     } catch (error) {
-      console.error("Error deleting inventory item:", error);
-      res.status(500).json({ error: "Failed to delete inventory item" });
+      console.error("Error deleting stock item:", error);
+      res.status(500).json({ error: "Failed to delete stock item" });
     }
   });
 
-  // Inventory Transactions
-  app.get("/api/inventory-transactions", requireAuth, async (req, res) => {
+  // Stock Transactions
+  app.get("/api/stock-transactions", requireAuth, async (req, res) => {
     try {
       const itemId = req.query.itemId ? parseInt(req.query.itemId as string) : undefined;
-      const transactions = await storage.getInventoryTransactions(itemId);
+      const transactions = await storage.getStockTransactions(itemId);
       res.json(transactions);
     } catch (error) {
-      console.error("Error fetching inventory transactions:", error);
-      res.status(500).json({ error: "Failed to fetch inventory transactions" });
+      console.error("Error fetching stock transactions:", error);
+      res.status(500).json({ error: "Failed to fetch stock transactions" });
     }
   });
 
-  app.post("/api/inventory-transactions", requireAuth, async (req, res) => {
+  app.post("/api/stock-transactions", requireAuth, async (req, res) => {
     try {
-      const data = insertInventoryTransactionSchema.parse(req.body);
-      const transaction = await storage.createInventoryTransaction(data);
+      const data = insertStockTransactionSchema.parse(req.body);
+      const transaction = await storage.createStockTransaction(data);
       res.json(transaction);
     } catch (error: any) {
-      console.error("Error creating inventory transaction:", error);
+      console.error("Error creating stock transaction:", error);
       res.status(400).json({ error: error.message });
     }
   });
 
-  // Inventory Balances
-  app.get("/api/inventory-balances", requireAuth, async (req, res) => {
+  // Stock Balances
+  app.get("/api/stock-balances", requireAuth, async (req, res) => {
     try {
-      const balances = await storage.getInventoryBalances();
+      const balances = await storage.getStockBalances();
       res.json(balances);
     } catch (error) {
-      console.error("Error fetching inventory balances:", error);
-      res.status(500).json({ error: "Failed to fetch inventory balances" });
+      console.error("Error fetching stock balances:", error);
+      res.status(500).json({ error: "Failed to fetch stock balances" });
     }
   });
 
@@ -8931,68 +8931,68 @@ Create a natural, conversational voice script that explains this feature to some
     }
   });
 
-  // Inventory Optimization Routes
-  app.get("/api/inventory-optimization-scenarios", requireAuth, async (req, res) => {
+  // Stock Optimization Routes
+  app.get("/api/stock-optimization-scenarios", requireAuth, async (req, res) => {
     try {
-      const scenarios = await storage.getInventoryOptimizationScenarios();
+      const scenarios = await storage.getStockOptimizationScenarios();
       res.json(scenarios);
     } catch (error) {
-      console.error("Error fetching inventory optimization scenarios:", error);
-      res.status(500).json({ error: "Failed to fetch inventory optimization scenarios" });
+      console.error("Error fetching stock optimization scenarios:", error);
+      res.status(500).json({ error: "Failed to fetch stock optimization scenarios" });
     }
   });
 
-  app.get("/api/inventory-optimization-scenarios/:id", requireAuth, async (req, res) => {
+  app.get("/api/stock-optimization-scenarios/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const scenario = await storage.getInventoryOptimizationScenario(id);
+      const scenario = await storage.getStockOptimizationScenario(id);
       if (!scenario) {
-        return res.status(404).json({ error: "Inventory optimization scenario not found" });
+        return res.status(404).json({ error: "Stock optimization scenario not found" });
       }
       res.json(scenario);
     } catch (error) {
-      console.error("Error fetching inventory optimization scenario:", error);
-      res.status(500).json({ error: "Failed to fetch inventory optimization scenario" });
+      console.error("Error fetching stock optimization scenario:", error);
+      res.status(500).json({ error: "Failed to fetch stock optimization scenario" });
     }
   });
 
-  app.post("/api/inventory-optimization-scenarios", requireAuth, async (req, res) => {
+  app.post("/api/stock-optimization-scenarios", requireAuth, async (req, res) => {
     try {
-      const data = insertInventoryOptimizationScenarioSchema.parse(req.body);
-      const scenario = await storage.createInventoryOptimizationScenario(data);
+      const data = insertStockOptimizationScenarioSchema.parse(req.body);
+      const scenario = await storage.createStockOptimizationScenario(data);
       res.json(scenario);
     } catch (error: any) {
-      console.error("Error creating inventory optimization scenario:", error);
+      console.error("Error creating stock optimization scenario:", error);
       res.status(400).json({ error: error.message });
     }
   });
 
-  app.put("/api/inventory-optimization-scenarios/:id", requireAuth, async (req, res) => {
+  app.put("/api/stock-optimization-scenarios/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const data = insertInventoryOptimizationScenarioSchema.partial().parse(req.body);
-      const scenario = await storage.updateInventoryOptimizationScenario(id, data);
+      const data = insertStockOptimizationScenarioSchema.partial().parse(req.body);
+      const scenario = await storage.updateStockOptimizationScenario(id, data);
       if (!scenario) {
-        return res.status(404).json({ error: "Inventory optimization scenario not found" });
+        return res.status(404).json({ error: "Stock optimization scenario not found" });
       }
       res.json(scenario);
     } catch (error: any) {
-      console.error("Error updating inventory optimization scenario:", error);
+      console.error("Error updating stock optimization scenario:", error);
       res.status(400).json({ error: error.message });
     }
   });
 
-  app.delete("/api/inventory-optimization-scenarios/:id", requireAuth, async (req, res) => {
+  app.delete("/api/stock-optimization-scenarios/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const success = await storage.deleteInventoryOptimizationScenario(id);
+      const success = await storage.deleteStockOptimizationScenario(id);
       if (!success) {
-        return res.status(404).json({ error: "Inventory optimization scenario not found" });
+        return res.status(404).json({ error: "Stock optimization scenario not found" });
       }
       res.json({ success: true });
     } catch (error) {
-      console.error("Error deleting inventory optimization scenario:", error);
-      res.status(500).json({ error: "Failed to delete inventory optimization scenario" });
+      console.error("Error deleting stock optimization scenario:", error);
+      res.status(500).json({ error: "Failed to delete stock optimization scenario" });
     }
   });
 
