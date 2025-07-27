@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,26 @@ export default function DataImport() {
   const [importStatuses, setImportStatuses] = useState<ImportStatus[]>([]);
   const [isImporting, setIsImporting] = useState(false);
   const [selectedDataTypes, setSelectedDataTypes] = useState<string[]>([]);
+
+  // Load selected data types from localStorage on component mount
+  useEffect(() => {
+    const saved = localStorage.getItem('master-data-selected-types');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setSelectedDataTypes(parsed);
+        }
+      } catch (error) {
+        console.warn('Failed to parse saved data types:', error);
+      }
+    }
+  }, []);
+
+  // Save selected data types to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('master-data-selected-types', JSON.stringify(selectedDataTypes));
+  }, [selectedDataTypes]);
   const [showConsolidatedDialog, setShowConsolidatedDialog] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
