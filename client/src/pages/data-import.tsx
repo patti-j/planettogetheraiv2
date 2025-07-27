@@ -95,11 +95,11 @@ export default function DataImport() {
     
     // Only process when onboarding data is available (not loading)
     if (onboardingData !== undefined) {
-      console.log('Processing onboarding data, selected features:', onboardingData?.selectedFeatures);
+      console.log('Processing onboarding data, selected features:', (onboardingData as any)?.selectedFeatures);
       
       // Load features from onboarding data if available
-      if (onboardingData && onboardingData.selectedFeatures && onboardingData.selectedFeatures.length > 0) {
-        const features = onboardingData.selectedFeatures;
+      if (onboardingData && (onboardingData as any).selectedFeatures && (onboardingData as any).selectedFeatures.length > 0) {
+        const features = (onboardingData as any).selectedFeatures;
         setOnboardingFeatures(features);
         
         // Convert onboarding features to recommended data types
@@ -197,8 +197,8 @@ export default function DataImport() {
       queryClient.invalidateQueries();
       
       // Parse the actual response structure from the backend
-      const recordCount = result.summary?.totalRecords || result.totalRecords || 0;
-      const typeCount = result.summary?.dataTypes || result.dataTypes || Object.keys(result.summary?.details || {}).length || 0;
+      const recordCount = result.totalRecords || 0;
+      const typeCount = result.importResults?.length || Object.keys(result.generatedData || {}).length || 0;
       
       toast({
         title: "AI Sample Data Generated",
