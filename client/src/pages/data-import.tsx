@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useMaxDock } from '@/contexts/MaxDockContext';
@@ -48,27 +48,61 @@ export default function DataImport() {
 
   // Load onboarding data and calculate recommendations
   useEffect(() => {
-    // Load saved onboarding state
+    // Try to load from different possible localStorage keys
     const onboardingState = localStorage.getItem('onboarding-state');
+    const selectedFeaturesOnly = localStorage.getItem('onboarding-selected-features');
+    
+    console.log('Raw onboarding state from localStorage:', onboardingState);
+    console.log('Selected features from localStorage:', selectedFeaturesOnly);
+    
+    let featuresArray: string[] = [];
+    
+    // First try the consolidated onboarding state
     if (onboardingState) {
       try {
         const parsed = JSON.parse(onboardingState);
+        console.log('Parsed onboarding state:', parsed);
+        
         if (parsed.selectedFeatures && Array.isArray(parsed.selectedFeatures)) {
-          setOnboardingFeatures(parsed.selectedFeatures);
-          
-          // Calculate recommended data types based on selected features
-          const recommended = new Set<string>();
-          parsed.selectedFeatures.forEach((feature: string) => {
-            const requirements = featureDataRequirements[feature as keyof typeof featureDataRequirements];
-            if (requirements) {
-              requirements.forEach(req => recommended.add(req));
-            }
-          });
-          setRecommendedDataTypes(Array.from(recommended));
+          featuresArray = parsed.selectedFeatures;
         }
       } catch (error) {
         console.warn('Failed to parse onboarding state:', error);
       }
+    }
+    
+    // If no features found, try the separate selected features storage
+    if (featuresArray.length === 0 && selectedFeaturesOnly) {
+      try {
+        const parsedFeatures = JSON.parse(selectedFeaturesOnly);
+        console.log('Parsed selected features:', parsedFeatures);
+        
+        if (Array.isArray(parsedFeatures)) {
+          featuresArray = parsedFeatures;
+        }
+      } catch (error) {
+        console.warn('Failed to parse selected features:', error);
+      }
+    }
+    
+    if (featuresArray.length > 0) {
+      console.log('Using selected features:', featuresArray);
+      setOnboardingFeatures(featuresArray);
+      
+      // Calculate recommended data types based on selected features
+      const recommended = new Set<string>();
+      featuresArray.forEach((feature: string) => {
+        const requirements = featureDataRequirements[feature as keyof typeof featureDataRequirements];
+        console.log(`Feature ${feature} requires:`, requirements);
+        if (requirements) {
+          requirements.forEach(req => recommended.add(req));
+        }
+      });
+      const recommendedArray = Array.from(recommended);
+      console.log('Final recommended data types:', recommendedArray);
+      setRecommendedDataTypes(recommendedArray);
+    } else {
+      console.log('No selected features found in any localStorage key');
     }
 
     // Load selected data types from localStorage on component mount
