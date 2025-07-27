@@ -61,7 +61,7 @@ const featureModules: FeatureModule[] = [
     complexity: 'beginner',
     prerequisites: [],
     estimatedSetupTime: '15-30 minutes',
-    dataRequirements: ['Jobs', 'Resources', 'Operations'],
+    dataRequirements: ['Production Orders', 'Resources', 'Operations'],
     benefits: ['Visual production timeline', 'Resource optimization', 'Delivery planning'],
     isSelected: false
   },
@@ -351,7 +351,7 @@ export default function OnboardingPage() {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('auth-token') || ''}`
+                'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
               },
               body: JSON.stringify({
                 selectedFeatures: selectedFeatures,
@@ -852,7 +852,7 @@ export default function OnboardingPage() {
                     </div>
                     <div className="border rounded-lg p-3">
                       <h4 className="font-medium">Operator</h4>
-                      <p className="text-sm text-gray-600">View schedules and update job status</p>
+                      <p className="text-sm text-gray-600">View schedules and update production order status</p>
                     </div>
                   </div>
                 </div>

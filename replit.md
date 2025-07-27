@@ -2,6 +2,13 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Onboarding Authentication & Terminology Fixes (July 27, 2025)**:
+- Fixed authentication token key mismatch causing 401 Unauthorized errors in onboarding feature selection
+- Updated token key from 'auth-token' to 'authToken' to match queryClient authentication system
+- Updated terminology from "Jobs" to "Production Orders" throughout onboarding flow for consistency
+- Enhanced onboarding record update with proper authentication headers and detailed error logging
+- System now uses consistent "Production Orders" terminology in data requirements and role descriptions
+
 ✓ **Recent Menu Items Timestamp Removal (July 27, 2025)**:
 - Removed timestamp display from recent menu items in hamburger menu as per user request
 - Recent pages now show only icon and label for cleaner appearance
