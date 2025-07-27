@@ -62,10 +62,137 @@ interface UsageTier {
   examples: string[];
 }
 
+interface FunctionalModule {
+  id: string;
+  name: string;
+  description: string;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  features: string[];
+  icon: React.ReactNode;
+  complexity: "core" | "advanced" | "premium";
+  requiredModules?: string[];
+}
+
+const functionalModules: FunctionalModule[] = [
+  {
+    id: "production-scheduling",
+    name: "Production Scheduling",
+    description: "Core scheduling engine with Gantt charts, resource allocation, and timeline optimization",
+    monthlyPrice: 25,
+    yearlyPrice: 250,
+    features: [
+      "Interactive Gantt chart scheduling",
+      "Drag-and-drop operation assignment",
+      "Resource capacity management",
+      "Real-time schedule optimization",
+      "Critical path analysis",
+      "Schedule scenario comparison",
+      "Mobile scheduling interface"
+    ],
+    icon: <Calendar className="w-6 h-6" />,
+    complexity: "core"
+  },
+  {
+    id: "capacity-planning",
+    name: "Capacity Planning",
+    description: "Advanced capacity forecasting, bottleneck analysis, and resource optimization",
+    monthlyPrice: 35,
+    yearlyPrice: 350,
+    features: [
+      "Capacity forecasting & modeling",
+      "Bottleneck identification & analysis",
+      "Resource utilization optimization",
+      "What-if scenario planning",
+      "Demand vs capacity alignment",
+      "Long-term capacity planning",
+      "Resource requirement planning"
+    ],
+    icon: <TrendingUp className="w-6 h-6" />,
+    complexity: "advanced",
+    requiredModules: ["production-scheduling"]
+  },
+  {
+    id: "inventory-optimization",
+    name: "Inventory Optimization",
+    description: "Smart inventory management with demand forecasting and stock optimization",
+    monthlyPrice: 30,
+    yearlyPrice: 300,
+    features: [
+      "Inventory level optimization",
+      "Automated reorder point calculation",
+      "Stock level recommendations",
+      "Supply chain optimization",
+      "Multi-location inventory tracking",
+      "Cost reduction analytics",
+      "Supplier performance tracking"
+    ],
+    icon: <Database className="w-6 h-6" />,
+    complexity: "advanced",
+    requiredModules: ["production-scheduling"]
+  },
+  {
+    id: "demand-planning",
+    name: "Demand Planning",
+    description: "AI-powered demand forecasting with predictive analytics and market intelligence",
+    monthlyPrice: 40,
+    yearlyPrice: 400,
+    features: [
+      "AI-powered demand forecasting",
+      "Seasonal trend analysis",
+      "Market intelligence integration",
+      "Customer demand patterns",
+      "Sales forecast accuracy",
+      "Demand variability analysis",
+      "Collaborative planning workflows"
+    ],
+    icon: <BarChart3 className="w-6 h-6" />,
+    complexity: "premium",
+    requiredModules: ["production-scheduling", "capacity-planning"]
+  }
+];
+
 export default function Pricing() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
+  const [selectedModules, setSelectedModules] = useState<string[]>([]);
   const { toast } = useToast();
+
+  const toggleModule = (moduleId: string) => {
+    const module = functionalModules.find(m => m.id === moduleId);
+    if (!module) return;
+
+    if (selectedModules.includes(moduleId)) {
+      // Remove module and any dependent modules
+      const modulesToRemove = functionalModules
+        .filter(m => m.requiredModules?.includes(moduleId) || m.id === moduleId)
+        .map(m => m.id);
+      
+      setSelectedModules(prev => prev.filter(id => !modulesToRemove.includes(id)));
+    } else {
+      // Add module and ensure required modules are also selected
+      const requiredModules = module.requiredModules || [];
+      const newModules = [...new Set([...selectedModules, ...requiredModules, moduleId])];
+      setSelectedModules(newModules);
+    }
+  };
+
+  const calculateModuleTotal = () => {
+    return selectedModules.reduce((total, moduleId) => {
+      const module = functionalModules.find(m => m.id === moduleId);
+      if (!module) return total;
+      return total + (billingCycle === "monthly" ? module.monthlyPrice : module.yearlyPrice);
+    }, 0);
+  };
+
+  const getModuleComplexityColor = (complexity: string) => {
+    switch (complexity) {
+      case "core": return "bg-green-100 text-green-800";
+      case "advanced": return "bg-blue-100 text-blue-800";
+      case "premium": return "bg-purple-100 text-purple-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
 
   const pricingTiers: PricingTier[] = [
     {
@@ -532,6 +659,165 @@ export default function Pricing() {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Functional Modules Add-ons Section */}
+        <div className="bg-white rounded-lg border border-gray-200 p-8 mb-12">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Functional Module Add-ons</h2>
+            <p className="text-lg text-gray-600 max-w-4xl mx-auto">
+              Scale your capabilities with specialized modules. Each module works independently and can be added to any plan. Build the perfect solution for your manufacturing needs.
+            </p>
+          </div>
+
+          {/* Module Selection Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {functionalModules.map((module) => {
+              const isSelected = selectedModules.includes(module.id);
+              const isRequired = module.requiredModules?.some(reqId => 
+                selectedModules.includes(reqId) && 
+                functionalModules.find(m => m.id === reqId && selectedModules.includes(m.id))
+              );
+              const isDisabled = module.requiredModules?.some(reqId => !selectedModules.includes(reqId));
+
+              return (
+                <Card 
+                  key={module.id} 
+                  className={`relative transition-all duration-300 cursor-pointer hover:shadow-lg ${
+                    isSelected ? "ring-2 ring-blue-500 bg-blue-50" : ""
+                  } ${isDisabled ? "opacity-60" : ""}`}
+                  onClick={() => !isDisabled && toggleModule(module.id)}
+                >
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${
+                          isSelected ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-600"
+                        }`}>
+                          {module.icon}
+                        </div>
+                        <div>
+                          <CardTitle className="text-xl font-bold flex items-center gap-2">
+                            {module.name}
+                            <Badge className={getModuleComplexityColor(module.complexity)}>
+                              {module.complexity}
+                            </Badge>
+                          </CardTitle>
+                          <div className="text-2xl font-bold text-blue-600 mt-1">
+                            ${billingCycle === "monthly" ? module.monthlyPrice : module.yearlyPrice}
+                            <span className="text-sm font-normal text-gray-500">
+                              /{billingCycle === "monthly" ? "mo" : "yr"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                        isSelected 
+                          ? "bg-blue-600 border-blue-600" 
+                          : "border-gray-300"
+                      }`}>
+                        {isSelected && <Check className="w-4 h-4 text-white" />}
+                      </div>
+                    </div>
+                    <p className="text-gray-600 mt-2">{module.description}</p>
+                    
+                    {module.requiredModules && module.requiredModules.length > 0 && (
+                      <div className="mt-3">
+                        <div className="text-sm text-gray-600">
+                          Requires: {module.requiredModules.map(reqId => {
+                            const reqModule = functionalModules.find(m => m.id === reqId);
+                            return reqModule?.name;
+                          }).join(", ")}
+                        </div>
+                      </div>
+                    )}
+                  </CardHeader>
+
+                  <CardContent className="pt-0">
+                    <div className="space-y-2">
+                      {module.features.slice(0, 4).map((feature, index) => (
+                        <div key={index} className="flex items-start text-sm text-gray-600">
+                          <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                          <span>{feature}</span>
+                        </div>
+                      ))}
+                      {module.features.length > 4 && (
+                        <div className="text-sm text-gray-500">
+                          +{module.features.length - 4} more features
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Module Total Calculator */}
+          {selectedModules.length > 0 && (
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Selected Modules Total</h3>
+                  <p className="text-gray-600 mt-1">
+                    {selectedModules.length} module{selectedModules.length !== 1 ? 's' : ''} selected
+                  </p>
+                </div>
+                <div className="text-right">
+                  <div className="text-3xl font-bold text-blue-600">
+                    ${calculateModuleTotal()}
+                    <span className="text-lg font-normal text-gray-500">
+                      /{billingCycle === "monthly" ? "mo" : "yr"}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Add to any plan above
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4 flex flex-wrap gap-2">
+                {selectedModules.map(moduleId => {
+                  const module = functionalModules.find(m => m.id === moduleId);
+                  if (!module) return null;
+                  return (
+                    <Badge key={moduleId} variant="secondary" className="flex items-center gap-1">
+                      {module.name}
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleModule(moduleId);
+                        }}
+                        className="ml-1 text-gray-500 hover:text-gray-700"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="mt-8 text-center">
+            <div className="bg-gray-50 rounded-lg p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-3">Module Benefits</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  <span>Add/remove modules anytime</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  <span>No setup fees</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  <span>Full feature access instantly</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Usage-Based Pricing Section */}
