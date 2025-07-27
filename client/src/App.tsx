@@ -50,6 +50,7 @@ import DemoTour from "@/pages/demo-tour";
 import DisruptionManagement from "@/pages/disruption-management";
 import Chat from "@/pages/chat";
 import Pricing from "@/pages/pricing";
+import Billing from "@/pages/billing";
 import Account from "@/pages/account";
 import IndustryTemplates from "@/pages/industry-templates";
 import PlantsManagementPage from "@/pages/plants-management";
@@ -351,6 +352,7 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/account" component={Account} />
+          <Route path="/billing" component={Billing} />
           <Route path="/pricing" component={Pricing} />
           <Route path="/demo-tour" component={DemoTour} />
           <Route path="/presentation" component={PresentationPage} />

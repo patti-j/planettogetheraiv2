@@ -739,7 +739,7 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => window.location.href = '/account'}
+                        onClick={() => window.location.href = '/billing'}
                         className="w-full"
                       >
                         <CreditCard className="h-4 w-4 mr-2" />
@@ -756,7 +756,7 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Button 
                       variant="outline" 
-                      onClick={() => window.location.href = '/account?section=subscription'}
+                      onClick={() => window.location.href = '/billing?tab=subscription'}
                       className="h-auto p-4 flex flex-col items-center gap-2"
                     >
                       <Settings className="h-6 w-6" />
@@ -764,7 +764,7 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
                     </Button>
                     <Button 
                       variant="outline" 
-                      onClick={() => window.location.href = '/account?section=billing'}
+                      onClick={() => window.location.href = '/billing?tab=payment'}
                       className="h-auto p-4 flex flex-col items-center gap-2"
                     >
                       <CreditCard className="h-6 w-6" />
@@ -772,7 +772,7 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
                     </Button>
                     <Button 
                       variant="outline" 
-                      onClick={() => window.location.href = '/account?section=invoices'}
+                      onClick={() => window.location.href = '/billing?tab=invoices'}
                       className="h-auto p-4 flex flex-col items-center gap-2"
                     >
                       <FileText className="h-6 w-6" />
