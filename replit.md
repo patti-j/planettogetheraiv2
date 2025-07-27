@@ -2,6 +2,13 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Master Data Setup Mobile Margin Reduction Fix (July 27, 2025)**:
+- Fixed excessively wide left and right margins on mobile devices in Master Data Setup screen
+- Reduced mobile margins from `ml-12 mr-12` (48px each) to `ml-3 mr-3` (12px each) for better mobile experience
+- Preserved desktop margin logic for proper Max AI panel integration: `md:ml-12 md:mr-12` when closed, `md:ml-0 md:mr-0` when open
+- Maintained existing inner padding `p-3 sm:p-6` for proper content spacing while reducing excessive outer margins
+- Master Data Setup screen now provides appropriate mobile spacing without overwhelming white space margins
+
 ✓ **Max AI Tour System Error Handling Enhancement (July 27, 2025)**:
 - Successfully enhanced Max AI tour system with comprehensive error handling and validation to prevent tour-related crashes
 - Added robust parameter validation in frontend action handler with proper error messages and toast notifications

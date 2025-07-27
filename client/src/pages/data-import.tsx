@@ -1094,7 +1094,7 @@ Focus on creating authentic, interconnected data that would be typical for ${com
   ];
 
   return (
-    <div className={`p-3 sm:p-6 space-y-4 sm:space-y-6 ${isMaxOpen ? 'md:ml-0 md:mr-0' : 'md:ml-12 md:mr-12'} ml-12 mr-12`}>
+    <div className={`p-3 sm:p-6 space-y-4 sm:space-y-6 ${isMaxOpen ? 'md:ml-0 md:mr-0' : 'md:ml-12 md:mr-12'} ml-3 mr-3`}>
       {/* Page Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="space-y-1">
