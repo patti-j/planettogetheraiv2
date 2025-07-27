@@ -15,7 +15,7 @@ import { Link, useLocation } from "wouter";
 import {
   Factory, Users, BarChart3, Package, Settings, CheckCircle2, ArrowRight,
   Building, Target, Calendar, Truck, Wrench, Brain, Sparkles, Upload,
-  PlayCircle, BookOpen, Lightbulb, ChevronRight, Clock, Award
+  PlayCircle, BookOpen, Lightbulb, ChevronRight, Clock, Award, TrendingUp, ClipboardList
 } from "lucide-react";
 
 interface OnboardingStep {
@@ -66,15 +66,15 @@ const featureModules: FeatureModule[] = [
     isSelected: false
   },
   {
-    id: 'resource-management',
-    name: 'Resource Management',
-    description: 'Manage your equipment, personnel, and facilities with capability tracking',
-    icon: Factory,
-    complexity: 'beginner',
-    prerequisites: [],
-    estimatedSetupTime: '10-20 minutes',
-    dataRequirements: ['Resources', 'Capabilities'],
-    benefits: ['Asset tracking', 'Skill management', 'Utilization monitoring'],
+    id: 'capacity-planning',
+    name: 'Capacity Planning',
+    description: 'Plan and forecast production capacity across your facilities and resources',
+    icon: TrendingUp,
+    complexity: 'intermediate',
+    prerequisites: ['production-scheduling'],
+    estimatedSetupTime: '20-35 minutes',
+    dataRequirements: ['Resources', 'Production Orders', 'Historical Data'],
+    benefits: ['Capacity optimization', 'Demand forecasting', 'Resource planning'],
     isSelected: false
   },
   {
@@ -90,15 +90,15 @@ const featureModules: FeatureModule[] = [
     isSelected: false
   },
   {
-    id: 'quality-management',
-    name: 'Quality Control',
-    description: 'Monitor quality metrics and manage inspection processes',
-    icon: Award,
+    id: 'production-planning',
+    name: 'Production Planning',
+    description: 'Create and manage production plans, targets, and milestones',
+    icon: ClipboardList,
     complexity: 'intermediate',
     prerequisites: ['production-scheduling'],
-    estimatedSetupTime: '20-35 minutes',
-    dataRequirements: ['Quality Standards', 'Inspection Points'],
-    benefits: ['Quality tracking', 'Defect reduction', 'Compliance'],
+    estimatedSetupTime: '25-40 minutes',
+    dataRequirements: ['Production Plans', 'Production Targets', 'Milestones'],
+    benefits: ['Strategic planning', 'Target tracking', 'Milestone management'],
     isSelected: false
   },
   {
@@ -107,7 +107,7 @@ const featureModules: FeatureModule[] = [
     description: 'Schedule preventive maintenance and track equipment health',
     icon: Wrench,
     complexity: 'intermediate',
-    prerequisites: ['resource-management'],
+    prerequisites: ['production-scheduling'],
     estimatedSetupTime: '25-40 minutes',
     dataRequirements: ['Maintenance Schedules', 'Equipment History'],
     benefits: ['Uptime improvement', 'Cost control', 'Predictive maintenance'],
@@ -119,7 +119,7 @@ const featureModules: FeatureModule[] = [
     description: 'Leverage artificial intelligence for automated optimization and insights',
     icon: Brain,
     complexity: 'advanced',
-    prerequisites: ['production-scheduling', 'resource-management'],
+    prerequisites: ['production-scheduling', 'capacity-planning'],
     estimatedSetupTime: '45-60 minutes',
     dataRequirements: ['Historical Data', 'Performance Metrics'],
     benefits: ['Automated optimization', 'Predictive analytics', 'Intelligent recommendations'],
