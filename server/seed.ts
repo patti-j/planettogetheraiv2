@@ -3,7 +3,8 @@ import {
   capabilities, resources, productionOrders, plannedOrders, operations, users, roles, permissions, userRoles, rolePermissions,
   customerStories, contentBlocks, marketingPages, leadCaptures, disruptions, disruptionActions,
   businessGoals, goalProgress, goalRisks, goalIssues, dashboardConfigs, reportConfigs,
-  visualFactoryDisplays, industryTemplates, vendors, customers
+  visualFactoryDisplays, industryTemplates, vendors, customers,
+  optimizationScopeConfigs
 } from "@shared/schema";
 import { sql, eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -2841,6 +2842,176 @@ async function seedMarketingData() {
 
     await db.insert(industryTemplates).values(industryTemplateData);
     console.log("Industry templates seeded successfully");
+  }
+
+  // Seed optimization scope configurations
+  const existingOptimizationConfigs = await db.select().from(optimizationScopeConfigs).limit(1);
+  if (existingOptimizationConfigs.length === 0) {
+    const optimizationScopeData = [
+      {
+        name: "Production Scheduling - All Resources",
+        description: "Comprehensive production scheduling optimization covering all resources and jobs",
+        category: "production_scheduling",
+        isDefault: true,
+        isShared: true,
+        scopeFilters: {
+          resources: { includeAll: true, specificIds: [], types: [], statuses: ["active"] },
+          jobs: { includeAll: true, specificIds: [], priorities: [], statuses: ["planned", "in_progress"] },
+          timeRange: { startDate: null, endDate: null, duration: "30_days" },
+          plants: { includeAll: true, specificIds: [] }
+        },
+        optimizationGoals: {
+          primary: "minimize_makespan",
+          secondary: ["minimize_tardiness", "maximize_resource_utilization"],
+          weights: { makespan: 0.5, tardiness: 0.3, utilization: 0.2 }
+        },
+        constraints: {
+          resourceCapabilities: true,
+          shiftSchedules: true,
+          setupTimes: true,
+          maintenanceWindows: true,
+          maxOvertimeHours: 8,
+          bufferTime: 15
+        },
+        metadata: {
+          usageCount: 0,
+          lastUsed: null,
+          tags: ["comprehensive", "all_resources", "default"]
+        },
+        createdBy: 6
+      },
+      {
+        name: "Critical Jobs Only",
+        description: "Focus optimization on high priority and critical jobs",
+        category: "production_scheduling",
+        isDefault: false,
+        isShared: true,
+        scopeFilters: {
+          resources: { includeAll: true, specificIds: [], types: [], statuses: ["active"] },
+          jobs: { includeAll: false, specificIds: [], priorities: ["high", "critical"], statuses: ["planned", "in_progress"] },
+          timeRange: { startDate: null, endDate: null, duration: "14_days" },
+          plants: { includeAll: true, specificIds: [] }
+        },
+        optimizationGoals: {
+          primary: "minimize_tardiness",
+          secondary: ["minimize_makespan"],
+          weights: { tardiness: 0.7, makespan: 0.3 }
+        },
+        constraints: {
+          resourceCapabilities: true,
+          shiftSchedules: true,
+          setupTimes: true,
+          maintenanceWindows: true,
+          maxOvertimeHours: 4,
+          bufferTime: 30
+        },
+        metadata: {
+          usageCount: 0,
+          lastUsed: null,
+          tags: ["critical", "priority", "urgent"]
+        },
+        createdBy: 6
+      },
+      {
+        name: "CNC Machines Only",
+        description: "Optimization focused on CNC machining resources and related operations",
+        category: "production_scheduling",
+        isDefault: false,
+        isShared: true,
+        scopeFilters: {
+          resources: { includeAll: false, specificIds: [1, 2], types: ["Machine"], statuses: ["active"] },
+          jobs: { includeAll: true, specificIds: [], priorities: [], statuses: ["planned", "in_progress"] },
+          timeRange: { startDate: null, endDate: null, duration: "7_days" },
+          plants: { includeAll: true, specificIds: [] }
+        },
+        optimizationGoals: {
+          primary: "maximize_resource_utilization",
+          secondary: ["minimize_setup_time", "minimize_makespan"],
+          weights: { utilization: 0.6, setup_time: 0.25, makespan: 0.15 }
+        },
+        constraints: {
+          resourceCapabilities: true,
+          shiftSchedules: true,
+          setupTimes: true,
+          maintenanceWindows: true,
+          maxOvertimeHours: 6,
+          bufferTime: 10
+        },
+        metadata: {
+          usageCount: 0,
+          lastUsed: null,
+          tags: ["cnc", "machining", "specific_resources"]
+        },
+        createdBy: 6
+      },
+      {
+        name: "Inventory Optimization - All Items",
+        description: "Comprehensive inventory optimization across all stock items and storage locations",
+        category: "inventory_optimization",
+        isDefault: true,
+        isShared: true,
+        scopeFilters: {
+          stockItems: { includeAll: true, specificIds: [], categories: [], statuses: ["active", "low_stock"] },
+          storageLocations: { includeAll: true, specificIds: [], types: [] },
+          timeRange: { startDate: null, endDate: null, duration: "90_days" },
+          suppliers: { includeAll: true, specificIds: [] }
+        },
+        optimizationGoals: {
+          primary: "minimize_total_cost",
+          secondary: ["minimize_stockouts", "minimize_carrying_cost"],
+          weights: { total_cost: 0.5, stockouts: 0.3, carrying_cost: 0.2 }
+        },
+        constraints: {
+          minStockLevels: true,
+          maxStockCapacity: true,
+          leadTimes: true,
+          orderMinimums: true,
+          budgetLimit: 100000,
+          shelfLife: true
+        },
+        metadata: {
+          usageCount: 0,
+          lastUsed: null,
+          tags: ["comprehensive", "all_items", "cost_optimization"]
+        },
+        createdBy: 6
+      },
+      {
+        name: "Fast-Moving Items",
+        description: "Inventory optimization focused on high-velocity stock items",
+        category: "inventory_optimization",
+        isDefault: false,
+        isShared: true,
+        scopeFilters: {
+          stockItems: { includeAll: false, specificIds: [], categories: ["raw_materials", "components"], statuses: ["active"] },
+          storageLocations: { includeAll: true, specificIds: [], types: [] },
+          timeRange: { startDate: null, endDate: null, duration: "30_days" },
+          suppliers: { includeAll: true, specificIds: [] }
+        },
+        optimizationGoals: {
+          primary: "minimize_stockouts",
+          secondary: ["minimize_total_cost"],
+          weights: { stockouts: 0.7, total_cost: 0.3 }
+        },
+        constraints: {
+          minStockLevels: true,
+          maxStockCapacity: true,
+          leadTimes: true,
+          orderMinimums: true,
+          budgetLimit: 50000,
+          turnoverRate: 12
+        },
+        metadata: {
+          usageCount: 0,
+          lastUsed: null,
+          tags: ["fast_moving", "high_velocity", "availability"]
+        },
+        createdBy: 6
+      }
+    ];
+
+    await db.insert(optimizationScopeConfigs).values(optimizationScopeData);
+    console.log("Optimization scope configurations seeded successfully");
   }
 
   console.log("Database seeded successfully");

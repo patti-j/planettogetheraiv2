@@ -66,9 +66,9 @@ import {
   productionPlans, productionTargets, resourceAllocations, productionMilestones,
   type ProductionPlan, type ProductionTarget, type ResourceAllocation, type ProductionMilestone,
   type InsertProductionPlan, type InsertProductionTarget, type InsertResourceAllocation, type InsertProductionMilestone,
-  optimizationAlgorithms, algorithmTests, algorithmDeployments, extensionData,
-  type OptimizationAlgorithm, type AlgorithmTest, type AlgorithmDeployment, type ExtensionData,
-  type InsertOptimizationAlgorithm, type InsertAlgorithmTest, type InsertAlgorithmDeployment, type InsertExtensionData,
+  optimizationAlgorithms, algorithmTests, algorithmDeployments, extensionData, optimizationScopeConfigs, optimizationRuns,
+  type OptimizationAlgorithm, type AlgorithmTest, type AlgorithmDeployment, type ExtensionData, type OptimizationScopeConfig, type OptimizationRun,
+  type InsertOptimizationAlgorithm, type InsertAlgorithmTest, type InsertAlgorithmDeployment, type InsertExtensionData, type InsertOptimizationScopeConfig, type InsertOptimizationRun,
   industryTemplates, userIndustryTemplates, templateConfigurations,
   type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
   type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration,
@@ -118,6 +118,13 @@ export interface IStorage {
   createResource(resource: InsertResource): Promise<Resource>;
   updateResource(id: number, resource: Partial<InsertResource>): Promise<Resource | undefined>;
   deleteResource(id: number): Promise<boolean>;
+  
+  // Jobs (alias for Production Orders for legacy compatibility)
+  getJobs(): Promise<ProductionOrder[]>;
+  getJob(id: number): Promise<ProductionOrder | undefined>;
+  createJob(job: InsertProductionOrder): Promise<ProductionOrder>;
+  updateJob(id: number, job: Partial<InsertProductionOrder>): Promise<ProductionOrder | undefined>;
+  deleteJob(id: number): Promise<boolean>;
   
   // Production Orders  
   getProductionOrders(): Promise<ProductionOrder[]>;
@@ -1040,6 +1047,25 @@ export interface IStorage {
   getExtensionDataByEntity(entityType: string, entityId: number): Promise<ExtensionData[]>;
   getExtensionDataFields(algorithmId: number): Promise<{ entityType: string; fields: string[] }[]>;
 
+  // Optimization Scope Configuration Management
+  getOptimizationScopeConfigs(category?: string, userId?: number): Promise<OptimizationScopeConfig[]>;
+  getOptimizationScopeConfig(id: number): Promise<OptimizationScopeConfig | undefined>;
+  createOptimizationScopeConfig(config: InsertOptimizationScopeConfig): Promise<OptimizationScopeConfig>;
+  updateOptimizationScopeConfig(id: number, updates: Partial<InsertOptimizationScopeConfig>): Promise<OptimizationScopeConfig | undefined>;
+  deleteOptimizationScopeConfig(id: number): Promise<boolean>;
+  getDefaultOptimizationScopeConfig(category: string): Promise<OptimizationScopeConfig | undefined>;
+  setOptimizationScopeConfigAsDefault(id: number): Promise<void>;
+  duplicateOptimizationScopeConfig(id: number, newName: string, userId: number): Promise<OptimizationScopeConfig>;
+  
+  // Optimization Run History Management
+  getOptimizationRuns(userId?: number, algorithmId?: number): Promise<OptimizationRun[]>;
+  getOptimizationRun(id: number): Promise<OptimizationRun | undefined>;
+  createOptimizationRun(run: InsertOptimizationRun): Promise<OptimizationRun>;
+  updateOptimizationRun(id: number, updates: Partial<InsertOptimizationRun>): Promise<OptimizationRun | undefined>;
+  deleteOptimizationRun(id: number): Promise<boolean>;
+  getOptimizationRunsByStatus(status: string): Promise<OptimizationRun[]>;
+  updateOptimizationRunStatus(id: number, status: string, error?: string): Promise<OptimizationRun | undefined>;
+
   // Product Development
   // Strategy Documents
   getStrategyDocuments(category?: string): Promise<StrategyDocument[]>;
@@ -1395,51 +1421,6 @@ export class MemStorage implements IStorage {
     return this.resources.delete(id);
   }
 
-  // Jobs
-  async getJobs(): Promise<Job[]> {
-    return Array.from(this.jobs.values());
-  }
-
-  async getJob(id: number): Promise<Job | undefined> {
-    return this.jobs.get(id);
-  }
-
-  async createJob(job: InsertJob): Promise<Job> {
-    const newJob: Job = { 
-      id: this.currentJobId++, 
-      name: job.name,
-      description: job.description || null,
-      customer: job.customer,
-      priority: job.priority || "medium",
-      status: job.status || "planned",
-      dueDate: job.dueDate || null,
-      createdAt: new Date()
-    };
-    this.jobs.set(newJob.id, newJob);
-    return newJob;
-  }
-
-  async updateJob(id: number, job: Partial<InsertJob>): Promise<Job | undefined> {
-    const existing = this.jobs.get(id);
-    if (!existing) return undefined;
-    
-    const updated: Job = { ...existing, ...job };
-    this.jobs.set(id, updated);
-    return updated;
-  }
-
-  async deleteJob(id: number): Promise<boolean> {
-    // Also delete associated operations
-    const operationsToDelete = Array.from(this.operations.values())
-      .filter(op => op.jobId === id);
-    
-    operationsToDelete.forEach(op => {
-      this.operations.delete(op.id);
-    });
-    
-    return this.jobs.delete(id);
-  }
-
   // Operations
   async getOperations(): Promise<Operation[]> {
     return Array.from(this.operations.values());
@@ -1658,28 +1639,28 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount || 0) > 0;
   }
 
-  async getJobs(): Promise<Job[]> {
-    return await db.select().from(jobs);
+  async getJobs(): Promise<ProductionOrder[]> {
+    return await db.select().from(productionOrders).orderBy(asc(productionOrders.dueDate));
   }
 
-  async getJob(id: number): Promise<Job | undefined> {
-    const [job] = await db.select().from(jobs).where(eq(jobs.id, id));
+  async getJob(id: number): Promise<ProductionOrder | undefined> {
+    const [job] = await db.select().from(productionOrders).where(eq(productionOrders.id, id));
     return job || undefined;
   }
 
-  async createJob(job: InsertJob): Promise<Job> {
+  async createJob(job: InsertProductionOrder): Promise<ProductionOrder> {
     const [newJob] = await db
-      .insert(jobs)
+      .insert(productionOrders)
       .values(job)
       .returning();
     return newJob;
   }
 
-  async updateJob(id: number, job: Partial<InsertJob>): Promise<Job | undefined> {
+  async updateJob(id: number, job: Partial<InsertProductionOrder>): Promise<ProductionOrder | undefined> {
     const [updatedJob] = await db
-      .update(jobs)
+      .update(productionOrders)
       .set(job)
-      .where(eq(jobs.id, id))
+      .where(eq(productionOrders.id, id))
       .returning();
     return updatedJob || undefined;
   }
@@ -1688,7 +1669,7 @@ export class DatabaseStorage implements IStorage {
     // First delete associated operations
     await db.delete(operations).where(eq(operations.jobId, id));
     
-    const result = await db.delete(jobs).where(eq(jobs.id, id));
+    const result = await db.delete(productionOrders).where(eq(productionOrders.id, id));
     return (result.rowCount || 0) > 0;
   }
 
@@ -6960,6 +6941,174 @@ export class DatabaseStorage implements IStorage {
       entityType,
       fields
     }));
+  }
+
+  // Optimization Scope Configuration Management Implementation
+  async getOptimizationScopeConfigs(category?: string, userId?: number): Promise<OptimizationScopeConfig[]> {
+    let query = db.select().from(optimizationScopeConfigs);
+    
+    const conditions = [];
+    if (category) conditions.push(eq(optimizationScopeConfigs.category, category));
+    if (userId) conditions.push(eq(optimizationScopeConfigs.createdBy, userId));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(optimizationScopeConfigs.isDefault), asc(optimizationScopeConfigs.name));
+  }
+
+  async getOptimizationScopeConfig(id: number): Promise<OptimizationScopeConfig | undefined> {
+    const [config] = await db.select().from(optimizationScopeConfigs).where(eq(optimizationScopeConfigs.id, id));
+    return config;
+  }
+
+  async createOptimizationScopeConfig(config: InsertOptimizationScopeConfig): Promise<OptimizationScopeConfig> {
+    const [newConfig] = await db
+      .insert(optimizationScopeConfigs)
+      .values({
+        ...config,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return newConfig;
+  }
+
+  async updateOptimizationScopeConfig(id: number, updates: Partial<InsertOptimizationScopeConfig>): Promise<OptimizationScopeConfig | undefined> {
+    const [updated] = await db
+      .update(optimizationScopeConfigs)
+      .set({
+        ...updates,
+        updatedAt: new Date()
+      })
+      .where(eq(optimizationScopeConfigs.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteOptimizationScopeConfig(id: number): Promise<boolean> {
+    const result = await db.delete(optimizationScopeConfigs).where(eq(optimizationScopeConfigs.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getDefaultOptimizationScopeConfig(category: string): Promise<OptimizationScopeConfig | undefined> {
+    const [config] = await db.select()
+      .from(optimizationScopeConfigs)
+      .where(and(
+        eq(optimizationScopeConfigs.category, category),
+        eq(optimizationScopeConfigs.isDefault, true)
+      ))
+      .limit(1);
+    return config;
+  }
+
+  async setOptimizationScopeConfigAsDefault(id: number): Promise<void> {
+    // First get the config to determine its category
+    const config = await this.getOptimizationScopeConfig(id);
+    if (!config) return;
+
+    // Remove default flag from all configs in this category
+    await db.update(optimizationScopeConfigs)
+      .set({ isDefault: false })
+      .where(eq(optimizationScopeConfigs.category, config.category));
+
+    // Set the specified config as default
+    await db.update(optimizationScopeConfigs)
+      .set({ isDefault: true, updatedAt: new Date() })
+      .where(eq(optimizationScopeConfigs.id, id));
+  }
+
+  async duplicateOptimizationScopeConfig(id: number, newName: string, userId: number): Promise<OptimizationScopeConfig> {
+    const original = await this.getOptimizationScopeConfig(id);
+    if (!original) throw new Error("Optimization scope configuration not found");
+
+    const duplicate: InsertOptimizationScopeConfig = {
+      name: newName,
+      description: original.description ? `Copy of ${original.description}` : `Copy of ${original.name}`,
+      category: original.category,
+      isDefault: false,
+      isShared: false,
+      scopeFilters: original.scopeFilters,
+      optimizationGoals: original.optimizationGoals,
+      constraints: original.constraints,
+      metadata: {
+        ...original.metadata,
+        usageCount: 0,
+        lastUsed: undefined
+      },
+      createdBy: userId
+    };
+
+    return await this.createOptimizationScopeConfig(duplicate);
+  }
+
+  // Optimization Run History Management Implementation
+  async getOptimizationRuns(userId?: number, algorithmId?: number): Promise<OptimizationRun[]> {
+    let query = db.select().from(optimizationRuns);
+    
+    const conditions = [];
+    if (userId) conditions.push(eq(optimizationRuns.createdBy, userId));
+    if (algorithmId) conditions.push(eq(optimizationRuns.algorithmId, algorithmId));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(optimizationRuns.createdAt));
+  }
+
+  async getOptimizationRun(id: number): Promise<OptimizationRun | undefined> {
+    const [run] = await db.select().from(optimizationRuns).where(eq(optimizationRuns.id, id));
+    return run;
+  }
+
+  async createOptimizationRun(run: InsertOptimizationRun): Promise<OptimizationRun> {
+    const [newRun] = await db
+      .insert(optimizationRuns)
+      .values({
+        ...run,
+        createdAt: new Date()
+      })
+      .returning();
+    return newRun;
+  }
+
+  async updateOptimizationRun(id: number, updates: Partial<InsertOptimizationRun>): Promise<OptimizationRun | undefined> {
+    const [updated] = await db
+      .update(optimizationRuns)
+      .set(updates)
+      .where(eq(optimizationRuns.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteOptimizationRun(id: number): Promise<boolean> {
+    const result = await db.delete(optimizationRuns).where(eq(optimizationRuns.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getOptimizationRunsByStatus(status: string): Promise<OptimizationRun[]> {
+    return await db.select()
+      .from(optimizationRuns)
+      .where(eq(optimizationRuns.status, status))
+      .orderBy(desc(optimizationRuns.createdAt));
+  }
+
+  async updateOptimizationRunStatus(id: number, status: string, error?: string): Promise<OptimizationRun | undefined> {
+    const updates: Partial<InsertOptimizationRun> = { status };
+    
+    if (status === 'running' && !error) {
+      updates.startTime = new Date();
+    } else if (status === 'completed' || status === 'failed') {
+      updates.endTime = new Date();
+    }
+    
+    if (error) {
+      updates.error = error;
+    }
+    
+    return await this.updateOptimizationRun(id, updates);
   }
 
   // Comprehensive Shift Management System Implementation

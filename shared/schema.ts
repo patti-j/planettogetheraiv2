@@ -3928,6 +3928,111 @@ export const extensionData = pgTable("extension_data", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Optimization Scope Configurations - Flexible filtering for optimization runs
+export const optimizationScopeConfigs = pgTable("optimization_scope_configs", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category").notNull().default("production_scheduling"), // production_scheduling, inventory_optimization, capacity_planning
+  isDefault: boolean("is_default").default(false),
+  isShared: boolean("is_shared").default(false), // Can be used by other users
+  scopeFilters: jsonb("scope_filters").$type<{
+    plants?: {
+      include: number[]; // plant IDs to include
+      exclude: number[]; // plant IDs to exclude
+    };
+    resources?: {
+      include: number[]; // resource IDs to include
+      exclude: number[]; // resource IDs to exclude
+      types?: string[]; // resource types to include
+      status?: string[]; // resource status to include
+    };
+    productionOrders?: {
+      include: number[]; // production order IDs to include
+      exclude: number[]; // production order IDs to exclude
+      priorities?: string[]; // priority levels to include
+      customers?: string[]; // customers to include
+      statuses?: string[]; // order statuses to include
+      dueDateRange?: {
+        start: string; // ISO date string
+        end: string; // ISO date string
+      };
+    };
+    operations?: {
+      include: number[]; // operation IDs to include
+      exclude: number[]; // operation IDs to exclude
+      capabilities?: number[]; // required capability IDs
+      status?: string[]; // operation statuses to include
+    };
+    items?: {
+      include: string[]; // item numbers to include
+      exclude: string[]; // item numbers to exclude
+      categories?: string[]; // item categories to include
+    };
+    dateRange?: {
+      start: string; // ISO date string
+      end: string; // ISO date string
+    };
+    customFilters?: Record<string, any>; // For algorithm-specific filters
+  }>().notNull().default({}),
+  optimizationGoals: jsonb("optimization_goals").$type<{
+    primary: string; // cost_reduction, time_optimization, resource_utilization, quality_improvement
+    secondary?: string[];
+    weights?: Record<string, number>; // Weight distribution for multi-objective optimization
+  }>().default({}),
+  constraints: jsonb("constraints").$type<{
+    maxExecutionTime?: number; // in minutes
+    resourceCapacityLimits?: Record<string, number>;
+    mandatoryBreaks?: boolean;
+    overtimeAllowed?: boolean;
+    parallelProcessing?: boolean;
+    customConstraints?: Record<string, any>;
+  }>().default({}),
+  metadata: jsonb("metadata").$type<{
+    estimatedItems?: number;
+    estimatedComplexity?: "low" | "medium" | "high";
+    lastUsed?: string;
+    usageCount?: number;
+    averageExecutionTime?: number;
+    successRate?: number;
+  }>().default({}),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  updatedBy: integer("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Optimization Run History - Track scope configurations used in optimization runs
+export const optimizationRuns = pgTable("optimization_runs", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  algorithmId: integer("algorithm_id").references(() => optimizationAlgorithms.id).notNull(),
+  scopeConfigId: integer("scope_config_id").references(() => optimizationScopeConfigs.id),
+  scopeSnapshot: jsonb("scope_snapshot").$type<typeof optimizationScopeConfigs.$inferSelect.scopeFilters>().notNull(), // Snapshot of filters used
+  parameters: jsonb("parameters").$type<Record<string, any>>().default({}),
+  status: text("status").notNull().default("pending"), // pending, running, completed, failed, cancelled
+  results: jsonb("results").$type<{
+    totalItemsProcessed?: number;
+    improvementMetrics?: Record<string, number>;
+    executionTime?: number; // in milliseconds
+    memoryUsage?: number; // in MB
+    optimizationScore?: number;
+    beforeMetrics?: Record<string, any>;
+    afterMetrics?: Record<string, any>;
+    recommendations?: Array<{
+      type: string;
+      description: string;
+      impact: string;
+      priority: "low" | "medium" | "high";
+    }>;
+  }>(),
+  error: text("error"), // Error message if failed
+  startTime: timestamp("start_time"),
+  endTime: timestamp("end_time"),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Extension Studio Insert Schemas
 export const insertExtensionSchema = createInsertSchema(extensions).omit({
   id: true,
@@ -4013,6 +4118,25 @@ export type InsertAlgorithmDeployment = z.infer<typeof insertAlgorithmDeployment
 
 export type ExtensionData = typeof extensionData.$inferSelect;
 export type InsertExtensionData = z.infer<typeof insertExtensionDataSchema>;
+
+// Optimization Scope Configuration Insert Schemas
+export const insertOptimizationScopeConfigSchema = createInsertSchema(optimizationScopeConfigs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertOptimizationRunSchema = createInsertSchema(optimizationRuns).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Optimization Scope Configuration Types
+export type OptimizationScopeConfig = typeof optimizationScopeConfigs.$inferSelect;
+export type InsertOptimizationScopeConfig = z.infer<typeof insertOptimizationScopeConfigSchema>;
+
+export type OptimizationRun = typeof optimizationRuns.$inferSelect;
+export type InsertOptimizationRun = z.infer<typeof insertOptimizationRunSchema>;
 
 // Error Logging and Monitoring Tables
 export const errorLogs = pgTable("error_logs", {

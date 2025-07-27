@@ -45,7 +45,8 @@ import {
   insertApiIntegrationSchema, insertApiMappingSchema, insertApiTestSchema, insertApiCredentialSchema, insertApiAuditLogSchema,
   insertSchedulingHistorySchema, insertSchedulingResultSchema, insertAlgorithmPerformanceSchema,
   insertRecipeSchema, insertRecipePhaseSchema, insertRecipeFormulaSchema, insertRecipeEquipmentSchema,
-  insertVendorSchema, insertCustomerSchema
+  insertVendorSchema, insertCustomerSchema,
+  insertOptimizationScopeConfigSchema, insertOptimizationRunSchema
 } from "@shared/schema";
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -12898,6 +12899,232 @@ Create a natural, conversational voice script that explains this feature to some
     } catch (error) {
       console.error("Error completing production milestone:", error);
       res.status(500).json({ error: "Failed to complete production milestone" });
+    }
+  });
+
+  // Optimization Scope Configuration API Routes
+  
+  // Get optimization scope configurations
+  app.get("/api/optimization-scope-configs", async (req, res) => {
+    try {
+      const { category, userId } = req.query;
+      const configs = await storage.getOptimizationScopeConfigs(
+        category as string,
+        userId ? parseInt(userId as string) : undefined
+      );
+      res.json(configs);
+    } catch (error) {
+      console.error("Error fetching optimization scope configurations:", error);
+      res.status(500).json({ error: "Failed to fetch optimization scope configurations" });
+    }
+  });
+
+  // Get single optimization scope configuration
+  app.get("/api/optimization-scope-configs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const config = await storage.getOptimizationScopeConfig(id);
+      if (!config) {
+        return res.status(404).json({ error: "Optimization scope configuration not found" });
+      }
+      res.json(config);
+    } catch (error) {
+      console.error("Error fetching optimization scope configuration:", error);
+      res.status(500).json({ error: "Failed to fetch optimization scope configuration" });
+    }
+  });
+
+  // Create optimization scope configuration
+  app.post("/api/optimization-scope-configs", async (req, res) => {
+    try {
+      const validatedData = insertOptimizationScopeConfigSchema.parse(req.body);
+      const config = await storage.createOptimizationScopeConfig(validatedData);
+      res.status(201).json(config);
+    } catch (error) {
+      console.error("Error creating optimization scope configuration:", error);
+      res.status(500).json({ error: "Failed to create optimization scope configuration" });
+    }
+  });
+
+  // Update optimization scope configuration
+  app.put("/api/optimization-scope-configs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const config = await storage.updateOptimizationScopeConfig(id, req.body);
+      if (!config) {
+        return res.status(404).json({ error: "Optimization scope configuration not found" });
+      }
+      res.json(config);
+    } catch (error) {
+      console.error("Error updating optimization scope configuration:", error);
+      res.status(500).json({ error: "Failed to update optimization scope configuration" });
+    }
+  });
+
+  // Delete optimization scope configuration
+  app.delete("/api/optimization-scope-configs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteOptimizationScopeConfig(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Optimization scope configuration not found" });
+      }
+      res.json({ message: "Optimization scope configuration deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting optimization scope configuration:", error);
+      res.status(500).json({ error: "Failed to delete optimization scope configuration" });
+    }
+  });
+
+  // Get default optimization scope configuration for category
+  app.get("/api/optimization-scope-configs/default/:category", async (req, res) => {
+    try {
+      const category = req.params.category;
+      const config = await storage.getDefaultOptimizationScopeConfig(category);
+      if (!config) {
+        return res.status(404).json({ error: "No default configuration found for category" });
+      }
+      res.json(config);
+    } catch (error) {
+      console.error("Error fetching default optimization scope configuration:", error);
+      res.status(500).json({ error: "Failed to fetch default optimization scope configuration" });
+    }
+  });
+
+  // Set optimization scope configuration as default
+  app.post("/api/optimization-scope-configs/:id/set-default", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.setOptimizationScopeConfigAsDefault(id);
+      res.json({ message: "Configuration set as default successfully" });
+    } catch (error) {
+      console.error("Error setting configuration as default:", error);
+      res.status(500).json({ error: "Failed to set configuration as default" });
+    }
+  });
+
+  // Duplicate optimization scope configuration
+  app.post("/api/optimization-scope-configs/:id/duplicate", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { name, userId } = req.body;
+      
+      if (!name || !userId) {
+        return res.status(400).json({ error: "Name and userId are required" });
+      }
+      
+      const duplicate = await storage.duplicateOptimizationScopeConfig(id, name, userId);
+      res.status(201).json(duplicate);
+    } catch (error) {
+      console.error("Error duplicating optimization scope configuration:", error);
+      res.status(500).json({ error: "Failed to duplicate optimization scope configuration" });
+    }
+  });
+
+  // Optimization Run History API Routes
+  
+  // Get optimization runs
+  app.get("/api/optimization-runs", async (req, res) => {
+    try {
+      const { userId, algorithmId } = req.query;
+      const runs = await storage.getOptimizationRuns(
+        userId ? parseInt(userId as string) : undefined,
+        algorithmId ? parseInt(algorithmId as string) : undefined
+      );
+      res.json(runs);
+    } catch (error) {
+      console.error("Error fetching optimization runs:", error);
+      res.status(500).json({ error: "Failed to fetch optimization runs" });
+    }
+  });
+
+  // Get single optimization run
+  app.get("/api/optimization-runs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const run = await storage.getOptimizationRun(id);
+      if (!run) {
+        return res.status(404).json({ error: "Optimization run not found" });
+      }
+      res.json(run);
+    } catch (error) {
+      console.error("Error fetching optimization run:", error);
+      res.status(500).json({ error: "Failed to fetch optimization run" });
+    }
+  });
+
+  // Create optimization run
+  app.post("/api/optimization-runs", async (req, res) => {
+    try {
+      const validatedData = insertOptimizationRunSchema.parse(req.body);
+      const run = await storage.createOptimizationRun(validatedData);
+      res.status(201).json(run);
+    } catch (error) {
+      console.error("Error creating optimization run:", error);
+      res.status(500).json({ error: "Failed to create optimization run" });
+    }
+  });
+
+  // Update optimization run
+  app.put("/api/optimization-runs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const run = await storage.updateOptimizationRun(id, req.body);
+      if (!run) {
+        return res.status(404).json({ error: "Optimization run not found" });
+      }
+      res.json(run);
+    } catch (error) {
+      console.error("Error updating optimization run:", error);
+      res.status(500).json({ error: "Failed to update optimization run" });
+    }
+  });
+
+  // Delete optimization run
+  app.delete("/api/optimization-runs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteOptimizationRun(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Optimization run not found" });
+      }
+      res.json({ message: "Optimization run deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting optimization run:", error);
+      res.status(500).json({ error: "Failed to delete optimization run" });
+    }
+  });
+
+  // Get optimization runs by status
+  app.get("/api/optimization-runs/status/:status", async (req, res) => {
+    try {
+      const status = req.params.status;
+      const runs = await storage.getOptimizationRunsByStatus(status);
+      res.json(runs);
+    } catch (error) {
+      console.error("Error fetching optimization runs by status:", error);
+      res.status(500).json({ error: "Failed to fetch optimization runs by status" });
+    }
+  });
+
+  // Update optimization run status
+  app.patch("/api/optimization-runs/:id/status", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status, error } = req.body;
+      
+      if (!status) {
+        return res.status(400).json({ error: "Status is required" });
+      }
+      
+      const run = await storage.updateOptimizationRunStatus(id, status, error);
+      if (!run) {
+        return res.status(404).json({ error: "Optimization run not found" });
+      }
+      res.json(run);
+    } catch (error) {
+      console.error("Error updating optimization run status:", error);
+      res.status(500).json({ error: "Failed to update optimization run status" });
     }
   });
 
