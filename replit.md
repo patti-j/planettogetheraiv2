@@ -2,6 +2,17 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **AI Generation Summary Screen Enhancement (July 27, 2025)**:
+- Updated AI generation summary screen to remove recommendations section and show detailed breakdown of generated data
+- Enhanced summary to display specific record counts for each data type (plants, resources, capabilities, production orders)
+- Added comprehensive "Next Steps" section with feature exploration buttons for enabled onboarding features
+- Added "View & Edit Sample Data" button to stay on current page and review generated data
+- Created dynamic feature exploration buttons (Explore Production Scheduling, Explore Capacity Planning, etc.) based on user's selected features
+- Each feature button includes proper routing, icons, descriptions, and color-coded design for clear navigation
+- Enhanced user workflow by providing immediate next steps after AI generation completion
+- Removed AI recommendations in favor of actionable navigation options for feature exploration
+- Users now get clear guidance on where to go next based on their specific feature selections
+
 ✓ **AI Generation Frontend Parsing Bug Fix (July 27, 2025)**:
 - Fixed critical frontend parsing issue where AI generation showed "zero records across zero data types" despite backend success
 - Root cause identified: Frontend apiRequest function returns Response object but mutation onSuccess expected parsed JSON data

@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2 } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2, ClipboardList } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useMaxDock } from '@/contexts/MaxDockContext';
@@ -1955,82 +1955,145 @@ Focus on creating authentic, interconnected data that would be typical for ${com
                 </div>
               </div>
 
-              {/* Import Results */}
-              {aiGenerationResult.summary?.details && Object.keys(aiGenerationResult.summary.details).length > 0 && (
+              {/* Detailed Import Results */}
+              {aiGenerationResult.importResults && aiGenerationResult.importResults.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="font-medium">Import Results</h3>
-                  <div className="space-y-2">
-                    {Object.entries(aiGenerationResult.summary.details).map(([dataType, details]: [string, any], index: number) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                          <span className="font-medium capitalize">{dataType}</span>
+                  <h3 className="font-medium">Generated Data Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {aiGenerationResult.importResults.map((result: any, index: number) => {
+                      const dataType = dataTypes.find(dt => dt.key === result.type);
+                      const Icon = dataType?.icon || Database;
+                      
+                      return (
+                        <div key={index} className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-lg">
+                          <div className="p-2 bg-green-100 rounded-md">
+                            <Icon className="h-5 w-5 text-green-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900">
+                              {dataType?.label || result.type}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {result.count} {result.count === 1 ? 'record' : 'records'} created
+                            </div>
+                          </div>
+                          <CheckCircle className="h-5 w-5 text-green-600" />
                         </div>
-                        <div className="text-right">
-                          <Badge variant="default">
-                            {details.count || 0} records
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
-              {/* Recommendations */}
-              {aiGenerationResult.recommendations && aiGenerationResult.recommendations.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="font-medium">AI Recommendations</h3>
-                  <div className="space-y-2">
-                    {aiGenerationResult.recommendations.map((recommendation: string, index: number) => (
-                      <div key={index} className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <Lightbulb className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                        <p className="text-sm text-blue-800">{recommendation}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Navigation Links */}
-              <div className="space-y-3">
+              {/* Next Steps */}
+              <div className="space-y-4">
                 <h3 className="font-medium">Next Steps</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <Button
-                    variant="outline"
-                    className="justify-start h-auto p-4"
-                    onClick={() => {
-                      setShowAISummary(false);
-                      // Could navigate to production schedule here
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Briefcase className="h-5 w-5 text-blue-600" />
-                      <div className="text-left">
-                        <div className="font-medium">View Production Schedule</div>
-                        <div className="text-xs text-muted-foreground">See your generated production orders</div>
-                      </div>
-                      <ExternalLink className="h-4 w-4 ml-auto" />
+                
+                {/* View Sample Data Button */}
+                <Button
+                  variant="outline"
+                  className="w-full justify-start h-auto p-4 border-blue-200 hover:border-blue-300"
+                  onClick={() => {
+                    setShowAISummary(false);
+                    // Stay on current page to view data
+                  }}
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <Database className="h-5 w-5 text-blue-600" />
+                    <div className="text-left flex-1">
+                      <div className="font-medium">View & Edit Sample Data</div>
+                      <div className="text-xs text-muted-foreground">Review and modify the generated data on this page</div>
                     </div>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="justify-start h-auto p-4"
-                    onClick={() => {
-                      setShowAISummary(false);
-                      // Could navigate to resources here
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Wrench className="h-5 w-5 text-green-600" />
-                      <div className="text-left">
-                        <div className="font-medium">Manage Resources</div>
-                        <div className="text-xs text-muted-foreground">Configure your generated resources</div>
-                      </div>
-                      <ExternalLink className="h-4 w-4 ml-auto" />
+                    <ExternalLink className="h-4 w-4 text-blue-600" />
+                  </div>
+                </Button>
+
+                {/* Feature Exploration Buttons */}
+                {onboardingFeatures.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-gray-700">Explore Your Selected Features:</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {onboardingFeatures.map(feature => {
+                        const getFeatureInfo = (featureKey: string) => {
+                          switch (featureKey) {
+                            case 'production-scheduling':
+                              return {
+                                label: 'Explore Production Scheduling',
+                                description: 'View and manage your production orders',
+                                icon: Calendar,
+                                route: '/production-schedule',
+                                color: 'text-blue-600'
+                              };
+                            case 'capacity-planning':
+                              return {
+                                label: 'Explore Capacity Planning', 
+                                description: 'Plan and optimize resource capacity',
+                                icon: TrendingUp,
+                                route: '/capacity-planning',
+                                color: 'text-green-600'
+                              };
+                            case 'production-planning':
+                              return {
+                                label: 'Explore Production Planning',
+                                description: 'Plan production targets and schedules',
+                                icon: ClipboardList,
+                                route: '/production-planning', 
+                                color: 'text-purple-600'
+                              };
+                            case 'inventory-optimization':
+                              return {
+                                label: 'Explore Inventory Optimization',
+                                description: 'Optimize stock levels and inventory',
+                                icon: Package,
+                                route: '/inventory-optimization',
+                                color: 'text-orange-600'
+                              };
+                            case 'demand-planning':
+                              return {
+                                label: 'Explore Demand Planning',
+                                description: 'Forecast and plan for customer demand',
+                                icon: TrendingUp,
+                                route: '/demand-planning',
+                                color: 'text-indigo-600'
+                              };
+                            default:
+                              return {
+                                label: `Explore ${feature.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}`,
+                                description: 'Explore this feature',
+                                icon: Briefcase,
+                                route: `/${feature}`,
+                                color: 'text-gray-600'
+                              };
+                          }
+                        };
+
+                        const featureInfo = getFeatureInfo(feature);
+                        const Icon = featureInfo.icon;
+
+                        return (
+                          <Button
+                            key={feature}
+                            variant="outline"
+                            className="justify-start h-auto p-4"
+                            onClick={() => {
+                              setShowAISummary(false);
+                              window.location.href = featureInfo.route;
+                            }}
+                          >
+                            <div className="flex items-center gap-3 w-full">
+                              <Icon className={`h-5 w-5 ${featureInfo.color}`} />
+                              <div className="text-left flex-1">
+                                <div className="font-medium">{featureInfo.label}</div>
+                                <div className="text-xs text-muted-foreground">{featureInfo.description}</div>
+                              </div>
+                              <ExternalLink className="h-4 w-4" />
+                            </div>
+                          </Button>
+                        );
+                      })}
                     </div>
-                  </Button>
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
