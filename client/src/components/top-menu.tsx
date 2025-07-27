@@ -351,7 +351,7 @@ export default function TopMenu() {
                                 `}
                                 title={page.isPinned ? 'Unpin from favorites' : 'Pin to favorites'}
                               >
-                                {page.isPinned ? <Pin className="h-2.5 w-2.5" strokeWidth={2} /> : <Pin className="h-2.5 w-2.5" strokeWidth={1} />}
+                                {page.isPinned ? <Pin className="h-2.5 w-2.5" strokeWidth={2} /> : <PinOff className="h-2.5 w-2.5" strokeWidth={1} />}
                               </Button>
                             </div>
                           </Link>

@@ -26,7 +26,7 @@
 - Updated pin button to always be visible with smaller size (4x4px) positioned at `bottom-1 right-1`
 - Removed hover-only visibility in favor of permanent pin display for better user accessibility
 - Enhanced pin icons to use subtle outline style instead of filled circles for less visual intrusion
-- Pin styling: emerald outline for pinned items (strokeWidth=2), light gray outline for unpinned (strokeWidth=1)
+- Pin styling: emerald Pin icon for pinned items (strokeWidth=2), gray PinOff icon for unpinned (strokeWidth=1)
 - Removed background circles to create cleaner, more minimal appearance that blends with menu design
 - Enhanced user experience by making pin functionality immediately discoverable without overwhelming visual design
 
