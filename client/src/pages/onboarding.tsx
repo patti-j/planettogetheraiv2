@@ -230,9 +230,10 @@ export default function OnboardingPage() {
   // Load company info from multiple sources with priority: database > localStorage
   useEffect(() => {
     // First, try to load from database (user preferences)
-    if (userPreferences?.companyInfo && Object.keys(userPreferences.companyInfo).some(key => (userPreferences.companyInfo as any)[key])) {
-      console.log('Loading company info from database:', userPreferences.companyInfo);
-      setCompanyInfo(userPreferences.companyInfo as any);
+    const companyInfo = (userPreferences as any)?.companyInfo;
+    if (companyInfo && Object.keys(companyInfo).some(key => companyInfo[key])) {
+      console.log('Loading company info from database:', companyInfo);
+      setCompanyInfo(companyInfo);
       return;
     }
     
@@ -372,20 +373,31 @@ export default function OnboardingPage() {
           if (existingOnboarding?.id) {
             console.log('Updating onboarding record with features:', selectedFeatures);
             
-            // Update the main onboarding record with selected features using apiRequest
-            await apiRequest('PUT', `/api/onboarding/company/${existingOnboarding.id}`, {
-              selectedFeatures: selectedFeatures, // Backend uses 'selectedFeatures' field
+            const updateData = {
+              selectedFeatures: selectedFeatures,
               currentStep: 'features-selected'
-            });
+            };
+            console.log('Sending update data:', updateData);
+            
+            // Update the main onboarding record with selected features using apiRequest
+            const response = await apiRequest('PUT', `/api/onboarding/company/${existingOnboarding.id}`, updateData);
+            console.log('API response:', response);
             
             console.log('Onboarding record updated successfully');
             
             // Invalidate cache to reload onboarding data
             queryClient.invalidateQueries({ queryKey: ['/api/onboarding/status'] });
+          } else {
+            console.error('No existing onboarding found - cannot update features');
           }
         } catch (error) {
           console.error('Progress save failed:', error);
-          // Don't throw error to avoid blocking the user
+          // Show user feedback about the error but don't block progression
+          toast({
+            title: "Warning",
+            description: "Failed to save selected features, but you can continue.",
+            variant: "default"
+          });
         }
       }
 

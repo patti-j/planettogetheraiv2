@@ -9005,11 +9005,15 @@ export class DatabaseStorage implements IStorage {
 
   async updateCompanyOnboarding(id: number, data: Partial<InsertCompanyOnboarding>): Promise<CompanyOnboarding | undefined> {
     try {
+      console.log('Updating company onboarding in database:', { id, data });
+      
       const [updated] = await db
         .update(companyOnboarding)
         .set({ ...data, updatedAt: new Date() })
         .where(eq(companyOnboarding.id, id))
         .returning();
+      
+      console.log('Database update result:', updated ? 'success' : 'no rows affected');
       return updated;
     } catch (error) {
       console.error('Error updating company onboarding:', error);

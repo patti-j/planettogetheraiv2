@@ -15515,10 +15515,14 @@ Response must be valid JSON:
       throw new ValidationError("Invalid onboarding ID");
     }
 
+    console.log('Updating onboarding record:', { id, body: req.body, userId: req.user?.id });
+    
     const onboarding = await storage.updateCompanyOnboarding(id, req.body);
     if (!onboarding) {
       throw new NotFoundError("Onboarding not found");
     }
+    
+    console.log('Onboarding updated successfully:', onboarding.id);
     res.json(onboarding);
   }));
 
