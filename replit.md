@@ -2,6 +2,14 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Master Data Setup Mobile Margin Balance Fix (July 27, 2025)**:
+- Fixed asymmetric margin issue on mobile devices where left and right margins were different
+- Added symmetric right margins to match existing left margins for balanced spacing
+- Applied consistent margin logic for both Max AI open/closed states with proper left/right balance
+- Mobile margins now use `ml-12 mr-12` for symmetric 48px spacing on both sides
+- Desktop margins properly handle Max panel states: `md:ml-0 md:mr-0` when open, `md:ml-12 md:mr-12` when closed
+- Master Data Setup page now has perfectly balanced spacing on all screen sizes
+
 ✓ **Flexible Optimization Scope Configuration System Implementation (July 27, 2025)**:
 - Successfully implemented comprehensive optimization scope filtering system with saved configurations for reuse across optimization runs
 - Created optimization_scope_configs and optimization_runs database tables with flexible JSONB fields for complex filter criteria storage
