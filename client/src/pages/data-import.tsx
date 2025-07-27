@@ -202,19 +202,16 @@ export default function DataImport() {
 
   const aiGenerationMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('/api/ai-agent/generate-sample-data', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
+      return apiRequest('POST', '/api/ai-agent/generate-sample-data', data);
     },
-    onSuccess: (result) => {
+    onSuccess: (result: any) => {
       setAiGenerationResult(result);
       setShowAIDialog(false);
       setShowAISummary(true);
       queryClient.invalidateQueries();
       toast({
         title: "AI Sample Data Generated",
-        description: `Successfully generated ${result.totalRecords} records across ${result.importResults.length} data types.`,
+        description: `Successfully generated ${result.totalRecords || 0} records across ${result.importResults?.length || 0} data types.`,
       });
     },
     onError: (error) => {
