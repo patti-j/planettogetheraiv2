@@ -2411,6 +2411,15 @@ export const userPreferences = pgTable("user_preferences", {
       timestamp: number;
     }>;
   }>().default(sql`'{"sidebarCollapsed": false, "defaultPage": "/", "widgetPreferences": {}}'::jsonb`),
+  companyInfo: jsonb("company_info").$type<{
+    name?: string;
+    industry?: string;
+    size?: string;
+    description?: string;
+    website?: string;
+    numberOfPlants?: string;
+    products?: string;
+  }>().default(sql`'{}'::jsonb`),
   aiThemeColor: varchar("ai_theme_color", { length: 30 }).notNull().default("purple-pink"), // purple-pink, blue-indigo, emerald-teal, orange-red, violet-purple, cyan-blue
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

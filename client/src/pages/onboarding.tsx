@@ -207,6 +207,30 @@ export default function OnboardingPage() {
     enabled: !!user
   }) as { data: CompanyOnboarding | undefined };
 
+  // User preferences for cross-device company info sync
+  const { data: userPreferences } = useQuery({
+    queryKey: [`/api/user-preferences/${user?.id}`],
+    enabled: !!user?.id
+  });
+
+  // Mutation to update user preferences with company info
+  const updatePreferencesMutation = useMutation({
+    mutationFn: async (companyInfo: any) => {
+      if (!user?.id) return;
+      
+      const currentPrefs = userPreferences || {};
+      const updatedPrefs = {
+        ...currentPrefs,
+        companyInfo: companyInfo
+      };
+      
+      await apiRequest('PUT', '/api/user-preferences', updatedPrefs);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/user-preferences/${user?.id}`] });
+    }
+  });
+
   const createOnboardingMutation = useMutation({
     mutationFn: async (data: any) => {
       const response = await apiRequest('POST', '/api/onboarding/initialize', data);
@@ -240,6 +264,17 @@ export default function OnboardingPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/onboarding/status'] });
     }
   });
+
+  // Helper function to save company info to both localStorage and database
+  const saveCompanyInfo = (newInfo: any) => {
+    setCompanyInfo(newInfo);
+    // Save to localStorage for immediate access and fallback
+    localStorage.setItem('onboarding-company-info', JSON.stringify(newInfo));
+    // Save to database for cross-device sync (for authenticated users)
+    if (user?.id) {
+      updatePreferencesMutation.mutate(newInfo);
+    }
+  };
 
   const progressPercentage = ((currentStep + 1) / onboardingSteps.length) * 100;
 
@@ -452,8 +487,7 @@ export default function OnboardingPage() {
                     value={companyInfo.name}
                     onChange={(e) => {
                       const newInfo = {...companyInfo, name: e.target.value};
-                      setCompanyInfo(newInfo);
-                      localStorage.setItem('onboarding-company-info', JSON.stringify(newInfo));
+                      saveCompanyInfo(newInfo);
                     }}
                     placeholder="Enter your company name"
                   />
@@ -464,8 +498,7 @@ export default function OnboardingPage() {
                     value={companyInfo.industry}
                     onValueChange={(value) => {
                       const newInfo = {...companyInfo, industry: value};
-                      setCompanyInfo(newInfo);
-                      localStorage.setItem('onboarding-company-info', JSON.stringify(newInfo));
+                      saveCompanyInfo(newInfo);
                     }}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select your industry" />
@@ -489,8 +522,7 @@ export default function OnboardingPage() {
                     value={companyInfo.size}
                     onValueChange={(value) => {
                       const newInfo = {...companyInfo, size: value};
-                      setCompanyInfo(newInfo);
-                      localStorage.setItem('onboarding-company-info', JSON.stringify(newInfo));
+                      saveCompanyInfo(newInfo);
                     }}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select company size" />
@@ -509,8 +541,7 @@ export default function OnboardingPage() {
                     value={companyInfo.website}
                     onChange={(e) => {
                       const newInfo = {...companyInfo, website: e.target.value};
-                      setCompanyInfo(newInfo);
-                      localStorage.setItem('onboarding-company-info', JSON.stringify(newInfo));
+                      saveCompanyInfo(newInfo);
                     }}
                     placeholder="https://www.yourcompany.com"
                   />
@@ -523,8 +554,7 @@ export default function OnboardingPage() {
                     value={companyInfo.numberOfPlants}
                     onChange={(e) => {
                       const newInfo = {...companyInfo, numberOfPlants: e.target.value};
-                      setCompanyInfo(newInfo);
-                      localStorage.setItem('onboarding-company-info', JSON.stringify(newInfo));
+                      saveCompanyInfo(newInfo);
                     }}
                     placeholder="Enter number of manufacturing plants"
                   />
@@ -536,8 +566,7 @@ export default function OnboardingPage() {
                   value={companyInfo.products}
                   onChange={(e) => {
                     const newInfo = {...companyInfo, products: e.target.value};
-                    setCompanyInfo(newInfo);
-                    localStorage.setItem('onboarding-company-info', JSON.stringify(newInfo));
+                    saveCompanyInfo(newInfo);
                   }}
                   placeholder="Describe your main products and the basic production process of how you make them (e.g., materials used, key manufacturing steps, assembly processes)..."
                   className="min-h-[80px]"
@@ -549,8 +578,7 @@ export default function OnboardingPage() {
                   value={companyInfo.description}
                   onChange={(e) => {
                     const newInfo = {...companyInfo, description: e.target.value};
-                    setCompanyInfo(newInfo);
-                    localStorage.setItem('onboarding-company-info', JSON.stringify(newInfo));
+                    saveCompanyInfo(newInfo);
                   }}
                   placeholder="Tell us a bit about what you manufacture..."
                   className="min-h-[100px]"

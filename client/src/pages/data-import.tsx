@@ -487,8 +487,6 @@ export default function DataImport() {
 
   // Initialize AI prompt based on company information
   const initializeAIPrompt = () => {
-    // Load company info from onboarding localStorage
-    const onboardingCompanyInfo = localStorage.getItem('onboarding-company-info');
     let companyInfo = {
       name: 'Manufacturing Company',
       industry: 'General Manufacturing',
@@ -499,12 +497,19 @@ export default function DataImport() {
       products: ''
     };
 
-    if (onboardingCompanyInfo) {
-      try {
-        const parsed = JSON.parse(onboardingCompanyInfo);
-        companyInfo = { ...companyInfo, ...parsed };
-      } catch (error) {
-        console.warn('Failed to parse onboarding company info:', error);
+    // First try to get company info from user preferences (database)
+    if (userPreferences.data?.companyInfo && Object.keys(userPreferences.data.companyInfo).length > 0) {
+      companyInfo = { ...companyInfo, ...userPreferences.data.companyInfo };
+    } else {
+      // Fallback to localStorage for backwards compatibility or anonymous users
+      const onboardingCompanyInfo = localStorage.getItem('onboarding-company-info');
+      if (onboardingCompanyInfo) {
+        try {
+          const parsed = JSON.parse(onboardingCompanyInfo);
+          companyInfo = { ...companyInfo, ...parsed };
+        } catch (error) {
+          console.warn('Failed to parse onboarding company info:', error);
+        }
       }
     }
 
@@ -538,8 +543,6 @@ Focus on creating authentic, interconnected data that would be typical for ${com
   };
 
   const executeAIGeneration = () => {
-    // Load company info from onboarding localStorage
-    const onboardingCompanyInfo = localStorage.getItem('onboarding-company-info');
     let companyInfo = {
       name: 'Manufacturing Company',
       industry: 'General Manufacturing',
@@ -550,12 +553,19 @@ Focus on creating authentic, interconnected data that would be typical for ${com
       products: ''
     };
 
-    if (onboardingCompanyInfo) {
-      try {
-        const parsed = JSON.parse(onboardingCompanyInfo);
-        companyInfo = { ...companyInfo, ...parsed };
-      } catch (error) {
-        console.warn('Failed to parse onboarding company info:', error);
+    // First try to get company info from user preferences (database)
+    if (userPreferences.data?.companyInfo && Object.keys(userPreferences.data.companyInfo).length > 0) {
+      companyInfo = { ...companyInfo, ...userPreferences.data.companyInfo };
+    } else {
+      // Fallback to localStorage for backwards compatibility or anonymous users
+      const onboardingCompanyInfo = localStorage.getItem('onboarding-company-info');
+      if (onboardingCompanyInfo) {
+        try {
+          const parsed = JSON.parse(onboardingCompanyInfo);
+          companyInfo = { ...companyInfo, ...parsed };
+        } catch (error) {
+          console.warn('Failed to parse onboarding company info:', error);
+        }
       }
     }
 
