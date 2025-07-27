@@ -2,6 +2,17 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Header Layout Fix & Mobile-Responsive Spreadsheet Interface Implementation (July 27, 2025)**:
+- Fixed hamburger menu blocking page title by implementing proper margin handling using useMaxDock hook
+- Added responsive design with `ml-12` for mobile and conditional `md:ml-0`/`md:ml-12` based on Max window state
+- Completely redesigned structured data entry from horizontal scrolling table to responsive design with desktop table + mobile cards
+- Mobile users now get vertical card layout eliminating horizontal scrolling issues on small screens
+- Each mobile card displays "Entry #1", "Entry #2" with clearly labeled fields and delete buttons in card headers
+- Desktop users retain efficient table layout with compact controls and proper column management
+- Added empty state messaging for mobile cards when no entries exist yet
+- Fixed all form controls (inputs, selects, multiselects) to work properly in both desktop table and mobile card layouts
+- Header now follows standard page header pattern across all screen sizes and Max window states
+
 ✓ **Master Data Setup Menu Rename & Onboarding API Fix (July 27, 2025)**:
 - Renamed "Data Import" menu item to "Master Data Setup" to better reflect manual entry capabilities alongside file import
 - Updated page title and description to emphasize both import and manual entry options  

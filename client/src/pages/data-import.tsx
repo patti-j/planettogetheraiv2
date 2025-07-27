@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { useMaxDock } from '@/contexts/MaxDockContext';
 
 interface ImportStatus {
   type: string;
@@ -27,6 +28,7 @@ export default function DataImport() {
   const [isImporting, setIsImporting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isMaxOpen } = useMaxDock();
 
   // Fetch available capabilities for dropdown
   const { data: capabilities = [] } = useQuery({
@@ -608,7 +610,7 @@ export default function DataImport() {
   ];
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className={`p-6 max-w-7xl mx-auto ${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Master Data Setup</h1>
         <p className="text-muted-foreground">
