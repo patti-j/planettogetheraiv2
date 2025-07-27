@@ -42,7 +42,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format, addDays, differenceInDays } from 'date-fns';
 import { apiRequest } from '@/lib/queryClient';
-import type { Job, Operation, Resource, Capability } from '@shared/schema';
+import type { ProductionOrder, Operation, Resource, Capability } from '@shared/schema';
 import { ScheduleEvaluationSystem } from '@/components/schedule-evaluation-system';
 import { useAITheme } from '@/hooks/use-ai-theme';
 import { usePermissions } from '@/hooks/useAuth';
@@ -380,7 +380,7 @@ const SchedulingOptimizer: React.FC = () => {
   const [schedulingOptions, setSchedulingOptions] = useState<SchedulingOption[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [lastFormData, setLastFormData] = useState<NewJobFormData | null>(null);
-  const [selectedExistingJob, setSelectedExistingJob] = useState<Job | null>(null);
+  const [selectedExistingProductionOrder, setSelectedExistingProductionOrder] = useState<ProductionOrder | null>(null);
   const [isOptimizingExisting, setIsOptimizingExisting] = useState(false);
   const [showEvaluationSystem, setShowEvaluationSystem] = useState(false);
   const evaluationSystemRef = useRef<HTMLDivElement>(null);
@@ -402,8 +402,8 @@ const SchedulingOptimizer: React.FC = () => {
   }, [showEvaluationSystem]);
 
   // Fetch data with disabled refetch to prevent form re-renders
-  const { data: jobs } = useQuery<Job[]>({ 
-    queryKey: ['/api/jobs'],
+  const { data: productionOrders } = useQuery<ProductionOrder[]>({ 
+    queryKey: ['/api/production-orders'],
     refetchOnWindowFocus: false,
     refetchInterval: false
   });
@@ -429,14 +429,14 @@ const SchedulingOptimizer: React.FC = () => {
 
 
 
-  // Generate scheduling options for existing job
-  const generateSchedulingOptionsForExisting = (job: Job) => {
+  // Generate scheduling options for existing production order
+  const generateSchedulingOptionsForExisting = (productionOrder: ProductionOrder) => {
     if (!resources || !capabilities || !operations) return;
 
-    const jobOperations = operations.filter(op => op.jobId === job.id);
-    if (jobOperations.length === 0) return;
+    const productionOrderOperations = operations.filter(op => op.productionOrderId === productionOrder.id);
+    if (productionOrderOperations.length === 0) return;
 
-    setSelectedExistingJob(job);
+    setSelectedExistingProductionOrder(productionOrder);
     setIsOptimizingExisting(true);
 
     // Simulate analysis delay
@@ -989,27 +989,27 @@ const SchedulingOptimizer: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {jobs && jobs.length > 0 ? (
+          {productionOrders && productionOrders.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {jobs.map((job) => {
-                const jobOperations = operations?.filter(op => op.jobId === job.id) || [];
-                const unscheduledOps = jobOperations.filter(op => !op.assignedResourceId);
+              {productionOrders.map((productionOrder) => {
+                const productionOrderOperations = operations?.filter(op => op.productionOrderId === productionOrder.id) || [];
+                const unscheduledOps = productionOrderOperations.filter(op => !op.assignedResourceId);
                 
                 return (
-                  <Card key={job.id} className="cursor-pointer hover:shadow-md transition-all border-l-4 border-blue-500">
+                  <Card key={productionOrder.id} className="cursor-pointer hover:shadow-md transition-all border-l-4 border-blue-500">
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">{job.name}</CardTitle>
-                        <Badge variant={job.priority === 'urgent' ? 'destructive' : job.priority === 'high' ? 'default' : 'secondary'}>
-                          {job.priority}
+                        <CardTitle className="text-lg">{productionOrder.name}</CardTitle>
+                        <Badge variant={productionOrder.priority === 'urgent' ? 'destructive' : productionOrder.priority === 'high' ? 'default' : 'secondary'}>
+                          {productionOrder.priority}
                         </Badge>
                       </div>
-                      <CardDescription className="text-sm">{job.customer}</CardDescription>
+                      <CardDescription className="text-sm">{productionOrder.customer}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="flex items-center justify-between text-sm">
                         <span>Operations:</span>
-                        <span className="font-medium">{jobOperations.length}</span>
+                        <span className="font-medium">{productionOrderOperations.length}</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span>Unscheduled:</span>
@@ -1019,15 +1019,15 @@ const SchedulingOptimizer: React.FC = () => {
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span>Due Date:</span>
-                        <span className="font-medium">{format(new Date(job.dueDate), 'MMM dd, yyyy')}</span>
+                        <span className="font-medium">{format(new Date(productionOrder.dueDate), 'MMM dd, yyyy')}</span>
                       </div>
-                      {job.description && (
+                      {productionOrder.description && (
                         <div className="text-sm text-gray-600 line-clamp-2">
-                          {job.description}
+                          {productionOrder.description}
                         </div>
                       )}
                       <Button 
-                        onClick={() => generateSchedulingOptionsForExisting(job)}
+                        onClick={() => generateSchedulingOptionsForExisting(productionOrder)}
                         disabled={isOptimizingExisting}
                         className="w-full mt-3"
                         size="sm"

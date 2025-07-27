@@ -2,6 +2,19 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Complete Jobs-to-Production-Orders Terminology Migration (July 27, 2025)**:
+- Successfully renamed all "jobs" references to "production orders" throughout the entire system
+- Updated database schema and API endpoints to use consistent production order terminology
+- Fixed client-side components to reference ProductionOrder type instead of Job type
+- Updated storage interface methods from getOperationsByJobId to getOperationsByProductionOrderId
+- Updated all UI components and forms to display "Production Orders" instead of "Jobs"
+- Maintained backward compatibility with legacy /api/jobs endpoints while primarily using /api/production-orders
+- Fixed TypeScript compilation errors by updating all type imports and variable references
+- Master Data Setup and all other components now consistently use production order terminology
+- System-wide terminology now aligned with manufacturing industry standards for production orders
+
+## Recent Changes (July 27, 2025)
+
 ✓ **Master Data Setup Mobile Margin Reduction Fix (July 27, 2025)**:
 - Fixed excessively wide left and right margins on mobile devices in Master Data Setup screen
 - Reduced mobile margins from `ml-12 mr-12` (48px each) to `ml-3 mr-3` (12px each) for better mobile experience

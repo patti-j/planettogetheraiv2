@@ -143,7 +143,7 @@ export interface IStorage {
   
   // Operations
   getOperations(): Promise<Operation[]>;
-  getOperationsByJobId(jobId: number): Promise<Operation[]>;
+  getOperationsByProductionOrderId(productionOrderId: number): Promise<Operation[]>;
   getOperation(id: number): Promise<Operation | undefined>;
   createOperation(operation: InsertOperation): Promise<Operation>;
   updateOperation(id: number, operation: Partial<InsertOperation>): Promise<Operation | undefined>;
@@ -1472,17 +1472,18 @@ export class MemStorage implements IStorage {
 
   // Operations
   async getOperations(): Promise<Operation[]> {
-    return Array.from(this.operations.values());
+    return await db.select().from(operations);
   }
 
-  async getOperationsByJobId(jobId: number): Promise<Operation[]> {
-    return Array.from(this.operations.values())
-      .filter(op => op.jobId === jobId)
-      .sort((a, b) => a.order - b.order);
+  async getOperationsByProductionOrderId(productionOrderId: number): Promise<Operation[]> {
+    return await db.select().from(operations)
+      .where(eq(operations.productionOrderId, productionOrderId))
+      .orderBy(operations.order);
   }
 
   async getOperation(id: number): Promise<Operation | undefined> {
-    return this.operations.get(id);
+    const [operation] = await db.select().from(operations).where(eq(operations.id, id));
+    return operation || undefined;
   }
 
   async createOperation(operation: InsertOperation): Promise<Operation> {
