@@ -132,7 +132,7 @@ const functionalModules: FunctionalModule[] = [
   },
   {
     id: "demand-planning",
-    name: "Demand Planning",
+    name: "Demand Plan Optimization",
     description: "AI-powered demand forecasting with predictive analytics and market intelligence",
     monthlyPrice: 40,
     yearlyPrice: 400,

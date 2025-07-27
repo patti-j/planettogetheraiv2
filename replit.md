@@ -7,6 +7,7 @@
 - Renamed "Production Scheduling" to "Schedule Optimization" in pricing page and onboarding feature list
 - Renamed "Capacity Planning" to "Capacity Optimization" in pricing page and onboarding feature list  
 - Renamed "Production Planning" to "Production Plan Optimization" in onboarding feature list
+- Renamed "Demand Planning" to "Demand Plan Optimization" in pricing page
 - Updated module naming convention to consistently use "optimization" terminology for all functional modules
 - Enhanced clarity by emphasizing the optimization-focused nature of advanced manufacturing capabilities
 - Module IDs remain unchanged to preserve existing data and functionality while updating display names
@@ -24,7 +25,7 @@
 
 ✓ **Module-Based Pricing System Implementation (July 27, 2025)**:
 - Successfully enhanced pricing structure with comprehensive functional module add-ons in addition to existing user-level tiers
-- Added four major functional modules: Schedule Optimization ($25-250), Capacity Optimization ($35-350), Inventory Optimization ($30-300), Demand Planning ($40-400)
+- Added four major functional modules: Schedule Optimization ($25-250), Capacity Optimization ($35-350), Inventory Optimization ($30-300), Demand Plan Optimization ($40-400)
 - Implemented per-plant pricing structure where functional modules are charged per plant per month for multi-location operations
 - Added plant count selector (1-30 plants) with real-time pricing calculation showing individual plant cost and total cost across all plants
 - Implemented smart module dependency system where advanced modules require core modules (Production Scheduling is foundation)
