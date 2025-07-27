@@ -497,7 +497,7 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleStartOver = () => {
+  const handleStartOver = async () => {
     // Reset onboarding state to beginning
     setCurrentStep(0);
     setSelectedFeatures([]);
@@ -510,6 +510,30 @@ export default function OnboardingPage() {
       numberOfPlants: '',
       products: ''
     });
+    
+    // Reset database onboarding completion status
+    if (existingOnboarding?.id) {
+      try {
+        await apiRequest('PUT', `/api/onboarding/company/${existingOnboarding.id}`, {
+          isCompleted: false,
+          currentStep: 'company-info',
+          selectedFeatures: []
+        });
+        
+        // Clear localStorage
+        localStorage.removeItem('onboarding-company-info');
+        
+        // Refresh onboarding data
+        queryClient.invalidateQueries({ queryKey: ['/api/onboarding/status'] });
+        
+        toast({
+          title: "Onboarding Reset",
+          description: "Starting fresh with the onboarding process."
+        });
+      } catch (error) {
+        console.error('Failed to reset onboarding:', error);
+      }
+    }
   };
 
   const getSelectedFeatureModules = () => {
@@ -547,9 +571,17 @@ export default function OnboardingPage() {
                   Go to Dashboard
                 </Button>
               </Link>
-              <Link to="/onboarding">
-                <Button variant="outline" size="lg">
-                  Review Setup
+              <Button 
+                variant="outline" 
+                size="lg"
+                onClick={handleStartOver}
+                className="mr-4"
+              >
+                Start Onboarding Again
+              </Button>
+              <Link to="/industry-templates">
+                <Button variant="ghost" size="lg">
+                  Manage Templates
                 </Button>
               </Link>
             </CardContent>
