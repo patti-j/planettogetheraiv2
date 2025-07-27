@@ -2,7 +2,7 @@
 
 ## Recent Changes (July 27, 2025)
 
-✓ **Functional Module Optimization-Focused Renaming (July 27, 2025)**:
+✓ **Optimization Add-ons Renaming and Structure Update (July 27, 2025)**:
 - Successfully renamed three key functional modules to emphasize optimization capabilities throughout the application
 - Renamed "Production Scheduling" to "Schedule Optimization" in pricing page and onboarding feature list
 - Renamed "Capacity Planning" to "Capacity Optimization" in pricing page and onboarding feature list  
@@ -11,7 +11,9 @@
 - Distinguished base tier features from optimization modules by renaming "Inventory Optimization AI" to "Inventory Planning AI" in professional tier
 - Removed "Advanced Scheduling Optimizer" from professional tier since it's now sold as separate optimization module
 - Removed "White-Label Platform Options" feature from enterprise tier pricing to streamline offering
-- Updated module naming convention to consistently use "optimization" terminology for all functional modules
+- Renamed "Functional Module Add-ons" to "Optimization Add-ons" throughout pricing page for clearer positioning
+- Updated interface and variable names from FunctionalModule to OptimizationAddon for better code clarity
+- Updated module naming convention to consistently use "optimization" terminology for all add-on modules
 - Enhanced clarity by emphasizing the optimization-focused nature of advanced manufacturing capabilities
 - Module IDs remain unchanged to preserve existing data and functionality while updating display names
 

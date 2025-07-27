@@ -61,7 +61,7 @@ interface UsageTier {
   examples: string[];
 }
 
-interface FunctionalModule {
+interface OptimizationAddon {
   id: string;
   name: string;
   description: string;
@@ -73,7 +73,7 @@ interface FunctionalModule {
   requiredModules?: string[];
 }
 
-const functionalModules: FunctionalModule[] = [
+const optimizationAddons: OptimizationAddon[] = [
   {
     id: "production-scheduling",
     name: "Schedule Optimization",
@@ -158,31 +158,31 @@ export default function Pricing() {
   const [numberOfPlants, setNumberOfPlants] = useState<number>(1);
   const { toast } = useToast();
 
-  const toggleModule = (moduleId: string) => {
-    const module = functionalModules.find(m => m.id === moduleId);
-    if (!module) return;
+  const toggleAddon = (addonId: string) => {
+    const addon = optimizationAddons.find(m => m.id === addonId);
+    if (!addon) return;
 
-    if (selectedModules.includes(moduleId)) {
-      // Remove module and any dependent modules
-      const modulesToRemove = functionalModules
-        .filter(m => m.requiredModules?.includes(moduleId) || m.id === moduleId)
+    if (selectedModules.includes(addonId)) {
+      // Remove addon and any dependent addons
+      const addonsToRemove = optimizationAddons
+        .filter(m => m.requiredModules?.includes(addonId) || m.id === addonId)
         .map(m => m.id);
       
-      setSelectedModules(prev => prev.filter(id => !modulesToRemove.includes(id)));
+      setSelectedModules(prev => prev.filter(id => !addonsToRemove.includes(id)));
     } else {
-      // Add module and ensure required modules are also selected
-      const requiredModules = module.requiredModules || [];
-      const newModules = Array.from(new Set([...selectedModules, ...requiredModules, moduleId]));
-      setSelectedModules(newModules);
+      // Add addon and ensure required addons are also selected
+      const requiredAddons = addon.requiredModules || [];
+      const newAddons = Array.from(new Set([...selectedModules, ...requiredAddons, addonId]));
+      setSelectedModules(newAddons);
     }
   };
 
-  const calculateModuleTotal = () => {
-    return selectedModules.reduce((total, moduleId) => {
-      const module = functionalModules.find(m => m.id === moduleId);
-      if (!module) return total;
-      const modulePrice = billingCycle === "monthly" ? module.monthlyPrice : module.yearlyPrice;
-      return total + (modulePrice * numberOfPlants);
+  const calculateAddonTotal = () => {
+    return selectedModules.reduce((total, addonId) => {
+      const addon = optimizationAddons.find(m => m.id === addonId);
+      if (!addon) return total;
+      const addonPrice = billingCycle === "monthly" ? addon.monthlyPrice : addon.yearlyPrice;
+      return total + (addonPrice * numberOfPlants);
     }, 0);
   };
 
@@ -641,12 +641,12 @@ export default function Pricing() {
           ))}
         </div>
 
-        {/* Functional Modules Add-ons Section */}
+        {/* Optimization Add-ons Section */}
         <div className="bg-white rounded-lg border border-gray-200 p-8 mb-12">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Functional Module Add-ons</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Optimization Add-ons</h2>
             <p className="text-lg text-gray-600 max-w-4xl mx-auto mb-6">
-              Scale your capabilities with specialized modules. Each module works independently and can be added to any plan. Pricing is per plant per month for multi-location operations.
+              Scale your capabilities with specialized optimization add-ons. Each add-on works independently and can be added to any plan. Pricing is per plant per month for multi-location operations.
             </p>
             
             {/* Plant Count Selector */}
@@ -666,23 +666,23 @@ export default function Pricing() {
             </div>
           </div>
 
-          {/* Module Selection Grid */}
+          {/* Add-on Selection Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            {functionalModules.map((module) => {
-              const isSelected = selectedModules.includes(module.id);
-              const isRequired = module.requiredModules?.some(reqId => 
+            {optimizationAddons.map((addon) => {
+              const isSelected = selectedModules.includes(addon.id);
+              const isRequired = addon.requiredModules?.some(reqId => 
                 selectedModules.includes(reqId) && 
-                functionalModules.find(m => m.id === reqId && selectedModules.includes(m.id))
+                optimizationAddons.find(m => m.id === reqId && selectedModules.includes(m.id))
               );
-              const isDisabled = module.requiredModules?.some(reqId => !selectedModules.includes(reqId));
+              const isDisabled = addon.requiredModules?.some(reqId => !selectedModules.includes(reqId));
 
               return (
                 <Card 
-                  key={module.id} 
+                  key={addon.id} 
                   className={`relative transition-all duration-300 cursor-pointer hover:shadow-lg ${
                     isSelected ? "ring-2 ring-blue-500 bg-blue-50" : ""
                   } ${isDisabled ? "opacity-60" : ""}`}
-                  onClick={() => !isDisabled && toggleModule(module.id)}
+                  onClick={() => !isDisabled && toggleAddon(addon.id)}
                 >
                   <CardHeader className="pb-4">
                     <div className="flex items-start justify-between">
@@ -690,24 +690,24 @@ export default function Pricing() {
                         <div className={`p-2 rounded-lg ${
                           isSelected ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-600"
                         }`}>
-                          {module.icon}
+                          {addon.icon}
                         </div>
                         <div>
                           <CardTitle className="text-xl font-bold flex items-center gap-2">
-                            {module.name}
-                            <Badge className={getModuleComplexityColor(module.complexity)}>
-                              {module.complexity}
+                            {addon.name}
+                            <Badge className={getModuleComplexityColor(addon.complexity)}>
+                              {addon.complexity}
                             </Badge>
                           </CardTitle>
                           <div className="text-2xl font-bold text-blue-600 mt-1">
-                            ${billingCycle === "monthly" ? module.monthlyPrice : module.yearlyPrice}
+                            ${billingCycle === "monthly" ? addon.monthlyPrice : addon.yearlyPrice}
                             <span className="text-sm font-normal text-gray-500">
                               /plant/{billingCycle === "monthly" ? "mo" : "yr"}
                             </span>
                           </div>
                           {numberOfPlants > 1 && (
                             <div className="text-lg font-semibold text-gray-700 mt-1">
-                              ${(billingCycle === "monthly" ? module.monthlyPrice : module.yearlyPrice) * numberOfPlants} total
+                              ${(billingCycle === "monthly" ? addon.monthlyPrice : addon.yearlyPrice) * numberOfPlants} total
                             </div>
                           )}
                         </div>
@@ -720,14 +720,14 @@ export default function Pricing() {
                         {isSelected && <Check className="w-4 h-4 text-white" />}
                       </div>
                     </div>
-                    <p className="text-gray-600 mt-2">{module.description}</p>
+                    <p className="text-gray-600 mt-2">{addon.description}</p>
                     
-                    {module.requiredModules && module.requiredModules.length > 0 && (
+                    {addon.requiredModules && addon.requiredModules.length > 0 && (
                       <div className="mt-3">
                         <div className="text-sm text-gray-600">
-                          Requires: {module.requiredModules.map(reqId => {
-                            const reqModule = functionalModules.find(m => m.id === reqId);
-                            return reqModule?.name;
+                          Requires: {addon.requiredModules.map(reqId => {
+                            const reqAddon = optimizationAddons.find(m => m.id === reqId);
+                            return reqAddon?.name;
                           }).join(", ")}
                         </div>
                       </div>
@@ -736,15 +736,15 @@ export default function Pricing() {
 
                   <CardContent className="pt-0">
                     <div className="space-y-2">
-                      {module.features.slice(0, 4).map((feature, index) => (
+                      {addon.features.slice(0, 4).map((feature, index) => (
                         <div key={index} className="flex items-start text-sm text-gray-600">
                           <Check className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
                           <span>{feature}</span>
                         </div>
                       ))}
-                      {module.features.length > 4 && (
+                      {addon.features.length > 4 && (
                         <div className="text-sm text-gray-500">
-                          +{module.features.length - 4} more features
+                          +{addon.features.length - 4} more features
                         </div>
                       )}
                     </div>
@@ -759,14 +759,14 @@ export default function Pricing() {
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">Selected Modules Total</h3>
+                  <h3 className="text-xl font-bold text-gray-900">Selected Add-ons Total</h3>
                   <p className="text-gray-600 mt-1">
-                    {selectedModules.length} module{selectedModules.length !== 1 ? 's' : ''} selected for {numberOfPlants} {numberOfPlants === 1 ? 'plant' : 'plants'}
+                    {selectedModules.length} add-on{selectedModules.length !== 1 ? 's' : ''} selected for {numberOfPlants} {numberOfPlants === 1 ? 'plant' : 'plants'}
                   </p>
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-bold text-blue-600">
-                    ${calculateModuleTotal()}
+                    ${calculateAddonTotal()}
                     <span className="text-lg font-normal text-gray-500">
                       /{billingCycle === "monthly" ? "mo" : "yr"}
                     </span>
@@ -778,16 +778,16 @@ export default function Pricing() {
               </div>
               
               <div className="mt-4 flex flex-wrap gap-2">
-                {selectedModules.map(moduleId => {
-                  const module = functionalModules.find(m => m.id === moduleId);
-                  if (!module) return null;
+                {selectedModules.map(addonId => {
+                  const addon = optimizationAddons.find(m => m.id === addonId);
+                  if (!addon) return null;
                   return (
-                    <Badge key={moduleId} variant="secondary" className="flex items-center gap-1">
-                      {module.name}
+                    <Badge key={addonId} variant="secondary" className="flex items-center gap-1">
+                      {addon.name}
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          toggleModule(moduleId);
+                          toggleAddon(addonId);
                         }}
                         className="ml-1 text-gray-500 hover:text-gray-700"
                       >
@@ -802,11 +802,11 @@ export default function Pricing() {
 
           <div className="mt-8 text-center">
             <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-3">Module Benefits</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-3">Add-on Benefits</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
                 <div className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-500" />
-                  <span>Add/remove modules anytime</span>
+                  <span>Add/remove add-ons anytime</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-500" />
