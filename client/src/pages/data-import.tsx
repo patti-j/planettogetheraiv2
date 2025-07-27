@@ -469,15 +469,24 @@ export default function DataImport() {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="upload" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="upload">Upload File</TabsTrigger>
-                  <TabsTrigger value="structured">
-                    <Grid3X3 className="h-4 w-4 mr-1" />
-                    Spreadsheet
-                  </TabsTrigger>
-                  <TabsTrigger value="manual">Text Entry</TabsTrigger>
-                  <TabsTrigger value="template">Template</TabsTrigger>
-                </TabsList>
+                <div className="w-full overflow-x-auto">
+                  <TabsList className="flex w-max gap-1 md:grid md:w-full md:grid-cols-4">
+                    <TabsTrigger value="upload" className="flex-shrink-0 whitespace-nowrap">
+                      <span className="hidden sm:inline">Upload File</span>
+                      <span className="sm:hidden">Upload</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="structured" className="flex-shrink-0 whitespace-nowrap">
+                      <Grid3X3 className="h-4 w-4 mr-1" />
+                      <span className="hidden sm:inline">Spreadsheet</span>
+                      <span className="sm:hidden">Sheet</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="manual" className="flex-shrink-0 whitespace-nowrap">
+                      <span className="hidden sm:inline">Text Entry</span>
+                      <span className="sm:hidden">Text</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="template" className="flex-shrink-0 whitespace-nowrap">Template</TabsTrigger>
+                  </TabsList>
+                </div>
 
                 <TabsContent value="upload" className="space-y-4">
                   <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
