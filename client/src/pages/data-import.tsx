@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useMaxDock } from '@/contexts/MaxDockContext';
@@ -26,6 +26,8 @@ interface ImportStatus {
 export default function DataImport() {
   const [importStatuses, setImportStatuses] = useState<ImportStatus[]>([]);
   const [isImporting, setIsImporting] = useState(false);
+  const [selectedDataTypes, setSelectedDataTypes] = useState<string[]>([]);
+  const [showConsolidatedDialog, setShowConsolidatedDialog] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isMaxOpen } = useMaxDock();
@@ -605,6 +607,108 @@ export default function DataImport() {
     }
   };
 
+  const downloadConsolidatedTemplate = () => {
+    if (selectedDataTypes.length === 0) {
+      toast({
+        title: "No Data Types Selected",
+        description: "Please select at least one data type to download.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create a consolidated CSV with sections for each data type
+    let consolidatedContent = '';
+    
+    selectedDataTypes.forEach((dataType, index) => {
+      const dataTypeInfo = dataTypes.find(dt => dt.key === dataType);
+      const sectionTitle = dataTypeInfo ? dataTypeInfo.label : dataType;
+      
+      // Add section header
+      consolidatedContent += `\n# ${sectionTitle.toUpperCase()}\n`;
+      consolidatedContent += `# ${dataTypeInfo?.description || ''}\n`;
+      
+      // Add the template content for this data type
+      const templateContent = getConsolidatedTemplateContent(dataType);
+      consolidatedContent += templateContent;
+      
+      // Add spacing between sections (except for last one)
+      if (index < selectedDataTypes.length - 1) {
+        consolidatedContent += '\n\n';
+      }
+    });
+
+    const blob = new Blob([consolidatedContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `consolidated_template_${selectedDataTypes.length}_types.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+
+    toast({
+      title: "Consolidated Template Downloaded",
+      description: `Downloaded template with ${selectedDataTypes.length} data types.`,
+    });
+  };
+
+  const getConsolidatedTemplateContent = (dataType: string) => {
+    switch (dataType) {
+      // Core Manufacturing
+      case 'resources':
+        return 'Name,Type,Description,Status,Capabilities\nMachine-001,Equipment,CNC Machine,active,CNC Machining\nOperator-001,Personnel,Machine Operator,active,Machine Operation';
+      case 'jobs':
+        return 'Name,Customer,Priority,Due Date,Quantity,Description\nWidget Assembly,ACME Corp,high,2025-02-01,100,Assembly of widget components\nPart Manufacturing,TechCorp,medium,2025-02-15,250,Manufacturing precision parts';
+      case 'capabilities':
+        return 'Name,Description,Category\nCNC Machining,Computer Numerical Control machining,manufacturing\nWelding,Metal welding operations,manufacturing\nQuality Control,Product quality inspection,quality';
+      case 'plants':
+        return 'Name,Location,Address,Timezone\nMain Plant,Chicago,123 Industrial Ave Chicago IL,America/Chicago\nSecondary Plant,Dallas,456 Manufacturing Blvd Dallas TX,America/Chicago';
+
+      // Organizational Structure
+      case 'sites':
+        return 'Name,Code,Street,City,State,Postal Code,Country,Timezone,Currency,Site Type\nMain Manufacturing,MAIN,123 Industrial Blvd,Chicago,IL,60601,USA,America/Chicago,USD,manufacturing\nWarehouse Site,WH01,456 Storage Dr,Dallas,TX,75201,USA,America/Chicago,USD,warehouse';
+      case 'departments':
+        return 'Name,Code,Description,Plant,Cost Center,Budget Amount\nProduction,PROD,Manufacturing operations department,Main Plant,CC001,500000\nQuality Control,QC,Quality assurance department,Main Plant,CC002,150000';
+      case 'workCenters':
+        return 'Name,Code,Description,Department,Plant,Capacity,Efficiency,Cost Per Hour\nCNC Work Center,WC001,CNC machining operations,Production,Main Plant,10,95,7500\nAssembly Line 1,WC002,Product assembly line,Production,Main Plant,5,90,5000';
+      case 'employees':
+        return 'Employee Number,First Name,Last Name,Email,Phone,Department,Work Center,Job Title,Skill Level,Hourly Rate,Capabilities,Shift Pattern\nEMP001,John,Smith,john.smith@company.com,555-0101,Production,CNC Work Center,CNC Operator,senior,3500,"1,2",day\nEMP002,Jane,Doe,jane.doe@company.com,555-0102,Quality Control,,QC Inspector,intermediate,3000,"5",day';
+
+      // Products & Inventory
+      case 'items':
+        return 'Item Number,Name,Description,Item Type,Unit of Measure,Weight,Standard Cost,List Price,Lead Time,Safety Stock\nWIDG-001,Widget Assembly,Standard widget product,finished_good,EA,1500,2500,5000,7,50\nCOMP-001,Widget Component,Main widget component,component,EA,200,500,0,3,100';
+      case 'warehouses':
+        return 'Name,Code,Description,Site,Warehouse Type,Total Capacity,Used Capacity\nMain Warehouse,WH-MAIN,Primary storage facility,Main Manufacturing,general,10000,6500\nFinished Goods,WH-FG,Finished products storage,Main Manufacturing,finished_goods,5000,2800';
+      case 'inventory':
+        return 'Item Number,Warehouse Code,Location,On Hand Quantity,Allocated Quantity,Available Quantity,Average Cost\nWIDG-001,WH-MAIN,A1-B2,150,25,125,2500\nCOMP-001,WH-MAIN,B3-C4,500,100,400,500';
+      case 'inventoryLots':
+        return 'Lot Number,Item Number,Warehouse Code,Quantity,Expiration Date,Received Date,Status\nLOT001,COMP-001,WH-MAIN,100,2025-12-31,2025-01-15,available\nLOT002,COMP-001,WH-MAIN,75,,2025-01-20,available';
+
+      // Sales & Orders
+      case 'salesOrders':
+        return 'Order Number,Customer Name,Customer Code,Order Date,Requested Date,Status,Priority,Total Amount,Site,Sales Person\nSO-2025-001,ACME Corporation,ACME,2025-01-15,2025-02-01,open,high,75000,Main Manufacturing,John Sales\nSO-2025-002,TechCorp Inc,TECH,2025-01-16,2025-02-15,confirmed,medium,125000,Main Manufacturing,Jane Sales';
+      case 'purchaseOrders':
+        return 'Order Number,Supplier Name,Supplier Code,Order Date,Requested Date,Status,Total Amount,Site,Buyer Name\nPO-2025-001,Steel Supply Co,STEEL,2025-01-15,2025-01-30,open,35000,Main Manufacturing,Bob Buyer\nPO-2025-002,Component Corp,COMP,2025-01-16,2025-02-05,confirmed,18000,Main Manufacturing,Alice Buyer';
+      case 'transferOrders':
+        return 'Order Number,From Warehouse,To Warehouse,Requested Date,Status,Priority,Requested By\nTO-2025-001,WH-MAIN,WH-FG,2025-01-15,open,medium,Production Manager\nTO-2025-002,WH-FG,WH-MAIN,2025-01-16,shipped,high,Inventory Manager';
+
+      // Manufacturing Planning
+      case 'billsOfMaterial':
+        return 'Parent Item Number,Revision,Description,Effective Date,BOM Type,Standard Quantity\nWIDG-001,1,Widget assembly BOM,2025-01-01,production,1\nCOMP-001,1,Component sub-assembly BOM,2025-01-01,production,1';
+      case 'routings':
+        return 'Item Number,Revision,Description,Effective Date,Routing Type,Standard Quantity\nWIDG-001,1,Widget manufacturing routing,2025-01-01,production,1\nCOMP-001,1,Component production routing,2025-01-01,production,1';
+      case 'forecasts':
+        return 'Item Number,Site,Forecast Date,Forecast Quantity,Forecast Type,Forecast Method,Confidence,Planner Name\nWIDG-001,Main Manufacturing,2025-02-01,100,demand,manual,80,Production Planner\nCOMP-001,Main Manufacturing,2025-02-01,250,demand,statistical,70,Production Planner';
+
+      // System Users
+      case 'users':
+        return 'Username,Email,First Name,Last Name,Role\njohn.doe,john@company.com,John,Doe,operator\njane.smith,jane@company.com,Jane,Smith,supervisor';
+
+      default:
+        return 'Column1,Column2,Column3\nValue1,Value2,Value3';
+    }
+  };
+
   const downloadTemplate = (dataType: string) => {
     let csvContent = '';
     let filename = '';
@@ -741,11 +845,24 @@ export default function DataImport() {
   return (
     <div className={`p-6 max-w-7xl mx-auto ${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Master Data Setup</h1>
-        <p className="text-muted-foreground">
-          Set up your company's core manufacturing data quickly and easily. 
-          Upload files, enter data in spreadsheet format, use text input, or download templates to get started.
-        </p>
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Master Data Setup</h1>
+            <p className="text-muted-foreground">
+              Set up your company's core manufacturing data quickly and easily. 
+              Upload files, enter data in spreadsheet format, use text input, or download templates to get started.
+            </p>
+          </div>
+          <Button 
+            onClick={() => setShowConsolidatedDialog(true)}
+            variant="outline"
+            className="gap-2 shrink-0 ml-4"
+          >
+            <FileSpreadsheet className="h-4 w-4" />
+            <span className="hidden sm:inline">Consolidated Template</span>
+            <span className="sm:hidden">Multi-Template</span>
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6">
@@ -1154,6 +1271,139 @@ export default function DataImport() {
           );
         })}
       </div>
+
+      {/* Consolidated Template Dialog */}
+      <Dialog open={showConsolidatedDialog} onOpenChange={setShowConsolidatedDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5" />
+              Consolidated Template Download
+            </DialogTitle>
+            <DialogDescription>
+              Select multiple data types to download a consolidated template with all your selected data structures.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Selection Controls */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedDataTypes(dataTypes.map(dt => dt.key))}
+                >
+                  Select All
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedDataTypes([])}
+                >
+                  Clear All
+                </Button>
+              </div>
+              <Badge variant="secondary">
+                {selectedDataTypes.length} of {dataTypes.length} selected
+              </Badge>
+            </div>
+
+            {/* Data Type Selection Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                { category: 'Core Manufacturing', types: dataTypes.slice(0, 4) },
+                { category: 'Organizational Structure', types: dataTypes.slice(4, 8) },
+                { category: 'Products & Inventory', types: dataTypes.slice(8, 12) },
+                { category: 'Orders & Transactions', types: dataTypes.slice(12, 15) },
+                { category: 'Manufacturing Planning', types: dataTypes.slice(15, 18) },
+                { category: 'System Users', types: dataTypes.slice(18) }
+              ].map(category => (
+                <div key={category.category} className="space-y-3">
+                  <h4 className="font-medium text-sm text-muted-foreground border-b pb-1">
+                    {category.category}
+                  </h4>
+                  <div className="space-y-2">
+                    {category.types.map(({ key, label, icon: Icon, description }) => {
+                      const isSelected = selectedDataTypes.includes(key);
+                      return (
+                        <div
+                          key={key}
+                          className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                            isSelected 
+                              ? 'bg-blue-50 border-blue-200' 
+                              : 'bg-white border-gray-200 hover:bg-gray-50'
+                          }`}
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedDataTypes(prev => prev.filter(id => id !== key));
+                            } else {
+                              setSelectedDataTypes(prev => [...prev, key]);
+                            }
+                          }}
+                        >
+                          <div className="flex-shrink-0 mt-0.5">
+                            {isSelected ? (
+                              <CheckSquare className="h-4 w-4 text-blue-600" />
+                            ) : (
+                              <Square className="h-4 w-4 text-gray-400" />
+                            )}
+                          </div>
+                          <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                          <div className="min-w-0">
+                            <div className="font-medium text-sm">{label}</div>
+                            <div className="text-xs text-muted-foreground">{description}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Preview Section */}
+            {selectedDataTypes.length > 0 && (
+              <div className="bg-gray-50 border rounded-lg p-4">
+                <h4 className="font-medium mb-2">Template Preview</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Your consolidated template will include sections for the following data types:
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {selectedDataTypes.map(key => {
+                    const dataType = dataTypes.find(dt => dt.key === key);
+                    return (
+                      <Badge key={key} variant="secondary" className="text-xs">
+                        {dataType?.label}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => setShowConsolidatedDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                downloadConsolidatedTemplate();
+                setShowConsolidatedDialog(false);
+              }}
+              disabled={selectedDataTypes.length === 0}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download Consolidated Template
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
