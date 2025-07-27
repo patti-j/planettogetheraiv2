@@ -68,22 +68,9 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
       return;
     }
 
-    // Check if onboarding is incomplete - require both company info and feature selection
-    const needsOnboarding = !onboardingData || 
-      !onboardingData.companyName?.trim() || 
-      !onboardingData.selectedFeatures || 
-      onboardingData.selectedFeatures.length === 0;
-
-    if (needsOnboarding) {
-      console.log('Onboarding incomplete, redirecting to Getting Started:', {
-        hasData: !!onboardingData,
-        companyName: onboardingData?.companyName,
-        featuresCount: onboardingData?.selectedFeatures?.length || 0
-      });
-      setShouldEnforceOnboarding(true);
-    } else {
-      setShouldEnforceOnboarding(false);
-    }
+    // Allow users to access all features regardless of onboarding completion
+    // Users can always return to Getting Started to work on more setup
+    setShouldEnforceOnboarding(false);
   }, [user, onboardingData, isTourActive, location, authLoading, onboardingLoading]);
 
   // Redirect to onboarding if enforcement is active

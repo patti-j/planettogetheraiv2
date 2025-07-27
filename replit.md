@@ -2,6 +2,13 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Getting Started Access Enhancement (July 27, 2025)**:
+- Removed onboarding completion checks allowing users to always access Getting Started page for continued work
+- Updated OnboardingGate component to disable enforcement entirely - users can access all features regardless of completion status
+- Removed completion redirect from onboarding page that was blocking access with "onboarding is complete" message
+- Users can now always return to Getting Started page as they'll have ongoing work to complete
+- Enhanced workflow by removing barriers between users and their ability to continue setup and configuration
+
 ✓ **Optimization Add-ons Renaming and Structure Update (July 27, 2025)**:
 - Successfully renamed three key functional modules to emphasize optimization capabilities throughout the application
 - Renamed "Production Scheduling" to "Schedule Optimization" in pricing page and onboarding feature list

@@ -553,43 +553,7 @@ export default function OnboardingPage() {
     }
   };
 
-  if (existingOnboarding?.isCompleted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-        <div className="max-w-4xl mx-auto">
-          <Card className="text-center">
-            <CardHeader>
-              <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-              <CardTitle className="text-2xl">Welcome Back!</CardTitle>
-              <CardDescription>
-                Your company onboarding is complete. Ready to get to work?
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link to="/production-schedule">
-                <Button size="lg" className="mr-4">
-                  Go to Dashboard
-                </Button>
-              </Link>
-              <Button 
-                variant="outline" 
-                size="lg"
-                onClick={handleStartOver}
-                className="mr-4"
-              >
-                Start Onboarding Again
-              </Button>
-              <Link to="/industry-templates">
-                <Button variant="ghost" size="lg">
-                  Manage Templates
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
