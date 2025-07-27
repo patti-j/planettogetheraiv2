@@ -398,17 +398,17 @@ export default function DataImport() {
 
   // Feature to data requirements mapping
   const featureDataRequirements = {
-    'production-scheduling': ['plants', 'resources', 'capabilities', 'productionOrders'],
+    'production-scheduling': ['plants', 'resources', 'capabilities', 'productionOrders', 'operations'],
     'resource-management': ['plants', 'resources', 'capabilities'],
-    'job-management': ['productionOrders', 'resources', 'plants'],
-    'capacity-planning': ['resources', 'capabilities', 'plants', 'productionOrders'],
+    'job-management': ['productionOrders', 'resources', 'plants', 'operations'],
+    'capacity-planning': ['resources', 'capabilities', 'plants', 'productionOrders', 'operations'],
     'inventory-management': ['inventoryItems', 'storageLocations', 'plants'],
-    'quality-management': ['resources', 'plants', 'productionOrders'],
+    'quality-management': ['resources', 'plants', 'productionOrders', 'operations'],
     'maintenance-scheduling': ['resources', 'plants', 'users'],
     'procurement': ['vendors', 'resources', 'plants'],
     'sales-orders': ['customers', 'productionOrders', 'plants'],
     'user-management': ['users', 'plants'],
-    'analytics-reporting': ['plants', 'resources', 'productionOrders']
+    'analytics-reporting': ['plants', 'resources', 'productionOrders', 'operations']
   };
 
   const [showConsolidatedDialog, setShowConsolidatedDialog] = useState(false);
@@ -474,7 +474,7 @@ export default function DataImport() {
         console.log('Loaded onboarding features:', features, 'Recommended data types:', recommendedArray);
       } else {
         // Fallback: provide default recommended data types for basic manufacturing setup
-        const defaultRecommendedTypes = ['plants', 'resources', 'capabilities', 'productionOrders'];
+        const defaultRecommendedTypes = ['plants', 'resources', 'capabilities', 'productionOrders', 'operations'];
         setRecommendedDataTypes(defaultRecommendedTypes);
         setOnboardingFeatures([]);
         console.log('No onboarding features found, using default recommended data types:', defaultRecommendedTypes);
@@ -672,6 +672,27 @@ export default function DataImport() {
           status: item.status || item.Status || 'pending',
           description: item.description || item.Description || ''
         }));
+      case 'operations':
+        return data.map(item => {
+          let requiredCapabilities = item.requiredCapabilities || item['Required Capabilities'] || [];
+          
+          // Handle different formats of capabilities data
+          if (typeof requiredCapabilities === 'string') {
+            requiredCapabilities = requiredCapabilities.split(',').map((cap: string) => cap.trim()).filter(Boolean);
+          } else if (!Array.isArray(requiredCapabilities)) {
+            requiredCapabilities = [];
+          }
+          
+          return {
+            name: item.name || item.Name || item.Operation || '',
+            productionOrderId: parseInt(item.productionOrderId || item['Production Order ID'] || '1'),
+            description: item.description || item.Description || '',
+            duration: parseFloat(item.duration || item.Duration || '1'),
+            sequence: parseInt(item.sequence || item.Sequence || '1'),
+            status: item.status || item.Status || 'pending',
+            requiredCapabilities: requiredCapabilities
+          };
+        });
       case 'plannedOrders':
         return data.map(item => ({
           name: item.name || item.Name || item['Planned Order'] || '',
@@ -729,6 +750,16 @@ export default function DataImport() {
           { key: 'quantity', label: 'Quantity', type: 'number', required: true },
           { key: 'status', label: 'Status', type: 'select', options: ['pending', 'released', 'in-progress', 'completed', 'cancelled'], required: true },
           { key: 'description', label: 'Description', type: 'text' }
+        ];
+      case 'operations':
+        return [
+          { key: 'name', label: 'Operation Name', type: 'text', required: true },
+          { key: 'productionOrderId', label: 'Production Order ID', type: 'number', required: true },
+          { key: 'description', label: 'Description', type: 'text' },
+          { key: 'duration', label: 'Duration (hours)', type: 'number', required: true },
+          { key: 'sequence', label: 'Sequence Order', type: 'number', required: true },
+          { key: 'status', label: 'Status', type: 'select', options: ['pending', 'in-progress', 'completed', 'on-hold'], required: true },
+          { key: 'requiredCapabilities', label: 'Required Capabilities', type: 'multiselect', placeholder: 'Select capabilities' }
         ];
       case 'plannedOrders':
         return [
@@ -1321,8 +1352,10 @@ Focus on creating authentic, interconnected data that would be typical for ${com
       // Core Manufacturing
       case 'resources':
         return 'Name,Type,Description,Status,Capabilities\nMachine-001,Equipment,CNC Machine,active,CNC Machining\nOperator-001,Personnel,Machine Operator,active,Machine Operation';
-      case 'jobs':
+      case 'productionOrders':
         return 'Name,Customer,Priority,Due Date,Quantity,Description\nWidget Assembly,ACME Corp,high,2025-02-01,100,Assembly of widget components\nPart Manufacturing,TechCorp,medium,2025-02-15,250,Manufacturing precision parts';
+      case 'operations':
+        return 'Name,Production Order ID,Description,Duration,Sequence,Status,Required Capabilities\nCNC Machining,1,Machine widget base,2.5,1,pending,CNC Machining\nAssembly,1,Assemble components,1.0,2,pending,Assembly\nQuality Check,1,Final inspection,0.5,3,pending,Quality Control';
       case 'capabilities':
         return 'Name,Description,Category\nCNC Machining,Computer Numerical Control machining,manufacturing\nWelding,Metal welding operations,manufacturing\nQuality Control,Product quality inspection,quality';
       case 'plants':
@@ -1391,6 +1424,10 @@ Focus on creating authentic, interconnected data that would be typical for ${com
       case 'productionOrders':
         csvContent = 'Name,Customer,Priority,Due Date,Quantity,Status,Description\nWidget Assembly,ACME Corp,high,2025-02-01,100,pending,Assembly of widget components\nPart Manufacturing,TechCorp,medium,2025-02-15,250,released,Manufacturing precision parts';
         filename = 'production_orders_template.csv';
+        break;
+      case 'operations':
+        csvContent = 'Name,Production Order ID,Description,Duration,Sequence,Status,Required Capabilities\nCNC Machining,1,Machine widget base,2.5,1,pending,CNC Machining\nAssembly,1,Assemble components,1.0,2,pending,Assembly\nQuality Check,1,Final inspection,0.5,3,pending,Quality Control';
+        filename = 'operations_template.csv';
         break;
       case 'plannedOrders':
         csvContent = 'Name,Customer,Priority,Due Date,Quantity,Plan Type,Description\nWidget Forecast Q1,ACME Corp,medium,2025-03-31,500,forecast,Forecast for Q1 widget demand\nPart Planning Q2,TechCorp,low,2025-06-30,300,firm,Planned parts for Q2 production';
@@ -1497,6 +1534,7 @@ Focus on creating authentic, interconnected data that would be typical for ${com
     // Core Manufacturing
     { key: 'resources', label: 'Resources', icon: Wrench, description: 'Equipment, machinery, and personnel' },
     { key: 'productionOrders', label: 'Production Orders', icon: Briefcase, description: 'Active production work orders' },
+    { key: 'operations', label: 'Operations', icon: Cog, description: 'Manufacturing operations and processes' },
     { key: 'plannedOrders', label: 'Planned Orders', icon: Calendar, description: 'Future planned production orders' },
     { key: 'capabilities', label: 'Capabilities', icon: Database, description: 'Skills and machine capabilities' },
     { key: 'plants', label: 'Plants', icon: Building, description: 'Manufacturing facilities and locations' },
@@ -2252,26 +2290,68 @@ Focus on creating authentic, interconnected data that would be typical for ${com
             <div className="space-y-3">
               <Label className="text-base font-medium">Sample Data Size</Label>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {[
-                  {
-                    value: 'small',
-                    label: 'Small Sample',
-                    description: 'Minimal data for quick testing',
-                    details: '1-2 plants, 3-5 resources, 5-10 orders'
-                  },
-                  {
-                    value: 'medium',
-                    label: 'Medium Sample',
-                    description: 'Balanced dataset for evaluation',
-                    details: '3-5 plants, 8-15 resources, 15-25 orders'
-                  },
-                  {
-                    value: 'large',
-                    label: 'Large Sample',
-                    description: 'Comprehensive data for full testing',
-                    details: '5-10 plants, 20-40 resources, 30-50 orders'
-                  }
-                ].map((option) => (
+                {(() => {
+                  // Get industry-specific descriptions
+                  const getIndustryDescriptions = () => {
+                    const companyInfo = JSON.parse(localStorage.getItem('onboarding-company-info') || '{}');
+                    const industry = companyInfo.industry?.toLowerCase() || 'general manufacturing';
+                    
+                    if (industry.includes('automotive')) {
+                      return {
+                        small: { records: '1-2 plants, 8-12 resources, 15-25 orders, 30-60 operations', description: 'Minimal automotive production setup' },
+                        medium: { records: '2-4 plants, 20-35 resources, 40-70 orders, 120-210 operations', description: 'Typical automotive production' },
+                        large: { records: '4-8 plants, 50-80 resources, 100-150 orders, 300-450 operations', description: 'Large automotive manufacturing' }
+                      };
+                    } else if (industry.includes('pharmaceutical')) {
+                      return {
+                        small: { records: '1-2 plants, 6-10 resources, 10-20 orders, 25-50 operations', description: 'Small pharma production setup' },
+                        medium: { records: '2-3 plants, 15-25 resources, 30-50 orders, 90-150 operations', description: 'Mid-scale pharmaceutical production' },
+                        large: { records: '3-6 plants, 35-60 resources, 80-120 orders, 240-360 operations', description: 'Enterprise pharmaceutical operations' }
+                      };
+                    } else if (industry.includes('electronics')) {
+                      return {
+                        small: { records: '1-2 plants, 10-15 resources, 25-40 orders, 50-80 operations', description: 'Small electronics production' },
+                        medium: { records: '2-4 plants, 25-40 resources, 60-100 orders, 180-300 operations', description: 'Mid-scale electronics manufacturing' },
+                        large: { records: '4-7 plants, 60-100 resources, 150-250 orders, 450-750 operations', description: 'Large electronics operations' }
+                      };
+                    } else if (industry.includes('food') || industry.includes('beverage')) {
+                      return {
+                        small: { records: '1-2 plants, 5-8 resources, 20-35 orders, 40-70 operations', description: 'Small food/beverage production' },
+                        medium: { records: '2-4 plants, 12-20 resources, 50-80 orders, 150-240 operations', description: 'Regional food manufacturing' },
+                        large: { records: '3-6 plants, 30-50 resources, 120-180 orders, 360-540 operations', description: 'National food/beverage operations' }
+                      };
+                    } else {
+                      return {
+                        small: { records: '1-2 plants, 3-5 resources, 5-10 orders, 10-20 operations', description: 'Minimal data for quick testing' },
+                        medium: { records: '3-5 plants, 8-15 resources, 15-25 orders, 45-75 operations', description: 'Balanced dataset for evaluation' },
+                        large: { records: '5-10 plants, 20-40 resources, 30-50 orders, 90-150 operations', description: 'Comprehensive data for full testing' }
+                      };
+                    }
+                  };
+                  
+                  const industryDescriptions = getIndustryDescriptions();
+                  
+                  return [
+                    {
+                      value: 'small',
+                      label: 'Small Sample',
+                      description: industryDescriptions.small.description,
+                      details: industryDescriptions.small.records
+                    },
+                    {
+                      value: 'medium',
+                      label: 'Medium Sample',
+                      description: industryDescriptions.medium.description,
+                      details: industryDescriptions.medium.records
+                    },
+                    {
+                      value: 'large',
+                      label: 'Large Sample',
+                      description: industryDescriptions.large.description,
+                      details: industryDescriptions.large.records
+                    }
+                  ];
+                })().map((option) => (
                   <div
                     key={option.value}
                     className={`relative cursor-pointer rounded-lg border-2 p-4 transition-all ${

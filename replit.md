@@ -2,6 +2,17 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Enhanced Operations Integration with Industry-Specific AI Generation (July 27, 2025)**:
+- Successfully added operations as a core data type in Master Data Setup with full field definitions and template support
+- Enhanced featureDataRequirements mapping to include operations for production-scheduling, resource-management, job-management, capacity-planning, and quality-management features
+- Added comprehensive operations field definitions: name, productionOrderId, description, duration, sequence, status, and requiredCapabilities
+- Implemented operations CSV template with realistic sample data including CNC Machining, Assembly, and Quality Check operations
+- Enhanced AI generation with industry-specific operations volume calculation: automotive (30-450 operations), pharmaceutical (25-360 operations), electronics (50-750 operations), food/beverage (40-540 operations)
+- Updated frontend sample size descriptions to include operations counts for all industry types
+- Enhanced transform data function to handle operations data import with capability arrays and production order relationships
+- Operations now fully integrated into AI generation workflow with production process-specific sample data
+- Complete data type now supports full lifecycle: manual entry, CSV import, AI generation, and structured data editing
+
 ✓ **Complete Kanban Board Jobs-to-Production-Orders Migration (July 27, 2025)**:
 - Successfully completed comprehensive migration from Job to ProductionOrder type throughout kanban-board.tsx component
 - Updated all import statements and TypeScript interfaces from Job to ProductionOrder type

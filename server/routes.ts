@@ -451,36 +451,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Missing required fields: prompt, companyInfo, selectedDataTypes' });
       }
 
-      // Define data volume ranges based on sample size
-      const sampleSizeConfig = {
-        small: {
-          plants: { min: 1, max: 2 },
-          resources: { min: 3, max: 5 },
-          capabilities: { min: 3, max: 5 },
-          productionOrders: { min: 5, max: 10 },
-          description: 'minimal data for quick testing'
-        },
-        medium: {
-          plants: { min: 3, max: 5 },
-          resources: { min: 8, max: 15 },
-          capabilities: { min: 5, max: 8 },
-          productionOrders: { min: 15, max: 25 },
-          description: 'balanced dataset for evaluation'
-        },
-        large: {
-          plants: { min: 5, max: 10 },
-          resources: { min: 20, max: 40 },
-          capabilities: { min: 8, max: 15 },
-          productionOrders: { min: 30, max: 50 },
-          description: 'comprehensive data for full testing'
+      // Industry-specific sample size configurations
+      const getIndustryTypicalSizes = (industry: string) => {
+        const industryLower = industry.toLowerCase();
+        
+        // Base configurations by industry
+        if (industryLower.includes('automotive') || industryLower.includes('auto')) {
+          return {
+            small: { plants: { min: 1, max: 2 }, resources: { min: 8, max: 12 }, capabilities: { min: 6, max: 10 }, productionOrders: { min: 15, max: 25 }, operations: { min: 30, max: 60 } },
+            medium: { plants: { min: 2, max: 4 }, resources: { min: 20, max: 35 }, capabilities: { min: 12, max: 18 }, productionOrders: { min: 40, max: 70 }, operations: { min: 120, max: 210 } },
+            large: { plants: { min: 4, max: 8 }, resources: { min: 50, max: 80 }, capabilities: { min: 20, max: 30 }, productionOrders: { min: 100, max: 150 }, operations: { min: 300, max: 450 } }
+          };
+        } else if (industryLower.includes('pharmaceutical') || industryLower.includes('pharma')) {
+          return {
+            small: { plants: { min: 1, max: 2 }, resources: { min: 6, max: 10 }, capabilities: { min: 8, max: 12 }, productionOrders: { min: 10, max: 20 }, operations: { min: 25, max: 50 } },
+            medium: { plants: { min: 2, max: 3 }, resources: { min: 15, max: 25 }, capabilities: { min: 15, max: 25 }, productionOrders: { min: 30, max: 50 }, operations: { min: 90, max: 150 } },
+            large: { plants: { min: 3, max: 6 }, resources: { min: 35, max: 60 }, capabilities: { min: 30, max: 40 }, productionOrders: { min: 80, max: 120 }, operations: { min: 240, max: 360 } }
+          };
+        } else if (industryLower.includes('electronics') || industryLower.includes('semiconductor')) {
+          return {
+            small: { plants: { min: 1, max: 2 }, resources: { min: 10, max: 15 }, capabilities: { min: 8, max: 12 }, productionOrders: { min: 25, max: 40 }, operations: { min: 50, max: 80 } },
+            medium: { plants: { min: 2, max: 4 }, resources: { min: 25, max: 40 }, capabilities: { min: 15, max: 22 }, productionOrders: { min: 60, max: 100 }, operations: { min: 180, max: 300 } },
+            large: { plants: { min: 4, max: 7 }, resources: { min: 60, max: 100 }, capabilities: { min: 25, max: 35 }, productionOrders: { min: 150, max: 250 }, operations: { min: 450, max: 750 } }
+          };
+        } else if (industryLower.includes('food') || industryLower.includes('beverage')) {
+          return {
+            small: { plants: { min: 1, max: 2 }, resources: { min: 5, max: 8 }, capabilities: { min: 5, max: 8 }, productionOrders: { min: 20, max: 35 }, operations: { min: 40, max: 70 } },
+            medium: { plants: { min: 2, max: 4 }, resources: { min: 12, max: 20 }, capabilities: { min: 10, max: 15 }, productionOrders: { min: 50, max: 80 }, operations: { min: 150, max: 240 } },
+            large: { plants: { min: 3, max: 6 }, resources: { min: 30, max: 50 }, capabilities: { min: 18, max: 25 }, productionOrders: { min: 120, max: 180 }, operations: { min: 360, max: 540 } }
+          };
+        } else {
+          // Generic manufacturing defaults
+          return {
+            small: { plants: { min: 1, max: 2 }, resources: { min: 3, max: 5 }, capabilities: { min: 3, max: 5 }, productionOrders: { min: 5, max: 10 }, operations: { min: 10, max: 20 } },
+            medium: { plants: { min: 3, max: 5 }, resources: { min: 8, max: 15 }, capabilities: { min: 5, max: 8 }, productionOrders: { min: 15, max: 25 }, operations: { min: 45, max: 75 } },
+            large: { plants: { min: 5, max: 10 }, resources: { min: 20, max: 40 }, capabilities: { min: 8, max: 15 }, productionOrders: { min: 30, max: 50 }, operations: { min: 90, max: 150 } }
+          };
         }
       };
 
-      const config = sampleSizeConfig[sampleSize as keyof typeof sampleSizeConfig] || sampleSizeConfig.medium;
+      const industryConfig = getIndustryTypicalSizes(companyInfo.industry || 'General Manufacturing');
+      const config = industryConfig[sampleSize as keyof typeof industryConfig] || industryConfig.medium;
 
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-      const systemPrompt = `You are an expert manufacturing data specialist. Generate realistic sample data for a manufacturing ERP system based on the company information and requirements provided.
+      const systemPrompt = `You are an expert manufacturing data specialist with deep knowledge of industry-specific production processes. Generate realistic sample data for a manufacturing ERP system based on the company information and requirements provided.
 
 Company Information:
 - Company Name: ${companyInfo.name}
@@ -489,9 +504,9 @@ Company Information:
 - Number of Plants: ${companyInfo.numberOfPlants || '1'}
 - Description: ${companyInfo.description}
 ${companyInfo.website ? `- Website: ${companyInfo.website}` : ''}
-${companyInfo.products ? `- Main Products: ${companyInfo.products}` : ''}
+${companyInfo.products ? `- Main Products & Production Process: ${companyInfo.products}` : ''}
 
-Sample Size: ${sampleSize.toUpperCase()} - ${config.description}
+Sample Size: ${sampleSize.toUpperCase()} - Industry-typical volumes for ${companyInfo.industry}
 
 Generate sample data for the following data types: ${selectedDataTypes.join(', ')}
 
@@ -499,18 +514,50 @@ For each data type, generate the following number of records:
 ${selectedDataTypes.map(type => {
   const typeConfig = config[type as keyof typeof config];
   if (typeConfig && typeof typeConfig === 'object' && 'min' in typeConfig) {
-    return `- ${type}: ${typeConfig.min}-${typeConfig.max} records`;
+    return `- ${type}: ${typeConfig.min}-${typeConfig.max} records (industry-typical for ${companyInfo.industry})`;
   }
   return `- ${type}: 3-5 records (default)`;
 }).join('\n')}
 
+CRITICAL REQUIREMENTS:
+1. Create capabilities that align with typical ${companyInfo.industry} production processes
+2. Generate resources that require these specific capabilities (perfect matching)
+3. Create operations for production orders that utilize the generated capabilities
+4. Ensure operations follow realistic production sequences for ${companyInfo.industry}
+5. Each capability should be used by at least one resource and required by at least one operation
+
+INDUSTRY-SPECIFIC GUIDANCE:
+${companyInfo.industry.toLowerCase().includes('automotive') ? `
+For Automotive Industry:
+- Capabilities: CNC Machining, Welding, Stamping, Assembly, Painting, Quality Inspection, Heat Treatment
+- Resources: CNC Mills, Robotic Welders, Stamping Presses, Assembly Lines, Paint Booths, CMM Machines
+- Operations: Part Machining → Welding → Assembly → Painting → Quality Check
+- Products: Engine components, chassis parts, body panels, electronic assemblies` : ''}
+${companyInfo.industry.toLowerCase().includes('pharmaceutical') ? `
+For Pharmaceutical Industry:
+- Capabilities: API Synthesis, Tablet Compression, Liquid Filling, Sterile Processing, Quality Testing, Packaging
+- Resources: Reactors, Tablet Presses, Filling Lines, Cleanrooms, HPLC Equipment, Packaging Lines
+- Operations: API Production → Formulation → Compression/Filling → Testing → Packaging
+- Products: Tablets, injectable solutions, capsules, ointments` : ''}
+${companyInfo.industry.toLowerCase().includes('electronics') ? `
+For Electronics Industry:
+- Capabilities: PCB Assembly, Surface Mount Technology, Testing, Programming, Final Assembly, Quality Control
+- Resources: Pick & Place Machines, Reflow Ovens, ICT Testers, Programming Stations, Assembly Workstations
+- Operations: PCB Assembly → Component Placement → Reflow → Testing → Programming → Final Assembly
+- Products: Circuit boards, electronic modules, consumer devices, industrial controls` : ''}
+${companyInfo.industry.toLowerCase().includes('food') || companyInfo.industry.toLowerCase().includes('beverage') ? `
+For Food/Beverage Industry:
+- Capabilities: Mixing, Cooking, Pasteurization, Packaging, Labeling, Quality Testing, Cold Storage
+- Resources: Mixers, Ovens, Pasteurizers, Filling Lines, Labeling Machines, Lab Equipment, Cold Storage
+- Operations: Ingredient Prep → Mixing → Cooking/Processing → Packaging → Quality Check → Storage
+- Products: Packaged foods, beverages, frozen products, dairy items` : ''}
+
 For each data type, provide:
-1. The exact number of records within the specified range for realistic factory operations
-2. Data that's specific to the company's industry and size
-3. Consistent naming conventions using the company name
-4. Proper relationships between data elements
-5. Scale appropriately per plant - each plant should have its own resources and production orders
-6. Create realistic resource distribution across plants based on industry requirements
+1. Industry-specific authentic equipment and process names
+2. Realistic production workflows that match ${companyInfo.industry} standards
+3. Proper capability-resource-operation relationships
+4. Scale appropriately per plant with specialized equipment per location
+5. Use ${companyInfo.products ? `production processes based on: ${companyInfo.products}` : 'industry-standard production processes'}
 
 IMPORTANT: Use these exact field names for each data type:
 
@@ -518,6 +565,13 @@ plants: { name, location, address, timezone }
 capabilities: { name, description, category }
 resources: { name, type, description, status }
 productionOrders: { orderNumber, name, customer, priority, status, quantity, dueDate, description }
+operations: { name, description, duration, requiredCapabilities }
+
+ENSURE PERFECT ALIGNMENT:
+- Every capability must be required by at least one operation
+- Every resource must possess capabilities that are actually used in operations
+- Operations should form logical production sequences for ${companyInfo.industry}
+- Production orders should include realistic operations for their products
 
 Return the result as a JSON object with the following structure:
 {
@@ -613,6 +667,25 @@ Focus on manufacturing-relevant data that would be realistic for a ${companyInfo
                   });
                   const resource = await storage.createResource(insertResource);
                   results.push(resource);
+                }
+                break;
+              case 'operations':
+                for (const item of records) {
+                  // Find a production order to associate this operation with
+                  const existingJobs = await storage.getJobs();
+                  const randomJob = existingJobs[Math.floor(Math.random() * existingJobs.length)];
+                  
+                  if (randomJob) {
+                    const insertOperation = insertOperationSchema.parse({
+                      productionOrderId: randomJob.id,
+                      name: item.name || item.operationName || 'Unknown Operation',
+                      description: item.description || '',
+                      duration: item.duration || 8,
+                      requiredCapabilities: item.requiredCapabilities || []
+                    });
+                    const operation = await storage.createOperation(insertOperation);
+                    results.push(operation);
+                  }
                 }
                 break;
               case 'productionOrders':
