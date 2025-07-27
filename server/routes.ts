@@ -565,22 +565,26 @@ Sample Size: ${sampleSize.toUpperCase()} - Industry-typical volumes for ${compan
 
 Generate sample data for the following data types: ${selectedDataTypes.join(', ')}
 
-EXACT RECORD COUNTS TO GENERATE:
+MANDATORY RECORD COUNTS - DO NOT GENERATE FEWER THAN SPECIFIED:
 ${selectedDataTypes.map(type => {
   if (type === 'plants') {
-    return `- plants: EXACTLY ${config.plants.min}-${config.plants.max} manufacturing facilities`;
+    return `- plants: MINIMUM ${actualPlantsCount} plants (exactly ${actualPlantsCount} facilities named after ${companyInfo.name})`;
   } else if (type === 'resources') {
-    return `- resources: EXACTLY ${resourcesTotal-10}-${resourcesTotal+10} total resources (${config.resourcesPerPlant.min}-${config.resourcesPerPlant.max} per plant × number of plants)`;
+    return `- resources: MINIMUM ${resourcesTotal-10} resources REQUIRED (${resourcesPerPlant} per plant × ${actualPlantsCount} plants = ${resourcesTotal} total)`;
   } else if (type === 'productionOrders') {
-    return `- productionOrders: EXACTLY ${ordersTotal-20}-${ordersTotal+20} total production orders (${config.ordersPerPlant.min}-${config.ordersPerPlant.max} per plant × number of plants)`;
+    return `- productionOrders: MINIMUM ${ordersTotal-20} production orders REQUIRED (${ordersPerPlant} per plant × ${actualPlantsCount} plants = ${ordersTotal} total)`;
   } else if (type === 'operations') {
-    return `- operations: EXACTLY ${operationsTotal-30}-${operationsTotal+30} total operations (${config.operationsPerOrder.min}-${config.operationsPerOrder.max} per production order × total orders)`;
+    return `- operations: MINIMUM ${operationsTotal-50} operations REQUIRED (${operationsPerOrder} per order × ${ordersTotal} orders = ${operationsTotal} total)`;
   } else if (type === 'capabilities') {
-    return `- capabilities: EXACTLY ${config.capabilities.min}-${config.capabilities.max} manufacturing capabilities (shared across all plants)`;
+    return `- capabilities: MINIMUM ${config.capabilities.min} capabilities REQUIRED (shared across all ${actualPlantsCount} plants)`;
   } else {
     return `- ${type}: 3-5 records (default)`;
   }
 }).join('\n')}
+
+⚠️ CRITICAL: These are MINIMUM counts for enterprise pharmaceutical manufacturing. Generate AT LEAST these numbers.
+📊 Total Required: ${ordersTotal} production orders, ${resourcesTotal} resources, ${operationsTotal} operations across ${actualPlantsCount} plants.
+🏭 This represents realistic pharmaceutical enterprise volumes - do NOT create fewer records.
 
 CRITICAL REQUIREMENTS:
 1. Create capabilities that align with typical ${companyInfo.industry} production processes
@@ -679,6 +683,52 @@ Focus on manufacturing-relevant data that would be realistic for a ${companyInfo
 
       const generatedData = JSON.parse(response.choices[0].message.content);
       
+      // Validate and potentially supplement generated data to meet minimum requirements
+      console.log('Generated data summary:');
+      for (const [dataType, records] of Object.entries(generatedData.dataTypes)) {
+        if (Array.isArray(records)) {
+          console.log(`- ${dataType}: ${records.length} records generated`);
+        }
+      }
+
+      // Post-process to ensure minimum record counts are met
+      const supplementData = (dataType: string, records: any[], minRequired: number) => {
+        if (records.length >= minRequired) return records;
+        
+        console.log(`⚠️ Only ${records.length} ${dataType} generated, need ${minRequired}. Supplementing...`);
+        const supplemented = [...records];
+        const baseCount = records.length;
+        
+        while (supplemented.length < minRequired) {
+          // Create variations of existing records
+          const templateIndex = (supplemented.length - baseCount) % baseCount;
+          const template = records[templateIndex];
+          const variant = { ...template };
+          
+          // Add variation to make unique
+          const suffix = Math.floor((supplemented.length - baseCount) / baseCount) + 2;
+          if (variant.name) variant.name = `${template.name} - Line ${suffix}`;
+          if (variant.orderNumber) variant.orderNumber = `${template.orderNumber}-${suffix}`;
+          if (variant.location && dataType === 'plants') variant.location = `${template.location} - Facility ${suffix}`;
+          
+          supplemented.push(variant);
+        }
+        
+        console.log(`✅ Supplemented ${dataType} from ${baseCount} to ${supplemented.length} records`);
+        return supplemented;
+      };
+
+      // Apply minimum requirements for enterprise pharmaceutical scaling
+      if (generatedData.dataTypes.productionOrders) {
+        generatedData.dataTypes.productionOrders = supplementData('productionOrders', generatedData.dataTypes.productionOrders, ordersTotal - 20);
+      }
+      if (generatedData.dataTypes.resources) {
+        generatedData.dataTypes.resources = supplementData('resources', generatedData.dataTypes.resources, resourcesTotal - 10);
+      }
+      if (generatedData.dataTypes.operations) {
+        generatedData.dataTypes.operations = supplementData('operations', generatedData.dataTypes.operations, operationsTotal - 50);
+      }
+
       // Import the generated data
       const importResults = [];
       let totalImported = 0;
@@ -743,7 +793,7 @@ Focus on manufacturing-relevant data that would be realistic for a ${companyInfo
                       productionOrderId: randomJob.id,
                       name: item.name || item.operationName || 'Unknown Operation',
                       description: item.description || '',
-                      duration: item.duration || 8,
+                      duration: typeof item.duration === 'string' ? parseFloat(item.duration) || 8 : item.duration || 8,
                       requiredCapabilities: item.requiredCapabilities || []
                     });
                     const operation = await storage.createOperation(insertOperation);
