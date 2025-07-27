@@ -60,6 +60,7 @@ import {
 import { Resource } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useMaxDock } from '@/contexts/MaxDockContext';
 
 interface MaintenanceSchedule {
   id: number;
@@ -142,6 +143,7 @@ interface ResourceHealth {
 }
 
 export default function Maintenance() {
+  const { isMaxOpen } = useMaxDock();
   const [isMaximized, setIsMaximized] = useState(false);
   const [activeTab, setActiveTab] = useState("schedule");
   const [searchTerm, setSearchTerm] = useState("");
@@ -790,7 +792,7 @@ export default function Maintenance() {
       {/* Header */}
       <div className="bg-white shadow-sm border-b px-3 sm:px-6 py-3 sm:py-6 flex-shrink-0">
         <div className="relative">
-          <div className="md:ml-0 ml-12">
+          <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
             <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
               <Wrench className="w-6 h-6 mr-2" />
               Maintenance Planning

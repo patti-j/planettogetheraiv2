@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Sparkles, Building2, Settings, Check, Plus, Globe, Palette, BarChart, Factory, Maximize2, Minimize2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAITheme } from "@/hooks/use-ai-theme";
+import { useMaxDock } from "@/contexts/MaxDockContext";
 
 const categories = [
   { value: "all", label: "All Industries" },
@@ -34,6 +35,7 @@ export default function IndustryTemplates() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { aiTheme } = useAITheme();
+  const { isMaxOpen } = useMaxDock();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [customIndustry, setCustomIndustry] = useState("");
@@ -327,7 +329,7 @@ export default function IndustryTemplates() {
       <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="relative">
-          <div className="md:ml-0 ml-12">
+          <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
             <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
               <Building2 className="w-6 h-6 mr-2" />
               Industry Templates

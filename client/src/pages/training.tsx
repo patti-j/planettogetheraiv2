@@ -19,6 +19,7 @@ import { RoleSwitcher } from '@/components/role-switcher';
 import { TourManagementSettings } from '@/components/tour-management-settings';
 import { apiRequest } from '@/lib/queryClient';
 import { useTour } from '@/contexts/TourContext';
+import { useMaxDock } from '@/contexts/MaxDockContext';
 interface Role {
   id: number;
   name: string;
@@ -208,6 +209,7 @@ const trainingModules: TrainingModule[] = [
   },
 ];
 export default function Training() {
+  const { isMaxOpen } = useMaxDock();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showTourSettings, setShowTourSettings] = useState(false);
   const { user } = useAuth();
@@ -1003,7 +1005,7 @@ export default function Training() {
     <div className="p-6">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
-        <div className="md:ml-0 ml-12">
+        <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
           <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
             <GraduationCap className="w-6 h-6 mr-2" />
             Training & Role Demonstration

@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useMobile } from "@/hooks/use-mobile";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useMaxDock } from '@/contexts/MaxDockContext';
 import { 
   Truck, 
   Package, 
@@ -51,6 +52,7 @@ interface MaterialMovement {
 }
 
 export default function ForkliftDriver() {
+  const { isMaxOpen } = useMaxDock();
   const [isMaximized, setIsMaximized] = useState(false);
   const [selectedPriority, setSelectedPriority] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("pending");
@@ -348,7 +350,7 @@ export default function ForkliftDriver() {
     <div className="space-y-6 pb-6">
       {/* Header */}
       <div className="relative">
-        <div className="md:ml-0 ml-12">
+        <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
           <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
             <Truck className="w-6 h-6 mr-2" />
             Forklift Operations

@@ -207,16 +207,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
         case 'jobs':
           for (const item of data) {
-            const insertJob = insertJobSchema.parse({
+            const insertJob = insertProductionOrderSchema.parse({
+              orderNumber: `PO-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
               name: item.name,
               customer: item.customer || '',
               priority: item.priority || 'medium',
-              status: 'active',
+              status: 'released',
               dueDate: item.dueDate ? new Date(item.dueDate) : null,
               quantity: item.quantity || 1,
-              description: item.description || ''
+              description: item.description || '',
+              plantId: 1 // Default plant
             });
-            const job = await storage.createJob(insertJob);
+            const job = await storage.createProductionOrder(insertJob);
             results.push(job);
           }
           break;

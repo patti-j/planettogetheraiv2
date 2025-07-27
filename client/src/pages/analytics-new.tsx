@@ -12,6 +12,7 @@ import DashboardManager from "@/components/dashboard-manager";
 import type { Job, Operation, Resource } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useMaxDock } from '@/contexts/MaxDockContext';
 
 interface Metrics {
   activeJobs: number;
@@ -33,6 +34,7 @@ interface AnalyticsWidget {
 }
 
 export default function Analytics() {
+  const { isMaxOpen } = useMaxDock();
   const [aiAnalyticsOpen, setAiAnalyticsOpen] = useState(false);
   const [customWidgets, setCustomWidgets] = useState<AnalyticsWidget[]>([]);
   const [layoutMode] = useState<"grid" | "free">("free");
@@ -284,7 +286,7 @@ export default function Analytics() {
     <div className="h-full flex flex-col">
       <header className="bg-white shadow-sm border-b border-gray-200 px-4 py-3 sm:px-6">
         <div className="relative">
-          <div className="md:ml-0 ml-12">
+          <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
             <h1 className="text-2xl font-semibold text-gray-800">Analytics</h1>
             <p className="text-gray-600 mt-1">Production performance insights</p>
           </div>

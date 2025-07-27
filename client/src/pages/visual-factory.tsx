@@ -39,6 +39,7 @@ import {
   Minimize2
 } from 'lucide-react';
 import type { Job, Operation, Resource } from '@shared/schema';
+import { useMaxDock } from '@/contexts/MaxDockContext';
 
 interface VisualFactoryDisplay {
   id: number;
@@ -99,6 +100,7 @@ const defaultWidgets: Omit<VisualFactoryWidget, 'id'>[] = [
 ];
 
 export default function VisualFactory() {
+  const { isMaxOpen } = useMaxDock();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentDisplay, setCurrentDisplay] = useState<VisualFactoryDisplay | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -540,7 +542,7 @@ export default function VisualFactory() {
           <div className="border-b border-gray-200 bg-white">
             <div className="px-6 py-4">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div className="md:ml-0 ml-12">
+                <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
                   <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
                     <Monitor className="w-6 h-6 mr-2" />
                     Visual Factory

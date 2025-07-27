@@ -47,6 +47,7 @@ import { ScheduleEvaluationSystem } from '@/components/schedule-evaluation-syste
 import { useAITheme } from '@/hooks/use-ai-theme';
 import { usePermissions } from '@/hooks/useAuth';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useMaxDock } from '@/contexts/MaxDockContext';
 
 interface SchedulingOption {
   id: string;
@@ -886,11 +887,14 @@ const SchedulingOptimizer: React.FC = () => {
     return 'text-red-600';
   };
 
-  const PageContent = () => (
+  const PageContent = () => {
+    const { isMaxOpen } = useMaxDock();
+    
+    return (
     <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="relative">
-        <div className="md:ml-0 ml-12">
+        <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
           <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
             <Target className="w-6 h-6 mr-2" />
             Optimize Orders
@@ -1215,6 +1219,7 @@ const SchedulingOptimizer: React.FC = () => {
       </Dialog>
     </div>
   );
+};
 
   return (
     <div className={`min-h-screen ${isMaximized ? 'fixed inset-0 z-50 bg-white' : ''}`}>

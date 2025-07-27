@@ -49,6 +49,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useMaxDock } from '@/contexts/MaxDockContext';
 
 interface FeedbackItem {
   id: number;
@@ -89,6 +90,7 @@ interface FeedbackStats {
 }
 
 export default function Feedback() {
+  const { isMaxOpen } = useMaxDock();
   const [isMaximized, setIsMaximized] = useState(false);
   const [activeTab, setActiveTab] = useState("submit");
   const [searchTerm, setSearchTerm] = useState("");
@@ -805,7 +807,7 @@ export default function Feedback() {
       {/* Header */}
       <div className="bg-white shadow-sm border-b p-3 sm:p-6 flex-shrink-0">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="md:ml-0 ml-12">
+          <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
             <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
               <MessageCircle className="w-6 h-6 mr-2" />
               Feedback & Suggestions

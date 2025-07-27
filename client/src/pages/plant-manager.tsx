@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useMaxDock } from "@/contexts/MaxDockContext";
 import { type Plant, type Job, type Operation, type Resource } from "@shared/schema";
 
 interface PlantMetrics {
@@ -73,6 +74,7 @@ export default function PlantManagerPage() {
   const [newIssueDialog, setNewIssueDialog] = useState(false);
   const [newDecisionDialog, setNewDecisionDialog] = useState(false);
   const { toast } = useToast();
+  const { isMaxOpen } = useMaxDock();
 
   // Fetch plants data
   const { data: plants = [] } = useQuery<Plant[]>({
@@ -282,7 +284,7 @@ export default function PlantManagerPage() {
     <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="relative">
-        <div className="md:ml-0 ml-12">
+        <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
           <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
             <Factory className="w-6 h-6 mr-2" />
             Plant Manager Dashboard
