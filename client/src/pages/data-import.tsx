@@ -75,6 +75,8 @@ export default function DataImport() {
   const { data: onboardingData, isLoading: onboardingLoading, error: onboardingError } = useQuery({
     queryKey: ['/api/onboarding/status'],
     enabled: !!user,
+    retry: 1,
+    staleTime: 0, // Force fresh data
   });
 
   // Debug logging for onboarding data

@@ -15320,40 +15320,16 @@ Response must be valid JSON:
     res.json(trends);
   }));
 
-  // Onboarding Management Routes
-  app.get("/api/onboarding/status", requireAuth, createSafeHandler(async (req, res) => {
-    const userId = req.user!.id;
-    
-    try {
-      const onboarding = await storage.getCompanyOnboarding(userId);
-      if (!onboarding) {
-        res.json({ isCompleted: false, teamMembers: 0 });
-        return;
-      }
-      
-      // Get team members count
-      const teamMembers = await storage.getTeamOnboardingStatus(onboarding.id);
-      
-      res.json({
-        id: onboarding.id,
-        isCompleted: onboarding.currentStep === 'completed',
-        teamMembers: teamMembers?.totalMembers || 0,
-        currentStep: onboarding.currentStep,
-        companyName: onboarding.companyName,
-        industry: onboarding.industry
-      });
-    } catch (error) {
-      console.error('Error getting onboarding status:', error);
-      res.json({ isCompleted: false, teamMembers: 0 });
-    }
-  }));
-
-  // Add missing onboarding status endpoint that frontend expects
+  // Onboarding Management Routes - Raw onboarding data for frontend
   app.get("/api/onboarding/status", requireAuth, createSafeHandler('onboarding-status')(async (req, res) => {
     const userId = req.user!.id;
+    console.log('Onboarding status API called for user:', userId);
+    
     const onboarding = await storage.getCompanyOnboarding(userId);
+    console.log('Onboarding data found:', onboarding);
     
     if (!onboarding) {
+      console.log('No onboarding data found, returning null');
       res.json(null);
       return;
     }
