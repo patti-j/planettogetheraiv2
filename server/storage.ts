@@ -8980,7 +8980,9 @@ export class DatabaseStorage implements IStorage {
       const [onboarding] = await db
         .select()
         .from(companyOnboarding)
-        .where(eq(companyOnboarding.createdBy, userId));
+        .where(eq(companyOnboarding.createdBy, userId))
+        .orderBy(desc(companyOnboarding.createdAt))
+        .limit(1);
       return onboarding;
     } catch (error) {
       console.error('Error getting company onboarding:', error);
