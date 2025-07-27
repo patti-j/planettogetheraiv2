@@ -49,6 +49,7 @@ import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAITheme } from '@/hooks/use-ai-theme';
+import { useMaxDock } from '@/contexts/MaxDockContext';
 import { format, parseISO } from 'date-fns';
 
 interface SystemIntegration {
@@ -95,6 +96,7 @@ interface AIIntegrationRequest {
 const SystemsIntegrationPage: React.FC = () => {
   const { toast } = useToast();
   const { getThemeClasses } = useAITheme();
+  const { isMaxOpen } = useMaxDock();
   const queryClient = useQueryClient();
   const [isMaximized, setIsMaximized] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState<SystemIntegration | null>(null);
@@ -356,7 +358,7 @@ const SystemsIntegrationPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div className="md:ml-0 ml-12">
+        <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
           <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
             <Database className="w-6 h-6 mr-2" />
             Systems Integration
