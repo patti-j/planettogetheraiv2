@@ -325,7 +325,7 @@ export default function TopMenu() {
                             <div className={`
                               w-full aspect-square min-h-[100px] h-[100px] min-w-[100px] md:min-h-[90px] md:h-[90px] md:min-w-[90px] 
                               bg-white border hover:border-gray-300 hover:shadow-md rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] 
-                              flex flex-col items-center justify-center text-center space-y-1
+                              flex flex-col items-center justify-center text-center space-y-1 relative
                               ${page.isPinned ? 'border-emerald-300 bg-emerald-50' : 'border-gray-200'}
                             `}>
                               <div className="bg-gray-100 p-2 rounded-full flex items-center justify-center flex-shrink-0">
@@ -336,25 +336,25 @@ export default function TopMenu() {
                                   {page.label}
                                 </span>
                               </div>
+                              {/* Pin/Unpin Button - Bottom Right Corner */}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  togglePinPage(page.path);
+                                }}
+                                className={`
+                                  absolute bottom-1 right-1 h-4 w-4 p-0 rounded-full shadow-sm transition-all
+                                  ${page.isPinned ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-gray-300 hover:bg-gray-400 text-gray-600'}
+                                `}
+                                title={page.isPinned ? 'Unpin from favorites' : 'Pin to favorites'}
+                              >
+                                {page.isPinned ? <Pin className="h-2 w-2" /> : <PinOff className="h-2 w-2" />}
+                              </Button>
                             </div>
                           </Link>
-                          {/* Pin/Unpin Button */}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              togglePinPage(page.path);
-                            }}
-                            className={`
-                              absolute -top-1 -right-1 h-6 w-6 p-0 rounded-full shadow-sm border opacity-0 group-hover:opacity-100 transition-opacity
-                              ${page.isPinned ? 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600' : 'bg-white hover:bg-gray-50 text-gray-600 border-gray-200'}
-                            `}
-                            title={page.isPinned ? 'Unpin from favorites' : 'Pin to favorites'}
-                          >
-                            {page.isPinned ? <Pin className="h-3 w-3" /> : <PinOff className="h-3 w-3" />}
-                          </Button>
                         </div>
                       );
                     })}
