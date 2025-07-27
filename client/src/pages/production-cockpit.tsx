@@ -189,6 +189,7 @@ export default function ProductionCockpit() {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isMaxOpen } = useMaxDock();
 
   // Fetch layouts
   const { data: layouts = [], isLoading: layoutsLoading } = useQuery<CockpitLayout[]>({
@@ -457,7 +458,7 @@ export default function ProductionCockpit() {
   return (
     <div className={`min-h-screen bg-background ${maximized ? 'fixed inset-0 z-50' : ''}`}>
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between p-3 lg:p-4 border-b bg-card gap-3 lg:gap-4">
+      <div className={`flex flex-col lg:flex-row lg:items-center justify-between p-3 lg:p-4 border-b bg-card gap-3 lg:gap-4 ${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
         {/* Title and Layout Selector Row */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 min-w-0 flex-1">
           <div className="flex items-center gap-2 min-w-0">
