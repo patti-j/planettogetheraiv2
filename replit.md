@@ -2,6 +2,15 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Onboarding Company Information Persistence Fix (July 27, 2025)**:
+- Fixed critical issue where company information entered during onboarding was not persisting when user navigated away
+- Enhanced saveCompanyInfo function with dual-layer persistence: immediate localStorage storage plus database synchronization
+- Added comprehensive error handling and debugging for user preferences mutations with detailed console logging
+- Improved initialization system to load company data from database first, then fallback to localStorage with automatic sync
+- Added localStorage-to-database migration for authenticated users to preserve data across sessions
+- Company information now persists reliably during onboarding process with fallback mechanisms for data integrity
+- Enhanced user experience by preventing data loss when navigating between onboarding steps or refreshing page
+
 ✓ **Complete Jobs-to-Production-Orders Terminology Migration (July 27, 2025)**:
 - Successfully renamed all "jobs" references to "production orders" throughout the entire system
 - Updated database schema and API endpoints to use consistent production order terminology

@@ -201,17 +201,41 @@ export default function OnboardingPage() {
     enabled: !!user?.id
   });
 
-  // Load company info from user preferences (database only)
+  // Load company info from multiple sources with priority: database > localStorage
   useEffect(() => {
-    if (userPreferences?.companyInfo) {
+    // First, try to load from database (user preferences)
+    if (userPreferences?.companyInfo && Object.keys(userPreferences.companyInfo).some(key => userPreferences.companyInfo[key])) {
+      console.log('Loading company info from database:', userPreferences.companyInfo);
       setCompanyInfo(userPreferences.companyInfo);
+      return;
     }
-  }, [userPreferences]);
+    
+    // Fallback to localStorage if database is empty
+    try {
+      const localStorageInfo = localStorage.getItem('onboarding-company-info');
+      if (localStorageInfo) {
+        const parsedInfo = JSON.parse(localStorageInfo);
+        console.log('Loading company info from localStorage:', parsedInfo);
+        setCompanyInfo(parsedInfo);
+        
+        // If user is authenticated, sync localStorage data to database
+        if (user?.id && parsedInfo && Object.keys(parsedInfo).some(key => parsedInfo[key])) {
+          console.log('Syncing localStorage data to database');
+          updatePreferencesMutation.mutate(parsedInfo);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load company info from localStorage:', error);
+    }
+  }, [userPreferences, user?.id]);
 
   // Mutation to update user preferences with company info
   const updatePreferencesMutation = useMutation({
     mutationFn: async (companyInfo: any) => {
-      if (!user?.id) return;
+      if (!user?.id) {
+        console.error('No user ID available for preferences update');
+        return;
+      }
       
       const currentPrefs = userPreferences || {};
       const updatedPrefs = {
@@ -219,10 +243,20 @@ export default function OnboardingPage() {
         companyInfo: companyInfo
       };
       
+      console.log('Updating user preferences with company info:', companyInfo);
       await apiRequest('PUT', '/api/user-preferences', updatedPrefs);
     },
     onSuccess: () => {
+      console.log('User preferences updated successfully');
       queryClient.invalidateQueries({ queryKey: [`/api/user-preferences/${user?.id}`] });
+    },
+    onError: (error) => {
+      console.error('Failed to update user preferences:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save company information. Please try again.",
+        variant: "destructive"
+      });
     }
   });
 
@@ -260,10 +294,19 @@ export default function OnboardingPage() {
     }
   });
 
-  // Helper function to save company info to database only
+  // Helper function to save company info with dual persistence
   const saveCompanyInfo = (newInfo: any) => {
+    console.log('Saving company info:', newInfo);
     setCompanyInfo(newInfo);
-    // Save to database for authenticated users only
+    
+    // Always save to localStorage for immediate persistence
+    try {
+      localStorage.setItem('onboarding-company-info', JSON.stringify(newInfo));
+    } catch (error) {
+      console.error('Failed to save to localStorage:', error);
+    }
+    
+    // Save to database for authenticated users
     if (user?.id) {
       updatePreferencesMutation.mutate(newInfo);
     }
