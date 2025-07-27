@@ -394,14 +394,21 @@ For each data type, provide:
 3. Consistent naming conventions
 4. Proper relationships between data elements
 
+IMPORTANT: Use these exact field names for each data type:
+
+plants: { name, location, address, timezone }
+capabilities: { name, description, category }
+resources: { name, type, description, status }
+productionOrders: { orderNumber, name, customer, priority, status, quantity, dueDate, description }
+
 Return the result as a JSON object with the following structure:
 {
   "summary": "Brief description of what was generated",
   "dataTypes": {
-    "plants": [...],
-    "capabilities": [...],
-    "resources": [...],
-    "productionOrders": [...],
+    "plants": [{ "name": "Plant Name", "location": "City, State", "address": "Full Address", "timezone": "America/New_York" }],
+    "capabilities": [{ "name": "Capability Name", "description": "What this capability does", "category": "manufacturing" }],
+    "resources": [{ "name": "Resource Name", "type": "Equipment", "description": "Resource description", "status": "active" }],
+    "productionOrders": [{ "orderNumber": "PO-001", "name": "Order Name", "customer": "Customer Name", "priority": "high", "status": "released", "quantity": 100, "dueDate": "2024-01-15", "description": "Order description" }]
     // etc for each requested type
   },
   "totalRecords": 0,
@@ -434,9 +441,9 @@ Focus on manufacturing-relevant data that would be realistic for a ${companyInfo
               case 'plants':
                 for (const item of records) {
                   const insertPlant = insertPlantSchema.parse({
-                    name: item.name,
+                    name: item.name || item.plantName || item.facilityName || 'Unknown Plant',
                     location: item.location || '',
-                    address: item.address || '',
+                    address: item.address || item.location || '',
                     timezone: item.timezone || 'UTC'
                   });
                   const plant = await storage.createPlant(insertPlant);
@@ -446,20 +453,29 @@ Focus on manufacturing-relevant data that would be realistic for a ${companyInfo
               case 'capabilities':
                 for (const item of records) {
                   const insertCapability = insertCapabilitySchema.parse({
-                    name: item.name,
-                    description: item.description || '',
-                    category: item.category || 'general'
+                    name: item.name || item.capabilityName || item.skillName || item.process || 'Unknown Capability',
+                    description: item.description || `${item.process || item.capability || 'Manufacturing'} capability`,
+                    category: item.category || 'manufacturing'
                   });
-                  const capability = await storage.createCapability(insertCapability);
-                  results.push(capability);
+                  try {
+                    const capability = await storage.createCapability(insertCapability);
+                    results.push(capability);
+                  } catch (capabilityError: any) {
+                    if (capabilityError.constraint === 'capabilities_name_unique') {
+                      // Skip duplicate capability names
+                      console.log(`Skipping duplicate capability: ${insertCapability.name}`);
+                      continue;
+                    }
+                    throw capabilityError;
+                  }
                 }
                 break;
               case 'resources':
                 for (const item of records) {
                   const insertResource = insertResourceSchema.parse({
-                    name: item.name,
+                    name: item.name || item.resourceName || item.equipmentName || item.description || 'Unknown Resource',
                     type: item.type || 'Equipment',
-                    description: item.description || '',
+                    description: item.description || item.name || '',
                     status: item.status || 'active'
                   });
                   const resource = await storage.createResource(insertResource);
@@ -469,8 +485,8 @@ Focus on manufacturing-relevant data that would be realistic for a ${companyInfo
               case 'productionOrders':
                 for (const item of records) {
                   const insertJob = insertProductionOrderSchema.parse({
-                    orderNumber: item.orderNumber || `PO-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-                    name: item.name,
+                    orderNumber: item.orderNumber || item.orderId || `PO-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                    name: item.name || item.orderName || item.product || 'Unknown Order',
                     customer: item.customer || '',
                     priority: item.priority || 'medium',
                     status: 'released',

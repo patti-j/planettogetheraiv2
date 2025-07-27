@@ -1692,6 +1692,38 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount || 0) > 0;
   }
 
+  // Production Orders
+  async getProductionOrders(): Promise<ProductionOrder[]> {
+    return await db.select().from(productionOrders).orderBy(asc(productionOrders.dueDate));
+  }
+
+  async getProductionOrder(id: number): Promise<ProductionOrder | undefined> {
+    const [order] = await db.select().from(productionOrders).where(eq(productionOrders.id, id));
+    return order || undefined;
+  }
+
+  async createProductionOrder(order: InsertProductionOrder): Promise<ProductionOrder> {
+    const [newOrder] = await db
+      .insert(productionOrders)
+      .values(order)
+      .returning();
+    return newOrder;
+  }
+
+  async updateProductionOrder(id: number, order: Partial<InsertProductionOrder>): Promise<ProductionOrder | undefined> {
+    const [updatedOrder] = await db
+      .update(productionOrders)
+      .set(order)
+      .where(eq(productionOrders.id, id))
+      .returning();
+    return updatedOrder || undefined;
+  }
+
+  async deleteProductionOrder(id: number): Promise<boolean> {
+    const result = await db.delete(productionOrders).where(eq(productionOrders.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
   async getOperations(): Promise<Operation[]> {
     return await db.select().from(operations);
   }

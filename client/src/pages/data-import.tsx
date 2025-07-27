@@ -202,7 +202,7 @@ export default function DataImport() {
 
   const aiGenerationMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('POST', '/api/ai-agent/generate-sample-data', data);
+      return apiRequest('POST', '/api/data-import/generate-sample-data', data);
     },
     onSuccess: (result: any) => {
       setAiGenerationResult(result);
