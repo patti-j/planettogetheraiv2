@@ -310,14 +310,17 @@ LIVE DATA AVAILABLE:
 
 IMPORTANT: You have access to real live manufacturing data. When users ask about jobs, operations, resources, plants, or system status, use the provided live data above to give accurate answers. DO NOT say you don't have access - you have direct access to current system data.
 
-Available actions: LIST_JOBS, LIST_OPERATIONS, LIST_RESOURCES, LIST_PLANTS, CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, OPEN_SHOP_FLOOR, OPEN_VISUAL_FACTORY, OPEN_CAPACITY_PLANNING, OPEN_OPTIMIZATION_STUDIO, OPEN_PRODUCTION_PLANNING, OPEN_SYSTEMS_INTEGRATION, OPEN_ROLE_MANAGEMENT, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, CLEAR_CANVAS, CREATE_CHART, CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART, SHOW_API_DOCUMENTATION, START_TOUR, and others.
+Available actions: LIST_JOBS, LIST_OPERATIONS, LIST_RESOURCES, LIST_PLANTS, CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, OPEN_SHOP_FLOOR, OPEN_VISUAL_FACTORY, OPEN_CAPACITY_PLANNING, OPEN_OPTIMIZATION_STUDIO, OPEN_PRODUCTION_PLANNING, OPEN_SYSTEMS_INTEGRATION, OPEN_ROLE_MANAGEMENT, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, CLEAR_CANVAS, CREATE_CHART, CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART, SHOW_API_DOCUMENTATION, START_TOUR, CREATE_TOUR, and others.
 
 Tour Guidelines:
 - START_TOUR: Start a guided tour for a specific role with voice narration
+- CREATE_TOUR: Create a new custom tour based on user description and target roles
 - Tour parameters: {roleId: number, voiceEnabled: boolean (default true), context: "demo" | "training" (default "demo")}
+- Custom tour parameters: {title: string, description: string, targetRoles: array, focusAreas: array, voiceEnabled: boolean}
 - Common role IDs: Trainer (9), Director (1), Plant Manager (2), Production Scheduler (3), Systems Manager (5)
 - When users ask for tours, training, or guidance, use START_TOUR action to initiate appropriate role-based tours
-- Examples: "start tour" = START_TOUR with current user's role, "show me how to use this" = START_TOUR with demo context
+- When users want to create custom tours or request specific training content, use CREATE_TOUR action
+- Examples: "start tour" = START_TOUR with current user's role, "create a tour about scheduling for managers" = CREATE_TOUR with specific parameters
 
 CRITICAL DISTINCTION:
 - For API documentation requests ("available APIs", "what APIs can you call", "list of available functions", "what can you do", "your capabilities", "available commands"): Use LIST_AVAILABLE_APIS action
@@ -1733,7 +1736,8 @@ async function executeAction(action: string, parameters: any, message: string, c
           { "API Function": "CLEAR_CANVAS", "Description": "Clear all content from canvas." },
           { "API Function": "MAXIMIZE_VIEW", "Description": "Maximize current view." },
           { "API Function": "MINIMIZE_VIEW", "Description": "Minimize current view." },
-          { "API Function": "START_TOUR", "Description": "Start a guided tour for a specific role with optional voice narration." }
+          { "API Function": "START_TOUR", "Description": "Start a guided tour for a specific role with optional voice narration." },
+          { "API Function": "CREATE_TOUR", "Description": "Create a new custom tour based on user description and target roles." }
         ];
 
         return {
@@ -1795,6 +1799,45 @@ async function executeAction(action: string, parameters: any, message: string, c
             }
           },
           actions: ["START_TOUR"]
+        };
+
+      case "CREATE_TOUR":
+        // Create a new custom tour based on user description and target roles
+        const tourDescription = parameters.description || parameters.tourDescription || "";
+        const targetRoles = parameters.targetRoles || parameters.roles || ["trainer"];
+        const tourTitle = parameters.title || parameters.tourTitle || "Custom Tour";
+        const focusAreas = parameters.focusAreas || parameters.focus || [];
+        const voiceEnabledForTour = parameters.voiceEnabled !== false; // Default to true
+        const tourType = parameters.type || "custom";
+        
+        // Generate tour content using OpenAI based on user description and system context
+        const tourContent = await generateTourContent({
+          title: tourTitle,
+          description: tourDescription,
+          targetRoles,
+          focusAreas,
+          voiceEnabled: voiceEnabledForTour,
+          type: tourType,
+          systemContext: context
+        });
+        
+        return {
+          success: true,
+          message: message || `Created custom tour "${tourTitle}" for roles: ${targetRoles.join(', ')}. Tour includes ${tourContent.steps.length} steps covering ${focusAreas.length > 0 ? focusAreas.join(', ') : 'general features'}.`,
+          data: {
+            tour: tourContent,
+            created: true,
+            customTour: true
+          },
+          frontendAction: {
+            type: "START_CUSTOM_TOUR",
+            parameters: {
+              tourContent,
+              voiceEnabled: voiceEnabledForTour,
+              targetRoles
+            }
+          },
+          actions: ["CREATE_TOUR", "START_CUSTOM_TOUR"]
         };
 
       default:
@@ -2490,5 +2533,142 @@ export async function transcribeAudio(audioBuffer: Buffer): Promise<string> {
   } catch (error) {
     console.error("Audio transcription error:", error);
     throw new Error("Failed to transcribe audio");
+  }
+}
+
+// Generate custom tour content using OpenAI based on user specifications
+export async function generateTourContent(config: {
+  title: string;
+  description: string;
+  targetRoles: string[];
+  focusAreas: string[];
+  voiceEnabled: boolean;
+  type: string;
+  systemContext?: SystemContext;
+}): Promise<any> {
+  try {
+    const { title, description, targetRoles, focusAreas, voiceEnabled, type, systemContext } = config;
+    
+    // Get current system data for context
+    const jobs = systemContext?.jobs || await storage.getJobs();
+    const operations = systemContext?.operations || await storage.getOperations();
+    const resources = systemContext?.resources || await storage.getResources();
+    
+    const systemPrompt = `You are an expert manufacturing tour guide creating dynamic guided tours for PlanetTogether manufacturing management platform.
+
+CURRENT SYSTEM DATA:
+- Jobs: ${jobs.length} total (${jobs.filter(j => j.status === 'active').length} active)
+- Operations: ${operations.length} total 
+- Resources: ${resources.length} total
+
+TOUR CREATION REQUEST:
+- Title: ${title}
+- Description: ${description}
+- Target Roles: ${targetRoles.join(', ')}
+- Focus Areas: ${focusAreas.length > 0 ? focusAreas.join(', ') : 'General overview'}
+- Voice Enabled: ${voiceEnabled}
+- Tour Type: ${type}
+
+AVAILABLE PAGES/FEATURES:
+- Dashboard (/): Production metrics, alerts, KPIs
+- Production Schedule (/production-schedule): Gantt charts, operation scheduling
+- Analytics (/analytics): Charts, performance analysis
+- Shop Floor (/shop-floor): Resource layout, real-time operations
+- Optimization Studio (/optimization-studio): AI algorithms, testing
+- Visual Factory (/visual-factory): Digital displays, communications
+- Capacity Planning (/capacity-planning): Resource capacity analysis
+- Role Management (/role-management): User permissions, role assignments
+
+Create a comprehensive guided tour with 5-8 steps that matches the user's description and target roles. Each step should include:
+
+1. Page navigation (which page to visit)
+2. Voice narration script (2-3 sentences, conversational)
+3. UI elements to highlight or interact with
+4. Key learning objectives
+5. Estimated time per step
+
+Focus on practical, role-relevant features that help users accomplish real tasks. Make the tour engaging and educational.
+
+Return JSON format:
+{
+  "id": "custom_tour_[timestamp]",
+  "title": "[title]",
+  "description": "[description]", 
+  "targetRoles": [role array],
+  "estimatedDuration": "[total minutes]",
+  "steps": [
+    {
+      "id": 1,
+      "title": "[step title]",
+      "page": "[page path]",
+      "voiceScript": "[narration text]",
+      "highlights": ["selector1", "selector2"],
+      "interactions": [{"type": "click", "target": "selector"}],
+      "objectives": ["learning objective 1"],
+      "duration": "[minutes]"
+    }
+  ],
+  "focusAreas": [focus areas],
+  "customTour": true
+}`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `Create a custom tour based on this request: "${description}" for roles: ${targetRoles.join(', ')}. ${focusAreas.length > 0 ? `Focus specifically on: ${focusAreas.join(', ')}.` : ''}` }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.7,
+      max_tokens: 2000
+    });
+
+    const tourContent = JSON.parse(response.choices[0].message.content || '{}');
+    
+    // Add metadata
+    tourContent.id = tourContent.id || `custom_tour_${Date.now()}`;
+    tourContent.createdAt = new Date().toISOString();
+    tourContent.voiceEnabled = voiceEnabled;
+    tourContent.customTour = true;
+    
+    return tourContent;
+    
+  } catch (error) {
+    console.error("Tour content generation error:", error);
+    
+    // Return a fallback basic tour structure
+    return {
+      id: `custom_tour_${Date.now()}`,
+      title: config.title,
+      description: config.description,
+      targetRoles: config.targetRoles,
+      estimatedDuration: "10-15 minutes",
+      steps: [
+        {
+          id: 1,
+          title: "Welcome to the Platform",
+          page: "/",
+          voiceScript: "Welcome to PlanetTogether! Let's explore the key features that will help you manage production efficiently.",
+          highlights: [".dashboard-metrics", ".quick-actions"],
+          interactions: [],
+          objectives: ["Understand the dashboard layout", "Identify key metrics"],
+          duration: "2 minutes"
+        },
+        {
+          id: 2,
+          title: "Production Scheduling",
+          page: "/production-schedule",
+          voiceScript: "Here's where you'll manage your production schedule using our interactive Gantt chart and operation sequencer.",
+          highlights: [".gantt-chart", ".operation-sequencer"],
+          interactions: [{"type": "click", "target": ".gantt-zoom-controls"}],
+          objectives: ["Learn scheduling basics", "Explore Gantt chart features"],
+          duration: "3 minutes"
+        }
+      ],
+      focusAreas: config.focusAreas,
+      customTour: true,
+      voiceEnabled: config.voiceEnabled,
+      createdAt: new Date().toISOString()
+    };
   }
 }

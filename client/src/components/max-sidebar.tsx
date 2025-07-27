@@ -849,6 +849,31 @@ export function MaxSidebar() {
           });
           break;
           
+        case 'START_CUSTOM_TOUR':
+          const { tourContent, voiceEnabled: customVoiceEnabled, targetRoles } = frontendAction.parameters || {};
+          console.log('Starting custom tour with content:', tourContent);
+          
+          if (tourContent && tourContent.steps && tourContent.steps.length > 0) {
+            // Store the custom tour content temporarily for the tour system to use
+            localStorage.setItem('customTourContent', JSON.stringify(tourContent));
+            
+            // Start the custom tour using the trainer role as default
+            startTour(9, customVoiceEnabled, 'custom');
+            
+            // Show success message
+            toast({
+              title: "Custom Tour Created & Started",
+              description: `"${tourContent.title}" tour created with ${tourContent.steps.length} steps for ${targetRoles?.join(', ') || 'all roles'}`,
+            });
+          } else {
+            toast({
+              title: "Tour Creation Failed",
+              description: "Unable to create custom tour - invalid content generated",
+              variant: "destructive"
+            });
+          }
+          break;
+          
         default:
           console.warn('Unknown frontend action type:', frontendAction.type);
           break;

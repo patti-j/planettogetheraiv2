@@ -7,7 +7,7 @@ interface TourContextType {
   isActive: boolean;
   currentRoleId: number | null;
   voiceEnabled: boolean;
-  startTour: (roleId: number, voiceEnabled?: boolean, context?: 'training' | 'demo') => void;
+  startTour: (roleId: number, voiceEnabled?: boolean, context?: 'training' | 'demo' | 'custom') => void;
   completeTour: () => void;
   skipTour: () => void;
   closeTour: () => void;
@@ -20,7 +20,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const [isActive, setIsActive] = useState(false);
   const [currentRoleId, setCurrentRoleId] = useState<number | null>(null);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
-  const [tourContext, setTourContext] = useState<'training' | 'demo'>('demo');
+  const [tourContext, setTourContext] = useState<'training' | 'demo' | 'custom'>('demo');
   const [originalRoleId, setOriginalRoleId] = useState<number | null>(null);
   const { isAuthenticated, isLoading, user } = useAuth();
   const queryClient = useQueryClient();
@@ -59,7 +59,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
     }
   }, [isAuthenticated, isLoading, isActive]);
 
-  const startTour = (roleId: number, voiceEnabledParam = false, context: 'training' | 'demo' = 'demo') => {
+  const startTour = (roleId: number, voiceEnabledParam = false, context: 'training' | 'demo' | 'custom' = 'demo') => {
     console.log("TourContext startTour called with roleId:", roleId, "voiceEnabledParam:", voiceEnabledParam, "context:", context);
     
     // Store original role for training context tours

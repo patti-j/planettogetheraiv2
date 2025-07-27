@@ -1,5 +1,22 @@
 # PlanetTogether - Manufacturing Production Scheduler
 
+## Recent Changes (July 27, 2025)
+
+✓ **Max AI Dynamic Tour Creation System Implementation (July 27, 2025)**:
+- Successfully implemented complete dynamic tour creation system enabling Max to create custom tours based on user descriptions
+- Added CREATE_TOUR action to AI agent backend with OpenAI-powered tour content generation using GPT-4o model
+- Enhanced tour initiation system with START_TOUR backend action and frontend handler for existing pre-built tours
+- Implemented generateTourContent function that creates custom tour steps, voice narration, and interactive elements based on user specifications
+- Added START_CUSTOM_TOUR frontend action handler to process dynamically generated tour content and start custom tours
+- Enhanced TourContext to support 'custom' context type alongside existing 'training' and 'demo' contexts for different tour types
+- Complete AI system prompt updated with CREATE_TOUR capability and custom tour parameter specifications
+- Custom tour generation includes: title, description, target roles, focus areas, voice scripts, page navigation, UI highlights, and learning objectives
+- Users can now request: "create a tour about scheduling for managers", "make a tour showing analytics features", or "build training for new operators"
+- Max analyzes current system data (jobs, operations, resources) to create contextually relevant tour content with real manufacturing scenarios
+- Tour creation system provides 5-8 step comprehensive tours with estimated durations, interactive elements, and role-specific content
+- Fallback system ensures tours are created even if OpenAI generation fails, maintaining system reliability
+- Dynamic tours stored in localStorage and integrated with existing tour window system for seamless user experience
+
 ## Overview
 
 This is a full-stack manufacturing production scheduler application built with React, TypeScript, Express, PostgreSQL, and Drizzle ORM. The system manages production jobs, operations, resources, and capabilities in a manufacturing environment with a visual Gantt chart interface and drag-and-drop functionality. The application now uses persistent PostgreSQL database storage instead of in-memory storage.
