@@ -372,36 +372,20 @@ export default function OnboardingPage() {
           if (existingOnboarding?.id) {
             console.log('Updating onboarding record with features:', selectedFeatures);
             
-            // Update the main onboarding record with selected features using authenticated fetch
-            const response = await fetch(`/api/onboarding/company/${existingOnboarding.id}`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
-              },
-              body: JSON.stringify({
-                selectedFeatures: selectedFeatures,
-                currentStep: 'features-selected'
-              })
+            // Update the main onboarding record with selected features using apiRequest
+            await apiRequest('PUT', `/api/onboarding/company/${existingOnboarding.id}`, {
+              selectedFeatures: selectedFeatures, // Backend uses 'selectedFeatures' field
+              currentStep: 'features-selected'
             });
-            
-            if (!response.ok) {
-              const errorText = await response.text();
-              console.error('Failed to update onboarding record:', response.status, errorText);
-              throw new Error(`HTTP ${response.status}: ${errorText}`);
-            }
             
             console.log('Onboarding record updated successfully');
             
-            // Also save to progress table
-            await updateProgressMutation.mutateAsync({
-              step: 'feature-selection',
-              data: { selectedFeatures }
-            });
+            // Invalidate cache to reload onboarding data
+            queryClient.invalidateQueries({ queryKey: ['/api/onboarding/status'] });
           }
         } catch (error) {
           console.error('Progress save failed:', error);
-          // Continue without blocking the user - don't throw error
+          // Don't throw error to avoid blocking the user
         }
       }
 
