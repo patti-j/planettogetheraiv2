@@ -67,6 +67,7 @@ import ProductDevelopment from "@/pages/product-development";
 import SchedulingHistory from "@/pages/scheduling-history";
 import WidgetShowcase from "@/pages/widget-showcase";
 import DataImportPage from "@/pages/data-import";
+import Onboarding from "@/pages/onboarding";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
@@ -173,6 +174,11 @@ function Router() {
       <SplitPaneLayout maxPanel={<MaxSidebar />}>
         <Switch>
           <Route path="/marketing" component={MarketingLandingPage} />
+          <Route path="/onboarding">
+            <ProtectedRoute feature="onboarding" action="view">
+              <Onboarding />
+            </ProtectedRoute>
+          </Route>
           <Route path="/production-schedule">
             <DashboardWithAutoTour />
           </Route>

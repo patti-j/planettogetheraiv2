@@ -14572,6 +14572,119 @@ Response must be valid JSON:
     res.json(trends);
   }));
 
+  // Onboarding Management Routes
+  app.get("/api/onboarding/company/:userId", requireAuth, createSafeHandler(async (req, res) => {
+    const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) {
+      throw new ValidationError("Invalid user ID");
+    }
+
+    const onboarding = await storage.getCompanyOnboarding(userId);
+    if (!onboarding) {
+      res.status(404).json({ error: "No onboarding found for this company" });
+      return;
+    }
+    res.json(onboarding);
+  }));
+
+  app.post("/api/onboarding/company", requireAuth, createSafeHandler(async (req, res) => {
+    // Basic validation for required fields
+    const { companyName, industry, size, primaryGoal, features } = req.body;
+    
+    if (!companyName || !industry || !size || !primaryGoal || !features) {
+      throw new ValidationError("Missing required onboarding fields");
+    }
+
+    const onboardingData = {
+      companyName,
+      industry,
+      size,
+      primaryGoal,
+      features: Array.isArray(features) ? features : [],
+      completedSteps: [],
+      currentStep: 'welcome',
+      createdBy: req.user!.id,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    const onboarding = await storage.createCompanyOnboarding(onboardingData);
+    res.status(201).json(onboarding);
+  }));
+
+  app.put("/api/onboarding/company/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new ValidationError("Invalid onboarding ID");
+    }
+
+    const onboarding = await storage.updateCompanyOnboarding(id, req.body);
+    if (!onboarding) {
+      throw new NotFoundError("Onboarding not found");
+    }
+    res.json(onboarding);
+  }));
+
+  app.get("/api/onboarding/progress/:userId/:companyOnboardingId", requireAuth, createSafeHandler(async (req, res) => {
+    const userId = parseInt(req.params.userId);
+    const companyOnboardingId = parseInt(req.params.companyOnboardingId);
+    
+    if (isNaN(userId) || isNaN(companyOnboardingId)) {
+      throw new ValidationError("Invalid user ID or onboarding ID");
+    }
+
+    const progress = await storage.getOnboardingProgress(userId, companyOnboardingId);
+    res.json(progress);
+  }));
+
+  app.post("/api/onboarding/progress", requireAuth, createSafeHandler(async (req, res) => {
+    const { userId, companyOnboardingId, step, status, data } = req.body;
+    
+    if (!userId || !companyOnboardingId || !step || !status) {
+      throw new ValidationError("Missing required progress fields");
+    }
+
+    const progressData = {
+      userId,
+      companyOnboardingId,
+      step,
+      status,
+      data: data || {},
+      completedAt: status === 'completed' ? new Date() : undefined,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    const progress = await storage.createOnboardingProgress(progressData);
+    res.status(201).json(progress);
+  }));
+
+  app.put("/api/onboarding/progress/:userId/:step", requireAuth, createSafeHandler(async (req, res) => {
+    const userId = parseInt(req.params.userId);
+    const step = req.params.step;
+    
+    if (isNaN(userId) || !step) {
+      throw new ValidationError("Invalid user ID or step");
+    }
+
+    const progress = await storage.updateOnboardingProgress(userId, step, req.body);
+    if (!progress) {
+      throw new NotFoundError("Progress not found");
+    }
+    res.json(progress);
+  }));
+
+  app.get("/api/onboarding/team-status/:companyOnboardingId", requireAuth, createSafeHandler(async (req, res) => {
+    const companyOnboardingId = parseInt(req.params.companyOnboardingId);
+    
+    if (isNaN(companyOnboardingId)) {
+      throw new ValidationError("Invalid company onboarding ID");
+    }
+
+    const status = await storage.getTeamOnboardingStatus(companyOnboardingId);
+    res.json(status);
+  }));
+
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
   app.use(errorMiddleware);

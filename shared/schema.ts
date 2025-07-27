@@ -2755,6 +2755,56 @@ export type InsertInventoryOptimizationScenario = z.infer<typeof insertInventory
 export type OptimizationRecommendation = typeof optimizationRecommendations.$inferSelect;
 export type InsertOptimizationRecommendation = z.infer<typeof insertOptimizationRecommendationSchema>;
 
+// Onboarding Management Tables
+export const companyOnboarding = pgTable("company_onboarding", {
+  id: serial("id").primaryKey(),
+  companyName: text("company_name").notNull(),
+  industry: text("industry").notNull(),
+  size: text("size"),
+  description: text("description"),
+  currentStep: text("current_step").notNull().default("welcome"),
+  completedSteps: jsonb("completed_steps").$type<string[]>().default([]),
+  selectedFeatures: jsonb("selected_features").$type<string[]>().default([]),
+  teamMembers: integer("team_members").default(1),
+  isCompleted: boolean("is_completed").default(false),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const onboardingProgress = pgTable("onboarding_progress", {
+  id: serial("id").primaryKey(),
+  companyOnboardingId: integer("company_onboarding_id").references(() => companyOnboarding.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  step: text("step").notNull(),
+  data: jsonb("data").$type<Record<string, any>>().default({}),
+  isCompleted: boolean("is_completed").default(false),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  userStepIdx: unique().on(table.userId, table.step),
+}));
+
+// Onboarding relations
+export const companyOnboardingRelations = relations(companyOnboarding, ({ many, one }) => ({
+  createdByUser: one(users, {
+    fields: [companyOnboarding.createdBy],
+    references: [users.id],
+  }),
+  progress: many(onboardingProgress),
+}));
+
+export const onboardingProgressRelations = relations(onboardingProgress, ({ one }) => ({
+  companyOnboarding: one(companyOnboarding, {
+    fields: [onboardingProgress.companyOnboardingId],
+    references: [companyOnboarding.id],
+  }),
+  user: one(users, {
+    fields: [onboardingProgress.userId],
+    references: [users.id],
+  }),
+}));
+
 // Feedback Management Tables
 export const feedback = pgTable("feedback", {
   id: serial("id").primaryKey(),
@@ -2853,6 +2903,25 @@ export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 
 export type FeedbackComment = typeof feedbackComments.$inferSelect;
 export type InsertFeedbackComment = z.infer<typeof insertFeedbackCommentSchema>;
+
+// Onboarding schemas
+export const insertCompanyOnboardingSchema = createInsertSchema(companyOnboarding).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertOnboardingProgressSchema = createInsertSchema(onboardingProgress).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Onboarding types
+export type CompanyOnboarding = typeof companyOnboarding.$inferSelect;
+export type InsertCompanyOnboarding = z.infer<typeof insertCompanyOnboardingSchema>;
+
+export type OnboardingProgress = typeof onboardingProgress.$inferSelect;
+export type InsertOnboardingProgress = z.infer<typeof insertOnboardingProgressSchema>;
 
 // Systems Integration Tables
 export const systemIntegrations = pgTable("system_integrations", {

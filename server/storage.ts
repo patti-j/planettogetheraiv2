@@ -73,6 +73,9 @@ import {
   type ShiftTemplate, type ResourceShiftAssignment, type Holiday, type ResourceAbsence, type ShiftScenario, type UnplannedDowntime, type OvertimeShift, type DowntimeAction, type ShiftChangeRequest,
   type InsertShiftTemplate, type InsertResourceShiftAssignment, type InsertHoliday, type InsertResourceAbsence, type InsertShiftScenario, type InsertUnplannedDowntime, type InsertOvertimeShift, type InsertDowntimeAction, type InsertShiftChangeRequest,
   cockpitLayouts, cockpitWidgets, cockpitAlerts, cockpitTemplates,
+  companyOnboarding, onboardingProgress,
+  type CompanyOnboarding, type OnboardingProgress,
+  type InsertCompanyOnboarding, type InsertOnboardingProgress,
   apiIntegrations, apiMappings, apiTests, apiAuditLogs, apiCredentials,
   type ApiIntegration, type ApiMapping, type ApiTest, type ApiAuditLog, type ApiCredential,
   type InsertApiIntegration, type InsertApiMapping, type InsertApiTest, type InsertApiAuditLog, type InsertApiCredential,
@@ -8683,6 +8686,123 @@ export class DatabaseStorage implements IStorage {
       return await query.orderBy(algorithmPerformance.lastUpdated);
     } catch (error) {
       console.error('Error getting algorithm performance trends:', error);
+      throw error;
+    }
+  }
+
+  // Onboarding Management Implementation
+  async getCompanyOnboarding(userId: number): Promise<CompanyOnboarding | undefined> {
+    try {
+      const [onboarding] = await db
+        .select()
+        .from(companyOnboarding)
+        .where(eq(companyOnboarding.createdBy, userId));
+      return onboarding;
+    } catch (error) {
+      console.error('Error getting company onboarding:', error);
+      throw error;
+    }
+  }
+
+  async createCompanyOnboarding(data: InsertCompanyOnboarding): Promise<CompanyOnboarding> {
+    try {
+      const [newOnboarding] = await db
+        .insert(companyOnboarding)
+        .values(data)
+        .returning();
+      return newOnboarding;
+    } catch (error) {
+      console.error('Error creating company onboarding:', error);
+      throw error;
+    }
+  }
+
+  async updateCompanyOnboarding(id: number, data: Partial<InsertCompanyOnboarding>): Promise<CompanyOnboarding | undefined> {
+    try {
+      const [updated] = await db
+        .update(companyOnboarding)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(companyOnboarding.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating company onboarding:', error);
+      throw error;
+    }
+  }
+
+  async getOnboardingProgress(userId: number, companyOnboardingId: number): Promise<OnboardingProgress[]> {
+    try {
+      return await db
+        .select()
+        .from(onboardingProgress)
+        .where(
+          and(
+            eq(onboardingProgress.userId, userId),
+            eq(onboardingProgress.companyOnboardingId, companyOnboardingId)
+          )
+        );
+    } catch (error) {
+      console.error('Error getting onboarding progress:', error);
+      throw error;
+    }
+  }
+
+  async createOnboardingProgress(data: InsertOnboardingProgress): Promise<OnboardingProgress> {
+    try {
+      const [newProgress] = await db
+        .insert(onboardingProgress)
+        .values(data)
+        .returning();
+      return newProgress;
+    } catch (error) {
+      console.error('Error creating onboarding progress:', error);
+      throw error;
+    }
+  }
+
+  async updateOnboardingProgress(userId: number, step: string, data: Partial<InsertOnboardingProgress>): Promise<OnboardingProgress | undefined> {
+    try {
+      const [updated] = await db
+        .update(onboardingProgress)
+        .set(data)
+        .where(
+          and(
+            eq(onboardingProgress.userId, userId),
+            eq(onboardingProgress.step, step)
+          )
+        )
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating onboarding progress:', error);
+      throw error;
+    }
+  }
+
+  async getTeamOnboardingStatus(companyOnboardingId: number): Promise<{ teamMembers: number; completedSteps: string[] }> {
+    try {
+      const onboarding = await db
+        .select()
+        .from(companyOnboarding)
+        .where(eq(companyOnboarding.id, companyOnboardingId))
+        .limit(1);
+
+      if (!onboarding.length) {
+        return { teamMembers: 0, completedSteps: [] };
+      }
+
+      const progressCount = await db
+        .select({ count: sql<number>`count(distinct ${onboardingProgress.userId})` })
+        .from(onboardingProgress)
+        .where(eq(onboardingProgress.companyOnboardingId, companyOnboardingId));
+
+      return {
+        teamMembers: progressCount[0]?.count || 1,
+        completedSteps: onboarding[0].completedSteps || []
+      };
+    } catch (error) {
+      console.error('Error getting team onboarding status:', error);
       throw error;
     }
   }
