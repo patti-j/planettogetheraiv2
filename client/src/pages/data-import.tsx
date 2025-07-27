@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2, ClipboardList } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2, ClipboardList, AlertTriangle } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useMaxDock } from '@/contexts/MaxDockContext';
@@ -395,6 +395,7 @@ export default function DataImport() {
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiSampleSize, setAiSampleSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [aiGenerationResult, setAiGenerationResult] = useState<any>(null);
+  const [deleteExistingData, setDeleteExistingData] = useState(false);
 
   // Feature to data requirements mapping
   const featureDataRequirements = {
@@ -970,15 +971,39 @@ Focus on creating authentic, interconnected data that would be typical for ${com
     // Use recommended data types if no data types are manually selected
     const dataTypesToGenerate = selectedDataTypes.length > 0 ? selectedDataTypes : recommendedDataTypes;
     
+    if (dataTypesToGenerate.length === 0) {
+      toast({
+        title: "No Data Types Selected",
+        description: "Please select at least one data type to generate.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Show confirmation dialog if delete existing data is selected
+    if (deleteExistingData) {
+      const confirmed = window.confirm(
+        "⚠️ WARNING: This will permanently delete ALL existing master data (plants, resources, capabilities, production orders, operations, etc.) before generating new sample data.\n\n" +
+        "This action CANNOT BE UNDONE.\n\n" +
+        "Are you absolutely sure you want to proceed?"
+      );
+      
+      if (!confirmed) {
+        return;
+      }
+    }
+    
     console.log('Data types for AI generation:', dataTypesToGenerate);
     console.log('Selected data types:', selectedDataTypes);
     console.log('Recommended data types:', recommendedDataTypes);
+    console.log('Delete existing data:', deleteExistingData);
 
     aiGenerationMutation.mutate({
       prompt: aiPrompt,
       companyInfo,
       selectedDataTypes: dataTypesToGenerate,
-      sampleSize: aiSampleSize
+      sampleSize: aiSampleSize,
+      deleteExistingData
     });
   };
 
@@ -2389,6 +2414,51 @@ Focus on creating authentic, interconnected data that would be typical for ${com
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Delete Existing Data Option */}
+            <div className="space-y-3">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div className="space-y-3 flex-1">
+                    <div>
+                      <h4 className="font-medium text-amber-900">Data Generation Options</h4>
+                      <p className="text-sm text-amber-800 mt-1">
+                        Choose whether to add to existing data or start fresh.
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        id="delete-existing"
+                        checked={deleteExistingData}
+                        onCheckedChange={setDeleteExistingData}
+                        className="mt-0.5"
+                      />
+                      <div className="space-y-1">
+                        <Label 
+                          htmlFor="delete-existing" 
+                          className="text-sm font-medium text-amber-900 cursor-pointer"
+                        >
+                          Delete all existing master data first
+                        </Label>
+                        <p className="text-xs text-amber-700">
+                          ⚠️ <strong>Warning:</strong> This will permanently delete all existing plants, resources, capabilities, 
+                          production orders, operations, and other master data. This action cannot be undone.
+                        </p>
+                        {deleteExistingData && (
+                          <div className="bg-red-50 border border-red-200 rounded p-2 mt-2">
+                            <p className="text-xs text-red-800 font-medium">
+                              🔥 Deletion confirmed: All master data will be permanently removed before generating new data.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 

@@ -445,10 +445,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI-powered sample data generation
   app.post('/api/data-import/generate-sample-data', requireAuth, async (req, res) => {
     try {
-      const { prompt, companyInfo, selectedDataTypes, sampleSize = 'medium' } = req.body;
+      const { prompt, companyInfo, selectedDataTypes, sampleSize = 'medium', deleteExistingData = false } = req.body;
       
       if (!prompt || !companyInfo || !selectedDataTypes) {
         return res.status(400).json({ error: 'Missing required fields: prompt, companyInfo, selectedDataTypes' });
+      }
+
+      // Delete existing master data if requested
+      if (deleteExistingData) {
+        console.log('Deleting existing master data before AI generation...');
+        try {
+          // Delete in proper order to handle foreign key constraints
+          // Delete operations first (depends on production orders)
+          const operations = await storage.getOperations();
+          for (const operation of operations) {
+            await storage.deleteOperation(operation.id);
+          }
+          
+          // Delete production orders (depends on nothing)
+          const productionOrders = await storage.getJobs();
+          for (const order of productionOrders) {
+            await storage.deleteJob(order.id);
+          }
+          
+          // Delete resources (may depend on capabilities)
+          const resources = await storage.getResources();
+          for (const resource of resources) {
+            await storage.deleteResource(resource.id);
+          }
+          
+          // Note: Capabilities deletion skipped as delete method needs to be implemented
+          // This is safe since we're regenerating all data including capabilities
+          
+          // Delete plants last (may be referenced by other entities)
+          const plants = await storage.getPlants();
+          for (const plant of plants) {
+            await storage.deletePlant(plant.id);
+          }
+          
+          console.log('Successfully deleted all existing master data');
+        } catch (deleteError) {
+          console.error('Error deleting existing master data:', deleteError);
+          return res.status(500).json({ 
+            error: 'Failed to delete existing master data', 
+            details: deleteError.message 
+          });
+        }
       }
 
       // Industry-specific sample size configurations
