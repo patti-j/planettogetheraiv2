@@ -310,7 +310,14 @@ LIVE DATA AVAILABLE:
 
 IMPORTANT: You have access to real live manufacturing data. When users ask about jobs, operations, resources, plants, or system status, use the provided live data above to give accurate answers. DO NOT say you don't have access - you have direct access to current system data.
 
-Available actions: LIST_JOBS, LIST_OPERATIONS, LIST_RESOURCES, LIST_PLANTS, CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, OPEN_SHOP_FLOOR, OPEN_VISUAL_FACTORY, OPEN_CAPACITY_PLANNING, OPEN_OPTIMIZATION_STUDIO, OPEN_PRODUCTION_PLANNING, OPEN_SYSTEMS_INTEGRATION, OPEN_ROLE_MANAGEMENT, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, CLEAR_CANVAS, CREATE_CHART, CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART, SHOW_API_DOCUMENTATION, and others.
+Available actions: LIST_JOBS, LIST_OPERATIONS, LIST_RESOURCES, LIST_PLANTS, CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, OPEN_SHOP_FLOOR, OPEN_VISUAL_FACTORY, OPEN_CAPACITY_PLANNING, OPEN_OPTIMIZATION_STUDIO, OPEN_PRODUCTION_PLANNING, OPEN_SYSTEMS_INTEGRATION, OPEN_ROLE_MANAGEMENT, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, CLEAR_CANVAS, CREATE_CHART, CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART, SHOW_API_DOCUMENTATION, START_TOUR, and others.
+
+Tour Guidelines:
+- START_TOUR: Start a guided tour for a specific role with voice narration
+- Tour parameters: {roleId: number, voiceEnabled: boolean (default true), context: "demo" | "training" (default "demo")}
+- Common role IDs: Trainer (9), Director (1), Plant Manager (2), Production Scheduler (3), Systems Manager (5)
+- When users ask for tours, training, or guidance, use START_TOUR action to initiate appropriate role-based tours
+- Examples: "start tour" = START_TOUR with current user's role, "show me how to use this" = START_TOUR with demo context
 
 CRITICAL DISTINCTION:
 - For API documentation requests ("available APIs", "what APIs can you call", "list of available functions", "what can you do", "your capabilities", "available commands"): Use LIST_AVAILABLE_APIS action
@@ -1725,7 +1732,8 @@ async function executeAction(action: string, parameters: any, message: string, c
           { "API Function": "SHOW_CANVAS", "Description": "Display or show canvas content area." },
           { "API Function": "CLEAR_CANVAS", "Description": "Clear all content from canvas." },
           { "API Function": "MAXIMIZE_VIEW", "Description": "Maximize current view." },
-          { "API Function": "MINIMIZE_VIEW", "Description": "Minimize current view." }
+          { "API Function": "MINIMIZE_VIEW", "Description": "Minimize current view." },
+          { "API Function": "START_TOUR", "Description": "Start a guided tour for a specific role with optional voice narration." }
         ];
 
         return {
@@ -1746,10 +1754,53 @@ async function executeAction(action: string, parameters: any, message: string, c
           actions: ["LIST_AVAILABLE_APIS", "ADD_CANVAS_CONTENT"]
         };
 
+      case "START_TOUR":
+        // Start a guided tour for the specified role
+        const roleId = parameters.roleId || 9; // Default to trainer role
+        const voiceEnabled = parameters.voiceEnabled !== false; // Default to true
+        const tourContext = parameters.context || "demo"; // Default to demo context
+        
+        // Map role names to IDs if role name is provided instead of ID
+        const roleNameMapping: Record<string, number> = {
+          "trainer": 9,
+          "director": 1,
+          "plant-manager": 2,
+          "production-scheduler": 3,
+          "systems-manager": 5,
+          "administrator": 4,
+          "it-administrator": 4,
+          "data-analyst": 8
+        };
+        
+        let finalRoleId = roleId;
+        if (typeof roleId === 'string') {
+          finalRoleId = roleNameMapping[roleId.toLowerCase().replace(/\s+/g, '-')] || 9;
+        }
+        
+        return {
+          success: true,
+          message: message || `Starting guided tour for role ID ${finalRoleId} with voice ${voiceEnabled ? 'enabled' : 'disabled'} in ${tourContext} mode.`,
+          data: {
+            roleId: finalRoleId,
+            voiceEnabled,
+            context: tourContext,
+            tourInitiated: true
+          },
+          frontendAction: {
+            type: "START_TOUR",
+            parameters: {
+              roleId: finalRoleId,
+              voiceEnabled,
+              context: tourContext
+            }
+          },
+          actions: ["START_TOUR"]
+        };
+
       default:
         return {
           success: false,
-          message: "I don't understand that command. Try asking me to create jobs, operations, resources, open pages, navigate to analytics, or analyze attached files.",
+          message: "I don't understand that command. Try asking me to create jobs, operations, resources, open pages, navigate to analytics, analyze attached files, or start a tour.",
           data: null
         };
     }

@@ -12,6 +12,7 @@ import { useMaxDock } from "@/contexts/MaxDockContext";
 import type { CanvasItem } from "@/contexts/MaxDockContext";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { useLocation } from "wouter";
+import { useTour } from "@/contexts/TourContext";
 import { 
   Bot, 
   Send, 
@@ -130,6 +131,7 @@ export function MaxSidebar() {
     setCanvasItems
   } = useMaxDock();
   const { getThemeClasses } = useAITheme();
+  const { startTour } = useTour();
   
   // State management
   const [messages, setMessages] = useState<Message[]>([]);
@@ -323,6 +325,12 @@ export function MaxSidebar() {
         handleCanvasAction(response.canvasAction);
       } else {
         console.log('No canvas action in response');
+      }
+
+      // Handle frontend actions
+      if (response.frontendAction) {
+        console.log('Frontend action detected:', response.frontendAction);
+        handleFrontendAction(response.frontendAction);
       }
 
       // Handle navigation actions
@@ -817,6 +825,39 @@ export function MaxSidebar() {
       toast({
         title: "Navigation Error",
         description: "Unable to navigate to the requested page",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleFrontendAction = (frontendAction: any) => {
+    console.log('Processing frontend action:', frontendAction);
+    
+    try {
+      switch (frontendAction.type) {
+        case 'START_TOUR':
+          const { roleId, voiceEnabled, context } = frontendAction.parameters || {};
+          console.log('Starting tour with parameters:', { roleId, voiceEnabled, context });
+          
+          // Call the tour system to start the tour
+          startTour(roleId, voiceEnabled, context);
+          
+          // Show success message
+          toast({
+            title: "Tour Started",
+            description: `Guided tour initiated for role ${roleId} with voice ${voiceEnabled ? 'enabled' : 'disabled'}`,
+          });
+          break;
+          
+        default:
+          console.warn('Unknown frontend action type:', frontendAction.type);
+          break;
+      }
+    } catch (error) {
+      console.error('Frontend action error:', error);
+      toast({
+        title: "Action Error",
+        description: "Unable to execute the requested action",
         variant: "destructive"
       });
     }
