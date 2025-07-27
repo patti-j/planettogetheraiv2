@@ -2,6 +2,17 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Per-Plant AI Generation Scaling & Comprehensive Deletion System Implementation (July 27, 2025)**:
+- Successfully implemented per-plant scaling for AI sample data generation where resources, orders, and operations now scale based on number of plants instead of fixed totals
+- Fixed critical foreign key constraint issues by implementing proper deletion sequence with comprehensive table clearing including disruptions, scheduling_history, and all dependent tables
+- Updated backend configuration with per-plant multipliers for all industries (automotive: 8-15 resources/plant, pharmaceutical: 6-12 resources/plant, electronics: 12-20 resources/plant, food/beverage: 10-18 resources/plant)
+- Updated frontend display logic to show per-plant scaling descriptions instead of fixed record counts for better user understanding
+- Enhanced AI prompt generation to reflect new per-plant scaling structure for more realistic manufacturing data that scales with company size
+- Resolved seeding conflicts by adding conditional disruption seeding that only runs when master data exists, preventing foreign key constraint violations
+- AI generation now creates realistic data volumes: small (1-2 plants), medium (3-5 plants), large (5-10 plants) with appropriate resource scaling per plant
+- Comprehensive deletion system uses SQL direct deletion approach to handle complex foreign key relationships across 15+ dependent tables
+- System tested successfully with Tesla automotive (7 resources for 1 plant) and Apple electronics (5 resources for 4 plants) scenarios showing proper per-plant scaling
+
 ✓ **AI-Powered Master Data Modification Feature Implementation (July 27, 2025)**:
 - Successfully implemented comprehensive AI-powered master data modification system allowing targeted changes without full regeneration
 - Created natural language modification interface where users describe specific changes (e.g., "Add 3 CNC machines to Plant A", "Update all high priority orders to critical")

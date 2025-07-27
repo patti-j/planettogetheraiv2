@@ -1,6 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
+import { sql } from "drizzle-orm";
 import { createSafeHandler, errorMiddleware, ValidationError, DatabaseError, NotFoundError, AuthenticationError } from "./error-handler";
 import { 
   insertPlantSchema, insertCapabilitySchema, insertResourceSchema, insertProductionOrderSchema, insertPlannedOrderSchema, 
@@ -456,34 +458,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('Deleting existing master data before AI generation...');
         try {
           // Delete in proper order to handle foreign key constraints
-          // Delete operations first (depends on production orders)
-          const operations = await storage.getOperations();
-          for (const operation of operations) {
-            await storage.deleteOperation(operation.id);
-          }
+          // Delete all dependent tables first, then core master data tables
+          await db.execute(sql`DELETE FROM disruption_actions`);
+          await db.execute(sql`DELETE FROM disruption_escalations`);
+          await db.execute(sql`DELETE FROM disruptions`);
+          await db.execute(sql`DELETE FROM dependencies`);
+          await db.execute(sql`DELETE FROM scenario_operations`);
+          await db.execute(sql`DELETE FROM scheduling_results`);
+          await db.execute(sql`DELETE FROM algorithm_performance`);
+          await db.execute(sql`DELETE FROM scheduling_history`);
+          await db.execute(sql`DELETE FROM production_targets`);
+          await db.execute(sql`DELETE FROM production_plans`);
+          await db.execute(sql`DELETE FROM resource_absences`);
+          await db.execute(sql`DELETE FROM resource_allocations`);
+          await db.execute(sql`DELETE FROM resource_shift_assignments`);
+          await db.execute(sql`DELETE FROM shift_templates`);
+          await db.execute(sql`DELETE FROM holidays`);
+          await db.execute(sql`DELETE FROM operations`);
+          await db.execute(sql`DELETE FROM production_orders`);
+          await db.execute(sql`DELETE FROM jobs WHERE id NOT IN (SELECT id FROM production_orders)`);
+          await db.execute(sql`DELETE FROM resources`);
+          await db.execute(sql`DELETE FROM plants`);
           
-          // Delete production orders (depends on nothing)
-          const productionOrders = await storage.getJobs();
-          for (const order of productionOrders) {
-            await storage.deleteJob(order.id);
-          }
-          
-          // Delete resources (may depend on capabilities)
-          const resources = await storage.getResources();
-          for (const resource of resources) {
-            await storage.deleteResource(resource.id);
-          }
-          
-          // Note: Capabilities deletion skipped as delete method needs to be implemented
-          // This is safe since we're regenerating all data including capabilities
-          
-          // Delete plants last (may be referenced by other entities)
-          const plants = await storage.getPlants();
-          for (const plant of plants) {
-            await storage.deletePlant(plant.id);
-          }
-          
-          console.log('Successfully deleted all existing master data');
+          console.log('Successfully deleted all existing master data via SQL');
         } catch (deleteError) {
           console.error('Error deleting existing master data:', deleteError);
           return res.status(500).json({ 
@@ -497,37 +494,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const getIndustryTypicalSizes = (industry: string) => {
         const industryLower = industry.toLowerCase();
         
-        // Base configurations by industry
+        // Base configurations by industry - Per Plant Scaling
         if (industryLower.includes('automotive') || industryLower.includes('auto')) {
           return {
-            small: { plants: { min: 1, max: 2 }, resources: { min: 8, max: 12 }, capabilities: { min: 6, max: 10 }, productionOrders: { min: 15, max: 25 }, operations: { min: 30, max: 60 } },
-            medium: { plants: { min: 2, max: 4 }, resources: { min: 20, max: 35 }, capabilities: { min: 12, max: 18 }, productionOrders: { min: 40, max: 70 }, operations: { min: 120, max: 210 } },
-            large: { plants: { min: 4, max: 8 }, resources: { min: 50, max: 80 }, capabilities: { min: 20, max: 30 }, productionOrders: { min: 100, max: 150 }, operations: { min: 300, max: 450 } }
+            small: { plants: { min: 1, max: 2 }, resourcesPerPlant: { min: 4, max: 6 }, capabilities: { min: 6, max: 10 }, ordersPerPlant: { min: 8, max: 12 }, operationsPerOrder: { min: 2, max: 4 } },
+            medium: { plants: { min: 2, max: 4 }, resourcesPerPlant: { min: 5, max: 9 }, capabilities: { min: 12, max: 18 }, ordersPerPlant: { min: 10, max: 18 }, operationsPerOrder: { min: 3, max: 6 } },
+            large: { plants: { min: 4, max: 8 }, resourcesPerPlant: { min: 6, max: 10 }, capabilities: { min: 20, max: 30 }, ordersPerPlant: { min: 12, max: 19 }, operationsPerOrder: { min: 4, max: 8 } }
           };
         } else if (industryLower.includes('pharmaceutical') || industryLower.includes('pharma')) {
           return {
-            small: { plants: { min: 1, max: 2 }, resources: { min: 6, max: 10 }, capabilities: { min: 8, max: 12 }, productionOrders: { min: 10, max: 20 }, operations: { min: 25, max: 50 } },
-            medium: { plants: { min: 2, max: 3 }, resources: { min: 15, max: 25 }, capabilities: { min: 15, max: 25 }, productionOrders: { min: 30, max: 50 }, operations: { min: 90, max: 150 } },
-            large: { plants: { min: 3, max: 6 }, resources: { min: 35, max: 60 }, capabilities: { min: 30, max: 40 }, productionOrders: { min: 80, max: 120 }, operations: { min: 240, max: 360 } }
+            small: { plants: { min: 1, max: 2 }, resourcesPerPlant: { min: 3, max: 5 }, capabilities: { min: 8, max: 12 }, ordersPerPlant: { min: 5, max: 10 }, operationsPerOrder: { min: 2, max: 5 } },
+            medium: { plants: { min: 2, max: 3 }, resourcesPerPlant: { min: 5, max: 8 }, capabilities: { min: 15, max: 25 }, ordersPerPlant: { min: 10, max: 17 }, operationsPerOrder: { min: 3, max: 6 } },
+            large: { plants: { min: 3, max: 6 }, resourcesPerPlant: { min: 6, max: 10 }, capabilities: { min: 30, max: 40 }, ordersPerPlant: { min: 13, max: 20 }, operationsPerOrder: { min: 4, max: 8 } }
           };
         } else if (industryLower.includes('electronics') || industryLower.includes('semiconductor')) {
           return {
-            small: { plants: { min: 1, max: 2 }, resources: { min: 10, max: 15 }, capabilities: { min: 8, max: 12 }, productionOrders: { min: 25, max: 40 }, operations: { min: 50, max: 80 } },
-            medium: { plants: { min: 2, max: 4 }, resources: { min: 25, max: 40 }, capabilities: { min: 15, max: 22 }, productionOrders: { min: 60, max: 100 }, operations: { min: 180, max: 300 } },
-            large: { plants: { min: 4, max: 7 }, resources: { min: 60, max: 100 }, capabilities: { min: 25, max: 35 }, productionOrders: { min: 150, max: 250 }, operations: { min: 450, max: 750 } }
+            small: { plants: { min: 1, max: 2 }, resourcesPerPlant: { min: 5, max: 8 }, capabilities: { min: 8, max: 12 }, ordersPerPlant: { min: 12, max: 20 }, operationsPerOrder: { min: 2, max: 4 } },
+            medium: { plants: { min: 2, max: 4 }, resourcesPerPlant: { min: 6, max: 10 }, capabilities: { min: 15, max: 22 }, ordersPerPlant: { min: 15, max: 25 }, operationsPerOrder: { min: 3, max: 6 } },
+            large: { plants: { min: 4, max: 7 }, resourcesPerPlant: { min: 9, max: 14 }, capabilities: { min: 25, max: 35 }, ordersPerPlant: { min: 21, max: 36 }, operationsPerOrder: { min: 4, max: 8 } }
           };
         } else if (industryLower.includes('food') || industryLower.includes('beverage')) {
           return {
-            small: { plants: { min: 1, max: 2 }, resources: { min: 5, max: 8 }, capabilities: { min: 5, max: 8 }, productionOrders: { min: 20, max: 35 }, operations: { min: 40, max: 70 } },
-            medium: { plants: { min: 2, max: 4 }, resources: { min: 12, max: 20 }, capabilities: { min: 10, max: 15 }, productionOrders: { min: 50, max: 80 }, operations: { min: 150, max: 240 } },
-            large: { plants: { min: 3, max: 6 }, resources: { min: 30, max: 50 }, capabilities: { min: 18, max: 25 }, productionOrders: { min: 120, max: 180 }, operations: { min: 360, max: 540 } }
+            small: { plants: { min: 1, max: 2 }, resourcesPerPlant: { min: 2, max: 4 }, capabilities: { min: 5, max: 8 }, ordersPerPlant: { min: 10, max: 18 }, operationsPerOrder: { min: 2, max: 4 } },
+            medium: { plants: { min: 2, max: 4 }, resourcesPerPlant: { min: 3, max: 5 }, capabilities: { min: 10, max: 15 }, ordersPerPlant: { min: 12, max: 20 }, operationsPerOrder: { min: 3, max: 6 } },
+            large: { plants: { min: 3, max: 6 }, resourcesPerPlant: { min: 5, max: 8 }, capabilities: { min: 18, max: 25 }, ordersPerPlant: { min: 20, max: 30 }, operationsPerOrder: { min: 4, max: 8 } }
           };
         } else {
           // Generic manufacturing defaults
           return {
-            small: { plants: { min: 1, max: 2 }, resources: { min: 3, max: 5 }, capabilities: { min: 3, max: 5 }, productionOrders: { min: 5, max: 10 }, operations: { min: 10, max: 20 } },
-            medium: { plants: { min: 3, max: 5 }, resources: { min: 8, max: 15 }, capabilities: { min: 5, max: 8 }, productionOrders: { min: 15, max: 25 }, operations: { min: 45, max: 75 } },
-            large: { plants: { min: 5, max: 10 }, resources: { min: 20, max: 40 }, capabilities: { min: 8, max: 15 }, productionOrders: { min: 30, max: 50 }, operations: { min: 90, max: 150 } }
+            small: { plants: { min: 1, max: 2 }, resourcesPerPlant: { min: 2, max: 3 }, capabilities: { min: 3, max: 5 }, ordersPerPlant: { min: 3, max: 5 }, operationsPerOrder: { min: 2, max: 4 } },
+            medium: { plants: { min: 3, max: 5 }, resourcesPerPlant: { min: 2, max: 3 }, capabilities: { min: 5, max: 8 }, ordersPerPlant: { min: 4, max: 6 }, operationsPerOrder: { min: 3, max: 5 } },
+            large: { plants: { min: 5, max: 10 }, resourcesPerPlant: { min: 2, max: 4 }, capabilities: { min: 8, max: 15 }, ordersPerPlant: { min: 3, max: 5 }, operationsPerOrder: { min: 3, max: 5 } }
           };
         }
       };
@@ -554,11 +551,24 @@ Generate sample data for the following data types: ${selectedDataTypes.join(', '
 
 For each data type, generate the following number of records:
 ${selectedDataTypes.map(type => {
-  const typeConfig = config[type as keyof typeof config];
-  if (typeConfig && typeof typeConfig === 'object' && 'min' in typeConfig) {
-    return `- ${type}: ${typeConfig.min}-${typeConfig.max} records (industry-typical for ${companyInfo.industry})`;
+  if (type === 'plants') {
+    const typeConfig = config.plants;
+    return `- plants: ${typeConfig.min}-${typeConfig.max} manufacturing facilities`;
+  } else if (type === 'resources') {
+    const typeConfig = config.resourcesPerPlant;
+    return `- resources: ${typeConfig.min}-${typeConfig.max} resources PER PLANT (scale based on number of plants generated)`;
+  } else if (type === 'productionOrders') {
+    const typeConfig = config.ordersPerPlant;
+    return `- productionOrders: ${typeConfig.min}-${typeConfig.max} production orders PER PLANT (scale based on number of plants generated)`;
+  } else if (type === 'operations') {
+    const typeConfig = config.operationsPerOrder;
+    return `- operations: ${typeConfig.min}-${typeConfig.max} operations PER PRODUCTION ORDER (scale based on total orders)`;
+  } else if (type === 'capabilities') {
+    const typeConfig = config.capabilities;
+    return `- capabilities: ${typeConfig.min}-${typeConfig.max} manufacturing capabilities (shared across all plants)`;
+  } else {
+    return `- ${type}: 3-5 records (default)`;
   }
-  return `- ${type}: 3-5 records (default)`;
 }).join('\n')}
 
 CRITICAL REQUIREMENTS:

@@ -2382,33 +2382,33 @@ Focus on creating authentic, interconnected data that would be typical for ${com
                     
                     if (industry.includes('automotive')) {
                       return {
-                        small: { records: '1-2 plants, 8-12 resources, 15-25 orders, 30-60 operations', description: 'Minimal automotive production setup' },
-                        medium: { records: '2-4 plants, 20-35 resources, 40-70 orders, 120-210 operations', description: 'Typical automotive production' },
-                        large: { records: '4-8 plants, 50-80 resources, 100-150 orders, 300-450 operations', description: 'Large automotive manufacturing' }
+                        small: { records: '1-2 plants, 4-6 resources per plant, 8-12 orders per plant, 2-4 operations per order', description: 'Minimal automotive production setup' },
+                        medium: { records: '2-4 plants, 5-9 resources per plant, 10-18 orders per plant, 3-6 operations per order', description: 'Typical automotive production' },
+                        large: { records: '4-8 plants, 6-10 resources per plant, 12-19 orders per plant, 4-8 operations per order', description: 'Large automotive manufacturing' }
                       };
                     } else if (industry.includes('pharmaceutical')) {
                       return {
-                        small: { records: '1-2 plants, 6-10 resources, 10-20 orders, 25-50 operations', description: 'Small pharma production setup' },
-                        medium: { records: '2-3 plants, 15-25 resources, 30-50 orders, 90-150 operations', description: 'Mid-scale pharmaceutical production' },
-                        large: { records: '3-6 plants, 35-60 resources, 80-120 orders, 240-360 operations', description: 'Enterprise pharmaceutical operations' }
+                        small: { records: '1-2 plants, 3-5 resources per plant, 5-10 orders per plant, 2-5 operations per order', description: 'Small pharma production setup' },
+                        medium: { records: '2-3 plants, 5-8 resources per plant, 10-17 orders per plant, 3-6 operations per order', description: 'Mid-scale pharmaceutical production' },
+                        large: { records: '3-6 plants, 6-10 resources per plant, 13-20 orders per plant, 4-8 operations per order', description: 'Enterprise pharmaceutical operations' }
                       };
                     } else if (industry.includes('electronics')) {
                       return {
-                        small: { records: '1-2 plants, 10-15 resources, 25-40 orders, 50-80 operations', description: 'Small electronics production' },
-                        medium: { records: '2-4 plants, 25-40 resources, 60-100 orders, 180-300 operations', description: 'Mid-scale electronics manufacturing' },
-                        large: { records: '4-7 plants, 60-100 resources, 150-250 orders, 450-750 operations', description: 'Large electronics operations' }
+                        small: { records: '1-2 plants, 5-8 resources per plant, 12-20 orders per plant, 2-4 operations per order', description: 'Small electronics production' },
+                        medium: { records: '2-4 plants, 6-10 resources per plant, 15-25 orders per plant, 3-6 operations per order', description: 'Mid-scale electronics manufacturing' },
+                        large: { records: '4-7 plants, 9-14 resources per plant, 21-36 orders per plant, 4-8 operations per order', description: 'Large electronics operations' }
                       };
                     } else if (industry.includes('food') || industry.includes('beverage')) {
                       return {
-                        small: { records: '1-2 plants, 5-8 resources, 20-35 orders, 40-70 operations', description: 'Small food/beverage production' },
-                        medium: { records: '2-4 plants, 12-20 resources, 50-80 orders, 150-240 operations', description: 'Regional food manufacturing' },
-                        large: { records: '3-6 plants, 30-50 resources, 120-180 orders, 360-540 operations', description: 'National food/beverage operations' }
+                        small: { records: '1-2 plants, 2-4 resources per plant, 10-18 orders per plant, 2-4 operations per order', description: 'Small food/beverage production' },
+                        medium: { records: '2-4 plants, 3-5 resources per plant, 12-20 orders per plant, 3-6 operations per order', description: 'Regional food manufacturing' },
+                        large: { records: '3-6 plants, 5-8 resources per plant, 20-30 orders per plant, 4-8 operations per order', description: 'National food/beverage operations' }
                       };
                     } else {
                       return {
-                        small: { records: '1-2 plants, 3-5 resources, 5-10 orders, 10-20 operations', description: 'Minimal data for quick testing' },
-                        medium: { records: '3-5 plants, 8-15 resources, 15-25 orders, 45-75 operations', description: 'Balanced dataset for evaluation' },
-                        large: { records: '5-10 plants, 20-40 resources, 30-50 orders, 90-150 operations', description: 'Comprehensive data for full testing' }
+                        small: { records: '1-2 plants, 2-3 resources per plant, 3-5 orders per plant, 2-4 operations per order', description: 'Minimal data for quick testing' },
+                        medium: { records: '3-5 plants, 2-3 resources per plant, 4-6 orders per plant, 3-5 operations per order', description: 'Balanced dataset for evaluation' },
+                        large: { records: '5-10 plants, 2-4 resources per plant, 3-5 orders per plant, 3-5 operations per order', description: 'Comprehensive data for full testing' }
                       };
                     }
                   };

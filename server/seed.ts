@@ -149,8 +149,11 @@ export async function seedDatabase() {
       await db.insert(operations).values(operationData);
     }
 
-    // Insert sample disruptions only if they don't exist
-    if (shouldReseedDisruptions) {
+    // Insert sample disruptions only if they don't exist and master data exists
+    const existingResources = await db.select().from(resources).limit(5);
+    const existingProductionOrders = await db.select().from(productionOrders).limit(5);
+    
+    if (shouldReseedDisruptions && existingResources.length > 0 && existingProductionOrders.length > 0) {
       const disruptionData = [
       {
         title: "CNC-001 Machine Breakdown",
