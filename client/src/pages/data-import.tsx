@@ -6,8 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3 } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -30,6 +32,15 @@ export default function DataImport() {
     users: '',
     capabilities: '',
     plants: ''
+  });
+
+  // Structured data for spreadsheet-like interface
+  const [structuredData, setStructuredData] = useState<Record<string, any[]>>({
+    resources: [{ name: '', type: 'Equipment', description: '', status: 'active', capabilities: '' }],
+    jobs: [{ name: '', customer: '', priority: 'medium', dueDate: '', quantity: 1, description: '' }],
+    users: [{ username: '', email: '', firstName: '', lastName: '', role: 'operator' }],
+    capabilities: [{ name: '', description: '', category: 'general' }],
+    plants: [{ name: '', location: '', address: '', timezone: 'UTC' }]
   });
 
   const importMutation = useMutation({
@@ -164,6 +175,136 @@ export default function DataImport() {
     }
   };
 
+  // Field definitions for each data type
+  const getFieldDefinitions = (dataType: string) => {
+    switch (dataType) {
+      case 'resources':
+        return [
+          { key: 'name', label: 'Name', type: 'text', required: true },
+          { key: 'type', label: 'Type', type: 'select', options: ['Equipment', 'Personnel', 'Tool', 'Vehicle'], required: true },
+          { key: 'description', label: 'Description', type: 'text' },
+          { key: 'status', label: 'Status', type: 'select', options: ['active', 'inactive', 'maintenance'], required: true },
+          { key: 'capabilities', label: 'Capabilities', type: 'text', placeholder: 'Comma-separated capabilities' }
+        ];
+      case 'jobs':
+        return [
+          { key: 'name', label: 'Job Name', type: 'text', required: true },
+          { key: 'customer', label: 'Customer', type: 'text', required: true },
+          { key: 'priority', label: 'Priority', type: 'select', options: ['low', 'medium', 'high', 'critical'], required: true },
+          { key: 'dueDate', label: 'Due Date', type: 'date' },
+          { key: 'quantity', label: 'Quantity', type: 'number', required: true },
+          { key: 'description', label: 'Description', type: 'text' }
+        ];
+      case 'users':
+        return [
+          { key: 'username', label: 'Username', type: 'text', required: true },
+          { key: 'email', label: 'Email', type: 'email', required: true },
+          { key: 'firstName', label: 'First Name', type: 'text', required: true },
+          { key: 'lastName', label: 'Last Name', type: 'text', required: true },
+          { key: 'role', label: 'Role', type: 'select', options: ['operator', 'supervisor', 'manager', 'admin'], required: true }
+        ];
+      case 'capabilities':
+        return [
+          { key: 'name', label: 'Capability Name', type: 'text', required: true },
+          { key: 'description', label: 'Description', type: 'text' },
+          { key: 'category', label: 'Category', type: 'select', options: ['general', 'manufacturing', 'quality', 'maintenance', 'logistics'], required: true }
+        ];
+      case 'plants':
+        return [
+          { key: 'name', label: 'Plant Name', type: 'text', required: true },
+          { key: 'location', label: 'Location', type: 'text', required: true },
+          { key: 'address', label: 'Address', type: 'text' },
+          { key: 'timezone', label: 'Timezone', type: 'select', options: ['UTC', 'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'Europe/London', 'Europe/Berlin', 'Asia/Tokyo'], required: true }
+        ];
+      default:
+        return [];
+    }
+  };
+
+  const addStructuredRow = (dataType: string) => {
+    const fields = getFieldDefinitions(dataType);
+    const newRow = fields.reduce((obj, field) => {
+      obj[field.key] = field.type === 'number' ? 0 : field.options?.[0] || '';
+      return obj;
+    }, {} as any);
+    
+    setStructuredData(prev => ({
+      ...prev,
+      [dataType]: [...prev[dataType], newRow]
+    }));
+  };
+
+  const removeStructuredRow = (dataType: string, index: number) => {
+    setStructuredData(prev => ({
+      ...prev,
+      [dataType]: prev[dataType].filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateStructuredCell = (dataType: string, rowIndex: number, fieldKey: string, value: any) => {
+    setStructuredData(prev => ({
+      ...prev,
+      [dataType]: prev[dataType].map((row, i) => 
+        i === rowIndex ? { ...row, [fieldKey]: value } : row
+      )
+    }));
+  };
+
+  const handleStructuredImport = async (dataType: string) => {
+    const data = structuredData[dataType].filter(row => {
+      // Filter out empty rows (rows where required fields are empty)
+      const fields = getFieldDefinitions(dataType);
+      return fields.some(field => field.required && row[field.key]?.toString().trim());
+    });
+
+    if (data.length === 0) {
+      toast({
+        title: "No Data",
+        description: "Please enter at least one complete row of data.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsImporting(true);
+    setImportStatuses(prev => [...prev, { type: dataType, status: 'pending', message: 'Processing structured data...' }]);
+
+    try {
+      await processImportData(dataType, data);
+      
+      setImportStatuses(prev => 
+        prev.map(status => 
+          status.type === dataType 
+            ? { ...status, status: 'success', message: `Successfully imported ${data.length} items`, count: data.length }
+            : status
+        )
+      );
+
+      // Reset structured data after successful import
+      const fields = getFieldDefinitions(dataType);
+      const emptyRow = fields.reduce((obj, field) => {
+        obj[field.key] = field.type === 'number' ? 0 : field.options?.[0] || '';
+        return obj;
+      }, {} as any);
+      
+      setStructuredData(prev => ({
+        ...prev,
+        [dataType]: [emptyRow]
+      }));
+
+    } catch (error) {
+      setImportStatuses(prev => 
+        prev.map(status => 
+          status.type === dataType 
+            ? { ...status, status: 'error', message: error instanceof Error ? error.message : 'Import failed' }
+            : status
+        )
+      );
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   const handleManualImport = async (dataType: string) => {
     const textData = manualData[dataType as keyof typeof manualData];
     if (!textData.trim()) {
@@ -281,7 +422,7 @@ export default function DataImport() {
         <h1 className="text-3xl font-bold mb-2">Master Data Import</h1>
         <p className="text-muted-foreground">
           Import your company's core manufacturing data quickly and easily. 
-          Use the templates, upload spreadsheets, or enter data manually.
+          Use file uploads, structured spreadsheet-like entry, text input, or download templates to get started.
         </p>
       </div>
 
@@ -328,10 +469,14 @@ export default function DataImport() {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="upload" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="upload">Upload File</TabsTrigger>
-                  <TabsTrigger value="manual">Manual Entry</TabsTrigger>
-                  <TabsTrigger value="template">Download Template</TabsTrigger>
+                  <TabsTrigger value="structured">
+                    <Grid3X3 className="h-4 w-4 mr-1" />
+                    Spreadsheet
+                  </TabsTrigger>
+                  <TabsTrigger value="manual">Text Entry</TabsTrigger>
+                  <TabsTrigger value="template">Template</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="upload" className="space-y-4">
@@ -347,6 +492,106 @@ export default function DataImport() {
                       disabled={isImporting}
                       className="max-w-xs mx-auto"
                     />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="structured" className="space-y-4">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-base font-medium">Structured Data Entry</Label>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addStructuredRow(key)}
+                        disabled={isImporting}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Row
+                      </Button>
+                    </div>
+                    
+                    <div className="border rounded-lg overflow-hidden">
+                      <div className="max-h-96 overflow-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              {getFieldDefinitions(key).map(field => (
+                                <TableHead key={field.key} className="min-w-32">
+                                  {field.label}
+                                  {field.required && <span className="text-red-500 ml-1">*</span>}
+                                </TableHead>
+                              ))}
+                              <TableHead className="w-12">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {structuredData[key]?.map((row, rowIndex) => (
+                              <TableRow key={rowIndex}>
+                                {getFieldDefinitions(key).map(field => (
+                                  <TableCell key={field.key} className="p-2">
+                                    {field.type === 'select' ? (
+                                      <Select
+                                        value={row[field.key]?.toString() || ''}
+                                        onValueChange={(value) => updateStructuredCell(key, rowIndex, field.key, value)}
+                                        disabled={isImporting}
+                                      >
+                                        <SelectTrigger className="h-8">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {field.options?.map(option => (
+                                            <SelectItem key={option} value={option}>
+                                              {option}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    ) : (
+                                      <Input
+                                        type={field.type}
+                                        value={row[field.key]?.toString() || ''}
+                                        onChange={(e) => updateStructuredCell(key, rowIndex, field.key, 
+                                          field.type === 'number' ? parseInt(e.target.value) || 0 : e.target.value
+                                        )}
+                                        placeholder={field.placeholder || field.label}
+                                        disabled={isImporting}
+                                        className="h-8"
+                                        required={field.required}
+                                      />
+                                    )}
+                                  </TableCell>
+                                ))}
+                                <TableCell className="p-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeStructuredRow(key, rowIndex)}
+                                    disabled={isImporting || structuredData[key]?.length <= 1}
+                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <p>Fields marked with * are required</p>
+                      <p>{structuredData[key]?.length || 0} rows</p>
+                    </div>
+                    
+                    <Button 
+                      onClick={() => handleStructuredImport(key)}
+                      disabled={isImporting || (structuredData[key]?.length === 0)}
+                      className="w-full"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Import {structuredData[key]?.length || 0} {label}
+                    </Button>
                   </div>
                 </TabsContent>
 
