@@ -9,9 +9,10 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useMaxDock } from '@/contexts/MaxDockContext';
@@ -47,7 +48,8 @@ export default function DataImport() {
 
   const [manualData, setManualData] = useState({
     resources: '',
-    jobs: '',
+    productionOrders: '',
+    plannedOrders: '',
     users: '',
     capabilities: '',
     plants: ''
@@ -59,7 +61,8 @@ export default function DataImport() {
     capabilities: [], // No dependencies - can be created first  
     users: [], // No dependencies - can be created first
     resources: ['plants', 'capabilities'], // Requires plants and capabilities to exist
-    jobs: ['resources'] // Requires resources to exist
+    productionOrders: ['resources'], // Requires resources to exist
+    plannedOrders: ['resources'] // Requires resources to exist
   };
 
   // Structured data for spreadsheet-like interface
@@ -68,7 +71,8 @@ export default function DataImport() {
     capabilities: [{ name: '', description: '', category: 'general' }],
     users: [{ username: '', email: '', firstName: '', lastName: '', role: 'operator' }],
     resources: [{ name: '', type: 'Equipment', description: '', status: 'active', capabilities: [], plantId: '' }],
-    jobs: [{ name: '', customer: '', priority: 'medium', dueDate: '', quantity: 1, description: '' }]
+    productionOrders: [{ name: '', customer: '', priority: 'medium', dueDate: '', quantity: 1, description: '', status: 'pending' }],
+    plannedOrders: [{ name: '', customer: '', priority: 'medium', dueDate: '', quantity: 1, description: '', planType: 'forecast' }]
   });
 
   const importMutation = useMutation({
@@ -176,13 +180,24 @@ export default function DataImport() {
             capabilities: capabilities
           };
         });
-      case 'jobs':
+      case 'productionOrders':
         return data.map(item => ({
-          name: item.name || item.Name || item.Job || '',
+          name: item.name || item.Name || item['Production Order'] || '',
           customer: item.customer || item.Customer || '',
           priority: item.priority || item.Priority || 'medium',
           dueDate: item.dueDate || item['Due Date'] || null,
           quantity: parseInt(item.quantity || item.Quantity || '1'),
+          status: item.status || item.Status || 'pending',
+          description: item.description || item.Description || ''
+        }));
+      case 'plannedOrders':
+        return data.map(item => ({
+          name: item.name || item.Name || item['Planned Order'] || '',
+          customer: item.customer || item.Customer || '',
+          priority: item.priority || item.Priority || 'medium',
+          dueDate: item.dueDate || item['Due Date'] || null,
+          quantity: parseInt(item.quantity || item.Quantity || '1'),
+          planType: item.planType || item['Plan Type'] || 'forecast',
           description: item.description || item.Description || ''
         }));
       case 'users':
@@ -223,13 +238,24 @@ export default function DataImport() {
           { key: 'status', label: 'Status', type: 'select', options: ['active', 'inactive', 'maintenance'], required: true },
           { key: 'capabilities', label: 'Capabilities', type: 'multiselect', placeholder: 'Select capabilities' }
         ];
-      case 'jobs':
+      case 'productionOrders':
         return [
-          { key: 'name', label: 'Job Name', type: 'text', required: true },
+          { key: 'name', label: 'Production Order Name', type: 'text', required: true },
           { key: 'customer', label: 'Customer', type: 'text', required: true },
           { key: 'priority', label: 'Priority', type: 'select', options: ['low', 'medium', 'high', 'critical'], required: true },
           { key: 'dueDate', label: 'Due Date', type: 'date' },
           { key: 'quantity', label: 'Quantity', type: 'number', required: true },
+          { key: 'status', label: 'Status', type: 'select', options: ['pending', 'released', 'in-progress', 'completed', 'cancelled'], required: true },
+          { key: 'description', label: 'Description', type: 'text' }
+        ];
+      case 'plannedOrders':
+        return [
+          { key: 'name', label: 'Planned Order Name', type: 'text', required: true },
+          { key: 'customer', label: 'Customer', type: 'text', required: true },
+          { key: 'priority', label: 'Priority', type: 'select', options: ['low', 'medium', 'high', 'critical'], required: true },
+          { key: 'dueDate', label: 'Due Date', type: 'date' },
+          { key: 'quantity', label: 'Quantity', type: 'number', required: true },
+          { key: 'planType', label: 'Plan Type', type: 'select', options: ['forecast', 'firm', 'safety'], required: true },
           { key: 'description', label: 'Description', type: 'text' }
         ];
       case 'users':
@@ -718,9 +744,13 @@ export default function DataImport() {
         csvContent = 'Name,Type,Description,Status,Capabilities\nMachine-001,Equipment,CNC Machine,active,CNC Machining\nOperator-001,Personnel,Machine Operator,active,Machine Operation';
         filename = 'resources_template.csv';
         break;
-      case 'jobs':
-        csvContent = 'Name,Customer,Priority,Due Date,Quantity,Description\nWidget Assembly,ACME Corp,high,2025-02-01,100,Assembly of widget components\nPart Manufacturing,TechCorp,medium,2025-02-15,250,Manufacturing precision parts';
-        filename = 'jobs_template.csv';
+      case 'productionOrders':
+        csvContent = 'Name,Customer,Priority,Due Date,Quantity,Status,Description\nWidget Assembly,ACME Corp,high,2025-02-01,100,pending,Assembly of widget components\nPart Manufacturing,TechCorp,medium,2025-02-15,250,released,Manufacturing precision parts';
+        filename = 'production_orders_template.csv';
+        break;
+      case 'plannedOrders':
+        csvContent = 'Name,Customer,Priority,Due Date,Quantity,Plan Type,Description\nWidget Forecast Q1,ACME Corp,medium,2025-03-31,500,forecast,Forecast for Q1 widget demand\nPart Planning Q2,TechCorp,low,2025-06-30,300,firm,Planned parts for Q2 production';
+        filename = 'planned_orders_template.csv';
         break;
       case 'users':
         csvContent = 'Username,Email,First Name,Last Name,Role\njohn.doe,john@company.com,John,Doe,operator\njane.smith,jane@company.com,Jane,Smith,supervisor';
@@ -812,7 +842,8 @@ export default function DataImport() {
   const dataTypes = [
     // Core Manufacturing
     { key: 'resources', label: 'Resources', icon: Wrench, description: 'Equipment, machinery, and personnel' },
-    { key: 'jobs', label: 'Jobs', icon: Briefcase, description: 'Production orders and work orders' },
+    { key: 'productionOrders', label: 'Production Orders', icon: Briefcase, description: 'Active production work orders' },
+    { key: 'plannedOrders', label: 'Planned Orders', icon: Calendar, description: 'Future planned production orders' },
     { key: 'capabilities', label: 'Capabilities', icon: Database, description: 'Skills and machine capabilities' },
     { key: 'plants', label: 'Plants', icon: Building, description: 'Manufacturing facilities and locations' },
     
@@ -1312,12 +1343,12 @@ export default function DataImport() {
             {/* Data Type Selection Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { category: 'Core Manufacturing', types: dataTypes.slice(0, 4) },
-                { category: 'Organizational Structure', types: dataTypes.slice(4, 8) },
-                { category: 'Products & Inventory', types: dataTypes.slice(8, 12) },
-                { category: 'Orders & Transactions', types: dataTypes.slice(12, 15) },
-                { category: 'Manufacturing Planning', types: dataTypes.slice(15, 18) },
-                { category: 'System Users', types: dataTypes.slice(18) }
+                { category: 'Core Manufacturing', types: dataTypes.slice(0, 5) },
+                { category: 'Organizational Structure', types: dataTypes.slice(5, 9) },
+                { category: 'Products & Inventory', types: dataTypes.slice(9, 13) },
+                { category: 'Orders & Transactions', types: dataTypes.slice(13, 16) },
+                { category: 'Manufacturing Planning', types: dataTypes.slice(16, 19) },
+                { category: 'System Users', types: dataTypes.slice(19) }
               ].map(category => (
                 <div key={category.category} className="space-y-3">
                   <h4 className="font-medium text-sm text-muted-foreground border-b pb-1">

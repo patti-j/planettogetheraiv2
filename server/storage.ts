@@ -1,5 +1,5 @@
 import { 
-  plants, capabilities, resources, jobs, operations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
+  plants, capabilities, resources, productionOrders, plannedOrders, operations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
   capacityPlanningScenarios, staffingPlans, shiftPlans, equipmentPlans, capacityProjections,
@@ -8,7 +8,7 @@ import {
   disruptions, disruptionActions, disruptionEscalations,
   inventoryItems, inventoryTransactions, inventoryBalances, demandForecasts, demandDrivers, demandHistory, inventoryOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
-  type Plant, type Capability, type Resource, type Job, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
+  type Plant, type Capability, type Resource, type ProductionOrder, type PlannedOrder, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
   type CapacityPlanningScenario, type StaffingPlan, type ShiftPlan, type EquipmentPlan, type CapacityProjection,
@@ -17,7 +17,7 @@ import {
   type Disruption, type DisruptionAction, type DisruptionEscalation,
   type InventoryItem, type InventoryTransaction, type InventoryBalance, type DemandForecast, type DemandDriver, type DemandHistory, type InventoryOptimizationScenario, type OptimizationRecommendation,
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
-  type InsertPlant, type InsertCapability, type InsertResource, type InsertJob, 
+  type InsertPlant, type InsertCapability, type InsertResource, type InsertProductionOrder, type InsertPlannedOrder, 
   type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
@@ -116,12 +116,19 @@ export interface IStorage {
   updateResource(id: number, resource: Partial<InsertResource>): Promise<Resource | undefined>;
   deleteResource(id: number): Promise<boolean>;
   
-  // Jobs
-  getJobs(): Promise<Job[]>;
-  getJob(id: number): Promise<Job | undefined>;
-  createJob(job: InsertJob): Promise<Job>;
-  updateJob(id: number, job: Partial<InsertJob>): Promise<Job | undefined>;
-  deleteJob(id: number): Promise<boolean>;
+  // Production Orders  
+  getProductionOrders(): Promise<ProductionOrder[]>;
+  getProductionOrder(id: number): Promise<ProductionOrder | undefined>;
+  createProductionOrder(order: InsertProductionOrder): Promise<ProductionOrder>;
+  updateProductionOrder(id: number, order: Partial<InsertProductionOrder>): Promise<ProductionOrder | undefined>;
+  deleteProductionOrder(id: number): Promise<boolean>;
+  
+  // Planned Orders
+  getPlannedOrders(): Promise<PlannedOrder[]>;
+  getPlannedOrder(id: number): Promise<PlannedOrder | undefined>;
+  createPlannedOrder(order: InsertPlannedOrder): Promise<PlannedOrder>;
+  updatePlannedOrder(id: number, order: Partial<InsertPlannedOrder>): Promise<PlannedOrder | undefined>;
+  deletePlannedOrder(id: number): Promise<boolean>;
   
   // Operations
   getOperations(): Promise<Operation[]>;

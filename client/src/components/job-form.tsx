@@ -15,10 +15,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Plus, Edit, Trash2, MoreHorizontal, Settings, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { insertJobSchema, type Job, type Operation, type Capability, type Resource } from "@shared/schema";
+import { insertProductionOrderSchema, type ProductionOrder, type Operation, type Capability, type Resource } from "@shared/schema";
 import OperationForm from "./operation-form";
 
-const jobFormSchema = insertJobSchema.extend({
+const jobFormSchema = insertProductionOrderSchema.extend({
   dueDate: z.string().optional(),
   scheduledStartDate: z.string().optional(),
   scheduledEndDate: z.string().optional(),
@@ -27,7 +27,7 @@ const jobFormSchema = insertJobSchema.extend({
 type JobFormData = z.infer<typeof jobFormSchema>;
 
 interface JobFormProps {
-  job?: Job;
+  job?: ProductionOrder;
   onSuccess?: () => void;
 }
 

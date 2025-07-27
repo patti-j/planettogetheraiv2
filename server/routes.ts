@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { createSafeHandler, errorMiddleware, ValidationError, DatabaseError, NotFoundError, AuthenticationError } from "./error-handler";
 import { 
-  insertPlantSchema, insertCapabilitySchema, insertResourceSchema, insertJobSchema, 
+  insertPlantSchema, insertCapabilitySchema, insertResourceSchema, insertProductionOrderSchema, insertPlannedOrderSchema, 
   insertOperationSchema, insertDependencySchema, insertResourceViewSchema,
   insertCustomTextLabelSchema, insertKanbanConfigSchema, insertReportConfigSchema,
   insertDashboardConfigSchema, insertScheduleScenarioSchema, insertScenarioOperationSchema,
@@ -833,37 +833,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Jobs - Enhanced with error handling
-  app.get("/api/jobs", createSafeHandler('Get Jobs')(async (req, res) => {
-    const jobs = await storage.getJobs();
-    if (!jobs) {
-      throw new DatabaseError('Failed to retrieve jobs from database', {
-        operation: 'Get Jobs',
+  // Production Orders (formerly Jobs) - Enhanced with error handling
+  app.get("/api/production-orders", createSafeHandler('Get Production Orders')(async (req, res) => {
+    const productionOrders = await storage.getProductionOrders();
+    if (!productionOrders) {
+      throw new DatabaseError('Failed to retrieve production orders from database', {
+        operation: 'Get Production Orders',
+        endpoint: '/api/production-orders',
+        userId: req.user?.id
+      });
+    }
+    res.json(productionOrders);
+  }));
+
+  // Keep old /api/jobs endpoint for backward compatibility
+  app.get("/api/jobs", createSafeHandler('Get Jobs (Legacy)')(async (req, res) => {
+    const productionOrders = await storage.getProductionOrders();
+    if (!productionOrders) {
+      throw new DatabaseError('Failed to retrieve production orders from database', {
+        operation: 'Get Jobs (Legacy)',
         endpoint: '/api/jobs',
         userId: req.user?.id
       });
     }
-    res.json(jobs);
+    res.json(productionOrders);
   }));
 
+  app.get("/api/production-orders/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const productionOrder = await storage.getProductionOrder(id);
+      if (!productionOrder) {
+        return res.status(404).json({ message: "Production order not found" });
+      }
+      res.json(productionOrder);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch production order" });
+    }
+  });
+
+  // Keep old /api/jobs/:id endpoint for backward compatibility
   app.get("/api/jobs/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const job = await storage.getJob(id);
-      if (!job) {
+      const productionOrder = await storage.getProductionOrder(id);
+      if (!productionOrder) {
         return res.status(404).json({ message: "Job not found" });
       }
-      res.json(job);
+      res.json(productionOrder);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch job" });
     }
   });
 
-  app.post("/api/jobs", createSafeHandler('Create Job')(async (req, res) => {
-    const parseResult = insertJobSchema.safeParse(req.body);
+  app.post("/api/production-orders", createSafeHandler('Create Production Order')(async (req, res) => {
+    const parseResult = insertProductionOrderSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      throw new ValidationError('Invalid production order data provided', {
+        operation: 'Create Production Order',
+        endpoint: '/api/production-orders',
+        userId: req.user?.id,
+        requestData: req.body,
+        additionalInfo: { validationErrors: parseResult.error.issues }
+      });
+    }
+    
+    const newProductionOrder = await storage.createProductionOrder(parseResult.data);
+    if (!newProductionOrder) {
+      throw new DatabaseError('Failed to create production order in database', {
+        operation: 'Create Production Order',
+        endpoint: '/api/production-orders',
+        userId: req.user?.id,
+        requestData: parseResult.data
+      });
+    }
+    
+    res.status(201).json(newProductionOrder);
+  }));
+
+  // Keep old /api/jobs endpoint for backward compatibility
+  app.post("/api/jobs", createSafeHandler('Create Job (Legacy)')(async (req, res) => {
+    const parseResult = insertProductionOrderSchema.safeParse(req.body);
     if (!parseResult.success) {
       throw new ValidationError('Invalid job data provided', {
-        operation: 'Create Job',
+        operation: 'Create Job (Legacy)',
         endpoint: '/api/jobs',
         userId: req.user?.id,
         requestData: req.body,
@@ -871,37 +924,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
     
-    const newJob = await storage.createJob(parseResult.data);
-    if (!newJob) {
+    const newProductionOrder = await storage.createProductionOrder(parseResult.data);
+    if (!newProductionOrder) {
       throw new DatabaseError('Failed to create job in database', {
-        operation: 'Create Job',
+        operation: 'Create Job (Legacy)',
         endpoint: '/api/jobs',
         userId: req.user?.id,
         requestData: parseResult.data
       });
     }
     
-    res.status(201).json(newJob);
+    res.status(201).json(newProductionOrder);
   }));
 
+  app.put("/api/production-orders/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const productionOrder = insertProductionOrderSchema.partial().parse(req.body);
+      const updatedProductionOrder = await storage.updateProductionOrder(id, productionOrder);
+      if (!updatedProductionOrder) {
+        return res.status(404).json({ message: "Production order not found" });
+      }
+      res.json(updatedProductionOrder);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid production order data" });
+    }
+  });
+
+  // Keep old /api/jobs/:id endpoint for backward compatibility
   app.put("/api/jobs/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const job = insertJobSchema.partial().parse(req.body);
-      const updatedJob = await storage.updateJob(id, job);
-      if (!updatedJob) {
+      const productionOrder = insertProductionOrderSchema.partial().parse(req.body);
+      const updatedProductionOrder = await storage.updateProductionOrder(id, productionOrder);
+      if (!updatedProductionOrder) {
         return res.status(404).json({ message: "Job not found" });
       }
-      res.json(updatedJob);
+      res.json(updatedProductionOrder);
     } catch (error) {
       res.status(400).json({ message: "Invalid job data" });
     }
   });
 
+  app.delete("/api/production-orders/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteProductionOrder(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Production order not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete production order" });
+    }
+  });
+
+  // Keep old /api/jobs/:id endpoint for backward compatibility
   app.delete("/api/jobs/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const deleted = await storage.deleteJob(id);
+      const deleted = await storage.deleteProductionOrder(id);
       if (!deleted) {
         return res.status(404).json({ message: "Job not found" });
       }
@@ -921,10 +1003,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/production-orders/:productionOrderId/operations", async (req, res) => {
+    try {
+      const productionOrderId = parseInt(req.params.productionOrderId);
+      const operations = await storage.getOperationsByProductionOrderId(productionOrderId);
+      res.json(operations);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch operations" });
+    }
+  });
+
+  // Keep old /api/jobs/:jobId/operations endpoint for backward compatibility
   app.get("/api/jobs/:jobId/operations", async (req, res) => {
     try {
       const jobId = parseInt(req.params.jobId);
-      const operations = await storage.getOperationsByJobId(jobId);
+      const operations = await storage.getOperationsByProductionOrderId(jobId);
       res.json(operations);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch operations" });

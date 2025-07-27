@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { 
-  capabilities, resources, jobs, operations, users, roles, permissions, userRoles, rolePermissions,
+  capabilities, resources, productionOrders, plannedOrders, operations, users, roles, permissions, userRoles, rolePermissions,
   customerStories, contentBlocks, marketingPages, leadCaptures, disruptions, disruptionActions,
   businessGoals, goalProgress, goalRisks, goalIssues, dashboardConfigs, reportConfigs,
   visualFactoryDisplays, industryTemplates

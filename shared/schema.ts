@@ -31,24 +31,50 @@ export const resources = pgTable("resources", {
   sharedPlants: jsonb("shared_plants").$type<number[]>().default([]), // Array of plant IDs if shared
 });
 
-export const jobs = pgTable("jobs", {
+// Production Orders (formerly jobs) - firm manufacturing orders ready for execution
+export const productionOrders = pgTable("production_orders", {
   id: serial("id").primaryKey(),
+  orderNumber: text("order_number").notNull().unique(), // e.g., "PO-2025-001"
   name: text("name").notNull(),
   description: text("description"),
   customer: text("customer").notNull(),
   priority: text("priority").notNull().default("medium"),
-  status: text("status").notNull().default("planned"),
-  quantity: integer("quantity").notNull().default(1), // Number of units/items in this job
+  status: text("status").notNull().default("released"), // released, in_progress, completed, cancelled
+  quantity: integer("quantity").notNull().default(1),
   dueDate: timestamp("due_date"),
   scheduledStartDate: timestamp("scheduled_start_date"),
   scheduledEndDate: timestamp("scheduled_end_date"),
+  actualStartDate: timestamp("actual_start_date"),
+  actualEndDate: timestamp("actual_end_date"),
+  itemNumber: text("item_number"), // Reference to items table
+  salesOrderNumber: text("sales_order_number"), // Reference to sales order
   createdAt: timestamp("created_at").defaultNow(),
-  plantId: integer("plant_id").references(() => plants.id).notNull(), // Jobs are assigned to specific plants
+  plantId: integer("plant_id").references(() => plants.id).notNull(),
+});
+
+// Planned Orders - preliminary orders from MRP planning before becoming production orders
+export const plannedOrders = pgTable("planned_orders", {
+  id: serial("id").primaryKey(),
+  plannedOrderNumber: text("planned_order_number").notNull().unique(), // e.g., "PLN-2025-001"
+  itemNumber: text("item_number").notNull(), // What to produce
+  quantity: integer("quantity").notNull(),
+  requiredDate: timestamp("required_date").notNull(), // When needed
+  plannedStartDate: timestamp("planned_start_date"),
+  plannedEndDate: timestamp("planned_end_date"),
+  orderType: text("order_type").notNull().default("production"), // production, purchase, transfer
+  source: text("source").notNull().default("mrp"), // mrp, manual, forecast
+  status: text("status").notNull().default("firm"), // firm, released_to_production, cancelled
+  priority: text("priority").notNull().default("medium"),
+  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  salesOrderNumber: text("sales_order_number"), // Originating sales order if applicable
+  createdAt: timestamp("created_at").defaultNow(),
+  convertedToProductionOrder: boolean("converted_to_production_order").default(false),
+  productionOrderId: integer("production_order_id").references(() => productionOrders.id), // If converted
 });
 
 export const operations = pgTable("operations", {
   id: serial("id").primaryKey(),
-  jobId: integer("job_id").references(() => jobs.id).notNull(),
+  productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
   name: text("name").notNull(),
   description: text("description"),
   status: text("status").notNull().default("planned"),
@@ -417,7 +443,7 @@ export const disruptions = pgTable("disruptions", {
   status: text("status").notNull().default("active"), // active, resolved, monitoring, escalated
   description: text("description"),
   affectedResourceId: integer("affected_resource_id").references(() => resources.id),
-  affectedJobId: integer("affected_job_id").references(() => jobs.id),
+  affectedJobId: integer("affected_job_id").references(() => productionOrders.id),
   affectedOperationId: integer("affected_operation_id").references(() => operations.id),
   startTime: timestamp("start_time").notNull(),
   estimatedDuration: integer("estimated_duration"), // in hours
@@ -476,7 +502,12 @@ export const insertResourceSchema = createInsertSchema(resources).omit({
   id: true,
 });
 
-export const insertJobSchema = createInsertSchema(jobs).omit({
+export const insertProductionOrderSchema = createInsertSchema(productionOrders).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPlannedOrderSchema = createInsertSchema(plannedOrders).omit({
   id: true,
   createdAt: true,
 });
@@ -1317,8 +1348,11 @@ export type Capability = typeof capabilities.$inferSelect;
 export type InsertResource = z.infer<typeof insertResourceSchema>;
 export type Resource = typeof resources.$inferSelect;
 
-export type InsertJob = z.infer<typeof insertJobSchema>;
-export type Job = typeof jobs.$inferSelect;
+export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
+export type ProductionOrder = typeof productionOrders.$inferSelect;
+
+export type InsertPlannedOrder = z.infer<typeof insertPlannedOrderSchema>;
+export type PlannedOrder = typeof plannedOrders.$inferSelect;
 
 export type InsertOperation = z.infer<typeof insertOperationSchema>;
 export type Operation = typeof operations.$inferSelect;
@@ -3129,7 +3163,7 @@ export const schedulingResults = pgTable("scheduling_results", {
   id: serial("id").primaryKey(),
   historyId: integer("history_id").references(() => schedulingHistory.id).notNull(),
   operationId: integer("operation_id").references(() => operations.id).notNull(),
-  jobId: integer("job_id").references(() => jobs.id).notNull(),
+  jobId: integer("job_id").references(() => productionOrders.id).notNull(),
   resourceId: integer("resource_id").references(() => resources.id),
   originalStartTime: timestamp("original_start_time"),
   originalEndTime: timestamp("original_end_time"),
@@ -4399,7 +4433,7 @@ export const productionPlans = pgTable("production_plans", {
 export const productionTargets = pgTable("production_targets", {
   id: serial("id").primaryKey(),
   planId: integer("plan_id").references(() => productionPlans.id).notNull(),
-  jobId: integer("job_id").references(() => jobs.id).notNull(),
+  jobId: integer("job_id").references(() => productionOrders.id).notNull(),
   targetQuantity: integer("target_quantity").notNull(),
   actualQuantity: integer("actual_quantity").notNull().default(0),
   targetStartDate: timestamp("target_start_date").notNull(),
@@ -5072,9 +5106,9 @@ export const schedulingResultsRelations = relations(schedulingResults, ({ one })
     fields: [schedulingResults.operationId],
     references: [operations.id],
   }),
-  job: one(jobs, {
+  job: one(productionOrders, {
     fields: [schedulingResults.jobId],
-    references: [jobs.id],
+    references: [productionOrders.id],
   }),
   resource: one(resources, {
     fields: [schedulingResults.resourceId],
