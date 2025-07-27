@@ -2404,6 +2404,12 @@ export const userPreferences = pgTable("user_preferences", {
     sidebarCollapsed: boolean;
     defaultPage: string;
     widgetPreferences: Record<string, any>;
+    recentPages?: Array<{
+      path: string;
+      label: string;
+      icon?: string;
+      timestamp: number;
+    }>;
   }>().default(sql`'{"sidebarCollapsed": false, "defaultPage": "/", "widgetPreferences": {}}'::jsonb`),
   aiThemeColor: varchar("ai_theme_color", { length: 30 }).notNull().default("purple-pink"), // purple-pink, blue-indigo, emerald-teal, orange-red, violet-purple, cyan-blue
   createdAt: timestamp("created_at").defaultNow(),

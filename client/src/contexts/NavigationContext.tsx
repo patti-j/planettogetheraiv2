@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useLocation } from 'wouter';
+import { useAuth } from '@/hooks/useAuth';
+import { apiRequest } from '@/lib/queryClient';
 
 interface RecentPage {
   path: string;
@@ -59,22 +61,47 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
 export function NavigationProvider({ children }: { children: ReactNode }) {
   const [recentPages, setRecentPages] = useState<RecentPage[]>([]);
   const [location] = useLocation();
+  const { user, isAuthenticated } = useAuth();
 
-  // Load recent pages from localStorage on mount
+  // Load recent pages from user preferences or localStorage fallback
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        // Ensure we have valid data structure
-        if (Array.isArray(parsed)) {
-          setRecentPages(parsed.slice(0, MAX_RECENT_PAGES));
+    const loadRecentPages = async () => {
+      if (isAuthenticated && user?.id) {
+        try {
+          // Load from user preferences
+          const response = await apiRequest('GET', `/api/user-preferences/${user.id}`);
+          const preferences = await response.json();
+          const savedRecentPages = preferences?.dashboardLayout?.recentPages || [];
+          if (Array.isArray(savedRecentPages)) {
+            setRecentPages(savedRecentPages.slice(0, MAX_RECENT_PAGES));
+          }
+        } catch (error) {
+          console.warn('Failed to load recent pages from user preferences:', error);
+          // Fallback to localStorage
+          loadFromLocalStorage();
         }
+      } else {
+        // Not authenticated, use localStorage
+        loadFromLocalStorage();
       }
-    } catch (error) {
-      console.warn('Failed to load recent pages from localStorage:', error);
-    }
-  }, []);
+    };
+
+    const loadFromLocalStorage = () => {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            setRecentPages(parsed.slice(0, MAX_RECENT_PAGES));
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to load recent pages from localStorage:', error);
+      }
+    };
+
+    loadRecentPages();
+  }, [isAuthenticated, user?.id]);
 
   // Track current page when location changes
   useEffect(() => {
@@ -99,12 +126,8 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
           timestamp: Date.now()
         };
         
-        // Save to localStorage
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-        } catch (error) {
-          console.warn('Failed to save recent pages to localStorage:', error);
-        }
+        // Save to user preferences or localStorage
+        saveRecentPages(updated);
         
         return updated;
       } else {
@@ -114,24 +137,84 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
           ...current
         ].slice(0, MAX_RECENT_PAGES);
 
-        // Save to localStorage
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-        } catch (error) {
-          console.warn('Failed to save recent pages to localStorage:', error);
-        }
+        // Save to user preferences or localStorage
+        saveRecentPages(updated);
 
         return updated;
       }
     });
   };
 
-  const clearRecentPages = () => {
-    setRecentPages([]);
+  const saveRecentPages = async (pages: RecentPage[]) => {
+    if (isAuthenticated && user?.id) {
+      try {
+        // First get current preferences to merge
+        const response = await apiRequest('GET', `/api/user-preferences/${user.id}`);
+        const currentPreferences = await response.json();
+        
+        // Merge recent pages with existing dashboard layout
+        const updatedDashboardLayout = {
+          ...currentPreferences.dashboardLayout,
+          recentPages: pages
+        };
+        
+        // Save to user preferences with merged data
+        await apiRequest('PUT', `/api/user-preferences`, {
+          dashboardLayout: updatedDashboardLayout
+        });
+      } catch (error) {
+        console.warn('Failed to save recent pages to user preferences:', error);
+        // Fallback to localStorage
+        saveToLocalStorage(pages);
+      }
+    } else {
+      // Not authenticated, use localStorage
+      saveToLocalStorage(pages);
+    }
+  };
+
+  const saveToLocalStorage = (pages: RecentPage[]) => {
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
     } catch (error) {
-      console.warn('Failed to clear recent pages from localStorage:', error);
+      console.warn('Failed to save recent pages to localStorage:', error);
+    }
+  };
+
+  const clearRecentPages = async () => {
+    setRecentPages([]);
+    if (isAuthenticated && user?.id) {
+      try {
+        // First get current preferences to merge
+        const response = await apiRequest('GET', `/api/user-preferences/${user.id}`);
+        const currentPreferences = await response.json();
+        
+        // Merge empty recent pages with existing dashboard layout
+        const updatedDashboardLayout = {
+          ...currentPreferences.dashboardLayout,
+          recentPages: []
+        };
+        
+        // Clear from user preferences with merged data
+        await apiRequest('PUT', `/api/user-preferences`, {
+          dashboardLayout: updatedDashboardLayout
+        });
+      } catch (error) {
+        console.warn('Failed to clear recent pages from user preferences:', error);
+        // Fallback to localStorage
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch (localError) {
+          console.warn('Failed to clear recent pages from localStorage:', localError);
+        }
+      }
+    } else {
+      // Not authenticated, use localStorage
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (error) {
+        console.warn('Failed to clear recent pages from localStorage:', error);
+      }
     }
   };
 
