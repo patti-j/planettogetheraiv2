@@ -445,11 +445,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI-powered sample data generation
   app.post('/api/data-import/generate-sample-data', requireAuth, async (req, res) => {
     try {
-      const { prompt, companyInfo, selectedDataTypes } = req.body;
+      const { prompt, companyInfo, selectedDataTypes, sampleSize = 'medium' } = req.body;
       
       if (!prompt || !companyInfo || !selectedDataTypes) {
         return res.status(400).json({ error: 'Missing required fields: prompt, companyInfo, selectedDataTypes' });
       }
+
+      // Define data volume ranges based on sample size
+      const sampleSizeConfig = {
+        small: {
+          plants: { min: 1, max: 2 },
+          resources: { min: 3, max: 5 },
+          capabilities: { min: 3, max: 5 },
+          productionOrders: { min: 5, max: 10 },
+          description: 'minimal data for quick testing'
+        },
+        medium: {
+          plants: { min: 3, max: 5 },
+          resources: { min: 8, max: 15 },
+          capabilities: { min: 5, max: 8 },
+          productionOrders: { min: 15, max: 25 },
+          description: 'balanced dataset for evaluation'
+        },
+        large: {
+          plants: { min: 5, max: 10 },
+          resources: { min: 20, max: 40 },
+          capabilities: { min: 8, max: 15 },
+          productionOrders: { min: 30, max: 50 },
+          description: 'comprehensive data for full testing'
+        }
+      };
+
+      const config = sampleSizeConfig[sampleSize as keyof typeof sampleSizeConfig] || sampleSizeConfig.medium;
 
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -459,15 +486,31 @@ Company Information:
 - Company Name: ${companyInfo.name}
 - Industry: ${companyInfo.industry}
 - Company Size: ${companyInfo.size}
+- Number of Plants: ${companyInfo.numberOfPlants || '1'}
 - Description: ${companyInfo.description}
+${companyInfo.website ? `- Website: ${companyInfo.website}` : ''}
+${companyInfo.products ? `- Main Products: ${companyInfo.products}` : ''}
+
+Sample Size: ${sampleSize.toUpperCase()} - ${config.description}
 
 Generate sample data for the following data types: ${selectedDataTypes.join(', ')}
 
+For each data type, generate the following number of records:
+${selectedDataTypes.map(type => {
+  const typeConfig = config[type as keyof typeof config];
+  if (typeConfig && typeof typeConfig === 'object' && 'min' in typeConfig) {
+    return `- ${type}: ${typeConfig.min}-${typeConfig.max} records`;
+  }
+  return `- ${type}: 3-5 records (default)`;
+}).join('\n')}
+
 For each data type, provide:
-1. A realistic number of records (2-10 per type)
-2. Data that's specific to the company's industry
-3. Consistent naming conventions
+1. The exact number of records within the specified range for realistic factory operations
+2. Data that's specific to the company's industry and size
+3. Consistent naming conventions using the company name
 4. Proper relationships between data elements
+5. Scale appropriately per plant - each plant should have its own resources and production orders
+6. Create realistic resource distribution across plants based on industry requirements
 
 IMPORTANT: Use these exact field names for each data type:
 
@@ -490,7 +533,22 @@ Return the result as a JSON object with the following structure:
   "recommendations": ["List of recommendations for using this data"]
 }
 
-Focus on manufacturing-relevant data that would be realistic for a ${companyInfo.industry} company of ${companyInfo.size} size.`;
+Additional guidance for ${sampleSize} sample:
+${sampleSize === 'small' ? `
+- Create minimal but functional dataset for quick testing and evaluation
+- Focus on core operations with essential resources and basic production flow
+- Suitable for proof-of-concept and initial system exploration` : ''}
+${sampleSize === 'medium' ? `
+- Create balanced dataset that represents typical operations
+- Include variety of resources, capabilities, and production scenarios
+- Suitable for system evaluation and feature demonstration` : ''}
+${sampleSize === 'large' ? `
+- Create comprehensive dataset representing full-scale operations
+- Include diverse resource types, complex production workflows, and multiple product lines
+- Distribute resources realistically across all plants with proper specialization
+- Suitable for performance testing and complete system evaluation` : ''}
+
+Focus on manufacturing-relevant data that would be realistic for a ${companyInfo.industry} company of ${companyInfo.size} size operating ${companyInfo.numberOfPlants || '1'} plant(s).`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user

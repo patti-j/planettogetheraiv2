@@ -36,6 +36,7 @@ export default function DataImport() {
   const [showAIDialog, setShowAIDialog] = useState(false);
   const [showAISummary, setShowAISummary] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
+  const [aiSampleSize, setAiSampleSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [aiGenerationResult, setAiGenerationResult] = useState<any>(null);
 
   // Feature to data requirements mapping
@@ -588,7 +589,8 @@ Focus on creating authentic, interconnected data that would be typical for ${com
     aiGenerationMutation.mutate({
       prompt: aiPrompt,
       companyInfo,
-      selectedDataTypes: dataTypesToGenerate
+      selectedDataTypes: dataTypesToGenerate,
+      sampleSize: aiSampleSize
     });
   };
 
@@ -1875,6 +1877,70 @@ Focus on creating authentic, interconnected data that would be typical for ${com
                     </div>
                   );
                 })()}
+              </div>
+            </div>
+
+            {/* Sample Size Selection */}
+            <div className="space-y-3">
+              <Label className="text-base font-medium">Sample Data Size</Label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {[
+                  {
+                    value: 'small',
+                    label: 'Small Sample',
+                    description: 'Minimal data for quick testing',
+                    details: '1-2 plants, 3-5 resources, 5-10 orders'
+                  },
+                  {
+                    value: 'medium',
+                    label: 'Medium Sample',
+                    description: 'Balanced dataset for evaluation',
+                    details: '3-5 plants, 8-15 resources, 15-25 orders'
+                  },
+                  {
+                    value: 'large',
+                    label: 'Large Sample',
+                    description: 'Comprehensive data for full testing',
+                    details: '5-10 plants, 20-40 resources, 30-50 orders'
+                  }
+                ].map((option) => (
+                  <div
+                    key={option.value}
+                    className={`relative cursor-pointer rounded-lg border-2 p-4 transition-all ${
+                      aiSampleSize === option.value
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setAiSampleSize(option.value as 'small' | 'medium' | 'large')}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <div className={`flex h-4 w-4 items-center justify-center rounded-full border-2 ${
+                        aiSampleSize === option.value ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+                      }`}>
+                        {aiSampleSize === option.value && (
+                          <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium ${
+                          aiSampleSize === option.value ? 'text-blue-900' : 'text-gray-900'
+                        }`}>
+                          {option.label}
+                        </p>
+                        <p className={`text-xs ${
+                          aiSampleSize === option.value ? 'text-blue-700' : 'text-gray-600'
+                        }`}>
+                          {option.description}
+                        </p>
+                        <p className={`text-xs ${
+                          aiSampleSize === option.value ? 'text-blue-600' : 'text-gray-500'
+                        }`}>
+                          {option.details}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 

@@ -2,6 +2,18 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **AI Sample Data Generation with Configurable Sample Sizes (July 27, 2025)**:
+- Successfully implemented configurable sample size selection (small/medium/large) for AI generation
+- Added sample size selector in AI generation dialog with detailed descriptions and data volume estimates
+- Small Sample: 1-2 plants, 3-5 resources, 5-10 orders for quick testing and evaluation
+- Medium Sample: 3-5 plants, 8-15 resources, 15-25 orders for balanced dataset evaluation
+- Large Sample: 5-10 plants, 20-40 resources, 30-50 orders for comprehensive full testing
+- Enhanced backend AI generation to scale data volumes based on selected sample size
+- Updated OpenAI prompt to include specific record count ranges and realistic factory data distribution
+- AI now generates appropriate data volumes for each plant with proper resource distribution
+- Sample size configuration ensures realistic manufacturing data volumes for different testing scenarios
+- Enhanced prompt includes company plant count and industry-specific guidance for authentic data generation
+
 ✓ **AI Generation Summary Screen Enhancement (July 27, 2025)**:
 - Updated AI generation summary screen to remove recommendations section and show detailed breakdown of generated data
 - Enhanced summary to display specific record counts for each data type (plants, resources, capabilities, production orders)
