@@ -16,10 +16,10 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import JobForm from "@/components/job-form";
 import OperationForm from "@/components/operation-form";
 import KanbanConfigManager from "@/components/kanban-config-manager";
-import type { Job, Operation, Resource, Capability, KanbanConfig } from "@shared/schema";
+import type { ProductionOrder, Operation, Resource, Capability, KanbanConfig } from "@shared/schema";
 
 interface KanbanBoardProps {
-  jobs: Job[];
+  jobs: ProductionOrder[];
   operations: Operation[];
   resources: Resource[];
   capabilities: Capability[];
@@ -38,7 +38,7 @@ interface KanbanColumn {
   title: string;
   status: string;
   color: string;
-  items: (Job | Operation)[];
+  items: (ProductionOrder | Operation)[];
 }
 
 interface DragItem {
@@ -48,7 +48,7 @@ interface DragItem {
   index: number;
 }
 
-const JobCard = ({ job, onEdit, onViewDetails, swimLaneField, index }: { job: Job; onEdit: (job: Job) => void; onViewDetails: (job: Job) => void; swimLaneField: string; index: number }) => {
+const JobCard = ({ job, onEdit, onViewDetails, swimLaneField, index }: { job: ProductionOrder; onEdit: (job: ProductionOrder) => void; onViewDetails: (job: ProductionOrder) => void; swimLaneField: string; index: number }) => {
   const getSourceColumnId = () => {
     switch (swimLaneField) {
       case "status":
@@ -159,8 +159,8 @@ const JobCard = ({ job, onEdit, onViewDetails, swimLaneField, index }: { job: Jo
 
 const OperationCard = ({ operation, job, jobs, resources, onEdit, onViewDetails, swimLaneField, index }: { 
   operation: Operation; 
-  job?: Job; 
-  jobs: Job[];
+  job?: ProductionOrder; 
+  jobs: ProductionOrder[];
   resources: Resource[];
   onEdit: (operation: Operation) => void;
   onViewDetails: (operation: Operation) => void;
@@ -173,7 +173,7 @@ const OperationCard = ({ operation, job, jobs, resources, onEdit, onViewDetails,
         return operation.status;
       case "priority":
         // Operations inherit priority from their parent job
-        const parentJob = job || jobs.find((j: Job) => j.id === operation.jobId);
+        const parentJob = job || jobs.find((j: ProductionOrder) => j.id === operation.productionOrderId);
         return parentJob?.priority || "medium";
       case "assignedResourceId":
         const resource = resources.find(r => r.id === operation.assignedResourceId);
@@ -293,7 +293,7 @@ const OperationCard = ({ operation, job, jobs, resources, onEdit, onViewDetails,
 
 // Job Details Dialog Component
 const JobDetailsDialog = ({ job, operations, resources, capabilities, open, onOpenChange }: { 
-  job: Job | null; 
+  job: ProductionOrder | null; 
   operations: Operation[];
   resources: Resource[];
   capabilities: Capability[];
@@ -303,7 +303,7 @@ const JobDetailsDialog = ({ job, operations, resources, capabilities, open, onOp
   if (!job) return null;
 
   // Filter operations for this job
-  const jobOperations = operations.filter(op => op.jobId === job.id);
+  const jobOperations = operations.filter(op => op.productionOrderId === job.id);
 
   const formatDate = (date: Date | null) => {
     return date ? new Date(date).toLocaleString() : "Not set";
@@ -512,7 +512,7 @@ const JobDetailsDialog = ({ job, operations, resources, capabilities, open, onOp
 // Operation Details Dialog Component
 const OperationDetailsDialog = ({ operation, job, resources, capabilities, open, onOpenChange }: { 
   operation: Operation | null; 
-  job: Job | null;
+  job: ProductionOrder | null;
   resources: Resource[];
   capabilities: Capability[];
   open: boolean; 
@@ -560,7 +560,7 @@ const OperationDetailsDialog = ({ operation, job, resources, capabilities, open,
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Parent Job:</span>
-                  <span className="font-medium">{job?.name || `Job #${operation.jobId}`}</span>
+                  <span className="font-medium">{job?.name || `Job #${operation.productionOrderId}`}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Status:</span>
@@ -814,7 +814,7 @@ function KanbanBoard({
   const isMobile = useIsMobile();
   const [jobDialogOpen, setJobDialogOpen] = useState(false);
   const [operationDialogOpen, setOperationDialogOpen] = useState(false);
-  const [selectedJob, setSelectedJob] = useState<Job | undefined>();
+  const [selectedJob, setSelectedJob] = useState<ProductionOrder | undefined>();
   const [selectedOperation, setSelectedOperation] = useState<Operation | undefined>();
   const [configManagerOpen, setConfigManagerOpen] = useState(false);
   const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
@@ -822,7 +822,7 @@ function KanbanBoard({
   // Details dialog state
   const [jobDetailsOpen, setJobDetailsOpen] = useState(false);
   const [operationDetailsOpen, setOperationDetailsOpen] = useState(false);
-  const [jobForDetails, setJobForDetails] = useState<Job | null>(null);
+  const [jobForDetails, setJobForDetails] = useState<ProductionOrder | null>(null);
   const [operationForDetails, setOperationForDetails] = useState<Operation | null>(null);
 
   // Use parent configs if available, otherwise fetch
@@ -835,12 +835,12 @@ function KanbanBoard({
   const selectedConfig = parentSelectedConfig || kanbanConfigs.find(config => config.isDefault) || kanbanConfigs[0];
 
   // Derived values from selected configuration
-  const view = selectedConfig?.viewType || "jobs";
+  const view = selectedConfig?.viewType || "productionOrders";
   const swimLaneField = selectedConfig?.swimLaneField || "status";
   const swimLaneColors = selectedConfig?.swimLaneColors || {};
 
   // Generate columns based on selected field
-  const getFieldValue = (item: Job | Operation, field: string) => {
+  const getFieldValue = (item: ProductionOrder | Operation, field: string) => {
     switch (field) {
       case "status":
         return item.status;
@@ -850,11 +850,11 @@ function KanbanBoard({
           return item.priority;
         } else {
           const operation = item as Operation;
-          const parentJob = jobs.find(j => j.id === operation.jobId);
+          const parentJob = jobs.find(j => j.id === operation.productionOrderId);
           return parentJob?.priority || "medium";
         }
       case "customer":
-        return (item as Job).customer || "Unknown";
+        return (item as ProductionOrder).customer || "Unknown";
       case "assignedResourceId":
         const operation = item as Operation;
         const resource = resources.find(r => r.id === operation.assignedResourceId);
@@ -867,7 +867,7 @@ function KanbanBoard({
   const getFieldValues = (field: string) => {
     if (field === "status") {
       // Get actual status values from jobs and operations
-      const items = view === "jobs" ? jobs : operations;
+      const items = view === "productionOrders" ? jobs : operations;
       const statusValues = Array.from(new Set(items.map(item => item.status).filter(Boolean)));
       // If no status values found, use defaults
       return statusValues.length > 0 ? statusValues : ["planned", "In-Progress", "completed", "cancelled"];
@@ -912,7 +912,7 @@ function KanbanBoard({
     if (!selectedConfig) return [];
     
     const fieldValues = getFieldValues(swimLaneField);
-    const items = view === "jobs" ? jobs : operations;
+    const items = view === "productionOrders" ? jobs : operations;
     
     // Debug logging
     console.log('Kanban Debug:', {
@@ -989,7 +989,7 @@ function KanbanBoard({
       const previousJobs = queryClient.getQueryData(["/api/jobs"]);
       
       // Optimistically update to the new value
-      queryClient.setQueryData(["/api/jobs"], (old: Job[]) => {
+      queryClient.setQueryData(["/api/jobs"], (old: ProductionOrder[]) => {
         if (!old) return old;
         return old.map(job => 
           job.id === updateData.id 
@@ -1170,7 +1170,7 @@ function KanbanBoard({
     }
   };
 
-  const handleEditJob = (job: Job) => {
+  const handleEditJob = (job: ProductionOrder) => {
     setSelectedJob(job);
     setJobDialogOpen(true);
   };
@@ -1180,7 +1180,7 @@ function KanbanBoard({
     setOperationDialogOpen(true);
   };
 
-  const handleViewJobDetails = (job: Job) => {
+  const handleViewJobDetails = (job: ProductionOrder) => {
     setJobForDetails(job);
     setJobDetailsOpen(true);
   };
@@ -1430,7 +1430,7 @@ function KanbanBoard({
                   }}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  New {selectedConfig?.viewType === "jobs" ? "Job" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
+                  New {selectedConfig?.viewType === "productionOrders" ? "Production Order" : selectedConfig?.viewType === "operations" ? "Operation" : "Resource"}
                 </Button>
               </div>
             )}
@@ -1475,11 +1475,11 @@ function KanbanBoard({
                       </div>
                       
                       <div className="flex flex-col gap-2 overflow-y-auto flex-1">
-                        {view === "jobs" ? (
+                        {view === "productionOrders" ? (
                           column.items.map((item, index) => (
                             <JobCard
                               key={item.id}
-                              job={item as Job}
+                              job={item as ProductionOrder}
                               onEdit={handleEditJob}
                               onViewDetails={handleViewJobDetails}
                               swimLaneField={swimLaneField}
@@ -1491,7 +1491,7 @@ function KanbanBoard({
                             <OperationCard
                               key={item.id}
                               operation={item as Operation}
-                              job={jobs.find(j => j.id === (item as Operation).jobId)}
+                              job={jobs.find(j => j.id === (item as Operation).productionOrderId)}
                               jobs={jobs}
                               resources={resources}
                               onEdit={handleEditOperation}
@@ -1516,7 +1516,7 @@ function KanbanBoard({
                       column={column}
                       onDrop={handleDrop}
                     >
-                      {view === "jobs" ? (
+                      {view === "productionOrders" ? (
                         column.items.map((item, index) => (
                           <JobCard
                             key={item.id}
@@ -1532,7 +1532,7 @@ function KanbanBoard({
                           <OperationCard
                             key={item.id}
                             operation={item as Operation}
-                            job={jobs.find(j => j.id === (item as Operation).jobId)}
+                            job={jobs.find(j => j.id === (item as Operation).productionOrderId)}
                             jobs={jobs}
                             resources={resources}
                             onEdit={handleEditOperation}

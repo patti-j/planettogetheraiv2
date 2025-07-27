@@ -35,17 +35,40 @@ interface Job {
 interface SwimLaneFieldOption {
   value: string;
   label: string;
-  type: "jobs" | "operations" | "resources" | "both";
+  type: "productionOrders" | "operations" | "resources" | "capabilities" | "plants" | "stockItems" | "vendors" | "customers" | "storageLocations" | "both";
   values: string[];
 }
+
+// Helper function to get display name for view types
+const getViewTypeDisplayName = (viewType: string): string => {
+  const displayNames: Record<string, string> = {
+    productionOrders: "Production Orders",
+    operations: "Operations", 
+    resources: "Resources",
+    capabilities: "Capabilities",
+    plants: "Plants",
+    stockItems: "Stock Items",
+    vendors: "Vendors",
+    customers: "Customers",
+    storageLocations: "Storage Locations",
+    // Legacy support for existing data
+    jobs: "Production Orders"
+  };
+  return displayNames[viewType] || viewType;
+};
 
 const SWIM_LANE_FIELDS: SwimLaneFieldOption[] = [
   { value: "status", label: "Status", type: "both", values: ["planned", "In-Progress", "completed", "cancelled"] },
   { value: "priority", label: "Priority", type: "both", values: ["low", "medium", "high"] },
-  { value: "customer", label: "Customer", type: "jobs", values: [] }, // Will be populated dynamically
+  { value: "customer", label: "Customer", type: "productionOrders", values: [] }, // Will be populated dynamically
   { value: "assignedResourceId", label: "Assigned Resource", type: "operations", values: [] }, // Will be populated dynamically
-  { value: "type", label: "Resource Type", type: "resources", values: ["Machine", "Operator", "Facility"] },
+  { value: "type", label: "Type", type: "both", values: ["Machine", "Operator", "Facility", "Raw Material", "Finished Good"] },
   { value: "resourceStatus", label: "Resource Status", type: "resources", values: ["active", "maintenance", "offline"] },
+  { value: "location", label: "Location", type: "both", values: [] }, // Will be populated dynamically
+  { value: "category", label: "Category", type: "both", values: [] }, // Will be populated dynamically
+  { value: "vendor", label: "Vendor", type: "stockItems", values: [] }, // Will be populated dynamically
+  { value: "customerTier", label: "Customer Tier", type: "customers", values: ["Bronze", "Silver", "Gold", "Platinum"] },
+  { value: "plantStatus", label: "Plant Status", type: "plants", values: ["active", "maintenance", "offline"] },
 ];
 
 interface KanbanConfigManagerProps {
@@ -123,7 +146,7 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
   const [formData, setFormData] = useState<Omit<KanbanConfig, 'id' | 'createdAt'>>({
     name: config?.name || "",
     description: config?.description || "",
-    viewType: config?.viewType || "jobs",
+    viewType: config?.viewType || "productionOrders",
     swimLaneField: config?.swimLaneField || "status",
     swimLaneColors: config?.swimLaneColors || {},
     filters: config?.filters || {
@@ -216,14 +239,20 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
         
         <div>
           <Label htmlFor="viewType">View Type</Label>
-          <Select value={formData.viewType} onValueChange={(value) => setFormData({ ...formData, viewType: value as "jobs" | "operations" | "resources" })}>
+          <Select value={formData.viewType} onValueChange={(value) => setFormData({ ...formData, viewType: value })}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="jobs">Jobs</SelectItem>
+              <SelectItem value="productionOrders">Production Orders</SelectItem>
               <SelectItem value="operations">Operations</SelectItem>
               <SelectItem value="resources">Resources</SelectItem>
+              <SelectItem value="capabilities">Capabilities</SelectItem>
+              <SelectItem value="plants">Plants</SelectItem>
+              <SelectItem value="stockItems">Stock Items</SelectItem>
+              <SelectItem value="vendors">Vendors</SelectItem>
+              <SelectItem value="customers">Customers</SelectItem>
+              <SelectItem value="storageLocations">Storage Locations</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -286,7 +315,15 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
                         : currentPriorities.filter(p => p !== priority);
                       setFormData({
                         ...formData,
-                        filters: { ...formData.filters, priorities: newPriorities }
+                        filters: { 
+                          ...formData.filters, 
+                          priorities: newPriorities,
+                          statuses: formData.filters?.statuses || [],
+                          resources: formData.filters?.resources || [],
+                          capabilities: formData.filters?.capabilities || [],
+                          customers: formData.filters?.customers || [],
+                          dateRange: formData.filters?.dateRange || { from: null, to: null }
+                        }
                       });
                     }}
                   />
@@ -311,7 +348,15 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
                         : currentCustomers.filter(c => c !== customer);
                       setFormData({
                         ...formData,
-                        filters: { ...formData.filters, customers: newCustomers }
+                        filters: { 
+                          ...formData.filters, 
+                          customers: newCustomers,
+                          priorities: formData.filters?.priorities || [],
+                          statuses: formData.filters?.statuses || [],
+                          resources: formData.filters?.resources || [],
+                          capabilities: formData.filters?.capabilities || [],
+                          dateRange: formData.filters?.dateRange || { from: null, to: null }
+                        }
                       });
                     }}
                   />
@@ -349,7 +394,14 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
                         ...formData,
                         displayOptions: {
                           ...formData.displayOptions,
-                          [option.key]: checked
+                          [option.key]: checked,
+                          showPriority: formData.displayOptions?.showPriority ?? true,
+                          showDueDate: formData.displayOptions?.showDueDate ?? true,
+                          showCustomer: formData.displayOptions?.showCustomer ?? true,
+                          showResource: formData.displayOptions?.showResource ?? true,
+                          showProgress: formData.displayOptions?.showProgress ?? true,
+                          cardSize: formData.displayOptions?.cardSize ?? "standard",
+                          groupBy: formData.displayOptions?.groupBy ?? "none"
                         }
                       });
                     }}
@@ -368,7 +420,16 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
                   value={formData.displayOptions?.cardSize || "standard"}
                   onValueChange={(value) => setFormData({
                     ...formData,
-                    displayOptions: { ...formData.displayOptions, cardSize: value as "compact" | "standard" | "detailed" }
+                    displayOptions: { 
+                      ...formData.displayOptions, 
+                      cardSize: value as "compact" | "standard" | "detailed",
+                      showPriority: formData.displayOptions?.showPriority ?? true,
+                      showDueDate: formData.displayOptions?.showDueDate ?? true,
+                      showCustomer: formData.displayOptions?.showCustomer ?? true,
+                      showResource: formData.displayOptions?.showResource ?? true,
+                      showProgress: formData.displayOptions?.showProgress ?? true,
+                      groupBy: formData.displayOptions?.groupBy ?? "none"
+                    }
                   })}
                 >
                   <SelectTrigger>
@@ -388,7 +449,16 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
                   value={formData.displayOptions?.groupBy || "none"}
                   onValueChange={(value) => setFormData({
                     ...formData,
-                    displayOptions: { ...formData.displayOptions, groupBy: value as "none" | "priority" | "customer" | "resource" }
+                    displayOptions: { 
+                      ...formData.displayOptions, 
+                      groupBy: value as "none" | "priority" | "customer" | "resource",
+                      showPriority: formData.displayOptions?.showPriority ?? true,
+                      showDueDate: formData.displayOptions?.showDueDate ?? true,
+                      showCustomer: formData.displayOptions?.showCustomer ?? true,
+                      showResource: formData.displayOptions?.showResource ?? true,
+                      showProgress: formData.displayOptions?.showProgress ?? true,
+                      cardSize: formData.displayOptions?.cardSize ?? "standard"
+                    }
                   })}
                 >
                   <SelectTrigger>
@@ -592,7 +662,7 @@ export default function KanbanConfigManager({ open, onOpenChange, jobs, resource
                   <CardContent>
                     <div className="space-y-3">
                       <div className="flex items-center space-x-4">
-                        <Badge variant="outline">{config.viewType === "jobs" ? "Jobs" : "Operations"}</Badge>
+                        <Badge variant="outline">{getViewTypeDisplayName(config.viewType)}</Badge>
                         <span className="text-sm text-gray-600">Swim Lane: {config.swimLaneField}</span>
                       </div>
                       
