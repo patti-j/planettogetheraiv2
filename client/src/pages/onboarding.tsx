@@ -678,32 +678,22 @@ export default function OnboardingPage() {
                 Data Setup
               </CardTitle>
               <CardDescription>
-                Import your existing data or start with sample data to get going quickly
+                Set up your manufacturing data to get started with production scheduling
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <h3 className="font-semibold">Quick Start Options</h3>
+                  <h3 className="font-semibold">Get Started</h3>
+                  <p className="text-sm text-gray-600">
+                    You can import your existing data or generate AI-powered sample data directly in the Master Data Setup screen.
+                  </p>
                   <Link href="/data-import">
                     <Button variant="outline" className="w-full justify-start">
                       <Upload className="w-4 h-4 mr-2" />
-                      Import My Data
+                      Go to Master Data Setup
                     </Button>
                   </Link>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start"
-                    onClick={() => {
-                      toast({
-                        title: "Sample Data Loaded",
-                        description: "Your system is now populated with sample data to explore.",
-                      });
-                    }}
-                  >
-                    <Lightbulb className="w-4 h-4 mr-2" />
-                    Use Sample Data
-                  </Button>
                 </div>
                 <div className="space-y-4">
                   <h3 className="font-semibold">Required Data for Your Features</h3>

@@ -12,6 +12,8 @@
 - Improved sample data authenticity by incorporating company size, plant count, and product focus into manufacturing data generation
 - Users now receive personalized AI-generated data that matches their specific company profile and industry requirements
 - Changed "Main Products/Services" to "Main Products" with focus on production process description for better AI-generated manufacturing workflows
+- Removed "Use Sample Data" button from onboarding step 3 since AI generation happens directly in Master Data Setup screen
+- Streamlined onboarding flow to guide users directly to Master Data Setup where they can access all data import and AI generation options
 
 ✓ **Global Timezone Support Enhancement (July 27, 2025)**:
 - Expanded timezone dropdown options from 8 limited options to comprehensive global coverage with 75+ timezones
