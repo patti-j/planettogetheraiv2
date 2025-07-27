@@ -1944,13 +1944,14 @@ Focus on creating authentic, interconnected data that would be typical for ${com
 
                 <TabsContent value="structured" className="space-y-4">
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <Label className="text-base font-medium">Structured Data Entry</Label>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => addStructuredRow(key)}
                         disabled={isImporting}
+                        className="w-full sm:w-auto"
                       >
                         <Plus className="h-4 w-4 mr-1" />
                         Add Row
@@ -2194,25 +2195,26 @@ Focus on creating authentic, interconnected data that would be typical for ${com
 
       {/* Consolidated Template Dialog */}
       <Dialog open={showConsolidatedDialog} onOpenChange={setShowConsolidatedDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
               <FileSpreadsheet className="h-5 w-5" />
               Consolidated Template Download
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               Select multiple data types to download a consolidated template with all your selected data structures.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Selection Controls */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setSelectedDataTypes(dataTypes.map(dt => dt.key))}
+                  className="w-full sm:w-auto"
                 >
                   Select All
                 </Button>
@@ -2220,6 +2222,7 @@ Focus on creating authentic, interconnected data that would be typical for ${com
                   variant="outline"
                   size="sm"
                   onClick={() => setSelectedDataTypes([])}
+                  className="w-full sm:w-auto"
                 >
                   Clear All
                 </Button>
@@ -2303,10 +2306,11 @@ Focus on creating authentic, interconnected data that would be typical for ${com
             )}
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-between gap-3 pt-4 border-t">
             <Button
               variant="outline"
               onClick={() => setShowConsolidatedDialog(false)}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
@@ -2316,10 +2320,11 @@ Focus on creating authentic, interconnected data that would be typical for ${com
                 setShowConsolidatedDialog(false);
               }}
               disabled={selectedDataTypes.length === 0}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
             >
               <Download className="h-4 w-4 mr-2" />
-              Download Consolidated Template
+              <span className="hidden sm:inline">Download Consolidated Template</span>
+              <span className="sm:hidden">Download Template</span>
             </Button>
           </div>
         </DialogContent>
@@ -2328,14 +2333,14 @@ Focus on creating authentic, interconnected data that would be typical for ${com
       {/* AI Sample Data Generation Dialog */}
       <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
         <DialogContent 
-          className="max-w-4xl max-h-[90vh] overflow-y-auto"
+          className="w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto"
           onOpenAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
               <Sparkles className="h-5 w-5 text-purple-600" />
               AI Sample Data Generation
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               Let AI generate realistic sample data for your manufacturing company based on your onboarding information.
             </DialogDescription>
           </DialogHeader>
@@ -2372,7 +2377,7 @@ Focus on creating authentic, interconnected data that would be typical for ${com
 
             {/* Sample Size Selection */}
             <div className="space-y-3">
-              <Label className="text-base font-medium">Sample Data Size</Label>
+              <Label className="text-sm sm:text-base font-medium">Sample Data Size</Label>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {(() => {
                   // Get industry-specific descriptions
@@ -2523,7 +2528,7 @@ Focus on creating authentic, interconnected data that would be typical for ${com
 
             {/* AI Prompt Editor */}
             <div className="space-y-3">
-              <Label htmlFor="ai-prompt" className="text-base font-medium">
+              <Label htmlFor="ai-prompt" className="text-sm sm:text-base font-medium">
                 Generation Instructions
               </Label>
               <Textarea
@@ -2531,7 +2536,7 @@ Focus on creating authentic, interconnected data that would be typical for ${com
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
                 placeholder="Describe what kind of sample data you want to generate..."
-                className="min-h-[200px] text-sm"
+                className="min-h-[150px] sm:min-h-[200px] text-sm"
                 autoFocus={false}
               />
               <p className="text-xs text-muted-foreground">
@@ -2539,20 +2544,20 @@ Focus on creating authentic, interconnected data that would be typical for ${com
               </p>
             </div>
 
-
           </div>
 
-          <div className="flex items-center justify-between pt-6 border-t">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-between gap-3 pt-6 border-t">
             <Button
               variant="outline"
               onClick={() => setShowAIDialog(false)}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
             <Button
               onClick={executeAIGeneration}
               disabled={aiGenerationMutation.isPending}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
             >
               {aiGenerationMutation.isPending ? (
                 <>
@@ -2562,7 +2567,8 @@ Focus on creating authentic, interconnected data that would be typical for ${com
               ) : (
                 <>
                   <Sparkles className="h-4 w-4 mr-2" />
-                  Generate Sample Data
+                  <span className="hidden sm:inline">Generate Sample Data</span>
+                  <span className="sm:hidden">Generate Data</span>
                 </>
               )}
             </Button>
@@ -2572,13 +2578,13 @@ Focus on creating authentic, interconnected data that would be typical for ${com
 
       {/* AI Generation Summary Dialog */}
       <Dialog open={showAISummary} onOpenChange={setShowAISummary}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
               <CheckCircle className="h-5 w-5 text-green-600" />
               AI Sample Data Generated Successfully
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               Your sample data has been generated and imported into the system.
             </DialogDescription>
           </DialogHeader>
@@ -2742,10 +2748,10 @@ Focus on creating authentic, interconnected data that would be typical for ${com
             </div>
           )}
 
-          <div className="flex items-center justify-end pt-6 border-t">
+          <div className="flex justify-center sm:justify-end pt-6 border-t">
             <Button
               onClick={() => setShowAISummary(false)}
-              className="bg-green-600 hover:bg-green-700"
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
             >
               Continue
             </Button>
@@ -2755,13 +2761,13 @@ Focus on creating authentic, interconnected data that would be typical for ${com
 
       {/* AI Data Modification Dialog */}
       <Dialog open={showAIModifyDialog} onOpenChange={setShowAIModifyDialog}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
               <Edit2 className="h-5 w-5 text-emerald-600" />
               AI Master Data Modification
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               Describe the specific changes you want to make to your existing master data. AI will analyze your current data and apply the requested modifications.
             </DialogDescription>
           </DialogHeader>
@@ -2769,7 +2775,7 @@ Focus on creating authentic, interconnected data that would be typical for ${com
           <div className="space-y-6">
             {/* Modification Instructions */}
             <div className="space-y-3">
-              <Label htmlFor="ai-modify-prompt" className="text-base font-medium">
+              <Label htmlFor="ai-modify-prompt" className="text-sm sm:text-base font-medium">
                 Modification Instructions
               </Label>
               <Textarea
@@ -2777,7 +2783,7 @@ Focus on creating authentic, interconnected data that would be typical for ${com
                 value={aiModifyPrompt}
                 onChange={(e) => setAiModifyPrompt(e.target.value)}
                 placeholder="Describe what changes you want to make to your master data. Examples:&#10;- Add 3 new CNC machines to Plant A&#10;- Update all high priority production orders to critical&#10;- Add quality control capability to all assembly resources&#10;- Change plant timezone from UTC to America/Chicago&#10;- Increase production order quantities by 25%"
-                className="min-h-[150px] text-sm"
+                className="min-h-[120px] sm:min-h-[150px] text-sm"
                 autoFocus={false}
               />
               <p className="text-xs text-muted-foreground">
@@ -2802,27 +2808,30 @@ Focus on creating authentic, interconnected data that would be typical for ${com
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-6 border-t">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-between gap-3 pt-6 border-t">
             <Button
               variant="outline"
               onClick={() => setShowAIModifyDialog(false)}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
             <Button
               onClick={executeAIModification}
               disabled={aiModificationMutation.isPending}
-              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+              className="w-full sm:w-auto bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
             >
               {aiModificationMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Analyzing & Modifying...
+                  <span className="hidden sm:inline">Analyzing & Modifying...</span>
+                  <span className="sm:hidden">Modifying...</span>
                 </>
               ) : (
                 <>
                   <Edit2 className="h-4 w-4 mr-2" />
-                  Modify Master Data
+                  <span className="hidden sm:inline">Modify Master Data</span>
+                  <span className="sm:hidden">Modify Data</span>
                 </>
               )}
             </Button>
@@ -2832,13 +2841,13 @@ Focus on creating authentic, interconnected data that would be typical for ${com
 
       {/* AI Modification Summary Dialog */}
       <Dialog open={showAIModifySummary} onOpenChange={setShowAIModifySummary}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
               <CheckCircle className="h-5 w-5 text-emerald-600" />
               AI Data Modification Complete
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               Your master data has been successfully modified according to your instructions.
             </DialogDescription>
           </DialogHeader>
@@ -2880,10 +2889,10 @@ Focus on creating authentic, interconnected data that would be typical for ${com
             </div>
           )}
 
-          <div className="flex items-center justify-end pt-6 border-t">
+          <div className="flex justify-center sm:justify-end pt-6 border-t">
             <Button
               onClick={() => setShowAIModifySummary(false)}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700"
             >
               Continue
             </Button>
