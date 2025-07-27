@@ -53,6 +53,30 @@ export default function DataImport() {
     'analytics-reporting': ['plants', 'resources', 'productionOrders']
   };
 
+  const [showConsolidatedDialog, setShowConsolidatedDialog] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { isMaxOpen } = useMaxDock();
+  const { user } = useAuth();
+
+  // Fetch available capabilities for dropdown
+  const { data: capabilities = [] } = useQuery({
+    queryKey: ['/api/capabilities'],
+    enabled: true
+  });
+
+  // Fetch user preferences
+  const { data: userPreferences } = useQuery({
+    queryKey: [`/api/user-preferences/${user?.id}`],
+    enabled: !!user?.id,
+  });
+
+  // Fetch onboarding data to get selected features
+  const { data: onboardingData } = useQuery({
+    queryKey: ['/api/onboarding/status'],
+    enabled: !!user,
+  });
+
   // Load recommended data types from onboarding features
   useEffect(() => {
     console.log('Master Data Setup initialized without localStorage dependencies');
@@ -78,30 +102,6 @@ export default function DataImport() {
   }, [onboardingData]);
 
   // No localStorage saving - selections are session-only
-  
-  const [showConsolidatedDialog, setShowConsolidatedDialog] = useState(false);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const { isMaxOpen } = useMaxDock();
-  const { user } = useAuth();
-
-  // Fetch available capabilities for dropdown
-  const { data: capabilities = [] } = useQuery({
-    queryKey: ['/api/capabilities'],
-    enabled: true
-  });
-
-  // Fetch user preferences
-  const { data: userPreferences } = useQuery({
-    queryKey: [`/api/user-preferences/${user?.id}`],
-    enabled: !!user?.id,
-  });
-
-  // Fetch onboarding data to get selected features
-  const { data: onboardingData } = useQuery({
-    queryKey: ['/api/onboarding/status'],
-    enabled: !!user,
-  });
 
   // Fetch plants for resource dependencies (disabled for now)
   // const { data: plants = [] } = useQuery({
