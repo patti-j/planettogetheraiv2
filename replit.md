@@ -2,6 +2,17 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **ATP/CTP (Available to Promise/Capable to Promise) Implementation (July 27, 2025)**:
+- Created comprehensive ATP/CTP page for tracking product availability and manufacturing capacity commitments to customers
+- Added ATP calculation based on current inventory minus reservations plus incoming stock
+- Added CTP calculation including production capacity and lead time considerations for products that need to be manufactured
+- Implemented interactive analysis form with product selection, quantity input, and requested delivery date
+- Created detailed results display with summary metrics, inventory details, production requirements, and actionable recommendations
+- Added progress visualization showing fulfillment capability percentage and earliest delivery date calculation
+- Integrated with existing stock items and production orders data for real-time availability analysis
+- Added ATP/CTP menu item to Planning & Scheduling section with Package icon and teal color scheme
+- System helps sales teams make accurate delivery commitments based on current inventory and production capacity
+
 ✓ **Order Optimization Menu Item Restoration (July 27, 2025)**:
 - Added "Order Optimization" menu item back to the Planning & Scheduling section in the main navigation menu
 - Menu item uses Sparkles icon with amber color scheme to distinguish from other scheduling features

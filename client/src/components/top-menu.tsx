@@ -33,6 +33,7 @@ const featureGroups = [
       { icon: Monitor, label: "Production Cockpit", href: "/production-cockpit", feature: "production-cockpit", action: "view", color: "bg-slate-600" },
       { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", feature: "capacity-planning", action: "view", color: "bg-purple-500" },
       { icon: Target, label: "Production Planning", href: "/production-planning", feature: "production-planning", action: "view", color: "bg-green-500" },
+      { icon: Package, label: "ATP/CTP", href: "/atp-ctp", feature: "production-scheduling", action: "view", color: "bg-teal-500" },
       { icon: Clock, label: "Shift Management", href: "/shift-management", feature: "shift-management", action: "view", color: "bg-cyan-500" }
     ]
   },

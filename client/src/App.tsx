@@ -69,6 +69,7 @@ import SchedulingHistory from "@/pages/scheduling-history";
 import WidgetShowcase from "@/pages/widget-showcase";
 import DataImportPage from "@/pages/data-import";
 import Onboarding from "@/pages/onboarding";
+import AtpCtpPage from "@/pages/atp-ctp";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
@@ -339,6 +340,11 @@ function Router() {
           <Route path="/data-import">
             <ProtectedRoute feature="systems-management" action="view">
               <DataImportPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/atp-ctp">
+            <ProtectedRoute feature="production-scheduling" action="view">
+              <AtpCtpPage />
             </ProtectedRoute>
           </Route>
           <Route path="/canvas">
