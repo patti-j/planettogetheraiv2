@@ -550,50 +550,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ordersTotal = actualPlantsCount * ordersPerPlant;
       const operationsTotal = ordersTotal * operationsPerOrder;
 
-      const systemPrompt = `You are an expert manufacturing data specialist with deep knowledge of industry-specific production processes. Generate realistic sample data for a manufacturing ERP system based on the company information and requirements provided.
+      const systemPrompt = `You are a pharmaceutical manufacturing data expert creating realistic ERP sample data. You MUST generate data at enterprise scale - small datasets will fail validation.
 
-Company Information:
-- Company Name: ${companyInfo.name}
-- Industry: ${companyInfo.industry}
-- Company Size: ${companyInfo.size}
-- Number of Plants: ${companyInfo.numberOfPlants || '1'}
-- Description: ${companyInfo.description}
-${companyInfo.website ? `- Website: ${companyInfo.website}` : ''}
-${companyInfo.products ? `- Main Products & Production Process: ${companyInfo.products}` : ''}
+🏭 ENTERPRISE PHARMACEUTICAL COMPANY PROFILE:
+Company: ${companyInfo.name} (${companyInfo.industry})
+Scale: ${companyInfo.size} company with ${companyInfo.numberOfPlants || '1'} manufacturing plants
+${companyInfo.website ? `Website: ${companyInfo.website}` : ''}
+${companyInfo.products ? `Products: ${companyInfo.products}` : ''}
 
-Sample Size: ${sampleSize.toUpperCase()} - Industry-typical volumes for ${companyInfo.industry}
-
-Generate sample data for the following data types: ${selectedDataTypes.join(', ')}
-
-MANDATORY RECORD COUNTS - DO NOT GENERATE FEWER THAN SPECIFIED:
+🎯 CRITICAL SUCCESS CRITERIA - YOUR DATA MUST PASS THESE VALIDATIONS:
 ${selectedDataTypes.map(type => {
   if (type === 'plants') {
-    return `- plants: MINIMUM ${actualPlantsCount} plants (exactly ${actualPlantsCount} facilities named after ${companyInfo.name})`;
+    return `✅ plants: Generate EXACTLY ${actualPlantsCount} facilities (one per location)`;
   } else if (type === 'resources') {
-    return `- resources: MINIMUM ${resourcesTotal-10} resources REQUIRED (${resourcesPerPlant} per plant × ${actualPlantsCount} plants = ${resourcesTotal} total)`;
+    return `✅ resources: Generate ${resourcesTotal-10} to ${resourcesTotal+10} items (${resourcesPerPlant} equipment units per plant)`;
   } else if (type === 'productionOrders') {
-    return `- productionOrders: MINIMUM ${ordersTotal-20} production orders REQUIRED (${ordersPerPlant} per plant × ${actualPlantsCount} plants = ${ordersTotal} total)`;
+    return `✅ productionOrders: Generate ${ordersTotal-20} to ${ordersTotal+20} orders (${ordersPerPlant} active orders per plant)`;
   } else if (type === 'operations') {
-    return `- operations: MINIMUM ${operationsTotal-50} operations REQUIRED (${operationsPerOrder} per order × ${ordersTotal} orders = ${operationsTotal} total)`;
+    return `✅ operations: Generate ${operationsTotal-50} to ${operationsTotal+50} tasks (${operationsPerOrder} steps per order)`;
   } else if (type === 'capabilities') {
-    return `- capabilities: MINIMUM ${config.capabilities.min} capabilities REQUIRED (shared across all ${actualPlantsCount} plants)`;
+    return `✅ capabilities: Generate ${config.capabilities.min} to ${config.capabilities.max} skills (pharmaceutical processes)`;
   } else {
-    return `- ${type}: 3-5 records (default)`;
+    return `✅ ${type}: Generate 3-5 records`;
   }
 }).join('\n')}
 
-⚠️ CRITICAL: These are MINIMUM counts for enterprise pharmaceutical manufacturing. Generate AT LEAST these numbers.
-📊 Total Required: ${ordersTotal} production orders, ${resourcesTotal} resources, ${operationsTotal} operations across ${actualPlantsCount} plants.
-🏭 This represents realistic pharmaceutical enterprise volumes - do NOT create fewer records.
+🚨 VALIDATION FAILURE = IMMEDIATE REJECTION
+Your response will be automatically validated. If you generate fewer than these counts, the data will be rejected and you'll need to regenerate everything.
 
-CRITICAL REQUIREMENTS:
-1. Create capabilities that align with typical ${companyInfo.industry} production processes
-2. Generate resources that require these specific capabilities (perfect matching)
-3. Create operations for production orders that utilize the generated capabilities
-4. Ensure operations follow realistic production sequences for ${companyInfo.industry}
-5. Each capability should be used by at least one resource and required by at least one operation
+📈 PHARMACEUTICAL ENTERPRISE CONTEXT:
+- ${actualPlantsCount} plants running 24/7 operations
+- ${ordersTotal} concurrent production batches across all facilities  
+- ${resourcesTotal} pieces of specialized pharmaceutical equipment
+- ${operationsTotal} active manufacturing operations in progress
+- This represents a typical enterprise pharmaceutical operation similar to Pfizer, Novartis, or Johnson & Johnson
 
-INDUSTRY-SPECIFIC GUIDANCE:
+Data Types Required: ${selectedDataTypes.join(', ')}
+
+🎯 GENERATION TARGET EXAMPLES (Generate this many items):
+- plants: ${actualPlantsCount} facilities → ["Plant A", "Plant B", "Plant C", "Plant D", "Plant E"]  
+- productionOrders: ${ordersTotal-20}-${ordersTotal+20} orders → Create ${Math.floor(ordersTotal/5)} batches like ["Batch-001", "Batch-002", ... "Batch-${Math.floor(ordersTotal/5)}"]
+- resources: ${resourcesTotal-10}-${resourcesTotal+10} equipment → Generate ${Math.floor(resourcesTotal/5)} sets like ["Reactor-01", "Reactor-02", ... "Reactor-${Math.floor(resourcesTotal/5)}"]
+- operations: ${operationsTotal-50}-${operationsTotal+50} tasks → Create ${Math.floor(operationsTotal/10)} groups like ["Operation-001", "Operation-002", ... "Operation-${Math.floor(operationsTotal/10)}"]
+
+💡 PRO TIP: Use loops or arrays to generate large datasets efficiently. Don't manually type each record.
+
+🔬 PHARMACEUTICAL MANUFACTURING REQUIREMENTS:
 ${companyInfo.industry.toLowerCase().includes('automotive') ? `
 For Automotive Industry:
 - Capabilities: CNC Machining, Welding, Stamping, Assembly, Painting, Quality Inspection, Heat Treatment
@@ -669,13 +671,33 @@ ${sampleSize === 'large' ? `
 - Distribute resources realistically across all plants with proper specialization
 - Suitable for performance testing and complete system evaluation` : ''}
 
-Focus on manufacturing-relevant data that would be realistic for a ${companyInfo.industry} company of ${companyInfo.size} size operating ${companyInfo.numberOfPlants || '1'} plant(s).`;
+Focus on manufacturing-relevant data that would be realistic for a ${companyInfo.industry} company of ${companyInfo.size} size operating ${companyInfo.numberOfPlants || '1'} plant(s).
+
+🚨 CRITICAL: Your response will be automatically validated. Generate enterprise volumes: ${ordersTotal} orders, ${resourcesTotal} resources, ${operationsTotal} operations. Small datasets will fail validation.`;
+
+      const finalUserPrompt = `ENTERPRISE PHARMACEUTICAL DATA GENERATION TASK
+
+Company: ${companyInfo.name} (${companyInfo.industry}, ${companyInfo.size})
+Validation Target: Generate ${ordersTotal} production orders across ${actualPlantsCount} plants
+
+PASS/FAIL CRITERIA:
+✅ PASS: Generate ${ordersTotal-20} to ${ordersTotal+20} production orders
+✅ PASS: Generate ${resourcesTotal-10} to ${resourcesTotal+10} resources  
+✅ PASS: Generate ${operationsTotal-50} to ${operationsTotal+50} operations
+❌ FAIL: Generate fewer than required minimums
+
+This data represents realistic pharmaceutical enterprise operations. Generate enterprise-scale manufacturing data that matches the volumes specified above.
+
+${companyInfo.products ? `Products/Processes: ${companyInfo.products}` : ''}
+${companyInfo.description ? `Context: ${companyInfo.description}` : ''}
+
+Create authentic pharmaceutical manufacturing data for ${companyInfo.name} with proper equipment names, production processes, and operational workflows.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: prompt }
+          { role: "user", content: finalUserPrompt }
         ],
         response_format: { type: "json_object" },
         max_tokens: 4000
