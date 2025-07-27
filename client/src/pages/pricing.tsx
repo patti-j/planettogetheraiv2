@@ -43,10 +43,23 @@ interface PricingTier {
     jobs: number | "unlimited";
     storage: string;
     support: string;
+    dataProcessing?: string;
+    aiUsage?: string;
+    optimizationRuns?: string;
   };
   popular?: boolean;
   enterprise?: boolean;
   icon: React.ReactNode;
+}
+
+interface UsageTier {
+  id: string;
+  name: string;
+  description: string;
+  baseIncluded: string;
+  overageRate: string;
+  icon: React.ReactNode;
+  examples: string[];
 }
 
 export default function Pricing() {
@@ -80,6 +93,9 @@ export default function Pricing() {
         resources: 50,
         jobs: 200,
         storage: "10GB",
+        dataProcessing: "10,000 records/month",
+        aiUsage: "500 AI requests/month",
+        optimizationRuns: "10 runs/month",
         support: "Email & Community"
       },
       icon: <Rocket className="w-6 h-6" />
@@ -111,6 +127,9 @@ export default function Pricing() {
         resources: 250,
         jobs: 1000,
         storage: "100GB",
+        dataProcessing: "100,000 records/month",
+        aiUsage: "5,000 AI requests/month",
+        optimizationRuns: "100 runs/month",
         support: "Phone, Email & Chat"
       },
       popular: true,
@@ -144,10 +163,72 @@ export default function Pricing() {
         resources: "unlimited",
         jobs: "unlimited",
         storage: "Unlimited",
+        dataProcessing: "1M+ records/month included",
+        aiUsage: "50,000 AI requests/month",
+        optimizationRuns: "Unlimited",
         support: "24/7 Dedicated with SLA"
       },
       enterprise: true,
       icon: <Crown className="w-6 h-6" />
+    }
+  ];
+
+  const usageTiers: UsageTier[] = [
+    {
+      id: "data-processing",
+      name: "Data Processing",
+      description: "Large-scale manufacturing data management with high-performance processing",
+      baseIncluded: "Base tier limits included",
+      overageRate: "$0.05 per 1,000 additional records processed",
+      icon: <Database className="w-6 h-6" />,
+      examples: [
+        "Processing 500K+ production orders monthly",
+        "Managing 100K+ inventory transactions", 
+        "Bulk operations on large datasets",
+        "High-volume data imports and exports"
+      ]
+    },
+    {
+      id: "ai-usage",
+      name: "AI & Machine Learning",
+      description: "Advanced AI processing for optimization, forecasting, and intelligent automation",
+      baseIncluded: "Base tier AI requests included",
+      overageRate: "$0.10 per additional AI request",
+      icon: <Bot className="w-6 h-6" />,
+      examples: [
+        "Max AI conversations and file analysis",
+        "AI-powered demand forecasting",
+        "Intelligent scheduling optimization",
+        "Custom AI model training and inference"
+      ]
+    },
+    {
+      id: "optimization",
+      name: "Optimization Computing",
+      description: "High-performance optimization algorithms for complex manufacturing scenarios",
+      baseIncluded: "Base tier optimization runs included",
+      overageRate: "$2.50 per additional optimization run",
+      icon: <Cpu className="w-6 h-6" />,
+      examples: [
+        "Complex multi-plant scheduling optimization",
+        "Advanced capacity planning algorithms",
+        "Large-scale inventory optimization",
+        "Custom optimization algorithm execution"
+      ]
+    },
+    {
+      id: "storage",
+      name: "Additional Storage",
+      description: "Extended storage for large manufacturing datasets and historical archives",
+      baseIncluded: "Base tier storage included",
+      overageRate: "$0.25 per GB per month",
+      icon: <Cloud className="w-6 h-6" />,
+      examples: [
+        "Long-term historical data retention",
+        "Large file attachments and documents",
+        "Extensive production archives",
+        "Multi-plant data consolidation"
+      ]
     }
   ];
 
@@ -387,6 +468,24 @@ export default function Pricing() {
                       <span className="font-medium">Storage:</span>
                       <div className="text-gray-600">{tier.limits.storage}</div>
                     </div>
+                    {tier.limits.dataProcessing && (
+                      <div className="col-span-2">
+                        <span className="font-medium">Data Processing:</span>
+                        <div className="text-gray-600">{tier.limits.dataProcessing}</div>
+                      </div>
+                    )}
+                    {tier.limits.aiUsage && (
+                      <div className="col-span-2">
+                        <span className="font-medium">AI Requests:</span>
+                        <div className="text-gray-600">{tier.limits.aiUsage}</div>
+                      </div>
+                    )}
+                    {tier.limits.optimizationRuns && (
+                      <div className="col-span-2">
+                        <span className="font-medium">Optimization Runs:</span>
+                        <div className="text-gray-600">{tier.limits.optimizationRuns}</div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="border-t pt-4">
@@ -433,6 +532,80 @@ export default function Pricing() {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Usage-Based Pricing Section */}
+        <div className="bg-white rounded-lg border border-gray-200 p-8 mb-12">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Usage-Based Pricing</h2>
+            <p className="text-lg text-gray-600 max-w-4xl mx-auto">
+              Scale with confidence. All plans include generous base limits, with transparent usage-based pricing for enterprise-scale operations processing large data volumes, heavy AI usage, and complex optimizations.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {usageTiers.map((usage) => (
+              <Card key={usage.id} className="border border-gray-200 hover:shadow-lg transition-shadow">
+                <CardHeader className="text-center pb-4">
+                  <div className="flex items-center justify-center mb-4">
+                    <div className="p-3 rounded-full bg-gray-100 text-gray-600">
+                      {usage.icon}
+                    </div>
+                  </div>
+                  <CardTitle className="text-xl font-bold text-gray-900">{usage.name}</CardTitle>
+                  <p className="text-sm text-gray-600 mt-2">{usage.description}</p>
+                </CardHeader>
+
+                <CardContent className="pt-0">
+                  <div className="space-y-4">
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="text-sm font-medium text-gray-700 mb-1">Base Included</div>
+                      <div className="text-xs text-gray-600">{usage.baseIncluded}</div>
+                    </div>
+                    
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <div className="text-sm font-medium text-blue-700 mb-1">Overage Rate</div>
+                      <div className="text-lg font-bold text-blue-900">{usage.overageRate}</div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium text-gray-700">Common Use Cases:</div>
+                      <div className="space-y-1">
+                        {usage.examples.slice(0, 2).map((example, index) => (
+                          <div key={index} className="flex items-start text-xs text-gray-600">
+                            <div className="w-1 h-1 bg-gray-400 rounded-full mt-1.5 mr-2 flex-shrink-0"></div>
+                            <span>{example}</span>
+                          </div>
+                        ))}
+                        {usage.examples.length > 2 && (
+                          <div className="text-xs text-gray-500">
+                            +{usage.examples.length - 2} more scenarios
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
+            <div className="text-center">
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Volume Discounts Available</h3>
+              <p className="text-gray-600 mb-4">
+                For enterprise customers with consistent high-volume usage, we offer significant volume discounts and custom pricing plans.
+              </p>
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  Contact Sales for Custom Pricing
+                </Button>
+                <div className="text-sm text-gray-600">
+                  Save 20-40% with annual volume commitments
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Key Platform Capabilities */}
