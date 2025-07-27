@@ -14,7 +14,19 @@ import { Plus, Edit, Trash2, Settings, Save, X, Sparkles } from "lucide-react";
 
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Job, Resource, Capability, KanbanConfig } from "@shared/schema";
+import type { Resource, Capability, KanbanConfig } from "@shared/schema";
+
+// Define Job type locally since it's not exported from schema
+interface Job {
+  id: number;
+  orderNumber: string;
+  name: string;
+  customer: string;
+  priority: string;
+  status: string;
+  quantity: number;
+  dueDate: string;
+}
 
 // Use the type from shared schema
 // interface KanbanConfig is already imported from @shared/schema
@@ -68,7 +80,7 @@ const ColorMapping = ({ swimLaneField, fieldValues, colors, onColorChange }: Col
   return (
     <div className="space-y-3">
       <Label>Swim Lane Colors</Label>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {fieldValues.map((value, index) => (
           <div key={value} className="flex items-center space-x-2">
             <div className={`w-4 h-4 rounded-full ${colors[value] || defaultColors[index % defaultColors.length]}`}></div>
@@ -131,12 +143,13 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
       cardSize: "standard",
       groupBy: "none"
     },
+    cardOrdering: config?.cardOrdering || {},
     isDefault: config?.isDefault || false
   });
 
   const priorityOptions = ["high", "medium", "low"];
   const statusOptions = ["planned", "in_progress", "completed", "cancelled"];
-  const uniqueCustomers = [...new Set(jobs.map(job => job.customer))];
+  const uniqueCustomers = Array.from(new Set(jobs.map(job => job.customer).filter(Boolean)));
   const resourceOptions = resources.map(r => ({ value: r.id.toString(), label: r.name }));
 
   // Get available swim lane fields based on view type
@@ -194,7 +207,7 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
           <Label htmlFor="description">Description</Label>
           <Textarea
             id="description"
-            value={formData.description}
+            value={formData.description || ''}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             placeholder="Describe what this board is used for..."
             rows={3}
@@ -245,7 +258,7 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
           <ColorMapping
             swimLaneField={formData.swimLaneField}
             fieldValues={currentFieldValues}
-            colors={formData.swimLaneColors}
+            colors={formData.swimLaneColors || {}}
             onColorChange={handleColorChange}
           />
         )}
@@ -257,7 +270,7 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Filters</h3>
         
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label>Priorities</Label>
             <div className="space-y-2 mt-2">
@@ -265,11 +278,12 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
                 <div key={priority} className="flex items-center space-x-2">
                   <Checkbox
                     id={`priority-${priority}`}
-                    checked={formData.filters.priorities.includes(priority)}
+                    checked={formData.filters?.priorities?.includes(priority) || false}
                     onCheckedChange={(checked) => {
+                      const currentPriorities = formData.filters?.priorities || [];
                       const newPriorities = checked
-                        ? [...formData.filters.priorities, priority]
-                        : formData.filters.priorities.filter(p => p !== priority);
+                        ? [...currentPriorities, priority]
+                        : currentPriorities.filter(p => p !== priority);
                       setFormData({
                         ...formData,
                         filters: { ...formData.filters, priorities: newPriorities }
@@ -289,11 +303,12 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
                 <div key={customer} className="flex items-center space-x-2">
                   <Checkbox
                     id={`customer-${customer}`}
-                    checked={formData.filters.customers.includes(customer)}
+                    checked={formData.filters?.customers?.includes(customer) || false}
                     onCheckedChange={(checked) => {
+                      const currentCustomers = formData.filters?.customers || [];
                       const newCustomers = checked
-                        ? [...formData.filters.customers, customer]
-                        : formData.filters.customers.filter(c => c !== customer);
+                        ? [...currentCustomers, customer]
+                        : currentCustomers.filter(c => c !== customer);
                       setFormData({
                         ...formData,
                         filters: { ...formData.filters, customers: newCustomers }
@@ -314,7 +329,7 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Display Options</h3>
         
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div>
             <Label>Show on Cards</Label>
             <div className="space-y-2 mt-2">
@@ -328,7 +343,7 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
                 <div key={option.key} className="flex items-center space-x-2">
                   <Checkbox
                     id={option.key}
-                    checked={formData.displayOptions[option.key as keyof DisplayOptions] as boolean}
+                    checked={formData.displayOptions?.[option.key as keyof typeof formData.displayOptions] as boolean || false}
                     onCheckedChange={(checked) => {
                       setFormData({
                         ...formData,
@@ -350,7 +365,7 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
               <div>
                 <Label>Card Size</Label>
                 <Select
-                  value={formData.displayOptions.cardSize}
+                  value={formData.displayOptions?.cardSize || "standard"}
                   onValueChange={(value) => setFormData({
                     ...formData,
                     displayOptions: { ...formData.displayOptions, cardSize: value as "compact" | "standard" | "detailed" }
@@ -370,7 +385,7 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
               <div>
                 <Label>Group By</Label>
                 <Select
-                  value={formData.displayOptions.groupBy}
+                  value={formData.displayOptions?.groupBy || "none"}
                   onValueChange={(value) => setFormData({
                     ...formData,
                     displayOptions: { ...formData.displayOptions, groupBy: value as "none" | "priority" | "customer" | "resource" }
@@ -393,11 +408,11 @@ const KanbanConfigForm = ({ config, jobs, resources, capabilities, onSave, onCan
       </div>
 
       {/* Action Buttons */}
-      <div className="flex justify-end space-x-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
+      <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
+        <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
           Cancel
         </Button>
-        <Button type="submit">
+        <Button type="submit" className="w-full sm:w-auto">
           <Save className="w-4 h-4 mr-2" />
           Save Configuration
         </Button>
@@ -524,34 +539,36 @@ export default function KanbanConfigManager({ open, onOpenChange, jobs, resource
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto w-[95vw] sm:w-full">
         <DialogHeader>
-          <DialogTitle>Kanban Board Configurations</DialogTitle>
+          <DialogTitle>Board Configurations</DialogTitle>
         </DialogHeader>
         
         {!showForm ? (
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
               <p className="text-sm text-gray-600">
-                Create and manage custom Kanban board configurations with different swim lanes, filters, and display options.
+                Create and manage custom board configurations with different swim lanes, filters, and display options.
               </p>
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                 <Button 
                   onClick={() => setShowAIDialog(true)}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 w-full sm:w-auto"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
-                  Create
+                  <span className="hidden sm:inline">AI Create</span>
+                  <span className="sm:hidden">AI</span>
                 </Button>
-                <Button onClick={() => setShowForm(true)}>
+                <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto">
                   <Plus className="w-4 h-4 mr-2" />
-                  New Configuration
+                  <span className="hidden sm:inline">New Configuration</span>
+                  <span className="sm:hidden">New</span>
                 </Button>
               </div>
             </div>
             
             <div className="grid gap-4">
-              {configs.map((config) => (
+              {(configs as KanbanConfig[]).map((config) => (
                 <Card key={config.id}>
                   <CardHeader>
                     <div className="flex items-center justify-between">
@@ -562,11 +579,11 @@ export default function KanbanConfigManager({ open, onOpenChange, jobs, resource
                         </CardTitle>
                         <p className="text-sm text-gray-600 mt-1">{config.description}</p>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEditConfig(config)}>
+                      <div className="flex items-center space-x-1 sm:space-x-2">
+                        <Button variant="ghost" size="sm" onClick={() => handleEditConfig(config)} className="h-8 w-8 p-0 sm:h-auto sm:w-auto sm:p-2">
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteConfig(config.id)}>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteConfig(config.id)} className="h-8 w-8 p-0 sm:h-auto sm:w-auto sm:p-2">
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -588,16 +605,17 @@ export default function KanbanConfigManager({ open, onOpenChange, jobs, resource
                       
                       <div className="flex justify-between items-center">
                         <div className="text-sm text-gray-500">
-                          {config.filters.priorities.length > 0 && (
+                          {config.filters?.priorities && config.filters.priorities.length > 0 && (
                             <span>Priorities: {config.filters.priorities.join(", ")}</span>
                           )}
-                          {config.filters.customers.length > 0 && (
+                          {config.filters?.customers && config.filters.customers.length > 0 && (
                             <span className="ml-4">Customers: {config.filters.customers.length}</span>
                           )}
                         </div>
                         {!config.isDefault && (
-                          <Button variant="outline" size="sm" onClick={() => handleSetDefault(config.id)}>
-                            Set as Default
+                          <Button variant="outline" size="sm" onClick={() => handleSetDefault(config.id)} className="text-xs">
+                            <span className="hidden sm:inline">Set as Default</span>
+                            <span className="sm:hidden">Default</span>
                           </Button>
                         )}
                       </div>
