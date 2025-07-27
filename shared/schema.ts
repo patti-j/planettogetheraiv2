@@ -5096,3 +5096,786 @@ export const algorithmPerformanceRelations = relations(algorithmPerformance, ({ 
     references: [schedulingHistory.id],
   }),
 }));
+
+// ===== COMPREHENSIVE ERP MANUFACTURING DATA STRUCTURES =====
+
+// Departments and organizational structure
+export const departments = pgTable("departments", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  code: text("code").notNull().unique(),
+  parentDepartmentId: integer("parent_department_id").references((): any => departments.id),
+  managerId: integer("manager_id"), // Will reference employees table
+  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  costCenter: text("cost_center"),
+  budgetAmount: integer("budget_amount").default(0), // in cents
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Work centers - physical or logical groupings where work is performed
+export const workCenters = pgTable("work_centers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  code: text("code").notNull().unique(),
+  departmentId: integer("department_id").references(() => departments.id).notNull(),
+  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  capacity: integer("capacity").notNull().default(1), // units per hour
+  efficiency: integer("efficiency").notNull().default(100), // percentage
+  costPerHour: integer("cost_per_hour").default(0), // in cents
+  setupTime: integer("setup_time").default(0), // minutes
+  teardownTime: integer("teardown_time").default(0), // minutes
+  queueTime: integer("queue_time").default(0), // minutes
+  moveTime: integer("move_time").default(0), // minutes
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Employees - personnel who can be assigned to work centers or used as resources
+export const employees = pgTable("employees", {
+  id: serial("id").primaryKey(),
+  employeeNumber: text("employee_number").notNull().unique(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email").unique(),
+  phoneNumber: text("phone_number"),
+  departmentId: integer("department_id").references(() => departments.id),
+  workCenterId: integer("work_center_id").references(() => workCenters.id),
+  jobTitle: text("job_title").notNull(),
+  skillLevel: text("skill_level").notNull().default("intermediate"), // entry, intermediate, senior, expert
+  hourlyRate: integer("hourly_rate").default(0), // in cents
+  isResource: boolean("is_resource").default(false), // Can be assigned as a resource
+  capabilities: jsonb("capabilities").$type<number[]>().default([]), // Skill capabilities
+  shiftPattern: text("shift_pattern").default("day"), // day, night, rotating
+  hireDate: timestamp("hire_date"),
+  terminationDate: timestamp("termination_date"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Sites - multiple manufacturing locations
+export const sites = pgTable("sites", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  code: text("code").notNull().unique(),
+  address: jsonb("address").$type<{
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+  }>().notNull(),
+  timezone: text("timezone").notNull().default("UTC"),
+  currency: text("currency").notNull().default("USD"),
+  parentSiteId: integer("parent_site_id").references((): any => sites.id),
+  siteType: text("site_type").notNull().default("manufacturing"), // manufacturing, warehouse, distribution, office
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Items - products, components, raw materials
+export const items = pgTable("items", {
+  id: serial("id").primaryKey(),
+  itemNumber: text("item_number").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description"),
+  itemType: text("item_type").notNull(), // finished_good, component, raw_material, service
+  unitOfMeasure: text("unit_of_measure").notNull().default("EA"), // EA, LBS, GAL, etc.
+  weight: integer("weight").default(0), // in grams
+  volume: integer("volume").default(0), // in cubic centimeters
+  standardCost: integer("standard_cost").default(0), // in cents
+  listPrice: integer("list_price").default(0), // in cents
+  leadTime: integer("lead_time").default(0), // days
+  safetyStock: integer("safety_stock").default(0),
+  reorderPoint: integer("reorder_point").default(0),
+  lotSizeRule: text("lot_size_rule").default("fixed"), // fixed, lot_for_lot, economic_order_quantity
+  lotSize: integer("lot_size").default(1),
+  shelfLife: integer("shelf_life").default(0), // days
+  requiresLotControl: boolean("requires_lot_control").default(false),
+  requiresSerialControl: boolean("requires_serial_control").default(false),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Warehouses - storage locations
+export const warehouses = pgTable("warehouses", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  code: text("code").notNull().unique(),
+  description: text("description"),
+  siteId: integer("site_id").references(() => sites.id).notNull(),
+  warehouseType: text("warehouse_type").notNull().default("general"), // general, finished_goods, raw_materials, work_in_process
+  address: jsonb("address").$type<{
+    street?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+  }>(),
+  totalCapacity: integer("total_capacity").default(0), // cubic units
+  usedCapacity: integer("used_capacity").default(0), // cubic units
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Inventory - current stock levels
+export const inventory = pgTable("inventory", {
+  id: serial("id").primaryKey(),
+  itemId: integer("item_id").references(() => items.id).notNull(),
+  warehouseId: integer("warehouse_id").references(() => warehouses.id).notNull(),
+  location: text("location"), // bin, shelf, etc.
+  onHandQuantity: integer("on_hand_quantity").notNull().default(0),
+  allocatedQuantity: integer("allocated_quantity").notNull().default(0),
+  availableQuantity: integer("available_quantity").notNull().default(0),
+  onOrderQuantity: integer("on_order_quantity").notNull().default(0),
+  reservedQuantity: integer("reserved_quantity").notNull().default(0),
+  averageCost: integer("average_cost").default(0), // in cents
+  lastCountDate: timestamp("last_count_date"),
+  lastMovementDate: timestamp("last_movement_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  itemWarehouseIdx: unique().on(table.itemId, table.warehouseId),
+}));
+
+// Inventory lots for lot-controlled items
+export const inventoryLots = pgTable("inventory_lots", {
+  id: serial("id").primaryKey(),
+  lotNumber: text("lot_number").notNull(),
+  itemId: integer("item_id").references(() => items.id).notNull(),
+  warehouseId: integer("warehouse_id").references(() => warehouses.id).notNull(),
+  quantity: integer("quantity").notNull().default(0),
+  expirationDate: timestamp("expiration_date"),
+  receivedDate: timestamp("received_date").notNull(),
+  vendorLotNumber: text("vendor_lot_number"),
+  status: text("status").notNull().default("available"), // available, hold, expired, consumed
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  lotItemWarehouseIdx: unique().on(table.lotNumber, table.itemId, table.warehouseId),
+}));
+
+// Sales orders from customers
+export const salesOrders = pgTable("sales_orders", {
+  id: serial("id").primaryKey(),
+  orderNumber: text("order_number").notNull().unique(),
+  customerName: text("customer_name").notNull(),
+  customerCode: text("customer_code"),
+  customerContact: jsonb("customer_contact").$type<{
+    name?: string;
+    email?: string;
+    phone?: string;
+  }>(),
+  orderDate: timestamp("order_date").notNull(),
+  requestedDate: timestamp("requested_date").notNull(),
+  promisedDate: timestamp("promised_date"),
+  shippedDate: timestamp("shipped_date"),
+  status: text("status").notNull().default("open"), // open, confirmed, in_production, shipped, invoiced, closed, cancelled
+  priority: text("priority").notNull().default("medium"), // low, medium, high, urgent
+  totalAmount: integer("total_amount").default(0), // in cents
+  currency: text("currency").notNull().default("USD"),
+  siteId: integer("site_id").references(() => sites.id).notNull(),
+  salesPerson: text("sales_person"),
+  notes: text("notes"),
+  shippingAddress: jsonb("shipping_address").$type<{
+    name?: string;
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Sales order line items
+export const salesOrderLines = pgTable("sales_order_lines", {
+  id: serial("id").primaryKey(),
+  salesOrderId: integer("sales_order_id").references(() => salesOrders.id).notNull(),
+  lineNumber: integer("line_number").notNull(),
+  itemId: integer("item_id").references(() => items.id).notNull(),
+  orderedQuantity: integer("ordered_quantity").notNull(),
+  shippedQuantity: integer("shipped_quantity").default(0),
+  unitPrice: integer("unit_price").notNull(), // in cents
+  extendedPrice: integer("extended_price").notNull(), // in cents
+  requestedDate: timestamp("requested_date").notNull(),
+  promisedDate: timestamp("promised_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  salesOrderLineIdx: unique().on(table.salesOrderId, table.lineNumber),
+}));
+
+// Purchase orders to suppliers
+export const purchaseOrders = pgTable("purchase_orders", {
+  id: serial("id").primaryKey(),
+  orderNumber: text("order_number").notNull().unique(),
+  supplierName: text("supplier_name").notNull(),
+  supplierCode: text("supplier_code"),
+  supplierContact: jsonb("supplier_contact").$type<{
+    name?: string;
+    email?: string;
+    phone?: string;
+  }>(),
+  orderDate: timestamp("order_date").notNull(),
+  requestedDate: timestamp("requested_date").notNull(),
+  promisedDate: timestamp("promised_date"),
+  receivedDate: timestamp("received_date"),
+  status: text("status").notNull().default("open"), // open, confirmed, partial_received, received, invoiced, closed, cancelled
+  totalAmount: integer("total_amount").default(0), // in cents
+  currency: text("currency").notNull().default("USD"),
+  siteId: integer("site_id").references(() => sites.id).notNull(),
+  buyerName: text("buyer_name"),
+  notes: text("notes"),
+  terms: text("terms"), // payment terms
+  freightTerms: text("freight_terms"), // FOB, CIF, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Purchase order line items
+export const purchaseOrderLines = pgTable("purchase_order_lines", {
+  id: serial("id").primaryKey(),
+  purchaseOrderId: integer("purchase_order_id").references(() => purchaseOrders.id).notNull(),
+  lineNumber: integer("line_number").notNull(),
+  itemId: integer("item_id").references(() => items.id).notNull(),
+  orderedQuantity: integer("ordered_quantity").notNull(),
+  receivedQuantity: integer("received_quantity").default(0),
+  unitCost: integer("unit_cost").notNull(), // in cents
+  extendedCost: integer("extended_cost").notNull(), // in cents
+  requestedDate: timestamp("requested_date").notNull(),
+  promisedDate: timestamp("promised_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  purchaseOrderLineIdx: unique().on(table.purchaseOrderId, table.lineNumber),
+}));
+
+// Transfer orders between warehouses/sites
+export const transferOrders = pgTable("transfer_orders", {
+  id: serial("id").primaryKey(),
+  orderNumber: text("order_number").notNull().unique(),
+  fromWarehouseId: integer("from_warehouse_id").references(() => warehouses.id).notNull(),
+  toWarehouseId: integer("to_warehouse_id").references(() => warehouses.id).notNull(),
+  requestedDate: timestamp("requested_date").notNull(),
+  shippedDate: timestamp("shipped_date"),
+  receivedDate: timestamp("received_date"),
+  status: text("status").notNull().default("open"), // open, shipped, received, cancelled
+  priority: text("priority").notNull().default("medium"), // low, medium, high, urgent
+  requestedBy: text("requested_by"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Transfer order line items
+export const transferOrderLines = pgTable("transfer_order_lines", {
+  id: serial("id").primaryKey(),
+  transferOrderId: integer("transfer_order_id").references(() => transferOrders.id).notNull(),
+  lineNumber: integer("line_number").notNull(),
+  itemId: integer("item_id").references(() => items.id).notNull(),
+  requestedQuantity: integer("requested_quantity").notNull(),
+  shippedQuantity: integer("shipped_quantity").default(0),
+  receivedQuantity: integer("received_quantity").default(0),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  transferOrderLineIdx: unique().on(table.transferOrderId, table.lineNumber),
+}));
+
+// Bills of Material - recipe/formula for making items
+export const billsOfMaterial = pgTable("bills_of_material", {
+  id: serial("id").primaryKey(),
+  parentItemId: integer("parent_item_id").references(() => items.id).notNull(),
+  revision: text("revision").notNull().default("1"),
+  description: text("description"),
+  effectiveDate: timestamp("effective_date").notNull(),
+  expiredDate: timestamp("expired_date"),
+  bomType: text("bom_type").notNull().default("production"), // production, engineering, costing
+  standardQuantity: integer("standard_quantity").notNull().default(1), // quantity this BOM produces
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  parentItemRevisionIdx: unique().on(table.parentItemId, table.revision),
+}));
+
+// BOM line items - components needed
+export const bomLines = pgTable("bom_lines", {
+  id: serial("id").primaryKey(),
+  bomId: integer("bom_id").references(() => billsOfMaterial.id).notNull(),
+  lineNumber: integer("line_number").notNull(),
+  componentItemId: integer("component_item_id").references(() => items.id).notNull(),
+  quantity: integer("quantity").notNull(), // quantity needed per parent
+  unitOfMeasure: text("unit_of_measure").notNull(),
+  scrapFactor: integer("scrap_factor").default(0), // percentage
+  leadTimeOffset: integer("lead_time_offset").default(0), // days
+  isOptional: boolean("is_optional").default(false),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  bomLineIdx: unique().on(table.bomId, table.lineNumber),
+}));
+
+// Routings - sequence of operations to make items
+export const routings = pgTable("routings", {
+  id: serial("id").primaryKey(),
+  itemId: integer("item_id").references(() => items.id).notNull(),
+  revision: text("revision").notNull().default("1"),
+  description: text("description"),
+  effectiveDate: timestamp("effective_date").notNull(),
+  expiredDate: timestamp("expired_date"),
+  routingType: text("routing_type").notNull().default("production"), // production, alternate, engineering
+  standardQuantity: integer("standard_quantity").notNull().default(1), // lot size this routing is based on
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  itemRevisionIdx: unique().on(table.itemId, table.revision),
+}));
+
+// Routing operations - steps in the routing
+export const routingOperations = pgTable("routing_operations", {
+  id: serial("id").primaryKey(),
+  routingId: integer("routing_id").references(() => routings.id).notNull(),
+  operationNumber: integer("operation_number").notNull(),
+  workCenterId: integer("work_center_id").references(() => workCenters.id).notNull(),
+  description: text("description").notNull(),
+  setupTime: integer("setup_time").default(0), // minutes
+  runTime: integer("run_time").notNull(), // minutes per unit
+  teardownTime: integer("teardown_time").default(0), // minutes
+  queueTime: integer("queue_time").default(0), // minutes
+  moveTime: integer("move_time").default(0), // minutes
+  overlap: integer("overlap").default(0), // percentage - how much can overlap with next operation
+  requiredCapabilities: jsonb("required_capabilities").$type<number[]>().default([]),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  routingOperationIdx: unique().on(table.routingId, table.operationNumber),
+}));
+
+// Demand forecasts
+export const forecasts = pgTable("forecasts", {
+  id: serial("id").primaryKey(),
+  itemId: integer("item_id").references(() => items.id).notNull(),
+  siteId: integer("site_id").references(() => sites.id).notNull(),
+  forecastDate: timestamp("forecast_date").notNull(),
+  forecastQuantity: integer("forecast_quantity").notNull(),
+  forecastType: text("forecast_type").notNull().default("demand"), // demand, supply, safety_stock
+  forecastMethod: text("forecast_method").notNull().default("manual"), // manual, statistical, ai, collaborative
+  confidence: integer("confidence").default(50), // percentage
+  plannerName: text("planner_name"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  itemSiteDateIdx: unique().on(table.itemId, table.siteId, table.forecastDate),
+}));
+
+// ===== ERP RELATIONS =====
+
+export const departmentsRelations = relations(departments, ({ one, many }) => ({
+  parentDepartment: one(departments, {
+    fields: [departments.parentDepartmentId],
+    references: [departments.id],
+  }),
+  plant: one(plants, {
+    fields: [departments.plantId],
+    references: [plants.id],
+  }),
+  workCenters: many(workCenters),
+  employees: many(employees),
+}));
+
+export const workCentersRelations = relations(workCenters, ({ one, many }) => ({
+  department: one(departments, {
+    fields: [workCenters.departmentId],
+    references: [departments.id],
+  }),
+  plant: one(plants, {
+    fields: [workCenters.plantId],
+    references: [plants.id],
+  }),
+  employees: many(employees),
+  routingOperations: many(routingOperations),
+}));
+
+export const employeesRelations = relations(employees, ({ one }) => ({
+  department: one(departments, {
+    fields: [employees.departmentId],
+    references: [departments.id],
+  }),
+  workCenter: one(workCenters, {
+    fields: [employees.workCenterId],
+    references: [workCenters.id],
+  }),
+}));
+
+export const sitesRelations = relations(sites, ({ one, many }) => ({
+  parentSite: one(sites, {
+    fields: [sites.parentSiteId],
+    references: [sites.id],
+  }),
+  warehouses: many(warehouses),
+  salesOrders: many(salesOrders),
+  purchaseOrders: many(purchaseOrders),
+  forecasts: many(forecasts),
+}));
+
+export const itemsRelations = relations(items, ({ many }) => ({
+  inventory: many(inventory),
+  inventoryLots: many(inventoryLots),
+  salesOrderLines: many(salesOrderLines),
+  purchaseOrderLines: many(purchaseOrderLines),
+  transferOrderLines: many(transferOrderLines),
+  billsOfMaterial: many(billsOfMaterial),
+  bomLines: many(bomLines),
+  routings: many(routings),
+  forecasts: many(forecasts),
+}));
+
+export const warehousesRelations = relations(warehouses, ({ one, many }) => ({
+  site: one(sites, {
+    fields: [warehouses.siteId],
+    references: [sites.id],
+  }),
+  inventory: many(inventory),
+  inventoryLots: many(inventoryLots),
+  transferOrdersFrom: many(transferOrders, { relationName: "fromWarehouse" }),
+  transferOrdersTo: many(transferOrders, { relationName: "toWarehouse" }),
+}));
+
+export const inventoryRelations = relations(inventory, ({ one }) => ({
+  item: one(items, {
+    fields: [inventory.itemId],
+    references: [items.id],
+  }),
+  warehouse: one(warehouses, {
+    fields: [inventory.warehouseId],
+    references: [warehouses.id],
+  }),
+}));
+
+export const inventoryLotsRelations = relations(inventoryLots, ({ one }) => ({
+  item: one(items, {
+    fields: [inventoryLots.itemId],
+    references: [items.id],
+  }),
+  warehouse: one(warehouses, {
+    fields: [inventoryLots.warehouseId],
+    references: [warehouses.id],
+  }),
+}));
+
+export const salesOrdersRelations = relations(salesOrders, ({ one, many }) => ({
+  site: one(sites, {
+    fields: [salesOrders.siteId],
+    references: [sites.id],
+  }),
+  lines: many(salesOrderLines),
+}));
+
+export const salesOrderLinesRelations = relations(salesOrderLines, ({ one }) => ({
+  salesOrder: one(salesOrders, {
+    fields: [salesOrderLines.salesOrderId],
+    references: [salesOrders.id],
+  }),
+  item: one(items, {
+    fields: [salesOrderLines.itemId],
+    references: [items.id],
+  }),
+}));
+
+export const purchaseOrdersRelations = relations(purchaseOrders, ({ one, many }) => ({
+  site: one(sites, {
+    fields: [purchaseOrders.siteId],
+    references: [sites.id],
+  }),
+  lines: many(purchaseOrderLines),
+}));
+
+export const purchaseOrderLinesRelations = relations(purchaseOrderLines, ({ one }) => ({
+  purchaseOrder: one(purchaseOrders, {
+    fields: [purchaseOrderLines.purchaseOrderId],
+    references: [purchaseOrders.id],
+  }),
+  item: one(items, {
+    fields: [purchaseOrderLines.itemId],
+    references: [items.id],
+  }),
+}));
+
+export const transferOrdersRelations = relations(transferOrders, ({ one, many }) => ({
+  fromWarehouse: one(warehouses, {
+    fields: [transferOrders.fromWarehouseId],
+    references: [warehouses.id],
+    relationName: "fromWarehouse",
+  }),
+  toWarehouse: one(warehouses, {
+    fields: [transferOrders.toWarehouseId],
+    references: [warehouses.id],
+    relationName: "toWarehouse",
+  }),
+  lines: many(transferOrderLines),
+}));
+
+export const transferOrderLinesRelations = relations(transferOrderLines, ({ one }) => ({
+  transferOrder: one(transferOrders, {
+    fields: [transferOrderLines.transferOrderId],
+    references: [transferOrders.id],
+  }),
+  item: one(items, {
+    fields: [transferOrderLines.itemId],
+    references: [items.id],
+  }),
+}));
+
+export const billsOfMaterialRelations = relations(billsOfMaterial, ({ one, many }) => ({
+  parentItem: one(items, {
+    fields: [billsOfMaterial.parentItemId],
+    references: [items.id],
+  }),
+  lines: many(bomLines),
+}));
+
+export const bomLinesRelations = relations(bomLines, ({ one }) => ({
+  bom: one(billsOfMaterial, {
+    fields: [bomLines.bomId],
+    references: [billsOfMaterial.id],
+  }),
+  componentItem: one(items, {
+    fields: [bomLines.componentItemId],
+    references: [items.id],
+  }),
+}));
+
+export const routingsRelations = relations(routings, ({ one, many }) => ({
+  item: one(items, {
+    fields: [routings.itemId],
+    references: [items.id],
+  }),
+  operations: many(routingOperations),
+}));
+
+export const routingOperationsRelations = relations(routingOperations, ({ one }) => ({
+  routing: one(routings, {
+    fields: [routingOperations.routingId],
+    references: [routings.id],
+  }),
+  workCenter: one(workCenters, {
+    fields: [routingOperations.workCenterId],
+    references: [workCenters.id],
+  }),
+}));
+
+export const forecastsRelations = relations(forecasts, ({ one }) => ({
+  item: one(items, {
+    fields: [forecasts.itemId],
+    references: [items.id],
+  }),
+  site: one(sites, {
+    fields: [forecasts.siteId],
+    references: [sites.id],
+  }),
+}));
+
+// ===== ERP INSERT SCHEMAS =====
+
+export const insertDepartmentSchema = createInsertSchema(departments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertWorkCenterSchema = createInsertSchema(workCenters).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertEmployeeSchema = createInsertSchema(employees).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  hireDate: z.union([z.string().datetime(), z.date()]).optional(),
+  terminationDate: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertSiteSchema = createInsertSchema(sites).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertItemSchema = createInsertSchema(items).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertWarehouseSchema = createInsertSchema(warehouses).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertInventorySchema = createInsertSchema(inventory).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertInventoryLotSchema = createInsertSchema(inventoryLots).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  expirationDate: z.union([z.string().datetime(), z.date()]).optional(),
+  receivedDate: z.union([z.string().datetime(), z.date()]),
+});
+
+export const insertSalesOrderSchema = createInsertSchema(salesOrders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  orderDate: z.union([z.string().datetime(), z.date()]),
+  requestedDate: z.union([z.string().datetime(), z.date()]),
+  promisedDate: z.union([z.string().datetime(), z.date()]).optional(),
+  shippedDate: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertSalesOrderLineSchema = createInsertSchema(salesOrderLines).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  requestedDate: z.union([z.string().datetime(), z.date()]),
+  promisedDate: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertPurchaseOrderSchema = createInsertSchema(purchaseOrders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  orderDate: z.union([z.string().datetime(), z.date()]),
+  requestedDate: z.union([z.string().datetime(), z.date()]),
+  promisedDate: z.union([z.string().datetime(), z.date()]).optional(),
+  receivedDate: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertPurchaseOrderLineSchema = createInsertSchema(purchaseOrderLines).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  requestedDate: z.union([z.string().datetime(), z.date()]),
+  promisedDate: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertTransferOrderSchema = createInsertSchema(transferOrders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  requestedDate: z.union([z.string().datetime(), z.date()]),
+  shippedDate: z.union([z.string().datetime(), z.date()]).optional(),
+  receivedDate: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertTransferOrderLineSchema = createInsertSchema(transferOrderLines).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertBillOfMaterialSchema = createInsertSchema(billsOfMaterial).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  effectiveDate: z.union([z.string().datetime(), z.date()]),
+  expiredDate: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertBomLineSchema = createInsertSchema(bomLines).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertRoutingSchema = createInsertSchema(routings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  effectiveDate: z.union([z.string().datetime(), z.date()]),
+  expiredDate: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertRoutingOperationSchema = createInsertSchema(routingOperations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertForecastSchema = createInsertSchema(forecasts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  forecastDate: z.union([z.string().datetime(), z.date()]),
+});
+
+// ===== ERP TYPE EXPORTS =====
+
+export type Department = typeof departments.$inferSelect;
+export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
+
+export type WorkCenter = typeof workCenters.$inferSelect;
+export type InsertWorkCenter = z.infer<typeof insertWorkCenterSchema>;
+
+export type Employee = typeof employees.$inferSelect;
+export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
+
+export type Site = typeof sites.$inferSelect;
+export type InsertSite = z.infer<typeof insertSiteSchema>;
+
+export type Item = typeof items.$inferSelect;
+export type InsertItem = z.infer<typeof insertItemSchema>;
+
+export type Warehouse = typeof warehouses.$inferSelect;
+export type InsertWarehouse = z.infer<typeof insertWarehouseSchema>;
+
+export type Inventory = typeof inventory.$inferSelect;
+export type InsertInventory = z.infer<typeof insertInventorySchema>;
+
+export type InventoryLot = typeof inventoryLots.$inferSelect;
+export type InsertInventoryLot = z.infer<typeof insertInventoryLotSchema>;
+
+export type SalesOrder = typeof salesOrders.$inferSelect;
+export type InsertSalesOrder = z.infer<typeof insertSalesOrderSchema>;
+
+export type SalesOrderLine = typeof salesOrderLines.$inferSelect;
+export type InsertSalesOrderLine = z.infer<typeof insertSalesOrderLineSchema>;
+
+export type PurchaseOrder = typeof purchaseOrders.$inferSelect;
+export type InsertPurchaseOrder = z.infer<typeof insertPurchaseOrderSchema>;
+
+export type PurchaseOrderLine = typeof purchaseOrderLines.$inferSelect;
+export type InsertPurchaseOrderLine = z.infer<typeof insertPurchaseOrderLineSchema>;
+
+export type TransferOrder = typeof transferOrders.$inferSelect;
+export type InsertTransferOrder = z.infer<typeof insertTransferOrderSchema>;
+
+export type TransferOrderLine = typeof transferOrderLines.$inferSelect;
+export type InsertTransferOrderLine = z.infer<typeof insertTransferOrderLineSchema>;
+
+export type BillOfMaterial = typeof billsOfMaterial.$inferSelect;
+export type InsertBillOfMaterial = z.infer<typeof insertBillOfMaterialSchema>;
+
+export type BomLine = typeof bomLines.$inferSelect;
+export type InsertBomLine = z.infer<typeof insertBomLineSchema>;
+
+export type Routing = typeof routings.$inferSelect;
+export type InsertRouting = z.infer<typeof insertRoutingSchema>;
+
+export type RoutingOperation = typeof routingOperations.$inferSelect;
+export type InsertRoutingOperation = z.infer<typeof insertRoutingOperationSchema>;
+
+export type Forecast = typeof forecasts.$inferSelect;
+export type InsertForecast = z.infer<typeof insertForecastSchema>;
+

@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useMaxDock } from '@/contexts/MaxDockContext';
@@ -550,16 +550,56 @@ export default function DataImport() {
 
   const getTemplatePreview = (type: string) => {
     switch (type) {
+      // Core Manufacturing
       case 'resources':
         return 'Name,Type,Description,Status,Capabilities\nMachine-001,Equipment,CNC Machine,active,CNC Machining';
       case 'jobs':
         return 'Name,Customer,Priority,Due Date,Quantity,Description\nWidget Assembly,ACME Corp,high,2025-02-01,100,Assembly of widget components';
-      case 'users':
-        return 'Username,Email,First Name,Last Name,Role\njohn.doe,john@company.com,John,Doe,operator';
       case 'capabilities':
         return 'Name,Description,Category\nCNC Machining,Computer Numerical Control machining,manufacturing';
       case 'plants':
         return 'Name,Location,Address,Timezone\nMain Plant,Chicago,123 Industrial Ave Chicago IL,America/Chicago';
+      
+      // Organizational Structure
+      case 'sites':
+        return 'Name,Code,Street,City,State,Postal Code,Country\nMain Manufacturing,MAIN,123 Industrial Blvd,Chicago,IL,60601,USA';
+      case 'departments':
+        return 'Name,Code,Description,Plant,Cost Center\nProduction,PROD,Manufacturing operations,Main Plant,CC001';
+      case 'workCenters':
+        return 'Name,Code,Description,Department,Capacity\nCNC Work Center,WC001,CNC machining operations,Production,10';
+      case 'employees':
+        return 'Employee Number,First Name,Last Name,Email,Department\nEMP001,John,Smith,john.smith@company.com,Production';
+      
+      // Products & Inventory
+      case 'items':
+        return 'Item Number,Name,Description,Item Type,Unit of Measure\nWIDG-001,Widget Assembly,Standard widget product,finished_good,EA';
+      case 'warehouses':
+        return 'Name,Code,Description,Site,Warehouse Type\nMain Warehouse,WH-MAIN,Primary storage facility,Main Manufacturing,general';
+      case 'inventory':
+        return 'Item Number,Warehouse Code,Location,On Hand Quantity\nWIDG-001,WH-MAIN,A1-B2,150';
+      case 'inventoryLots':
+        return 'Lot Number,Item Number,Warehouse Code,Quantity,Status\nLOT001,COMP-001,WH-MAIN,100,available';
+      
+      // Sales & Orders
+      case 'salesOrders':
+        return 'Order Number,Customer Name,Order Date,Status,Total Amount\nSO-2025-001,ACME Corporation,2025-01-15,open,75000';
+      case 'purchaseOrders':
+        return 'Order Number,Supplier Name,Order Date,Status,Total Amount\nPO-2025-001,Steel Supply Co,2025-01-15,open,35000';
+      case 'transferOrders':
+        return 'Order Number,From Warehouse,To Warehouse,Status\nTO-2025-001,WH-MAIN,WH-FG,open';
+      
+      // Manufacturing Planning
+      case 'billsOfMaterial':
+        return 'Parent Item Number,Revision,Description,Effective Date\nWIDG-001,1,Widget assembly BOM,2025-01-01';
+      case 'routings':
+        return 'Item Number,Revision,Description,Effective Date\nWIDG-001,1,Widget manufacturing routing,2025-01-01';
+      case 'forecasts':
+        return 'Item Number,Site,Forecast Date,Forecast Quantity\nWIDG-001,Main Manufacturing,2025-02-01,100';
+      
+      // System Users
+      case 'users':
+        return 'Username,Email,First Name,Last Name,Role\njohn.doe,john@company.com,John,Doe,operator';
+      
       default:
         return 'Column1,Column2,Column3\nValue1,Value2,Value3';
     }
@@ -590,6 +630,70 @@ export default function DataImport() {
         csvContent = 'Name,Location,Address,Timezone\nMain Plant,Chicago,123 Industrial Ave Chicago IL,America/Chicago\nSecondary Plant,Dallas,456 Manufacturing Blvd Dallas TX,America/Chicago';
         filename = 'plants_template.csv';
         break;
+
+      // Organizational Structure
+      case 'sites':
+        csvContent = 'Name,Code,Street,City,State,Postal Code,Country,Timezone,Currency,Site Type\nMain Manufacturing,MAIN,123 Industrial Blvd,Chicago,IL,60601,USA,America/Chicago,USD,manufacturing\nWarehouse Site,WH01,456 Storage Dr,Dallas,TX,75201,USA,America/Chicago,USD,warehouse';
+        filename = 'sites_template.csv';
+        break;
+      case 'departments':
+        csvContent = 'Name,Code,Description,Plant,Cost Center,Budget Amount\nProduction,PROD,Manufacturing operations department,Main Plant,CC001,500000\nQuality Control,QC,Quality assurance department,Main Plant,CC002,150000';
+        filename = 'departments_template.csv';
+        break;
+      case 'workCenters':
+        csvContent = 'Name,Code,Description,Department,Plant,Capacity,Efficiency,Cost Per Hour\nCNC Work Center,WC001,CNC machining operations,Production,Main Plant,10,95,7500\nAssembly Line 1,WC002,Product assembly line,Production,Main Plant,5,90,5000';
+        filename = 'work_centers_template.csv';
+        break;
+      case 'employees':
+        csvContent = 'Employee Number,First Name,Last Name,Email,Phone,Department,Work Center,Job Title,Skill Level,Hourly Rate,Capabilities,Shift Pattern\nEMP001,John,Smith,john.smith@company.com,555-0101,Production,CNC Work Center,CNC Operator,senior,3500,"1,2",day\nEMP002,Jane,Doe,jane.doe@company.com,555-0102,Quality Control,,QC Inspector,intermediate,3000,"5",day';
+        filename = 'employees_template.csv';
+        break;
+
+      // Products & Inventory
+      case 'items':
+        csvContent = 'Item Number,Name,Description,Item Type,Unit of Measure,Weight,Standard Cost,List Price,Lead Time,Safety Stock\nWIDG-001,Widget Assembly,Standard widget product,finished_good,EA,1500,2500,5000,7,50\nCOMP-001,Widget Component,Main widget component,component,EA,200,500,0,3,100';
+        filename = 'items_template.csv';
+        break;
+      case 'warehouses':
+        csvContent = 'Name,Code,Description,Site,Warehouse Type,Total Capacity,Used Capacity\nMain Warehouse,WH-MAIN,Primary storage facility,Main Manufacturing,general,10000,6500\nFinished Goods,WH-FG,Finished products storage,Main Manufacturing,finished_goods,5000,2800';
+        filename = 'warehouses_template.csv';
+        break;
+      case 'inventory':
+        csvContent = 'Item Number,Warehouse Code,Location,On Hand Quantity,Allocated Quantity,Available Quantity,Average Cost\nWIDG-001,WH-MAIN,A1-B2,150,25,125,2500\nCOMP-001,WH-MAIN,B3-C4,500,100,400,500';
+        filename = 'inventory_template.csv';
+        break;
+      case 'inventoryLots':
+        csvContent = 'Lot Number,Item Number,Warehouse Code,Quantity,Expiration Date,Received Date,Status\nLOT001,COMP-001,WH-MAIN,100,2025-12-31,2025-01-15,available\nLOT002,COMP-001,WH-MAIN,75,,2025-01-20,available';
+        filename = 'inventory_lots_template.csv';
+        break;
+
+      // Sales & Orders
+      case 'salesOrders':
+        csvContent = 'Order Number,Customer Name,Customer Code,Order Date,Requested Date,Status,Priority,Total Amount,Site,Sales Person\nSO-2025-001,ACME Corporation,ACME,2025-01-15,2025-02-01,open,high,75000,Main Manufacturing,John Sales\nSO-2025-002,TechCorp Inc,TECH,2025-01-16,2025-02-15,confirmed,medium,125000,Main Manufacturing,Jane Sales';
+        filename = 'sales_orders_template.csv';
+        break;
+      case 'purchaseOrders':
+        csvContent = 'Order Number,Supplier Name,Supplier Code,Order Date,Requested Date,Status,Total Amount,Site,Buyer Name\nPO-2025-001,Steel Supply Co,STEEL,2025-01-15,2025-01-30,open,35000,Main Manufacturing,Bob Buyer\nPO-2025-002,Component Corp,COMP,2025-01-16,2025-02-05,confirmed,18000,Main Manufacturing,Alice Buyer';
+        filename = 'purchase_orders_template.csv';
+        break;
+      case 'transferOrders':
+        csvContent = 'Order Number,From Warehouse,To Warehouse,Requested Date,Status,Priority,Requested By\nTO-2025-001,WH-MAIN,WH-FG,2025-01-15,open,medium,Production Manager\nTO-2025-002,WH-FG,WH-MAIN,2025-01-16,shipped,high,Inventory Manager';
+        filename = 'transfer_orders_template.csv';
+        break;
+
+      // Manufacturing Planning
+      case 'billsOfMaterial':
+        csvContent = 'Parent Item Number,Revision,Description,Effective Date,BOM Type,Standard Quantity\nWIDG-001,1,Widget assembly BOM,2025-01-01,production,1\nCOMP-001,1,Component sub-assembly BOM,2025-01-01,production,1';
+        filename = 'bills_of_material_template.csv';
+        break;
+      case 'routings':
+        csvContent = 'Item Number,Revision,Description,Effective Date,Routing Type,Standard Quantity\nWIDG-001,1,Widget manufacturing routing,2025-01-01,production,1\nCOMP-001,1,Component production routing,2025-01-01,production,1';
+        filename = 'routings_template.csv';
+        break;
+      case 'forecasts':
+        csvContent = 'Item Number,Site,Forecast Date,Forecast Quantity,Forecast Type,Forecast Method,Confidence,Planner Name\nWIDG-001,Main Manufacturing,2025-02-01,100,demand,manual,80,Production Planner\nCOMP-001,Main Manufacturing,2025-02-01,250,demand,statistical,70,Production Planner';
+        filename = 'forecasts_template.csv';
+        break;
     }
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -602,11 +706,36 @@ export default function DataImport() {
   };
 
   const dataTypes = [
+    // Core Manufacturing
     { key: 'resources', label: 'Resources', icon: Wrench, description: 'Equipment, machinery, and personnel' },
     { key: 'jobs', label: 'Jobs', icon: Briefcase, description: 'Production orders and work orders' },
-    { key: 'users', label: 'Users', icon: Users, description: 'System users and operators' },
     { key: 'capabilities', label: 'Capabilities', icon: Database, description: 'Skills and machine capabilities' },
-    { key: 'plants', label: 'Plants', icon: Building, description: 'Manufacturing facilities and locations' }
+    { key: 'plants', label: 'Plants', icon: Building, description: 'Manufacturing facilities and locations' },
+    
+    // Organizational Structure
+    { key: 'sites', label: 'Sites', icon: MapPin, description: 'Manufacturing sites and locations' },
+    { key: 'departments', label: 'Departments', icon: Building2, description: 'Organizational departments' },
+    { key: 'workCenters', label: 'Work Centers', icon: Factory, description: 'Production work centers' },
+    { key: 'employees', label: 'Employees', icon: Users, description: 'Personnel and workforce' },
+    
+    // Products & Inventory
+    { key: 'items', label: 'Items', icon: Package, description: 'Products, components, and materials' },
+    { key: 'warehouses', label: 'Warehouses', icon: Warehouse, description: 'Storage facilities and locations' },
+    { key: 'inventory', label: 'Inventory', icon: Package2, description: 'Current stock levels and quantities' },
+    { key: 'inventoryLots', label: 'Inventory Lots', icon: Hash, description: 'Lot-controlled inventory tracking' },
+    
+    // Sales & Orders
+    { key: 'salesOrders', label: 'Sales Orders', icon: ShoppingCart, description: 'Customer orders and sales' },
+    { key: 'purchaseOrders', label: 'Purchase Orders', icon: FileText, description: 'Supplier purchase orders' },
+    { key: 'transferOrders', label: 'Transfer Orders', icon: ArrowLeftRight, description: 'Inter-warehouse transfers' },
+    
+    // Manufacturing Planning
+    { key: 'billsOfMaterial', label: 'Bills of Material', icon: List, description: 'Product recipes and formulas' },
+    { key: 'routings', label: 'Routings', icon: Route, description: 'Manufacturing process sequences' },
+    { key: 'forecasts', label: 'Forecasts', icon: TrendingUp, description: 'Demand and supply forecasts' },
+    
+    // System Users
+    { key: 'users', label: 'Users', icon: UserCheck, description: 'System users and operators' }
   ];
 
   return (
