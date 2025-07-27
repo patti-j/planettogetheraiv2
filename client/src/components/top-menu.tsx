@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { 
@@ -9,7 +9,7 @@ import {
   Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, 
   Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, 
   Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, 
-  Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff
+  Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff, PlayCircle
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleSwitcher } from "./role-switcher";
@@ -19,6 +19,7 @@ import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { useMaxDock } from "@/contexts/MaxDockContext";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { useNavigation } from "@/contexts/NavigationContext";
+import { useTour } from "@/contexts/TourContext";
 
 // Define feature groups with hierarchy and visual styling
 const featureGroups = [
@@ -37,7 +38,7 @@ const featureGroups = [
     title: "AI & Optimization", 
     priority: "high",
     features: [
-      { icon: Bot, label: "Max AI Assistant", href: "#max", feature: "", action: "", color: "bg-gradient-to-r from-purple-500 to-pink-600", isAI: true },
+      { icon: Bot, label: "Max AI Assistant", href: "#max", feature: "", action: "", color: "bg-gradient-to-r from-purple-500 to-pink-600", isAI: true, requiresOnboarding: false },
       { icon: Sparkles, label: "Optimization Studio", href: "/optimization-studio", feature: "optimization-studio", action: "view", color: "bg-gradient-to-r from-blue-500 to-indigo-600" },
       { icon: History, label: "Scheduling History", href: "/scheduling-history", feature: "optimization-studio", action: "view", color: "bg-slate-500" },
       { icon: Brain, label: "Demand Forecasting", href: "/demand-forecasting", feature: "demand-forecasting", action: "view", color: "bg-indigo-500" },
@@ -93,7 +94,8 @@ const featureGroups = [
     title: "Training & Support",
     priority: "low", 
     features: [
-      { icon: BookOpen, label: "Getting Started", href: "/onboarding", feature: "", action: "", color: "bg-emerald-500" },
+      { icon: BookOpen, label: "Getting Started", href: "/onboarding", feature: "", action: "", color: "bg-emerald-500", requiresOnboarding: false },
+      { icon: PlayCircle, label: "Take a Guided Tour", href: "#tour", feature: "", action: "", color: "bg-blue-500", requiresOnboarding: false, isSpecial: true },
       { icon: GraduationCap, label: "Training", href: "/training", feature: "", action: "", color: "bg-blue-500" },
       { icon: Presentation, label: "Presentation System", href: "/presentation-system", feature: "", action: "", color: "bg-purple-600" }
     ]
@@ -109,6 +111,19 @@ export default function TopMenu() {
   const { isMaxOpen, setMaxOpen } = useMaxDock();
   const { aiTheme } = useAITheme();
   const { recentPages, clearRecentPages, togglePinPage } = useNavigation();
+  const { startTour } = useTour();
+
+  // Get onboarding status for menu filtering
+  const { data: onboardingData } = useQuery({
+    queryKey: ['/api/onboarding/status'],
+    enabled: !!user
+  }) as { data: any };
+
+  // Check if onboarding is complete
+  const isOnboardingComplete = onboardingData && 
+    onboardingData.companyName?.trim() && 
+    onboardingData.selectedFeatures && 
+    onboardingData.selectedFeatures.length > 0;
 
   // Derive current role from user data if not provided
   const currentRole = user?.currentRole || (user?.activeRoleId && user?.roles ? 
@@ -127,14 +142,19 @@ export default function TopMenu() {
     setMenuOpen(false);
   };
 
-  // Filter features based on permissions
+  // Filter features based on permissions and onboarding completion
   const getVisibleFeatures = (features: any[]) => {
     return features.filter(feature => {
       if (feature.href === "#max") return !isMaxOpen; // Only show Max AI when closed
+      if (feature.requiresOnboarding === false) return true; // Always show items that don't require onboarding
       if (!feature.feature) return true; // Always show items without permission requirements
       
-      // Check permissions for feature access
+      // Hide features that require onboarding if not complete (except Getting Started and Take a Tour)
+      if (!isOnboardingComplete && feature.href !== "/onboarding" && feature.href !== "#tour") {
+        return false;
+      }
       
+      // Check permissions for feature access
       return hasPermission(feature.feature, feature.action);
     });
   };
@@ -149,6 +169,9 @@ export default function TopMenu() {
   const handleFeatureClick = (feature: any) => {
     if (feature.href === "#max") {
       toggleMaxAI();
+    } else if (feature.href === "#tour") {
+      // Start a production scheduler demo tour for feature exploration
+      startTour(3, true, 'demo');
     }
     setMenuOpen(false);
   };
