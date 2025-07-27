@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
 import { apiRequest } from '@/lib/queryClient';
+import { useQuery } from '@tanstack/react-query';
 
 interface RecentPage {
   path: string;
@@ -65,6 +66,43 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { user, isAuthenticated } = useAuth();
 
+  // Check onboarding status to determine if Getting Started should be auto-pinned
+  const { data: onboardingStatus } = useQuery({
+    queryKey: ['/api/onboarding/status'],
+    enabled: !!user
+  });
+
+  // Helper function to check if onboarding is complete
+  const isOnboardingComplete = () => {
+    return onboardingStatus?.isCompleted === true;
+  };
+
+  // Helper function to ensure Getting Started is auto-pinned when needed
+  const ensureGettingStartedPinned = (pages: RecentPage[]) => {
+    if (isOnboardingComplete()) {
+      // If onboarding is complete, don't force pin Getting Started
+      return pages;
+    }
+
+    // Find Getting Started page
+    const gettingStartedIndex = pages.findIndex(page => page.path === '/onboarding');
+    
+    if (gettingStartedIndex === -1) {
+      // Getting Started not in recent pages - add it as pinned at the front
+      const gettingStartedPage = {
+        path: '/onboarding',
+        label: 'Getting Started',
+        icon: 'BookOpen',
+        timestamp: Date.now(),
+        isPinned: true
+      };
+      return [gettingStartedPage, ...pages.slice(0, MAX_RECENT_PAGES - 1)];
+    }
+    
+    // If Getting Started exists, just make sure it's in the list - don't force pin
+    return pages;
+  };
+
   // Load recent pages from user preferences (database only)
   useEffect(() => {
     const loadRecentPages = async () => {
@@ -83,11 +121,17 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
               timestamp: Date.now(),
               isPinned: true
             }];
-            setRecentPages(defaultRecentPages);
+            const processedPages = ensureGettingStartedPinned(defaultRecentPages);
+            setRecentPages(processedPages);
             // Save default to database
-            saveRecentPages(defaultRecentPages);
+            saveRecentPages(processedPages);
           } else {
-            setRecentPages(savedRecentPages.slice(0, MAX_RECENT_PAGES));
+            const processedPages = ensureGettingStartedPinned(savedRecentPages.slice(0, MAX_RECENT_PAGES));
+            setRecentPages(processedPages);
+            // Save back to database if auto-pinning occurred
+            if (JSON.stringify(processedPages) !== JSON.stringify(savedRecentPages.slice(0, MAX_RECENT_PAGES))) {
+              saveRecentPages(processedPages);
+            }
           }
         } catch (error) {
           console.warn('Failed to load recent pages from database:', error);
@@ -99,7 +143,8 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
             timestamp: Date.now(),
             isPinned: true
           }];
-          setRecentPages(defaultRecentPages);
+          const processedPages = ensureGettingStartedPinned(defaultRecentPages);
+          setRecentPages(processedPages);
         }
       } else {
         // Not authenticated, clear recent pages
@@ -109,6 +154,17 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
 
     loadRecentPages();
   }, [isAuthenticated, user?.id]);
+
+  // Re-apply auto-pinning logic when onboarding status changes
+  useEffect(() => {
+    if (recentPages.length > 0) {
+      const processedPages = ensureGettingStartedPinned(recentPages);
+      if (JSON.stringify(processedPages) !== JSON.stringify(recentPages)) {
+        setRecentPages(processedPages);
+        saveRecentPages(processedPages);
+      }
+    }
+  }, [onboardingStatus?.isCompleted]);
 
   // Track current page when location changes
   useEffect(() => {
@@ -133,10 +189,11 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
           timestamp: Date.now()
         };
         
-        // Save to user preferences
-        saveRecentPages(updated);
+        // Apply auto-pinning logic and save to user preferences
+        const processedUpdated = ensureGettingStartedPinned(updated);
+        saveRecentPages(processedUpdated);
         
-        return updated;
+        return processedUpdated;
       } else {
         // Separate pinned and unpinned pages
         const pinnedPages = current.filter(page => page.isPinned);
@@ -149,10 +206,11 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
         // Combine pinned + unpinned, ensuring we don't exceed MAX_RECENT_PAGES
         const updated = [...pinnedPages, ...updatedUnpinned].slice(0, MAX_RECENT_PAGES);
 
-        // Save to user preferences
-        saveRecentPages(updated);
+        // Apply auto-pinning logic and save to user preferences
+        const processedUpdated = ensureGettingStartedPinned(updated);
+        saveRecentPages(processedUpdated);
 
-        return updated;
+        return processedUpdated;
       }
     });
   };
@@ -192,10 +250,13 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
       const unpinnedPages = updated.filter(page => !page.isPinned).sort((a, b) => b.timestamp - a.timestamp);
       const sortedUpdated = [...pinnedPages, ...unpinnedPages];
       
-      // Save to user preferences
-      saveRecentPages(sortedUpdated);
+      // Apply auto-pinning logic (but respect manual unpinning of Getting Started)
+      const processedUpdated = ensureGettingStartedPinned(sortedUpdated);
       
-      return sortedUpdated;
+      // Save to user preferences
+      saveRecentPages(processedUpdated);
+      
+      return processedUpdated;
     });
   };
 
