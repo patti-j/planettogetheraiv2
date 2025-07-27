@@ -14697,47 +14697,8 @@ Response must be valid JSON:
     }
   }));
 
-  app.post("/api/onboarding/initialize", requireAuth, createSafeHandler(async (req, res) => {
-    const { companyName, industry, size, description } = req.body;
-    
-    if (!companyName || !industry) {
-      throw new ValidationError("Company name and industry are required", {
-        operation: 'Initialize Onboarding',
-        endpoint: '/api/onboarding/initialize',
-        userId: req.user!.id,
-        requestData: { companyName, industry, size, description }
-      });
-    }
-
-    const onboardingData = {
-      companyName,
-      industry,
-      size: size || 'medium',
-      primaryGoal: 'improve-efficiency', // default goal
-      features: [], // will be set in next step
-      completedSteps: [],
-      currentStep: 'company-info',
-      createdBy: req.user!.id,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    try {
-      const onboarding = await storage.createCompanyOnboarding(onboardingData);
-      res.status(201).json(onboarding);
-    } catch (error) {
-      console.error('Error creating onboarding:', error);
-      throw new DatabaseError("Failed to initialize onboarding", {
-        operation: 'Initialize Onboarding',
-        endpoint: '/api/onboarding/initialize',
-        userId: req.user!.id,
-        requestData: onboardingData
-      }, error as Error);
-    }
-  }));
-
   // Add missing onboarding status endpoint that frontend expects
-  app.get("/api/onboarding/status", requireAuth, createSafeHandler(async (req, res) => {
+  app.get("/api/onboarding/status", requireAuth, createSafeHandler('onboarding-status')(async (req, res) => {
     const userId = req.user!.id;
     const onboarding = await storage.getCompanyOnboarding(userId);
     
@@ -14748,10 +14709,15 @@ Response must be valid JSON:
     res.json(onboarding);
   }));
 
-  app.get("/api/onboarding/company/:userId", requireAuth, createSafeHandler(async (req, res) => {
+  app.get("/api/onboarding/company/:userId", requireAuth, createSafeHandler('onboarding-get-by-user')(async (req, res) => {
     const userId = parseInt(req.params.userId);
     if (isNaN(userId)) {
-      throw new ValidationError("Invalid user ID");
+      throw new ValidationError("Invalid user ID", {
+        operation: 'onboarding-get-by-user',
+        endpoint: 'GET /api/onboarding/company/:userId',
+        userId: req.user?.id,
+        requestData: { userId }
+      });
     }
 
     const onboarding = await storage.getCompanyOnboarding(userId);
@@ -14763,7 +14729,7 @@ Response must be valid JSON:
   }));
 
   // Add initialize endpoint that frontend expects
-  app.post("/api/onboarding/initialize", requireAuth, createSafeHandler(async (req, res) => {
+  app.post("/api/onboarding/initialize", requireAuth, createSafeHandler('onboarding-initialize')(async (req, res) => {
     // Basic validation for required fields
     const { companyName, industry, size, description } = req.body;
     

@@ -51,7 +51,8 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/feedback': { label: 'Feedback', icon: 'MessageCircle' },
   '/getting-started': { label: 'Getting Started', icon: 'BookOpen' },
   '/training': { label: 'Training', icon: 'GraduationCap' },
-  '/presentation-system': { label: 'Presentation System', icon: 'Presentation' }
+  '/presentation-system': { label: 'Presentation System', icon: 'Presentation' },
+  '/onboarding': { label: 'Onboarding', icon: 'UserCheck' }
 };
 
 export function NavigationProvider({ children }: { children: ReactNode }) {
