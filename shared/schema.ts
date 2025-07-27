@@ -1752,7 +1752,7 @@ export const stockBalances = pgTable("stock_balances", {
   itemLocationIdx: unique().on(table.itemId, table.location),
 }));
 
-// Demand Forecasting Tables
+// Demand Planning Tables
 export const demandForecasts = pgTable("demand_forecasts", {
   id: serial("id").primaryKey(),
   itemId: integer("item_id").references(() => stockItems.id).notNull(),
@@ -2991,7 +2991,7 @@ export const insertOptimizationRecommendationSchema = createInsertSchema(optimiz
   createdAt: true,
 });
 
-// Stock and Demand Forecasting Types
+// Stock and Demand Planning Types
 export type StockItem = typeof stockItems.$inferSelect;
 export type InsertStockItem = z.infer<typeof insertStockItemSchema>;
 

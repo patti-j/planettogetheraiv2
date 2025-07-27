@@ -2,6 +2,17 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Complete Demand Forecasting to Demand Planning Rename (July 27, 2025)**:
+- Successfully renamed "Demand Forecasting" to "Demand Planning" throughout the entire application
+- Updated page filename from demand-forecasting.tsx to demand-planning.tsx with corresponding App.tsx import updates
+- Changed main navigation menu label from "Demand Forecasting" to "Demand Planning" in top-menu.tsx
+- Updated route path from /demand-forecasting to /demand-planning with proper feature permission updates
+- Fixed page header title and description to reflect demand planning terminology and focus on production scheduling
+- Updated schema comments from "Demand Forecasting Tables" to "Demand Planning Tables" for better consistency
+- Fixed API mutation syntax errors by correcting apiRequest calls to use proper method, URL, and data parameters
+- Database tables and API endpoints remain unchanged to preserve existing data and functionality
+- System now consistently uses "Demand Planning" terminology while maintaining all existing backend functionality
+
 ✓ **Module-Based Pricing System Implementation (July 27, 2025)**:
 - Successfully enhanced pricing structure with comprehensive functional module add-ons in addition to existing user-level tiers
 - Added four major functional modules: Production Scheduling ($25-250), Capacity Planning ($35-350), Inventory Optimization ($30-300), Demand Planning ($40-400)

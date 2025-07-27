@@ -108,7 +108,7 @@ const sampleDriverImpact = [
   { name: 'Industry Events', impact: 10, type: 'event' }
 ];
 
-export default function DemandForecastingPage() {
+export default function DemandPlanningPage() {
   const [selectedTab, setSelectedTab] = useState("overview");
   const [selectedForecast, setSelectedForecast] = useState<DemandForecast | null>(null);
   const [newDriverDialog, setNewDriverDialog] = useState(false);
@@ -141,10 +141,7 @@ export default function DemandForecastingPage() {
   // Mutations
   const createDriverMutation = useMutation({
     mutationFn: async (data: typeof driverForm) => {
-      return apiRequest(`/api/demand/drivers`, {
-        method: "POST",
-        body: JSON.stringify({ ...data, isActive: true })
-      });
+      return apiRequest("POST", `/api/demand/drivers`, { ...data, isActive: true });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/demand/drivers"] });
@@ -156,10 +153,7 @@ export default function DemandForecastingPage() {
 
   const generateForecastMutation = useMutation({
     mutationFn: async ({ period, model }: { period: string, model: string }) => {
-      return apiRequest(`/api/demand/forecasts/generate`, {
-        method: "POST",
-        body: JSON.stringify({ forecastPeriodDays: parseInt(period), modelType: model })
-      });
+      return apiRequest("POST", `/api/demand/forecasts/generate`, { forecastPeriodDays: parseInt(period), modelType: model });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/demand/forecasts"] });
@@ -229,7 +223,7 @@ export default function DemandForecastingPage() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading demand forecasting...</p>
+          <p className="text-gray-600">Loading demand planning...</p>
         </div>
       </div>
     );
@@ -243,9 +237,9 @@ export default function DemandForecastingPage() {
           <div className="md:ml-0 ml-12">
             <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
               <Brain className="w-6 h-6 mr-2" />
-              Demand Forecasting
+              Demand Planning
             </h1>
-            <p className="text-sm md:text-base text-gray-600">AI-powered demand prediction and analysis for optimal planning</p>
+            <p className="text-sm md:text-base text-gray-600">AI-powered demand planning and analysis for optimal production scheduling</p>
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <Dialog open={newDriverDialog} onOpenChange={setNewDriverDialog}>

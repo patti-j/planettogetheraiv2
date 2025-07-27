@@ -9318,7 +9318,7 @@ Create a natural, conversational voice script that explains this feature to some
     }
   });
 
-  // Demand Forecasting Routes
+  // Demand Planning Routes  
   app.get("/api/demand-forecasts", requireAuth, async (req, res) => {
     try {
       const itemId = req.query.itemId ? parseInt(req.query.itemId as string) : undefined;
