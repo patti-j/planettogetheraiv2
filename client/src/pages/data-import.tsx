@@ -98,7 +98,7 @@ export default function DataImport() {
       console.log('Processing onboarding data, selected features:', onboardingData?.selectedFeatures);
       
       // Load features from onboarding data if available
-      if (onboardingData?.selectedFeatures?.length > 0) {
+      if (onboardingData && onboardingData.selectedFeatures && onboardingData.selectedFeatures.length > 0) {
         const features = onboardingData.selectedFeatures;
         setOnboardingFeatures(features);
         
@@ -190,16 +190,23 @@ export default function DataImport() {
       return apiRequest('POST', '/api/data-import/generate-sample-data', data);
     },
     onSuccess: (result: any) => {
+      console.log('AI Generation Success Result:', result);
       setAiGenerationResult(result);
       setShowAIDialog(false);
       setShowAISummary(true);
       queryClient.invalidateQueries();
+      
+      // Parse the actual response structure from the backend
+      const recordCount = result.summary?.totalRecords || result.totalRecords || 0;
+      const typeCount = result.summary?.dataTypes || result.dataTypes || Object.keys(result.summary?.details || {}).length || 0;
+      
       toast({
         title: "AI Sample Data Generated",
-        description: `Successfully generated ${result.totalRecords || 0} records across ${result.importResults?.length || 0} data types.`,
+        description: `Successfully generated ${recordCount} records across ${typeCount} data types.`,
       });
     },
     onError: (error) => {
+      console.error('AI Generation Error:', error);
       toast({
         title: "AI Generation Failed",
         description: "There was an error generating sample data. Please try again.",
@@ -1924,35 +1931,31 @@ Focus on creating authentic, interconnected data that would be typical for ${com
               {/* Summary */}
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <h3 className="font-medium text-green-900 mb-2">Generation Summary</h3>
-                <p className="text-sm text-green-800">{aiGenerationResult.summary}</p>
+                <p className="text-sm text-green-800">{aiGenerationResult.summary?.description || aiGenerationResult.summary || 'AI data generation completed successfully'}</p>
                 <div className="mt-3 flex items-center gap-4 text-sm">
                   <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    {aiGenerationResult.totalRecords} total records
+                    {aiGenerationResult.summary?.totalRecords || aiGenerationResult.totalRecords || 0} total records
                   </Badge>
                   <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    {aiGenerationResult.importResults?.length || 0} data types
+                    {Object.keys(aiGenerationResult.summary?.details || {}).length || aiGenerationResult.dataTypes || 0} data types
                   </Badge>
                 </div>
               </div>
 
               {/* Import Results */}
-              {aiGenerationResult.importResults && aiGenerationResult.importResults.length > 0 && (
+              {aiGenerationResult.summary?.details && Object.keys(aiGenerationResult.summary.details).length > 0 && (
                 <div className="space-y-3">
                   <h3 className="font-medium">Import Results</h3>
                   <div className="space-y-2">
-                    {aiGenerationResult.importResults.map((result: any, index: number) => (
+                    {Object.entries(aiGenerationResult.summary.details).map(([dataType, details]: [string, any], index: number) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <div className="flex items-center gap-3">
-                          {result.status === 'success' ? (
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <AlertCircle className="h-4 w-4 text-red-600" />
-                          )}
-                          <span className="font-medium capitalize">{result.type}</span>
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <span className="font-medium capitalize">{dataType}</span>
                         </div>
                         <div className="text-right">
-                          <Badge variant={result.status === 'success' ? 'default' : 'destructive'}>
-                            {result.count} records
+                          <Badge variant="default">
+                            {details.count || 0} records
                           </Badge>
                         </div>
                       </div>
