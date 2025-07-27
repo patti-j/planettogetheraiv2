@@ -789,7 +789,8 @@ export default function DataImport() {
                       </Button>
                     </div>
                     
-                    <div className="border rounded-lg overflow-hidden">
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block border rounded-lg overflow-hidden">
                       <div className="max-h-96 overflow-auto">
                         <Table>
                           <TableHeader>
@@ -862,6 +863,78 @@ export default function DataImport() {
                           </TableBody>
                         </Table>
                       </div>
+                    </div>
+
+                    {/* Mobile Card View */}
+                    <div className="md:hidden space-y-4 max-h-96 overflow-auto">
+                      {structuredData[key]?.length ? (
+                        structuredData[key].map((row, rowIndex) => (
+                          <Card key={rowIndex} className="p-4">
+                            <div className="space-y-3">
+                              <div className="flex justify-between items-center">
+                                <h4 className="font-medium text-sm">Entry #{rowIndex + 1}</h4>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeStructuredRow(key, rowIndex)}
+                                  disabled={isImporting || structuredData[key]?.length <= 1}
+                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              {getFieldDefinitions(key).map(field => (
+                                <div key={field.key} className="space-y-1">
+                                  <Label className="text-sm font-medium">
+                                    {field.label}
+                                    {field.required && <span className="text-red-500 ml-1">*</span>}
+                                  </Label>
+                                  {field.type === 'multiselect' && field.key === 'capabilities' ? (
+                                    <CapabilitiesMultiSelect
+                                      value={row[field.key] || []}
+                                      onChange={(value) => updateStructuredCell(key, rowIndex, field.key, value)}
+                                      disabled={isImporting}
+                                    />
+                                  ) : field.type === 'select' ? (
+                                    <Select
+                                      value={row[field.key]?.toString() || ''}
+                                      onValueChange={(value) => updateStructuredCell(key, rowIndex, field.key, value)}
+                                      disabled={isImporting}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {field.options?.map(option => (
+                                          <SelectItem key={option} value={option}>
+                                            {option}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  ) : (
+                                    <Input
+                                      type={field.type}
+                                      value={row[field.key]?.toString() || ''}
+                                      onChange={(e) => updateStructuredCell(key, rowIndex, field.key, 
+                                        field.type === 'number' ? parseInt(e.target.value) || 0 : e.target.value
+                                      )}
+                                      placeholder={field.placeholder || field.label}
+                                      disabled={isImporting}
+                                      required={field.required}
+                                    />
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </Card>
+                        ))
+                      ) : (
+                        <div className="text-center text-muted-foreground py-8">
+                          <Grid3X3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                          <p>No entries yet. Click "Add Row" to start.</p>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
