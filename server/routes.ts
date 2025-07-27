@@ -43,7 +43,8 @@ import {
   insertUnplannedDowntimeSchema, insertOvertimeShiftSchema, insertDowntimeActionSchema, insertShiftChangeRequestSchema,
   insertStrategyDocumentSchema, insertDevelopmentTaskSchema, insertTestSuiteSchema, insertTestCaseSchema, insertArchitectureComponentSchema,
   insertApiIntegrationSchema, insertApiMappingSchema, insertApiTestSchema, insertApiCredentialSchema, insertApiAuditLogSchema,
-  insertSchedulingHistorySchema, insertSchedulingResultSchema, insertAlgorithmPerformanceSchema
+  insertSchedulingHistorySchema, insertSchedulingResultSchema, insertAlgorithmPerformanceSchema,
+  insertRecipeSchema, insertRecipePhaseSchema, insertRecipeFormulaSchema, insertRecipeEquipmentSchema
 } from "@shared/schema";
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -14843,6 +14844,193 @@ Response must be valid JSON:
     const status = await storage.getTeamOnboardingStatus(companyOnboardingId);
     res.json(status);
   }));
+
+  // Recipe Management
+  app.get("/api/recipes", async (req, res) => {
+    try {
+      const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : undefined;
+      const recipes = await storage.getRecipes(plantId);
+      res.json(recipes);
+    } catch (error) {
+      console.error("Error fetching recipes:", error);
+      res.status(500).json({ error: "Failed to fetch recipes" });
+    }
+  });
+
+  app.get("/api/recipes/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid recipe ID" });
+      }
+
+      const recipe = await storage.getRecipe(id);
+      if (!recipe) {
+        return res.status(404).json({ error: "Recipe not found" });
+      }
+      res.json(recipe);
+    } catch (error) {
+      console.error("Error fetching recipe:", error);
+      res.status(500).json({ error: "Failed to fetch recipe" });
+    }
+  });
+
+  app.post("/api/recipes", async (req, res) => {
+    try {
+      const validation = insertRecipeSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid recipe data", details: validation.error.errors });
+      }
+
+      const recipe = await storage.createRecipe(validation.data);
+      res.status(201).json(recipe);
+    } catch (error) {
+      console.error("Error creating recipe:", error);
+      res.status(500).json({ error: "Failed to create recipe" });
+    }
+  });
+
+  app.put("/api/recipes/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid recipe ID" });
+      }
+
+      const validation = insertRecipeSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid recipe data", details: validation.error.errors });
+      }
+
+      const recipe = await storage.updateRecipe(id, validation.data);
+      if (!recipe) {
+        return res.status(404).json({ error: "Recipe not found" });
+      }
+      res.json(recipe);
+    } catch (error) {
+      console.error("Error updating recipe:", error);
+      res.status(500).json({ error: "Failed to update recipe" });
+    }
+  });
+
+  app.delete("/api/recipes/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid recipe ID" });
+      }
+
+      const success = await storage.deleteRecipe(id);
+      if (!success) {
+        return res.status(404).json({ error: "Recipe not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting recipe:", error);
+      res.status(500).json({ error: "Failed to delete recipe" });
+    }
+  });
+
+  // Recipe Phases
+  app.get("/api/recipe-phases", async (req, res) => {
+    try {
+      const recipeId = req.query.recipeId ? parseInt(req.query.recipeId as string) : undefined;
+      
+      const phases = await storage.getRecipePhases(recipeId);
+      res.json(phases);
+    } catch (error) {
+      console.error("Error fetching recipe phases:", error);
+      res.status(500).json({ error: "Failed to fetch recipe phases" });
+    }
+  });
+
+  app.get("/api/recipes/:recipeId/phases", async (req, res) => {
+    try {
+      const recipeId = parseInt(req.params.recipeId);
+      if (isNaN(recipeId)) {
+        return res.status(400).json({ error: "Invalid recipe ID" });
+      }
+
+      const phases = await storage.getRecipePhases(recipeId);
+      res.json(phases);
+    } catch (error) {
+      console.error("Error fetching recipe phases:", error);
+      res.status(500).json({ error: "Failed to fetch recipe phases" });
+    }
+  });
+
+  app.post("/api/recipe-phases", async (req, res) => {
+    try {
+      const validation = insertRecipePhaseSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid recipe phase data", details: validation.error.errors });
+      }
+
+      const phase = await storage.createRecipePhase(validation.data);
+      res.status(201).json(phase);
+    } catch (error) {
+      console.error("Error creating recipe phase:", error);
+      res.status(500).json({ error: "Failed to create recipe phase" });
+    }
+  });
+
+  // Recipe Formulas
+  app.get("/api/recipe-formulas", async (req, res) => {
+    try {
+      const recipeId = req.query.recipeId ? parseInt(req.query.recipeId as string) : undefined;
+      const phaseId = req.query.phaseId ? parseInt(req.query.phaseId as string) : undefined;
+      
+      const formulas = await storage.getRecipeFormulas(recipeId, phaseId);
+      res.json(formulas);
+    } catch (error) {
+      console.error("Error fetching recipe formulas:", error);
+      res.status(500).json({ error: "Failed to fetch recipe formulas" });
+    }
+  });
+
+  app.post("/api/recipe-formulas", async (req, res) => {
+    try {
+      const validation = insertRecipeFormulaSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid recipe formula data", details: validation.error.errors });
+      }
+
+      const formula = await storage.createRecipeFormula(validation.data);
+      res.status(201).json(formula);
+    } catch (error) {
+      console.error("Error creating recipe formula:", error);
+      res.status(500).json({ error: "Failed to create recipe formula" });
+    }
+  });
+
+  // Recipe Equipment
+  app.get("/api/recipe-equipment", async (req, res) => {
+    try {
+      const recipeId = req.query.recipeId ? parseInt(req.query.recipeId as string) : undefined;
+      const phaseId = req.query.phaseId ? parseInt(req.query.phaseId as string) : undefined;
+      
+      const equipment = await storage.getRecipeEquipment(recipeId, phaseId);
+      res.json(equipment);
+    } catch (error) {
+      console.error("Error fetching recipe equipment:", error);
+      res.status(500).json({ error: "Failed to fetch recipe equipment" });
+    }
+  });
+
+  app.post("/api/recipe-equipment", async (req, res) => {
+    try {
+      const validation = insertRecipeEquipmentSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid recipe equipment data", details: validation.error.errors });
+      }
+
+      const equipment = await storage.createRecipeEquipment(validation.data);
+      res.status(201).json(equipment);
+    } catch (error) {
+      console.error("Error creating recipe equipment:", error);
+      res.status(500).json({ error: "Failed to create recipe equipment" });
+    }
+  });
 
   const httpServer = createServer(app);
   // Add global error handling middleware at the end

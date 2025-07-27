@@ -1,5 +1,6 @@
 import { 
   plants, capabilities, resources, productionOrders, plannedOrders, operations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
+  recipes, recipePhases, recipeFormulas, recipeEquipment,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
   capacityPlanningScenarios, staffingPlans, shiftPlans, equipmentPlans, capacityProjections,
@@ -9,6 +10,7 @@ import {
   inventoryItems, inventoryTransactions, inventoryBalances, demandForecasts, demandDrivers, demandHistory, inventoryOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
   type Plant, type Capability, type Resource, type ProductionOrder, type PlannedOrder, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
+  type Recipe, type RecipePhase, type RecipeFormula, type RecipeEquipment,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
   type CapacityPlanningScenario, type StaffingPlan, type ShiftPlan, type EquipmentPlan, type CapacityProjection,
@@ -19,6 +21,7 @@ import {
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
   type InsertPlant, type InsertCapability, type InsertResource, type InsertProductionOrder, type InsertPlannedOrder, 
   type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
+  type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertRecipeEquipment,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
   type InsertCapacityPlanningScenario, type InsertStaffingPlan, type InsertShiftPlan, type InsertEquipmentPlan, type InsertCapacityProjection,
@@ -1131,6 +1134,35 @@ export interface IStorage {
   updateAlgorithmPerformance(id: number, updates: Partial<InsertAlgorithmPerformance>): Promise<AlgorithmPerformance | undefined>;
   deleteAlgorithmPerformance(id: number): Promise<boolean>;
   getAlgorithmPerformanceTrends(algorithmName: string, plantId?: number, months?: number): Promise<AlgorithmPerformance[]>;
+
+  // Recipe Management
+  getRecipes(plantId?: number): Promise<Recipe[]>;
+  getRecipe(id: number): Promise<Recipe | undefined>;
+  getRecipeByNumber(recipeNumber: string): Promise<Recipe | undefined>;
+  createRecipe(recipe: InsertRecipe): Promise<Recipe>;
+  updateRecipe(id: number, recipe: Partial<InsertRecipe>): Promise<Recipe | undefined>;
+  deleteRecipe(id: number): Promise<boolean>;
+
+  // Recipe Phases
+  getRecipePhases(recipeId: number): Promise<RecipePhase[]>;
+  getRecipePhase(id: number): Promise<RecipePhase | undefined>;
+  createRecipePhase(phase: InsertRecipePhase): Promise<RecipePhase>;
+  updateRecipePhase(id: number, phase: Partial<InsertRecipePhase>): Promise<RecipePhase | undefined>;
+  deleteRecipePhase(id: number): Promise<boolean>;
+
+  // Recipe Formulas
+  getRecipeFormulas(recipeId?: number, phaseId?: number): Promise<RecipeFormula[]>;
+  getRecipeFormula(id: number): Promise<RecipeFormula | undefined>;
+  createRecipeFormula(formula: InsertRecipeFormula): Promise<RecipeFormula>;
+  updateRecipeFormula(id: number, formula: Partial<InsertRecipeFormula>): Promise<RecipeFormula | undefined>;
+  deleteRecipeFormula(id: number): Promise<boolean>;
+
+  // Recipe Equipment
+  getRecipeEquipment(recipeId?: number, phaseId?: number): Promise<RecipeEquipment[]>;
+  getRecipeEquipmentItem(id: number): Promise<RecipeEquipment | undefined>;
+  createRecipeEquipment(equipment: InsertRecipeEquipment): Promise<RecipeEquipment>;
+  updateRecipeEquipment(id: number, equipment: Partial<InsertRecipeEquipment>): Promise<RecipeEquipment | undefined>;
+  deleteRecipeEquipment(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -8812,6 +8844,176 @@ export class DatabaseStorage implements IStorage {
       console.error('Error getting team onboarding status:', error);
       throw error;
     }
+  }
+
+  // Recipe Management
+  async getRecipes(plantId?: number): Promise<Recipe[]> {
+    const conditions: any[] = [];
+    if (plantId) {
+      conditions.push(eq(recipes.plantId, plantId));
+    }
+    
+    const query = conditions.length > 0 
+      ? db.select().from(recipes).where(and(...conditions))
+      : db.select().from(recipes);
+      
+    return await query;
+  }
+
+  async getRecipe(id: number): Promise<Recipe | undefined> {
+    const [recipe] = await db.select().from(recipes).where(eq(recipes.id, id));
+    return recipe || undefined;
+  }
+
+  async getRecipeByNumber(recipeNumber: string): Promise<Recipe | undefined> {
+    const [recipe] = await db.select().from(recipes).where(eq(recipes.recipeNumber, recipeNumber));
+    return recipe || undefined;
+  }
+
+  async createRecipe(recipe: InsertRecipe): Promise<Recipe> {
+    const [newRecipe] = await db.insert(recipes).values(recipe).returning();
+    return newRecipe;
+  }
+
+  async updateRecipe(id: number, recipe: Partial<InsertRecipe>): Promise<Recipe | undefined> {
+    const [updated] = await db.update(recipes)
+      .set({ ...recipe, updatedAt: new Date() })
+      .where(eq(recipes.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteRecipe(id: number): Promise<boolean> {
+    // Delete related data first
+    await db.delete(recipePhases).where(eq(recipePhases.recipeId, id));
+    await db.delete(recipeFormulas).where(eq(recipeFormulas.recipeId, id));
+    await db.delete(recipeEquipment).where(eq(recipeEquipment.recipeId, id));
+    
+    const result = await db.delete(recipes).where(eq(recipes.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Recipe Phases
+  async getRecipePhases(recipeId?: number): Promise<RecipePhase[]> {
+    try {
+      if (recipeId) {
+        return await db.select().from(recipePhases)
+          .where(eq(recipePhases.recipeId, recipeId))
+          .orderBy(recipePhases.phaseOrder);
+      } else {
+        return await db.select().from(recipePhases);
+      }
+    } catch (error) {
+      console.error('Error in getRecipePhases:', error);
+      throw error;
+    }
+  }
+
+  async getRecipePhase(id: number): Promise<RecipePhase | undefined> {
+    const [phase] = await db.select().from(recipePhases).where(eq(recipePhases.id, id));
+    return phase || undefined;
+  }
+
+  async createRecipePhase(phase: InsertRecipePhase): Promise<RecipePhase> {
+    const [newPhase] = await db.insert(recipePhases).values(phase).returning();
+    return newPhase;
+  }
+
+  async updateRecipePhase(id: number, phase: Partial<InsertRecipePhase>): Promise<RecipePhase | undefined> {
+    const [updated] = await db.update(recipePhases)
+      .set({ ...phase, updatedAt: new Date() })
+      .where(eq(recipePhases.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteRecipePhase(id: number): Promise<boolean> {
+    // Delete related formulas and equipment first
+    await db.delete(recipeFormulas).where(eq(recipeFormulas.phaseId, id));
+    await db.delete(recipeEquipment).where(eq(recipeEquipment.phaseId, id));
+    
+    const result = await db.delete(recipePhases).where(eq(recipePhases.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Recipe Formulas
+  async getRecipeFormulas(recipeId?: number, phaseId?: number): Promise<RecipeFormula[]> {
+    const conditions: any[] = [];
+    if (recipeId) {
+      conditions.push(eq(recipeFormulas.recipeId, recipeId));
+    }
+    if (phaseId) {
+      conditions.push(eq(recipeFormulas.phaseId, phaseId));
+    }
+    
+    const query = conditions.length > 0 
+      ? db.select().from(recipeFormulas).where(and(...conditions))
+      : db.select().from(recipeFormulas);
+      
+    return await query;
+  }
+
+  async getRecipeFormula(id: number): Promise<RecipeFormula | undefined> {
+    const [formula] = await db.select().from(recipeFormulas).where(eq(recipeFormulas.id, id));
+    return formula || undefined;
+  }
+
+  async createRecipeFormula(formula: InsertRecipeFormula): Promise<RecipeFormula> {
+    const [newFormula] = await db.insert(recipeFormulas).values(formula).returning();
+    return newFormula;
+  }
+
+  async updateRecipeFormula(id: number, formula: Partial<InsertRecipeFormula>): Promise<RecipeFormula | undefined> {
+    const [updated] = await db.update(recipeFormulas)
+      .set({ ...formula, updatedAt: new Date() })
+      .where(eq(recipeFormulas.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteRecipeFormula(id: number): Promise<boolean> {
+    const result = await db.delete(recipeFormulas).where(eq(recipeFormulas.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Recipe Equipment
+  async getRecipeEquipment(recipeId?: number, phaseId?: number): Promise<RecipeEquipment[]> {
+    const conditions: any[] = [];
+    if (recipeId) {
+      conditions.push(eq(recipeEquipment.recipeId, recipeId));
+    }
+    if (phaseId) {
+      conditions.push(eq(recipeEquipment.phaseId, phaseId));
+    }
+    
+    const query = conditions.length > 0 
+      ? db.select().from(recipeEquipment).where(and(...conditions))
+      : db.select().from(recipeEquipment);
+      
+    return await query;
+  }
+
+  async getRecipeEquipmentItem(id: number): Promise<RecipeEquipment | undefined> {
+    const [equipment] = await db.select().from(recipeEquipment).where(eq(recipeEquipment.id, id));
+    return equipment || undefined;
+  }
+
+  async createRecipeEquipment(equipment: InsertRecipeEquipment): Promise<RecipeEquipment> {
+    const [newEquipment] = await db.insert(recipeEquipment).values(equipment).returning();
+    return newEquipment;
+  }
+
+  async updateRecipeEquipment(id: number, equipment: Partial<InsertRecipeEquipment>): Promise<RecipeEquipment | undefined> {
+    const [updated] = await db.update(recipeEquipment)
+      .set({ ...equipment, updatedAt: new Date() })
+      .where(eq(recipeEquipment.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteRecipeEquipment(id: number): Promise<boolean> {
+    const result = await db.delete(recipeEquipment).where(eq(recipeEquipment.id, id));
+    return result.rowCount > 0;
   }
 }
 

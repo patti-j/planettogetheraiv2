@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar, primaryKey, index, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar, numeric, primaryKey, index, unique } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -70,6 +70,145 @@ export const plannedOrders = pgTable("planned_orders", {
   createdAt: timestamp("created_at").defaultNow(),
   convertedToProductionOrder: boolean("converted_to_production_order").default(false),
   productionOrderId: integer("production_order_id").references(() => productionOrders.id), // If converted
+});
+
+// Process Manufacturing Recipes - combines formulation and processing instructions
+export const recipes = pgTable("recipes", {
+  id: serial("id").primaryKey(),
+  recipeNumber: text("recipe_number").notNull().unique(), // e.g., "RCP-001"
+  recipeName: text("recipe_name").notNull(),
+  productItemNumber: text("product_item_number").notNull(), // What this recipe produces
+  recipeVersion: text("recipe_version").notNull().default("1.0"),
+  recipeType: text("recipe_type").notNull().default("master"), // master, pilot, trial, development
+  status: text("status").notNull().default("active"), // active, inactive, pending, obsolete, under_review
+  batchSize: integer("batch_size").notNull(), // Standard batch size in base unit
+  batchUnit: text("batch_unit").notNull().default("kg"), // kg, lbs, liters, gallons, etc.
+  yieldFactor: integer("yield_factor").notNull().default(100), // percentage (95 = 95% yield)
+  scaleMinimum: integer("scale_minimum").default(50), // minimum scale percentage
+  scaleMaximum: integer("scale_maximum").default(200), // maximum scale percentage
+  totalCycleTime: integer("total_cycle_time"), // total time in minutes
+  description: text("description"),
+  processNotes: text("process_notes"),
+  safetyNotes: text("safety_notes"),
+  qualitySpecifications: jsonb("quality_specifications").$type<{
+    target_yield: number;
+    min_yield: number;
+    max_yield: number;
+    critical_quality_parameters: Array<{
+      parameter: string;
+      target_value: number;
+      min_value: number;
+      max_value: number;
+      unit: string;
+      test_method: string;
+    }>;
+  }>(),
+  environmentalConditions: jsonb("environmental_conditions").$type<{
+    temperature_range: { min: number; max: number };
+    humidity_range: { min: number; max: number };
+    pressure_range: { min: number; max: number };
+    atmosphere: string; // nitrogen, air, vacuum, etc.
+  }>(),
+  effectiveDate: timestamp("effective_date").notNull(),
+  endDate: timestamp("end_date"),
+  createdBy: text("created_by").notNull(),
+  approvedBy: text("approved_by"),
+  approvedDate: timestamp("approved_date"),
+  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Recipe Phases - define process steps (e.g., mixing, heating, cooling)
+export const recipePhases = pgTable("recipe_phases", {
+  id: serial("id").primaryKey(),
+  recipeId: integer("recipe_id").references(() => recipes.id).notNull(),
+  phaseName: text("phase_name").notNull(),
+  phaseOrder: integer("phase_order").notNull(),
+  phaseType: text("phase_type").notNull(),
+  description: text("description"),
+  duration: integer("duration"), // minutes
+  temperatureMin: numeric("temperature_min"),
+  temperatureMax: numeric("temperature_max"),
+  pressureMin: numeric("pressure_min"),
+  pressureMax: numeric("pressure_max"),
+  phMin: numeric("ph_min"),
+  phMax: numeric("ph_max"),
+  agitationSpeed: numeric("agitation_speed"),
+  holdTime: integer("hold_time"),
+  transferCriteria: text("transfer_criteria"),
+  processInstructions: text("process_instructions"),
+  safetyRequirements: text("safety_requirements"),
+  environmentalControls: jsonb("environmental_controls"),
+  equipmentSetup: jsonb("equipment_setup"),
+  processParameters: jsonb("process_parameters"),
+  qualityChecks: jsonb("quality_checks"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Recipe Formulas - input materials with quantities (like a BOM for recipes)
+export const recipeFormulas = pgTable("recipe_formulas", {
+  id: serial("id").primaryKey(),
+  recipeId: integer("recipe_id").references(() => recipes.id).notNull(),
+  phaseId: integer("phase_id").references(() => recipePhases.id), // which phase uses this ingredient
+  itemNumber: text("item_number").notNull(), // what material/ingredient
+  itemDescription: text("item_description"),
+  quantity: integer("quantity").notNull(), // quantity needed (stored as integer for precision)
+  unit: text("unit").notNull(), // kg, lbs, liters, gallons, etc.
+  percentageByWeight: integer("percentage_by_weight"), // percentage * 100 (e.g., 2.5% = 250)
+  materialType: text("material_type").notNull(), // raw_material, intermediate, catalyst, solvent, etc.
+  additionMethod: text("addition_method"), // continuous, batch, staged, etc.
+  additionRate: integer("addition_rate"), // rate of addition (units per minute)
+  additionTemperature: integer("addition_temperature"), // temperature when adding
+  scalingFactor: integer("scaling_factor").default(100), // how this scales with batch size (percentage)
+  isOptional: boolean("is_optional").default(false),
+  substitutes: jsonb("substitutes").$type<Array<{
+    item_number: string;
+    item_description: string;
+    conversion_factor: number; // how much substitute needed per unit of original
+    notes: string;
+  }>>().default([]),
+  specifications: jsonb("specifications").$type<{
+    purity_min: number;
+    moisture_max: number;
+    particle_size: { min: number; max: number; unit: string };
+    other_specs: Array<{
+      specification: string;
+      requirement: string;
+      test_method: string;
+    }>;
+  }>(),
+  storageRequirements: text("storage_requirements"),
+  handlingNotes: text("handling_notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Recipe Equipment Requirements - specific equipment needed for the recipe
+export const recipeEquipment = pgTable("recipe_equipment", {
+  id: serial("id").primaryKey(),
+  recipeId: integer("recipe_id").references(() => recipes.id).notNull(),
+  phaseId: integer("phase_id").references(() => recipePhases.id), // which phase needs this equipment
+  equipmentType: text("equipment_type").notNull(), // reactor, mixer, heater, cooler, pump, etc.
+  equipmentModel: text("equipment_model"),
+  capacity: integer("capacity").notNull(), // required capacity
+  capacityUnit: text("capacity_unit").notNull(), // liters, kg, etc.
+  operatingConditions: jsonb("operating_conditions").$type<{
+    temperature: { min: number; max: number; unit: string };
+    pressure: { min: number; max: number; unit: string };
+    agitation_speed: { min: number; max: number; unit: string };
+    flow_rate: { min: number; max: number; unit: string };
+  }>(),
+  setupTime: integer("setup_time").default(0), // minutes
+  cleanupTime: integer("cleanup_time").default(0), // minutes
+  resourceId: integer("resource_id").references(() => resources.id), // link to actual equipment
+  isAlternative: boolean("is_alternative").default(false), // true if this is backup equipment
+  alternativeGroup: integer("alternative_group"), // group ID for alternative equipment sets
+  utilizationPercentage: integer("utilization_percentage").default(100), // how much of equipment capacity is used
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const operations = pgTable("operations", {
@@ -2789,6 +2928,48 @@ export type InsertInventoryOptimizationScenario = z.infer<typeof insertInventory
 export type OptimizationRecommendation = typeof optimizationRecommendations.$inferSelect;
 export type InsertOptimizationRecommendation = z.infer<typeof insertOptimizationRecommendationSchema>;
 
+// Recipe Insert Schemas
+export const insertRecipeSchema = createInsertSchema(recipes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  effectiveDate: z.union([z.string().datetime(), z.date()]),
+  endDate: z.union([z.string().datetime(), z.date()]).optional(),
+  approvedDate: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertRecipePhaseSchema = createInsertSchema(recipePhases).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertRecipeFormulaSchema = createInsertSchema(recipeFormulas).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertRecipeEquipmentSchema = createInsertSchema(recipeEquipment).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Recipe Types
+export type Recipe = typeof recipes.$inferSelect;
+export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
+
+export type RecipePhase = typeof recipePhases.$inferSelect;
+export type InsertRecipePhase = z.infer<typeof insertRecipePhaseSchema>;
+
+export type RecipeFormula = typeof recipeFormulas.$inferSelect;
+export type InsertRecipeFormula = z.infer<typeof insertRecipeFormulaSchema>;
+
+export type RecipeEquipment = typeof recipeEquipment.$inferSelect;
+export type InsertRecipeEquipment = z.infer<typeof insertRecipeEquipmentSchema>;
+
 // Onboarding Management Tables
 export const companyOnboarding = pgTable("company_onboarding", {
   id: serial("id").primaryKey(),
@@ -5128,6 +5309,52 @@ export const algorithmPerformanceRelations = relations(algorithmPerformance, ({ 
   worstPerformanceHistory: one(schedulingHistory, {
     fields: [algorithmPerformance.worstPerformanceHistoryId],
     references: [schedulingHistory.id],
+  }),
+}));
+
+// Recipe Relations
+export const recipesRelations = relations(recipes, ({ one, many }) => ({
+  plant: one(plants, {
+    fields: [recipes.plantId],
+    references: [plants.id],
+  }),
+  phases: many(recipePhases),
+  formulas: many(recipeFormulas),
+  equipment: many(recipeEquipment),
+}));
+
+export const recipePhasesRelations = relations(recipePhases, ({ one, many }) => ({
+  recipe: one(recipes, {
+    fields: [recipePhases.recipeId],
+    references: [recipes.id],
+  }),
+  formulas: many(recipeFormulas),
+  equipment: many(recipeEquipment),
+}));
+
+export const recipeFormulasRelations = relations(recipeFormulas, ({ one }) => ({
+  recipe: one(recipes, {
+    fields: [recipeFormulas.recipeId],
+    references: [recipes.id],
+  }),
+  phase: one(recipePhases, {
+    fields: [recipeFormulas.phaseId],
+    references: [recipePhases.id],
+  }),
+}));
+
+export const recipeEquipmentRelations = relations(recipeEquipment, ({ one }) => ({
+  recipe: one(recipes, {
+    fields: [recipeEquipment.recipeId],
+    references: [recipes.id],
+  }),
+  phase: one(recipePhases, {
+    fields: [recipeEquipment.phaseId],
+    references: [recipePhases.id],
+  }),
+  resource: one(resources, {
+    fields: [recipeEquipment.resourceId],
+    references: [resources.id],
   }),
 }));
 
