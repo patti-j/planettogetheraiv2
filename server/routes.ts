@@ -15751,6 +15751,131 @@ Response must be valid JSON:
     }
   });
 
+  // High-performance data management API endpoints for large datasets
+  app.post("/api/data-management/:table", requireAuth, async (req, res) => {
+    try {
+      const { table } = req.params;
+      const validTables = ['plants', 'resources', 'capabilities', 'production_orders', 'vendors', 'customers', 'stock_items'];
+      
+      if (!validTables.includes(table)) {
+        return res.status(400).json({ error: `Invalid table: ${table}` });
+      }
+      
+      const request = req.body;
+      let response;
+      
+      // Route to appropriate method based on table name
+      switch (table) {
+        case 'plants':
+          response = await storage.getPlantsWithPagination(request);
+          break;
+        case 'resources':
+          response = await storage.getResourcesWithPagination(request);
+          break;
+        case 'capabilities':
+          response = await storage.getCapabilitiesWithPagination(request);
+          break;
+        case 'production_orders':
+          response = await storage.getProductionOrdersWithPagination(request);
+          break;
+        case 'vendors':
+          response = await storage.getVendorsWithPagination(request);
+          break;
+        case 'customers':
+          response = await storage.getCustomersWithPagination(request);
+          break;
+        case 'stock_items':
+          response = await storage.getStockItemsWithPagination(request);
+          break;
+        default:
+          return res.status(400).json({ error: `Unsupported table: ${table}` });
+      }
+      
+      res.json(response);
+    } catch (error) {
+      console.error(`Error fetching paginated data for ${req.params.table}:`, error);
+      res.status(500).json({ error: "Failed to fetch data" });
+    }
+  });
+
+  app.put("/api/data-management/:table/bulk-update", requireAuth, async (req, res) => {
+    try {
+      const { table } = req.params;
+      const validTables = ['plants', 'resources', 'capabilities', 'production_orders', 'vendors', 'customers', 'stock_items'];
+      
+      if (!validTables.includes(table)) {
+        return res.status(400).json({ error: `Invalid table: ${table}` });
+      }
+      
+      const updateRequest = req.body;
+      
+      if (!Array.isArray(updateRequest.updates) || updateRequest.updates.length === 0) {
+        return res.status(400).json({ error: "Updates array is required and cannot be empty" });
+      }
+      
+      const result = await storage.bulkUpdateRecords(table, updateRequest);
+      res.json(result);
+    } catch (error) {
+      console.error(`Error bulk updating ${req.params.table}:`, error);
+      res.status(500).json({ error: "Failed to bulk update records" });
+    }
+  });
+
+  app.delete("/api/data-management/:table/bulk-delete", requireAuth, async (req, res) => {
+    try {
+      const { table } = req.params;
+      const validTables = ['plants', 'resources', 'capabilities', 'production_orders', 'vendors', 'customers', 'stock_items'];
+      
+      if (!validTables.includes(table)) {
+        return res.status(400).json({ error: `Invalid table: ${table}` });
+      }
+      
+      const deleteRequest = req.body;
+      
+      if (!Array.isArray(deleteRequest.ids) || deleteRequest.ids.length === 0) {
+        return res.status(400).json({ error: "IDs array is required and cannot be empty" });
+      }
+      
+      const result = await storage.bulkDeleteRecords(table, deleteRequest);
+      res.json(result);
+    } catch (error) {
+      console.error(`Error bulk deleting ${req.params.table}:`, error);
+      res.status(500).json({ error: "Failed to bulk delete records" });
+    }
+  });
+
+  // Generic search endpoint with autocomplete support
+  app.get("/api/data-management/:table/search", requireAuth, async (req, res) => {
+    try {
+      const { table } = req.params;
+      const { q, fields, limit = 10 } = req.query;
+      
+      const validTables = ['plants', 'resources', 'capabilities', 'production_orders', 'vendors', 'customers', 'stock_items'];
+      
+      if (!validTables.includes(table)) {
+        return res.status(400).json({ error: `Invalid table: ${table}` });
+      }
+      
+      if (!q || !fields) {
+        return res.status(400).json({ error: "Query (q) and fields parameters are required" });
+      }
+      
+      const searchFields = (fields as string).split(',');
+      const limitNum = parseInt(limit as string);
+      
+      const request = {
+        pagination: { page: 1, limit: limitNum },
+        search: { query: q as string, fields: searchFields }
+      };
+      
+      const response = await storage.getDataWithPagination(table, request);
+      res.json(response.data);
+    } catch (error) {
+      console.error(`Error searching ${req.params.table}:`, error);
+      res.status(500).json({ error: "Failed to search data" });
+    }
+  });
+
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
   app.use(errorMiddleware);

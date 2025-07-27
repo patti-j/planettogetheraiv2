@@ -95,7 +95,7 @@ import {
   // type InsertAccountInfo, type InsertBillingHistory, type InsertUsageMetrics
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, like, ilike, ne, inArray } from "drizzle-orm";
+import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, gt, lt, like, ilike, ne, not, inArray } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export interface IStorage {
@@ -1053,6 +1053,20 @@ export interface IStorage {
   createOptimizationScopeConfig(config: InsertOptimizationScopeConfig): Promise<OptimizationScopeConfig>;
   updateOptimizationScopeConfig(id: number, updates: Partial<InsertOptimizationScopeConfig>): Promise<OptimizationScopeConfig | undefined>;
   deleteOptimizationScopeConfig(id: number): Promise<boolean>;
+
+  // High-performance data management for large datasets
+  getDataWithPagination<T>(table: string, request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<T>>;
+  bulkUpdateRecords<T>(table: string, updates: import("@shared/data-management-types").BulkUpdateRequest<T>): Promise<{ success: boolean; updated: number; errors: any[] }>;
+  bulkDeleteRecords(table: string, request: import("@shared/data-management-types").BulkDeleteRequest): Promise<{ success: boolean; deleted: number; errors: any[] }>;
+  
+  // Specialized pagination methods for each data type
+  getPlantsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Plant>>;
+  getResourcesWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Resource>>;
+  getCapabilitiesWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Capability>>;
+  getProductionOrdersWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<ProductionOrder>>;
+  getVendorsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Vendor>>;
+  getCustomersWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Customer>>;
+  getStockItemsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<StockItem>>;
   getDefaultOptimizationScopeConfig(category: string): Promise<OptimizationScopeConfig | undefined>;
   setOptimizationScopeConfigAsDefault(id: number): Promise<void>;
   duplicateOptimizationScopeConfig(id: number, newName: string, userId: number): Promise<OptimizationScopeConfig>;
@@ -1203,6 +1217,31 @@ export interface IStorage {
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: number, customer: Partial<InsertCustomer>): Promise<Customer | undefined>;
   deleteCustomer(id: number): Promise<boolean>;
+
+  // High-performance data management for large datasets
+  getDataWithPagination<T>(
+    table: string,
+    request: import("@shared/data-management-types").DataRequest
+  ): Promise<import("@shared/data-management-types").DataResponse<T>>;
+
+  bulkUpdateRecords<T>(
+    table: string,
+    updates: import("@shared/data-management-types").BulkUpdateRequest<T>
+  ): Promise<{ success: boolean; updated: number; errors: any[] }>;
+
+  bulkDeleteRecords(
+    table: string,
+    request: import("@shared/data-management-types").BulkDeleteRequest
+  ): Promise<{ success: boolean; deleted: number; errors: any[] }>;
+
+  // Enhanced data type methods with pagination support
+  getPlantsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Plant>>;
+  getResourcesWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Resource>>;
+  getCapabilitiesWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Capability>>;
+  getProductionOrdersWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<ProductionOrder>>;
+  getVendorsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Vendor>>;
+  getCustomersWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Customer>>;
+  getStockItemsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<StockItem>>;
 }
 
 export class MemStorage implements IStorage {
@@ -9265,6 +9304,227 @@ export class DatabaseStorage implements IStorage {
   async deleteCustomer(id: number): Promise<boolean> {
     const result = await db.delete(customers).where(eq(customers.id, id));
     return result.rowCount > 0;
+  }
+
+  // High-performance data management implementation for large datasets
+  async getDataWithPagination<T>(
+    table: string,
+    request: import("@shared/data-management-types").DataRequest
+  ): Promise<import("@shared/data-management-types").DataResponse<T>> {
+    const startTime = Date.now();
+    const { pagination, search, filters, sort } = request;
+    
+    // Get the table schema based on table name
+    const tableMap: Record<string, any> = {
+      plants,
+      resources,
+      capabilities,
+      production_orders: productionOrders,
+      vendors,
+      customers,
+      stock_items: stockItems
+    };
+    
+    const dbTable = tableMap[table];
+    if (!dbTable) {
+      throw new Error(`Table ${table} not supported`);
+    }
+
+    // Build base query
+    let query = db.select().from(dbTable);
+    let countQuery = db.select({ count: sql<number>`count(*)` }).from(dbTable);
+
+    // Apply search filters
+    if (search?.query && search.fields) {
+      const searchConditions = search.fields.map(field => 
+        ilike(dbTable[field], `%${search.query}%`)
+      );
+      const searchCondition = or(...searchConditions);
+      query = query.where(searchCondition);
+      countQuery = countQuery.where(searchCondition);
+    }
+
+    // Apply filters
+    if (filters && filters.length > 0) {
+      const conditions = filters.map(filter => {
+        const field = dbTable[filter.field];
+        switch (filter.operator) {
+          case 'eq': return eq(field, filter.value);
+          case 'ne': return ne(field, filter.value);
+          case 'gt': return gt(field, filter.value);
+          case 'gte': return gte(field, filter.value);
+          case 'lt': return lt(field, filter.value);
+          case 'lte': return lte(field, filter.value);
+          case 'contains': return ilike(field, `%${filter.value}%`);
+          case 'starts_with': return ilike(field, `${filter.value}%`);
+          case 'ends_with': return ilike(field, `%${filter.value}`);
+          case 'in': return inArray(field, filter.value);
+          case 'not_in': return not(inArray(field, filter.value));
+          default: return eq(field, filter.value);
+        }
+      });
+      
+      if (conditions.length > 0) {
+        const filterCondition = and(...conditions);
+        query = query.where(filterCondition);
+        countQuery = countQuery.where(filterCondition);
+      }
+    }
+
+    // Apply sorting
+    if (sort && sort.length > 0) {
+      const sortConditions = sort.map(s => {
+        const field = dbTable[s.field];
+        return s.direction === 'desc' ? desc(field) : asc(field);
+      });
+      query = query.orderBy(...sortConditions);
+    }
+
+    // Get total count
+    const [{ count: total }] = await countQuery;
+
+    // Apply pagination
+    const offset = (pagination.page - 1) * pagination.limit;
+    query = query.limit(pagination.limit).offset(offset);
+
+    // Execute query
+    const data = await query;
+
+    const queryTime = Date.now() - startTime;
+    const totalPages = Math.ceil(total / pagination.limit);
+
+    return {
+      data: data as T[],
+      pagination: {
+        page: pagination.page,
+        limit: pagination.limit,
+        offset,
+        total,
+        totalPages,
+        hasNext: pagination.page < totalPages,
+        hasPrev: pagination.page > 1
+      },
+      meta: {
+        queryTime,
+        cacheHit: false
+      }
+    };
+  }
+
+  async bulkUpdateRecords<T>(
+    table: string,
+    updates: import("@shared/data-management-types").BulkUpdateRequest<T>
+  ): Promise<{ success: boolean; updated: number; errors: any[] }> {
+    const tableMap: Record<string, any> = {
+      plants,
+      resources,
+      capabilities,
+      production_orders: productionOrders,
+      vendors,
+      customers,
+      stock_items: stockItems
+    };
+    
+    const dbTable = tableMap[table];
+    if (!dbTable) {
+      throw new Error(`Table ${table} not supported`);
+    }
+
+    const errors: any[] = [];
+    let updated = 0;
+
+    // Process updates in batches
+    for (const update of updates.updates) {
+      try {
+        const result = await db
+          .update(dbTable)
+          .set({ ...update.data, updatedAt: new Date() })
+          .where(eq(dbTable.id, update.id));
+        
+        if (result.rowCount && result.rowCount > 0) {
+          updated++;
+        }
+      } catch (error) {
+        errors.push({ id: update.id, error: error.message });
+      }
+    }
+
+    return {
+      success: errors.length === 0,
+      updated,
+      errors
+    };
+  }
+
+  async bulkDeleteRecords(
+    table: string,
+    request: import("@shared/data-management-types").BulkDeleteRequest
+  ): Promise<{ success: boolean; deleted: number; errors: any[] }> {
+    const tableMap: Record<string, any> = {
+      plants,
+      resources,
+      capabilities,
+      production_orders: productionOrders,
+      vendors,
+      customers,
+      stock_items: stockItems
+    };
+    
+    const dbTable = tableMap[table];
+    if (!dbTable) {
+      throw new Error(`Table ${table} not supported`);
+    }
+
+    const errors: any[] = [];
+    let deleted = 0;
+
+    // Process deletions in batches
+    for (const id of request.ids) {
+      try {
+        const result = await db.delete(dbTable).where(eq(dbTable.id, id));
+        
+        if (result.rowCount && result.rowCount > 0) {
+          deleted++;
+        }
+      } catch (error) {
+        errors.push({ id, error: error.message });
+      }
+    }
+
+    return {
+      success: errors.length === 0,
+      deleted,
+      errors
+    };
+  }
+
+  // Enhanced pagination methods for specific data types
+  async getPlantsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Plant>> {
+    return this.getDataWithPagination<Plant>('plants', request);
+  }
+
+  async getResourcesWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Resource>> {
+    return this.getDataWithPagination<Resource>('resources', request);
+  }
+
+  async getCapabilitiesWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Capability>> {
+    return this.getDataWithPagination<Capability>('capabilities', request);
+  }
+
+  async getProductionOrdersWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<ProductionOrder>> {
+    return this.getDataWithPagination<ProductionOrder>('production_orders', request);
+  }
+
+  async getVendorsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Vendor>> {
+    return this.getDataWithPagination<Vendor>('vendors', request);
+  }
+
+  async getCustomersWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Customer>> {
+    return this.getDataWithPagination<Customer>('customers', request);
+  }
+
+  async getStockItemsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<StockItem>> {
+    return this.getDataWithPagination<StockItem>('stock_items', request);
   }
 }
 
