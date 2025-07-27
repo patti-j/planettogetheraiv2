@@ -546,6 +546,23 @@ export default function DataImport() {
     }
   };
 
+  const getTemplatePreview = (type: string) => {
+    switch (type) {
+      case 'resources':
+        return 'Name,Type,Description,Status,Capabilities\nMachine-001,Equipment,CNC Machine,active,CNC Machining';
+      case 'jobs':
+        return 'Name,Customer,Priority,Due Date,Quantity,Description\nWidget Assembly,ACME Corp,high,2025-02-01,100,Assembly of widget components';
+      case 'users':
+        return 'Username,Email,First Name,Last Name,Role\njohn.doe,john@company.com,John,Doe,operator';
+      case 'capabilities':
+        return 'Name,Description,Category\nCNC Machining,Computer Numerical Control machining,manufacturing';
+      case 'plants':
+        return 'Name,Location,Address,Timezone\nMain Plant,Chicago,123 Industrial Ave Chicago IL,America/Chicago';
+      default:
+        return 'Column1,Column2,Column3\nValue1,Value2,Value3';
+    }
+  };
+
   const downloadTemplate = (dataType: string) => {
     let csvContent = '';
     let filename = '';
@@ -692,6 +709,10 @@ export default function DataImport() {
                       <span className="hidden sm:inline">Upload File</span>
                       <span className="sm:hidden">Upload</span>
                     </TabsTrigger>
+                    <TabsTrigger value="template" className="flex-shrink-0 whitespace-nowrap">
+                      <span className="hidden sm:inline">Template Format</span>
+                      <span className="sm:hidden">Template</span>
+                    </TabsTrigger>
                     <TabsTrigger value="structured" className="flex-shrink-0 whitespace-nowrap">
                       <Grid3X3 className="h-4 w-4 mr-1" />
                       <span className="hidden sm:inline">Spreadsheet</span>
@@ -701,23 +722,55 @@ export default function DataImport() {
                       <span className="hidden sm:inline">Text Entry</span>
                       <span className="sm:hidden">Text</span>
                     </TabsTrigger>
-                    <TabsTrigger value="template" className="flex-shrink-0 whitespace-nowrap">Template</TabsTrigger>
                   </TabsList>
                 </div>
 
                 <TabsContent value="upload" className="space-y-4">
-                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                    <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Upload CSV or JSON files with your {label.toLowerCase()} data
-                    </p>
-                    <Input
-                      type="file"
-                      accept=".csv,.json"
-                      onChange={(e) => handleFileUpload(e, key)}
-                      disabled={isImporting}
-                      className="max-w-xs mx-auto"
-                    />
+                  <div className="space-y-4">
+                    {/* Format Requirements */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-start gap-2">
+                        <FileSpreadsheet className="h-5 w-5 text-blue-600 mt-0.5" />
+                        <div>
+                          <h4 className="font-medium text-blue-800 mb-1">File Format Requirements</h4>
+                          <p className="text-sm text-blue-700 mb-2">
+                            Your file must match the exact format shown in the Template tab below.
+                          </p>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => downloadTemplate(key)}
+                              className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                            >
+                              <Download className="h-4 w-4 mr-1" />
+                              Download Template
+                            </Button>
+                            <span className="text-xs text-blue-600 flex items-center">
+                              Use this template to ensure correct format
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Upload Area */}
+                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                      <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Upload CSV or JSON files with your {label.toLowerCase()} data
+                      </p>
+                      <Input
+                        type="file"
+                        accept=".csv,.json"
+                        onChange={(e) => handleFileUpload(e, key)}
+                        disabled={isImporting}
+                        className="max-w-xs mx-auto"
+                      />
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Accepted formats: CSV, JSON
+                      </p>
+                    </div>
                   </div>
                 </TabsContent>
 
@@ -853,18 +906,42 @@ export default function DataImport() {
                 </TabsContent>
 
                 <TabsContent value="template" className="space-y-4">
-                  <div className="text-center space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                      Download a template CSV file with sample data to get started quickly
-                    </p>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => downloadTemplate(key)}
-                      className="w-full"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download {label} Template
-                    </Button>
+                  <div className="space-y-4">
+                    {/* Template Purpose */}
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="flex items-start gap-2">
+                        <Download className="h-5 w-5 text-green-600 mt-0.5" />
+                        <div>
+                          <h4 className="font-medium text-green-800 mb-1">Required File Format</h4>
+                          <p className="text-sm text-green-700 mb-2">
+                            This template shows the exact column headers and format required for file uploads. 
+                            Your CSV files must match this structure exactly.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Template Preview */}
+                    <div className="border rounded-lg p-4 bg-gray-50">
+                      <h5 className="font-medium mb-2">Template Format Preview:</h5>
+                      <div className="text-xs font-mono bg-white p-2 rounded border">
+                        {getTemplatePreview(key)}
+                      </div>
+                    </div>
+
+                    {/* Download Button */}
+                    <div className="text-center">
+                      <Button 
+                        onClick={() => downloadTemplate(key)}
+                        className="w-full bg-green-600 hover:bg-green-700"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Download {label} Template
+                      </Button>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Use this template for the Upload File tab above
+                      </p>
+                    </div>
                   </div>
                 </TabsContent>
               </Tabs>
