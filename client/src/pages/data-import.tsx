@@ -301,7 +301,43 @@ export default function DataImport() {
           { key: 'name', label: 'Plant Name', type: 'text', required: true },
           { key: 'location', label: 'Location', type: 'text', required: true },
           { key: 'address', label: 'Address', type: 'text' },
-          { key: 'timezone', label: 'Timezone', type: 'select', options: ['UTC', 'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'Europe/London', 'Europe/Berlin', 'Asia/Tokyo'], required: true }
+          { key: 'timezone', label: 'Timezone', type: 'select', options: [
+            'UTC',
+            // North America
+            'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+            'America/Toronto', 'America/Vancouver', 'America/Montreal', 'America/Phoenix',
+            'America/Anchorage', 'America/Mexico_City', 'America/Cancun', 'America/Tijuana',
+            // South America
+            'America/Sao_Paulo', 'America/Buenos_Aires', 'America/Lima', 'America/Santiago',
+            'America/Bogota', 'America/Caracas', 'America/Montevideo', 'America/La_Paz',
+            // Europe
+            'Europe/London', 'Europe/Berlin', 'Europe/Paris', 'Europe/Rome', 'Europe/Madrid',
+            'Europe/Amsterdam', 'Europe/Brussels', 'Europe/Vienna', 'Europe/Zurich',
+            'Europe/Prague', 'Europe/Warsaw', 'Europe/Stockholm', 'Europe/Oslo',
+            'Europe/Copenhagen', 'Europe/Helsinki', 'Europe/Athens', 'Europe/Budapest',
+            'Europe/Bucharest', 'Europe/Sofia', 'Europe/Zagreb', 'Europe/Belgrade',
+            'Europe/Moscow', 'Europe/Kiev', 'Europe/Minsk', 'Europe/Vilnius',
+            'Europe/Riga', 'Europe/Tallinn', 'Europe/Dublin', 'Europe/Lisbon',
+            // Asia
+            'Asia/Tokyo', 'Asia/Seoul', 'Asia/Shanghai', 'Asia/Hong_Kong', 'Asia/Singapore',
+            'Asia/Bangkok', 'Asia/Jakarta', 'Asia/Manila', 'Asia/Kuala_Lumpur',
+            'Asia/Ho_Chi_Minh', 'Asia/Mumbai', 'Asia/Delhi', 'Asia/Kolkata',
+            'Asia/Dhaka', 'Asia/Karachi', 'Asia/Tehran', 'Asia/Dubai', 'Asia/Riyadh',
+            'Asia/Kuwait', 'Asia/Baghdad', 'Asia/Baku', 'Asia/Tashkent', 'Asia/Almaty',
+            'Asia/Yekaterinburg', 'Asia/Novosibirsk', 'Asia/Krasnoyarsk', 'Asia/Irkutsk',
+            'Asia/Vladivostok', 'Asia/Magadan', 'Asia/Kamchatka',
+            // Middle East
+            'Asia/Jerusalem', 'Asia/Beirut', 'Asia/Damascus', 'Asia/Amman',
+            // Africa
+            'Africa/Cairo', 'Africa/Lagos', 'Africa/Nairobi', 'Africa/Johannesburg',
+            'Africa/Cape_Town', 'Africa/Casablanca', 'Africa/Tunis', 'Africa/Algiers',
+            'Africa/Addis_Ababa', 'Africa/Dar_es_Salaam', 'Africa/Kampala',
+            // Australia & Oceania
+            'Australia/Sydney', 'Australia/Melbourne', 'Australia/Brisbane',
+            'Australia/Perth', 'Australia/Adelaide', 'Australia/Darwin',
+            'Pacific/Auckland', 'Pacific/Fiji', 'Pacific/Honolulu', 'Pacific/Guam',
+            'Pacific/Port_Moresby', 'Pacific/Noumea', 'Pacific/Tahiti'
+          ], required: true }
         ];
       default:
         return [];

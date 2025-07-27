@@ -2,6 +2,16 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Global Timezone Support Enhancement (July 27, 2025)**:
+- Expanded timezone dropdown options from 8 limited options to comprehensive global coverage with 75+ timezones
+- Updated Master Data Setup plants grid to include all major world timezones across North America, South America, Europe, Asia, Middle East, Africa, and Australia/Oceania
+- Enhanced user profile timezone selector with detailed timezone labels for better user experience
+- Comprehensive timezone coverage includes major cities and regions: New York, London, Tokyo, Sydney, Dubai, São Paulo, and many more
+- Timezones organized by geographic region with proper IANA timezone identifiers for accurate scheduling operations
+- Master Data Setup now properly supports international manufacturing operations with correct timezone settings
+
+## Previous Changes (July 27, 2025)
+
 ✓ **Master Data Setup Vendors and Customers Integration (July 27, 2025)**:
 - Successfully added vendors and customers to Master Data Setup screen bringing total available data types from 19 to 21
 - Implemented comprehensive CSV template support for both vendors and customers with realistic sample data
