@@ -379,7 +379,6 @@ export default function Pricing() {
         { name: "Shop Floor Controls & Mobile Access", starter: true, professional: true, enterprise: true },
         { name: "Operator Dashboard & Visual Factory", starter: true, professional: true, enterprise: true },
         { name: "Multi-Plant Management", starter: false, professional: true, enterprise: true },
-        { name: "Advanced Scheduling Optimizer", starter: false, professional: true, enterprise: true },
         { name: "Unlimited Plant Operations", starter: false, professional: false, enterprise: true }
       ]
     },
