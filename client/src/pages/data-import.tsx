@@ -72,10 +72,20 @@ export default function DataImport() {
   });
 
   // Fetch onboarding data to get selected features
-  const { data: onboardingData } = useQuery({
+  const { data: onboardingData, isLoading: onboardingLoading, error: onboardingError } = useQuery({
     queryKey: ['/api/onboarding/status'],
     enabled: !!user,
   });
+
+  // Debug logging for onboarding data
+  useEffect(() => {
+    console.log('Onboarding query state:', { 
+      user: !!user, 
+      onboardingData, 
+      onboardingLoading, 
+      onboardingError 
+    });
+  }, [user, onboardingData, onboardingLoading, onboardingError]);
 
   // Load recommended data types from onboarding features
   useEffect(() => {
