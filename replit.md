@@ -20,6 +20,8 @@
 - Tooltip explains functionality: "Edit feature selections in Getting Started"
 - Enhanced user workflow by allowing easy navigation between data setup and feature selection
 - Users can now modify their onboarding choices without using main menu navigation
+- Fixed navigation to go directly to feature selection step (step 1) instead of company setup step
+- Added URL parameter support to onboarding wizard for direct step navigation
 
 ✓ **Menu Pin Positioning Update - Bottom Right Corner Implementation (July 27, 2025)**:
 - Changed pin mechanism from dynamic hover top-right corner to permanent bottom-right corner placement

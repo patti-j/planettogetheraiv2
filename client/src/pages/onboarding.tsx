@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import {
   Factory, Users, BarChart3, Package, Settings, CheckCircle2, ArrowRight,
   Building, Target, Calendar, Truck, Wrench, Brain, Sparkles, Upload,
@@ -173,7 +173,12 @@ const onboardingSteps: OnboardingStep[] = [
 ];
 
 export default function OnboardingPage() {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [location] = useLocation();
+  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const stepParam = urlParams.get('step');
+  const initialStep = stepParam ? parseInt(stepParam, 10) : 0;
+  
+  const [currentStep, setCurrentStep] = useState(Math.max(0, Math.min(initialStep, 5)));
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [companyInfo, setCompanyInfo] = useState({
     name: '',
@@ -212,9 +217,9 @@ export default function OnboardingPage() {
   // Load company info from multiple sources with priority: database > localStorage
   useEffect(() => {
     // First, try to load from database (user preferences)
-    if (userPreferences?.companyInfo && Object.keys(userPreferences.companyInfo).some(key => userPreferences.companyInfo[key])) {
+    if (userPreferences?.companyInfo && Object.keys(userPreferences.companyInfo).some(key => (userPreferences.companyInfo as any)[key])) {
       console.log('Loading company info from database:', userPreferences.companyInfo);
-      setCompanyInfo(userPreferences.companyInfo);
+      setCompanyInfo(userPreferences.companyInfo as any);
       return;
     }
     

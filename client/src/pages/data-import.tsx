@@ -1225,7 +1225,7 @@ Focus on creating authentic, interconnected data that would be typical for ${com
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => window.location.href = '/onboarding'}
+                    onClick={() => window.location.href = '/onboarding?step=1'}
                     className="h-auto p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-100"
                     title="Edit feature selections in Getting Started"
                   >
