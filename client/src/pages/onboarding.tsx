@@ -227,26 +227,39 @@ export default function OnboardingPage() {
   };
 
   const handleNextStep = async () => {
-    if (currentStep === 0 && companyInfo.name && companyInfo.industry) {
-      // Initialize company onboarding
-      await createOnboardingMutation.mutateAsync({
-        companyName: companyInfo.name,
-        industry: companyInfo.industry,
-        size: companyInfo.size,
-        description: companyInfo.description
-      });
-    }
+    setIsLoading(true);
+    
+    try {
+      if (currentStep === 0 && companyInfo.name && companyInfo.industry) {
+        // Initialize company onboarding
+        await createOnboardingMutation.mutateAsync({
+          companyName: companyInfo.name,
+          industry: companyInfo.industry,
+          size: companyInfo.size,
+          description: companyInfo.description
+        });
+      }
 
-    if (currentStep === 1 && selectedFeatures.length > 0) {
-      // Save selected features
-      await updateProgressMutation.mutateAsync({
-        step: 'feature-selection',
-        data: { selectedFeatures }
-      });
-    }
+      if (currentStep === 1 && selectedFeatures.length > 0) {
+        // Save selected features
+        await updateProgressMutation.mutateAsync({
+          step: 'feature-selection',
+          data: { selectedFeatures }
+        });
+      }
 
-    if (currentStep < onboardingSteps.length - 1) {
-      setCurrentStep(currentStep + 1);
+      if (currentStep < onboardingSteps.length - 1) {
+        setCurrentStep(currentStep + 1);
+      }
+    } catch (error) {
+      console.error('Error in handleNextStep:', error);
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -701,10 +714,10 @@ export default function OnboardingPage() {
             )}
             <Button
               onClick={handleNextStep}
-              disabled={!canProceed() || isLoading}
+              disabled={!canProceed() || isLoading || createOnboardingMutation.isPending || updateProgressMutation.isPending}
               className={currentStep === onboardingSteps.length - 1 ? "hidden" : ""}
             >
-              {isLoading ? "Processing..." : "Next"}
+              {(isLoading || createOnboardingMutation.isPending || updateProgressMutation.isPending) ? "Processing..." : "Next"}
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
