@@ -159,6 +159,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Data import routes
+  app.post('/api/data-import/bulk', requireAuth, async (req, res) => {
+    try {
+      const { type, data } = req.body;
+      
+      if (!type || !data || !Array.isArray(data)) {
+        return res.status(400).json({ message: 'Invalid import data format' });
+      }
+
+      let results: any[] = [];
+      
+      switch (type) {
+        case 'resources':
+          for (const item of data) {
+            const insertResource = insertResourceSchema.parse({
+              name: item.name,
+              type: item.type || 'Equipment',
+              description: item.description || '',
+              status: item.status || 'active'
+            });
+            const resource = await storage.createResource(insertResource);
+            
+            // Handle capabilities if provided
+            if (item.capabilities) {
+              const capabilityNames = item.capabilities.split(',').map((c: string) => c.trim());
+              for (const capName of capabilityNames) {
+                // Find or create capability
+                let capability = await storage.getCapabilityByName(capName);
+                if (!capability) {
+                  const insertCap = insertCapabilitySchema.parse({
+                    name: capName,
+                    description: `Auto-created capability: ${capName}`,
+                    category: 'general'
+                  });
+                  capability = await storage.createCapability(insertCap);
+                }
+                // Associate resource with capability
+                await storage.addResourceCapability(resource.id, capability.id);
+              }
+            }
+            results.push(resource);
+          }
+          break;
+          
+        case 'jobs':
+          for (const item of data) {
+            const insertJob = insertJobSchema.parse({
+              name: item.name,
+              customer: item.customer || '',
+              priority: item.priority || 'medium',
+              status: 'active',
+              dueDate: item.dueDate ? new Date(item.dueDate) : null,
+              quantity: item.quantity || 1,
+              description: item.description || ''
+            });
+            const job = await storage.createJob(insertJob);
+            results.push(job);
+          }
+          break;
+          
+        case 'capabilities':
+          for (const item of data) {
+            const insertCapability = insertCapabilitySchema.parse({
+              name: item.name,
+              description: item.description || '',
+              category: item.category || 'general'
+            });
+            const capability = await storage.createCapability(insertCapability);
+            results.push(capability);
+          }
+          break;
+          
+        case 'plants':
+          for (const item of data) {
+            const insertPlant = insertPlantSchema.parse({
+              name: item.name,
+              location: item.location || '',
+              address: item.address || '',
+              timezone: item.timezone || 'UTC',
+              status: 'active'
+            });
+            const plant = await storage.createPlant(insertPlant);
+            results.push(plant);
+          }
+          break;
+          
+        case 'users':
+          for (const item of data) {
+            // For user creation, we'll need to handle this differently since it involves authentication
+            // For now, we'll create a simplified version or require admin privileges
+            if (!req.user || req.user.id !== 6) { // Only trainer can create users for now
+              return res.status(403).json({ message: 'Insufficient permissions to create users' });
+            }
+            
+            const insertUser = insertUserSchema.parse({
+              username: item.username,
+              email: item.email || `${item.username}@company.com`,
+              firstName: item.firstName || '',
+              lastName: item.lastName || '',
+              passwordHash: await bcrypt.hash('temporary123', 10) // Default temporary password
+            });
+            const user = await storage.createUser(insertUser);
+            results.push({ ...user, passwordHash: undefined }); // Don't return password hash
+          }
+          break;
+          
+        default:
+          return res.status(400).json({ message: `Unsupported import type: ${type}` });
+      }
+      
+      res.json({
+        success: true,
+        type,
+        imported: results.length,
+        data: results
+      });
+    } catch (error) {
+      console.error('Data import error:', error);
+      res.status(500).json({ message: 'Failed to import data', error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {

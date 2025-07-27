@@ -102,7 +102,9 @@ export interface IStorage {
 
   // Capabilities
   getCapabilities(): Promise<Capability[]>;
+  getCapabilityByName(name: string): Promise<Capability | undefined>;
   createCapability(capability: InsertCapability): Promise<Capability>;
+  addResourceCapability(resourceId: number, capabilityId: number): Promise<void>;
   
   // Resources
   getResources(): Promise<Resource[]>;
@@ -1543,6 +1545,30 @@ export class DatabaseStorage implements IStorage {
       .values(capability)
       .returning();
     return newCapability;
+  }
+
+  async getCapabilityByName(name: string): Promise<Capability | undefined> {
+    const [capability] = await db.select().from(capabilities).where(eq(capabilities.name, name));
+    return capability || undefined;
+  }
+
+  async addResourceCapability(resourceId: number, capabilityId: number): Promise<void> {
+    // Check if the relationship already exists to avoid duplicates
+    const existing = await db.select()
+      .from(resources)
+      .where(eq(resources.id, resourceId));
+    
+    if (existing.length > 0) {
+      const resource = existing[0];
+      const currentCapabilities = resource.capabilities as number[] || [];
+      
+      if (!currentCapabilities.includes(capabilityId)) {
+        currentCapabilities.push(capabilityId);
+        await db.update(resources)
+          .set({ capabilities: currentCapabilities })
+          .where(eq(resources.id, resourceId));
+      }
+    }
   }
 
   async getResources(): Promise<Resource[]> {

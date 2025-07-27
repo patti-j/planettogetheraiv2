@@ -66,6 +66,7 @@ import ProductionCockpit from "@/pages/production-cockpit";
 import ProductDevelopment from "@/pages/product-development";
 import SchedulingHistory from "@/pages/scheduling-history";
 import WidgetShowcase from "@/pages/widget-showcase";
+import DataImportPage from "@/pages/data-import";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
@@ -332,6 +333,11 @@ function Router() {
           <Route path="/extension-studio">
             <ProtectedRoute feature="systems-management" action="view">
               <ExtensionStudioPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/data-import">
+            <ProtectedRoute feature="systems-management" action="view">
+              <DataImportPage />
             </ProtectedRoute>
           </Route>
           <Route path="/canvas">
