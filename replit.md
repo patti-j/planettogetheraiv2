@@ -2,6 +2,18 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Menu Navigation Recent & Favorites Enhancement with Pinning Functionality (July 27, 2025)**:
+- Successfully renamed "Recent Pages" section to "Recent & Favorites" in the hamburger menu
+- Implemented comprehensive pinning functionality allowing users to pin menu items to keep them permanently accessible
+- Added pin/unpin toggle buttons with visual feedback: emerald border and background for pinned items
+- Defaulted "Getting Started" menu item to be pinned in first position for new users with automatic database initialization
+- Enhanced NavigationContext with togglePinPage function and isPinned property for persistent pinning state
+- Pinned items automatically sorted to appear first, followed by recent items sorted by timestamp
+- Added Pin and PinOff icons with hover-based visibility for clean UI design
+- Pin functionality persists across sessions through database storage with cross-device synchronization
+- New users now see "Getting Started" pinned by default to remain front and center until manually unpinned
+- Enhanced user experience by allowing users to customize their most frequently accessed menu items
+
 ✓ **Shift Template Update API Fix & Copy Button Visual Feedback Enhancement (July 27, 2025)**:
 - Fixed "Invalid HTTP method" error in shift template updates by changing frontend from PATCH to PUT method to match backend API
 - Enhanced error dialog copy button with visual feedback: button turns green with "Copied!" tooltip when clicked

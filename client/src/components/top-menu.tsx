@@ -9,7 +9,7 @@ import {
   Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, 
   Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, 
   Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, 
-  Eye, FileX, Clock, Monitor, History, X, Upload
+  Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleSwitcher } from "./role-switcher";
@@ -108,7 +108,7 @@ export default function TopMenu() {
   const { hasPermission } = usePermissions();
   const { isMaxOpen, setMaxOpen } = useMaxDock();
   const { aiTheme } = useAITheme();
-  const { recentPages, clearRecentPages } = useNavigation();
+  const { recentPages, clearRecentPages, togglePinPage } = useNavigation();
 
   // Derive current role from user data if not provided
   const currentRole = user?.currentRole || (user?.activeRoleId && user?.roles ? 
@@ -283,12 +283,12 @@ export default function TopMenu() {
 
             {/* Menu Content */}
             <div className="p-6 space-y-8">
-              {/* Recent Pages Section */}
+              {/* Recent & Favorites Section */}
               {recentPages.length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2 flex-1">
-                      Recent Pages
+                      Recent & Favorites
                     </h3>
                     <Button
                       variant="ghost"
@@ -317,22 +317,45 @@ export default function TopMenu() {
                       const iconColorClass = color.replace('bg-', 'text-').replace('-500', '-600');
                       
                       return (
-                        <Link 
-                          key={`${page.path}-${index}`}
-                          href={page.path}
-                          onClick={() => setMenuOpen(false)}
-                        >
-                          <div className="w-full aspect-square min-h-[100px] h-[100px] min-w-[100px] md:min-h-[90px] md:h-[90px] md:min-w-[90px] bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] flex flex-col items-center justify-center text-center space-y-1">
-                            <div className="bg-gray-100 p-2 rounded-full flex items-center justify-center flex-shrink-0">
-                              <IconComponent className={`w-4 h-4 ${iconColorClass}`} strokeWidth={1.5} fill="none" />
+                        <div key={`${page.path}-${index}`} className="relative group">
+                          <Link 
+                            href={page.path}
+                            onClick={() => setMenuOpen(false)}
+                          >
+                            <div className={`
+                              w-full aspect-square min-h-[100px] h-[100px] min-w-[100px] md:min-h-[90px] md:h-[90px] md:min-w-[90px] 
+                              bg-white border hover:border-gray-300 hover:shadow-md rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] 
+                              flex flex-col items-center justify-center text-center space-y-1
+                              ${page.isPinned ? 'border-emerald-300 bg-emerald-50' : 'border-gray-200'}
+                            `}>
+                              <div className="bg-gray-100 p-2 rounded-full flex items-center justify-center flex-shrink-0">
+                                <IconComponent className={`w-4 h-4 ${iconColorClass}`} strokeWidth={1.5} fill="none" />
+                              </div>
+                              <div className="flex flex-col items-center min-h-0 flex-1">
+                                <span className="text-xs font-medium text-gray-800 leading-tight text-center line-clamp-2 overflow-hidden">
+                                  {page.label}
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex flex-col items-center min-h-0 flex-1">
-                              <span className="text-xs font-medium text-gray-800 leading-tight text-center line-clamp-2 overflow-hidden">
-                                {page.label}
-                              </span>
-                            </div>
-                          </div>
-                        </Link>
+                          </Link>
+                          {/* Pin/Unpin Button */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              togglePinPage(page.path);
+                            }}
+                            className={`
+                              absolute -top-1 -right-1 h-6 w-6 p-0 rounded-full shadow-sm border opacity-0 group-hover:opacity-100 transition-opacity
+                              ${page.isPinned ? 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600' : 'bg-white hover:bg-gray-50 text-gray-600 border-gray-200'}
+                            `}
+                            title={page.isPinned ? 'Unpin from favorites' : 'Pin to favorites'}
+                          >
+                            {page.isPinned ? <Pin className="h-3 w-3" /> : <PinOff className="h-3 w-3" />}
+                          </Button>
+                        </div>
                       );
                     })}
                   </div>

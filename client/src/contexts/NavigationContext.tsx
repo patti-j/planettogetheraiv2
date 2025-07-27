@@ -8,12 +8,14 @@ interface RecentPage {
   label: string;
   icon?: string;
   timestamp: number;
+  isPinned?: boolean;
 }
 
 interface NavigationContextType {
   recentPages: RecentPage[];
   addRecentPage: (path: string, label: string, icon?: string) => void;
   clearRecentPages: () => void;
+  togglePinPage: (path: string) => void;
 }
 
 const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
@@ -71,12 +73,33 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
           const response = await apiRequest('GET', `/api/user-preferences/${user.id}`);
           const preferences = await response.json();
           const savedRecentPages = preferences?.dashboardLayout?.recentPages || [];
-          if (Array.isArray(savedRecentPages)) {
+          
+          // If no recent pages exist, initialize with default pinned "Getting Started"
+          if (!Array.isArray(savedRecentPages) || savedRecentPages.length === 0) {
+            const defaultRecentPages = [{
+              path: '/onboarding',
+              label: 'Getting Started',
+              icon: 'BookOpen',
+              timestamp: Date.now(),
+              isPinned: true
+            }];
+            setRecentPages(defaultRecentPages);
+            // Save default to database
+            saveRecentPages(defaultRecentPages);
+          } else {
             setRecentPages(savedRecentPages.slice(0, MAX_RECENT_PAGES));
           }
         } catch (error) {
           console.warn('Failed to load recent pages from database:', error);
-          setRecentPages([]);
+          // Initialize with default pinned "Getting Started" on error
+          const defaultRecentPages = [{
+            path: '/onboarding',
+            label: 'Getting Started',
+            icon: 'BookOpen',
+            timestamp: Date.now(),
+            isPinned: true
+          }];
+          setRecentPages(defaultRecentPages);
         }
       } else {
         // Not authenticated, clear recent pages
@@ -110,18 +133,23 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
           timestamp: Date.now()
         };
         
-        // Save to user preferences or localStorage
+        // Save to user preferences
         saveRecentPages(updated);
         
         return updated;
       } else {
-        // New page - add to the far left (beginning) and limit to MAX_RECENT_PAGES
-        const updated = [
-          { path, label, icon: icon || 'FileText', timestamp: Date.now() },
-          ...current
-        ].slice(0, MAX_RECENT_PAGES);
+        // Separate pinned and unpinned pages
+        const pinnedPages = current.filter(page => page.isPinned);
+        const unpinnedPages = current.filter(page => !page.isPinned);
+        
+        // New page - add to the unpinned section and limit total to MAX_RECENT_PAGES
+        const newPage = { path, label, icon: icon || 'FileText', timestamp: Date.now(), isPinned: false };
+        const updatedUnpinned = [newPage, ...unpinnedPages];
+        
+        // Combine pinned + unpinned, ensuring we don't exceed MAX_RECENT_PAGES
+        const updated = [...pinnedPages, ...updatedUnpinned].slice(0, MAX_RECENT_PAGES);
 
-        // Save to user preferences or localStorage
+        // Save to user preferences
         saveRecentPages(updated);
 
         return updated;
@@ -153,6 +181,24 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     // Only save for authenticated users - no localStorage fallback
   };
 
+  const togglePinPage = (path: string) => {
+    setRecentPages(current => {
+      const updated = current.map(page => 
+        page.path === path ? { ...page, isPinned: !page.isPinned } : page
+      );
+      
+      // Sort so pinned items come first
+      const pinnedPages = updated.filter(page => page.isPinned).sort((a, b) => a.timestamp - b.timestamp);
+      const unpinnedPages = updated.filter(page => !page.isPinned).sort((a, b) => b.timestamp - a.timestamp);
+      const sortedUpdated = [...pinnedPages, ...unpinnedPages];
+      
+      // Save to user preferences
+      saveRecentPages(sortedUpdated);
+      
+      return sortedUpdated;
+    });
+  };
+
   const clearRecentPages = async () => {
     setRecentPages([]);
     if (isAuthenticated && user?.id) {
@@ -182,7 +228,8 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     <NavigationContext.Provider value={{
       recentPages,
       addRecentPage,
-      clearRecentPages
+      clearRecentPages,
+      togglePinPage
     }}>
       {children}
     </NavigationContext.Provider>
