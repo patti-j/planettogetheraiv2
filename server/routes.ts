@@ -719,14 +719,19 @@ Focus on manufacturing-relevant data that would be realistic for a ${companyInfo
       };
 
       // Apply minimum requirements for enterprise pharmaceutical scaling
+      console.log(`📊 Expected volumes: ${ordersTotal} orders, ${resourcesTotal} resources, ${operationsTotal} operations for enterprise pharmaceutical`);
+      
       if (generatedData.dataTypes.productionOrders) {
-        generatedData.dataTypes.productionOrders = supplementData('productionOrders', generatedData.dataTypes.productionOrders, ordersTotal - 20);
+        const targetOrders = Math.max(ordersTotal - 20, 400); // Minimum 400 for enterprise
+        generatedData.dataTypes.productionOrders = supplementData('productionOrders', generatedData.dataTypes.productionOrders, targetOrders);
       }
       if (generatedData.dataTypes.resources) {
-        generatedData.dataTypes.resources = supplementData('resources', generatedData.dataTypes.resources, resourcesTotal - 10);
+        const targetResources = Math.max(resourcesTotal - 10, 100); // Minimum 100 for enterprise  
+        generatedData.dataTypes.resources = supplementData('resources', generatedData.dataTypes.resources, targetResources);
       }
       if (generatedData.dataTypes.operations) {
-        generatedData.dataTypes.operations = supplementData('operations', generatedData.dataTypes.operations, operationsTotal - 50);
+        const targetOperations = Math.max(operationsTotal - 50, 3200); // Minimum 3200 for enterprise
+        generatedData.dataTypes.operations = supplementData('operations', generatedData.dataTypes.operations, targetOperations);
       }
 
       // Import the generated data
