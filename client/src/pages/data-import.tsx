@@ -1154,35 +1154,37 @@ Focus on creating authentic, interconnected data that would be typical for ${com
   ];
 
   return (
-    <div className={`p-6 max-w-7xl mx-auto ${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
-      <div className="mb-8">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Master Data Setup</h1>
-            <p className="text-muted-foreground">
-              Set up your company's core manufacturing data quickly and easily. 
-              Upload files, enter data in spreadsheet format, use text input, or download templates to get started.
-            </p>
+    <div className={`p-3 sm:p-6 space-y-4 sm:space-y-6 ${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
+      {/* Page Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Database className="h-5 w-5 text-blue-600 mr-2" />
+            <h1 className="text-xl md:text-2xl font-bold">Master Data Setup</h1>
           </div>
-          <div className="flex gap-2 shrink-0 ml-4">
-            <Button 
-              onClick={handleGenerateAISampleData}
-              className="gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-            >
-              <Sparkles className="h-4 w-4" />
-              <span className="hidden sm:inline">AI Sample Data</span>
-              <span className="sm:hidden">AI Data</span>
-            </Button>
-            <Button 
-              onClick={() => setShowConsolidatedDialog(true)}
-              variant="outline"
-              className="gap-2"
-            >
-              <FileSpreadsheet className="h-4 w-4" />
-              <span className="hidden sm:inline">Consolidated Template</span>
-              <span className="sm:hidden">Multi-Template</span>
-            </Button>
-          </div>
+          <p className="text-sm md:text-base text-muted-foreground">
+            Set up your company's core manufacturing data quickly and easily. 
+            Upload files, enter data in spreadsheet format, use text input, or download templates to get started.
+          </p>
+        </div>
+        <div className="flex gap-2 lg:flex-shrink-0">
+          <Button 
+            onClick={handleGenerateAISampleData}
+            className="gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span className="hidden sm:inline">AI Sample Data</span>
+            <span className="sm:hidden">AI Data</span>
+          </Button>
+          <Button 
+            onClick={() => setShowConsolidatedDialog(true)}
+            variant="outline"
+            className="gap-2"
+          >
+            <FileSpreadsheet className="h-4 w-4" />
+            <span className="hidden sm:inline">Consolidated Template</span>
+            <span className="sm:hidden">Multi-Template</span>
+          </Button>
         </div>
       </div>
 
