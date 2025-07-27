@@ -2,6 +2,15 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **AI Generation Recommended Data Types Display Fix (July 27, 2025)**:
+- Fixed AI generation dialog to properly display recommended data types count and badges when no data types are manually selected
+- Updated company information section to show "Recommended data types: 4 types" instead of "Selected data types: 0 types"
+- Enhanced AI generation logic to automatically use recommended data types from onboarding when no manual selection exists
+- Added explanatory text showing which features triggered the data type recommendations
+- AI dialog now correctly shows all 4 recommended data types (plants, resources, capabilities, productionOrders) as badges
+- Generation button properly enabled when recommended data types exist, eliminating zero-count blocking issue
+- System provides clear indication of which data types will be generated based on user's feature selection from onboarding
+
 ✓ **Enhanced AI Sample Data Generation with Comprehensive Company Information (July 27, 2025)**:
 - Enhanced onboarding wizard to collect detailed company information including website, number of plants, and product descriptions
 - Updated AI generation prompt to properly include company name and all company details for more personalized sample data

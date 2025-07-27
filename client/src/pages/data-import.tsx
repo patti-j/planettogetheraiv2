@@ -1822,7 +1822,15 @@ Focus on creating authentic, interconnected data that would be typical for ${com
               <h3 className="font-medium text-blue-900 mb-2">Company Information</h3>
               <div className="text-sm text-blue-800">
                 <p>AI will generate data based on your company information from the onboarding process.</p>
-                <p className="mt-1">Selected data types: <Badge variant="secondary">{selectedDataTypes.length} types</Badge></p>
+                {(() => {
+                  const dataTypesToGenerate = selectedDataTypes.length > 0 ? selectedDataTypes : recommendedDataTypes;
+                  return (
+                    <p className="mt-1">
+                      {selectedDataTypes.length > 0 ? 'Selected' : 'Recommended'} data types: 
+                      <Badge variant="secondary" className="ml-2">{dataTypesToGenerate.length} types</Badge>
+                    </p>
+                  );
+                })()}
               </div>
             </div>
 
