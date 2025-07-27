@@ -559,10 +559,17 @@ Focus on creating authentic, interconnected data that would be typical for ${com
       }
     }
 
+    // Use recommended data types if no data types are manually selected
+    const dataTypesToGenerate = selectedDataTypes.length > 0 ? selectedDataTypes : recommendedDataTypes;
+    
+    console.log('Data types for AI generation:', dataTypesToGenerate);
+    console.log('Selected data types:', selectedDataTypes);
+    console.log('Recommended data types:', recommendedDataTypes);
+
     aiGenerationMutation.mutate({
       prompt: aiPrompt,
       companyInfo,
-      selectedDataTypes
+      selectedDataTypes: dataTypesToGenerate
     });
   };
 
@@ -1836,22 +1843,32 @@ Focus on creating authentic, interconnected data that would be typical for ${com
               </p>
             </div>
 
-            {/* Selected Data Types */}
-            {selectedDataTypes.length > 0 && (
-              <div className="space-y-3">
-                <Label className="text-base font-medium">Selected Data Types for Generation</Label>
-                <div className="flex flex-wrap gap-2">
-                  {selectedDataTypes.map(key => {
-                    const dataType = dataTypes.find(dt => dt.key === key);
-                    return (
-                      <Badge key={key} variant="outline" className="text-xs">
-                        {dataType?.label}
-                      </Badge>
-                    );
-                  })}
+            {/* Data Types for Generation */}
+            {(() => {
+              const dataTypesToShow = selectedDataTypes.length > 0 ? selectedDataTypes : recommendedDataTypes;
+              return dataTypesToShow.length > 0 && (
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">
+                    {selectedDataTypes.length > 0 ? 'Selected Data Types for Generation' : 'Recommended Data Types for Generation'}
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {dataTypesToShow.map(key => {
+                      const dataType = dataTypes.find(dt => dt.key === key);
+                      return (
+                        <Badge key={key} variant="outline" className="text-xs">
+                          {dataType?.label}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                  {selectedDataTypes.length === 0 && recommendedDataTypes.length > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      These data types are recommended based on your selected features: {onboardingFeatures.join(', ')}.
+                    </p>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
 
           <div className="flex items-center justify-between pt-6 border-t">
@@ -1863,7 +1880,7 @@ Focus on creating authentic, interconnected data that would be typical for ${com
             </Button>
             <Button
               onClick={executeAIGeneration}
-              disabled={aiGenerationMutation.isPending || selectedDataTypes.length === 0}
+              disabled={aiGenerationMutation.isPending || (selectedDataTypes.length === 0 && recommendedDataTypes.length === 0)}
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
             >
               {aiGenerationMutation.isPending ? (
