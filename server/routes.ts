@@ -503,9 +503,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         } else if (industryLower.includes('pharmaceutical') || industryLower.includes('pharma')) {
           return {
-            small: { plants: { min: 1, max: 2 }, resourcesPerPlant: { min: 3, max: 5 }, capabilities: { min: 8, max: 12 }, ordersPerPlant: { min: 5, max: 10 }, operationsPerOrder: { min: 2, max: 5 } },
-            medium: { plants: { min: 2, max: 3 }, resourcesPerPlant: { min: 5, max: 8 }, capabilities: { min: 15, max: 25 }, ordersPerPlant: { min: 10, max: 17 }, operationsPerOrder: { min: 3, max: 6 } },
-            large: { plants: { min: 3, max: 6 }, resourcesPerPlant: { min: 6, max: 10 }, capabilities: { min: 30, max: 40 }, ordersPerPlant: { min: 13, max: 20 }, operationsPerOrder: { min: 4, max: 8 } }
+            small: { plants: { min: 1, max: 2 }, resourcesPerPlant: { min: 8, max: 12 }, capabilities: { min: 15, max: 20 }, ordersPerPlant: { min: 25, max: 40 }, operationsPerOrder: { min: 4, max: 7 } },
+            medium: { plants: { min: 2, max: 4 }, resourcesPerPlant: { min: 12, max: 18 }, capabilities: { min: 25, max: 35 }, ordersPerPlant: { min: 40, max: 65 }, operationsPerOrder: { min: 5, max: 8 } },
+            large: { plants: { min: 4, max: 8 }, resourcesPerPlant: { min: 18, max: 25 }, capabilities: { min: 40, max: 60 }, ordersPerPlant: { min: 65, max: 100 }, operationsPerOrder: { min: 6, max: 10 } }
           };
         } else if (industryLower.includes('electronics') || industryLower.includes('semiconductor')) {
           return {

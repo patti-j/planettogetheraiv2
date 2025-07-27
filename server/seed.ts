@@ -149,11 +149,15 @@ export async function seedDatabase() {
       await db.insert(operations).values(operationData);
     }
 
-    // Insert sample disruptions only if they don't exist and master data exists
+    // TEMPORARILY DISABLED: Insert sample disruptions only if they don't exist and master data exists
+    // TODO: Fix foreign key constraint issues with jobs vs production_orders table mismatch
+    /*
+    const existingDisruptions = await db.select().from(disruptions).limit(1);
     const existingResources = await db.select().from(resources).limit(5);
     const existingProductionOrders = await db.select().from(productionOrders).limit(5);
+    const existingOperations = await db.select().from(operations).limit(5);
     
-    if (shouldReseedDisruptions && existingResources.length > 0 && existingProductionOrders.length > 0) {
+    if (false && shouldReseedDisruptions && existingDisruptions.length === 0 && existingResources.length > 0 && existingProductionOrders.length > 0) {
       const disruptionData = [
       {
         title: "CNC-001 Machine Breakdown",
@@ -161,9 +165,9 @@ export async function seedDatabase() {
         severity: "high",
         status: "active",
         description: "Primary CNC machine experiencing hydraulic system failure. Unable to continue machining operations.",
-        affectedResourceId: 1,
-        affectedJobId: 1,
-        affectedOperationId: 1,
+        affectedResourceId: existingResources[0]?.id || null,
+        affectedJobId: existingProductionOrders[0]?.id || null,
+        affectedOperationId: existingOperations[0]?.id || null,
         startTime: new Date(new Date().getTime() - 2 * 60 * 60 * 1000), // 2 hours ago
         estimatedDuration: 8, // 8 hours
         reportedBy: "John Operator",
@@ -184,9 +188,9 @@ export async function seedDatabase() {
         severity: "medium",
         status: "investigating",
         description: "Unexpected shortage of 10mm steel plates needed for motor housing production. Supplier delivery delayed.",
-        affectedResourceId: 2,
-        affectedJobId: 2,
-        affectedOperationId: 4,
+        affectedResourceId: existingResources[1]?.id || null,
+        affectedJobId: existingProductionOrders[1]?.id || existingProductionOrders[0]?.id || null,
+        affectedOperationId: existingOperations[1]?.id || existingOperations[0]?.id || null,
         startTime: new Date(new Date().getTime() - 4 * 60 * 60 * 1000), // 4 hours ago
         estimatedDuration: 24, // 24 hours
         reportedBy: "Sarah Scheduler",
@@ -207,9 +211,9 @@ export async function seedDatabase() {
         severity: "medium",
         status: "resolved",
         description: "Primary welder called in sick with medical emergency. No qualified backup available for specialized welding operations.",
-        affectedResourceId: 3,
-        affectedJobId: 1,
-        affectedOperationId: 2,
+        affectedResourceId: existingResources[2]?.id || null,
+        affectedJobId: existingProductionOrders[0]?.id || null,
+        affectedOperationId: existingOperations[2]?.id || existingOperations[0]?.id || null,
         startTime: new Date(new Date().getTime() - 8 * 60 * 60 * 1000), // 8 hours ago
         estimatedDuration: 8,
         actualEndTime: new Date(new Date().getTime() - 1 * 60 * 60 * 1000), // resolved 1 hour ago
@@ -232,9 +236,9 @@ export async function seedDatabase() {
         severity: "critical",
         status: "active",
         description: "Quality inspection revealed dimensional variances in 15% of machined parts. Investigating root cause.",
-        affectedResourceId: 1,
-        affectedJobId: 1,
-        affectedOperationId: 1,
+        affectedResourceId: existingResources[0]?.id || null,
+        affectedJobId: existingProductionOrders[0]?.id || null,
+        affectedOperationId: existingOperations[0]?.id || null,
         startTime: new Date(new Date().getTime() - 30 * 60 * 1000), // 30 minutes ago
         estimatedDuration: 6,
         reportedBy: "QC Inspector",
@@ -339,6 +343,7 @@ export async function seedDatabase() {
 
       await db.insert(disruptionActions).values(disruptionActionData);
     }
+    */
   }
 
   // Seed business goals if missing
