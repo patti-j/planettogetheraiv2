@@ -20,6 +20,7 @@ import { useMaxDock } from "@/contexts/MaxDockContext";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { useTour } from "@/contexts/TourContext";
+import { TourSelectionDialog } from "./tour-selection-dialog";
 
 // Define feature groups with hierarchy and visual styling
 const featureGroups = [
@@ -106,6 +107,7 @@ export default function TopMenu() {
   const [location] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [userProfileOpen, setUserProfileOpen] = useState(false);
+  const [tourSelectionOpen, setTourSelectionOpen] = useState(false);
   const { user, logout } = useAuth();
   const { hasPermission } = usePermissions();
   const { isMaxOpen, setMaxOpen } = useMaxDock();
@@ -170,8 +172,8 @@ export default function TopMenu() {
     if (feature.href === "#max") {
       toggleMaxAI();
     } else if (feature.href === "#tour") {
-      // Start a production scheduler demo tour for feature exploration
-      startTour(3, true, 'demo');
+      // Open tour selection dialog to let user choose which tour to take
+      setTourSelectionOpen(true);
     }
     setMenuOpen(false);
   };
@@ -541,6 +543,12 @@ export default function TopMenu() {
           />
         </div>
       )}
+
+      {/* Tour Selection Dialog */}
+      <TourSelectionDialog 
+        open={tourSelectionOpen} 
+        onOpenChange={setTourSelectionOpen}
+      />
     </>
   );
 }
