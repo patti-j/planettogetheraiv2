@@ -16,6 +16,7 @@ import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, B
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useMaxDock } from '@/contexts/MaxDockContext';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ImportStatus {
   type: string;
@@ -64,11 +65,18 @@ export default function DataImport() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isMaxOpen } = useMaxDock();
+  const { user } = useAuth();
 
   // Fetch available capabilities for dropdown
   const { data: capabilities = [] } = useQuery({
     queryKey: ['/api/capabilities'],
     enabled: true
+  });
+
+  // Fetch user preferences
+  const { data: userPreferences } = useQuery({
+    queryKey: [`/api/user-preferences/${user?.id}`],
+    enabled: !!user?.id,
   });
 
   // Fetch plants for resource dependencies (disabled for now)
@@ -415,6 +423,19 @@ export default function DataImport() {
     }));
   };
 
+  // Helper function to safely access company info from user preferences
+  const getCompanyInfoFromPreferences = () => {
+    try {
+      const prefs = userPreferences as any;
+      if (prefs && prefs.companyInfo && typeof prefs.companyInfo === 'object' && Object.keys(prefs.companyInfo).length > 0) {
+        return prefs.companyInfo;
+      }
+    } catch (error) {
+      console.warn('Error accessing company info from preferences:', error);
+    }
+    return null;
+  };
+
   // Initialize AI prompt based on company information
   const initializeAIPrompt = () => {
     let companyInfo = {
@@ -428,8 +449,9 @@ export default function DataImport() {
     };
 
     // First try to get company info from user preferences (database)
-    if (userPreferences.data?.companyInfo && Object.keys(userPreferences.data.companyInfo).length > 0) {
-      companyInfo = { ...companyInfo, ...userPreferences.data.companyInfo };
+    const prefsCompanyInfo = getCompanyInfoFromPreferences();
+    if (prefsCompanyInfo) {
+      companyInfo = { ...companyInfo, ...prefsCompanyInfo };
     } else {
       // Fallback to localStorage for backwards compatibility or anonymous users
       const onboardingCompanyInfo = localStorage.getItem('onboarding-company-info');
@@ -484,8 +506,9 @@ Focus on creating authentic, interconnected data that would be typical for ${com
     };
 
     // First try to get company info from user preferences (database)
-    if (userPreferences.data?.companyInfo && Object.keys(userPreferences.data.companyInfo).length > 0) {
-      companyInfo = { ...companyInfo, ...userPreferences.data.companyInfo };
+    const prefsCompanyInfo = getCompanyInfoFromPreferences();
+    if (prefsCompanyInfo) {
+      companyInfo = { ...companyInfo, ...prefsCompanyInfo };
     } else {
       // Fallback to localStorage for backwards compatibility or anonymous users
       const onboardingCompanyInfo = localStorage.getItem('onboarding-company-info');
