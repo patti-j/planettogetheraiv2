@@ -741,7 +741,23 @@ Focus on manufacturing-relevant data that would be realistic for a ${companyInfo
                 }
                 break;
               case 'productionOrders':
-                for (const item of records) {
+                // Get all available plants for distribution
+                const availablePlants = await storage.getPlants();
+                console.log('Available plants for production orders:', availablePlants.map(p => ({ id: p.id, name: p.name })));
+                
+                if (availablePlants.length === 0) {
+                  console.error('No plants available for production orders');
+                  break;
+                }
+                
+                for (let i = 0; i < records.length; i++) {
+                  const item = records[i];
+                  // Distribute production orders across available plants
+                  const plantIndex = i % availablePlants.length;
+                  const selectedPlant = availablePlants[plantIndex];
+                  
+                  console.log(`Assigning production order ${i + 1} to plant ${selectedPlant.id} (${selectedPlant.name})`);
+                  
                   const insertJob = insertProductionOrderSchema.parse({
                     orderNumber: item.orderNumber || item.orderId || `PO-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
                     name: item.name || item.orderName || item.product || 'Unknown Order',
@@ -751,7 +767,7 @@ Focus on manufacturing-relevant data that would be realistic for a ${companyInfo
                     dueDate: item.dueDate ? new Date(item.dueDate) : null,
                     quantity: item.quantity || 1,
                     description: item.description || '',
-                    plantId: 1 // Default plant
+                    plantId: selectedPlant.id // Use actual plant ID with distribution
                   });
                   try {
                     const job = await storage.createProductionOrder(insertJob);

@@ -2,16 +2,17 @@
 
 ## Recent Changes (July 27, 2025)
 
-✓ **Per-Plant AI Generation Scaling & Comprehensive Deletion System Implementation (July 27, 2025)**:
+✓ **Per-Plant AI Generation Scaling & Production Orders Foreign Key Fix (July 27, 2025)**:
 - Successfully implemented per-plant scaling for AI sample data generation where resources, orders, and operations now scale based on number of plants instead of fixed totals
-- Fixed critical foreign key constraint issues by implementing proper deletion sequence with comprehensive table clearing including disruptions, scheduling_history, and all dependent tables
+- Fixed critical production orders foreign key constraint issues by implementing dynamic plant ID assignment using actual plant IDs from database instead of hardcoded plant_id=1
 - Updated backend configuration with per-plant multipliers for all industries (automotive: 8-15 resources/plant, pharmaceutical: 6-12 resources/plant, electronics: 12-20 resources/plant, food/beverage: 10-18 resources/plant)
 - Updated frontend display logic to show per-plant scaling descriptions instead of fixed record counts for better user understanding
 - Enhanced AI prompt generation to reflect new per-plant scaling structure for more realistic manufacturing data that scales with company size
 - Resolved seeding conflicts by adding conditional disruption seeding that only runs when master data exists, preventing foreign key constraint violations
 - AI generation now creates realistic data volumes: small (1-2 plants), medium (3-5 plants), large (5-10 plants) with appropriate resource scaling per plant
 - Comprehensive deletion system uses SQL direct deletion approach to handle complex foreign key relationships across 15+ dependent tables
-- System tested successfully with Tesla automotive (7 resources for 1 plant) and Apple electronics (5 resources for 4 plants) scenarios showing proper per-plant scaling
+- Fixed production orders to use actual plant IDs with distribution logic across available plants instead of hardcoded references
+- System tested successfully: Test Company automotive scenario (1 plant, 5 resources, 5 production orders) with plant ID 86 assignment working properly
 
 ✓ **AI-Powered Master Data Modification Feature Implementation (July 27, 2025)**:
 - Successfully implemented comprehensive AI-powered master data modification system allowing targeted changes without full regeneration
