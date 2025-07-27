@@ -35,6 +35,12 @@ export default function DataImport() {
     enabled: true
   });
 
+  // Fetch plants for resource dependencies (disabled for now)
+  // const { data: plants = [] } = useQuery({
+  //   queryKey: ['/api/plants'],
+  //   enabled: true
+  // });
+
   const [manualData, setManualData] = useState({
     resources: '',
     jobs: '',
@@ -43,13 +49,22 @@ export default function DataImport() {
     plants: ''
   });
 
+  // Data dependency hierarchy - defines what must be created first
+  const dataDependencies = {
+    plants: [], // No dependencies - can be created first
+    capabilities: [], // No dependencies - can be created first  
+    users: [], // No dependencies - can be created first
+    resources: ['plants', 'capabilities'], // Requires plants and capabilities to exist
+    jobs: ['resources'] // Requires resources to exist
+  };
+
   // Structured data for spreadsheet-like interface
   const [structuredData, setStructuredData] = useState<Record<string, any[]>>({
-    resources: [{ name: '', type: 'Equipment', description: '', status: 'active', capabilities: [] }],
-    jobs: [{ name: '', customer: '', priority: 'medium', dueDate: '', quantity: 1, description: '' }],
-    users: [{ username: '', email: '', firstName: '', lastName: '', role: 'operator' }],
+    plants: [{ name: '', location: '', address: '', timezone: 'UTC' }],
     capabilities: [{ name: '', description: '', category: 'general' }],
-    plants: [{ name: '', location: '', address: '', timezone: 'UTC' }]
+    users: [{ username: '', email: '', firstName: '', lastName: '', role: 'operator' }],
+    resources: [{ name: '', type: 'Equipment', description: '', status: 'active', capabilities: [], plantId: '' }],
+    jobs: [{ name: '', customer: '', priority: 'medium', dueDate: '', quantity: 1, description: '' }]
   });
 
   const importMutation = useMutation({
@@ -199,6 +214,7 @@ export default function DataImport() {
         return [
           { key: 'name', label: 'Name', type: 'text', required: true },
           { key: 'type', label: 'Type', type: 'select', options: ['Equipment', 'Personnel', 'Tool', 'Vehicle'], required: true },
+          { key: 'plantId', label: 'Plant', type: 'select', options: ['1', '2'], required: true, placeholder: 'Select plant' },
           { key: 'description', label: 'Description', type: 'text' },
           { key: 'status', label: 'Status', type: 'select', options: ['active', 'inactive', 'maintenance'], required: true },
           { key: 'capabilities', label: 'Capabilities', type: 'multiselect', placeholder: 'Select capabilities' }
@@ -271,6 +287,54 @@ export default function DataImport() {
         i === rowIndex ? { ...row, [fieldKey]: value } : row
       )
     }));
+  };
+
+  // Check if dependencies are satisfied for a data type
+  const checkDependencies = (dataType: string) => {
+    const dependencies = dataDependencies[dataType as keyof typeof dataDependencies] || [];
+    const missingDeps: string[] = [];
+    
+    for (const dep of dependencies) {
+      // Check if this dependency has data (either imported or in structured data)
+      const hasImportedData = importStatuses.some(status => 
+        status.type === dep && status.status === 'success'
+      );
+      const hasStructuredData = structuredData[dep]?.some(row => {
+        const fields = getFieldDefinitions(dep);
+        return fields.some(field => field.required && row[field.key]?.toString().trim());
+      });
+      
+      if (!hasImportedData && !hasStructuredData) {
+        missingDeps.push(dep);
+      }
+    }
+    
+    return { isReady: missingDeps.length === 0, missingDeps };
+  };
+
+  // Get dependency status message
+  const getDependencyMessage = (dataType: string) => {
+    const { isReady, missingDeps } = checkDependencies(dataType);
+    
+    if (isReady) {
+      return { type: 'ready', message: 'Ready to create' };
+    } else {
+      const depNames = missingDeps.map(dep => dep.charAt(0).toUpperCase() + dep.slice(1)).join(', ');
+      return { 
+        type: 'blocked', 
+        message: `Please create ${depNames} first before adding ${dataType}` 
+      };
+    }
+  };
+
+  // Order data types by dependencies (least dependent first)
+  const getOrderedDataTypes = () => {
+    const dataTypes = Object.keys(structuredData);
+    return dataTypes.sort((a, b) => {
+      const aDeps = dataDependencies[a as keyof typeof dataDependencies]?.length || 0;
+      const bDeps = dataDependencies[b as keyof typeof dataDependencies]?.length || 0;
+      return aDeps - bDeps;
+    });
   };
 
   // Multi-select capabilities component
@@ -567,18 +631,61 @@ export default function DataImport() {
           </Card>
         )}
 
-        {/* Data Import Sections */}
-        {dataTypes.map(({ key, label, icon: Icon, description }) => (
-          <Card key={key}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Icon className="h-5 w-5" />
-                {label}
-              </CardTitle>
-              <CardDescription>{description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="upload" className="w-full">
+        {/* Dependency Guide */}
+        <Card className="border-blue-200 bg-blue-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-800">
+              <Grid3X3 className="h-5 w-5" />
+              Data Entry Guide
+            </CardTitle>
+            <CardDescription className="text-blue-700">
+              Follow this order to ensure all dependencies are met:
+              <span className="font-medium block mt-1">
+                1. Plants → 2. Capabilities → 3. Users → 4. Resources → 5. Jobs
+              </span>
+            </CardDescription>
+          </CardHeader>
+        </Card>
+
+        {/* Data Import Sections - Ordered by Dependencies */}
+        {getOrderedDataTypes().map((key) => {
+          const dataType = dataTypes.find(dt => dt.key === key);
+          if (!dataType) return null;
+          
+          const { label, icon: Icon, description } = dataType;
+          const dependencyStatus = getDependencyMessage(key);
+          const isReady = dependencyStatus.type === 'ready';
+          
+          return (
+            <Card key={key} className={isReady ? '' : 'opacity-60 border-orange-200'}>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-5 w-5" />
+                    {label}
+                    {!isReady && (
+                      <Badge variant="outline" className="text-orange-600 border-orange-300">
+                        Blocked
+                      </Badge>
+                    )}
+                    {isReady && (
+                      <Badge variant="outline" className="text-green-600 border-green-300">
+                        Ready
+                      </Badge>
+                    )}
+                  </div>
+                </CardTitle>
+                <CardDescription>
+                  {description}
+                  {!isReady && (
+                    <div className="mt-2 text-orange-600 font-medium text-sm">
+                      ⚠️ {dependencyStatus.message}
+                    </div>
+                  )}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="upload" className="w-full">{/* disabled={!isReady} */}
                 <div className="w-full overflow-x-auto">
                   <TabsList className="flex w-max gap-1 md:grid md:w-full md:grid-cols-4">
                     <TabsTrigger value="upload" className="flex-shrink-0 whitespace-nowrap">
@@ -763,7 +870,8 @@ export default function DataImport() {
               </Tabs>
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
