@@ -3014,5 +3014,185 @@ async function seedMarketingData() {
     console.log("Optimization scope configurations seeded successfully");
   }
 
+  // Seed scheduling history data
+  const existingSchedulingHistory = await db.select().from(schedulingHistory).limit(1);
+  if (existingSchedulingHistory.length === 0) {
+    const schedulingHistoryData = [
+      {
+        algorithmName: "backwards-scheduling",
+        algorithmVersion: "2.1.0",
+        triggeredBy: 6,
+        plantId: 1,
+        executionStartTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+        executionEndTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 45000), // 45 seconds later
+        executionDuration: 45,
+        status: "completed",
+        makespan: 4320, // 72 hours in minutes
+        resourceUtilization: 87.5,
+        onTimeDeliveryRate: 94.2,
+        costOptimization: 12.8,
+        qualityScore: 96.1,
+        parameters: {
+          planningHorizon: 30,
+          considerConstraints: true,
+          optimizeForCost: true,
+          priorityWeighting: "balanced"
+        },
+        notes: "Successful optimization with improved resource utilization"
+      },
+      {
+        algorithmName: "forward-scheduling",
+        algorithmVersion: "1.8.2",
+        triggeredBy: 6,
+        plantId: 1,
+        executionStartTime: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+        executionEndTime: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000 + 32000), // 32 seconds later
+        executionDuration: 32,
+        status: "completed",
+        makespan: 4680, // 78 hours in minutes
+        resourceUtilization: 82.3,
+        onTimeDeliveryRate: 89.7,
+        costOptimization: 8.4,
+        qualityScore: 91.5,
+        parameters: {
+          planningHorizon: 21,
+          considerConstraints: true,
+          optimizeForTime: true,
+          resourceLeveling: true
+        },
+        notes: "Standard forward scheduling execution"
+      },
+      {
+        algorithmName: "genetic-algorithm",
+        algorithmVersion: "3.0.1",
+        triggeredBy: 6,
+        plantId: 1,
+        executionStartTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+        executionEndTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 128000), // 2 minutes 8 seconds later
+        executionDuration: 128,
+        status: "completed",
+        makespan: 4140, // 69 hours in minutes
+        resourceUtilization: 91.2,
+        onTimeDeliveryRate: 97.8,
+        costOptimization: 18.6,
+        qualityScore: 98.3,
+        parameters: {
+          populationSize: 100,
+          generations: 500,
+          mutationRate: 0.05,
+          crossoverRate: 0.8,
+          eliteSize: 10
+        },
+        notes: "Best performing algorithm with highest optimization scores"
+      },
+      {
+        algorithmName: "simulated-annealing",
+        algorithmVersion: "2.3.0",
+        triggeredBy: 6,
+        plantId: 1,
+        executionStartTime: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
+        executionEndTime: null, // Failed execution
+        executionDuration: null,
+        status: "failed",
+        makespan: null,
+        resourceUtilization: null,
+        onTimeDeliveryRate: null,
+        costOptimization: null,
+        qualityScore: null,
+        parameters: {
+          initialTemperature: 1000,
+          coolingRate: 0.95,
+          minTemperature: 0.01,
+          maxIterations: 10000
+        },
+        errorMessage: "Memory allocation error during large dataset processing",
+        notes: "Algorithm failed due to memory constraints with current dataset size"
+      },
+      {
+        algorithmName: "backwards-scheduling",
+        algorithmVersion: "2.0.8",
+        triggeredBy: 6,
+        plantId: 1,
+        executionStartTime: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 14 days ago
+        executionEndTime: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000 + 38000), // 38 seconds later
+        executionDuration: 38,
+        status: "completed",
+        makespan: 4560, // 76 hours in minutes
+        resourceUtilization: 84.7,
+        onTimeDeliveryRate: 91.3,
+        costOptimization: 10.2,
+        qualityScore: 93.8,
+        parameters: {
+          planningHorizon: 28,
+          considerConstraints: true,
+          optimizeForCost: false,
+          priorityWeighting: "time-focused"
+        },
+        notes: "Previous version of backwards scheduling algorithm"
+      }
+    ];
+
+    await db.insert(schedulingHistory).values(schedulingHistoryData);
+    console.log("Scheduling history seeded successfully");
+  }
+
+  // Seed algorithm performance data
+  const existingAlgorithmPerformance = await db.select().from(algorithmPerformance).limit(1);
+  if (existingAlgorithmPerformance.length === 0) {
+    const algorithmPerformanceData = [
+      {
+        algorithmName: "backwards-scheduling",
+        totalExecutions: 24,
+        successfulExecutions: 23,
+        failedExecutions: 1,
+        averageExecutionTime: 42.3,
+        averageMakespanImprovement: 15.2,
+        averageUtilizationImprovement: 8.7,
+        averageCostSavings: 11.4,
+        performanceTrend: "improving",
+        lastExecutionDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) // 2 days ago
+      },
+      {
+        algorithmName: "forward-scheduling",
+        totalExecutions: 18,
+        successfulExecutions: 17,
+        failedExecutions: 1,
+        averageExecutionTime: 35.8,
+        averageMakespanImprovement: 9.6,
+        averageUtilizationImprovement: 6.2,
+        averageCostSavings: 7.8,
+        performanceTrend: "stable",
+        lastExecutionDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) // 5 days ago
+      },
+      {
+        algorithmName: "genetic-algorithm",
+        totalExecutions: 12,
+        successfulExecutions: 11,
+        failedExecutions: 1,
+        averageExecutionTime: 156.7,
+        averageMakespanImprovement: 22.8,
+        averageUtilizationImprovement: 14.3,
+        averageCostSavings: 19.2,
+        performanceTrend: "improving",
+        lastExecutionDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // 7 days ago
+      },
+      {
+        algorithmName: "simulated-annealing",
+        totalExecutions: 8,
+        successfulExecutions: 6,
+        failedExecutions: 2,
+        averageExecutionTime: 89.4,
+        averageMakespanImprovement: 18.1,
+        averageUtilizationImprovement: 11.8,
+        averageCostSavings: 15.6,
+        performanceTrend: "declining",
+        lastExecutionDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000) // 10 days ago
+      }
+    ];
+
+    await db.insert(algorithmPerformance).values(algorithmPerformanceData);
+    console.log("Algorithm performance data seeded successfully");
+  }
+
   console.log("Database seeded successfully");
 }
