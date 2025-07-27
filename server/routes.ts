@@ -98,6 +98,79 @@ function requireAuth(req: any, res: any, next: any) {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Session middleware is configured in index.ts
 
+  // Create trial account endpoint
+  app.post("/api/auth/create-trial", async (req, res) => {
+    try {
+      const { email, companyName } = req.body;
+      
+      console.log("=== TRIAL ACCOUNT CREATION ===");
+      console.log("Email:", email, "Company:", companyName);
+      
+      if (!email || !companyName) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Email and company name are required" 
+        });
+      }
+
+      // Check if email already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ 
+          success: false,
+          message: "An account with this email already exists" 
+        });
+      }
+
+      // Generate trial credentials
+      const trialUsername = `trial_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+      const trialPassword = Math.random().toString(36).substring(2, 12);
+
+      // Create trial user using correct schema fields (createUser will hash the password)
+      const trialUser = await storage.createUser({
+        username: trialUsername,
+        email: email,
+        passwordHash: trialPassword, // createUser method will hash this
+        firstName: "Trial",
+        lastName: "User",
+        jobTitle: "Trial User",
+        department: companyName
+      });
+
+      // Create trial onboarding data
+      await storage.createCompanyOnboarding({
+        companyName: companyName,
+        industry: "trial",
+        size: "small",
+        primaryGoal: "trial-evaluation",
+        features: ["production-scheduling"],
+        completedSteps: ["welcome", "company", "features"],
+        currentStep: "completed",
+        teamMembers: 1,
+        isCompleted: true,
+        createdBy: trialUser.id
+      });
+
+      console.log("Trial account created successfully:", trialUsername);
+
+      res.json({
+        success: true,
+        message: "Trial account created successfully",
+        credentials: {
+          username: trialUsername,
+          password: trialPassword
+        }
+      });
+
+    } catch (error) {
+      console.error("Trial account creation error:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to create trial account" 
+      });
+    }
+  });
+
   // Demo login route for prospective users
   app.post("/api/auth/demo-login", async (req, res) => {
     try {

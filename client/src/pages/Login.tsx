@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Factory, Info, Eye, EyeOff, PlayCircle, DollarSign } from "lucide-react";
+import { Factory, Info, Eye, EyeOff, PlayCircle, DollarSign, Zap, Mail } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -16,6 +17,13 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
+
+  // Trial signup state
+  const [trialEmail, setTrialEmail] = useState("");
+  const [trialCompanyName, setTrialCompanyName] = useState("");
+  const [trialLoading, setTrialLoading] = useState(false);
+  const [trialError, setTrialError] = useState("");
+  const [trialSuccess, setTrialSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +57,44 @@ export default function Login() {
       setError(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTrialSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!trialEmail || !trialCompanyName) {
+      setTrialError("Please fill in all fields");
+      return;
+    }
+
+    setTrialError("");
+    setTrialLoading(true);
+
+    try {
+      // Create trial account
+      const response = await apiRequest('POST', '/api/auth/create-trial', {
+        email: trialEmail,
+        companyName: trialCompanyName
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setTrialSuccess(true);
+        // Auto-login with trial credentials
+        await login({ 
+          username: result.credentials.username, 
+          password: result.credentials.password 
+        });
+        setLocation("/");
+      } else {
+        setTrialError(result.message || "Failed to create trial account");
+      }
+    } catch (error: any) {
+      console.error("Trial signup error:", error);
+      setTrialError("Failed to create trial account. Please try again.");
+    } finally {
+      setTrialLoading(false);
     }
   };
 
@@ -223,6 +269,89 @@ export default function Login() {
                 {loading ? "Signing In..." : "Sign In"}
               </Button>
             </form>
+          </CardContent>
+        </Card>
+
+        {/* Free Trial Signup */}
+        <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-purple-700">
+              <Zap className="h-5 w-5" />
+              Start Your Free Trial
+            </CardTitle>
+            <CardDescription>
+              Get instant access to production scheduling with no setup required
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {trialSuccess ? (
+              <div className="text-center text-green-600">
+                <p className="font-medium">Trial account created successfully!</p>
+                <p className="text-sm">Logging you in...</p>
+              </div>
+            ) : (
+              <form onSubmit={handleTrialSignup} className="space-y-4">
+                {trialError && (
+                  <Alert>
+                    <AlertDescription className="text-red-600">
+                      {trialError}
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                <div>
+                  <label htmlFor="trial-email" className="block text-sm font-medium text-gray-700 mb-1">
+                    Email Address
+                  </label>
+                  <Input
+                    id="trial-email"
+                    type="email"
+                    value={trialEmail}
+                    onChange={(e) => setTrialEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    required
+                    disabled={trialLoading}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="trial-company" className="block text-sm font-medium text-gray-700 mb-1">
+                    Company Name
+                  </label>
+                  <Input
+                    id="trial-company"
+                    type="text"
+                    value={trialCompanyName}
+                    onChange={(e) => setTrialCompanyName(e.target.value)}
+                    placeholder="Enter company name"
+                    required
+                    disabled={trialLoading}
+                  />
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full bg-purple-600 hover:bg-purple-700" 
+                  disabled={trialLoading}
+                >
+                  {trialLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Creating Trial...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-4 w-4 mr-2" />
+                      Start Free Trial
+                    </>
+                  )}
+                </Button>
+                
+                <p className="text-xs text-gray-500 text-center">
+                  No credit card required • 14-day trial • Full access
+                </p>
+              </form>
+            )}
           </CardContent>
         </Card>
 
