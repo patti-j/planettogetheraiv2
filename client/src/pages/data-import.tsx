@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2 } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2 } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useMaxDock } from '@/contexts/MaxDockContext';
@@ -1220,7 +1220,18 @@ Focus on creating authentic, interconnected data that would be typical for ${com
           <CardContent>
             <div className="space-y-4">
               <div>
-                <h4 className="font-medium text-blue-800 mb-2">Selected Features:</h4>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium text-blue-800">Selected Features:</h4>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => window.location.href = '/onboarding'}
+                    className="h-auto p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-100"
+                    title="Edit feature selections in Getting Started"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {onboardingFeatures.map(feature => (
                     <Badge key={feature} variant="outline" className="border-blue-300 text-blue-700">

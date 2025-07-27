@@ -13,6 +13,14 @@
 - Toast notifications now show accurate generation statistics instead of always showing zero
 - Master Data Setup AI generation functionality fully restored and working as intended
 
+✓ **Master Data Setup Feature Selection Edit Link (July 27, 2025)**:
+- Added edit icon next to "Selected Features" section in Master Data Setup recommendation card
+- Edit icon provides direct navigation link to Getting Started page for feature modification
+- Blue color scheme matches recommendation card design with subtle hover effects
+- Tooltip explains functionality: "Edit feature selections in Getting Started"
+- Enhanced user workflow by allowing easy navigation between data setup and feature selection
+- Users can now modify their onboarding choices without using main menu navigation
+
 ✓ **Menu Pin Positioning Update - Bottom Right Corner Implementation (July 27, 2025)**:
 - Changed pin mechanism from dynamic hover top-right corner to permanent bottom-right corner placement
 - Updated pin button to always be visible with smaller size (4x4px) positioned at `bottom-1 right-1`
