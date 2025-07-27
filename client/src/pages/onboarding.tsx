@@ -234,6 +234,7 @@ export default function OnboardingPage() {
   // Map industry values to available templates
   const industryToTemplateMap = React.useMemo(() => {
     const map: Record<string, any[]> = {};
+    console.log('Building industry template map from:', industryTemplates);
     if (Array.isArray(industryTemplates)) {
       industryTemplates.forEach((template: any) => {
         const category = template.category || template.targetIndustry;
@@ -243,6 +244,7 @@ export default function OnboardingPage() {
         map[category].push(template);
       });
     }
+    console.log('Industry template map created:', map);
     return map;
   }, [industryTemplates]);
 
@@ -405,16 +407,23 @@ export default function OnboardingPage() {
 
   // Handle industry selection with template checking
   const handleIndustryChange = (value: string) => {
+    console.log('Industry changed to:', value);
     const newInfo = {...companyInfo, industry: value};
     saveCompanyInfo(newInfo);
     
     // Check if this industry has templates and show dialog
     const templatesForIndustry = industryToTemplateMap[value];
+    console.log('Templates for industry:', value, templatesForIndustry);
+    
     if (templatesForIndustry && templatesForIndustry.length > 0) {
+      console.log('Setting templates and opening dialog:', templatesForIndustry);
       setSelectedIndustryTemplates(templatesForIndustry);
       setTemplateDialogOpen(true);
+      console.log('Template dialog should be open now');
+    } else {
+      console.log('No templates found for industry:', value);
     }
-  };;
+  };
 
   const handleNextStep = async () => {
     setIsLoading(true);
@@ -1089,7 +1098,10 @@ export default function OnboardingPage() {
       </div>
 
       {/* Template Suggestion Dialog */}
-      <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
+      <Dialog open={templateDialogOpen} onOpenChange={(open) => {
+        console.log('Template dialog onOpenChange called with:', open);
+        setTemplateDialogOpen(open);
+      }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
