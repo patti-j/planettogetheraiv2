@@ -45,7 +45,6 @@ interface PricingTier {
     support: string;
     dataProcessing?: string;
     aiUsage?: string;
-    optimizationRuns?: string;
   };
   popular?: boolean;
   enterprise?: boolean;
@@ -222,7 +221,6 @@ export default function Pricing() {
         storage: "10GB",
         dataProcessing: "10,000 records/month",
         aiUsage: "500 AI requests/month",
-        optimizationRuns: "10 runs/month",
         support: "Email & Community"
       },
       icon: <Rocket className="w-6 h-6" />
@@ -256,7 +254,6 @@ export default function Pricing() {
         storage: "100GB",
         dataProcessing: "100,000 records/month",
         aiUsage: "5,000 AI requests/month",
-        optimizationRuns: "100 runs/month",
         support: "Phone, Email & Chat"
       },
       popular: true,
@@ -292,7 +289,6 @@ export default function Pricing() {
         storage: "Unlimited",
         dataProcessing: "1M+ records/month included",
         aiUsage: "50,000 AI requests/month",
-        optimizationRuns: "Unlimited",
         support: "24/7 Dedicated with SLA"
       },
       enterprise: true,
@@ -329,20 +325,7 @@ export default function Pricing() {
         "Custom AI model training and inference"
       ]
     },
-    {
-      id: "optimization",
-      name: "Optimization Computing",
-      description: "High-performance optimization algorithms for complex manufacturing scenarios",
-      baseIncluded: "Base tier optimization runs included",
-      overageRate: "$2.50 per additional optimization run",
-      icon: <Cpu className="w-6 h-6" />,
-      examples: [
-        "Complex multi-plant scheduling optimization",
-        "Advanced capacity planning algorithms",
-        "Large-scale inventory optimization",
-        "Custom optimization algorithm execution"
-      ]
-    },
+
     {
       id: "storage",
       name: "Additional Storage",
@@ -607,12 +590,7 @@ export default function Pricing() {
                         <div className="text-gray-600">{tier.limits.aiUsage}</div>
                       </div>
                     )}
-                    {tier.limits.optimizationRuns && (
-                      <div className="col-span-2">
-                        <span className="font-medium">Optimization Runs:</span>
-                        <div className="text-gray-600">{tier.limits.optimizationRuns}</div>
-                      </div>
-                    )}
+
                   </div>
 
                   <div className="border-t pt-4">
