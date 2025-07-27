@@ -69,6 +69,7 @@ import {
   optimizationAlgorithms, algorithmTests, algorithmDeployments, extensionData, optimizationScopeConfigs, optimizationRuns,
   type OptimizationAlgorithm, type AlgorithmTest, type AlgorithmDeployment, type ExtensionData, type OptimizationScopeConfig, type OptimizationRun,
   type InsertOptimizationAlgorithm, type InsertAlgorithmTest, type InsertAlgorithmDeployment, type InsertExtensionData, type InsertOptimizationScopeConfig, type InsertOptimizationRun,
+  userSecrets, type UserSecret, type InsertUserSecret,
   industryTemplates, userIndustryTemplates, templateConfigurations,
   type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
   type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration,
@@ -1242,6 +1243,15 @@ export interface IStorage {
   getVendorsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Vendor>>;
   getCustomersWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Customer>>;
   getStockItemsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<StockItem>>;
+  
+  // User Secrets Management
+  getUserSecrets(userId: string): Promise<UserSecret[]>;
+  getUserSecret(id: number): Promise<UserSecret | undefined>;
+  getUserSecretByKey(userId: string, key: string): Promise<UserSecret | undefined>;
+  createUserSecret(secret: InsertUserSecret): Promise<UserSecret>;
+  updateUserSecret(id: number, secret: Partial<InsertUserSecret>): Promise<UserSecret | undefined>;
+  deleteUserSecret(id: number): Promise<boolean>;
+  updateSecretLastUsed(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -9525,6 +9535,55 @@ export class DatabaseStorage implements IStorage {
 
   async getStockItemsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<StockItem>> {
     return this.getDataWithPagination<StockItem>('stock_items', request);
+  }
+
+  // User Secrets Management - for secure storage of API keys and sensitive data
+  async getUserSecrets(userId: string): Promise<UserSecret[]> {
+    return await db.select().from(userSecrets)
+      .where(eq(userSecrets.userId, userId))
+      .orderBy(userSecrets.category, userSecrets.name);
+  }
+
+  async getUserSecret(id: number): Promise<UserSecret | undefined> {
+    const [secret] = await db.select().from(userSecrets)
+      .where(eq(userSecrets.id, id));
+    return secret;
+  }
+
+  async getUserSecretByKey(userId: string, key: string): Promise<UserSecret | undefined> {
+    const [secret] = await db.select().from(userSecrets)
+      .where(and(eq(userSecrets.userId, userId), eq(userSecrets.key, key)));
+    return secret;
+  }
+
+  async createUserSecret(secret: InsertUserSecret): Promise<UserSecret> {
+    const [newSecret] = await db.insert(userSecrets)
+      .values(secret)
+      .returning();
+    return newSecret;
+  }
+
+  async updateUserSecret(id: number, secret: Partial<InsertUserSecret>): Promise<UserSecret | undefined> {
+    const [updatedSecret] = await db.update(userSecrets)
+      .set({ 
+        ...secret, 
+        updatedAt: new Date() 
+      })
+      .where(eq(userSecrets.id, id))
+      .returning();
+    return updatedSecret;
+  }
+
+  async deleteUserSecret(id: number): Promise<boolean> {
+    const result = await db.delete(userSecrets)
+      .where(eq(userSecrets.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async updateSecretLastUsed(id: number): Promise<void> {
+    await db.update(userSecrets)
+      .set({ lastUsed: new Date() })
+      .where(eq(userSecrets.id, id));
   }
 }
 

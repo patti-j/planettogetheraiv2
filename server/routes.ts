@@ -46,7 +46,8 @@ import {
   insertSchedulingHistorySchema, insertSchedulingResultSchema, insertAlgorithmPerformanceSchema,
   insertRecipeSchema, insertRecipePhaseSchema, insertRecipeFormulaSchema, insertRecipeEquipmentSchema,
   insertVendorSchema, insertCustomerSchema,
-  insertOptimizationScopeConfigSchema, insertOptimizationRunSchema
+  insertOptimizationScopeConfigSchema, insertOptimizationRunSchema,
+  insertUserSecretSchema
 } from "@shared/schema";
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -6271,6 +6272,120 @@ Return a JSON response with this structure:
     } catch (error) {
       console.error('Error fetching live data:', error);
       res.status(500).json({ error: 'Failed to fetch live data' });
+    }
+  });
+
+  // User Secrets Management API Routes
+  app.get('/api/user-secrets', requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      const secrets = await storage.getUserSecrets(userId);
+      
+      // Don't send the encrypted values to the frontend for security
+      const safeSecrets = secrets.map(secret => ({
+        ...secret,
+        encryptedValue: undefined // Remove the encrypted value
+      }));
+      
+      res.json(safeSecrets);
+    } catch (error) {
+      console.error('Error fetching user secrets:', error);
+      res.status(500).json({ error: 'Failed to fetch user secrets' });
+    }
+  });
+
+  app.post('/api/user-secrets', requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      const validation = insertUserSecretSchema.safeParse({
+        ...req.body,
+        userId
+      });
+      
+      if (!validation.success) {
+        return res.status(400).json({ 
+          error: 'Invalid secret data', 
+          details: validation.error.errors 
+        });
+      }
+
+      // Simple encryption for demonstration - in production use proper encryption
+      const encryptedValue = Buffer.from(validation.data.encryptedValue).toString('base64');
+      
+      const secret = await storage.createUserSecret({
+        ...validation.data,
+        encryptedValue
+      });
+      
+      // Don't return the encrypted value
+      const safeSecret = { ...secret, encryptedValue: undefined };
+      res.status(201).json(safeSecret);
+    } catch (error) {
+      console.error('Error creating user secret:', error);
+      res.status(500).json({ error: 'Failed to create user secret' });
+    }
+  });
+
+  app.put('/api/user-secrets/:id', requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.session.userId;
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: 'Invalid secret ID' });
+      }
+
+      // Verify the secret belongs to the user
+      const existingSecret = await storage.getUserSecret(id);
+      if (!existingSecret || existingSecret.userId !== userId) {
+        return res.status(404).json({ error: 'Secret not found' });
+      }
+
+      const updateData = { ...req.body };
+      
+      // If updating the value, encrypt it
+      if (updateData.encryptedValue) {
+        updateData.encryptedValue = Buffer.from(updateData.encryptedValue).toString('base64');
+      }
+      
+      const updatedSecret = await storage.updateUserSecret(id, updateData);
+      if (!updatedSecret) {
+        return res.status(404).json({ error: 'Secret not found' });
+      }
+      
+      // Don't return the encrypted value
+      const safeSecret = { ...updatedSecret, encryptedValue: undefined };
+      res.json(safeSecret);
+    } catch (error) {
+      console.error('Error updating user secret:', error);
+      res.status(500).json({ error: 'Failed to update user secret' });
+    }
+  });
+
+  app.delete('/api/user-secrets/:id', requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.session.userId;
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: 'Invalid secret ID' });
+      }
+
+      // Verify the secret belongs to the user
+      const existingSecret = await storage.getUserSecret(id);
+      if (!existingSecret || existingSecret.userId !== userId) {
+        return res.status(404).json({ error: 'Secret not found' });
+      }
+
+      const success = await storage.deleteUserSecret(id);
+      if (!success) {
+        return res.status(404).json({ error: 'Secret not found' });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting user secret:', error);
+      res.status(500).json({ error: 'Failed to delete user secret' });
     }
   });
 

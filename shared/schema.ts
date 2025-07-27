@@ -6372,3 +6372,30 @@ export type InsertRoutingOperation = z.infer<typeof insertRoutingOperationSchema
 export type Forecast = typeof forecasts.$inferSelect;
 export type InsertForecast = z.infer<typeof insertForecastSchema>;
 
+// User Secrets Management - for storing API keys and sensitive connection data
+export const userSecrets = pgTable("user_secrets", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(), // Display name for the secret (e.g., "OpenAI API Key", "AWS Access Key")
+  key: text("key").notNull(), // The actual key identifier (e.g., "OPENAI_API_KEY", "AWS_ACCESS_KEY_ID")
+  encryptedValue: text("encrypted_value").notNull(), // Encrypted secret value
+  description: text("description"), // Optional description of what this secret is used for
+  category: text("category").notNull().default("api_key"), // api_key, database, integration, other
+  isActive: boolean("is_active").default(true),
+  lastUsed: timestamp("last_used"),
+  expiresAt: timestamp("expires_at"), // Optional expiration date
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  userKeyUnique: unique().on(table.userId, table.key), // Ensure unique key per user
+}));
+
+export const insertUserSecretSchema = createInsertSchema(userSecrets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type UserSecret = typeof userSecrets.$inferSelect;
+export type InsertUserSecret = z.infer<typeof insertUserSecretSchema>;
+

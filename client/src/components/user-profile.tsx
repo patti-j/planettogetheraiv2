@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Camera, User, Settings, Bell, Palette, Clock, Save, Upload, X, CreditCard, FileText } from "lucide-react";
+import { Camera, User, Settings, Bell, Palette, Clock, Save, Upload, X, CreditCard, FileText, Key, Plus, Trash2, Eye, EyeOff, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
@@ -51,6 +51,431 @@ interface UserPreferences {
     defaultPage: string;
     widgetPreferences: Record<string, any>;
   };
+}
+
+interface UserSecret {
+  id: number;
+  userId: string;
+  name: string;
+  key: string;
+  description?: string;
+  category: string;
+  isActive: boolean;
+  lastUsed?: string;
+  expiresAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Secrets Management Tab Component
+function SecretsManagementTab() {
+  const [isCreating, setIsCreating] = useState(false);
+  const [editingSecret, setEditingSecret] = useState<UserSecret | null>(null);
+  const [showValue, setShowValue] = useState<Record<number, boolean>>({});
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch user secrets
+  const { data: secrets = [], isLoading: secretsLoading } = useQuery({
+    queryKey: ['/api/user-secrets'],
+  });
+
+  // Create secret mutation
+  const createSecretMutation = useMutation({
+    mutationFn: async (data: { name: string; key: string; description?: string; category: string; encryptedValue: string }) => {
+      return apiRequest('/api/user-secrets', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/user-secrets'] });
+      setIsCreating(false);
+      toast({
+        title: "Success",
+        description: "Secret key created successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create secret key",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update secret mutation
+  const updateSecretMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<UserSecret> }) => {
+      return apiRequest(`/api/user-secrets/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/user-secrets'] });
+      setEditingSecret(null);
+      toast({
+        title: "Success",
+        description: "Secret key updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update secret key",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete secret mutation
+  const deleteSecretMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest(`/api/user-secrets/${id}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/user-secrets'] });
+      toast({
+        title: "Success",
+        description: "Secret key deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete secret key",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateSecret = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    
+    createSecretMutation.mutate({
+      name: formData.get('name') as string,
+      key: formData.get('key') as string,
+      description: formData.get('description') as string,
+      category: formData.get('category') as string,
+      encryptedValue: formData.get('value') as string,
+    });
+  };
+
+  const handleUpdateSecret = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editingSecret) return;
+    
+    const formData = new FormData(event.currentTarget);
+    const value = formData.get('value') as string;
+    
+    const updateData: Partial<UserSecret> = {
+      name: formData.get('name') as string,
+      key: formData.get('key') as string,
+      description: formData.get('description') as string,
+      category: formData.get('category') as string,
+    };
+
+    if (value) {
+      updateData.encryptedValue = value;
+    }
+    
+    updateSecretMutation.mutate({
+      id: editingSecret.id,
+      data: updateData,
+    });
+  };
+
+  const toggleShowValue = (secretId: number) => {
+    setShowValue(prev => ({
+      ...prev,
+      [secretId]: !prev[secretId]
+    }));
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Shield className="h-5 w-5" />
+          API Keys & Secrets Management
+        </CardTitle>
+        <CardDescription>
+          Securely store and manage API keys, tokens, and other sensitive connection data
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Add New Secret Button */}
+        {!isCreating && !editingSecret && (
+          <Button 
+            onClick={() => setIsCreating(true)}
+            className="w-full sm:w-auto"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add New Secret
+          </Button>
+        )}
+
+        {/* Create Secret Form */}
+        {isCreating && (
+          <Card className="border-2 border-blue-200">
+            <CardHeader>
+              <CardTitle className="text-lg">Create New Secret</CardTitle>
+              <CardDescription>
+                Add a new API key or secret to your secure vault
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreateSecret} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="create-name">Name *</Label>
+                    <Input
+                      id="create-name"
+                      name="name"
+                      placeholder="e.g., OpenAI API Key"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="create-key">Key Identifier *</Label>
+                    <Input
+                      id="create-key"
+                      name="key"
+                      placeholder="e.g., OPENAI_API_KEY"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="create-category">Category *</Label>
+                  <Select name="category" required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ai">AI Services</SelectItem>
+                      <SelectItem value="database">Database</SelectItem>
+                      <SelectItem value="payment">Payment Processing</SelectItem>
+                      <SelectItem value="messaging">Messaging</SelectItem>
+                      <SelectItem value="storage">Cloud Storage</SelectItem>
+                      <SelectItem value="analytics">Analytics</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="create-value">Secret Value *</Label>
+                  <Input
+                    id="create-value"
+                    name="value"
+                    type="password"
+                    placeholder="Enter the secret value"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="create-description">Description</Label>
+                  <Textarea
+                    id="create-description"
+                    name="description"
+                    placeholder="Optional description of this secret's purpose"
+                    rows={2}
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button 
+                    type="submit" 
+                    disabled={createSecretMutation.isPending}
+                  >
+                    {createSecretMutation.isPending ? 'Creating...' : 'Create Secret'}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsCreating(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Edit Secret Form */}
+        {editingSecret && (
+          <Card className="border-2 border-amber-200">
+            <CardHeader>
+              <CardTitle className="text-lg">Edit Secret</CardTitle>
+              <CardDescription>
+                Update your secret information
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleUpdateSecret} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-name">Name *</Label>
+                    <Input
+                      id="edit-name"
+                      name="name"
+                      defaultValue={editingSecret.name}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-key">Key Identifier *</Label>
+                    <Input
+                      id="edit-key"
+                      name="key"
+                      defaultValue={editingSecret.key}
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-category">Category *</Label>
+                  <Select name="category" defaultValue={editingSecret.category}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ai">AI Services</SelectItem>
+                      <SelectItem value="database">Database</SelectItem>
+                      <SelectItem value="payment">Payment Processing</SelectItem>
+                      <SelectItem value="messaging">Messaging</SelectItem>
+                      <SelectItem value="storage">Cloud Storage</SelectItem>
+                      <SelectItem value="analytics">Analytics</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-value">New Secret Value (leave empty to keep current)</Label>
+                  <Input
+                    id="edit-value"
+                    name="value"
+                    type="password"
+                    placeholder="Enter new value or leave empty to keep current"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-description">Description</Label>
+                  <Textarea
+                    id="edit-description"
+                    name="description"
+                    defaultValue={editingSecret.description || ''}
+                    rows={2}
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button 
+                    type="submit" 
+                    disabled={updateSecretMutation.isPending}
+                  >
+                    {updateSecretMutation.isPending ? 'Updating...' : 'Update Secret'}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setEditingSecret(null)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Secrets List */}
+        {secretsLoading ? (
+          <div className="space-y-4">
+            <div className="h-16 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-16 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-16 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+        ) : secrets.length === 0 ? (
+          <div className="text-center py-8">
+            <Key className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+            <p className="text-gray-500">No secrets stored yet</p>
+            <p className="text-sm text-gray-400">Add your first API key or secret to get started</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {secrets.map((secret: UserSecret) => (
+              <Card key={secret.id} className="border border-gray-200">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="font-medium">{secret.name}</h4>
+                        <Badge variant="outline" className="text-xs">
+                          {secret.category}
+                        </Badge>
+                        <Badge 
+                          variant={secret.isActive ? "default" : "secondary"}
+                          className="text-xs"
+                        >
+                          {secret.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">
+                        Key: <code className="bg-gray-100 px-1 rounded text-xs">{secret.key}</code>
+                      </p>
+                      {secret.description && (
+                        <p className="text-sm text-gray-500 mb-2">{secret.description}</p>
+                      )}
+                      <div className="text-xs text-gray-400">
+                        Created: {new Date(secret.createdAt).toLocaleDateString()}
+                        {secret.lastUsed && (
+                          <span className="ml-4">
+                            Last used: {new Date(secret.lastUsed).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 ml-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingSecret(secret)}
+                        disabled={isCreating || editingSecret !== null}
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => deleteSecretMutation.mutate(secret.id)}
+                        disabled={deleteSecretMutation.isPending}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 interface UserProfileDialogProps {
@@ -199,6 +624,10 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
                 <Bell className="h-4 w-4" />
                 Alerts
               </TabsTrigger>
+              <TabsTrigger value="secrets" className="flex items-center gap-1 text-xs flex-shrink-0 px-3 py-2">
+                <Key className="h-4 w-4" />
+                Keys
+              </TabsTrigger>
               <TabsTrigger value="account" className="flex items-center gap-1 text-xs flex-shrink-0 px-3 py-2">
                 <CreditCard className="h-4 w-4" />
                 Account
@@ -208,7 +637,7 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
           
           {/* Desktop: Grid layout */}
           <div className="hidden sm:block">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="profile" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
                 Profile
@@ -220,6 +649,10 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
               <TabsTrigger value="notifications" className="flex items-center gap-2">
                 <Bell className="h-4 w-4" />
                 Notifications
+              </TabsTrigger>
+              <TabsTrigger value="secrets" className="flex items-center gap-2">
+                <Key className="h-4 w-4" />
+                API Keys & Secrets
               </TabsTrigger>
               <TabsTrigger value="account" className="flex items-center gap-2">
                 <CreditCard className="h-4 w-4" />
@@ -782,6 +1215,11 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Secrets Management Tab */}
+          <TabsContent value="secrets" className="space-y-6">
+            <SecretsManagementTab />
           </TabsContent>
         </Tabs>
       </DialogContent>
