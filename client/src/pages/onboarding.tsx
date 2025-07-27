@@ -340,11 +340,23 @@ export default function OnboardingPage() {
       }
 
       if (currentStep === 1 && selectedFeatures.length > 0) {
-        // Save selected features locally for now to avoid API issues
+        // Save selected features to main onboarding record
         console.log('Selected features for step 1:', selectedFeatures);
-        // Optional: Save to backend if onboarding exists
         try {
           if (existingOnboarding?.id) {
+            // Update the main onboarding record with selected features
+            await fetch(`/api/onboarding/company/${existingOnboarding.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                selectedFeatures: selectedFeatures,
+                currentStep: 'features-selected'
+              })
+            });
+            
+            // Also save to progress table
             await updateProgressMutation.mutateAsync({
               step: 'feature-selection',
               data: { selectedFeatures }
