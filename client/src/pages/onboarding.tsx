@@ -208,7 +208,17 @@ export default function OnboardingPage() {
 
   const updateProgressMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest('POST', '/api/onboarding/progress', data);
+      // First get the onboarding to get the company onboarding ID
+      const userId = user?.id;
+      if (!userId) throw new Error("User not authenticated");
+      
+      const response = await apiRequest('POST', '/api/onboarding/progress', {
+        userId,
+        companyOnboardingId: existingOnboarding?.id || 1, // Use existing or fallback
+        step: data.step,
+        status: 'completed',
+        data: data.data || {}
+      });
       return response.json();
     },
     onSuccess: () => {

@@ -14573,6 +14573,62 @@ Response must be valid JSON:
   }));
 
   // Onboarding Management Routes
+  app.get("/api/onboarding/status", requireAuth, createSafeHandler(async (req, res) => {
+    const userId = req.user!.id;
+    
+    try {
+      const onboarding = await storage.getCompanyOnboarding(userId);
+      if (!onboarding) {
+        res.json({ isCompleted: false, teamMembers: 0 });
+        return;
+      }
+      
+      // Get team members count
+      const teamMembers = await storage.getTeamOnboardingStatus(onboarding.id);
+      
+      res.json({
+        id: onboarding.id,
+        isCompleted: onboarding.currentStep === 'completed',
+        teamMembers: teamMembers?.totalMembers || 0,
+        currentStep: onboarding.currentStep,
+        companyName: onboarding.companyName,
+        industry: onboarding.industry
+      });
+    } catch (error) {
+      console.error('Error getting onboarding status:', error);
+      res.json({ isCompleted: false, teamMembers: 0 });
+    }
+  }));
+
+  app.post("/api/onboarding/initialize", requireAuth, createSafeHandler(async (req, res) => {
+    const { companyName, industry, size, description } = req.body;
+    
+    if (!companyName || !industry) {
+      throw new ValidationError("Company name and industry are required");
+    }
+
+    const onboardingData = {
+      companyName,
+      industry,
+      size: size || 'medium',
+      primaryGoal: 'improve-efficiency', // default goal
+      features: [], // will be set in next step
+      completedSteps: [],
+      currentStep: 'company-info',
+      createdBy: req.user!.id,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    try {
+      const onboarding = await storage.createCompanyOnboarding(onboardingData);
+      res.status(201).json(onboarding);
+    } catch (error) {
+      console.error('Error creating onboarding:', error);
+      throw new DatabaseError("Failed to initialize onboarding");
+    }
+  }));
+
   app.get("/api/onboarding/company/:userId", requireAuth, createSafeHandler(async (req, res) => {
     const userId = parseInt(req.params.userId);
     if (isNaN(userId)) {
