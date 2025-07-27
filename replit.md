@@ -9,6 +9,7 @@
 - Renamed "Production Planning" to "Production Plan Optimization" in onboarding feature list
 - Renamed "Demand Planning" to "Demand Plan Optimization" in pricing page
 - Renamed "Inventory Optimization AI" to "Inventory Planning AI" in professional tier features
+- Removed "White-Label Platform Options" feature from enterprise tier pricing
 - Updated module naming convention to consistently use "optimization" terminology for all functional modules
 - Enhanced clarity by emphasizing the optimization-focused nature of advanced manufacturing capabilities
 - Module IDs remain unchanged to preserve existing data and functionality while updating display names

@@ -439,7 +439,6 @@ export default function Pricing() {
         { name: "Interactive Guided Tours", starter: false, professional: true, enterprise: true },
         { name: "Training System with Voice", starter: false, professional: true, enterprise: true },
         { name: "Extension Studio & Customizations", starter: false, professional: true, enterprise: true },
-        { name: "White-Label Platform Options", starter: false, professional: false, enterprise: true },
         { name: "Custom Training & Onboarding", starter: false, professional: false, enterprise: true }
       ]
     },
