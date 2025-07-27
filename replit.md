@@ -2,6 +2,16 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Industry Template Data Volume Integration & Enhanced AI Prompting (July 27, 2025)**:
+- Enhanced industry template schema to include dataVolumes configuration for all company sizes (small, medium, large, enterprise)
+- Updated AI generation system to fetch industry-specific data volumes from templates instead of hardcoded configurations
+- Added fallback mechanism when industry templates are not available, using existing hardcoded configurations
+- Improved AI prompting with psychological validation framing: "PASS/FAIL criteria", "automatic validation", "enterprise-scale requirements"
+- Added concrete examples in prompts with specific naming patterns and target ranges for better AI compliance
+- Enhanced pharmaceutical enterprise scaling with debug logging and explicit mathematical calculations
+- System now prioritizes industry template data volumes for more consistent and configurable AI generation
+- AI prompts include accountability measures and professional validation context to improve generation quality
+
 ✓ **Critical AI Generation Scaling Fix for Enterprise Pharmaceutical Manufacturing (July 27, 2025)**:
 - Fixed fundamental scaling issue where AI generation was only creating 22 records instead of expected 325-500+ records for pharmaceutical enterprise operations
 - Added missing "enterprise" configuration tier to pharmaceutical industry with proper high-volume scaling: 80-120 orders per plant, 20-30 resources per plant, 8-12 operations per order

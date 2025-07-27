@@ -490,47 +490,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Industry-specific sample size configurations
-      const getIndustryTypicalSizes = (industry: string) => {
-        const industryLower = industry.toLowerCase();
-        
-        // Base configurations by industry - Per Plant Scaling
-        if (industryLower.includes('automotive') || industryLower.includes('auto')) {
-          return {
-            small: { plants: { min: 1, max: 2 }, resourcesPerPlant: { min: 4, max: 6 }, capabilities: { min: 6, max: 10 }, ordersPerPlant: { min: 8, max: 12 }, operationsPerOrder: { min: 2, max: 4 } },
-            medium: { plants: { min: 2, max: 4 }, resourcesPerPlant: { min: 5, max: 9 }, capabilities: { min: 12, max: 18 }, ordersPerPlant: { min: 10, max: 18 }, operationsPerOrder: { min: 3, max: 6 } },
-            large: { plants: { min: 4, max: 8 }, resourcesPerPlant: { min: 6, max: 10 }, capabilities: { min: 20, max: 30 }, ordersPerPlant: { min: 12, max: 19 }, operationsPerOrder: { min: 4, max: 8 } }
-          };
-        } else if (industryLower.includes('pharmaceutical') || industryLower.includes('pharma')) {
-          return {
-            small: { plants: { min: 1, max: 2 }, resourcesPerPlant: { min: 8, max: 12 }, capabilities: { min: 15, max: 20 }, ordersPerPlant: { min: 25, max: 40 }, operationsPerOrder: { min: 4, max: 7 } },
-            medium: { plants: { min: 2, max: 4 }, resourcesPerPlant: { min: 12, max: 18 }, capabilities: { min: 25, max: 35 }, ordersPerPlant: { min: 40, max: 65 }, operationsPerOrder: { min: 5, max: 8 } },
-            large: { plants: { min: 4, max: 8 }, resourcesPerPlant: { min: 18, max: 25 }, capabilities: { min: 40, max: 60 }, ordersPerPlant: { min: 65, max: 100 }, operationsPerOrder: { min: 6, max: 10 } },
-            enterprise: { plants: { min: 5, max: 15 }, resourcesPerPlant: { min: 20, max: 30 }, capabilities: { min: 50, max: 80 }, ordersPerPlant: { min: 80, max: 120 }, operationsPerOrder: { min: 8, max: 12 } }
-          };
-        } else if (industryLower.includes('electronics') || industryLower.includes('semiconductor')) {
-          return {
-            small: { plants: { min: 1, max: 2 }, resourcesPerPlant: { min: 5, max: 8 }, capabilities: { min: 8, max: 12 }, ordersPerPlant: { min: 12, max: 20 }, operationsPerOrder: { min: 2, max: 4 } },
-            medium: { plants: { min: 2, max: 4 }, resourcesPerPlant: { min: 6, max: 10 }, capabilities: { min: 15, max: 22 }, ordersPerPlant: { min: 15, max: 25 }, operationsPerOrder: { min: 3, max: 6 } },
-            large: { plants: { min: 4, max: 7 }, resourcesPerPlant: { min: 9, max: 14 }, capabilities: { min: 25, max: 35 }, ordersPerPlant: { min: 21, max: 36 }, operationsPerOrder: { min: 4, max: 8 } }
-          };
-        } else if (industryLower.includes('food') || industryLower.includes('beverage')) {
-          return {
-            small: { plants: { min: 1, max: 2 }, resourcesPerPlant: { min: 2, max: 4 }, capabilities: { min: 5, max: 8 }, ordersPerPlant: { min: 10, max: 18 }, operationsPerOrder: { min: 2, max: 4 } },
-            medium: { plants: { min: 2, max: 4 }, resourcesPerPlant: { min: 3, max: 5 }, capabilities: { min: 10, max: 15 }, ordersPerPlant: { min: 12, max: 20 }, operationsPerOrder: { min: 3, max: 6 } },
-            large: { plants: { min: 3, max: 6 }, resourcesPerPlant: { min: 5, max: 8 }, capabilities: { min: 18, max: 25 }, ordersPerPlant: { min: 20, max: 30 }, operationsPerOrder: { min: 4, max: 8 } }
-          };
-        } else {
-          // Generic manufacturing defaults
-          return {
-            small: { plants: { min: 1, max: 2 }, resourcesPerPlant: { min: 2, max: 3 }, capabilities: { min: 3, max: 5 }, ordersPerPlant: { min: 3, max: 5 }, operationsPerOrder: { min: 2, max: 4 } },
-            medium: { plants: { min: 3, max: 5 }, resourcesPerPlant: { min: 2, max: 3 }, capabilities: { min: 5, max: 8 }, ordersPerPlant: { min: 4, max: 6 }, operationsPerOrder: { min: 3, max: 5 } },
-            large: { plants: { min: 5, max: 10 }, resourcesPerPlant: { min: 2, max: 4 }, capabilities: { min: 8, max: 15 }, ordersPerPlant: { min: 3, max: 5 }, operationsPerOrder: { min: 3, max: 5 } }
-          };
+      // Fetch industry template data volumes if available
+      let industryConfig = null;
+      try {
+        const industryTemplates = await storage.getIndustryTemplatesByCategory(companyInfo.industry || 'manufacturing');
+        if (industryTemplates.length > 0) {
+          const template = industryTemplates[0]; // Use first matching template
+          if (template.configuration?.dataVolumes) {
+            industryConfig = template.configuration.dataVolumes;
+            console.log(`🏭 Using industry template data volumes for ${companyInfo.industry}:`, industryConfig);
+          }
         }
-      };
+      } catch (error) {
+        console.log('Could not fetch industry template, using fallback configurations');
+      }
 
-      const industryConfig = getIndustryTypicalSizes(companyInfo.industry || 'General Manufacturing');
+      // Fallback configurations if no industry template found
+      if (!industryConfig) {
+        const getIndustryTypicalSizes = (industry: string) => {
+          const industryLower = industry.toLowerCase();
+          
+          // Base configurations by industry - Per Plant Scaling
+          if (industryLower.includes('automotive') || industryLower.includes('auto')) {
+            return {
+              small: { plants: { min: 1, max: 2 }, resourcesPerPlant: { min: 4, max: 6 }, capabilities: { min: 6, max: 10 }, ordersPerPlant: { min: 8, max: 12 }, operationsPerOrder: { min: 2, max: 4 } },
+              medium: { plants: { min: 2, max: 4 }, resourcesPerPlant: { min: 5, max: 9 }, capabilities: { min: 12, max: 18 }, ordersPerPlant: { min: 10, max: 18 }, operationsPerOrder: { min: 3, max: 6 } },
+              large: { plants: { min: 4, max: 8 }, resourcesPerPlant: { min: 6, max: 10 }, capabilities: { min: 20, max: 30 }, ordersPerPlant: { min: 12, max: 19 }, operationsPerOrder: { min: 4, max: 8 } }
+            };
+          } else if (industryLower.includes('pharmaceutical') || industryLower.includes('pharma')) {
+            return {
+              small: { plants: { min: 1, max: 2 }, resourcesPerPlant: { min: 8, max: 12 }, capabilities: { min: 15, max: 20 }, ordersPerPlant: { min: 25, max: 40 }, operationsPerOrder: { min: 4, max: 7 } },
+              medium: { plants: { min: 2, max: 4 }, resourcesPerPlant: { min: 12, max: 18 }, capabilities: { min: 25, max: 35 }, ordersPerPlant: { min: 40, max: 65 }, operationsPerOrder: { min: 5, max: 8 } },
+              large: { plants: { min: 4, max: 8 }, resourcesPerPlant: { min: 18, max: 25 }, capabilities: { min: 40, max: 60 }, ordersPerPlant: { min: 65, max: 100 }, operationsPerOrder: { min: 6, max: 10 } },
+              enterprise: { plants: { min: 5, max: 15 }, resourcesPerPlant: { min: 20, max: 30 }, capabilities: { min: 50, max: 80 }, ordersPerPlant: { min: 80, max: 120 }, operationsPerOrder: { min: 8, max: 12 } }
+            };
+          } else if (industryLower.includes('electronics') || industryLower.includes('semiconductor')) {
+            return {
+              small: { plants: { min: 1, max: 2 }, resourcesPerPlant: { min: 5, max: 8 }, capabilities: { min: 8, max: 12 }, ordersPerPlant: { min: 12, max: 20 }, operationsPerOrder: { min: 2, max: 4 } },
+              medium: { plants: { min: 2, max: 4 }, resourcesPerPlant: { min: 6, max: 10 }, capabilities: { min: 15, max: 22 }, ordersPerPlant: { min: 15, max: 25 }, operationsPerOrder: { min: 3, max: 6 } },
+              large: { plants: { min: 4, max: 7 }, resourcesPerPlant: { min: 9, max: 14 }, capabilities: { min: 25, max: 35 }, ordersPerPlant: { min: 21, max: 36 }, operationsPerOrder: { min: 4, max: 8 } }
+            };
+          } else if (industryLower.includes('food') || industryLower.includes('beverage')) {
+            return {
+              small: { plants: { min: 1, max: 2 }, resourcesPerPlant: { min: 2, max: 4 }, capabilities: { min: 5, max: 8 }, ordersPerPlant: { min: 10, max: 18 }, operationsPerOrder: { min: 2, max: 4 } },
+              medium: { plants: { min: 2, max: 4 }, resourcesPerPlant: { min: 3, max: 5 }, capabilities: { min: 10, max: 15 }, ordersPerPlant: { min: 12, max: 20 }, operationsPerOrder: { min: 3, max: 6 } },
+              large: { plants: { min: 3, max: 6 }, resourcesPerPlant: { min: 5, max: 8 }, capabilities: { min: 18, max: 25 }, ordersPerPlant: { min: 20, max: 30 }, operationsPerOrder: { min: 4, max: 8 } }
+            };
+          } else {
+            // Generic manufacturing defaults
+            return {
+              small: { plants: { min: 1, max: 2 }, resourcesPerPlant: { min: 2, max: 3 }, capabilities: { min: 3, max: 5 }, ordersPerPlant: { min: 3, max: 5 }, operationsPerOrder: { min: 2, max: 4 } },
+              medium: { plants: { min: 3, max: 5 }, resourcesPerPlant: { min: 2, max: 3 }, capabilities: { min: 5, max: 8 }, ordersPerPlant: { min: 4, max: 6 }, operationsPerOrder: { min: 3, max: 5 } },
+              large: { plants: { min: 5, max: 10 }, resourcesPerPlant: { min: 2, max: 4 }, capabilities: { min: 8, max: 15 }, ordersPerPlant: { min: 3, max: 5 }, operationsPerOrder: { min: 3, max: 5 } }
+            };
+          }
+        };
+
+        industryConfig = getIndustryTypicalSizes(companyInfo.industry || 'General Manufacturing');
+      }
       
       // Use company size if available, otherwise use sampleSize
       const configSize = (companyInfo.size && industryConfig[companyInfo.size as keyof typeof industryConfig]) 

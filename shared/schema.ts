@@ -4945,6 +4945,38 @@ export const industryTemplates = pgTable("industry_templates", {
   targetIndustry: text("target_industry").notNull(),
   companySize: text("company_size").notNull().default("medium"), // small, medium, large, enterprise
   configuration: jsonb("configurations").$type<{
+    // Data volume configurations by company size
+    dataVolumes?: {
+      small?: {
+        plants: { min: number; max: number };
+        resourcesPerPlant: { min: number; max: number };
+        capabilities: { min: number; max: number };
+        ordersPerPlant: { min: number; max: number };
+        operationsPerOrder: { min: number; max: number };
+      };
+      medium?: {
+        plants: { min: number; max: number };
+        resourcesPerPlant: { min: number; max: number };
+        capabilities: { min: number; max: number };
+        ordersPerPlant: { min: number; max: number };
+        operationsPerOrder: { min: number; max: number };
+      };
+      large?: {
+        plants: { min: number; max: number };
+        resourcesPerPlant: { min: number; max: number };
+        capabilities: { min: number; max: number };
+        ordersPerPlant: { min: number; max: number };
+        operationsPerOrder: { min: number; max: number };
+      };
+      enterprise?: {
+        plants: { min: number; max: number };
+        resourcesPerPlant: { min: number; max: number };
+        capabilities: { min: number; max: number };
+        ordersPerPlant: { min: number; max: number };
+        operationsPerOrder: { min: number; max: number };
+      };
+    };
+    
     // Dashboard configurations
     dashboards?: Array<{
       name: string;
