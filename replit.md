@@ -2,6 +2,15 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Getting Started Menu Restructuring & Route Cleanup (July 27, 2025)**:
+- Removed standalone "Getting Started" menu item and page from Training & Support section
+- Renamed onboarding page to "Getting Started" to consolidate duplicate functionality
+- Updated menu structure to have single "Getting Started" entry pointing to /onboarding route
+- Removed /help route and help.tsx page file to eliminate duplicate getting started functionality
+- Updated NavigationContext to properly map /onboarding to "Getting Started" label
+- Streamlined user experience by consolidating onboarding and getting started into single comprehensive wizard
+- Menu organization now cleaner with no redundant getting started options
+
 ✓ **Onboarding Data Requirements Consistency Fix (July 27, 2025)**:
 - Fixed inconsistency between onboarding feature requirements and actual Master Data Setup requirements
 - Updated production scheduling data requirements to include all necessary components: Production Orders, Resources, Operations, Plants, Capabilities

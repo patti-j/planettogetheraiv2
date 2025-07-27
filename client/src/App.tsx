@@ -45,7 +45,7 @@ import BusinessGoals from "@/pages/business-goals";
 import RoleManagement from "@/pages/role-management";
 import UserRoleAssignments from "@/pages/user-role-assignments";
 import Training from "@/pages/training";
-import HelpAndGuide from "@/pages/help";
+
 import DemoTour from "@/pages/demo-tour";
 import DisruptionManagement from "@/pages/disruption-management";
 import Chat from "@/pages/chat";
@@ -313,11 +313,7 @@ function Router() {
               <Chat />
             </ProtectedRoute>
           </Route>
-          <Route path="/help">
-            <ProtectedRoute feature="getting-started" action="view">
-              <HelpAndGuide />
-            </ProtectedRoute>
-          </Route>
+
           <Route path="/system-integrations">
             <ProtectedRoute feature="system-integrations" action="view">
               <SystemIntegrationsPage />

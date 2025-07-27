@@ -93,8 +93,7 @@ const featureGroups = [
     title: "Training & Support",
     priority: "low", 
     features: [
-      { icon: UserCheck, label: "Onboarding", href: "/onboarding", feature: "", action: "", color: "bg-emerald-500" },
-      { icon: BookOpen, label: "Getting Started", href: "/help", feature: "", action: "", color: "bg-lime-500" },
+      { icon: BookOpen, label: "Getting Started", href: "/onboarding", feature: "", action: "", color: "bg-emerald-500" },
       { icon: GraduationCap, label: "Training", href: "/training", feature: "", action: "", color: "bg-blue-500" },
       { icon: Presentation, label: "Presentation System", href: "/presentation-system", feature: "", action: "", color: "bg-purple-600" }
     ]

@@ -50,10 +50,9 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/visual-factory': { label: 'Visual Factory', icon: 'Eye' },
   '/chat': { label: 'Chat', icon: 'MessageSquare' },
   '/feedback': { label: 'Feedback', icon: 'MessageCircle' },
-  '/getting-started': { label: 'Getting Started', icon: 'BookOpen' },
+  '/onboarding': { label: 'Getting Started', icon: 'BookOpen' },
   '/training': { label: 'Training', icon: 'GraduationCap' },
   '/presentation-system': { label: 'Presentation System', icon: 'Presentation' },
-  '/onboarding': { label: 'Onboarding', icon: 'UserCheck' },
   '/data-import': { label: 'Master Data Setup', icon: 'Database' },
   '/billing': { label: 'Billing & Usage', icon: 'CreditCard' },
   '/account': { label: 'Account Settings', icon: 'Settings' }
