@@ -172,7 +172,7 @@ export default function Pricing() {
     } else {
       // Add module and ensure required modules are also selected
       const requiredModules = module.requiredModules || [];
-      const newModules = [...new Set([...selectedModules, ...requiredModules, moduleId])];
+      const newModules = Array.from(new Set([...selectedModules, ...requiredModules, moduleId]));
       setSelectedModules(newModules);
     }
   };
