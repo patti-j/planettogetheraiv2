@@ -1955,6 +1955,7 @@ Focus on creating authentic, interconnected data that would be typical for ${com
                 onChange={(e) => setAiPrompt(e.target.value)}
                 placeholder="Describe what kind of sample data you want to generate..."
                 className="min-h-[200px] text-sm"
+                autoFocus={false}
               />
               <p className="text-xs text-muted-foreground">
                 Edit the prompt above to customize the AI-generated sample data. The prompt includes your company information and selected data types.

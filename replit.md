@@ -13,6 +13,7 @@
 - AI now generates appropriate data volumes for each plant with proper resource distribution
 - Sample size configuration ensures realistic manufacturing data volumes for different testing scenarios
 - Enhanced prompt includes company plant count and industry-specific guidance for authentic data generation
+- Fixed mobile UX issue by disabling auto-focus on textarea to prevent unwanted keyboard popup
 
 ✓ **AI Generation Summary Screen Enhancement (July 27, 2025)**:
 - Updated AI generation summary screen to remove recommendations section and show detailed breakdown of generated data
