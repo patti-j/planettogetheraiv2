@@ -147,6 +147,78 @@ export const recipePhases = pgTable("recipe_phases", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Vendors - supplier information for recipe materials and equipment
+export const vendors = pgTable("vendors", {
+  id: serial("id").primaryKey(),
+  vendorNumber: text("vendor_number").notNull().unique(), // e.g., "VND-001"
+  vendorName: text("vendor_name").notNull(),
+  vendorType: text("vendor_type").notNull().default("supplier"), // supplier, contractor, service_provider
+  contactName: text("contact_name"),
+  contactEmail: text("contact_email"),
+  contactPhone: text("contact_phone"),
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  zipCode: text("zip_code"),
+  country: text("country").notNull().default("US"),
+  taxId: text("tax_id"),
+  paymentTerms: text("payment_terms"), // net30, net60, COD, etc.
+  currency: text("currency").notNull().default("USD"),
+  preferredVendor: boolean("preferred_vendor").default(false),
+  qualificationLevel: text("qualification_level").default("qualified"), // qualified, approved, preferred, restricted
+  capabilities: jsonb("capabilities").$type<string[]>().default([]), // what they can supply
+  certifications: jsonb("certifications").$type<Array<{
+    certification: string;
+    issued_by: string;
+    issued_date: string;
+    expiry_date: string;
+    status: string;
+  }>>().default([]),
+  performanceRating: integer("performance_rating").default(5), // 1-10 scale
+  status: text("status").notNull().default("active"), // active, inactive, suspended
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Customers - customer information for finished products
+export const customers = pgTable("customers", {
+  id: serial("id").primaryKey(),
+  customerNumber: text("customer_number").notNull().unique(), // e.g., "CUST-001"
+  customerName: text("customer_name").notNull(),
+  customerType: text("customer_type").notNull().default("standard"), // standard, preferred, key_account, distributor
+  contactName: text("contact_name"),
+  contactEmail: text("contact_email"),
+  contactPhone: text("contact_phone"),
+  billingAddress: text("billing_address"),
+  shippingAddress: text("shipping_address"),
+  city: text("city"),
+  state: text("state"),
+  zipCode: text("zip_code"),
+  country: text("country").notNull().default("US"),
+  taxId: text("tax_id"),
+  paymentTerms: text("payment_terms").notNull().default("net30"), // net30, net60, COD, etc.
+  creditLimit: integer("credit_limit").default(0), // in cents
+  currency: text("currency").notNull().default("USD"),
+  salesRepresentative: text("sales_representative"),
+  industrySegment: text("industry_segment"), // automotive, aerospace, pharmaceutical, etc.
+  accountStatus: text("account_status").notNull().default("active"), // active, inactive, credit_hold, suspended
+  specialRequirements: jsonb("special_requirements").$type<Array<{
+    requirement_type: string;
+    description: string;
+    mandatory: boolean;
+  }>>().default([]),
+  qualityRequirements: jsonb("quality_requirements").$type<{
+    certifications_required: string[];
+    inspection_level: string; // normal, tightened, reduced
+    documentation_requirements: string[];
+  }>(),
+  shippingInstructions: text("shipping_instructions"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Recipe Formulas - input materials with quantities (like a BOM for recipes)
 export const recipeFormulas = pgTable("recipe_formulas", {
   id: serial("id").primaryKey(),
@@ -2957,6 +3029,19 @@ export const insertRecipeEquipmentSchema = createInsertSchema(recipeEquipment).o
   updatedAt: true,
 });
 
+// Vendor and Customer Insert Schemas
+export const insertVendorSchema = createInsertSchema(vendors).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCustomerSchema = createInsertSchema(customers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Recipe Types
 export type Recipe = typeof recipes.$inferSelect;
 export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
@@ -2969,6 +3054,13 @@ export type InsertRecipeFormula = z.infer<typeof insertRecipeFormulaSchema>;
 
 export type RecipeEquipment = typeof recipeEquipment.$inferSelect;
 export type InsertRecipeEquipment = z.infer<typeof insertRecipeEquipmentSchema>;
+
+// Vendor and Customer Types
+export type Vendor = typeof vendors.$inferSelect;
+export type InsertVendor = z.infer<typeof insertVendorSchema>;
+
+export type Customer = typeof customers.$inferSelect;
+export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
 
 // Onboarding Management Tables
 export const companyOnboarding = pgTable("company_onboarding", {

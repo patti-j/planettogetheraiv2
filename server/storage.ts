@@ -1,6 +1,6 @@
 import { 
   plants, capabilities, resources, productionOrders, plannedOrders, operations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
-  recipes, recipePhases, recipeFormulas, recipeEquipment,
+  recipes, recipePhases, recipeFormulas, recipeEquipment, vendors, customers,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
   capacityPlanningScenarios, staffingPlans, shiftPlans, equipmentPlans, capacityProjections,
@@ -10,7 +10,7 @@ import {
   inventoryItems, inventoryTransactions, inventoryBalances, demandForecasts, demandDrivers, demandHistory, inventoryOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
   type Plant, type Capability, type Resource, type ProductionOrder, type PlannedOrder, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
-  type Recipe, type RecipePhase, type RecipeFormula, type RecipeEquipment,
+  type Recipe, type RecipePhase, type RecipeFormula, type RecipeEquipment, type Vendor, type Customer,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
   type CapacityPlanningScenario, type StaffingPlan, type ShiftPlan, type EquipmentPlan, type CapacityProjection,
@@ -21,7 +21,7 @@ import {
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
   type InsertPlant, type InsertCapability, type InsertResource, type InsertProductionOrder, type InsertPlannedOrder, 
   type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
-  type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertRecipeEquipment,
+  type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertRecipeEquipment, type InsertVendor, type InsertCustomer,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
   type InsertCapacityPlanningScenario, type InsertStaffingPlan, type InsertShiftPlan, type InsertEquipmentPlan, type InsertCapacityProjection,
@@ -1163,6 +1163,20 @@ export interface IStorage {
   createRecipeEquipment(equipment: InsertRecipeEquipment): Promise<RecipeEquipment>;
   updateRecipeEquipment(id: number, equipment: Partial<InsertRecipeEquipment>): Promise<RecipeEquipment | undefined>;
   deleteRecipeEquipment(id: number): Promise<boolean>;
+
+  // Vendors
+  getVendors(): Promise<Vendor[]>;
+  getVendor(id: number): Promise<Vendor | undefined>;
+  createVendor(vendor: InsertVendor): Promise<Vendor>;
+  updateVendor(id: number, vendor: Partial<InsertVendor>): Promise<Vendor | undefined>;
+  deleteVendor(id: number): Promise<boolean>;
+
+  // Customers
+  getCustomers(): Promise<Customer[]>;
+  getCustomer(id: number): Promise<Customer | undefined>;
+  createCustomer(customer: InsertCustomer): Promise<Customer>;
+  updateCustomer(id: number, customer: Partial<InsertCustomer>): Promise<Customer | undefined>;
+  deleteCustomer(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -9013,6 +9027,62 @@ export class DatabaseStorage implements IStorage {
 
   async deleteRecipeEquipment(id: number): Promise<boolean> {
     const result = await db.delete(recipeEquipment).where(eq(recipeEquipment.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Vendors
+  async getVendors(): Promise<Vendor[]> {
+    return await db.select().from(vendors).orderBy(vendors.vendorName);
+  }
+
+  async getVendor(id: number): Promise<Vendor | undefined> {
+    const [vendor] = await db.select().from(vendors).where(eq(vendors.id, id));
+    return vendor || undefined;
+  }
+
+  async createVendor(vendor: InsertVendor): Promise<Vendor> {
+    const [newVendor] = await db.insert(vendors).values(vendor).returning();
+    return newVendor;
+  }
+
+  async updateVendor(id: number, vendor: Partial<InsertVendor>): Promise<Vendor | undefined> {
+    const [updated] = await db.update(vendors)
+      .set({ ...vendor, updatedAt: new Date() })
+      .where(eq(vendors.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteVendor(id: number): Promise<boolean> {
+    const result = await db.delete(vendors).where(eq(vendors.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Customers
+  async getCustomers(): Promise<Customer[]> {
+    return await db.select().from(customers).orderBy(customers.customerName);
+  }
+
+  async getCustomer(id: number): Promise<Customer | undefined> {
+    const [customer] = await db.select().from(customers).where(eq(customers.id, id));
+    return customer || undefined;
+  }
+
+  async createCustomer(customer: InsertCustomer): Promise<Customer> {
+    const [newCustomer] = await db.insert(customers).values(customer).returning();
+    return newCustomer;
+  }
+
+  async updateCustomer(id: number, customer: Partial<InsertCustomer>): Promise<Customer | undefined> {
+    const [updated] = await db.update(customers)
+      .set({ ...customer, updatedAt: new Date() })
+      .where(eq(customers.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteCustomer(id: number): Promise<boolean> {
+    const result = await db.delete(customers).where(eq(customers.id, id));
     return result.rowCount > 0;
   }
 }

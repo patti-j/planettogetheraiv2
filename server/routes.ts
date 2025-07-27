@@ -44,7 +44,8 @@ import {
   insertStrategyDocumentSchema, insertDevelopmentTaskSchema, insertTestSuiteSchema, insertTestCaseSchema, insertArchitectureComponentSchema,
   insertApiIntegrationSchema, insertApiMappingSchema, insertApiTestSchema, insertApiCredentialSchema, insertApiAuditLogSchema,
   insertSchedulingHistorySchema, insertSchedulingResultSchema, insertAlgorithmPerformanceSchema,
-  insertRecipeSchema, insertRecipePhaseSchema, insertRecipeFormulaSchema, insertRecipeEquipmentSchema
+  insertRecipeSchema, insertRecipePhaseSchema, insertRecipeFormulaSchema, insertRecipeEquipmentSchema,
+  insertVendorSchema, insertCustomerSchema
 } from "@shared/schema";
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -15029,6 +15030,176 @@ Response must be valid JSON:
     } catch (error) {
       console.error("Error creating recipe equipment:", error);
       res.status(500).json({ error: "Failed to create recipe equipment" });
+    }
+  });
+
+  // Vendor Management
+  app.get("/api/vendors", async (req, res) => {
+    try {
+      const vendors = await storage.getVendors();
+      res.json(vendors);
+    } catch (error) {
+      console.error("Error fetching vendors:", error);
+      res.status(500).json({ error: "Failed to fetch vendors" });
+    }
+  });
+
+  app.get("/api/vendors/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid vendor ID" });
+      }
+
+      const vendor = await storage.getVendor(id);
+      if (!vendor) {
+        return res.status(404).json({ error: "Vendor not found" });
+      }
+      res.json(vendor);
+    } catch (error) {
+      console.error("Error fetching vendor:", error);
+      res.status(500).json({ error: "Failed to fetch vendor" });
+    }
+  });
+
+  app.post("/api/vendors", async (req, res) => {
+    try {
+      const validation = insertVendorSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid vendor data", details: validation.error.errors });
+      }
+
+      const vendor = await storage.createVendor(validation.data);
+      res.status(201).json(vendor);
+    } catch (error) {
+      console.error("Error creating vendor:", error);
+      res.status(500).json({ error: "Failed to create vendor" });
+    }
+  });
+
+  app.put("/api/vendors/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid vendor ID" });
+      }
+
+      const validation = insertVendorSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid vendor data", details: validation.error.errors });
+      }
+
+      const vendor = await storage.updateVendor(id, validation.data);
+      if (!vendor) {
+        return res.status(404).json({ error: "Vendor not found" });
+      }
+      res.json(vendor);
+    } catch (error) {
+      console.error("Error updating vendor:", error);
+      res.status(500).json({ error: "Failed to update vendor" });
+    }
+  });
+
+  app.delete("/api/vendors/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid vendor ID" });
+      }
+
+      const deleted = await storage.deleteVendor(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Vendor not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting vendor:", error);
+      res.status(500).json({ error: "Failed to delete vendor" });
+    }
+  });
+
+  // Customer Management
+  app.get("/api/customers", async (req, res) => {
+    try {
+      const customers = await storage.getCustomers();
+      res.json(customers);
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+      res.status(500).json({ error: "Failed to fetch customers" });
+    }
+  });
+
+  app.get("/api/customers/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid customer ID" });
+      }
+
+      const customer = await storage.getCustomer(id);
+      if (!customer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+      res.json(customer);
+    } catch (error) {
+      console.error("Error fetching customer:", error);
+      res.status(500).json({ error: "Failed to fetch customer" });
+    }
+  });
+
+  app.post("/api/customers", async (req, res) => {
+    try {
+      const validation = insertCustomerSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid customer data", details: validation.error.errors });
+      }
+
+      const customer = await storage.createCustomer(validation.data);
+      res.status(201).json(customer);
+    } catch (error) {
+      console.error("Error creating customer:", error);
+      res.status(500).json({ error: "Failed to create customer" });
+    }
+  });
+
+  app.put("/api/customers/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid customer ID" });
+      }
+
+      const validation = insertCustomerSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid customer data", details: validation.error.errors });
+      }
+
+      const customer = await storage.updateCustomer(id, validation.data);
+      if (!customer) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+      res.json(customer);
+    } catch (error) {
+      console.error("Error updating customer:", error);
+      res.status(500).json({ error: "Failed to update customer" });
+    }
+  });
+
+  app.delete("/api/customers/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid customer ID" });
+      }
+
+      const deleted = await storage.deleteCustomer(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting customer:", error);
+      res.status(500).json({ error: "Failed to delete customer" });
     }
   });
 

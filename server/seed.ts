@@ -3,7 +3,7 @@ import {
   capabilities, resources, productionOrders, plannedOrders, operations, users, roles, permissions, userRoles, rolePermissions,
   customerStories, contentBlocks, marketingPages, leadCaptures, disruptions, disruptionActions,
   businessGoals, goalProgress, goalRisks, goalIssues, dashboardConfigs, reportConfigs,
-  visualFactoryDisplays, industryTemplates
+  visualFactoryDisplays, industryTemplates, vendors, customers
 } from "@shared/schema";
 import { sql, eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -635,6 +635,228 @@ export async function seedDatabase() {
     await db.insert(goalIssues).values(sampleGoalIssues);
 
     console.log("✅ Business goals sample data seeded successfully");
+  }
+
+  // Check if vendor and customer data already exists
+  const existingVendors = await db.select().from(vendors).limit(1);
+  const existingCustomers = await db.select().from(customers).limit(1);
+  
+  // Seed vendors if missing
+  if (existingVendors.length === 0) {
+    console.log("Seeding vendors...");
+    
+    const sampleVendors = [
+      {
+        vendorNumber: "VND-001",
+        vendorName: "ChemSupply Industries",
+        vendorType: "supplier",
+        contactName: "Sarah Williams",
+        contactEmail: "sarah.williams@chemsupply.com",
+        contactPhone: "(555) 123-4567",
+        address: "1234 Industrial Blvd",
+        city: "Cleveland",
+        state: "OH",
+        zipCode: "44101",
+        country: "US",
+        taxId: "12-3456789",
+        paymentTerms: "net30",
+        currency: "USD",
+        preferredVendor: true,
+        qualificationLevel: "preferred",
+        capabilities: ["Raw Materials", "Chemical Processing", "Quality Testing"],
+        certifications: [
+          {
+            certification: "ISO 9001:2015",
+            issued_by: "ISO",
+            issued_date: "2024-01-15",
+            expiry_date: "2027-01-15",
+            status: "active"
+          },
+          {
+            certification: "FDA Food Grade",
+            issued_by: "FDA",
+            issued_date: "2024-03-10",
+            expiry_date: "2026-03-10",
+            status: "active"
+          }
+        ],
+        performanceRating: 9,
+        status: "active",
+        notes: "Primary supplier for chemical raw materials. Excellent quality and on-time delivery record."
+      },
+      {
+        vendorNumber: "VND-002",
+        vendorName: "Precision Equipment Corp",
+        vendorType: "supplier",
+        contactName: "Michael Chen",
+        contactEmail: "m.chen@precisionequip.com",
+        contactPhone: "(555) 987-6543",
+        address: "5678 Technology Park",
+        city: "Austin",
+        state: "TX",
+        zipCode: "78701",
+        country: "US",
+        taxId: "98-7654321",
+        paymentTerms: "net45",
+        currency: "USD",
+        preferredVendor: false,
+        qualificationLevel: "qualified",
+        capabilities: ["Equipment Manufacturing", "Maintenance Services", "Technical Support"],
+        certifications: [
+          {
+            certification: "ISO 14001:2015",
+            issued_by: "ISO",
+            issued_date: "2023-11-20",
+            expiry_date: "2026-11-20",
+            status: "active"
+          }
+        ],
+        performanceRating: 7,
+        status: "active",
+        notes: "Equipment supplier with good technical support capabilities."
+      },
+      {
+        vendorNumber: "VND-003",
+        vendorName: "Global Packaging Solutions",
+        vendorType: "supplier",
+        contactName: "Lisa Rodriguez",
+        contactEmail: "l.rodriguez@globalpack.com",
+        contactPhone: "(555) 456-7890",
+        address: "9012 Commerce Drive",
+        city: "Atlanta",
+        state: "GA",
+        zipCode: "30309",
+        country: "US",
+        taxId: "45-6789012",
+        paymentTerms: "net30",
+        currency: "USD",
+        preferredVendor: true,
+        qualificationLevel: "approved",
+        capabilities: ["Packaging Materials", "Custom Design", "Logistics"],
+        certifications: [
+          {
+            certification: "SQF Food Safety",
+            issued_by: "SQF Institute",
+            issued_date: "2024-02-05",
+            expiry_date: "2026-02-05",
+            status: "active"
+          }
+        ],
+        performanceRating: 8,
+        status: "active",
+        notes: "Primary packaging supplier with excellent design capabilities."
+      }
+    ];
+
+    await db.insert(vendors).values(sampleVendors);
+    console.log("✅ Vendor sample data seeded successfully");
+  }
+
+  // Seed customers if missing
+  if (existingCustomers.length === 0) {
+    console.log("Seeding customers...");
+    
+    const sampleCustomers = [
+      {
+        customerNumber: "CUS-001",
+        customerName: "TechCorp Manufacturing",
+        customerType: "distributor",
+        contactName: "David Johnson",
+        contactEmail: "david.johnson@techcorp.com",
+        contactPhone: "(555) 234-5678",
+        address: "2468 Business Center",
+        city: "San Francisco",
+        state: "CA",
+        zipCode: "94105",
+        country: "US",
+        taxId: "23-4567890",
+        paymentTerms: "net30",
+        currency: "USD",
+        creditLimit: 500000,
+        creditUsed: 125000,
+        preferredCustomer: true,
+        customerTier: "platinum",
+        salesRepresentative: "Jennifer Smith",
+        accountManager: "Robert Wilson",
+        contractTerms: "Annual contract with volume discounts",
+        shippingInstructions: "Standard LTL freight, dock delivery required",
+        billingInstructions: "Electronic invoicing to AP department",
+        qualityRequirements: ["ISO compliance", "Certificate of Analysis required"],
+        orderFrequency: "Weekly",
+        averageOrderValue: 25000,
+        lastOrderDate: new Date("2025-01-20"),
+        customerSince: new Date("2021-03-15"),
+        status: "active",
+        notes: "High-volume customer with excellent payment history. Priority shipping required."
+      },
+      {
+        customerNumber: "CUS-002",
+        customerName: "Industrial Dynamics LLC",
+        customerType: "end_user",
+        contactName: "Maria Gonzalez",
+        contactEmail: "maria.gonzalez@industrialdynamics.com",
+        contactPhone: "(555) 345-6789",
+        address: "1357 Manufacturing Way",
+        city: "Detroit",
+        state: "MI",
+        zipCode: "48201",
+        country: "US",
+        taxId: "34-5678901",
+        paymentTerms: "net45",
+        currency: "USD",
+        creditLimit: 250000,
+        creditUsed: 75000,
+        preferredCustomer: false,
+        customerTier: "gold",
+        salesRepresentative: "Michael Brown",
+        accountManager: "Sarah Davis",
+        contractTerms: "Standard terms and conditions",
+        shippingInstructions: "Customer pickup preferred",
+        billingInstructions: "Paper invoices via mail",
+        qualityRequirements: ["Standard specifications"],
+        orderFrequency: "Monthly",
+        averageOrderValue: 15000,
+        lastOrderDate: new Date("2025-01-15"),
+        customerSince: new Date("2022-08-10"),
+        status: "active",
+        notes: "Growing account with potential for increased volume."
+      },
+      {
+        customerNumber: "CUS-003",
+        customerName: "Pharma Solutions Inc",
+        customerType: "oem",
+        contactName: "Dr. James Patterson",
+        contactEmail: "j.patterson@pharmasolutions.com",
+        contactPhone: "(555) 456-7891",
+        address: "4680 Research Boulevard",
+        city: "Boston",
+        state: "MA",
+        zipCode: "02101",
+        country: "US",
+        taxId: "45-6789012",
+        paymentTerms: "net30",
+        currency: "USD",
+        creditLimit: 750000,
+        creditUsed: 200000,
+        preferredCustomer: true,
+        customerTier: "platinum",
+        salesRepresentative: "Amanda Lee",
+        accountManager: "Thomas Anderson",
+        contractTerms: "Multi-year pharmaceutical supply agreement",
+        shippingInstructions: "Temperature-controlled shipping required",
+        billingInstructions: "Electronic invoicing with PO matching",
+        qualityRequirements: ["FDA compliance", "cGMP certification", "Batch records required"],
+        orderFrequency: "Bi-weekly",
+        averageOrderValue: 35000,
+        lastOrderDate: new Date("2025-01-22"),
+        customerSince: new Date("2020-11-05"),
+        status: "active",
+        notes: "Pharmaceutical customer with strict quality and regulatory requirements. Critical account."
+      }
+    ];
+
+    await db.insert(customers).values(sampleCustomers);
+    console.log("✅ Customer sample data seeded successfully");
   }
 
   // Seed sample dashboards if missing
