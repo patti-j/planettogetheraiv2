@@ -178,7 +178,20 @@ export default function OnboardingPage() {
   const stepParam = urlParams.get('step');
   const initialStep = stepParam ? parseInt(stepParam, 10) : 0;
   
+  console.log('Onboarding URL parsing:', { location, stepParam, initialStep });
+  
   const [currentStep, setCurrentStep] = useState(Math.max(0, Math.min(initialStep, 5)));
+
+  // Update step when URL changes
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.split('?')[1] || '');
+    const stepParam = urlParams.get('step');
+    if (stepParam) {
+      const newStep = Math.max(0, Math.min(parseInt(stepParam, 10), 5));
+      console.log('URL step parameter changed, setting step to:', newStep);
+      setCurrentStep(newStep);
+    }
+  }, [location]);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [companyInfo, setCompanyInfo] = useState({
     name: '',
