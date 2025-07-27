@@ -450,7 +450,7 @@ const SchedulingOptimizer: React.FC = () => {
         startDate: new Date(),
         endDate: addDays(new Date(), 3),
         resources: resources.slice(0, 2),
-        operations: jobOperations.map((op, i) => ({
+        operations: productionOrderOperations.map((op: Operation, i: number) => ({
           ...op,
           assignedResourceId: resources[i % resources.length]?.id,
           startTime: addDays(new Date(), i * 0.5),
@@ -480,7 +480,7 @@ const SchedulingOptimizer: React.FC = () => {
         startDate: addDays(new Date(), 1),
         endDate: addDays(new Date(), 5),
         resources: resources.slice(0, 3),
-        operations: jobOperations.map((op, i) => ({
+        operations: productionOrderOperations.map((op: Operation, i: number) => ({
           ...op,
           assignedResourceId: resources[i % resources.length]?.id,
           startTime: addDays(new Date(), 1 + i * 0.8),
@@ -510,7 +510,7 @@ const SchedulingOptimizer: React.FC = () => {
         startDate: addDays(new Date(), 0.5),
         endDate: addDays(new Date(), 4),
         resources: resources.slice(0, 2),
-        operations: jobOperations.map((op, i) => ({
+        operations: productionOrderOperations.map((op: Operation, i: number) => ({
           ...op,
           assignedResourceId: resources[i % resources.length]?.id,
           startTime: addDays(new Date(), 0.5 + i * 0.7),
@@ -727,7 +727,7 @@ const SchedulingOptimizer: React.FC = () => {
 
   // Apply optimized scheduling to existing job
   const applyOptimizedScheduling = async (option: SchedulingOption) => {
-    if (!selectedExistingJob) return;
+    if (!selectedExistingProductionOrder) return;
 
     try {
       // Update all operations with optimized scheduling
@@ -751,7 +751,7 @@ const SchedulingOptimizer: React.FC = () => {
       });
 
       // Update job with optimized dates
-      const jobResponse = await fetch(`/api/jobs/${selectedExistingJob.id}`, {
+      const jobResponse = await fetch(`/api/production-orders/${selectedExistingProductionOrder.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -773,10 +773,10 @@ const SchedulingOptimizer: React.FC = () => {
 
       toast({
         title: "Success",
-        description: `Job "${selectedExistingJob.name}" optimized successfully with ${option.operations.length} operations rescheduled`
+        description: `Production Order "${selectedExistingProductionOrder.orderNumber}" optimized successfully with ${option.operations.length} operations rescheduled`
       });
 
-      setSelectedExistingJob(null);
+      setSelectedExistingProductionOrder(null);
       setSchedulingOptions([]);
       
     } catch (error) {
@@ -958,8 +958,8 @@ const SchedulingOptimizer: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{jobs?.length || 0}</div>
-              <div className="text-sm text-gray-600">Active Jobs</div>
+              <div className="text-2xl font-bold text-blue-600">{productionOrders?.length || 0}</div>
+              <div className="text-sm text-gray-600">Active Orders</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">{resources?.length || 0}</div>
@@ -1066,25 +1066,25 @@ const SchedulingOptimizer: React.FC = () => {
             <CardTitle className="flex items-center gap-2">
               <Target className="w-5 h-5" />
               Scheduling Recommendations
-              {selectedExistingJob && (
+              {selectedExistingProductionOrder && (
                 <Badge variant="outline" className="ml-2">
-                  {selectedExistingJob.name}
+                  {selectedExistingProductionOrder.orderNumber}
                 </Badge>
               )}
             </CardTitle>
             <CardDescription>
-              {selectedExistingJob 
-                ? `Optimize scheduling for existing order: ${selectedExistingJob.name}`
+              {selectedExistingProductionOrder 
+                ? `Optimize scheduling for existing order: ${selectedExistingProductionOrder.orderNumber}`
                 : 'Compare different scheduling options and their tradeoffs'
               }
             </CardDescription>
-            {selectedExistingJob && (
+            {selectedExistingProductionOrder && (
               <div className="flex justify-end mt-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setSelectedExistingJob(null);
+                    setSelectedExistingProductionOrder(null);
                     setSchedulingOptions([]);
                   }}
                 >
@@ -1167,7 +1167,7 @@ const SchedulingOptimizer: React.FC = () => {
                     <Button
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (selectedExistingJob) {
+                        if (selectedExistingProductionOrder) {
                           applyOptimizedScheduling(option);
                         } else {
                           scheduleJob(option);
@@ -1176,7 +1176,7 @@ const SchedulingOptimizer: React.FC = () => {
                       className="w-full mt-3"
                     >
                       <Play className="w-4 h-4 mr-2" />
-                      {selectedExistingJob ? 'Apply Optimization' : 'Schedule with this option'}
+                      {selectedExistingProductionOrder ? 'Apply Optimization' : 'Schedule with this option'}
                     </Button>
                   </CardContent>
                 </Card>
