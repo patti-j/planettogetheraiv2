@@ -174,11 +174,7 @@ function Router() {
       <SplitPaneLayout maxPanel={<MaxSidebar />}>
         <Switch>
           <Route path="/marketing" component={MarketingLandingPage} />
-          <Route path="/onboarding">
-            <ProtectedRoute feature="onboarding" action="view">
-              <Onboarding />
-            </ProtectedRoute>
-          </Route>
+          <Route path="/onboarding" component={Onboarding} />
           <Route path="/production-schedule">
             <DashboardWithAutoTour />
           </Route>
