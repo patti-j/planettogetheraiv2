@@ -8,9 +8,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3 } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X } from 'lucide-react';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 
 interface ImportStatus {
@@ -26,6 +28,13 @@ export default function DataImport() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch available capabilities for dropdown
+  const { data: capabilities = [] } = useQuery({
+    queryKey: ['/api/capabilities'],
+    queryFn: () => apiRequest('/api/capabilities'),
+    enabled: true
+  });
+
   const [manualData, setManualData] = useState({
     resources: '',
     jobs: '',
@@ -36,7 +45,7 @@ export default function DataImport() {
 
   // Structured data for spreadsheet-like interface
   const [structuredData, setStructuredData] = useState<Record<string, any[]>>({
-    resources: [{ name: '', type: 'Equipment', description: '', status: 'active', capabilities: '' }],
+    resources: [{ name: '', type: 'Equipment', description: '', status: 'active', capabilities: [] }],
     jobs: [{ name: '', customer: '', priority: 'medium', dueDate: '', quantity: 1, description: '' }],
     users: [{ username: '', email: '', firstName: '', lastName: '', role: 'operator' }],
     capabilities: [{ name: '', description: '', category: 'general' }],
@@ -45,11 +54,7 @@ export default function DataImport() {
 
   const importMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('/api/data-import/bulk', {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return apiRequest('/api/data-import/bulk', 'POST', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries();
@@ -133,13 +138,25 @@ export default function DataImport() {
   const transformDataForImport = (dataType: string, data: any[]) => {
     switch (dataType) {
       case 'resources':
-        return data.map(item => ({
-          name: item.name || item.Name || '',
-          type: item.type || item.Type || 'Equipment',
-          description: item.description || item.Description || '',
-          status: item.status || item.Status || 'active',
-          capabilities: item.capabilities || item.Capabilities || ''
-        }));
+        return data.map(item => {
+          let capabilities = item.capabilities || item.Capabilities || [];
+          
+          // Handle different formats of capabilities data
+          if (typeof capabilities === 'string') {
+            // If it's a comma-separated string, split it
+            capabilities = capabilities.split(',').map((cap: string) => cap.trim()).filter(Boolean);
+          } else if (!Array.isArray(capabilities)) {
+            capabilities = [];
+          }
+          
+          return {
+            name: item.name || item.Name || '',
+            type: item.type || item.Type || 'Equipment',
+            description: item.description || item.Description || '',
+            status: item.status || item.Status || 'active',
+            capabilities: capabilities
+          };
+        });
       case 'jobs':
         return data.map(item => ({
           name: item.name || item.Name || item.Job || '',
@@ -184,7 +201,7 @@ export default function DataImport() {
           { key: 'type', label: 'Type', type: 'select', options: ['Equipment', 'Personnel', 'Tool', 'Vehicle'], required: true },
           { key: 'description', label: 'Description', type: 'text' },
           { key: 'status', label: 'Status', type: 'select', options: ['active', 'inactive', 'maintenance'], required: true },
-          { key: 'capabilities', label: 'Capabilities', type: 'text', placeholder: 'Comma-separated capabilities' }
+          { key: 'capabilities', label: 'Capabilities', type: 'multiselect', placeholder: 'Select capabilities' }
         ];
       case 'jobs':
         return [
@@ -224,7 +241,13 @@ export default function DataImport() {
   const addStructuredRow = (dataType: string) => {
     const fields = getFieldDefinitions(dataType);
     const newRow = fields.reduce((obj, field) => {
-      obj[field.key] = field.type === 'number' ? 0 : field.options?.[0] || '';
+      if (field.type === 'multiselect') {
+        obj[field.key] = [];
+      } else if (field.type === 'number') {
+        obj[field.key] = 0;
+      } else {
+        obj[field.key] = field.options?.[0] || '';
+      }
       return obj;
     }, {} as any);
     
@@ -248,6 +271,93 @@ export default function DataImport() {
         i === rowIndex ? { ...row, [fieldKey]: value } : row
       )
     }));
+  };
+
+  // Multi-select capabilities component
+  const CapabilitiesMultiSelect = ({ value, onChange, disabled }: {
+    value: string[];
+    onChange: (value: string[]) => void;
+    disabled: boolean;
+  }) => {
+    const [open, setOpen] = useState(false);
+    
+    // Type guard for capabilities array
+    const availableCapabilities = Array.isArray(capabilities) ? capabilities : [];
+    
+    const toggleCapability = (capabilityName: string) => {
+      const newValue = value.includes(capabilityName)
+        ? value.filter(name => name !== capabilityName)
+        : [...value, capabilityName];
+      onChange(newValue);
+    };
+
+    const removeCapability = (capabilityName: string) => {
+      onChange(value.filter(name => name !== capabilityName));
+    };
+
+    return (
+      <div className="space-y-1">
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-between h-8 text-left"
+              disabled={disabled}
+            >
+              <span className="truncate">
+                {value.length === 0 ? "Select capabilities" : `${value.length} selected`}
+              </span>
+              <ChevronDown className="h-3 w-3 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-0" align="start">
+            <div className="max-h-48 overflow-auto p-2">
+              {availableCapabilities.map((capability: any) => (
+                <div key={capability.id} className="flex items-center space-x-2 py-1">
+                  <Checkbox
+                    id={`cap-${capability.id}`}
+                    checked={value.includes(capability.name)}
+                    onCheckedChange={() => toggleCapability(capability.name)}
+                  />
+                  <label 
+                    htmlFor={`cap-${capability.id}`}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                  >
+                    {capability.name}
+                  </label>
+                </div>
+              ))}
+              {availableCapabilities.length === 0 && (
+                <p className="text-sm text-muted-foreground p-2">No capabilities available</p>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+        
+        {/* Selected capabilities badges */}
+        {value.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {value.map((capName) => (
+              <Badge 
+                key={capName} 
+                variant="secondary" 
+                className="text-xs py-0 px-1 h-5"
+              >
+                {capName}
+                <button
+                  onClick={() => removeCapability(capName)}
+                  className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
+                  disabled={disabled}
+                >
+                  <X className="h-2 w-2" />
+                </button>
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   };
 
   const handleStructuredImport = async (dataType: string) => {
@@ -538,7 +648,13 @@ export default function DataImport() {
                               <TableRow key={rowIndex}>
                                 {getFieldDefinitions(key).map(field => (
                                   <TableCell key={field.key} className="p-2">
-                                    {field.type === 'select' ? (
+                                    {field.type === 'multiselect' && field.key === 'capabilities' ? (
+                                      <CapabilitiesMultiSelect
+                                        value={row[field.key] || []}
+                                        onChange={(value) => updateStructuredCell(key, rowIndex, field.key, value)}
+                                        disabled={isImporting}
+                                      />
+                                    ) : field.type === 'select' ? (
                                       <Select
                                         value={row[field.key]?.toString() || ''}
                                         onValueChange={(value) => updateStructuredCell(key, rowIndex, field.key, value)}
