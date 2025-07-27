@@ -47,7 +47,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Job, Resource, Operation } from "@shared/schema";
+import { Resource, Operation } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
 
 interface OnboardingStep {
@@ -109,7 +109,7 @@ export default function OnboardingWizard() {
   const { user } = useAuth();
 
   // Check if user is new (no existing data)
-  const { data: jobs = [] } = useQuery<Job[]>({
+  const { data: jobs = [] } = useQuery<any[]>({
     queryKey: ["/api/jobs"],
   });
 

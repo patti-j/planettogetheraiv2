@@ -229,11 +229,14 @@ export default function OnboardingPage() {
   const progressPercentage = ((currentStep + 1) / onboardingSteps.length) * 100;
 
   const handleFeatureToggle = (featureId: string) => {
-    setSelectedFeatures(prev => 
-      prev.includes(featureId) 
+    console.log('Feature toggle clicked:', featureId);
+    setSelectedFeatures(prev => {
+      const newFeatures = prev.includes(featureId) 
         ? prev.filter(id => id !== featureId)
-        : [...prev, featureId]
-    );
+        : [...prev, featureId];
+      console.log('Selected features updated:', newFeatures);
+      return newFeatures;
+    });
   };
 
   const handleNextStep = async () => {
@@ -475,7 +478,7 @@ export default function OnboardingPage() {
                     <div className="flex items-start gap-4">
                       <Checkbox
                         checked={selectedFeatures.includes(module.id)}
-                        onChange={() => handleFeatureToggle(module.id)}
+                        onCheckedChange={() => handleFeatureToggle(module.id)}
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
