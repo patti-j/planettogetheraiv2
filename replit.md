@@ -2,6 +2,13 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Shift Management Mobile Margin Reduction Fix (July 27, 2025)**:
+- Fixed excessively wide left and right margins on mobile devices in Shift Management screen
+- Reduced mobile margins from `ml-12 mr-12` (48px each) to `ml-3 mr-3` (12px each) for better mobile experience
+- Preserved desktop margin logic for proper Max AI panel integration: `md:ml-12 md:mr-12` when closed, `md:ml-0 md:mr-0` when open
+- Maintained existing inner padding `p-4 md:p-6` for proper content spacing while reducing excessive outer margins
+- Shift Management screen now provides appropriate mobile spacing without overwhelming white space margins
+
 ✓ **Master Data Setup Mobile Margin Balance Fix (July 27, 2025)**:
 - Fixed asymmetric margin issue on mobile devices where left and right margins were different
 - Added symmetric right margins to match existing left margins for balanced spacing
