@@ -823,28 +823,102 @@ export function MaxSidebar() {
     console.log('Processing frontend action:', frontendAction);
     
     try {
+      // Validate frontend action structure
+      if (!frontendAction || !frontendAction.type) {
+        console.error('Invalid frontend action structure:', frontendAction);
+        toast({
+          title: "Action Error",
+          description: "Invalid action format received",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       switch (frontendAction.type) {
         case 'START_TOUR':
           const { roleId, voiceEnabled, context } = frontendAction.parameters || {};
           console.log('Starting tour with parameters:', { roleId, voiceEnabled, context });
           
-          // Call the tour system to start the tour
-          startTour(roleId, voiceEnabled, context);
+          // Validate parameters
+          if (!roleId || (typeof roleId !== 'number' && typeof roleId !== 'string')) {
+            console.error('Invalid role ID for tour:', roleId);
+            toast({
+              title: "Tour Error",
+              description: "Invalid role specified for tour",
+              variant: "destructive"
+            });
+            return;
+          }
           
-          // Show success message
-          toast({
-            title: "Tour Started",
-            description: `Guided tour initiated for role ${roleId} with voice ${voiceEnabled ? 'enabled' : 'disabled'}`,
-          });
+          // Check if startTour function is available
+          if (typeof startTour !== 'function') {
+            console.error('startTour function not available');
+            toast({
+              title: "Tour Error",
+              description: "Tour system not initialized. Please refresh the page.",
+              variant: "destructive"
+            });
+            return;
+          }
+          
+          try {
+            // Call the tour system to start the tour
+            startTour(roleId, voiceEnabled, context);
+            
+            // Show success message
+            toast({
+              title: "Tour Started",
+              description: `Guided tour initiated for role ${roleId} with voice ${voiceEnabled ? 'enabled' : 'disabled'}`,
+            });
+          } catch (tourError) {
+            console.error('Error starting tour:', tourError);
+            toast({
+              title: "Tour Error",
+              description: `Failed to start tour: ${tourError.message || 'Unknown error'}`,
+              variant: "destructive"
+            });
+          }
           break;
           
         case 'START_CUSTOM_TOUR':
           const { tourContent, voiceEnabled: customVoiceEnabled, targetRoles } = frontendAction.parameters || {};
           console.log('Starting custom tour with content:', tourContent);
           
-          if (tourContent && tourContent.steps && tourContent.steps.length > 0) {
+          // Validate tour content
+          if (!tourContent) {
+            console.error('No tour content provided for custom tour');
+            toast({
+              title: "Tour Error",
+              description: "No tour content provided",
+              variant: "destructive"
+            });
+            return;
+          }
+          
+          if (!tourContent.steps || !Array.isArray(tourContent.steps) || tourContent.steps.length === 0) {
+            console.error('Invalid or empty tour steps:', tourContent.steps);
+            toast({
+              title: "Tour Error",
+              description: "Tour has no valid steps to display",
+              variant: "destructive"
+            });
+            return;
+          }
+          
+          try {
             // Store the custom tour content temporarily for the tour system to use
             localStorage.setItem('customTourContent', JSON.stringify(tourContent));
+            
+            // Check if startTour function is available
+            if (typeof startTour !== 'function') {
+              console.error('startTour function not available for custom tour');
+              toast({
+                title: "Tour Error",
+                description: "Tour system not initialized. Please refresh the page.",
+                variant: "destructive"
+              });
+              return;
+            }
             
             // Start the custom tour using the trainer role as default
             startTour(9, customVoiceEnabled, 'custom');
@@ -854,10 +928,11 @@ export function MaxSidebar() {
               title: "Custom Tour Created & Started",
               description: `"${tourContent.title}" tour created with ${tourContent.steps.length} steps for ${targetRoles?.join(', ') || 'all roles'}`,
             });
-          } else {
+          } catch (customTourError) {
+            console.error('Error starting custom tour:', customTourError);
             toast({
-              title: "Tour Creation Failed",
-              description: "Unable to create custom tour - invalid content generated",
+              title: "Custom Tour Error",
+              description: `Failed to start custom tour: ${customTourError.message || 'Unknown error'}`,
               variant: "destructive"
             });
           }
@@ -865,13 +940,18 @@ export function MaxSidebar() {
           
         default:
           console.warn('Unknown frontend action type:', frontendAction.type);
+          toast({
+            title: "Action Warning",
+            description: `Unknown action type: ${frontendAction.type}`,
+            variant: "destructive"
+          });
           break;
       }
     } catch (error) {
-      console.error('Frontend action error:', error);
+      console.error('Frontend action processing error:', error);
       toast({
         title: "Action Error",
-        description: "Unable to execute the requested action",
+        description: `Unable to execute action: ${error.message || 'Unknown error'}`,
         variant: "destructive"
       });
     }

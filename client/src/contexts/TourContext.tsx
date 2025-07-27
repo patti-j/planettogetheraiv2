@@ -62,43 +62,86 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const startTour = (roleId: number, voiceEnabledParam = false, context: 'training' | 'demo' | 'custom' = 'demo') => {
     console.log("TourContext startTour called with roleId:", roleId, "voiceEnabledParam:", voiceEnabledParam, "context:", context);
     
-    // Store original role for training context tours
-    if (context === 'training' && user?.id) {
-      // Get current role to restore later
-      queryClient.fetchQuery({
-        queryKey: [`/api/users/${user.id}/current-role`],
-        queryFn: async () => {
-          const response = await fetch(`/api/users/${user.id}/current-role`, {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+    try {
+      // Validate parameters
+      if (!roleId || (typeof roleId !== 'number' && typeof roleId !== 'string')) {
+        console.error("Invalid roleId provided to startTour:", roleId);
+        throw new Error("Invalid role ID provided");
+      }
+      
+      // Convert string roleId to number if needed
+      const numericRoleId = typeof roleId === 'string' ? parseInt(roleId, 10) : roleId;
+      if (isNaN(numericRoleId)) {
+        console.error("Could not convert roleId to number:", roleId);
+        throw new Error("Invalid role ID format");
+      }
+      
+      // Store original role for training context tours
+      if (context === 'training' && user?.id) {
+        // Get current role to restore later
+        queryClient.fetchQuery({
+          queryKey: [`/api/users/${user.id}/current-role`],
+          queryFn: async () => {
+            try {
+              const response = await fetch(`/api/users/${user.id}/current-role`, {
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                }
+              });
+              if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+              }
+              return await response.json();
+            } catch (fetchError) {
+              console.error("Failed to fetch current role:", fetchError);
+              throw fetchError;
             }
-          });
-          return await response.json();
-        }
-      }).then(currentRole => {
-        setOriginalRoleId(currentRole?.id || null);
-        console.log("Stored original role for training context:", currentRole?.id);
-      }).catch(err => {
-        console.warn("Could not fetch current role:", err);
-        setOriginalRoleId(null);
-      });
+          }
+        }).then(currentRole => {
+          setOriginalRoleId(currentRole?.id || null);
+          console.log("Stored original role for training context:", currentRole?.id);
+        }).catch(err => {
+          console.warn("Could not fetch current role:", err);
+          setOriginalRoleId(null);
+          // Continue with tour even if role fetching fails
+        });
+      }
+      
+      // Set tour state
+      setIsActive(true);
+      setCurrentRoleId(numericRoleId);
+      setVoiceEnabled(voiceEnabledParam);
+      setTourContext(context);
+      
+      // Save tour state to localStorage
+      try {
+        const tourData = { 
+          roleId: numericRoleId, 
+          active: true, 
+          voiceEnabled: voiceEnabledParam,
+          context,
+          originalRoleId: context === 'training' ? originalRoleId : null
+        };
+        localStorage.setItem("activeDemoTour", JSON.stringify(tourData));
+        console.log("Saved tour state to localStorage:", tourData);
+      } catch (storageError) {
+        console.warn("Failed to save tour state to localStorage:", storageError);
+        // Continue with tour even if localStorage save fails
+      }
+      
+      console.log("Tour started successfully");
+    } catch (error) {
+      console.error("Error starting tour:", error);
+      
+      // Reset tour state in case of error
+      setIsActive(false);
+      setCurrentRoleId(null);
+      setVoiceEnabled(false);
+      setTourContext('demo');
+      
+      // Re-throw error so it can be caught by the caller
+      throw new Error(`Failed to start tour: ${error.message}`);
     }
-    
-    setIsActive(true);
-    setCurrentRoleId(roleId);
-    setVoiceEnabled(voiceEnabledParam);
-    setTourContext(context);
-    
-    // Save tour state to localStorage
-    const tourData = { 
-      roleId, 
-      active: true, 
-      voiceEnabled: voiceEnabledParam,
-      context,
-      originalRoleId: context === 'training' ? originalRoleId : null
-    };
-    localStorage.setItem("activeDemoTour", JSON.stringify(tourData));
-    console.log("Saved tour state to localStorage:", tourData);
   };
 
   const completeTour = () => {
