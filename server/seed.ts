@@ -3190,3 +3190,191 @@ async function seedMarketingData() {
       }
     ];
 
+    await db.insert(algorithmPerformance).values(algorithmPerformanceData);
+    console.log("Algorithm performance data seeded successfully");
+  }
+
+  // Seed CTP (Capable to Promise) optimization algorithms
+  const existingCTPAlgorithms = await db.select().from(optimizationAlgorithms).where(eq(optimizationAlgorithms.category, "capable_to_promise")).limit(1);
+  if (existingCTPAlgorithms.length === 0) {
+    const ctpAlgorithmsData = [
+      {
+        name: "material-capacity-analyzer",
+        displayName: "Material Capacity Analyzer",
+        description: "Analyzes incoming order requests against current material inventory and planned production capacity to determine earliest possible delivery dates. Considers material availability, lead times, and production resource capacity.",
+        category: "capable_to_promise",
+        type: "standard",
+        version: "1.0.0",
+        status: "approved",
+        isStandard: true,
+        configuration: {
+          parameters: {
+            bufferDays: {
+              type: "number",
+              default: 2,
+              min: 0,
+              max: 14,
+              description: "Safety buffer days to add to delivery promises",
+              required: true
+            },
+            materialSafetyStock: {
+              type: "number",
+              default: 10,
+              min: 0,
+              max: 50,
+              description: "Percentage of material to keep as safety stock",
+              required: true
+            },
+            capacityUtilizationLimit: {
+              type: "number",
+              default: 90,
+              min: 50,
+              max: 100,
+              description: "Maximum capacity utilization percentage for new orders",
+              required: true
+            },
+            considerLeadTimes: {
+              type: "boolean",
+              default: true,
+              description: "Include material lead times in calculations",
+              required: true
+            }
+          },
+          constraints: [
+            {
+              name: "material_availability",
+              type: "hard",
+              value: "sufficient_materials",
+              description: "Sufficient materials must be available or procurable"
+            },
+            {
+              name: "production_capacity",
+              type: "hard", 
+              value: "capacity_available",
+              description: "Production capacity must be available for processing"
+            }
+          ],
+          objectives: [
+            {
+              name: "minimize_delivery_time",
+              type: "minimize",
+              weight: 0.6,
+              description: "Minimize promised delivery time to customer"
+            },
+            {
+              name: "maximize_capacity_utilization",
+              type: "maximize", 
+              weight: 0.4,
+              description: "Optimize production capacity utilization"
+            }
+          ],
+          dataSources: ["stock_items", "vendors", "production_orders", "planned_orders", "resources"],
+          extensionData: []
+        },
+        algorithmCode: "/* Material Capacity Analyzer CTP Algorithm - Full implementation available in production system */",
+        uiComponents: {
+          components: [
+            {
+              type: "parameter_form",
+              title: "CTP Analysis Parameters",
+              fields: [
+                { name: "bufferDays", type: "number", label: "Buffer Days", tooltip: "Safety buffer days for delivery promises" },
+                { name: "materialSafetyStock", type: "number", label: "Material Safety Stock (%)", tooltip: "Percentage of inventory to reserve as safety stock" },
+                { name: "capacityUtilizationLimit", type: "number", label: "Max Capacity Utilization (%)", tooltip: "Maximum capacity utilization for new orders" }
+              ]
+            }
+          ]
+        },
+        performance: {
+          averageExecutionTime: 1.8,
+          accuracy: "92% delivery promise accuracy",
+          scalability: "Good up to 500 concurrent analyses",
+          memoryUsage: "8MB",
+          lastBenchmark: "2025-01-27T00:00:00Z"
+        },
+        approvals: {
+          testResults: { passed: true, coverage: "95%", testDate: "2025-01-26T00:00:00Z" },
+          managerApproval: { approved: true, approvedBy: "Sales Director", approvedAt: "2025-01-27T00:00:00Z", notes: "Approved for customer commitment analysis" }
+        },
+        createdBy: 6
+      },
+      {
+        name: "order-feasibility-checker",
+        displayName: "Order Feasibility Checker",
+        description: "Comprehensive feasibility analysis for incoming order requests considering resource availability, material constraints, production schedule conflicts, and alternative sourcing options.",
+        category: "capable_to_promise",
+        type: "standard",
+        version: "1.0.0",
+        status: "approved",
+        isStandard: true,
+        configuration: {
+          parameters: {
+            feasibilityThreshold: {
+              type: "number",
+              default: 75,
+              min: 50,
+              max: 95,
+              description: "Minimum feasibility score to approve order",
+              required: true
+            },
+            considerAlternatives: {
+              type: "boolean",
+              default: true,
+              description: "Analyze alternative materials and processes",
+              required: true
+            },
+            maxLeadTimeExtension: {
+              type: "number",
+              default: 30,
+              min: 0,
+              max: 90,
+              description: "Maximum lead time extension in days",
+              required: true
+            }
+          },
+          constraints: [
+            { name: "resource_availability", type: "hard", value: "required_resources_available", description: "Required resources must be available" },
+            { name: "material_feasibility", type: "hard", value: "materials_obtainable", description: "All required materials must be obtainable" }
+          ],
+          objectives: [
+            { name: "maximize_feasibility_score", type: "maximize", weight: 0.5, description: "Maximize overall order feasibility score" },
+            { name: "minimize_risk", type: "minimize", weight: 0.5, description: "Minimize execution risk" }
+          ],
+          dataSources: ["production_orders", "stock_items", "resources", "capabilities", "vendors"],
+          extensionData: []
+        },
+        algorithmCode: "/* Order Feasibility Checker CTP Algorithm - Full implementation available in production system */",
+        uiComponents: {
+          components: [
+            {
+              type: "parameter_form",
+              title: "Feasibility Analysis Parameters",
+              fields: [
+                { name: "feasibilityThreshold", type: "number", label: "Feasibility Threshold (%)", tooltip: "Minimum score to approve order" },
+                { name: "considerAlternatives", type: "checkbox", label: "Consider Alternatives", tooltip: "Analyze alternative options" }
+              ]
+            }
+          ]
+        },
+        performance: {
+          averageExecutionTime: 2.3,
+          accuracy: "89% feasibility prediction accuracy",
+          scalability: "Good up to 300 concurrent analyses",
+          memoryUsage: "12MB",
+          lastBenchmark: "2025-01-27T00:00:00Z"
+        },
+        approvals: {
+          testResults: { passed: true, coverage: "93%", testDate: "2025-01-26T00:00:00Z" },
+          managerApproval: { approved: true, approvedBy: "Operations Director", approvedAt: "2025-01-27T00:00:00Z", notes: "Approved for order feasibility assessment" }
+        },
+        createdBy: 6
+      }
+    ];
+
+    await db.insert(optimizationAlgorithms).values(ctpAlgorithmsData);
+    console.log("CTP optimization algorithms seeded successfully");
+  }
+
+  console.log("Database seeded successfully");
+}
+

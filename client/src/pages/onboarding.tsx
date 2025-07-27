@@ -294,10 +294,7 @@ export default function OnboardingPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/onboarding/status'] });
-      toast({
-        title: "Onboarding Started",
-        description: "Your company onboarding has been initialized.",
-      });
+      // Removed annoying "Onboarding Started" toast notification
     }
   });
 
