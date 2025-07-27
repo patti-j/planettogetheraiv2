@@ -101,7 +101,7 @@ export default function DataImport() {
 
   const importMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('/api/data-import/bulk', 'POST', data);
+      return apiRequest('POST', '/api/data-import/bulk', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries();
