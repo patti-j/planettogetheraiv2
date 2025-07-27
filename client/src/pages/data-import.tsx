@@ -487,36 +487,46 @@ export default function DataImport() {
 
   // Initialize AI prompt based on company information
   const initializeAIPrompt = () => {
-    const onboardingState = localStorage.getItem('onboarding-state');
+    // Load company info from onboarding localStorage
+    const onboardingCompanyInfo = localStorage.getItem('onboarding-company-info');
     let companyInfo = {
       name: 'Manufacturing Company',
       industry: 'General Manufacturing',
       size: 'Medium',
-      description: 'A manufacturing company'
+      description: 'A manufacturing company',
+      website: '',
+      numberOfPlants: '1',
+      products: ''
     };
 
-    if (onboardingState) {
+    if (onboardingCompanyInfo) {
       try {
-        const parsed = JSON.parse(onboardingState);
-        if (parsed.companyInfo) {
-          companyInfo = parsed.companyInfo;
-        }
+        const parsed = JSON.parse(onboardingCompanyInfo);
+        companyInfo = { ...companyInfo, ...parsed };
       } catch (error) {
         console.warn('Failed to parse onboarding company info:', error);
       }
     }
 
-    const defaultPrompt = `Generate comprehensive sample data for ${companyInfo.name}, a ${companyInfo.size.toLowerCase()} ${companyInfo.industry.toLowerCase()} company. 
+    const defaultPrompt = `Generate comprehensive sample data for ${companyInfo.name}, a ${companyInfo.size.toLowerCase()} ${companyInfo.industry.toLowerCase()} company.
 
-Company Description: ${companyInfo.description}
+Company Details:
+- Company Name: ${companyInfo.name}
+- Industry: ${companyInfo.industry}
+- Company Size: ${companyInfo.size}
+- Number of Plants: ${companyInfo.numberOfPlants || '1'}
+${companyInfo.website ? `- Website: ${companyInfo.website}` : ''}
+${companyInfo.products ? `- Main Products: ${companyInfo.products}` : ''}
+${companyInfo.description ? `- Description: ${companyInfo.description}` : ''}
 
 Please create realistic manufacturing data that reflects:
-- Industry-specific equipment and processes
-- Appropriate naming conventions for the ${companyInfo.industry} industry
-- Realistic production volumes and timelines
-- Proper organizational structure
+- Industry-specific equipment and processes typical for ${companyInfo.industry.toLowerCase()} companies
+- Appropriate naming conventions using "${companyInfo.name}" as the company reference
+- Realistic production volumes and timelines for a ${companyInfo.size.toLowerCase()} operation
+- Proper organizational structure across ${companyInfo.numberOfPlants || '1'} manufacturing location(s)
+${companyInfo.products ? `- Manufacturing processes relevant to: ${companyInfo.products}` : ''}
 
-Focus on creating data that would be typical for a ${companyInfo.size.toLowerCase()} company in the ${companyInfo.industry.toLowerCase()} sector.`;
+Focus on creating authentic, interconnected data that would be typical for ${companyInfo.name} in the ${companyInfo.industry.toLowerCase()} sector.`;
 
     setAiPrompt(defaultPrompt);
     return companyInfo;
@@ -528,20 +538,22 @@ Focus on creating data that would be typical for a ${companyInfo.size.toLowerCas
   };
 
   const executeAIGeneration = () => {
-    const onboardingState = localStorage.getItem('onboarding-state');
+    // Load company info from onboarding localStorage
+    const onboardingCompanyInfo = localStorage.getItem('onboarding-company-info');
     let companyInfo = {
       name: 'Manufacturing Company',
       industry: 'General Manufacturing',
       size: 'Medium',
-      description: 'A manufacturing company'
+      description: 'A manufacturing company',
+      website: '',
+      numberOfPlants: '1',
+      products: ''
     };
 
-    if (onboardingState) {
+    if (onboardingCompanyInfo) {
       try {
-        const parsed = JSON.parse(onboardingState);
-        if (parsed.companyInfo) {
-          companyInfo = parsed.companyInfo;
-        }
+        const parsed = JSON.parse(onboardingCompanyInfo);
+        companyInfo = { ...companyInfo, ...parsed };
       } catch (error) {
         console.warn('Failed to parse onboarding company info:', error);
       }

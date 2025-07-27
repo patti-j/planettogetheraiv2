@@ -190,7 +190,10 @@ export default function OnboardingPage() {
       name: '',
       industry: '',
       size: '',
-      description: ''
+      description: '',
+      website: '',
+      numberOfPlants: '',
+      products: ''
     };
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -321,7 +324,10 @@ export default function OnboardingPage() {
       name: '',
       industry: '',
       size: '',
-      description: ''
+      description: '',
+      website: '',
+      numberOfPlants: '',
+      products: ''
     });
   };
 
@@ -497,6 +503,52 @@ export default function OnboardingPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Website (Optional)</label>
+                  <Input
+                    value={companyInfo.website}
+                    onChange={(e) => {
+                      const newInfo = {...companyInfo, website: e.target.value};
+                      setCompanyInfo(newInfo);
+                      localStorage.setItem('onboarding-company-info', JSON.stringify(newInfo));
+                    }}
+                    placeholder="https://www.yourcompany.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Number of Plants</label>
+                  <Select 
+                    value={companyInfo.numberOfPlants}
+                    onValueChange={(value) => {
+                      const newInfo = {...companyInfo, numberOfPlants: value};
+                      setCompanyInfo(newInfo);
+                      localStorage.setItem('onboarding-company-info', JSON.stringify(newInfo));
+                    }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select number of plants" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 Plant</SelectItem>
+                      <SelectItem value="2-3">2-3 Plants</SelectItem>
+                      <SelectItem value="4-10">4-10 Plants</SelectItem>
+                      <SelectItem value="11-25">11-25 Plants</SelectItem>
+                      <SelectItem value="25+">25+ Plants</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Main Products/Services</label>
+                <Textarea
+                  value={companyInfo.products}
+                  onChange={(e) => {
+                    const newInfo = {...companyInfo, products: e.target.value};
+                    setCompanyInfo(newInfo);
+                    localStorage.setItem('onboarding-company-info', JSON.stringify(newInfo));
+                  }}
+                  placeholder="Describe your main products, components, or services..."
+                  className="min-h-[80px]"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Brief Description (Optional)</label>
