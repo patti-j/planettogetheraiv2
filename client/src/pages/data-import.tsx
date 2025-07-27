@@ -167,7 +167,8 @@ export default function DataImport() {
 
   const importMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('POST', '/api/data-import/bulk', data);
+      const response = await apiRequest('POST', '/api/data-import/bulk', data);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries();
@@ -187,7 +188,8 @@ export default function DataImport() {
 
   const aiGenerationMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('POST', '/api/data-import/generate-sample-data', data);
+      const response = await apiRequest('POST', '/api/data-import/generate-sample-data', data);
+      return await response.json();
     },
     onSuccess: (result: any) => {
       console.log('AI Generation Success Result:', result);

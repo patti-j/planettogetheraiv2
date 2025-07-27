@@ -2,6 +2,15 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **AI Generation Frontend Parsing Bug Fix (July 27, 2025)**:
+- Fixed critical frontend parsing issue where AI generation showed "zero records across zero data types" despite backend success
+- Root cause identified: Frontend apiRequest function returns Response object but mutation onSuccess expected parsed JSON data
+- Updated AI generation mutation to properly parse JSON from response: `await response.json()` before processing result
+- Fixed similar issue in import mutation for consistency across all data import operations
+- Backend confirmed working correctly with 13+ second generation time and proper record creation
+- Frontend now correctly displays actual record counts and data types generated instead of empty object
+- AI generation functionality fully restored - users can now see accurate generation statistics in toast notifications
+
 ✓ **Getting Started Access Enhancement (July 27, 2025)**:
 - Removed onboarding completion checks allowing users to always access Getting Started page for continued work
 - Updated OnboardingGate component to disable enforcement entirely - users can access all features regardless of completion status
