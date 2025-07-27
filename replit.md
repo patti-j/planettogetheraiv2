@@ -2,6 +2,20 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Mandatory Onboarding Flow Implementation (July 27, 2025)**:
+- Implemented comprehensive OnboardingGate component that enforces mandatory onboarding for new users
+- Users cannot access any application features until they complete company information and feature selection
+- Added intelligent tour bypass system - users can take tours to explore features before selecting them
+- OnboardingGate checks for both company name and selected features before allowing system access
+- Created welcome screen with two paths: "Complete Getting Started" or "Take a Tour First"
+- Tour option starts production scheduler demo tour to help users understand available features
+- Integrated with existing tour system to allow feature exploration without bypassing security
+- System automatically redirects incomplete users to /onboarding with helpful messaging
+- Prevents new user confusion by guiding them through proper setup process
+- Enhanced user experience with clear messaging about tour option for feature discovery
+
+## Recent Changes (July 27, 2025)
+
 ✓ **AI Generation Frontend Display Bug Fix (July 27, 2025)**:
 - Fixed critical frontend display issue where AI generation showed "zero records across zero data types" despite backend success
 - Root cause identified: Frontend was incorrectly parsing backend response structure with wrong fallback properties

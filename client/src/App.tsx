@@ -72,6 +72,7 @@ import Onboarding from "@/pages/onboarding";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
+import { OnboardingGate } from "@/components/onboarding-gate";
 
 
 function DashboardWithAutoTour() {
@@ -173,7 +174,8 @@ function Router() {
     <div className="h-screen bg-gray-50"> {/* No top padding needed */}
       <TopMenu />
       <SplitPaneLayout maxPanel={<MaxSidebar />}>
-        <Switch>
+        <OnboardingGate>
+          <Switch>
           <Route path="/marketing" component={MarketingLandingPage} />
           <Route path="/onboarding" component={Onboarding} />
           <Route path="/production-schedule">
@@ -400,6 +402,7 @@ function Router() {
           <Route path="/" component={DashboardWithAutoTour} />
           <Route component={NotFound} />
         </Switch>
+        </OnboardingGate>
       </SplitPaneLayout>
       {/* Integrated AI Assistant - now integrated in SplitPaneLayout */}
     </div>
