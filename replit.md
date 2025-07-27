@@ -17,6 +17,13 @@
 - Operations sequencer should now display all operations regardless of date and status filter settings
 - Fixed inconsistency between database schema and application code caused by incomplete Jobs-to-Production-Orders terminology migration
 
+✓ **Onboarding Feature Selection Persistence Fix (July 27, 2025)**:
+- Fixed critical issue where selected features weren't persisting when user returned to onboarding step 2
+- Added useEffect to load selectedFeatures state from existing onboarding database data on page initialization
+- Updated database to restore previously selected "production-scheduling" feature for current user onboarding session
+- Feature selection checkboxes now properly reflect saved selections from database when user navigates back to step 2
+- Enhanced onboarding workflow reliability by ensuring user selections persist across page refreshes and navigation
+
 ✓ **Getting Started Menu Restructuring & Route Cleanup (July 27, 2025)**:
 - Removed standalone "Getting Started" menu item and page from Training & Support section
 - Renamed onboarding page to "Getting Started" to consolidate duplicate functionality

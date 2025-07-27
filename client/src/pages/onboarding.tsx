@@ -195,6 +195,14 @@ export default function OnboardingPage() {
     enabled: !!user
   }) as { data: CompanyOnboarding | undefined };
 
+  // Initialize selected features from existing onboarding data
+  useEffect(() => {
+    if (existingOnboarding?.selectedFeatures) {
+      setSelectedFeatures(existingOnboarding.selectedFeatures);
+      console.log('Loaded selected features from database:', existingOnboarding.selectedFeatures);
+    }
+  }, [existingOnboarding]);
+
   // User preferences for cross-device company info sync
   const { data: userPreferences } = useQuery({
     queryKey: [`/api/user-preferences/${user?.id}`],
