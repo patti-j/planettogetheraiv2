@@ -8747,13 +8747,21 @@ Create a natural, conversational voice script that explains this feature to some
 
   app.put("/api/user-preferences", requireAuth, async (req, res) => {
     try {
-      const userId = req.user.id;
+      console.log("User preferences update request - User:", req.user);
+      console.log("User preferences update request - Body:", req.body);
+      
+      const userId = req.user?.id;
+      if (!userId) {
+        console.error("No user ID found in request");
+        return res.status(401).json({ error: "User not authenticated" });
+      }
       
       const preferences = await storage.upsertUserPreferences({
         userId,
         ...req.body
       });
 
+      console.log("User preferences updated successfully:", preferences);
       res.json(preferences);
     } catch (error) {
       console.error("Error updating user preferences:", error);
