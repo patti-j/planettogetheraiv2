@@ -2,6 +2,12 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Onboarding Data Requirements Consistency Fix (July 27, 2025)**:
+- Fixed inconsistency between onboarding feature requirements and actual Master Data Setup requirements
+- Updated production scheduling data requirements to include all necessary components: Production Orders, Resources, Operations, Plants, Capabilities
+- Ensured onboarding step 3 accurately reflects the complete data needed for production scheduling functionality
+- Enhanced consistency between feature selection and actual system requirements for better user guidance
+
 ✓ **Onboarding Authentication & Terminology Fixes (July 27, 2025)**:
 - Fixed authentication token key mismatch causing 401 Unauthorized errors in onboarding feature selection
 - Updated token key from 'auth-token' to 'authToken' to match queryClient authentication system

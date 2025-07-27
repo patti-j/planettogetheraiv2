@@ -61,7 +61,7 @@ const featureModules: FeatureModule[] = [
     complexity: 'beginner',
     prerequisites: [],
     estimatedSetupTime: '15-30 minutes',
-    dataRequirements: ['Production Orders', 'Resources', 'Operations'],
+    dataRequirements: ['Production Orders', 'Resources', 'Operations', 'Plants', 'Capabilities'],
     benefits: ['Visual production timeline', 'Resource optimization', 'Delivery planning'],
     isSelected: false
   },
