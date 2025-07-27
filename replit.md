@@ -2,6 +2,21 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Order Optimization Menu Item Restoration (July 27, 2025)**:
+- Added "Order Optimization" menu item back to the Planning & Scheduling section in the main navigation menu
+- Menu item uses Sparkles icon with amber color scheme to distinguish from other scheduling features
+- Links to existing /optimize-orders route which displays the scheduling optimizer page for new order scheduling
+- Configured with proper "scheduling-optimizer" feature permission matching the existing route protection
+- Order Optimization now prominently positioned as second item in Planning & Scheduling section for easy access
+
+✓ **Onboarding Feature List Updates (July 27, 2025)**:
+- Removed "Quality Control" feature from onboarding step 2 feature selection
+- Removed "Resource Management" feature from onboarding step 2 feature selection  
+- Added "Capacity Planning" feature with TrendingUp icon focused on production capacity forecasting
+- Added "Production Planning" feature with ClipboardList icon focused on production plans and targets
+- Updated feature prerequisites to maintain logical dependencies after resource management removal
+- Enhanced feature descriptions and data requirements for better user understanding
+
 ✓ **Mandatory Onboarding Flow Implementation (July 27, 2025)**:
 - Implemented comprehensive OnboardingGate component that enforces mandatory onboarding for new users
 - Users cannot access any application features until they complete company information and feature selection
