@@ -7,8 +7,9 @@
 - Users cannot access any application features until they complete company information and feature selection
 - Added intelligent tour bypass system - users can take tours to explore features before selecting them
 - OnboardingGate checks for both company name and selected features before allowing system access
-- Created welcome screen with two paths: "Complete Getting Started" or "Take a Tour First"
+- Created welcome screen with three paths: "Complete Getting Started", "Take a Tour First", or "Start Free Trial"
 - Tour option starts production scheduler demo tour to help users understand available features
+- Free trial option creates minimal setup with basic production scheduling access for immediate exploration
 - Integrated with existing tour system to allow feature exploration without bypassing security
 - System automatically redirects incomplete users to /onboarding with helpful messaging
 - Prevents new user confusion by guiding them through proper setup process

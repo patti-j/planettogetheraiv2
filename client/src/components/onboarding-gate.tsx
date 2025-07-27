@@ -3,7 +3,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTour } from "@/contexts/TourContext";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { PlayCircle } from "lucide-react";
+import { PlayCircle, Zap } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 
 interface OnboardingData {
   id: number;
@@ -30,6 +31,7 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
   const { isActive: isTourActive, startTour } = useTour();
   const [location, setLocation] = useLocation();
   const [shouldEnforceOnboarding, setShouldEnforceOnboarding] = useState(false);
+  const [isStartingTrial, setIsStartingTrial] = useState(false);
 
   // Get onboarding status for authenticated users
   const { data: onboardingData, isLoading: onboardingLoading } = useQuery({
@@ -92,6 +94,32 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
     }
   }, [shouldEnforceOnboarding, location, setLocation]);
 
+  // Handle starting a free trial
+  const handleStartFreeTrial = async () => {
+    if (!user) return;
+    
+    setIsStartingTrial(true);
+    try {
+      // Create minimal onboarding data for trial
+      const trialData = {
+        companyName: "Trial Company",
+        industry: "trial",
+        size: "small",
+        selectedFeatures: ["production-scheduling"], // Basic feature for trial
+        isCompleted: true
+      };
+
+      await apiRequest('PUT', '/api/onboarding', trialData);
+      
+      // Navigate to dashboard to start trial
+      setLocation('/');
+    } catch (error) {
+      console.error('Failed to start trial:', error);
+    } finally {
+      setIsStartingTrial(false);
+    }
+  };
+
   // Show loading state while checking authentication and onboarding status
   if (authLoading || (user && onboardingLoading)) {
     return (
@@ -137,8 +165,20 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
               <PlayCircle className="w-5 h-5" />
               Take a Tour First
             </button>
+            <button
+              onClick={handleStartFreeTrial}
+              disabled={isStartingTrial}
+              className="w-full bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isStartingTrial ? (
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              ) : (
+                <Zap className="w-5 h-5" />
+              )}
+              {isStartingTrial ? 'Starting Trial...' : 'Start Free Trial'}
+            </button>
             <p className="text-sm text-gray-500 text-center">
-              The tour will help you understand available features before making selections
+              The tour helps you explore features, or start a trial to jump right in
             </p>
           </div>
         </div>
