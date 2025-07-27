@@ -57,7 +57,7 @@ interface CompanyOnboarding {
 const featureModules: FeatureModule[] = [
   {
     id: 'production-scheduling',
-    name: 'Production Scheduling',
+    name: 'Schedule Optimization',
     description: 'Plan and schedule your production operations with drag-and-drop Gantt charts',
     icon: BarChart3,
     complexity: 'beginner',
@@ -69,7 +69,7 @@ const featureModules: FeatureModule[] = [
   },
   {
     id: 'capacity-planning',
-    name: 'Capacity Planning',
+    name: 'Capacity Optimization',
     description: 'Plan and forecast production capacity across your facilities and resources',
     icon: TrendingUp,
     complexity: 'intermediate',
@@ -93,7 +93,7 @@ const featureModules: FeatureModule[] = [
   },
   {
     id: 'production-planning',
-    name: 'Production Planning',
+    name: 'Production Plan Optimization',
     description: 'Create and manage production plans, targets, and milestones',
     icon: ClipboardList,
     complexity: 'intermediate',

@@ -2,6 +2,15 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Functional Module Optimization-Focused Renaming (July 27, 2025)**:
+- Successfully renamed three key functional modules to emphasize optimization capabilities throughout the application
+- Renamed "Production Scheduling" to "Schedule Optimization" in pricing page and onboarding feature list
+- Renamed "Capacity Planning" to "Capacity Optimization" in pricing page and onboarding feature list  
+- Renamed "Production Planning" to "Production Plan Optimization" in onboarding feature list
+- Updated module naming convention to consistently use "optimization" terminology for all functional modules
+- Enhanced clarity by emphasizing the optimization-focused nature of advanced manufacturing capabilities
+- Module IDs remain unchanged to preserve existing data and functionality while updating display names
+
 ✓ **Complete Demand Forecasting to Demand Planning Rename (July 27, 2025)**:
 - Successfully renamed "Demand Forecasting" to "Demand Planning" throughout the entire application
 - Updated page filename from demand-forecasting.tsx to demand-planning.tsx with corresponding App.tsx import updates
@@ -15,7 +24,7 @@
 
 ✓ **Module-Based Pricing System Implementation (July 27, 2025)**:
 - Successfully enhanced pricing structure with comprehensive functional module add-ons in addition to existing user-level tiers
-- Added four major functional modules: Production Scheduling ($25-250), Capacity Planning ($35-350), Inventory Optimization ($30-300), Demand Planning ($40-400)
+- Added four major functional modules: Schedule Optimization ($25-250), Capacity Optimization ($35-350), Inventory Optimization ($30-300), Demand Planning ($40-400)
 - Implemented per-plant pricing structure where functional modules are charged per plant per month for multi-location operations
 - Added plant count selector (1-30 plants) with real-time pricing calculation showing individual plant cost and total cost across all plants
 - Implemented smart module dependency system where advanced modules require core modules (Production Scheduling is foundation)
@@ -71,8 +80,8 @@
 ✓ **Onboarding Feature List Updates (July 27, 2025)**:
 - Removed "Quality Control" feature from onboarding step 2 feature selection
 - Removed "Resource Management" feature from onboarding step 2 feature selection  
-- Added "Capacity Planning" feature with TrendingUp icon focused on production capacity forecasting
-- Added "Production Planning" feature with ClipboardList icon focused on production plans and targets
+- Added "Capacity Optimization" feature with TrendingUp icon focused on production capacity forecasting
+- Added "Production Plan Optimization" feature with ClipboardList icon focused on production plans and targets
 - Updated feature prerequisites to maintain logical dependencies after resource management removal
 - Enhanced feature descriptions and data requirements for better user understanding
 

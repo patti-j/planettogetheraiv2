@@ -76,7 +76,7 @@ interface FunctionalModule {
 const functionalModules: FunctionalModule[] = [
   {
     id: "production-scheduling",
-    name: "Production Scheduling",
+    name: "Schedule Optimization",
     description: "Core scheduling engine with Gantt charts, resource allocation, and timeline optimization",
     monthlyPrice: 25,
     yearlyPrice: 250,
@@ -94,7 +94,7 @@ const functionalModules: FunctionalModule[] = [
   },
   {
     id: "capacity-planning",
-    name: "Capacity Planning",
+    name: "Capacity Optimization",
     description: "Advanced capacity forecasting, bottleneck analysis, and resource optimization",
     monthlyPrice: 35,
     yearlyPrice: 350,
