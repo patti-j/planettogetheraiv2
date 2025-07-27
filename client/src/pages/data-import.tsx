@@ -28,9 +28,50 @@ export default function DataImport() {
   const [importStatuses, setImportStatuses] = useState<ImportStatus[]>([]);
   const [isImporting, setIsImporting] = useState(false);
   const [selectedDataTypes, setSelectedDataTypes] = useState<string[]>([]);
+  const [recommendedDataTypes, setRecommendedDataTypes] = useState<string[]>([]);
+  const [onboardingFeatures, setOnboardingFeatures] = useState<string[]>([]);
 
-  // Load selected data types from localStorage on component mount
+  // Feature to data requirements mapping
+  const featureDataRequirements = {
+    'production-scheduling': ['plants', 'resources', 'capabilities', 'productionOrders'],
+    'resource-management': ['plants', 'resources', 'capabilities'],
+    'job-management': ['productionOrders', 'resources', 'plants'],
+    'capacity-planning': ['resources', 'capabilities', 'plants', 'productionOrders'],
+    'inventory-management': ['inventoryItems', 'storageLocations', 'plants'],
+    'quality-management': ['resources', 'plants', 'productionOrders'],
+    'maintenance-scheduling': ['resources', 'plants', 'users'],
+    'procurement': ['vendors', 'resources', 'plants'],
+    'sales-orders': ['customers', 'productionOrders', 'plants'],
+    'user-management': ['users', 'plants'],
+    'analytics-reporting': ['plants', 'resources', 'productionOrders']
+  };
+
+  // Load onboarding data and calculate recommendations
   useEffect(() => {
+    // Load saved onboarding state
+    const onboardingState = localStorage.getItem('onboarding-state');
+    if (onboardingState) {
+      try {
+        const parsed = JSON.parse(onboardingState);
+        if (parsed.selectedFeatures && Array.isArray(parsed.selectedFeatures)) {
+          setOnboardingFeatures(parsed.selectedFeatures);
+          
+          // Calculate recommended data types based on selected features
+          const recommended = new Set<string>();
+          parsed.selectedFeatures.forEach((feature: string) => {
+            const requirements = featureDataRequirements[feature as keyof typeof featureDataRequirements];
+            if (requirements) {
+              requirements.forEach(req => recommended.add(req));
+            }
+          });
+          setRecommendedDataTypes(Array.from(recommended));
+        }
+      } catch (error) {
+        console.warn('Failed to parse onboarding state:', error);
+      }
+    }
+
+    // Load selected data types from localStorage on component mount
     const saved = localStorage.getItem('master-data-selected-types');
     if (saved) {
       try {
@@ -56,7 +97,6 @@ export default function DataImport() {
   // Fetch available capabilities for dropdown
   const { data: capabilities = [] } = useQuery({
     queryKey: ['/api/capabilities'],
-    queryFn: () => apiRequest('/api/capabilities'),
     enabled: true
   });
 
@@ -979,6 +1019,83 @@ export default function DataImport() {
           </Button>
         </div>
       </div>
+
+      {/* Feature-Based Recommendations */}
+      {recommendedDataTypes.length > 0 && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-800">
+              <Lightbulb className="h-5 w-5" />
+              Recommended Data for Your Selected Features
+            </CardTitle>
+            <CardDescription className="text-blue-700">
+              Based on your onboarding feature selections, these data elements are recommended to get started quickly.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium text-blue-800 mb-2">Selected Features:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {onboardingFeatures.map(feature => (
+                    <Badge key={feature} variant="outline" className="border-blue-300 text-blue-700">
+                      {feature.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-blue-800 mb-2">Recommended Data Types:</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {recommendedDataTypes.map(dataTypeKey => {
+                    const dataType = dataTypes.find(dt => dt.key === dataTypeKey);
+                    if (!dataType) return null;
+                    
+                    const Icon = dataType.icon;
+                    const isCompleted = importStatuses.some(status => 
+                      status.type === dataTypeKey && status.status === 'success'
+                    );
+                    
+                    return (
+                      <div 
+                        key={dataTypeKey}
+                        className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                          isCompleted 
+                            ? 'bg-green-50 border-green-200' 
+                            : 'bg-white border-blue-200 hover:border-blue-300'
+                        }`}
+                      >
+                        <div className={`p-2 rounded-md ${isCompleted ? 'bg-green-100' : 'bg-blue-100'}`}>
+                          <Icon className={`h-4 w-4 ${isCompleted ? 'text-green-600' : 'text-blue-600'}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className={`font-medium text-sm ${isCompleted ? 'text-green-800' : 'text-blue-800'}`}>
+                              {dataType.label}
+                            </p>
+                            {isCompleted && <CheckCircle className="h-4 w-4 text-green-600" />}
+                          </div>
+                          <p className={`text-xs ${isCompleted ? 'text-green-600' : 'text-blue-600'}`}>
+                            {dataType.description}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  💡 <strong>Pro tip:</strong> Start with Plants and Capabilities first, then add Resources and Production Orders. 
+                  This order helps avoid dependency issues during data import.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6">
         {/* Import Status Overview */}
