@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -15,7 +16,8 @@ import { Link, useLocation } from "wouter";
 import {
   Factory, Users, BarChart3, Package, Settings, CheckCircle2, ArrowRight,
   Building, Target, Calendar, Truck, Wrench, Brain, Sparkles, Upload,
-  PlayCircle, BookOpen, Lightbulb, ChevronRight, Clock, Award, TrendingUp, ClipboardList
+  PlayCircle, BookOpen, Lightbulb, ChevronRight, Clock, Award, TrendingUp, ClipboardList,
+  Star, FileImage, Info, X
 } from "lucide-react";
 
 interface OnboardingStep {
@@ -203,6 +205,8 @@ export default function OnboardingPage() {
     products: ''
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [selectedIndustryTemplates, setSelectedIndustryTemplates] = useState<any[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -220,6 +224,32 @@ export default function OnboardingPage() {
       console.log('Loaded selected features from database:', existingOnboarding.selectedFeatures);
     }
   }, [existingOnboarding]);
+
+  // Fetch available industry templates
+  const { data: industryTemplates = [] } = useQuery({
+    queryKey: ['/api/industry-templates'],
+    enabled: !!user
+  });
+
+  // Map industry values to available templates
+  const industryToTemplateMap = React.useMemo(() => {
+    const map: Record<string, any[]> = {};
+    if (Array.isArray(industryTemplates)) {
+      industryTemplates.forEach((template: any) => {
+        const category = template.category || template.targetIndustry;
+        if (!map[category]) {
+          map[category] = [];
+        }
+        map[category].push(template);
+      });
+    }
+    return map;
+  }, [industryTemplates]);
+
+  // Function to check if industry has templates
+  const hasTemplatesForIndustry = (industry: string) => {
+    return !!(industryToTemplateMap[industry] && industryToTemplateMap[industry].length > 0);
+  };
 
   // User preferences for cross-device company info sync
   const { data: userPreferences } = useQuery({
@@ -318,6 +348,30 @@ export default function OnboardingPage() {
     }
   });
 
+  // Mutation to apply industry template
+  const applyTemplateMutation = useMutation({
+    mutationFn: async (templateId: string) => {
+      const response = await apiRequest('POST', `/api/industry-templates/${templateId}/apply`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Template Applied",
+        description: "Industry template has been applied to your system configuration."
+      });
+      setTemplateDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/industry-templates'] });
+    },
+    onError: (error) => {
+      console.error('Failed to apply template:', error);
+      toast({
+        title: "Error",
+        description: "Failed to apply industry template. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
   // Helper function to save company info with dual persistence
   const saveCompanyInfo = (newInfo: any) => {
     console.log('Saving company info:', newInfo);
@@ -347,7 +401,20 @@ export default function OnboardingPage() {
       console.log('Selected features updated from', prev, 'to', newFeatures);
       return newFeatures;
     });
-  };
+  }
+
+  // Handle industry selection with template checking
+  const handleIndustryChange = (value: string) => {
+    const newInfo = {...companyInfo, industry: value};
+    saveCompanyInfo(newInfo);
+    
+    // Check if this industry has templates and show dialog
+    const templatesForIndustry = industryToTemplateMap[value];
+    if (templatesForIndustry && templatesForIndustry.length > 0) {
+      setSelectedIndustryTemplates(templatesForIndustry);
+      setTemplateDialogOpen(true);
+    }
+  };;
 
   const handleNextStep = async () => {
     setIsLoading(true);
@@ -566,25 +633,92 @@ export default function OnboardingPage() {
                   <label className="block text-sm font-medium mb-2">Industry *</label>
                   <Select 
                     value={companyInfo.industry}
-                    onValueChange={(value) => {
-                      const newInfo = {...companyInfo, industry: value};
-                      saveCompanyInfo(newInfo);
-                    }}>
+                    onValueChange={handleIndustryChange}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select your industry" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="automotive">Automotive</SelectItem>
-                      <SelectItem value="aerospace">Aerospace</SelectItem>
-                      <SelectItem value="electronics">Electronics</SelectItem>
-                      <SelectItem value="pharmaceutical">Pharmaceutical</SelectItem>
-                      <SelectItem value="food-beverage">Food & Beverage</SelectItem>
-                      <SelectItem value="textiles">Textiles</SelectItem>
-                      <SelectItem value="chemicals">Chemicals</SelectItem>
-                      <SelectItem value="metals">Metals</SelectItem>
+                      <SelectItem value="automotive">
+                        <div className="flex items-center justify-between w-full">
+                          Automotive
+                          {hasTemplatesForIndustry("automotive") && (
+                            <FileImage className="w-4 h-4 text-blue-600 ml-2" />
+                          )}
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="aerospace">
+                        <div className="flex items-center justify-between w-full">
+                          Aerospace
+                          {hasTemplatesForIndustry("aerospace") && (
+                            <FileImage className="w-4 h-4 text-blue-600 ml-2" />
+                          )}
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="electronics">
+                        <div className="flex items-center justify-between w-full">
+                          Electronics
+                          {hasTemplatesForIndustry("electronics") && (
+                            <FileImage className="w-4 h-4 text-blue-600 ml-2" />
+                          )}
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="pharmaceutical">
+                        <div className="flex items-center justify-between w-full">
+                          Pharmaceutical
+                          {hasTemplatesForIndustry("pharmaceutical") && (
+                            <FileImage className="w-4 h-4 text-blue-600 ml-2" />
+                          )}
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="food_beverage">
+                        <div className="flex items-center justify-between w-full">
+                          Food & Beverage
+                          {hasTemplatesForIndustry("food_beverage") && (
+                            <FileImage className="w-4 h-4 text-blue-600 ml-2" />
+                          )}
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="textiles">
+                        <div className="flex items-center justify-between w-full">
+                          Textiles
+                          {hasTemplatesForIndustry("textiles") && (
+                            <FileImage className="w-4 h-4 text-blue-600 ml-2" />
+                          )}
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="chemicals">
+                        <div className="flex items-center justify-between w-full">
+                          Chemicals
+                          {hasTemplatesForIndustry("chemicals") && (
+                            <FileImage className="w-4 h-4 text-blue-600 ml-2" />
+                          )}
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="metals">
+                        <div className="flex items-center justify-between w-full">
+                          Metals
+                          {hasTemplatesForIndustry("metals") && (
+                            <FileImage className="w-4 h-4 text-blue-600 ml-2" />
+                          )}
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="manufacturing">
+                        <div className="flex items-center justify-between w-full">
+                          General Manufacturing
+                          {hasTemplatesForIndustry("manufacturing") && (
+                            <FileImage className="w-4 h-4 text-blue-600 ml-2" />
+                          )}
+                        </div>
+                      </SelectItem>
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
+                  {companyInfo.industry && hasTemplatesForIndustry(companyInfo.industry) && (
+                    <div className="mt-2 flex items-center gap-2 text-sm text-blue-600">
+                      <Star className="w-4 h-4" />
+                      Industry templates available for this selection
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Company Size</label>
@@ -953,6 +1087,74 @@ export default function OnboardingPage() {
           </div>
         </div>
       </div>
+
+      {/* Template Suggestion Dialog */}
+      <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileImage className="w-5 h-5 text-blue-600" />
+              Industry Templates Available
+            </DialogTitle>
+            <DialogDescription>
+              We found {selectedIndustryTemplates.length} industry template{selectedIndustryTemplates.length > 1 ? 's' : ''} that match your industry selection. These templates can help you get started faster with pre-configured settings.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {selectedIndustryTemplates.map((template, index) => (
+              <div key={template.id || index} className="border rounded-lg p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-lg">{template.name}</h4>
+                    <p className="text-sm text-gray-600 mt-1">{template.description}</p>
+                    
+                    {template.features && template.features.length > 0 && (
+                      <div className="mt-3">
+                        <p className="text-sm font-medium mb-2">Includes:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {template.features.slice(0, 3).map((feature: any, idx: number) => (
+                            <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
+                              {feature}
+                            </span>
+                          ))}
+                          {template.features.length > 3 && (
+                            <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                              +{template.features.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <Button 
+                    onClick={() => applyTemplateMutation.mutate(template.id)}
+                    disabled={applyTemplateMutation.isPending}
+                    size="sm"
+                    className="ml-4"
+                  >
+                    {applyTemplateMutation.isPending ? "Applying..." : "Apply"}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
+            <Info className="w-4 h-4 text-blue-600" />
+            <p className="text-sm text-blue-800">
+              You can always change or modify templates later from the Industry Templates page in System Administration.
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={() => setTemplateDialogOpen(false)}>
+              Skip for Now
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
