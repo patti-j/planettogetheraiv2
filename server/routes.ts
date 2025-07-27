@@ -8756,9 +8756,12 @@ Create a natural, conversational voice script that explains this feature to some
         return res.status(401).json({ error: "User not authenticated" });
       }
       
+      // Clean the request body to only include fields that should be updated
+      const { id, createdAt, updatedAt, ...updateData } = req.body;
+      
       const preferences = await storage.upsertUserPreferences({
         userId,
-        ...req.body
+        ...updateData
       });
 
       console.log("User preferences updated successfully:", preferences);
