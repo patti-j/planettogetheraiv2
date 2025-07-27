@@ -14604,7 +14604,12 @@ Response must be valid JSON:
     const { companyName, industry, size, description } = req.body;
     
     if (!companyName || !industry) {
-      throw new ValidationError("Company name and industry are required");
+      throw new ValidationError("Company name and industry are required", {
+        operation: 'Initialize Onboarding',
+        endpoint: '/api/onboarding/initialize',
+        userId: req.user!.id,
+        requestData: { companyName, industry, size, description }
+      });
     }
 
     const onboardingData = {
@@ -14625,7 +14630,12 @@ Response must be valid JSON:
       res.status(201).json(onboarding);
     } catch (error) {
       console.error('Error creating onboarding:', error);
-      throw new DatabaseError("Failed to initialize onboarding");
+      throw new DatabaseError("Failed to initialize onboarding", {
+        operation: 'Initialize Onboarding',
+        endpoint: '/api/onboarding/initialize',
+        userId: req.user!.id,
+        requestData: onboardingData
+      }, error as Error);
     }
   }));
 
