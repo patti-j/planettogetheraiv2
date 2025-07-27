@@ -138,20 +138,12 @@ export function MaxSidebar() {
   const [inputMessage, setInputMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [currentInsights, setCurrentInsights] = useState<AIInsight[]>([]);
-  const [isVoiceEnabled, setIsVoiceEnabled] = useState(() => {
-    const saved = localStorage.getItem('maxVoiceEnabled');
-    return saved !== null ? JSON.parse(saved) : true;
-  });
-  const [selectedVoice, setSelectedVoice] = useState(() => {
-    return localStorage.getItem('maxSelectedVoice') || 'alloy';
-  });
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
+  const [selectedVoice, setSelectedVoice] = useState('alloy');
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
   
-  // Save voice settings to localStorage whenever they change
+  // Save voice settings to database only
   useEffect(() => {
-    localStorage.setItem('maxVoiceEnabled', JSON.stringify(isVoiceEnabled));
-    
-    // Also save to user preferences for authenticated users
     if (user?.id) {
       const saveVoicePreference = async () => {
         try {
@@ -167,9 +159,6 @@ export function MaxSidebar() {
   }, [isVoiceEnabled, user?.id]);
   
   useEffect(() => {
-    localStorage.setItem('maxSelectedVoice', selectedVoice);
-    
-    // Also save to user preferences for authenticated users
     if (user?.id) {
       const saveVoicePreference = async () => {
         try {
@@ -200,7 +189,7 @@ export function MaxSidebar() {
           }
         } catch (error) {
           console.error('Failed to load voice preferences:', error);
-          // Fall back to localStorage values which are already set
+          // Use default values (already set in state initialization)
         }
       };
       loadUserVoicePreferences();

@@ -173,28 +173,16 @@ const onboardingSteps: OnboardingStep[] = [
 ];
 
 export default function OnboardingPage() {
-  const [currentStep, setCurrentStep] = useState(() => {
-    // Load from localStorage or start at 0
-    const saved = localStorage.getItem('onboarding-current-step');
-    return saved ? parseInt(saved) : 0;
-  });
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>(() => {
-    // Load from localStorage
-    const saved = localStorage.getItem('onboarding-selected-features');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [companyInfo, setCompanyInfo] = useState(() => {
-    // Load from localStorage
-    const saved = localStorage.getItem('onboarding-company-info');
-    return saved ? JSON.parse(saved) : {
-      name: '',
-      industry: '',
-      size: '',
-      description: '',
-      website: '',
-      numberOfPlants: '',
-      products: ''
-    };
+  const [currentStep, setCurrentStep] = useState(0);
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const [companyInfo, setCompanyInfo] = useState({
+    name: '',
+    industry: '',
+    size: '',
+    description: '',
+    website: '',
+    numberOfPlants: '',
+    products: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -212,6 +200,13 @@ export default function OnboardingPage() {
     queryKey: [`/api/user-preferences/${user?.id}`],
     enabled: !!user?.id
   });
+
+  // Load company info from user preferences (database only)
+  useEffect(() => {
+    if (userPreferences?.companyInfo) {
+      setCompanyInfo(userPreferences.companyInfo);
+    }
+  }, [userPreferences]);
 
   // Mutation to update user preferences with company info
   const updatePreferencesMutation = useMutation({
@@ -265,12 +260,10 @@ export default function OnboardingPage() {
     }
   });
 
-  // Helper function to save company info to both localStorage and database
+  // Helper function to save company info to database only
   const saveCompanyInfo = (newInfo: any) => {
     setCompanyInfo(newInfo);
-    // Save to localStorage for immediate access and fallback
-    localStorage.setItem('onboarding-company-info', JSON.stringify(newInfo));
-    // Save to database for cross-device sync (for authenticated users)
+    // Save to database for authenticated users only
     if (user?.id) {
       updatePreferencesMutation.mutate(newInfo);
     }
@@ -285,8 +278,6 @@ export default function OnboardingPage() {
         ? prev.filter(id => id !== featureId)
         : [...prev, featureId];
       console.log('Selected features updated from', prev, 'to', newFeatures);
-      // Save to localStorage
-      localStorage.setItem('onboarding-selected-features', JSON.stringify(newFeatures));
       return newFeatures;
     });
   };
@@ -325,8 +316,6 @@ export default function OnboardingPage() {
       if (currentStep < onboardingSteps.length - 1) {
         const nextStep = currentStep + 1;
         setCurrentStep(nextStep);
-        // Save progress to localStorage
-        localStorage.setItem('onboarding-current-step', nextStep.toString());
       }
     } catch (error) {
       console.error('Error in handleNextStep:', error);
@@ -344,15 +333,11 @@ export default function OnboardingPage() {
     if (onboardingSteps[currentStep].isSkippable && currentStep < onboardingSteps.length - 1) {
       const nextStep = currentStep + 1;
       setCurrentStep(nextStep);
-      localStorage.setItem('onboarding-current-step', nextStep.toString());
     }
   };
 
   const handleStartOver = () => {
-    // Clear all localStorage data and restart
-    localStorage.removeItem('onboarding-current-step');
-    localStorage.removeItem('onboarding-selected-features');
-    localStorage.removeItem('onboarding-company-info');
+    // Reset onboarding state to beginning
     setCurrentStep(0);
     setSelectedFeatures([]);
     setCompanyInfo({

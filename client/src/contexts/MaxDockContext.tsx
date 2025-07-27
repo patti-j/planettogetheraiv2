@@ -39,42 +39,15 @@ const MaxDockContext = createContext<MaxDockContextType | undefined>(undefined);
 export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   
-  // Initialize states with localStorage persistence
-  const [isMaxOpen, setIsMaxOpen] = useState(() => {
-    const saved = localStorage.getItem('max-ai-open');
-    return saved !== null ? JSON.parse(saved) : false;
-  });
-  
-  const [maxWidth, setMaxWidth] = useState(() => {
-    const saved = localStorage.getItem('max-ai-width');
-    return saved ? parseInt(saved) : 400;
-  });
-  
-  const [currentPage, setCurrentPage] = useState(() => {
-    return localStorage.getItem('max-ai-current-page') || '/';
-  });
-  
+  // Initialize states with default values (database-only persistence)
+  const [isMaxOpen, setIsMaxOpen] = useState(false);
+  const [maxWidth, setMaxWidth] = useState(400);
+  const [currentPage, setCurrentPage] = useState('/');
   const [isMobile, setIsMobile] = useState(false);
-  const [mobileLayoutMode, setMobileLayoutMode] = useState<'split' | 'fullscreen'>(() => {
-    const saved = localStorage.getItem('max-ai-mobile-layout');
-    return (saved as 'split' | 'fullscreen') || 'split';
-  });
-  
-  const [currentFullscreenView, setCurrentFullscreenView] = useState<'main' | 'max'>(() => {
-    const saved = localStorage.getItem('max-ai-fullscreen-view');
-    return (saved as 'main' | 'max') || 'max';
-  });
-  
-  const [isCanvasVisible, setIsCanvasVisible] = useState(() => {
-    const saved = localStorage.getItem('max-ai-canvas-visible');
-    return saved !== null ? JSON.parse(saved) : false;
-  });
-  
-  const [canvasHeight, setCanvasHeight] = useState(() => {
-    const saved = localStorage.getItem('max-ai-canvas-height');
-    return saved ? parseInt(saved) : 300;
-  });
-  
+  const [mobileLayoutMode, setMobileLayoutMode] = useState<'split' | 'fullscreen'>('split');
+  const [currentFullscreenView, setCurrentFullscreenView] = useState<'main' | 'max'>('max');
+  const [isCanvasVisible, setIsCanvasVisible] = useState(false);
+  const [canvasHeight, setCanvasHeight] = useState(300);
   const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]); // Canvas items state
 
   // User preferences query and mutation for authenticated users
@@ -113,15 +86,9 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, [userPreferences]);
 
-  // Save state to localStorage and database
+  // Save state to database only
   const saveMaxState = (updates: any) => {
-    // Save to localStorage immediately
-    Object.keys(updates).forEach(key => {
-      localStorage.setItem(`max-ai-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`, 
-        typeof updates[key] === 'boolean' ? JSON.stringify(updates[key]) : updates[key].toString());
-    });
-    
-    // Save to database for authenticated users (debounced)
+    // Save to database for authenticated users only
     if (user?.id) {
       const maxAiState = updates;
       updatePreferencesMutation.mutate({ maxAiState });

@@ -70,11 +70,6 @@ function DraggableDashboardCard({
   setDashboardManagerOpen
 }: DraggableDashboardCardProps) {
   const [size, setSize] = useState(() => {
-    const saved = localStorage.getItem(`dashboard-size-${dashboard.id}`);
-    if (saved) {
-      return JSON.parse(saved);
-    }
-    
     // Auto-calculate size based on widgets with better bounds
     if (dashboard.configuration?.customWidgets?.length > 0) {
       const widgets = dashboard.configuration.customWidgets;
@@ -261,15 +256,9 @@ export default function Analytics() {
   const [isMaximized, setIsMaximized] = useState(false);
   const [dashboardManagerOpen, setDashboardManagerOpen] = useState(false);
   const [aiAnalyticsOpen, setAiAnalyticsOpen] = useState(false);
-  const [visibleDashboards, setVisibleDashboards] = useState<Set<number>>(() => {
-    const saved = localStorage.getItem('analytics-visible-dashboards');
-    return saved ? new Set(JSON.parse(saved)) : new Set();
-  });
+  const [visibleDashboards, setVisibleDashboards] = useState<Set<number>>(new Set());
   const [isLivePaused, setIsLivePaused] = useState(false);
-  const [dashboardOrder, setDashboardOrder] = useState<number[]>(() => {
-    const saved = localStorage.getItem('analytics-dashboard-order');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [dashboardOrder, setDashboardOrder] = useState<number[]>([]);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -331,17 +320,7 @@ export default function Analytics() {
     }
   }, [dashboards, dashboardOrder.length]);
 
-  // Save visible dashboards to localStorage
-  useEffect(() => {
-    localStorage.setItem('analytics-visible-dashboards', JSON.stringify(Array.from(visibleDashboards)));
-  }, [visibleDashboards]);
-
-  // Save dashboard order to localStorage
-  useEffect(() => {
-    if (dashboardOrder.length > 0) {
-      localStorage.setItem('analytics-dashboard-order', JSON.stringify(dashboardOrder));
-    }
-  }, [dashboardOrder]);
+  // No localStorage persistence - dashboard state is session-only
 
   // Handle dashboard reordering
   const handleDashboardMove = (dragIndex: number, dropIndex: number) => {
@@ -362,8 +341,7 @@ export default function Analytics() {
       newOrder.splice(targetIndex, 0, removed);
       setDashboardOrder(newOrder);
       
-      // Store the new order in localStorage for persistence
-      localStorage.setItem('dashboardOrder', JSON.stringify(newOrder));
+      // No localStorage persistence - order is session-only
       
       // Show success feedback
       toast({

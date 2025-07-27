@@ -52,83 +52,13 @@ export default function DataImport() {
     'analytics-reporting': ['plants', 'resources', 'productionOrders']
   };
 
-  // Load onboarding data and calculate recommendations
+  // No localStorage dependencies - data-import is self-contained
   useEffect(() => {
-    // Try to load from different possible localStorage keys
-    const onboardingState = localStorage.getItem('onboarding-state');
-    const selectedFeaturesOnly = localStorage.getItem('onboarding-selected-features');
-    
-    console.log('Raw onboarding state from localStorage:', onboardingState);
-    console.log('Selected features from localStorage:', selectedFeaturesOnly);
-    
-    let featuresArray: string[] = [];
-    
-    // First try the consolidated onboarding state
-    if (onboardingState) {
-      try {
-        const parsed = JSON.parse(onboardingState);
-        console.log('Parsed onboarding state:', parsed);
-        
-        if (parsed.selectedFeatures && Array.isArray(parsed.selectedFeatures)) {
-          featuresArray = parsed.selectedFeatures;
-        }
-      } catch (error) {
-        console.warn('Failed to parse onboarding state:', error);
-      }
-    }
-    
-    // If no features found, try the separate selected features storage
-    if (featuresArray.length === 0 && selectedFeaturesOnly) {
-      try {
-        const parsedFeatures = JSON.parse(selectedFeaturesOnly);
-        console.log('Parsed selected features:', parsedFeatures);
-        
-        if (Array.isArray(parsedFeatures)) {
-          featuresArray = parsedFeatures;
-        }
-      } catch (error) {
-        console.warn('Failed to parse selected features:', error);
-      }
-    }
-    
-    if (featuresArray.length > 0) {
-      console.log('Using selected features:', featuresArray);
-      setOnboardingFeatures(featuresArray);
-      
-      // Calculate recommended data types based on selected features
-      const recommended = new Set<string>();
-      featuresArray.forEach((feature: string) => {
-        const requirements = featureDataRequirements[feature as keyof typeof featureDataRequirements];
-        console.log(`Feature ${feature} requires:`, requirements);
-        if (requirements) {
-          requirements.forEach(req => recommended.add(req));
-        }
-      });
-      const recommendedArray = Array.from(recommended);
-      console.log('Final recommended data types:', recommendedArray);
-      setRecommendedDataTypes(recommendedArray);
-    } else {
-      console.log('No selected features found in any localStorage key');
-    }
-
-    // Load selected data types from localStorage on component mount
-    const saved = localStorage.getItem('master-data-selected-types');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          setSelectedDataTypes(parsed);
-        }
-      } catch (error) {
-        console.warn('Failed to parse saved data types:', error);
-      }
-    }
+    // Data recommendations can be set through other means if needed
+    console.log('Master Data Setup initialized without localStorage dependencies');
   }, []);
 
-  // Save selected data types to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('master-data-selected-types', JSON.stringify(selectedDataTypes));
-  }, [selectedDataTypes]);
+  // No localStorage saving - selections are session-only
   
   const [showConsolidatedDialog, setShowConsolidatedDialog] = useState(false);
   const { toast } = useToast();

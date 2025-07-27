@@ -55,14 +55,8 @@ export default function GanttChart({
   const [resourceDialogOpen, setResourceDialogOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [jobDialogOpen, setJobDialogOpen] = useState(false);
-  // Load zoom level from localStorage or default to "day"
-  const [timeUnit, setTimeUnit] = useState<TimeUnit>(() => {
-    const savedZoomLevel = localStorage.getItem('gantt-zoom-level');
-    if (savedZoomLevel && ["hour", "shift", "day", "week", "month", "quarter", "year", "decade"].includes(savedZoomLevel)) {
-      return savedZoomLevel as TimeUnit;
-    }
-    return "day";
-  });
+  // Default zoom level (session-only persistence)
+  const [timeUnit, setTimeUnit] = useState<TimeUnit>("day");
   const [timelineScrollLeft, setTimelineScrollLeft] = useState(0);
   const [resourceListScrollTop, setResourceListScrollTop] = useState(0);
   const [internalSelectedResourceViewId, setInternalSelectedResourceViewId] = useState<number | null>(null);
@@ -88,10 +82,7 @@ export default function GanttChart({
       setInternalSelectedResourceViewId(viewId);
     }
   };
-  // Save zoom level to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('gantt-zoom-level', timeUnit);
-  }, [timeUnit]);
+  // No localStorage persistence - zoom level is session-only
 
   // Create a truly stable base date that never changes
   const timelineBaseDate = useMemo(() => new Date(2025, 6, 13, 7, 0, 0, 0), []); // Fixed to July 13, 2025 07:00:00

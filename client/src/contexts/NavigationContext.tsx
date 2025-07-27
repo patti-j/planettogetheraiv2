@@ -18,7 +18,6 @@ interface NavigationContextType {
 
 const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'navigation-recent-pages';
 const MAX_RECENT_PAGES = 6;
 
 // Page mapping for labels and icons
@@ -63,12 +62,11 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { user, isAuthenticated } = useAuth();
 
-  // Load recent pages from user preferences or localStorage fallback
+  // Load recent pages from user preferences (database only)
   useEffect(() => {
     const loadRecentPages = async () => {
       if (isAuthenticated && user?.id) {
         try {
-          // Load from user preferences
           const response = await apiRequest('GET', `/api/user-preferences/${user.id}`);
           const preferences = await response.json();
           const savedRecentPages = preferences?.dashboardLayout?.recentPages || [];
@@ -76,27 +74,12 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
             setRecentPages(savedRecentPages.slice(0, MAX_RECENT_PAGES));
           }
         } catch (error) {
-          console.warn('Failed to load recent pages from user preferences:', error);
-          // Fallback to localStorage
-          loadFromLocalStorage();
+          console.warn('Failed to load recent pages from database:', error);
+          setRecentPages([]);
         }
       } else {
-        // Not authenticated, use localStorage
-        loadFromLocalStorage();
-      }
-    };
-
-    const loadFromLocalStorage = () => {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            setRecentPages(parsed.slice(0, MAX_RECENT_PAGES));
-          }
-        }
-      } catch (error) {
-        console.warn('Failed to load recent pages from localStorage:', error);
+        // Not authenticated, clear recent pages
+        setRecentPages([]);
       }
     };
 
@@ -163,22 +146,10 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
           dashboardLayout: updatedDashboardLayout
         });
       } catch (error) {
-        console.warn('Failed to save recent pages to user preferences:', error);
-        // Fallback to localStorage
-        saveToLocalStorage(pages);
+        console.warn('Failed to save recent pages to database:', error);
       }
-    } else {
-      // Not authenticated, use localStorage
-      saveToLocalStorage(pages);
     }
-  };
-
-  const saveToLocalStorage = (pages: RecentPage[]) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
-    } catch (error) {
-      console.warn('Failed to save recent pages to localStorage:', error);
-    }
+    // Only save for authenticated users - no localStorage fallback
   };
 
   const clearRecentPages = async () => {
@@ -200,22 +171,10 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
           dashboardLayout: updatedDashboardLayout
         });
       } catch (error) {
-        console.warn('Failed to clear recent pages from user preferences:', error);
-        // Fallback to localStorage
-        try {
-          localStorage.removeItem(STORAGE_KEY);
-        } catch (localError) {
-          console.warn('Failed to clear recent pages from localStorage:', localError);
-        }
-      }
-    } else {
-      // Not authenticated, use localStorage
-      try {
-        localStorage.removeItem(STORAGE_KEY);
-      } catch (error) {
-        console.warn('Failed to clear recent pages from localStorage:', error);
+        console.warn('Failed to clear recent pages from database:', error);
       }
     }
+    // Only clear for authenticated users - no localStorage fallback
   };
 
   return (
