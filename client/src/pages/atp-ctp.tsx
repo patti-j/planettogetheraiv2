@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useMaxDock } from "@/contexts/MaxDockContext";
 import { 
   Package, CheckCircle2, Clock, AlertTriangle, Calendar, 
   Search, Factory, Truck, Calculator, TrendingUp, Info
@@ -55,6 +56,7 @@ interface AtpResult {
 
 export default function AtpCtpPage() {
   const { toast } = useToast();
+  const { isMaxOpen } = useMaxDock();
   const [selectedProduct, setSelectedProduct] = useState<string>("");
   const [requestedQuantity, setRequestedQuantity] = useState<string>("");
   const [requestedDate, setRequestedDate] = useState<string>("");
@@ -164,7 +166,7 @@ export default function AtpCtpPage() {
   };
 
   return (
-    <div className="space-y-6 p-4">
+    <div className={`space-y-6 p-4 ${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
       {/* Header */}
       <div className="flex items-center gap-2">
         <Package className="w-6 h-6 text-blue-600" />
