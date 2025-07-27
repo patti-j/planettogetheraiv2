@@ -517,24 +517,17 @@ export default function OnboardingPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Number of Plants</label>
-                  <Select 
+                  <Input
+                    type="number"
+                    min="1"
                     value={companyInfo.numberOfPlants}
-                    onValueChange={(value) => {
-                      const newInfo = {...companyInfo, numberOfPlants: value};
+                    onChange={(e) => {
+                      const newInfo = {...companyInfo, numberOfPlants: e.target.value};
                       setCompanyInfo(newInfo);
                       localStorage.setItem('onboarding-company-info', JSON.stringify(newInfo));
-                    }}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select number of plants" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1 Plant</SelectItem>
-                      <SelectItem value="2-3">2-3 Plants</SelectItem>
-                      <SelectItem value="4-10">4-10 Plants</SelectItem>
-                      <SelectItem value="11-25">11-25 Plants</SelectItem>
-                      <SelectItem value="25+">25+ Plants</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    }}
+                    placeholder="Enter number of manufacturing plants"
+                  />
                 </div>
               </div>
               <div>

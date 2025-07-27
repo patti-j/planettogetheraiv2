@@ -5,7 +5,7 @@
 ✓ **Enhanced AI Sample Data Generation with Comprehensive Company Information (July 27, 2025)**:
 - Enhanced onboarding wizard to collect detailed company information including website, number of plants, and product descriptions
 - Updated AI generation prompt to properly include company name and all company details for more personalized sample data
-- Added new company information fields: website URL, number of plants (1, 2-3, 4-10, 11-25, 25+), and main products/services description
+- Added new company information fields: website URL, number of plants (exact number entry), and main products/services description
 - Fixed AI prompt initialization to correctly load company information from localStorage using 'onboarding-company-info' key
 - Enhanced prompt template to include structured company details section with conditional fields for website, products, and description
 - AI now generates industry-specific sample data that references the actual company name and reflects realistic business characteristics
