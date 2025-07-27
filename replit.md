@@ -2,6 +2,14 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Operations Sequencer Database Schema Fix (July 27, 2025)**:
+- Fixed critical operations API failure causing "Failed to fetch operations" error that prevented operations from displaying in sequencer
+- Resolved database schema mismatch where operations table used legacy 'job_id' column instead of current 'production_order_id'
+- Successfully migrated operations table column from job_id to production_order_id via SQL ALTER TABLE command
+- Operations API now returns 5 operations correctly: CNC Machining, Welding, Assembly, Housing Machining, Quality Check
+- Operations sequencer should now display all operations regardless of date and status filter settings
+- Fixed inconsistency between database schema and application code caused by incomplete Jobs-to-Production-Orders terminology migration
+
 ✓ **Getting Started Menu Restructuring & Route Cleanup (July 27, 2025)**:
 - Removed standalone "Getting Started" menu item and page from Training & Support section
 - Renamed onboarding page to "Getting Started" to consolidate duplicate functionality
