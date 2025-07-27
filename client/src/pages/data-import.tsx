@@ -25,6 +25,363 @@ interface ImportStatus {
   count?: number;
 }
 
+// Component for managing existing data
+function ManageDataTab({ dataType }: { dataType: string }) {
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [newItem, setNewItem] = useState<any>({});
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Dynamic query based on data type
+  const { data: items = [], isLoading } = useQuery<any[]>({
+    queryKey: [`/api/${getApiEndpoint(dataType)}`],
+    enabled: true
+  });
+
+  function getApiEndpoint(type: string): string {
+    const endpoints: Record<string, string> = {
+      'plants': 'plants',
+      'resources': 'resources', 
+      'capabilities': 'capabilities',
+      'productionOrders': 'jobs',
+      'users': 'users',
+      'vendors': 'vendors',
+      'customers': 'customers'
+    };
+    return endpoints[type] || type;
+  }
+
+  const updateMutation = useMutation({
+    mutationFn: async (item: any) => {
+      const endpoint = getApiEndpoint(dataType);
+      const response = await fetch(`/api/${endpoint}/${item.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item)
+      });
+      if (!response.ok) throw new Error('Failed to update item');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Item updated successfully" });
+      queryClient.invalidateQueries({ queryKey: [`/api/${getApiEndpoint(dataType)}`] });
+      setEditingItem(null);
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (item: any) => {
+      const endpoint = getApiEndpoint(dataType);
+      const response = await fetch(`/api/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item)
+      });
+      if (!response.ok) throw new Error('Failed to create item');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Item created successfully" });
+      queryClient.invalidateQueries({ queryKey: [`/api/${getApiEndpoint(dataType)}`] });
+      setShowAddDialog(false);
+      setNewItem({});
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const endpoint = getApiEndpoint(dataType);
+      const response = await fetch(`/api/${endpoint}/${id}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Failed to delete item');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Item deleted successfully" });
+      queryClient.invalidateQueries({ queryKey: [`/api/${getApiEndpoint(dataType)}`] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-medium">Existing {dataType} Data</h3>
+          <p className="text-sm text-gray-600">{items.length} items found</p>
+        </div>
+        <Button onClick={() => setShowAddDialog(true)} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Add New
+        </Button>
+      </div>
+
+      {items.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <Database className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+          <p>No {dataType} data found.</p>
+          <p className="text-sm">Use the other tabs to import data or click "Add New" to create manually.</p>
+        </div>
+      ) : (
+        <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Details</TableHead>
+                <TableHead className="w-24">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.map((item: any) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">
+                    {item.name || item.orderNumber || item.username || item.vendorName || item.customerName || 'N/A'}
+                  </TableCell>
+                  <TableCell>
+                    {item.description || item.email || item.contactName || 'N/A'}
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-600">
+                    {renderItemDetails(item, dataType)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditingItem(item)}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteMutation.mutate(item.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingItem} onOpenChange={() => setEditingItem(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit {dataType}</DialogTitle>
+          </DialogHeader>
+          {editingItem && (
+            <EditItemForm
+              item={editingItem}
+              dataType={dataType}
+              onSave={(updatedItem) => updateMutation.mutate(updatedItem)}
+              onCancel={() => setEditingItem(null)}
+              isLoading={updateMutation.isPending}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New {dataType}</DialogTitle>
+          </DialogHeader>
+          <EditItemForm
+            item={newItem}
+            dataType={dataType}
+            onSave={(item) => createMutation.mutate(item)}
+            onCancel={() => { setShowAddDialog(false); setNewItem({}); }}
+            isLoading={createMutation.isPending}
+            isNew={true}
+          />
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function renderItemDetails(item: any, dataType: string): string {
+  switch (dataType) {
+    case 'plants':
+      return item.location || 'No location';
+    case 'resources':
+      return item.type || 'No type';
+    case 'capabilities':
+      return item.category || 'No category';
+    case 'productionOrders':
+      return `${item.status} - ${item.customer || 'No customer'}`;
+    case 'users':
+      return item.role || 'No role';
+    case 'vendors':
+      return `${item.vendorType || 'N/A'} - ${item.contactEmail || 'No email'}`;
+    case 'customers':
+      return `${item.customerTier || 'N/A'} - ${item.contactEmail || 'No email'}`;
+    default:
+      return 'N/A';
+  }
+}
+
+function EditItemForm({ item, dataType, onSave, onCancel, isLoading, isNew = false }: {
+  item: any;
+  dataType: string;
+  onSave: (item: any) => void;
+  onCancel: () => void;
+  isLoading: boolean;
+  isNew?: boolean;
+}) {
+  const [formData, setFormData] = useState(item);
+
+  const handleSave = () => {
+    onSave(formData);
+  };
+
+  const renderFormFields = () => {
+    switch (dataType) {
+      case 'plants':
+        return (
+          <>
+            <div className="grid gap-4">
+              <div>
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={formData.name || ''}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  value={formData.location || ''}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="timezone">Timezone</Label>
+                <Input
+                  id="timezone"
+                  value={formData.timezone || ''}
+                  onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
+                />
+              </div>
+            </div>
+          </>
+        );
+      case 'resources':
+        return (
+          <>
+            <div className="grid gap-4">
+              <div>
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={formData.name || ''}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="type">Type</Label>
+                <Input
+                  id="type"
+                  value={formData.type || ''}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description || ''}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </div>
+            </div>
+          </>
+        );
+      case 'capabilities':
+        return (
+          <>
+            <div className="grid gap-4">
+              <div>
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={formData.name || ''}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description || ''}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <Input
+                  id="category"
+                  value={formData.category || ''}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                />
+              </div>
+            </div>
+          </>
+        );
+      default:
+        return (
+          <div className="text-center py-4 text-gray-500">
+            Form fields for {dataType} not yet implemented.
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {renderFormFields()}
+      <div className="flex gap-2 justify-end">
+        <Button variant="outline" onClick={onCancel} disabled={isLoading}>
+          Cancel
+        </Button>
+        <Button onClick={handleSave} disabled={isLoading}>
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+          {isNew ? 'Create' : 'Save'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function DataImport() {
   const [importStatuses, setImportStatuses] = useState<ImportStatus[]>([]);
   const [isImporting, setIsImporting] = useState(false);
@@ -1382,9 +1739,14 @@ Focus on creating authentic, interconnected data that would be typical for ${com
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="upload" className="w-full">{/* disabled={!isReady} */}
+                <Tabs defaultValue="manage" className="w-full">{/* disabled={!isReady} */}
                 <div className="w-full overflow-x-auto">
-                  <TabsList className="flex w-max gap-1 md:grid md:w-full md:grid-cols-4">
+                  <TabsList className="flex w-max gap-1 md:grid md:w-full md:grid-cols-5">
+                    <TabsTrigger value="manage" className="flex-shrink-0 whitespace-nowrap">
+                      <Edit2 className="h-4 w-4 mr-1" />
+                      <span className="hidden sm:inline">Manage Data</span>
+                      <span className="sm:hidden">Manage</span>
+                    </TabsTrigger>
                     <TabsTrigger value="upload" className="flex-shrink-0 whitespace-nowrap">
                       <span className="hidden sm:inline">Upload File</span>
                       <span className="sm:hidden">Upload</span>
@@ -1404,6 +1766,10 @@ Focus on creating authentic, interconnected data that would be typical for ${com
                     </TabsTrigger>
                   </TabsList>
                 </div>
+
+                <TabsContent value="manage" className="space-y-4">
+                  <ManageDataTab dataType={key} />
+                </TabsContent>
 
                 <TabsContent value="upload" className="space-y-4">
                   <div className="space-y-4">
