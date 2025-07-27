@@ -1229,7 +1229,7 @@ function ShiftTemplateCard({ template }: any) {
   const queryClient = useQueryClient();
 
   const updateTemplateMutation = useMutation({
-    mutationFn: (data: any) => apiRequest(`/api/shift-templates/${template.id}`, { method: 'PATCH', body: data }),
+    mutationFn: (data: any) => apiRequest(`/api/shift-templates/${template.id}`, { method: 'PUT', body: data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/shift-templates'] });
       toast({ title: "Success", description: "Shift template updated successfully" });

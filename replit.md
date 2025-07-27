@@ -2,6 +2,13 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Shift Template Update API Fix & Copy Button Visual Feedback Enhancement (July 27, 2025)**:
+- Fixed "Invalid HTTP method" error in shift template updates by changing frontend from PATCH to PUT method to match backend API
+- Enhanced error dialog copy button with visual feedback: button turns green with "Copied!" tooltip when clicked
+- Copy button now provides immediate visual confirmation with green background and color change for 2 seconds
+- Shift template update API now working correctly with PUT method instead of PATCH
+- Improved user experience in error handling with clear visual feedback for copy operations
+
 ✓ **Operations Sequencer Database Schema Fix (July 27, 2025)**:
 - Fixed critical operations API failure causing "Failed to fetch operations" error that prevented operations from displaying in sequencer
 - Resolved database schema mismatch where operations table used legacy 'job_id' column instead of current 'production_order_id'

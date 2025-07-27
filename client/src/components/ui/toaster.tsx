@@ -40,8 +40,12 @@ export function Toaster() {
               {variant === 'destructive' && (
                 <button
                   onClick={() => copyErrorMessage(id, title?.toString(), description?.toString())}
-                  className="rounded-md p-1 text-destructive-foreground/70 hover:text-destructive-foreground transition-colors"
-                  title="Copy error message"
+                  className={`rounded-md p-1 transition-colors ${
+                    copiedToastId === id
+                      ? 'bg-green-100 text-green-600'
+                      : 'text-destructive-foreground/70 hover:text-destructive-foreground'
+                  }`}
+                  title={copiedToastId === id ? "Copied!" : "Copy error message"}
                 >
                   <Copy className="h-4 w-4" />
                 </button>
