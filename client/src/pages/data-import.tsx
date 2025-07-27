@@ -53,11 +53,29 @@ export default function DataImport() {
     'analytics-reporting': ['plants', 'resources', 'productionOrders']
   };
 
-  // No localStorage dependencies - data-import is self-contained
+  // Load recommended data types from onboarding features
   useEffect(() => {
-    // Data recommendations can be set through other means if needed
     console.log('Master Data Setup initialized without localStorage dependencies');
-  }, []);
+    
+    // Load features from onboarding data if available
+    if (onboardingData?.selectedFeatures) {
+      const features = onboardingData.selectedFeatures;
+      setOnboardingFeatures(features);
+      
+      // Convert onboarding features to recommended data types
+      const recommendedTypes = new Set<string>();
+      features.forEach((feature: string) => {
+        const dataTypes = featureDataRequirements[feature as keyof typeof featureDataRequirements];
+        if (dataTypes) {
+          dataTypes.forEach(type => recommendedTypes.add(type));
+        }
+      });
+      
+      const recommendedArray = Array.from(recommendedTypes);
+      setRecommendedDataTypes(recommendedArray);
+      console.log('Loaded onboarding features:', features, 'Recommended data types:', recommendedArray);
+    }
+  }, [onboardingData]);
 
   // No localStorage saving - selections are session-only
   
@@ -77,6 +95,12 @@ export default function DataImport() {
   const { data: userPreferences } = useQuery({
     queryKey: [`/api/user-preferences/${user?.id}`],
     enabled: !!user?.id,
+  });
+
+  // Fetch onboarding data to get selected features
+  const { data: onboardingData } = useQuery({
+    queryKey: ['/api/onboarding/status'],
+    enabled: !!user,
   });
 
   // Fetch plants for resource dependencies (disabled for now)
