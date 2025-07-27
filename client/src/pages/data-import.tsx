@@ -91,25 +91,36 @@ export default function DataImport() {
 
   // Load recommended data types from onboarding features
   useEffect(() => {
-    console.log('Master Data Setup initialized without localStorage dependencies');
+    console.log('Master Data Setup effect triggered with onboarding data:', onboardingData);
     
-    // Load features from onboarding data if available
-    if (onboardingData?.selectedFeatures) {
-      const features = onboardingData.selectedFeatures;
-      setOnboardingFeatures(features);
+    // Only process when onboarding data is available (not loading)
+    if (onboardingData !== undefined) {
+      console.log('Processing onboarding data, selected features:', onboardingData?.selectedFeatures);
       
-      // Convert onboarding features to recommended data types
-      const recommendedTypes = new Set<string>();
-      features.forEach((feature: string) => {
-        const dataTypes = featureDataRequirements[feature as keyof typeof featureDataRequirements];
-        if (dataTypes) {
-          dataTypes.forEach(type => recommendedTypes.add(type));
-        }
-      });
-      
-      const recommendedArray = Array.from(recommendedTypes);
-      setRecommendedDataTypes(recommendedArray);
-      console.log('Loaded onboarding features:', features, 'Recommended data types:', recommendedArray);
+      // Load features from onboarding data if available
+      if (onboardingData?.selectedFeatures?.length > 0) {
+        const features = onboardingData.selectedFeatures;
+        setOnboardingFeatures(features);
+        
+        // Convert onboarding features to recommended data types
+        const recommendedTypes = new Set<string>();
+        features.forEach((feature: string) => {
+          const dataTypes = featureDataRequirements[feature as keyof typeof featureDataRequirements];
+          if (dataTypes) {
+            dataTypes.forEach(type => recommendedTypes.add(type));
+          }
+        });
+        
+        const recommendedArray = Array.from(recommendedTypes);
+        setRecommendedDataTypes(recommendedArray);
+        console.log('Loaded onboarding features:', features, 'Recommended data types:', recommendedArray);
+      } else {
+        // Fallback: provide default recommended data types for basic manufacturing setup
+        const defaultRecommendedTypes = ['plants', 'resources', 'capabilities', 'productionOrders'];
+        setRecommendedDataTypes(defaultRecommendedTypes);
+        setOnboardingFeatures([]);
+        console.log('No onboarding features found, using default recommended data types:', defaultRecommendedTypes);
+      }
     }
   }, [onboardingData]);
 
@@ -1876,7 +1887,7 @@ Focus on creating authentic, interconnected data that would be typical for ${com
             </Button>
             <Button
               onClick={executeAIGeneration}
-              disabled={aiGenerationMutation.isPending || (selectedDataTypes.length === 0 && recommendedDataTypes.length === 0)}
+              disabled={aiGenerationMutation.isPending}
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
             >
               {aiGenerationMutation.isPending ? (
