@@ -1670,7 +1670,7 @@ Focus on creating authentic, interconnected data that would be typical for ${com
           </Button>
           <Button 
             onClick={() => setShowAIModifyDialog(true)}
-            className="gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+            className="gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
           >
             <Edit2 className="h-4 w-4" />
             <span className="hidden sm:inline">AI Modify Data</span>
