@@ -534,6 +534,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+      // Calculate actual record counts based on scaling
+      const plantsCount = Math.floor((config.plants.min + config.plants.max) / 2);
+      const resourcesTotal = plantsCount * Math.floor((config.resourcesPerPlant.min + config.resourcesPerPlant.max) / 2);
+      const ordersTotal = plantsCount * Math.floor((config.ordersPerPlant.min + config.ordersPerPlant.max) / 2);
+      const operationsTotal = ordersTotal * Math.floor((config.operationsPerOrder.min + config.operationsPerOrder.max) / 2);
+
       const systemPrompt = `You are an expert manufacturing data specialist with deep knowledge of industry-specific production processes. Generate realistic sample data for a manufacturing ERP system based on the company information and requirements provided.
 
 Company Information:
@@ -549,23 +555,18 @@ Sample Size: ${sampleSize.toUpperCase()} - Industry-typical volumes for ${compan
 
 Generate sample data for the following data types: ${selectedDataTypes.join(', ')}
 
-For each data type, generate the following number of records:
+EXACT RECORD COUNTS TO GENERATE:
 ${selectedDataTypes.map(type => {
   if (type === 'plants') {
-    const typeConfig = config.plants;
-    return `- plants: ${typeConfig.min}-${typeConfig.max} manufacturing facilities`;
+    return `- plants: EXACTLY ${config.plants.min}-${config.plants.max} manufacturing facilities`;
   } else if (type === 'resources') {
-    const typeConfig = config.resourcesPerPlant;
-    return `- resources: ${typeConfig.min}-${typeConfig.max} resources PER PLANT (scale based on number of plants generated)`;
+    return `- resources: EXACTLY ${resourcesTotal-10}-${resourcesTotal+10} total resources (${config.resourcesPerPlant.min}-${config.resourcesPerPlant.max} per plant × number of plants)`;
   } else if (type === 'productionOrders') {
-    const typeConfig = config.ordersPerPlant;
-    return `- productionOrders: ${typeConfig.min}-${typeConfig.max} production orders PER PLANT (scale based on number of plants generated)`;
+    return `- productionOrders: EXACTLY ${ordersTotal-20}-${ordersTotal+20} total production orders (${config.ordersPerPlant.min}-${config.ordersPerPlant.max} per plant × number of plants)`;
   } else if (type === 'operations') {
-    const typeConfig = config.operationsPerOrder;
-    return `- operations: ${typeConfig.min}-${typeConfig.max} operations PER PRODUCTION ORDER (scale based on total orders)`;
+    return `- operations: EXACTLY ${operationsTotal-30}-${operationsTotal+30} total operations (${config.operationsPerOrder.min}-${config.operationsPerOrder.max} per production order × total orders)`;
   } else if (type === 'capabilities') {
-    const typeConfig = config.capabilities;
-    return `- capabilities: ${typeConfig.min}-${typeConfig.max} manufacturing capabilities (shared across all plants)`;
+    return `- capabilities: EXACTLY ${config.capabilities.min}-${config.capabilities.max} manufacturing capabilities (shared across all plants)`;
   } else {
     return `- ${type}: 3-5 records (default)`;
   }
@@ -724,7 +725,7 @@ Focus on manufacturing-relevant data that would be realistic for a ${companyInfo
               case 'operations':
                 for (const item of records) {
                   // Find a production order to associate this operation with
-                  const existingJobs = await storage.getJobs();
+                  const existingJobs = await storage.getProductionOrders();
                   const randomJob = existingJobs[Math.floor(Math.random() * existingJobs.length)];
                   
                   if (randomJob) {

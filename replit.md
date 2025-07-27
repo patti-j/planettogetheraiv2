@@ -2,6 +2,16 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **AI Generation Per-Plant Scaling Enhancement & Operations Foreign Key Fix (July 27, 2025)**:
+- Fixed critical operations table foreign key constraint error by dropping invalid `operations_job_id_jobs_id_fk` and adding proper `operations_production_order_id_production_orders_id_fk`
+- Resolved operations creation failures that were preventing operations from being generated during AI sample data generation
+- Enhanced AI generation prompt with explicit mathematical scaling calculations to ensure proper per-plant scaling instead of treating configuration as total numbers
+- Updated AI prompt to show exact record count ranges with calculated totals (e.g., "EXACTLY 390-430 total production orders (65-100 per plant × 5 plants)")
+- Fixed `getOperationsByJobId` and added `getOperationsByProductionOrderId` methods to properly reference `production_order_id` column instead of non-existent `job_id`
+- Operations API endpoints now working correctly with proper foreign key relationships and database constraints
+- Enhanced AI generation system to calculate realistic pharmaceutical manufacturing volumes: 5 plants should generate ~410 production orders (82 per plant), ~110 resources (22 per plant), ~3,280 operations (8 per order)
+- AI generation scaling issue resolved - OpenAI model now receives explicit mathematical instructions instead of relying on natural language scaling descriptions
+
 ✓ **Pharmaceutical Plant Record Count Enhancement & Database Seeding Fix (July 27, 2025)**:
 - Successfully increased pharmaceutical industry record counts to realistic manufacturing volumes for small/medium/large sample sizes
 - Updated small pharmaceutical plants: 8-12 resources/plant (was 3-5), 25-40 orders/plant (was 5-10), 15-20 capabilities (was 8-12), 4-7 operations/order (was 2-5)

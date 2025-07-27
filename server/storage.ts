@@ -1760,7 +1760,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getOperationsByJobId(jobId: number): Promise<Operation[]> {
-    return await db.select().from(operations).where(eq(operations.jobId, jobId));
+    return await db.select().from(operations).where(eq(operations.productionOrderId, jobId));
+  }
+
+  async getOperationsByProductionOrderId(productionOrderId: number): Promise<Operation[]> {
+    return await db.select().from(operations).where(eq(operations.productionOrderId, productionOrderId));
   }
 
   async getOperation(id: number): Promise<Operation | undefined> {
