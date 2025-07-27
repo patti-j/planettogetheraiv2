@@ -173,13 +173,25 @@ const onboardingSteps: OnboardingStep[] = [
 ];
 
 export default function OnboardingPage() {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
-  const [companyInfo, setCompanyInfo] = useState({
-    name: '',
-    industry: '',
-    size: '',
-    description: ''
+  const [currentStep, setCurrentStep] = useState(() => {
+    // Load from localStorage or start at 0
+    const saved = localStorage.getItem('onboarding-current-step');
+    return saved ? parseInt(saved) : 0;
+  });
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>(() => {
+    // Load from localStorage
+    const saved = localStorage.getItem('onboarding-selected-features');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [companyInfo, setCompanyInfo] = useState(() => {
+    // Load from localStorage
+    const saved = localStorage.getItem('onboarding-company-info');
+    return saved ? JSON.parse(saved) : {
+      name: '',
+      industry: '',
+      size: '',
+      description: ''
+    };
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -235,6 +247,8 @@ export default function OnboardingPage() {
         ? prev.filter(id => id !== featureId)
         : [...prev, featureId];
       console.log('Selected features updated from', prev, 'to', newFeatures);
+      // Save to localStorage
+      localStorage.setItem('onboarding-selected-features', JSON.stringify(newFeatures));
       return newFeatures;
     });
   };
@@ -271,7 +285,10 @@ export default function OnboardingPage() {
       }
 
       if (currentStep < onboardingSteps.length - 1) {
-        setCurrentStep(currentStep + 1);
+        const nextStep = currentStep + 1;
+        setCurrentStep(nextStep);
+        // Save progress to localStorage
+        localStorage.setItem('onboarding-current-step', nextStep.toString());
       }
     } catch (error) {
       console.error('Error in handleNextStep:', error);
@@ -287,8 +304,25 @@ export default function OnboardingPage() {
 
   const handleSkipStep = () => {
     if (onboardingSteps[currentStep].isSkippable && currentStep < onboardingSteps.length - 1) {
-      setCurrentStep(currentStep + 1);
+      const nextStep = currentStep + 1;
+      setCurrentStep(nextStep);
+      localStorage.setItem('onboarding-current-step', nextStep.toString());
     }
+  };
+
+  const handleStartOver = () => {
+    // Clear all localStorage data and restart
+    localStorage.removeItem('onboarding-current-step');
+    localStorage.removeItem('onboarding-selected-features');
+    localStorage.removeItem('onboarding-company-info');
+    setCurrentStep(0);
+    setSelectedFeatures([]);
+    setCompanyInfo({
+      name: '',
+      industry: '',
+      size: '',
+      description: ''
+    });
   };
 
   const getSelectedFeatureModules = () => {
@@ -350,6 +384,21 @@ export default function OnboardingPage() {
             <p className="text-lg text-gray-600">
               Let's get your manufacturing operations set up in just a few simple steps
             </p>
+            
+            {/* Show resume progress message if we're continuing from a saved state */}
+            {currentStep > 0 && (
+              <div className="mt-4 p-3 bg-blue-100 border border-blue-300 rounded-lg inline-block">
+                <p className="text-sm text-blue-800">
+                  📋 Continuing from step {currentStep + 1}: {onboardingSteps[currentStep].title}
+                  <button 
+                    onClick={handleStartOver}
+                    className="ml-2 text-blue-600 underline hover:text-blue-800"
+                  >
+                    Start over from beginning
+                  </button>
+                </p>
+              </div>
+            )}
           </div>
           
           <Card className="mb-6">
@@ -395,13 +444,23 @@ export default function OnboardingPage() {
                   <label className="block text-sm font-medium mb-2">Company Name *</label>
                   <Input
                     value={companyInfo.name}
-                    onChange={(e) => setCompanyInfo({...companyInfo, name: e.target.value})}
+                    onChange={(e) => {
+                      const newInfo = {...companyInfo, name: e.target.value};
+                      setCompanyInfo(newInfo);
+                      localStorage.setItem('onboarding-company-info', JSON.stringify(newInfo));
+                    }}
                     placeholder="Enter your company name"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Industry *</label>
-                  <Select onValueChange={(value) => setCompanyInfo({...companyInfo, industry: value})}>
+                  <Select 
+                    value={companyInfo.industry}
+                    onValueChange={(value) => {
+                      const newInfo = {...companyInfo, industry: value};
+                      setCompanyInfo(newInfo);
+                      localStorage.setItem('onboarding-company-info', JSON.stringify(newInfo));
+                    }}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select your industry" />
                     </SelectTrigger>
@@ -420,7 +479,13 @@ export default function OnboardingPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Company Size</label>
-                  <Select onValueChange={(value) => setCompanyInfo({...companyInfo, size: value})}>
+                  <Select 
+                    value={companyInfo.size}
+                    onValueChange={(value) => {
+                      const newInfo = {...companyInfo, size: value};
+                      setCompanyInfo(newInfo);
+                      localStorage.setItem('onboarding-company-info', JSON.stringify(newInfo));
+                    }}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select company size" />
                     </SelectTrigger>
@@ -437,7 +502,11 @@ export default function OnboardingPage() {
                 <label className="block text-sm font-medium mb-2">Brief Description (Optional)</label>
                 <Textarea
                   value={companyInfo.description}
-                  onChange={(e) => setCompanyInfo({...companyInfo, description: e.target.value})}
+                  onChange={(e) => {
+                    const newInfo = {...companyInfo, description: e.target.value};
+                    setCompanyInfo(newInfo);
+                    localStorage.setItem('onboarding-company-info', JSON.stringify(newInfo));
+                  }}
                   placeholder="Tell us a bit about what you manufacture..."
                   className="min-h-[100px]"
                 />
