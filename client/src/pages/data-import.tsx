@@ -516,7 +516,7 @@ Company Details:
 - Company Size: ${companyInfo.size}
 - Number of Plants: ${companyInfo.numberOfPlants || '1'}
 ${companyInfo.website ? `- Website: ${companyInfo.website}` : ''}
-${companyInfo.products ? `- Main Products: ${companyInfo.products}` : ''}
+${companyInfo.products ? `- Main Products & Production Process: ${companyInfo.products}` : ''}
 ${companyInfo.description ? `- Description: ${companyInfo.description}` : ''}
 
 Please create realistic manufacturing data that reflects:
@@ -524,9 +524,9 @@ Please create realistic manufacturing data that reflects:
 - Appropriate naming conventions using "${companyInfo.name}" as the company reference
 - Realistic production volumes and timelines for a ${companyInfo.size.toLowerCase()} operation
 - Proper organizational structure across ${companyInfo.numberOfPlants || '1'} manufacturing location(s)
-${companyInfo.products ? `- Manufacturing processes relevant to: ${companyInfo.products}` : ''}
+${companyInfo.products ? `- Manufacturing operations, resources, and workflows based on the production process: ${companyInfo.products}` : ''}
 
-Focus on creating authentic, interconnected data that would be typical for ${companyInfo.name} in the ${companyInfo.industry.toLowerCase()} sector.`;
+Focus on creating authentic, interconnected data that would be typical for ${companyInfo.name} in the ${companyInfo.industry.toLowerCase()} sector, with manufacturing operations that reflect their actual production process.`;
 
     setAiPrompt(defaultPrompt);
     return companyInfo;

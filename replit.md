@@ -5,12 +5,13 @@
 ✓ **Enhanced AI Sample Data Generation with Comprehensive Company Information (July 27, 2025)**:
 - Enhanced onboarding wizard to collect detailed company information including website, number of plants, and product descriptions
 - Updated AI generation prompt to properly include company name and all company details for more personalized sample data
-- Added new company information fields: website URL, number of plants (exact number entry), and main products/services description
+- Added new company information fields: website URL, number of plants (exact number entry), and main products with production process details
 - Fixed AI prompt initialization to correctly load company information from localStorage using 'onboarding-company-info' key
 - Enhanced prompt template to include structured company details section with conditional fields for website, products, and description
 - AI now generates industry-specific sample data that references the actual company name and reflects realistic business characteristics
 - Improved sample data authenticity by incorporating company size, plant count, and product focus into manufacturing data generation
 - Users now receive personalized AI-generated data that matches their specific company profile and industry requirements
+- Changed "Main Products/Services" to "Main Products" with focus on production process description for better AI-generated manufacturing workflows
 
 ✓ **Global Timezone Support Enhancement (July 27, 2025)**:
 - Expanded timezone dropdown options from 8 limited options to comprehensive global coverage with 75+ timezones

@@ -531,7 +531,7 @@ export default function OnboardingPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Main Products/Services</label>
+                <label className="block text-sm font-medium mb-2">Main Products</label>
                 <Textarea
                   value={companyInfo.products}
                   onChange={(e) => {
@@ -539,7 +539,7 @@ export default function OnboardingPage() {
                     setCompanyInfo(newInfo);
                     localStorage.setItem('onboarding-company-info', JSON.stringify(newInfo));
                   }}
-                  placeholder="Describe your main products, components, or services..."
+                  placeholder="Describe your main products and the basic production process of how you make them (e.g., materials used, key manufacturing steps, assembly processes)..."
                   className="min-h-[80px]"
                 />
               </div>
