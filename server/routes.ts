@@ -497,8 +497,21 @@ Focus on manufacturing-relevant data that would be realistic for a ${companyInfo
                     description: item.description || '',
                     plantId: 1 // Default plant
                   });
-                  const job = await storage.createProductionOrder(insertJob);
-                  results.push(job);
+                  try {
+                    const job = await storage.createProductionOrder(insertJob);
+                    results.push(job);
+                  } catch (orderError: any) {
+                    if (orderError.constraint === 'production_orders_order_number_key') {
+                      // Generate a unique order number and retry
+                      const uniqueOrderNumber = `PO-AI-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+                      console.log(`Duplicate order number ${insertJob.orderNumber}, retrying with ${uniqueOrderNumber}`);
+                      const retryJob = { ...insertJob, orderNumber: uniqueOrderNumber };
+                      const job = await storage.createProductionOrder(retryJob);
+                      results.push(job);
+                    } else {
+                      throw orderError;
+                    }
+                  }
                 }
                 break;
               case 'vendors':
