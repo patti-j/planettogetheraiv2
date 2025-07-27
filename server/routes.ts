@@ -367,6 +367,206 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI-powered sample data generation
+  app.post('/api/data-import/generate-sample-data', requireAuth, async (req, res) => {
+    try {
+      const { prompt, companyInfo, selectedDataTypes } = req.body;
+      
+      if (!prompt || !companyInfo || !selectedDataTypes) {
+        return res.status(400).json({ error: 'Missing required fields: prompt, companyInfo, selectedDataTypes' });
+      }
+
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      const systemPrompt = `You are an expert manufacturing data specialist. Generate realistic sample data for a manufacturing ERP system based on the company information and requirements provided.
+
+Company Information:
+- Company Name: ${companyInfo.name}
+- Industry: ${companyInfo.industry}
+- Company Size: ${companyInfo.size}
+- Description: ${companyInfo.description}
+
+Generate sample data for the following data types: ${selectedDataTypes.join(', ')}
+
+For each data type, provide:
+1. A realistic number of records (2-10 per type)
+2. Data that's specific to the company's industry
+3. Consistent naming conventions
+4. Proper relationships between data elements
+
+Return the result as a JSON object with the following structure:
+{
+  "summary": "Brief description of what was generated",
+  "dataTypes": {
+    "plants": [...],
+    "capabilities": [...],
+    "resources": [...],
+    "productionOrders": [...],
+    // etc for each requested type
+  },
+  "totalRecords": 0,
+  "recommendations": ["List of recommendations for using this data"]
+}
+
+Focus on manufacturing-relevant data that would be realistic for a ${companyInfo.industry} company of ${companyInfo.size} size.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 4000
+      });
+
+      const generatedData = JSON.parse(response.choices[0].message.content);
+      
+      // Import the generated data
+      const importResults = [];
+      let totalImported = 0;
+
+      for (const [dataType, records] of Object.entries(generatedData.dataTypes)) {
+        if (Array.isArray(records) && records.length > 0) {
+          try {
+            let results = [];
+            switch (dataType) {
+              case 'plants':
+                for (const item of records) {
+                  const insertPlant = insertPlantSchema.parse({
+                    name: item.name,
+                    location: item.location || '',
+                    address: item.address || '',
+                    timezone: item.timezone || 'UTC'
+                  });
+                  const plant = await storage.createPlant(insertPlant);
+                  results.push(plant);
+                }
+                break;
+              case 'capabilities':
+                for (const item of records) {
+                  const insertCapability = insertCapabilitySchema.parse({
+                    name: item.name,
+                    description: item.description || '',
+                    category: item.category || 'general'
+                  });
+                  const capability = await storage.createCapability(insertCapability);
+                  results.push(capability);
+                }
+                break;
+              case 'resources':
+                for (const item of records) {
+                  const insertResource = insertResourceSchema.parse({
+                    name: item.name,
+                    type: item.type || 'Equipment',
+                    description: item.description || '',
+                    status: item.status || 'active'
+                  });
+                  const resource = await storage.createResource(insertResource);
+                  results.push(resource);
+                }
+                break;
+              case 'productionOrders':
+                for (const item of records) {
+                  const insertJob = insertProductionOrderSchema.parse({
+                    orderNumber: item.orderNumber || `PO-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                    name: item.name,
+                    customer: item.customer || '',
+                    priority: item.priority || 'medium',
+                    status: 'released',
+                    dueDate: item.dueDate ? new Date(item.dueDate) : null,
+                    quantity: item.quantity || 1,
+                    description: item.description || '',
+                    plantId: 1 // Default plant
+                  });
+                  const job = await storage.createProductionOrder(insertJob);
+                  results.push(job);
+                }
+                break;
+              case 'vendors':
+                for (const item of records) {
+                  const insertVendor = insertVendorSchema.parse({
+                    vendorNumber: item.vendorNumber || `V${Date.now()}`,
+                    vendorName: item.vendorName,
+                    vendorType: item.vendorType || 'supplier',
+                    contactName: item.contactName || '',
+                    contactEmail: item.contactEmail || '',
+                    contactPhone: item.contactPhone || '',
+                    address: item.address || '',
+                    city: item.city || '',
+                    state: item.state || '',
+                    zipCode: item.zipCode || '',
+                    country: item.country || 'US',
+                    paymentTerms: item.paymentTerms || 'net30',
+                    status: item.status || 'active'
+                  });
+                  const vendor = await storage.createVendor(insertVendor);
+                  results.push(vendor);
+                }
+                break;
+              case 'customers':
+                for (const item of records) {
+                  const insertCustomer = insertCustomerSchema.parse({
+                    customerNumber: item.customerNumber || `C${Date.now()}`,
+                    customerName: item.customerName,
+                    contactName: item.contactName || '',
+                    contactEmail: item.contactEmail || '',
+                    contactPhone: item.contactPhone || '',
+                    address: item.address || '',
+                    city: item.city || '',
+                    state: item.state || '',
+                    zipCode: item.zipCode || '',
+                    country: item.country || 'US',
+                    customerTier: item.customerTier || 'standard',
+                    status: item.status || 'active'
+                  });
+                  const customer = await storage.createCustomer(insertCustomer);
+                  results.push(customer);
+                }
+                break;
+              default:
+                console.log(`Skipping unsupported data type: ${dataType}`);
+                continue;
+            }
+            
+            if (results.length > 0) {
+              importResults.push({
+                type: dataType,
+                count: results.length,
+                status: 'success'
+              });
+              totalImported += results.length;
+            }
+          } catch (importError) {
+            console.error(`Error importing ${dataType}:`, importError);
+            importResults.push({
+              type: dataType,
+              count: 0,
+              status: 'error',
+              error: importError.message
+            });
+          }
+        }
+      }
+
+      res.json({
+        success: true,
+        summary: generatedData.summary,
+        totalRecords: totalImported,
+        importResults,
+        recommendations: generatedData.recommendations || [],
+        generatedData: generatedData.dataTypes
+      });
+
+    } catch (error) {
+      console.error('AI sample data generation error:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate sample data',
+        details: error.message 
+      });
+    }
+  });
+
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {

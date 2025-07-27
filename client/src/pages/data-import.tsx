@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2 } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useMaxDock } from '@/contexts/MaxDockContext';
@@ -30,6 +30,12 @@ export default function DataImport() {
   const [selectedDataTypes, setSelectedDataTypes] = useState<string[]>([]);
   const [recommendedDataTypes, setRecommendedDataTypes] = useState<string[]>([]);
   const [onboardingFeatures, setOnboardingFeatures] = useState<string[]>([]);
+  
+  // AI Generation state
+  const [showAIDialog, setShowAIDialog] = useState(false);
+  const [showAISummary, setShowAISummary] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiGenerationResult, setAiGenerationResult] = useState<any>(null);
 
   // Feature to data requirements mapping
   const featureDataRequirements = {
@@ -123,6 +129,7 @@ export default function DataImport() {
   useEffect(() => {
     localStorage.setItem('master-data-selected-types', JSON.stringify(selectedDataTypes));
   }, [selectedDataTypes]);
+  
   const [showConsolidatedDialog, setShowConsolidatedDialog] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -192,6 +199,34 @@ export default function DataImport() {
       });
     }
   });
+
+  const aiGenerationMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest('/api/ai-agent/generate-sample-data', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: (result) => {
+      setAiGenerationResult(result);
+      setShowAIDialog(false);
+      setShowAISummary(true);
+      queryClient.invalidateQueries();
+      toast({
+        title: "AI Sample Data Generated",
+        description: `Successfully generated ${result.totalRecords} records across ${result.importResults.length} data types.`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "AI Generation Failed",
+        description: "There was an error generating sample data. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, dataType: string) => {
     const file = event.target.files?.[0];
@@ -451,6 +486,75 @@ export default function DataImport() {
         i === rowIndex ? { ...row, [fieldKey]: value } : row
       )
     }));
+  };
+
+  // Initialize AI prompt based on company information
+  const initializeAIPrompt = () => {
+    const onboardingState = localStorage.getItem('onboarding-state');
+    let companyInfo = {
+      name: 'Manufacturing Company',
+      industry: 'General Manufacturing',
+      size: 'Medium',
+      description: 'A manufacturing company'
+    };
+
+    if (onboardingState) {
+      try {
+        const parsed = JSON.parse(onboardingState);
+        if (parsed.companyInfo) {
+          companyInfo = parsed.companyInfo;
+        }
+      } catch (error) {
+        console.warn('Failed to parse onboarding company info:', error);
+      }
+    }
+
+    const defaultPrompt = `Generate comprehensive sample data for ${companyInfo.name}, a ${companyInfo.size.toLowerCase()} ${companyInfo.industry.toLowerCase()} company. 
+
+Company Description: ${companyInfo.description}
+
+Please create realistic manufacturing data that reflects:
+- Industry-specific equipment and processes
+- Appropriate naming conventions for the ${companyInfo.industry} industry
+- Realistic production volumes and timelines
+- Proper organizational structure
+
+Focus on creating data that would be typical for a ${companyInfo.size.toLowerCase()} company in the ${companyInfo.industry.toLowerCase()} sector.`;
+
+    setAiPrompt(defaultPrompt);
+    return companyInfo;
+  };
+
+  const handleGenerateAISampleData = () => {
+    const companyInfo = initializeAIPrompt();
+    setShowAIDialog(true);
+  };
+
+  const executeAIGeneration = () => {
+    const onboardingState = localStorage.getItem('onboarding-state');
+    let companyInfo = {
+      name: 'Manufacturing Company',
+      industry: 'General Manufacturing',
+      size: 'Medium',
+      description: 'A manufacturing company'
+    };
+
+    if (onboardingState) {
+      try {
+        const parsed = JSON.parse(onboardingState);
+        if (parsed.companyInfo) {
+          companyInfo = parsed.companyInfo;
+        }
+      } catch (error) {
+        console.warn('Failed to parse onboarding company info:', error);
+      }
+    }
+
+    aiGenerationMutation.mutate({
+      prompt: aiPrompt,
+      companyInfo,
+      selectedDataTypes
+    });
   };
 
   // Check if dependencies are satisfied for a data type
@@ -771,6 +875,8 @@ export default function DataImport() {
     }
   };
 
+
+
   const downloadConsolidatedTemplate = () => {
     if (selectedDataTypes.length === 0) {
       toast({
@@ -1042,15 +1148,25 @@ export default function DataImport() {
               Upload files, enter data in spreadsheet format, use text input, or download templates to get started.
             </p>
           </div>
-          <Button 
-            onClick={() => setShowConsolidatedDialog(true)}
-            variant="outline"
-            className="gap-2 shrink-0 ml-4"
-          >
-            <FileSpreadsheet className="h-4 w-4" />
-            <span className="hidden sm:inline">Consolidated Template</span>
-            <span className="sm:hidden">Multi-Template</span>
-          </Button>
+          <div className="flex gap-2 shrink-0 ml-4">
+            <Button 
+              onClick={handleGenerateAISampleData}
+              className="gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span className="hidden sm:inline">AI Sample Data</span>
+              <span className="sm:hidden">AI Data</span>
+            </Button>
+            <Button 
+              onClick={() => setShowConsolidatedDialog(true)}
+              variant="outline"
+              className="gap-2"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              <span className="hidden sm:inline">Consolidated Template</span>
+              <span className="sm:hidden">Multi-Template</span>
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -1666,6 +1782,216 @@ export default function DataImport() {
             >
               <Download className="h-4 w-4 mr-2" />
               Download Consolidated Template
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Sample Data Generation Dialog */}
+      <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-purple-600" />
+              AI Sample Data Generation
+            </DialogTitle>
+            <DialogDescription>
+              Let AI generate realistic sample data for your manufacturing company based on your onboarding information.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Company Info Display */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="font-medium text-blue-900 mb-2">Company Information</h3>
+              <div className="text-sm text-blue-800">
+                <p>AI will generate data based on your company information from the onboarding process.</p>
+                <p className="mt-1">Selected data types: <Badge variant="secondary">{selectedDataTypes.length} types</Badge></p>
+              </div>
+            </div>
+
+            {/* AI Prompt Editor */}
+            <div className="space-y-3">
+              <Label htmlFor="ai-prompt" className="text-base font-medium">
+                Generation Instructions
+              </Label>
+              <Textarea
+                id="ai-prompt"
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="Describe what kind of sample data you want to generate..."
+                className="min-h-[200px] text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                Edit the prompt above to customize the AI-generated sample data. The prompt includes your company information and selected data types.
+              </p>
+            </div>
+
+            {/* Selected Data Types */}
+            {selectedDataTypes.length > 0 && (
+              <div className="space-y-3">
+                <Label className="text-base font-medium">Selected Data Types for Generation</Label>
+                <div className="flex flex-wrap gap-2">
+                  {selectedDataTypes.map(key => {
+                    const dataType = dataTypes.find(dt => dt.key === key);
+                    return (
+                      <Badge key={key} variant="outline" className="text-xs">
+                        {dataType?.label}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between pt-6 border-t">
+            <Button
+              variant="outline"
+              onClick={() => setShowAIDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={executeAIGeneration}
+              disabled={aiGenerationMutation.isPending || selectedDataTypes.length === 0}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            >
+              {aiGenerationMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate Sample Data
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Generation Summary Dialog */}
+      <Dialog open={showAISummary} onOpenChange={setShowAISummary}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              AI Sample Data Generated Successfully
+            </DialogTitle>
+            <DialogDescription>
+              Your sample data has been generated and imported into the system.
+            </DialogDescription>
+          </DialogHeader>
+
+          {aiGenerationResult && (
+            <div className="space-y-6">
+              {/* Summary */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h3 className="font-medium text-green-900 mb-2">Generation Summary</h3>
+                <p className="text-sm text-green-800">{aiGenerationResult.summary}</p>
+                <div className="mt-3 flex items-center gap-4 text-sm">
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    {aiGenerationResult.totalRecords} total records
+                  </Badge>
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    {aiGenerationResult.importResults?.length || 0} data types
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Import Results */}
+              {aiGenerationResult.importResults && aiGenerationResult.importResults.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-medium">Import Results</h3>
+                  <div className="space-y-2">
+                    {aiGenerationResult.importResults.map((result: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                        <div className="flex items-center gap-3">
+                          {result.status === 'success' ? (
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <AlertCircle className="h-4 w-4 text-red-600" />
+                          )}
+                          <span className="font-medium capitalize">{result.type}</span>
+                        </div>
+                        <div className="text-right">
+                          <Badge variant={result.status === 'success' ? 'default' : 'destructive'}>
+                            {result.count} records
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Recommendations */}
+              {aiGenerationResult.recommendations && aiGenerationResult.recommendations.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-medium">AI Recommendations</h3>
+                  <div className="space-y-2">
+                    {aiGenerationResult.recommendations.map((recommendation: string, index: number) => (
+                      <div key={index} className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <Lightbulb className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm text-blue-800">{recommendation}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Navigation Links */}
+              <div className="space-y-3">
+                <h3 className="font-medium">Next Steps</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <Button
+                    variant="outline"
+                    className="justify-start h-auto p-4"
+                    onClick={() => {
+                      setShowAISummary(false);
+                      // Could navigate to production schedule here
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Briefcase className="h-5 w-5 text-blue-600" />
+                      <div className="text-left">
+                        <div className="font-medium">View Production Schedule</div>
+                        <div className="text-xs text-muted-foreground">See your generated production orders</div>
+                      </div>
+                      <ExternalLink className="h-4 w-4 ml-auto" />
+                    </div>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="justify-start h-auto p-4"
+                    onClick={() => {
+                      setShowAISummary(false);
+                      // Could navigate to resources here
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Wrench className="h-5 w-5 text-green-600" />
+                      <div className="text-left">
+                        <div className="font-medium">Manage Resources</div>
+                        <div className="text-xs text-muted-foreground">Configure your generated resources</div>
+                      </div>
+                      <ExternalLink className="h-4 w-4 ml-auto" />
+                    </div>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-end pt-6 border-t">
+            <Button
+              onClick={() => setShowAISummary(false)}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Continue
             </Button>
           </div>
         </DialogContent>
