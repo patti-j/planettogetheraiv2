@@ -2,6 +2,14 @@
 
 ## Recent Changes (July 27, 2025)
 
+✓ **Recent Menu Items Timestamp Removal (July 27, 2025)**:
+- Removed timestamp display from recent menu items in hamburger menu as per user request
+- Recent pages now show only icon and label for cleaner appearance
+- Timestamps are still tracked internally for ordering but no longer shown to users
+- Simplified menu item layout by removing the small timestamp text below each item label
+
+## Recent Changes (July 27, 2025)
+
 ✓ **Onboarding Company Information Persistence Fix (July 27, 2025)**:
 - Fixed critical issue where company information entered during onboarding was not persisting when user navigated away
 - Enhanced saveCompanyInfo function with dual-layer persistence: immediate localStorage storage plus database synchronization
