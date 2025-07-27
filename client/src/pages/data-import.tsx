@@ -1824,11 +1824,23 @@ Focus on creating authentic, interconnected data that would be typical for ${com
                 <p>AI will generate data based on your company information from the onboarding process.</p>
                 {(() => {
                   const dataTypesToGenerate = selectedDataTypes.length > 0 ? selectedDataTypes : recommendedDataTypes;
-                  return (
-                    <p className="mt-1">
-                      {selectedDataTypes.length > 0 ? 'Selected' : 'Recommended'} data types: 
-                      <Badge variant="secondary" className="ml-2">{dataTypesToGenerate.length} types</Badge>
-                    </p>
+                  return dataTypesToGenerate.length > 0 && (
+                    <div className="mt-3">
+                      <p className="mb-2">
+                        {selectedDataTypes.length > 0 ? 'Selected' : 'Recommended'} data types: 
+                        <Badge variant="secondary" className="ml-2">{dataTypesToGenerate.length} types</Badge>
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {dataTypesToGenerate.map(key => {
+                          const dataType = dataTypes.find(dt => dt.key === key);
+                          return (
+                            <Badge key={key} variant="outline" className="text-xs bg-white/50">
+                              {dataType?.label}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    </div>
                   );
                 })()}
               </div>
