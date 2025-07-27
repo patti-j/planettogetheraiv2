@@ -344,17 +344,28 @@ export default function OnboardingPage() {
         console.log('Selected features for step 1:', selectedFeatures);
         try {
           if (existingOnboarding?.id) {
-            // Update the main onboarding record with selected features
-            await fetch(`/api/onboarding/company/${existingOnboarding.id}`, {
+            console.log('Updating onboarding record with features:', selectedFeatures);
+            
+            // Update the main onboarding record with selected features using authenticated fetch
+            const response = await fetch(`/api/onboarding/company/${existingOnboarding.id}`, {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('auth-token') || ''}`
               },
               body: JSON.stringify({
                 selectedFeatures: selectedFeatures,
                 currentStep: 'features-selected'
               })
             });
+            
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error('Failed to update onboarding record:', response.status, errorText);
+              throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+            
+            console.log('Onboarding record updated successfully');
             
             // Also save to progress table
             await updateProgressMutation.mutateAsync({
@@ -363,8 +374,8 @@ export default function OnboardingPage() {
             });
           }
         } catch (error) {
-          console.log('Progress save failed, continuing anyway:', error);
-          // Continue without blocking the user
+          console.error('Progress save failed:', error);
+          // Continue without blocking the user - don't throw error
         }
       }
 
