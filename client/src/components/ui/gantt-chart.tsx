@@ -962,8 +962,8 @@ export default function GanttChart({
         {/* Fixed Header */}
         <div className="flex-none bg-white border-b border-gray-200 z-10">
           <div className="flex">
-            <div className="w-80 px-4 py-2 bg-gray-50 border-r border-gray-200">
-              <div className="flex items-center justify-between">
+            <div className="w-80 bg-gray-50 border-r border-gray-200">
+              <div className="flex items-center justify-between px-4 py-2">
                 <span className="font-medium text-gray-700">Jobs & Operations</span>
                 <div className="flex items-center space-x-1">
                   <Button variant="ghost" size="sm" onClick={zoomOut} disabled={timeUnit === "decade"} title="Zoom Out">
@@ -1017,8 +1017,8 @@ export default function GanttChart({
               {/* Job Row */}
               <div className="border-b border-gray-100">
                 <div className="flex">
-                  <div className="w-80 px-4 py-3 bg-gray-50 border-r border-gray-200">
-                    <div className="flex items-center">
+                  <div className="w-80 bg-gray-50 border-r border-gray-200">
+                    <div className="flex items-center px-4 py-3">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -1053,8 +1053,8 @@ export default function GanttChart({
               {isExpanded && jobOperations.map((operation) => (
                 <div key={operation.id} className="border-b border-gray-100">
                   <div className="flex">
-                    <div className="w-80 px-4 py-3 border-r border-gray-200">
-                      <div className="flex items-center ml-6">
+                    <div className="w-80 border-r border-gray-200">
+                      <div className="flex items-center ml-6 px-4 py-3">
                         <div className="w-2 h-2 bg-gray-300 rounded-full mr-2"></div>
                         <div className="flex-1">
                           <div className="text-sm text-gray-700">{operation.name}</div>
@@ -1174,8 +1174,8 @@ export default function GanttChart({
         className={`border-b border-gray-100 ${isDragging ? 'opacity-50' : ''}`}
       >
         <div className="flex">
-          <div className="w-80 px-4 bg-gray-50 border-r border-gray-200" style={{ minHeight: `${rowHeight}px` }}>
-            <div className="flex items-center h-full">
+          <div className="w-80 bg-gray-50 border-r border-gray-200" style={{ minHeight: `${rowHeight}px` }}>
+            <div className="flex items-center h-full px-4">
               {canReorder && (
                 <div 
                   ref={drag}
@@ -1286,8 +1286,8 @@ export default function GanttChart({
     return (
       <div className="border-b border-gray-100">
         <div className="flex">
-          <div className="w-80 px-4 bg-gray-50 border-r border-gray-200" style={{ minHeight: `${rowHeight}px` }}>
-            <div className="flex items-center h-full">
+          <div className="w-80 bg-gray-50 border-r border-gray-200" style={{ minHeight: `${rowHeight}px` }}>
+            <div className="flex items-center h-full px-4">
               <div className="flex-1">
                 <div className="font-medium text-gray-800">{resource.name}</div>
                 <div className="text-xs text-gray-500 flex items-center gap-2">
@@ -1381,8 +1381,9 @@ export default function GanttChart({
         <div key={customer}>
           {/* Customer Header Row */}
           <div className="flex bg-gray-50 border-b border-gray-200" style={{ height: `${rowHeight}px` }}>
-            <div className="w-80 px-4 py-2 border-r border-gray-200 flex items-center">
-              <Button
+            <div className="w-80 border-r border-gray-200">
+              <div className="flex items-center px-4 py-2">
+                <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => toggleCustomerExpansion(customer)}
@@ -1396,6 +1397,7 @@ export default function GanttChart({
                 <Badge variant="secondary" className="text-xs">
                   {customerJobs.length} jobs
                 </Badge>
+              </div>
               </div>
             </div>
             <div className="flex-1 relative overflow-hidden">
@@ -1411,7 +1413,8 @@ export default function GanttChart({
           {/* Customer Jobs (when expanded) */}
           {isExpanded && customerJobs.map(job => (
             <div key={job.id} className="flex border-b border-gray-200" style={{ height: `${rowHeight}px` }}>
-              <div className="w-80 px-4 py-2 border-r border-gray-200 flex items-center relative">
+              <div className="w-80 border-r border-gray-200">
+                <div className="flex items-center px-4 py-2 relative">
                 <div className="ml-6 flex items-center space-x-2 flex-1 pr-8">
                   <Calendar className="w-4 h-4 text-green-600" />
                   <span className="font-medium text-gray-800">{job.name}</span>
@@ -1433,6 +1436,7 @@ export default function GanttChart({
                 >
                   <Eye className="w-4 h-4" />
                 </Button>
+                </div>
               </div>
               <div className="flex-1 relative overflow-hidden">
                 <div
@@ -1624,8 +1628,8 @@ export default function GanttChart({
       {/* Fixed Header */}
       <div className="flex-none bg-white border-b border-gray-200 z-10">
         <div className="flex">
-          <div className="w-80 px-2 md:px-4 py-2 bg-gray-50 border-r border-gray-200">
-            <div className="flex flex-col space-y-2">
+          <div className="w-80 bg-gray-50 border-r border-gray-200">
+            <div className="flex flex-col space-y-2 px-2 md:px-4 py-2">
               <div className="flex items-center space-x-2">
                 <Select 
                   value={selectedResourceViewId?.toString() || "all"} 
@@ -1824,8 +1828,10 @@ export default function GanttChart({
       {/* Unscheduled Operations */}
       <div className="border-t border-gray-200 bg-gray-50" style={{ minHeight: `${rowHeight}px` }}>
         <div className="flex">
-          <div className="w-80 px-4 bg-gray-50 border-r border-gray-200 flex items-center" style={{ minHeight: `${rowHeight}px` }}>
-            <div className="font-medium text-gray-800">Unscheduled Operations</div>
+          <div className="w-80 bg-gray-50 border-r border-gray-200" style={{ minHeight: `${rowHeight}px` }}>
+            <div className="flex items-center h-full px-4">
+              <div className="font-medium text-gray-800">Unscheduled Operations</div>
+            </div>
           </div>
           <div className="flex-1 p-2 overflow-x-auto" style={{ minHeight: `${rowHeight}px` }}>
             <div className="flex space-x-2">
