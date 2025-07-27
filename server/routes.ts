@@ -15509,17 +15509,27 @@ Response must be valid JSON:
     res.status(201).json(onboarding);
   }));
 
-  app.put("/api/onboarding/company/:id", requireAuth, createSafeHandler(async (req, res) => {
+  app.put("/api/onboarding/company/:id", requireAuth, createSafeHandler('onboarding-company-update')(async (req, res) => {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
-      throw new ValidationError("Invalid onboarding ID");
+      throw new ValidationError("Invalid onboarding ID", {
+        operation: 'onboarding-company-update',
+        endpoint: 'PUT /api/onboarding/company/:id',
+        userId: req.user?.id,
+        requestData: { id, body: req.body }
+      });
     }
 
     console.log('Updating onboarding record:', { id, body: req.body, userId: req.user?.id });
     
     const onboarding = await storage.updateCompanyOnboarding(id, req.body);
     if (!onboarding) {
-      throw new NotFoundError("Onboarding not found");
+      throw new NotFoundError("Onboarding not found", {
+        operation: 'onboarding-company-update',
+        endpoint: 'PUT /api/onboarding/company/:id',
+        userId: req.user?.id,
+        requestData: { id, body: req.body }
+      });
     }
     
     console.log('Onboarding updated successfully:', onboarding.id);
