@@ -17,6 +17,12 @@
 - Operations sequencer should now display all operations regardless of date and status filter settings
 - Fixed inconsistency between database schema and application code caused by incomplete Jobs-to-Production-Orders terminology migration
 
+✓ **Onboarding Menu Naming Verification (July 27, 2025)**:
+- Confirmed onboarding menu item is correctly named "Getting Started" in Training & Support section of hamburger menu
+- Menu item properly configured in top-menu.tsx with BookOpen icon and emerald color theme
+- NavigationContext correctly maps /onboarding route to "Getting Started" label for recent pages tracking
+- Menu organization follows user preference for "Getting Started" terminology instead of "Onboarding"
+
 ✓ **Onboarding Feature Selection Persistence Fix (July 27, 2025)**:
 - Fixed critical issue where selected features weren't persisting when user returned to onboarding step 2
 - Added useEffect to load selectedFeatures state from existing onboarding database data on page initialization
