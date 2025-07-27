@@ -3190,9 +3190,3 @@ async function seedMarketingData() {
       }
     ];
 
-    await db.insert(algorithmPerformance).values(algorithmPerformanceData);
-    console.log("Algorithm performance data seeded successfully");
-  }
-
-  console.log("Database seeded successfully");
-}
