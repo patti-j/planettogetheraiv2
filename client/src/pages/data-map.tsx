@@ -20,6 +20,7 @@ import ReactFlow, {
   NodeTypes,
   Handle,
   Position,
+  ReactFlowProvider,
 } from 'reactflow';
 
 // Custom node component for data objects
@@ -128,7 +129,7 @@ interface DataRelationship {
   description?: string;
 }
 
-export default function DataMapView() {
+function DataMapView() {
   const [selectedObjectType, setSelectedObjectType] = useState<string>('');
   const [selectedObjectId, setSelectedObjectId] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -410,5 +411,14 @@ export default function DataMapView() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// Export with ReactFlowProvider wrapper to fix zustand provider error
+export default function DataMap() {
+  return (
+    <ReactFlowProvider>
+      <DataMapView />
+    </ReactFlowProvider>
   );
 }
