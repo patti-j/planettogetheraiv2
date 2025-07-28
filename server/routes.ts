@@ -17220,6 +17220,96 @@ Response must be valid JSON:
     }
   });
 
+  // Database Schema endpoint
+  app.get("/api/database/schema", async (req, res) => {
+    try {
+      const schemaQuery = `
+        SELECT 
+          t.table_name,
+          t.table_comment,
+          COALESCE(
+            json_agg(
+              json_build_object(
+                'name', c.column_name,
+                'type', c.data_type,
+                'nullable', c.is_nullable = 'YES',
+                'default', c.column_default,
+                'comment', c.column_comment
+              ) ORDER BY c.ordinal_position
+            ) FILTER (WHERE c.column_name IS NOT NULL), 
+            '[]'::json
+          ) as columns,
+          COALESCE(
+            json_agg(
+              DISTINCT json_build_object(
+                'fromTable', tc.table_name,
+                'toTable', ccu.table_name,
+                'fromColumn', kcu.column_name,
+                'toColumn', ccu.column_name,
+                'type', 'foreign_key'
+              )
+            ) FILTER (WHERE tc.constraint_type = 'FOREIGN KEY'), 
+            '[]'::json
+          ) as relationships
+        FROM information_schema.tables t
+        LEFT JOIN information_schema.columns c ON t.table_name = c.table_name 
+          AND t.table_schema = c.table_schema
+        LEFT JOIN information_schema.table_constraints tc ON t.table_name = tc.table_name 
+          AND t.table_schema = tc.table_schema
+        LEFT JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name 
+          AND tc.table_schema = kcu.table_schema
+        LEFT JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name 
+          AND tc.table_schema = ccu.table_schema
+        WHERE t.table_schema = 'public' 
+          AND t.table_type = 'BASE TABLE'
+        GROUP BY t.table_name, t.table_comment
+        ORDER BY t.table_name;
+      `;
+      
+      const result = await db.execute(schemaQuery);
+      
+      // Transform the result to add categories based on table naming patterns
+      const tables = result.rows.map((row: any) => {
+        const tableName = row.table_name;
+        let category = 'Other';
+        
+        // Categorize tables based on naming patterns
+        if (tableName.includes('user') || tableName.includes('role') || tableName.includes('auth') || tableName.includes('session')) {
+          category = 'Authentication & Users';
+        } else if (tableName.includes('production') || tableName.includes('job') || tableName.includes('order')) {
+          category = 'Production Management';
+        } else if (tableName.includes('resource') || tableName.includes('plant') || tableName.includes('capability')) {
+          category = 'Resources & Assets';
+        } else if (tableName.includes('inventory') || tableName.includes('stock') || tableName.includes('material')) {
+          category = 'Inventory & Materials';
+        } else if (tableName.includes('schedule') || tableName.includes('shift') || tableName.includes('calendar')) {
+          category = 'Scheduling & Planning';
+        } else if (tableName.includes('quality') || tableName.includes('test') || tableName.includes('inspection')) {
+          category = 'Quality Management';
+        } else if (tableName.includes('demand') || tableName.includes('forecast') || tableName.includes('planning')) {
+          category = 'Demand & Planning';
+        } else if (tableName.includes('optimization') || tableName.includes('algorithm')) {
+          category = 'Optimization & Analytics';
+        } else if (tableName.includes('config') || tableName.includes('setting') || tableName.includes('parameter')) {
+          category = 'System Configuration';
+        }
+        
+        return {
+          name: tableName,
+          description: row.table_comment || `Database table: ${tableName}`,
+          category,
+          columns: Array.isArray(row.columns) ? row.columns : [],
+          relationships: Array.isArray(row.relationships) ? row.relationships : []
+        };
+      });
+      
+      res.json(tables);
+    } catch (error) {
+      console.error("Error fetching database schema:", error);
+      res.status(500).json({ error: "Failed to fetch database schema" });
+    }
+  });
+
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
   app.use(errorMiddleware);

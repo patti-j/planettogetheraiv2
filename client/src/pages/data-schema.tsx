@@ -208,12 +208,12 @@ export default function DataSchemaView() {
 
   // Filter tables based on search and category
   const filteredTables = useMemo(() => {
-    if (!schemaData) return [];
+    if (!schemaData || !Array.isArray(schemaData)) return [];
     
-    return schemaData.filter(table => {
+    return schemaData.filter((table: SchemaTable) => {
       const matchesSearch = table.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            table.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           table.columns.some(col => col.name.toLowerCase().includes(searchTerm.toLowerCase()));
+                           table.columns.some((col: any) => col.name.toLowerCase().includes(searchTerm.toLowerCase()));
       
       const matchesCategory = selectedCategory === 'all' || table.category === selectedCategory;
       
@@ -223,8 +223,8 @@ export default function DataSchemaView() {
 
   // Get unique categories
   const categories = useMemo(() => {
-    if (!schemaData) return [];
-    return Array.from(new Set(schemaData.map(table => table.category)));
+    if (!schemaData || !Array.isArray(schemaData)) return [];
+    return Array.from(new Set(schemaData.map((table: SchemaTable) => table.category)));
   }, [schemaData]);
 
   // Generate nodes and edges for React Flow
