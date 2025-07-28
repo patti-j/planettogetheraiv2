@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2, ClipboardList, AlertTriangle, Cog, Search, ChevronLeft, ChevronRight, ChevronUp, ArrowUpDown } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2, ClipboardList, AlertTriangle, Cog, Search, ChevronLeft, ChevronRight, ChevronUp, ArrowUpDown, Filter, Eye, EyeOff, Info } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useMaxDock } from '@/contexts/MaxDockContext';
@@ -598,6 +598,10 @@ export default function DataImport() {
   const [selectedDataTypes, setSelectedDataTypes] = useState<string[]>([]);
   const [recommendedDataTypes, setRecommendedDataTypes] = useState<string[]>([]);
   const [onboardingFeatures, setOnboardingFeatures] = useState<string[]>([]);
+  
+  // Smart filtering state
+  const [showAllDataTypes, setShowAllDataTypes] = useState(false);
+  const [dataTypeUsage, setDataTypeUsage] = useState<Record<string, number>>({});
   
   // AI Generation state
   const [showAIDialog, setShowAIDialog] = useState(false);
@@ -1314,6 +1318,81 @@ Focus on creating authentic, interconnected data that would be typical for ${com
       const bDeps = dataDependencies[b as keyof typeof dataDependencies]?.length || 0;
       return aDeps - bDeps;
     });
+  };
+
+  // Smart filtering functions
+  const getDataTypePriority = (dataType: string): 'essential' | 'useful' | 'advanced' => {
+    // Essential data types needed for core manufacturing
+    const essentialTypes = ['plants', 'resources', 'capabilities', 'productionOrders', 'operations'];
+    
+    // Useful data types for enhanced functionality
+    const usefulTypes = ['inventoryItems', 'storageLocations', 'users', 'workCenters'];
+    
+    if (essentialTypes.includes(dataType)) return 'essential';
+    if (usefulTypes.includes(dataType)) return 'useful';
+    return 'advanced';
+  };
+
+  const getFilteredDataTypes = () => {
+    if (showAllDataTypes) {
+      return dataTypes; // Show all data types
+    }
+
+    // Filter to show only relevant data types
+    const relevantTypes = new Set<string>();
+    
+    // Always include recommended types from onboarding
+    recommendedDataTypes.forEach(type => relevantTypes.add(type));
+    
+    // Include essential types for basic manufacturing
+    const essentialTypes = ['plants', 'resources', 'capabilities', 'productionOrders', 'operations'];
+    essentialTypes.forEach(type => relevantTypes.add(type));
+    
+    // Filter out truly unused advanced types (ones that have never been used)
+    return dataTypes.filter(dataType => {
+      if (relevantTypes.has(dataType.key)) return true;
+      
+      const priority = getDataTypePriority(dataType.key);
+      if (priority === 'essential') return true;
+      
+      // Show useful types if they've been used or if no specific features selected
+      if (priority === 'useful') {
+        const hasBeenUsed = dataTypeUsage[dataType.key] > 0;
+        const noFeatureSpecific = recommendedDataTypes.length === 0;
+        return hasBeenUsed || noFeatureSpecific;
+      }
+      
+      // Advanced types only shown if specifically needed or heavily used
+      const usage = dataTypeUsage[dataType.key] || 0;
+      return usage > 5; // Show if used more than 5 times
+    });
+  };
+
+  const getDataTypesByCategory = () => {
+    const filteredTypes = getFilteredDataTypes();
+    
+    // Group filtered data types by category
+    const categories = [
+      { category: 'Core Manufacturing', types: [] as any[] },
+      { category: 'Organizational Structure', types: [] as any[] },
+      { category: 'Products & Inventory', types: [] as any[] },
+      { category: 'Orders & Transactions', types: [] as any[] },
+      { category: 'Manufacturing Planning', types: [] as any[] },
+      { category: 'System Users', types: [] as any[] }
+    ];
+
+    filteredTypes.forEach((dataType, index) => {
+      const originalIndex = dataTypes.findIndex(dt => dt.key === dataType.key);
+      if (originalIndex >= 0 && originalIndex < 5) categories[0].types.push(dataType);
+      else if (originalIndex >= 5 && originalIndex < 9) categories[1].types.push(dataType);
+      else if (originalIndex >= 9 && originalIndex < 13) categories[2].types.push(dataType);
+      else if (originalIndex >= 13 && originalIndex < 16) categories[3].types.push(dataType);
+      else if (originalIndex >= 16 && originalIndex < 19) categories[4].types.push(dataType);
+      else categories[5].types.push(dataType);
+    });
+
+    // Filter out empty categories
+    return categories.filter(category => category.types.length > 0);
   };
 
   // Multi-select capabilities component
@@ -2442,16 +2521,41 @@ Focus on creating authentic, interconnected data that would be typical for ${com
               </Badge>
             </div>
 
-            {/* Data Type Selection Grid */}
+            {/* Smart Data Type View Toggle */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Data Types:</span>
+                <span className="text-xs text-muted-foreground">
+                  {showAllDataTypes 
+                    ? `Showing all ${dataTypes.length} data types`
+                    : `Showing ${getFilteredDataTypes().length} relevant data types`
+                  }
+                </span>
+              </div>
+              <Button
+                variant={showAllDataTypes ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowAllDataTypes(!showAllDataTypes)}
+                className="h-8"
+              >
+                {showAllDataTypes ? (
+                  <>
+                    <Eye className="h-3 w-3 mr-1" />
+                    Show Less
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-3 w-3 mr-1" />
+                    Show All
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Intelligent Data Type Selection Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { category: 'Core Manufacturing', types: dataTypes.slice(0, 5) },
-                { category: 'Organizational Structure', types: dataTypes.slice(5, 9) },
-                { category: 'Products & Inventory', types: dataTypes.slice(9, 13) },
-                { category: 'Orders & Transactions', types: dataTypes.slice(13, 16) },
-                { category: 'Manufacturing Planning', types: dataTypes.slice(16, 19) },
-                { category: 'System Users', types: dataTypes.slice(19) }
-              ].map(category => (
+              {getDataTypesByCategory().map(category => (
                 <div key={category.category} className="space-y-3">
                   <h4 className="font-medium text-sm text-muted-foreground border-b pb-1">
                     {category.category}
@@ -2459,12 +2563,17 @@ Focus on creating authentic, interconnected data that would be typical for ${com
                   <div className="space-y-2">
                     {category.types.map(({ key, label, icon: Icon, description }) => {
                       const isSelected = selectedDataTypes.includes(key);
+                      const isRecommended = recommendedDataTypes.includes(key);
+                      const priority = getDataTypePriority(key);
+                      
                       return (
                         <div
                           key={key}
                           className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                             isSelected 
                               ? 'bg-blue-50 border-blue-200' 
+                              : isRecommended
+                              ? 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100'
                               : 'bg-white border-gray-200 hover:bg-gray-50'
                           }`}
                           onClick={() => {
@@ -2483,9 +2592,23 @@ Focus on creating authentic, interconnected data that would be typical for ${com
                             )}
                           </div>
                           <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                          <div className="min-w-0">
-                            <div className="font-medium text-sm">{label}</div>
-                            <div className="text-xs text-muted-foreground">{description}</div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between">
+                              <div className="font-medium text-sm">{label}</div>
+                              <div className="flex gap-1">
+                                {isRecommended && (
+                                  <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 bg-emerald-100 text-emerald-700 border-emerald-300">
+                                    Recommended
+                                  </Badge>
+                                )}
+                                {priority === 'essential' && !isRecommended && (
+                                  <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 bg-blue-100 text-blue-700 border-blue-300">
+                                    Essential
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-0.5">{description}</div>
                           </div>
                         </div>
                       );
