@@ -2,15 +2,17 @@
 
 ## Recent Changes (July 28, 2025)
 
-✓ **Data Schema View Session Persistence Implementation (July 28, 2025)**:
-- Added comprehensive localStorage persistence for all Data Schema View filter states to remember user preferences between sessions
-- Enhanced filter state initialization to load previous settings from localStorage with proper error handling and fallback defaults
-- Implemented session persistence for searchTerm, selectedCategory, selectedFeature, layoutType, showColumns, showRelationships, and simplifyLines states
-- Users' filter selections now persist across browser sessions, page refreshes, and application restarts without requiring manual reconfiguration
-- Added comprehensive useEffect hooks to automatically save filter changes to localStorage with detailed error logging for debugging
-- Enhanced user experience by maintaining personalized Data Schema View configuration without losing work progress or preferred settings
-- Filter persistence complements existing legend, minimap, and fullscreen mode localStorage persistence for complete interface state management
-- System gracefully handles localStorage unavailability with try-catch error handling and fallback to default behavior
+✓ **Data Schema View Table Selection & Session Persistence Implementation (July 28, 2025)**:
+- Added comprehensive table selection checklist allowing users to choose specific tables to display with checkbox interface
+- Implemented "Include Related Tables" toggle to show connected tables through foreign key relationships when specific tables are selected
+- Enhanced table selector modal with search integration, select all/none controls, and visual feedback showing column count and category
+- Added localStorage persistence for selectedTables and showRelatedTables preferences with proper error handling
+- Table selection works seamlessly with existing filters (search, category, feature) for precise data schema exploration
+- Users can now focus on specific database tables while optionally including their related tables for comprehensive relationship understanding
+- Added session persistence for all filter states: searchTerm, selectedCategory, selectedFeature, layoutType, showColumns, showRelationships, simplifyLines, selectedTables, and showRelatedTables
+- Enhanced filtering logic to support table selection with related table expansion using foreign key relationship analysis
+- Table selector button shows current selection count and highlights when tables are selected for clear visual feedback
+- System maintains complete filter state across browser sessions enabling users to return to their exact configuration
 
 ✓ **Storage Locations Engineering Filter Fix & Gantt Chart TypeScript Cleanup (July 28, 2025)**:
 - Added storage_locations table to Engineering & Product Design filter in Data Schema View as requested

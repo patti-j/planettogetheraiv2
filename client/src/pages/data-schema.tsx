@@ -43,7 +43,12 @@ import {
   HelpCircle,
   X,
   Maximize,
-  Minimize
+  Minimize,
+  CheckSquare,
+  Square,
+  Settings,
+  Plus,
+  Minus
 } from "lucide-react";
 
 interface SchemaTable {
@@ -466,6 +471,28 @@ function DataSchemaViewContent() {
   const [focusMode, setFocusMode] = useState(false);
   const [focusTable, setFocusTable] = useState<string | null>(null);
   
+  // Table selection functionality
+  const [selectedTables, setSelectedTables] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('dataSchemaSelectedTables');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  
+  const [showRelatedTables, setShowRelatedTables] = useState(() => {
+    try {
+      const saved = localStorage.getItem('dataSchemaShowRelatedTables');
+      return saved ? JSON.parse(saved) : true;
+    } catch {
+      return true;
+    }
+  });
+  
+  const [showTableSelector, setShowTableSelector] = useState(false);
+  const [tableSelectorSearch, setTableSelectorSearch] = useState("");
+  
   // Initialize showLegend state from localStorage, default to true if not set
   const [showLegend, setShowLegend] = useState(() => {
     try {
@@ -581,6 +608,22 @@ function DataSchemaViewContent() {
     }
   }, [simplifyLines]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('dataSchemaSelectedTables', JSON.stringify(selectedTables));
+    } catch (error) {
+      console.warn('Failed to save selected tables to localStorage:', error);
+    }
+  }, [selectedTables]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('dataSchemaShowRelatedTables', JSON.stringify(showRelatedTables));
+    } catch (error) {
+      console.warn('Failed to save show related tables setting to localStorage:', error);
+    }
+  }, [showRelatedTables]);
+
   // Keyboard shortcuts for full screen mode
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
@@ -667,7 +710,19 @@ function DataSchemaViewContent() {
     return Array.from(connected);
   }, []);
 
-  // Filter tables based on search, category, feature and focus mode
+  // Get related tables for selected tables
+  const getRelatedTablesForSelection = useCallback((tableNames: string[], tables: SchemaTable[]): string[] => {
+    const related = new Set<string>();
+    
+    tableNames.forEach(tableName => {
+      const connectedTables = getConnectedTables(tableName, tables);
+      connectedTables.forEach(t => related.add(t));
+    });
+    
+    return Array.from(related);
+  }, [getConnectedTables]);
+
+  // Filter tables based on search, category, feature, focus mode, and table selection
   const filteredTables = useMemo(() => {
     if (!schemaData || !Array.isArray(schemaData)) return [];
     
@@ -685,6 +740,18 @@ function DataSchemaViewContent() {
       return matchesSearch && matchesCategory && matchesFeature;
     });
     
+    // Apply table selection filtering
+    if (selectedTables.length > 0) {
+      if (showRelatedTables) {
+        // Show selected tables and their related tables
+        const relatedTables = getRelatedTablesForSelection(selectedTables, tables);
+        tables = tables.filter(table => relatedTables.includes(table.name));
+      } else {
+        // Show only selected tables
+        tables = tables.filter(table => selectedTables.includes(table.name));
+      }
+    }
+    
     // Apply focus mode filtering
     if (focusMode && focusTable) {
       const connectedTableNames = getConnectedTables(focusTable, schemaData);
@@ -700,7 +767,7 @@ function DataSchemaViewContent() {
     });
     
     return tables;
-  }, [schemaData, searchTerm, selectedCategory, selectedFeature, focusMode, focusTable, getConnectedTables]);
+  }, [schemaData, searchTerm, selectedCategory, selectedFeature, focusMode, focusTable, selectedTables, showRelatedTables, getConnectedTables, getRelatedTablesForSelection]);
 
   // Get unique categories
   const categories = useMemo(() => {
@@ -1012,6 +1079,28 @@ function DataSchemaViewContent() {
               className="w-full sm:w-64"
             />
           </div>
+
+          {/* Table Selection Button */}
+          <div className="flex items-center gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowTableSelector(!showTableSelector)}
+                    className={`${selectedTables.length > 0 ? 'bg-blue-50 border-blue-200' : ''}`}
+                  >
+                    <Settings className="w-4 h-4 mr-1" />
+                    Tables ({selectedTables.length})
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Select specific tables to display</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           
           {/* Feature Filter - Priority on mobile */}
           <Select value={selectedFeature} onValueChange={setSelectedFeature}>
@@ -1211,6 +1300,119 @@ function DataSchemaViewContent() {
             )}
           </div>
         )}
+        
+        {/* Show Related Tables Toggle - appears when tables are selected */}
+        {selectedTables.length > 0 && !isFullScreen && (
+          <div className="flex items-center gap-4 mt-2 pt-2 border-t border-gray-200">
+            <div className="flex items-center gap-2">
+              <Label className="text-sm text-gray-600">Selected: {selectedTables.length} tables</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1">
+                      <Switch
+                        id="show-related"
+                        checked={showRelatedTables}
+                        onCheckedChange={setShowRelatedTables}
+                        className="scale-75 sm:scale-100"
+                      />
+                      <Label htmlFor="show-related" className="text-xs sm:text-sm">Include Related</Label>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">
+                      <strong>Include Related Tables:</strong> Also show tables that are connected to your selected tables through foreign key relationships.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </div>
+        )}
+        </div>
+      )}
+
+      {/* Table Selector Modal */}
+      {showTableSelector && (
+        <div className="absolute top-16 left-4 right-4 z-50 bg-white border rounded-lg shadow-lg max-h-96 overflow-hidden">
+          <div className="p-4 border-b">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold">Select Tables to Display</h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowTableSelector(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                <span>{selectedTables.length} selected</span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedTables(filteredTables.map(t => t.name))}
+                    disabled={selectedTables.length === filteredTables.length}
+                  >
+                    <Plus className="w-3 h-3 mr-1" />
+                    All
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedTables([])}
+                    disabled={selectedTables.length === 0}
+                  >
+                    <Minus className="w-3 h-3 mr-1" />
+                    None
+                  </Button>
+                </div>
+              </div>
+              {/* Search within table selector */}
+              <div className="flex items-center gap-2">
+                <Search className="w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="Filter tables..."
+                  value={tableSelectorSearch}
+                  onChange={(e) => setTableSelectorSearch(e.target.value)}
+                  className="w-48"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="max-h-80 overflow-y-auto p-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {filteredTables
+                .filter(table => 
+                  tableSelectorSearch === "" || 
+                  table.name.toLowerCase().includes(tableSelectorSearch.toLowerCase()) ||
+                  table.category.toLowerCase().includes(tableSelectorSearch.toLowerCase())
+                )
+                .map((table) => (
+                <div
+                  key={table.name}
+                  className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                  onClick={() => {
+                    if (selectedTables.includes(table.name)) {
+                      setSelectedTables(prev => prev.filter(t => t !== table.name));
+                    } else {
+                      setSelectedTables(prev => [...prev, table.name]);
+                    }
+                  }}
+                >
+                  {selectedTables.includes(table.name) ? (
+                    <CheckSquare className="w-4 h-4 text-blue-600" />
+                  ) : (
+                    <Square className="w-4 h-4 text-gray-400" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm truncate">{table.name}</div>
+                    <div className="text-xs text-gray-500 truncate">
+                      {table.columns.length} columns • {table.category}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
