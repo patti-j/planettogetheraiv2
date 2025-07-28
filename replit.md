@@ -24,6 +24,9 @@
 - Implemented in-context feature selection dialog for Master Data Setup page to replace disruptive navigation to welcome page
 - Created comprehensive feature selection interface with visual feature cards, checkbox selection, and real-time summary display
 - Enhanced UX by allowing users to edit feature selections without leaving Master Data Setup context or losing current work
+- Updated optimization studio categories: changed "Production Scheduling" to "Schedule Optimization", "Capacity Planning" to "Capacity Optimization", removed "Resource Allocation", and added "Capable to Promise (CTP) Optimization"
+- Enhanced mobile layouts for Templates section with centered design and responsive button layout
+- Fixed hamburger menu z-index issue preventing proper header visibility
 
 ✓ **Master Data Setup Feature Selection Edit Button Implementation (July 28, 2025)**:
 - Added edit button next to "Selected Features" section in Master Data Setup page for easy feature modification

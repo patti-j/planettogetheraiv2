@@ -232,11 +232,11 @@ export default function OptimizationStudio() {
 
   const categories = [
     { value: "all", label: "All Categories" },
-    { value: "production_scheduling", label: "Production Scheduling" },
+    { value: "schedule_optimization", label: "Schedule Optimization" },
     { value: "inventory_optimization", label: "Inventory Optimization" },
-    { value: "capacity_planning", label: "Capacity Planning" },
+    { value: "capacity_optimization", label: "Capacity Optimization" },
     { value: "demand_forecasting", label: "Demand Forecasting" },
-    { value: "resource_allocation", label: "Resource Allocation" }
+    { value: "ctp_optimization", label: "Capable to Promise (CTP) Optimization" }
   ];
 
   const getStatusColor = (status: string) => {
