@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2, ClipboardList, AlertTriangle, Cog, Search, ChevronLeft, ChevronRight, ChevronUp, ArrowUpDown, Filter, Eye, EyeOff, Info, Beaker } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2, ClipboardList, AlertTriangle, Cog, Search, ChevronLeft, ChevronRight, ChevronUp, ArrowUpDown, Filter, Eye, EyeOff, Info, Beaker, Table as TableIcon } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useMaxDock } from '@/contexts/MaxDockContext';
@@ -931,11 +931,14 @@ Create authentic manufacturing data that reflects this company's operations.`;
 
   // Component for managing existing data
   function ManageDataTab({ dataType }: { dataType: string }) {
-    const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+    const [viewMode, setViewMode] = useState<'table' | 'cards' | 'spreadsheet'>('table');
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [bulkSelectMode, setBulkSelectMode] = useState(false);
     const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+    const [editingRows, setEditingRows] = useState<Set<string>>(new Set());
+    const [newRowData, setNewRowData] = useState<any>({});
+    const [showNewRow, setShowNewRow] = useState(false);
     
     // Debounce search with longer delay for mobile to prevent keyboard hiding
     React.useEffect(() => {
@@ -1347,6 +1350,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
               variant={viewMode === 'table' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('table')}
+              title="Table View"
             >
               <Grid3X3 className="h-4 w-4" />
             </Button>
@@ -1354,13 +1358,33 @@ Create authentic manufacturing data that reflects this company's operations.`;
               variant={viewMode === 'cards' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('cards')}
+              title="Card View"
             >
               <List className="h-4 w-4" />
             </Button>
-            <Button onClick={() => setShowAddDialog(true)} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add New
+            <Button
+              variant={viewMode === 'spreadsheet' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('spreadsheet')}
+              title="Spreadsheet View"
+            >
+              <TableIcon className="h-4 w-4" />
             </Button>
+            {viewMode === 'spreadsheet' ? (
+              <Button 
+                onClick={() => setShowNewRow(true)} 
+                size="sm"
+                disabled={showNewRow}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Row
+              </Button>
+            ) : (
+              <Button onClick={() => setShowAddDialog(true)} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add New
+              </Button>
+            )}
           </div>
         </div>
 
@@ -1377,7 +1401,22 @@ Create authentic manufacturing data that reflects this company's operations.`;
         </div>
 
         {/* Data Display */}
-        {viewMode === 'table' ? (
+        {viewMode === 'spreadsheet' ? (
+          <SpreadsheetView 
+            dataType={dataType}
+            items={currentItems}
+            editingRows={editingRows}
+            setEditingRows={setEditingRows}
+            showNewRow={showNewRow}
+            setShowNewRow={setShowNewRow}
+            newRowData={newRowData}
+            setNewRowData={setNewRowData}
+            onUpdate={(item) => updateMutation.mutate(item)}
+            onCreate={(item) => createMutation.mutate(item)}
+            onDelete={(id) => deleteMutation.mutate(id)}
+            isLoading={updateMutation.isPending || createMutation.isPending || deleteMutation.isPending}
+          />
+        ) : viewMode === 'table' ? (
           <div className="border rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
@@ -1561,6 +1600,329 @@ Create authentic manufacturing data that reflects this company's operations.`;
             />
           </DialogContent>
         </Dialog>
+      </div>
+    );
+  }
+
+  // Spreadsheet View Component
+  function SpreadsheetView({ 
+    dataType, 
+    items, 
+    editingRows, 
+    setEditingRows, 
+    showNewRow, 
+    setShowNewRow, 
+    newRowData, 
+    setNewRowData,
+    onUpdate, 
+    onCreate, 
+    onDelete, 
+    isLoading 
+  }: {
+    dataType: string;
+    items: any[];
+    editingRows: Set<string>;
+    setEditingRows: React.Dispatch<React.SetStateAction<Set<string>>>;
+    showNewRow: boolean;
+    setShowNewRow: React.Dispatch<React.SetStateAction<boolean>>;
+    newRowData: any;
+    setNewRowData: React.Dispatch<React.SetStateAction<any>>;
+    onUpdate: (item: any) => void;
+    onCreate: (item: any) => void;
+    onDelete: (id: number) => void;
+    isLoading: boolean;
+  }) {
+    const [editData, setEditData] = useState<Record<string, any>>({});
+
+    const getFieldsForDataType = (dataType: string) => {
+      const commonFields = ['name', 'description'];
+      const typeSpecificFields: Record<string, string[]> = {
+        plants: ['location', 'timezone', 'capacity'],
+        resources: ['type', 'status', 'plantId'],
+        capabilities: ['category', 'level'],
+        productionOrders: ['priority', 'dueDate', 'quantity', 'status'],
+        operations: ['duration', 'sequence', 'status', 'productionOrderId'],
+        vendors: ['contactPerson', 'email', 'phone', 'address'],
+        customers: ['tier', 'email', 'phone', 'address']
+      };
+      return [...commonFields, ...(typeSpecificFields[dataType] || [])];
+    };
+
+    const fields = getFieldsForDataType(dataType);
+
+    const startEdit = (itemId: string, item: any) => {
+      setEditingRows(prev => new Set([...prev, itemId]));
+      setEditData(prev => ({ ...prev, [itemId]: { ...item } }));
+    };
+
+    const cancelEdit = (itemId: string) => {
+      setEditingRows(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(itemId);
+        return newSet;
+      });
+      setEditData(prev => {
+        const newData = { ...prev };
+        delete newData[itemId];
+        return newData;
+      });
+    };
+
+    const saveEdit = (itemId: string) => {
+      const updatedItem = editData[itemId];
+      if (updatedItem) {
+        onUpdate(updatedItem);
+        cancelEdit(itemId);
+      }
+    };
+
+    const saveNewRow = () => {
+      if (newRowData.name && newRowData.name.trim()) {
+        onCreate(newRowData);
+        setNewRowData({});
+        setShowNewRow(false);
+      }
+    };
+
+    const cancelNewRow = () => {
+      setNewRowData({});
+      setShowNewRow(false);
+    };
+
+    const updateEditField = (itemId: string, field: string, value: any) => {
+      setEditData(prev => ({
+        ...prev,
+        [itemId]: {
+          ...prev[itemId],
+          [field]: value
+        }
+      }));
+    };
+
+    const updateNewRowField = (field: string, value: any) => {
+      setNewRowData((prev: any) => ({
+        ...prev,
+        [field]: value
+      }));
+    };
+
+    const renderCell = (item: any, field: string, isEditing: boolean, isNewRow = false) => {
+      const value = isNewRow ? newRowData[field] || '' : (isEditing ? editData[item.id]?.[field] : item[field]) || '';
+      
+      if (!isEditing && !isNewRow) {
+        return (
+          <div className="px-3 py-2 min-h-[40px] flex items-center">
+            {field === 'dueDate' && value ? new Date(value).toLocaleDateString() : (value || '-')}
+          </div>
+        );
+      }
+
+      const handleChange = (newValue: any) => {
+        if (isNewRow) {
+          updateNewRowField(field, newValue);
+        } else {
+          updateEditField(item.id, field, newValue);
+        }
+      };
+
+      if (field === 'status' && (dataType === 'resources' || dataType === 'operations' || dataType === 'productionOrders')) {
+        return (
+          <select 
+            value={value} 
+            onChange={(e) => handleChange(e.target.value)}
+            className="w-full px-2 py-1 border rounded text-sm h-[36px]"
+          >
+            <option value="">Select...</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            {dataType === 'productionOrders' && (
+              <>
+                <option value="planned">Planned</option>
+                <option value="in-progress">In Progress</option>
+                <option value="completed">Completed</option>
+              </>
+            )}
+          </select>
+        );
+      }
+
+      if (field === 'priority' && dataType === 'productionOrders') {
+        return (
+          <select 
+            value={value} 
+            onChange={(e) => handleChange(e.target.value)}
+            className="w-full px-2 py-1 border rounded text-sm h-[36px]"
+          >
+            <option value="">Select...</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        );
+      }
+
+      if (field === 'dueDate') {
+        return (
+          <input
+            type="date"
+            value={value ? (typeof value === 'string' ? value.split('T')[0] : value) : ''}
+            onChange={(e) => handleChange(e.target.value)}
+            className="w-full px-2 py-1 border rounded text-sm h-[36px]"
+          />
+        );
+      }
+
+      if (field === 'duration' || field === 'sequence' || field === 'quantity' || field === 'capacity') {
+        return (
+          <input
+            type="number"
+            value={value}
+            onChange={(e) => handleChange(e.target.value)}
+            className="w-full px-2 py-1 border rounded text-sm h-[36px]"
+            min="0"
+          />
+        );
+      }
+
+      return (
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => handleChange(e.target.value)}
+          className="w-full px-2 py-1 border rounded text-sm h-[36px]"
+          placeholder={field === 'name' ? 'Enter name...' : ''}
+        />
+      );
+    };
+
+    return (
+      <div className="border rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                {fields.map(field => (
+                  <th key={field} className="text-left px-3 py-3 font-medium text-sm text-gray-900 min-w-[120px]">
+                    {field.charAt(0).toUpperCase() + field.slice(1)}
+                  </th>
+                ))}
+                <th className="text-left px-3 py-3 font-medium text-sm text-gray-900 w-[120px]">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {/* New Row */}
+              {showNewRow && (
+                <tr className="border-b bg-blue-50">
+                  {fields.map(field => (
+                    <td key={field} className="border-r">
+                      {renderCell(null, field, true, true)}
+                    </td>
+                  ))}
+                  <td className="px-3 py-2">
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        onClick={saveNewRow}
+                        disabled={isLoading || !newRowData.name?.trim()}
+                        className="h-8 px-2 text-xs"
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={cancelNewRow}
+                        disabled={isLoading}
+                        className="h-8 px-2 text-xs"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              
+              {/* Data Rows */}
+              {items.map((item) => {
+                const itemId = item.id.toString();
+                const isEditing = editingRows.has(itemId);
+                
+                return (
+                  <tr key={itemId} className={`border-b hover:bg-gray-50 ${isEditing ? 'bg-yellow-50' : ''}`}>
+                    {fields.map(field => (
+                      <td key={field} className="border-r">
+                        {renderCell(item, field, isEditing)}
+                      </td>
+                    ))}
+                    <td className="px-3 py-2">
+                      <div className="flex gap-1">
+                        {isEditing ? (
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={() => saveEdit(itemId)}
+                              disabled={isLoading}
+                              className="h-8 px-2 text-xs"
+                            >
+                              Save
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => cancelEdit(itemId)}
+                              disabled={isLoading}
+                              className="h-8 px-2 text-xs"
+                            >
+                              Cancel
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => startEdit(itemId, item)}
+                              disabled={isLoading || editingRows.size > 0}
+                              className="h-8 px-2 text-xs"
+                              title="Edit"
+                            >
+                              <Edit2 className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onDelete(item.id)}
+                              disabled={isLoading}
+                              className="h-8 px-2 text-xs text-red-600 hover:text-red-700"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              
+              {/* Empty State */}
+              {items.length === 0 && !showNewRow && (
+                <tr>
+                  <td colSpan={fields.length + 1} className="text-center py-8 text-gray-500">
+                    No {dataType} data available
+                    <div className="mt-2 text-sm">
+                      Add some data using the "Add Row" button above
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   }
