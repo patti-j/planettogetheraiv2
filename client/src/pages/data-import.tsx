@@ -3085,12 +3085,12 @@ Create authentic manufacturing data that reflects this company's operations.`;
               <div className="space-y-4">
                 {/* Header with bulk download */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center space-x-2">
-                      <FileSpreadsheet className="h-5 w-5 text-blue-600" />
-                      <h3 className="text-lg font-medium text-blue-800">Import Templates</h3>
+                  <div className="flex items-center justify-between mb-2 min-w-0">
+                    <div className="flex items-center space-x-2 min-w-0 flex-1">
+                      <FileSpreadsheet className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <h3 className="text-lg font-medium text-blue-800 truncate">Import Templates</h3>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-shrink-0">
                       {selectedTemplates.size > 0 && (
                         <div className="flex items-center gap-1 text-xs text-gray-600">
                           <span>{selectedTemplates.size} selected</span>
@@ -3106,17 +3106,17 @@ Create authentic manufacturing data that reflects this company's operations.`;
                       )}
                       <Button 
                         onClick={downloadAllTemplates}
-                        className="gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                        className="gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 flex-shrink-0"
                         size="sm"
                       >
-                        <Download className="h-4 w-4" />
-                        <span className="hidden sm:inline">
+                        <Download className="h-4 w-4 flex-shrink-0" />
+                        <span className="hidden sm:inline truncate">
                           {selectedTemplates.size > 0 
                             ? `Download ${selectedTemplates.size} Selected` 
                             : 'Download All Templates'
                           }
                         </span>
-                        <span className="sm:hidden">
+                        <span className="sm:hidden truncate">
                           {selectedTemplates.size > 0 ? `Download ${selectedTemplates.size}` : 'Download All'}
                         </span>
                       </Button>

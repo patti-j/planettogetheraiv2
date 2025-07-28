@@ -9,7 +9,11 @@
 - Improved user experience by allowing quick access to modify onboarding choices without menu navigation
 - Streamlined feature selection editing process with clear visual indication and intuitive placement
 
-✓ **Mobile Menu Search Optimization & Layout Improvement (July 28, 2025)**:
+✓ **Template Download Button Overflow Fix & Mobile Menu Search Optimization (July 28, 2025)**:
+- Fixed template download button overflow issue in Master Data Setup Templates tab where button exceeded container width when templates were selected
+- Added proper responsive container structure with flex-shrink-0 and min-w-0 classes to prevent overflow
+- Enhanced button sizing with truncate text handling for dynamic button content ("Download 5 Selected" vs "Download All Templates")
+- Improved flex container layout to properly handle dynamic button text width changes
 - Moved menu search next to role switching controls in mobile hamburger menu to save vertical space
 - Combined user controls (role switching, training mode) and search filter into single compact section on mobile
 - Separated desktop and mobile search layouts: desktop keeps original spacing, mobile uses space-efficient horizontal layout
