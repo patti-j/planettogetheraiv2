@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2, ClipboardList, AlertTriangle, Cog, Search, ChevronLeft, ChevronRight, ChevronUp, ArrowUpDown, Filter, Eye, EyeOff, Info, Beaker, Table as TableIcon, Undo2 } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2, ClipboardList, AlertTriangle, Cog, Search, ChevronLeft, ChevronRight, ChevronUp, ArrowUpDown, Filter, Eye, EyeOff, Info, Beaker, Table as TableIcon, Undo2, Shield, BarChart3, Clock, Settings, Save, ArrowRightLeft } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useMaxDock } from '@/contexts/MaxDockContext';
@@ -68,6 +68,26 @@ function DataImport() {
   const [aiModifyPrompt, setAiModifyPrompt] = useState('');
   const [aiModifyResult, setAiModifyResult] = useState<any>(null);
   const [showAIModifySummary, setShowAIModifySummary] = useState(false);
+
+  // Feature selection dialog state
+  const [showFeatureDialog, setShowFeatureDialog] = useState(false);
+  const [tempSelectedFeatures, setTempSelectedFeatures] = useState<string[]>([]);
+
+  // Available features for selection
+  const availableFeatures = [
+    { id: 'production-scheduling', name: 'Production Scheduling', icon: Calendar, description: 'Schedule and optimize production workflows' },
+    { id: 'inventory-planning', name: 'Inventory Planning AI', icon: Package, description: 'AI-powered inventory optimization and forecasting' },
+    { id: 'quality-management', name: 'Quality Management', icon: Shield, description: 'Quality control and compliance tracking' },
+    { id: 'capacity-optimization', name: 'Capacity Optimization', icon: TrendingUp, description: 'Production capacity forecasting and optimization' },
+    { id: 'job-management', name: 'Job Management', icon: ClipboardList, description: 'Work order and job tracking systems' },
+    { id: 'production-plan-optimization', name: 'Production Plan Optimization', icon: ClipboardList, description: 'Production plans and targets optimization' },
+    { id: 'user-management', name: 'User Management', icon: Users, description: 'Role-based access control and team management' },
+    { id: 'dashboard-analytics', name: 'Dashboard & Analytics', icon: BarChart3, description: 'Real-time dashboards and business intelligence' },
+    { id: 'shift-management', name: 'Shift Management', icon: Clock, description: 'Workforce scheduling and shift planning' },
+    { id: 'bill-of-materials', name: 'Bill of Materials', icon: FileText, description: 'Product structure and component management' },
+    { id: 'sequencer-optimization', name: 'Sequencer Optimization', icon: ArrowRightLeft, description: 'Operation sequencing and workflow optimization' },
+    { id: 'demand-planning', name: 'Demand Planning', icon: TrendingUp, description: 'Demand forecasting and production scheduling alignment' },
+  ];
 
   // Feature to data requirements mapping
   const featureDataRequirements = {
@@ -1171,6 +1191,39 @@ Create authentic manufacturing data that reflects this company's operations.`;
     }
   });
 
+  // Feature update mutation
+  const updateFeaturesMutation = useMutation({
+    mutationFn: async (features: string[]) => {
+      // Get the onboarding ID from the onboarding status
+      const statusResponse = await apiRequest('GET', '/api/onboarding/status');
+      if (!statusResponse?.id) {
+        throw new Error('No onboarding record found');
+      }
+      
+      return await apiRequest('PUT', `/api/onboarding/company/${statusResponse.id}`, { 
+        selectedFeatures: features 
+      });
+    },
+    onSuccess: () => {
+      setOnboardingFeatures(tempSelectedFeatures);
+      calculateRecommendedDataTypes(tempSelectedFeatures);
+      setShowFeatureDialog(false);
+      toast({
+        title: "Features Updated",
+        description: "Your feature selections have been updated successfully",
+      });
+      // Refetch onboarding status to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ['/api/onboarding/status'] });
+    },
+    onError: () => {
+      toast({
+        title: "Update Failed",
+        description: "Failed to update feature selections",
+        variant: "destructive"
+      });
+    }
+  });
+
   const executeAIGeneration = () => {
     // Get company info from user preferences
     const companyInfo = (userPreferences as any)?.companyInfo || {};
@@ -1191,6 +1244,24 @@ Create authentic manufacturing data that reflects this company's operations.`;
       selectedDataTypes: [selectedManageDataType]
     };
     aiModifyMutation.mutate(modifyData);
+  };
+
+  // Feature selection handlers
+  const handleFeatureToggle = (featureId: string) => {
+    setTempSelectedFeatures(prev => 
+      prev.includes(featureId) 
+        ? prev.filter(id => id !== featureId)
+        : [...prev, featureId]
+    );
+  };
+
+  const openFeatureDialog = () => {
+    setTempSelectedFeatures([...onboardingFeatures]);
+    setShowFeatureDialog(true);
+  };
+
+  const saveFeatureSelection = () => {
+    updateFeaturesMutation.mutate(tempSelectedFeatures);
   };
 
   // Comprehensive list of all master data types organized by category
@@ -2685,11 +2756,11 @@ Create authentic manufacturing data that reflects this company's operations.`;
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => window.location.href = '/onboarding?step=1'}
+                    onClick={openFeatureDialog}
                     className="text-blue-600 hover:text-blue-700 flex items-center gap-1 px-2 py-1 h-auto"
                     title="Edit feature selections"
                   >
-                    <Edit2 className="h-4 w-4" />
+                    <Settings className="h-4 w-4" />
                     <span className="text-xs">Edit</span>
                   </Button>
                 </div>
@@ -3658,6 +3729,109 @@ Create authentic manufacturing data that reflects this company's operations.`;
         </DialogContent>
       </Dialog>
       </div>
+      {/* In-Context Feature Selection Dialog */}
+      <Dialog open={showFeatureDialog} onOpenChange={setShowFeatureDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5 text-blue-600" />
+              Edit Feature Selections
+            </DialogTitle>
+            <DialogDescription>
+              Select which features you want to use in your manufacturing management system. Your selections will determine which data types are recommended.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {availableFeatures.map((feature) => {
+                const IconComponent = feature.icon;
+                const isSelected = tempSelectedFeatures.includes(feature.id);
+                
+                return (
+                  <div
+                    key={feature.id}
+                    className={`relative cursor-pointer rounded-lg border-2 p-4 transition-all ${
+                      isSelected
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => handleFeatureToggle(feature.id)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`flex h-5 w-5 items-center justify-center rounded ${
+                        isSelected ? 'text-blue-600' : 'text-gray-400'
+                      }`}>
+                        <IconComponent className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={isSelected}
+                            onChange={() => handleFeatureToggle(feature.id)}
+                            className="flex-shrink-0"
+                          />
+                          <h3 className={`text-sm font-medium ${
+                            isSelected ? 'text-blue-900' : 'text-gray-900'
+                          }`}>
+                            {feature.name}
+                          </h3>
+                        </div>
+                        <p className={`text-xs mt-1 ${
+                          isSelected ? 'text-blue-700' : 'text-gray-600'
+                        }`}>
+                          {feature.description}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Lightbulb className="h-4 w-4 text-blue-600" />
+                <h4 className="text-sm font-medium text-blue-900">Selection Summary</h4>
+              </div>
+              <p className="text-xs text-blue-800">
+                {tempSelectedFeatures.length === 0 
+                  ? 'No features selected. Select at least one feature to get data recommendations.'
+                  : `${tempSelectedFeatures.length} feature${tempSelectedFeatures.length === 1 ? '' : 's'} selected. These will determine your recommended data types for import and setup.`
+                }
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-between gap-3 pt-6 border-t">
+            <Button
+              variant="outline"
+              onClick={() => setShowFeatureDialog(false)}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={saveFeatureSelection}
+              disabled={updateFeaturesMutation.isPending}
+              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
+            >
+              {updateFeaturesMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
