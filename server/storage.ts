@@ -1582,6 +1582,9 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Cache for database schema to avoid repeated expensive queries
+  private schemaCache: { data: any[]; timestamp: number } | null = null;
+  private readonly SCHEMA_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
   // Plants
   async getPlants(): Promise<Plant[]> {
     return await db.select().from(plants).orderBy(asc(plants.name));
@@ -3196,10 +3199,18 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Database Schema Analysis
+  // Database Schema Analysis - Optimized with bulk queries and caching
   async getDatabaseSchema(): Promise<any[]> {
     try {
-      // Get all table names and their basic info
+      // Check cache first
+      const now = Date.now();
+      if (this.schemaCache && (now - this.schemaCache.timestamp) < this.SCHEMA_CACHE_TTL) {
+        console.log('Returning cached schema data');
+        return this.schemaCache.data;
+      }
+
+      console.log('Fetching fresh schema data...');
+      // Get all table names in one query
       const tablesQuery = await db.execute(sql`
         SELECT 
           t.table_name,
@@ -3211,86 +3222,119 @@ export class DatabaseStorage implements IStorage {
         ORDER BY t.table_name
       `);
 
+      // Get all columns for all tables in one query
+      const allColumnsQuery = await db.execute(sql`
+        SELECT 
+          c.table_name,
+          c.column_name,
+          c.data_type,
+          c.is_nullable,
+          c.column_default,
+          c.ordinal_position,
+          CASE WHEN pk.column_name IS NOT NULL THEN 'PRIMARY KEY' ELSE NULL END as constraint_type
+        FROM information_schema.columns c
+        LEFT JOIN information_schema.key_column_usage pk 
+          ON c.table_name = pk.table_name AND c.column_name = pk.column_name
+          AND pk.constraint_name LIKE '%_pkey'
+        WHERE c.table_schema = 'public'
+        ORDER BY c.table_name, c.ordinal_position
+      `);
+
+      // Get all foreign keys for all tables in one query
+      const allForeignKeysQuery = await db.execute(sql`
+        SELECT 
+          tc.table_name,
+          kcu.column_name,
+          ccu.table_name AS foreign_table_name,
+          ccu.column_name AS foreign_column_name
+        FROM information_schema.table_constraints AS tc 
+        JOIN information_schema.key_column_usage AS kcu
+          ON tc.constraint_name = kcu.constraint_name
+        JOIN information_schema.constraint_column_usage AS ccu
+          ON ccu.constraint_name = tc.constraint_name
+        WHERE tc.constraint_type = 'FOREIGN KEY' 
+          AND tc.table_schema = 'public'
+      `);
+
+      // Get all relationships for all tables in one query
+      const allRelationshipsQuery = await db.execute(sql`
+        SELECT 
+          tc.table_name,
+          tc.constraint_type,
+          kcu.column_name as from_column,
+          ccu.table_name as to_table,
+          ccu.column_name as to_column
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu 
+          ON tc.constraint_name = kcu.constraint_name
+        JOIN information_schema.constraint_column_usage ccu 
+          ON ccu.constraint_name = tc.constraint_name
+        WHERE tc.constraint_type = 'FOREIGN KEY'
+          AND tc.table_schema = 'public'
+      `);
+
+      // Build lookup maps for fast access
+      const columnsByTable = new Map<string, any[]>();
+      const foreignKeysByTable = new Map<string, Map<string, any>>();
+      const relationshipsByTable = new Map<string, any[]>();
+
+      // Process columns
+      allColumnsQuery.rows.forEach((col: any) => {
+        if (!columnsByTable.has(col.table_name)) {
+          columnsByTable.set(col.table_name, []);
+        }
+        columnsByTable.get(col.table_name)!.push(col);
+      });
+
+      // Process foreign keys
+      allForeignKeysQuery.rows.forEach((fk: any) => {
+        if (!foreignKeysByTable.has(fk.table_name)) {
+          foreignKeysByTable.set(fk.table_name, new Map());
+        }
+        foreignKeysByTable.get(fk.table_name)!.set(fk.column_name, {
+          table: fk.foreign_table_name,
+          column: fk.foreign_column_name
+        });
+      });
+
+      // Process relationships
+      allRelationshipsQuery.rows.forEach((rel: any) => {
+        if (!relationshipsByTable.has(rel.table_name)) {
+          relationshipsByTable.set(rel.table_name, []);
+        }
+        relationshipsByTable.get(rel.table_name)!.push({
+          type: 'one-to-many' as const,
+          fromTable: rel.table_name,
+          fromColumn: rel.from_column,
+          toTable: rel.to_table,
+          toColumn: rel.to_column,
+          description: `${rel.table_name}.${rel.from_column} → ${rel.to_table}.${rel.to_column}`
+        });
+      });
+
+      // Build final table objects
       const tables = [];
       
       for (const tableRow of tablesQuery.rows) {
         const tableName = tableRow.table_name as string;
         
-        // Get column information with proper foreign key detection
-        const columnsQuery = await db.execute(sql`
-          SELECT 
-            c.column_name,
-            c.data_type,
-            c.is_nullable,
-            c.column_default,
-            CASE WHEN pk.column_name IS NOT NULL THEN 'PRIMARY KEY' ELSE NULL END as constraint_type
-          FROM information_schema.columns c
-          LEFT JOIN information_schema.key_column_usage pk 
-            ON c.table_name = pk.table_name AND c.column_name = pk.column_name
-            AND pk.constraint_name LIKE '%_pkey'
-          WHERE c.table_name = ${tableName}
-          ORDER BY c.ordinal_position
-        `);
-
-        // Get foreign key information separately for better accuracy
-        const foreignKeysQuery = await db.execute(sql`
-          SELECT 
-            kcu.column_name,
-            ccu.table_name AS foreign_table_name,
-            ccu.column_name AS foreign_column_name
-          FROM information_schema.table_constraints AS tc 
-          JOIN information_schema.key_column_usage AS kcu
-            ON tc.constraint_name = kcu.constraint_name
-          JOIN information_schema.constraint_column_usage AS ccu
-            ON ccu.constraint_name = tc.constraint_name
-          WHERE tc.constraint_type = 'FOREIGN KEY' 
-            AND tc.table_name = ${tableName}
-        `);
-
-        const foreignKeyMap = new Map();
-        foreignKeysQuery.rows.forEach((fk: any) => {
-          foreignKeyMap.set(fk.column_name, {
-            table: fk.foreign_table_name,
-            column: fk.foreign_column_name
-          });
-        });
-
-        const columns = columnsQuery.rows.map((col: any) => ({
+        // Get columns for this table
+        const tableColumns = columnsByTable.get(tableName) || [];
+        const tableForeignKeys = foreignKeysByTable.get(tableName) || new Map();
+        
+        const columns = tableColumns.map((col: any) => ({
           name: col.column_name,
           type: col.data_type,
           nullable: col.is_nullable === 'YES',
           primaryKey: col.constraint_type === 'PRIMARY KEY',
-          foreignKey: foreignKeyMap.get(col.column_name),
+          foreignKey: tableForeignKeys.get(col.column_name),
           defaultValue: col.column_default
         }));
 
-        // Get relationships
-        const relationshipsQuery = await db.execute(sql`
-          SELECT 
-            tc.constraint_type,
-            kcu.column_name as from_column,
-            ccu.table_name as to_table,
-            ccu.column_name as to_column
-          FROM information_schema.table_constraints tc
-          JOIN information_schema.key_column_usage kcu 
-            ON tc.constraint_name = kcu.constraint_name
-          JOIN information_schema.constraint_column_usage ccu 
-            ON ccu.constraint_name = tc.constraint_name
-          WHERE tc.table_name = ${tableName}
-            AND tc.constraint_type = 'FOREIGN KEY'
-        `);
-
-        const relationships = relationshipsQuery.rows.map((rel: any) => ({
-          type: 'one-to-many' as const,
-          fromTable: tableName,
-          fromColumn: rel.from_column,
-          toTable: rel.to_table,
-          toColumn: rel.to_column,
-          description: `${tableName}.${rel.from_column} → ${rel.to_table}.${rel.to_column}`
-        }));
+        // Get relationships for this table
+        const relationships = relationshipsByTable.get(tableName) || [];
 
         // Add manual relationship definitions for JSONB-based connections
-        // These relationships exist in the schema but are stored as JSONB arrays, not formal foreign keys
         const manualRelationships = this.getManualRelationships(tableName);
         relationships.push(...manualRelationships);
 
@@ -3307,6 +3351,13 @@ export class DatabaseStorage implements IStorage {
         });
       }
 
+      // Cache the results
+      this.schemaCache = {
+        data: tables,
+        timestamp: now
+      };
+
+      console.log(`Schema data fetched: ${tables.length} tables in ${Date.now() - now}ms`);
       return tables;
     } catch (error) {
       console.error('Error getting database schema:', error);
