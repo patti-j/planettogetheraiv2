@@ -1076,31 +1076,242 @@ Create authentic manufacturing data that reflects this company's operations.`;
               </div>
             </TabsContent>
             <TabsContent value="import" className="mt-6">
-              <div className="text-center py-8 text-gray-500">
-                <Upload className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>Import Data Tab - Under Development</p>
-                <p className="text-sm">Upload CSV files to import your data.</p>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Import CSV Data</h3>
+                  <p className="text-sm text-gray-600 mb-4">Upload CSV files to import your manufacturing data</p>
+                </div>
+                
+                {/* Data Type Selection for Import */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="import-data-type">Select Data Type</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose data type to import" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="resources">Resources</SelectItem>
+                        <SelectItem value="plants">Plants</SelectItem>
+                        <SelectItem value="capabilities">Capabilities</SelectItem>
+                        <SelectItem value="productionOrders">Production Orders</SelectItem>
+                        <SelectItem value="operations">Operations</SelectItem>
+                        <SelectItem value="vendors">Vendors</SelectItem>
+                        <SelectItem value="customers">Customers</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* File Upload Area */}
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                  <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <p className="text-lg font-medium mb-2">Drop your CSV file here</p>
+                  <p className="text-sm text-gray-500 mb-4">or click to browse files</p>
+                  <Button variant="outline">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Choose File
+                  </Button>
+                </div>
+
+                {/* Import Options */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Import Options</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <input type="checkbox" id="skip-duplicates" className="rounded" />
+                      <Label htmlFor="skip-duplicates" className="text-sm">Skip duplicate records</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input type="checkbox" id="validate-data" className="rounded" defaultChecked />
+                      <Label htmlFor="validate-data" className="text-sm">Validate data before import</Label>
+                    </div>
+                  </div>
+                </div>
               </div>
             </TabsContent>
+            
             <TabsContent value="structured" className="mt-6">
-              <div className="text-center py-8 text-gray-500">
-                <Grid3X3 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>Structured Entry Tab - Under Development</p>
-                <p className="text-sm">Enter data in spreadsheet format.</p>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Structured Data Entry</h3>
+                  <p className="text-sm text-gray-600 mb-4">Enter data in spreadsheet format for quick bulk entry</p>
+                </div>
+
+                {/* Data Type Selection for Structured Entry */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="structured-data-type">Select Data Type</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose data type to enter" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="resources">Resources</SelectItem>
+                        <SelectItem value="plants">Plants</SelectItem>
+                        <SelectItem value="capabilities">Capabilities</SelectItem>
+                        <SelectItem value="productionOrders">Production Orders</SelectItem>
+                        <SelectItem value="operations">Operations</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-end">
+                    <Button variant="outline">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Row
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Spreadsheet-like Interface Placeholder */}
+                <div className="border rounded-lg">
+                  <div className="bg-gray-50 p-3 border-b">
+                    <div className="grid grid-cols-4 gap-4 text-sm font-medium">
+                      <div>Name</div>
+                      <div>Type</div>
+                      <div>Description</div>
+                      <div>Actions</div>
+                    </div>
+                  </div>
+                  <div className="p-4 text-center text-gray-500">
+                    <Grid3X3 className="h-8 w-8 mx-auto mb-2" />
+                    <p className="text-sm">Select a data type above to start entering data</p>
+                  </div>
+                </div>
               </div>
             </TabsContent>
+            
             <TabsContent value="text" className="mt-6">
-              <div className="text-center py-8 text-gray-500">
-                <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>Text Entry Tab - Under Development</p>
-                <p className="text-sm">Enter data using natural text input.</p>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Natural Text Entry</h3>
+                  <p className="text-sm text-gray-600 mb-4">Describe your data in natural language and let AI convert it to structured records</p>
+                </div>
+
+                {/* Data Type Selection for Text Entry */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="text-data-type">Select Data Type</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose data type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="resources">Resources</SelectItem>
+                        <SelectItem value="plants">Plants</SelectItem>
+                        <SelectItem value="capabilities">Capabilities</SelectItem>
+                        <SelectItem value="productionOrders">Production Orders</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Text Input Area */}
+                <div className="space-y-2">
+                  <Label htmlFor="text-input">Describe Your Data</Label>
+                  <textarea
+                    id="text-input"
+                    className="w-full h-32 p-3 border rounded-lg resize-none"
+                    placeholder="Example: We have 3 CNC machines (Machine A, Machine B, Machine C) in our production facility. Machine A can do milling and turning, Machine B only does milling, and Machine C does turning and drilling..."
+                  />
+                </div>
+
+                {/* Processing Options */}
+                <div className="flex gap-2">
+                  <Button>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Process Text
+                  </Button>
+                  <Button variant="outline">
+                    Clear
+                  </Button>
+                </div>
+
+                {/* Preview Area */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Preview Processed Data</h4>
+                  <p className="text-sm text-gray-500">Processed records will appear here for review before saving</p>
+                </div>
               </div>
             </TabsContent>
+            
             <TabsContent value="templates" className="mt-6">
-              <div className="text-center py-8 text-gray-500">
-                <Download className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>Templates Tab - Under Development</p>
-                <p className="text-sm">Download CSV templates for data entry.</p>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Download Templates</h3>
+                  <p className="text-sm text-gray-600 mb-4">Download CSV templates with sample data and proper formatting</p>
+                </div>
+
+                {/* Template Categories */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Core Manufacturing */}
+                  <div className="border rounded-lg p-4">
+                    <h4 className="font-medium mb-3">Core Manufacturing</h4>
+                    <div className="space-y-2">
+                      <Button variant="outline" size="sm" className="w-full justify-start">
+                        <Download className="h-4 w-4 mr-2" />
+                        Resources Template
+                      </Button>
+                      <Button variant="outline" size="sm" className="w-full justify-start">
+                        <Download className="h-4 w-4 mr-2" />
+                        Plants Template
+                      </Button>
+                      <Button variant="outline" size="sm" className="w-full justify-start">
+                        <Download className="h-4 w-4 mr-2" />
+                        Capabilities Template
+                      </Button>
+                      <Button variant="outline" size="sm" className="w-full justify-start">
+                        <Download className="h-4 w-4 mr-2" />
+                        Production Orders Template
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Business Partners */}
+                  <div className="border rounded-lg p-4">
+                    <h4 className="font-medium mb-3">Business Partners</h4>
+                    <div className="space-y-2">
+                      <Button variant="outline" size="sm" className="w-full justify-start">
+                        <Download className="h-4 w-4 mr-2" />
+                        Vendors Template
+                      </Button>
+                      <Button variant="outline" size="sm" className="w-full justify-start">
+                        <Download className="h-4 w-4 mr-2" />
+                        Customers Template
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Inventory & Orders */}
+                  <div className="border rounded-lg p-4">
+                    <h4 className="font-medium mb-3">Inventory & Orders</h4>
+                    <div className="space-y-2">
+                      <Button variant="outline" size="sm" className="w-full justify-start">
+                        <Download className="h-4 w-4 mr-2" />
+                        Items Template
+                      </Button>
+                      <Button variant="outline" size="sm" className="w-full justify-start">
+                        <Download className="h-4 w-4 mr-2" />
+                        Storage Locations Template
+                      </Button>
+                      <Button variant="outline" size="sm" className="w-full justify-start">
+                        <Download className="h-4 w-4 mr-2" />
+                        Sales Orders Template
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Template Info */}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-blue-800 mb-2">Template Information</h4>
+                  <ul className="text-sm text-blue-700 space-y-1">
+                    <li>• Templates include sample data and proper column headers</li>
+                    <li>• Follow the exact format for successful data import</li>
+                    <li>• Required fields are marked with * in the template headers</li>
+                    <li>• Remove sample rows before adding your actual data</li>
+                  </ul>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
