@@ -2,7 +2,11 @@
 
 ## Recent Changes (July 28, 2025)
 
-✓ **Engineering Filter Addition & Toggle Clarity Enhancement for Data Schema View (July 28, 2025)**:
+✓ **Data Schema View Auto-Fit Enhancement & Engineering Filter Addition (July 28, 2025)**:
+- Enhanced auto-fit functionality to automatically adjust viewport when filters are applied showing all filtered tables optimally
+- Added automatic viewport adjustment with improved timing (300ms delay) and zoom constraints (0.1 to 1.5x) for better layout completion
+- Included manual "Fit to View" button with Target icon in top-right corner for user-controlled viewport adjustment
+- Auto-fit triggers on all filter changes: feature selection, category filtering, search terms, focus mode, and layout type changes
 - Added comprehensive "Engineering & Product Design" filter option to Data Schema View for engineering teams
 - Engineering filter focuses on product definitions, routings, recipes, BOMs, and production versions relationships
 - Includes 22 core engineering tables: bills_of_materials, bom_items, recipes, routings, routing_operations, production_versions, work_centers, products, capabilities, specifications, and technical documents

@@ -637,19 +637,21 @@ function DataSchemaViewContent() {
 
   // Auto-fit view when filters change to show all filtered tables
   useEffect(() => {
-    if (filteredTables.length > 0) {
-      // Use a small delay to ensure nodes are rendered before fitting
+    if (filteredTables.length > 0 && nodes.length > 0) {
+      // Use a longer delay to ensure nodes are fully positioned after layout changes
       const timer = setTimeout(() => {
         fitView({ 
-          padding: 0.2,
+          padding: 0.15, // Slightly tighter padding for better use of space
           duration: 800,
-          includeHiddenNodes: false 
+          includeHiddenNodes: false,
+          minZoom: 0.1,
+          maxZoom: 1.5
         });
-      }, 100);
+      }, 300); // Increased delay for layout completion
       
       return () => clearTimeout(timer);
     }
-  }, [selectedFeature, selectedCategory, focusMode, focusTable, searchTerm, layoutType, filteredTables.length, fitView]);
+  }, [selectedFeature, selectedCategory, focusMode, focusTable, searchTerm, layoutType, filteredTables.length, nodes.length, fitView]);
 
   const handleTableClick = useCallback((event: any, node: Node) => {
     setSelectedTable(node.id);
@@ -1034,6 +1036,34 @@ function DataSchemaViewContent() {
         >
           <Background />
           <Controls />
+          
+          {/* Custom Fit View Button */}
+          <Panel position="top-right" className="flex gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => fitView({ 
+                      padding: 0.15, 
+                      duration: 800,
+                      includeHiddenNodes: false,
+                      minZoom: 0.1,
+                      maxZoom: 1.5
+                    })}
+                    className="bg-white/90 backdrop-blur-sm hover:bg-white"
+                  >
+                    <Target className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Fit all visible tables in view</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </Panel>
+          
           <MiniMap 
             nodeStrokeColor={(n) => getCategoryColor(n.data?.table?.category || 'default')}
             nodeColor={(n) => getCategoryColor(n.data?.table?.category || 'default')}
