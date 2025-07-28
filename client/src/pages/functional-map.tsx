@@ -1,10 +1,26 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import ReactFlow, {
+  Node,
+  Edge,
+  Background,
+  Controls,
+  Panel,
+  MarkerType,
+  useNodesState,
+  useEdgesState,
+  useReactFlow,
+  ReactFlowProvider,
+  ConnectionMode,
+} from 'reactflow';
+import 'reactflow/dist/style.css';
 import { 
   Factory, 
   Package, 
@@ -26,7 +42,9 @@ import {
   Workflow,
   Map,
   ArrowRight,
-  Info
+  Info,
+  Grid3X3,
+  Network
 } from 'lucide-react';
 import { Link } from 'wouter';
 
@@ -212,11 +230,63 @@ const categories = [
   { id: 'analytics', name: 'Analytics & Insights', color: 'bg-pink-500' }
 ];
 
-export default function FunctionalMap() {
+// Custom Node Component for Network View
+function FunctionalAreaNode({ data }: { data: FunctionalArea & { isSelected: boolean; isConnected: boolean } }) {
+  const { name, description, icon, color, category, priority, isSelected, isConnected, features } = data;
+  
+  return (
+    <div 
+      className={`
+        bg-white rounded-lg shadow-lg border-2 p-4 min-w-[200px] max-w-[250px]
+        transition-all duration-200 cursor-pointer
+        ${isSelected ? 'border-blue-500 shadow-xl' : 'border-gray-200'}
+        ${isConnected ? 'border-green-400' : ''}
+        hover:shadow-xl
+      `}
+    >
+      <div className="flex items-center gap-3 mb-2">
+        <div className={`p-2 rounded-lg ${color} text-white flex-shrink-0`}>
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <h3 className="font-semibold text-sm leading-tight">{name}</h3>
+          <div className="flex items-center gap-2 mt-1">
+            <div className={`w-2 h-2 rounded-full ${getCategoryColor(category)}`} />
+            <Badge className={getPriorityBadgeSmall(priority)} >
+              {priority}
+            </Badge>
+          </div>
+        </div>
+      </div>
+      
+      <p className="text-xs text-gray-600 mb-3 line-clamp-2">{description}</p>
+      
+      <div className="flex flex-wrap gap-1">
+        {features.slice(0, 2).map(feature => (
+          <Badge key={feature} variant="secondary" className="text-xs">
+            {feature}
+          </Badge>
+        ))}
+        {features.length > 2 && (
+          <Badge variant="outline" className="text-xs">
+            +{features.length - 2}
+          </Badge>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const nodeTypes = {
+  functionalArea: FunctionalAreaNode,
+};
+
+function FunctionalMapContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'network'>('grid');
+  const { fitView } = useReactFlow();
 
   // Filter functional areas
   const filteredAreas = useMemo(() => {
@@ -250,6 +320,102 @@ export default function FunctionalMap() {
     };
     return colors[priority as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
+
+  const getPriorityBadgeSmall = (priority: string) => {
+    const colors = {
+      high: 'bg-red-50 text-red-600 border-red-200',
+      medium: 'bg-yellow-50 text-yellow-600 border-yellow-200',
+      low: 'bg-green-50 text-green-600 border-green-200'
+    };
+    return colors[priority as keyof typeof colors] || 'bg-gray-50 text-gray-600 border-gray-200';
+  };
+
+  // Generate network nodes and edges
+  const { nodes, edges } = useMemo(() => {
+    if (viewMode !== 'network') return { nodes: [], edges: [] };
+
+    const connectedAreas = selectedArea ? getConnectedAreas(selectedArea) : [];
+    
+    // Create nodes
+    const flowNodes: Node[] = filteredAreas.map((area, index) => {
+      const isSelected = selectedArea === area.id;
+      const isConnected = selectedArea ? connectedAreas.includes(area.id) : false;
+      
+      // Position nodes in a circular layout
+      const angle = (index / filteredAreas.length) * 2 * Math.PI;
+      const radius = Math.min(300, filteredAreas.length * 30);
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
+      
+      return {
+        id: area.id,
+        type: 'functionalArea',
+        position: { x, y },
+        data: { ...area, isSelected, isConnected },
+        style: {
+          opacity: !selectedArea || isSelected || isConnected ? 1 : 0.3,
+        },
+      };
+    });
+
+    // Create edges
+    const flowEdges: Edge[] = [];
+    filteredAreas.forEach(area => {
+      area.connections.forEach(connectionId => {
+        const targetArea = filteredAreas.find(a => a.id === connectionId);
+        if (targetArea) {
+          const isHighlighted = selectedArea === area.id || selectedArea === connectionId;
+          flowEdges.push({
+            id: `${area.id}-${connectionId}`,
+            source: area.id,
+            target: connectionId,
+            type: 'default',
+            animated: isHighlighted,
+            style: {
+              stroke: isHighlighted ? '#3b82f6' : '#6b7280',
+              strokeWidth: isHighlighted ? 3 : 1,
+              opacity: !selectedArea || isHighlighted ? 0.8 : 0.2,
+            },
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              color: isHighlighted ? '#3b82f6' : '#6b7280',
+              width: isHighlighted ? 12 : 8,
+              height: isHighlighted ? 12 : 8,
+            },
+          });
+        }
+      });
+    });
+
+    return { nodes: flowNodes, edges: flowEdges };
+  }, [filteredAreas, selectedArea, viewMode]);
+
+  const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
+  const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
+
+  // Update nodes and edges when data changes
+  useEffect(() => {
+    setNodes(nodes);
+    setEdges(edges);
+  }, [nodes, edges, setNodes, setEdges]);
+
+  // Handle node clicks in network view
+  const handleNodeClick = useCallback((event: any, node: Node) => {
+    setSelectedArea(selectedArea === node.id ? null : node.id);
+  }, [selectedArea]);
+
+  // Auto-fit network view when nodes change
+  useEffect(() => {
+    if (viewMode === 'network' && nodes.length > 0) {
+      setTimeout(() => {
+        fitView({ 
+          padding: 0.2,
+          duration: 800,
+          includeHiddenNodes: false 
+        });
+      }, 100);
+    }
+  }, [viewMode, nodes.length, fitView]);
 
   // Generate smart explore routes with context
   const getExploreRoute = (area: FunctionalArea) => {
@@ -476,17 +642,61 @@ export default function FunctionalMap() {
             })}
           </div>
         ) : (
-          /* Network View - Placeholder for future implementation */
-          <div className="flex items-center justify-center h-96 bg-white rounded-lg border-2 border-dashed border-gray-300">
-            <div className="text-center">
-              <Workflow className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Network View</h3>
-              <p className="text-gray-600">
-                Interactive network visualization coming soon. 
-                <br />
-                Use Grid View to explore functional connections.
-              </p>
-            </div>
+          /* Network View */
+          <div className="h-[600px] bg-gray-50 rounded-lg border border-gray-200">
+            <ReactFlow
+              nodes={flowNodes}
+              edges={flowEdges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onNodeClick={handleNodeClick}
+              nodeTypes={nodeTypes}
+              connectionMode={ConnectionMode.Loose}
+              fitView
+              fitViewOptions={{ padding: 0.2 }}
+              className="bg-gray-50"
+              nodesDraggable={true}
+              nodesConnectable={false}
+              elementsSelectable={true}
+            >
+              <Background color="#e5e7eb" gap={20} />
+              <Controls />
+              
+              {/* Network Info Panel */}
+              <Panel position="top-left" className="bg-white/90 backdrop-blur-sm rounded-lg p-4 shadow-lg">
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm flex items-center gap-2">
+                    <Network className="w-4 h-4" />
+                    Functional Network
+                  </h3>
+                  <div className="text-xs text-gray-600 space-y-1">
+                    <div>• Click nodes to highlight connections</div>
+                    <div>• Drag nodes to rearrange layout</div>
+                    <div>• Use controls to zoom and pan</div>
+                  </div>
+                  <div className="pt-2 border-t border-gray-200 text-xs text-gray-500">
+                    {filteredAreas.length} areas • {edges.length} connections
+                  </div>
+                </div>
+              </Panel>
+
+              {/* Connection Legend */}
+              <Panel position="bottom-right" className="bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Connection Types</h4>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-0.5 bg-blue-500"></div>
+                      <span>Highlighted</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-0.5 bg-gray-400"></div>
+                      <span>Standard</span>
+                    </div>
+                  </div>
+                </div>
+              </Panel>
+            </ReactFlow>
           </div>
         )}
       </div>
@@ -575,5 +785,13 @@ export default function FunctionalMap() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function FunctionalMap() {
+  return (
+    <ReactFlowProvider>
+      <FunctionalMapContent />
+    </ReactFlowProvider>
   );
 }
