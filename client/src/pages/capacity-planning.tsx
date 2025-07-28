@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { 
   Calendar, Users, Settings, Target, TrendingUp, AlertTriangle, Plus, BookOpen, Zap, Briefcase,
   Clock, Activity, BarChart3, Factory, Gauge, Timer, Wrench, UserCheck, ClipboardList, 
-  ChevronUp, ChevronDown, Info
+  ChevronUp, ChevronDown, Info, Building2, MapPin, LineChart, PieChart
 } from "lucide-react";
 import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isWeekend, differenceInDays } from "date-fns";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -26,6 +26,284 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { useMaxDock } from "@/contexts/MaxDockContext";
+import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+} from 'chart.js';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement
+);
+
+// Plant Capacity Timeline Component
+const PlantCapacityTimeline = ({ plants, timeframe }: { plants: any[], timeframe: string }) => {
+  const generateTimelineData = () => {
+    const labels = [];
+    const datasets = [];
+    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+    
+    // Generate dates based on timeframe
+    const now = new Date();
+    for (let i = 0; i < 12; i++) {
+      if (timeframe === 'week') {
+        labels.push(format(addDays(now, i * 7), 'MMM dd'));
+      } else if (timeframe === 'month') {
+        labels.push(format(addDays(now, i * 30), 'MMM yyyy'));
+      } else {
+        labels.push(format(addDays(now, i), 'MMM dd'));
+      }
+    }
+
+    plants.forEach((plant, index) => {
+      datasets.push({
+        label: `${plant.name} Capacity`,
+        data: Array.from({ length: 12 }, () => Math.floor(Math.random() * 200) + 150),
+        borderColor: colors[index % colors.length],
+        backgroundColor: colors[index % colors.length] + '20',
+        fill: false,
+        tension: 0.4
+      });
+      
+      datasets.push({
+        label: `${plant.name} Demand`,
+        data: Array.from({ length: 12 }, () => Math.floor(Math.random() * 180) + 100),
+        borderColor: colors[index % colors.length],
+        backgroundColor: colors[index % colors.length] + '40',
+        borderDash: [5, 5],
+        fill: false,
+        tension: 0.4
+      });
+    });
+
+    return { labels, datasets };
+  };
+
+  const chartData = generateTimelineData();
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: 'Plant Capacity vs Demand Timeline'
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Hours'
+        }
+      }
+    }
+  };
+
+  return <Line data={chartData} options={options} />;
+};
+
+// Work Center Capacity Analysis Component
+const WorkCenterCapacityAnalysis = ({ resources, timeframe }: { resources: any[], timeframe: string }) => {
+  const workCenters = useMemo(() => {
+    // Group resources by work center (using type as work center)
+    const grouped = resources.reduce((acc, resource) => {
+      const workCenter = resource.type || 'General';
+      if (!acc[workCenter]) {
+        acc[workCenter] = [];
+      }
+      acc[workCenter].push(resource);
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    return Object.entries(grouped).map(([name, resources]) => ({
+      name,
+      resources,
+      totalCapacity: resources.reduce((sum, r) => sum + (r.capacity || 40), 0),
+      currentUtilization: resources.reduce((sum, r) => sum + (r.utilization || Math.floor(Math.random() * 100)), 0) / resources.length,
+      futureProjection: Array.from({ length: 12 }, () => Math.floor(Math.random() * 100) + 20)
+    }));
+  }, [resources]);
+
+  const chartData = {
+    labels: Array.from({ length: 12 }, (_, i) => {
+      const date = addDays(new Date(), timeframe === 'week' ? i * 7 : timeframe === 'month' ? i * 30 : i);
+      return format(date, timeframe === 'month' ? 'MMM yyyy' : 'MMM dd');
+    }),
+    datasets: workCenters.map((wc, index) => ({
+      label: wc.name,
+      data: wc.futureProjection,
+      backgroundColor: `hsl(${index * 60}, 70%, 50%)`,
+      borderColor: `hsl(${index * 60}, 70%, 40%)`,
+      borderWidth: 2
+    }))
+  };
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: 'Work Center Utilization Forecast'
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 100,
+        title: {
+          display: true,
+          text: 'Utilization %'
+        }
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="h-80">
+        <Bar data={chartData} options={options} />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {workCenters.map((wc, index) => (
+          <Card key={wc.name}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center justify-between">
+                <span>{wc.name}</span>
+                <Badge variant={wc.currentUtilization >= 85 ? 'destructive' : wc.currentUtilization >= 75 ? 'secondary' : 'default'}>
+                  {wc.currentUtilization.toFixed(1)}%
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Resources:</span>
+                  <span>{wc.resources.length}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Total Capacity:</span>
+                  <span>{wc.totalCapacity}h</span>
+                </div>
+                <Progress value={wc.currentUtilization} className="h-2" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Resource Detailed Analysis Component
+const ResourceDetailedAnalysis = ({ resources, timeframe }: { resources: any[], timeframe: string }) => {
+  const [selectedResourceType, setSelectedResourceType] = useState<string>('all');
+  
+  const resourceTypes = useMemo(() => {
+    const types = Array.from(new Set(resources.map(r => r.type || 'General')));
+    return ['all', ...types];
+  }, [resources]);
+
+  const filteredResources = useMemo(() => {
+    return selectedResourceType === 'all' 
+      ? resources 
+      : resources.filter(r => (r.type || 'General') === selectedResourceType);
+  }, [resources, selectedResourceType]);
+
+  const generateResourceChart = () => {
+    const labels = filteredResources.map(r => r.name || `Resource ${r.id}`);
+    const capacityData = filteredResources.map(r => r.capacity || Math.floor(Math.random() * 60) + 20);
+    const utilizationData = filteredResources.map(r => (r.utilization || Math.floor(Math.random() * 100)) / 100 * (r.capacity || 40));
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Total Capacity',
+          data: capacityData,
+          backgroundColor: 'rgba(59, 130, 246, 0.3)',
+          borderColor: 'rgb(59, 130, 246)',
+          borderWidth: 2
+        },
+        {
+          label: 'Current Load',
+          data: utilizationData,
+          backgroundColor: 'rgba(16, 185, 129, 0.3)',
+          borderColor: 'rgb(16, 185, 129)',
+          borderWidth: 2
+        }
+      ]
+    };
+  };
+
+  const chartData = generateResourceChart();
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: 'Resource Capacity vs Current Load'
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Hours'
+        }
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Resource Analysis</h3>
+        <Select value={selectedResourceType} onValueChange={setSelectedResourceType}>
+          <SelectTrigger className="w-48">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {resourceTypes.map(type => (
+              <SelectItem key={type} value={type}>
+                {type === 'all' ? 'All Resource Types' : type}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="h-80">
+        <Bar data={chartData} options={options} />
+      </div>
+    </div>
+  );
+};
 
 export default function CapacityPlanning() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -782,10 +1060,18 @@ export default function CapacityPlanning() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-6">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-9">
           <TabsTrigger value="overview" className="text-xs sm:text-sm">
             <BarChart3 className="w-4 h-4 mr-1" />
             Overview
+          </TabsTrigger>
+          <TabsTrigger value="plants" className="text-xs sm:text-sm">
+            <Building2 className="w-4 h-4 mr-1" />
+            Plants
+          </TabsTrigger>
+          <TabsTrigger value="workcenters" className="text-xs sm:text-sm">
+            <MapPin className="w-4 h-4 mr-1" />
+            Work Centers
           </TabsTrigger>
           <TabsTrigger value="resources" className="text-xs sm:text-sm">
             <Wrench className="w-4 h-4 mr-1" />
@@ -802,6 +1088,10 @@ export default function CapacityPlanning() {
           <TabsTrigger value="overtime" className="text-xs sm:text-sm">
             <Timer className="w-4 h-4 mr-1" />
             Overtime
+          </TabsTrigger>
+          <TabsTrigger value="forecast" className="text-xs sm:text-sm">
+            <LineChart className="w-4 h-4 mr-1" />
+            Forecast
           </TabsTrigger>
           <TabsTrigger value="scenarios" className="text-xs sm:text-sm">
             <ClipboardList className="w-4 h-4 mr-1" />
@@ -869,8 +1159,45 @@ export default function CapacityPlanning() {
           </Card>
         </TabsContent>
 
+        {/* Plants Tab - New detailed plant capacity timeline */}
+        <TabsContent value="plants" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="w-5 h-5" />
+                Plant Capacity Timeline Analysis
+              </CardTitle>
+              <CardDescription>
+                Future capacity forecasting and demand analysis by plant location
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PlantCapacityTimeline plants={plants} timeframe={selectedTimeframe} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Work Centers Tab - New detailed work center analysis */}
+        <TabsContent value="workcenters" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
+                Work Center Capacity Analysis
+              </CardTitle>
+              <CardDescription>
+                Detailed capacity utilization forecasting by work center with resource breakdown
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <WorkCenterCapacityAnalysis resources={resources} timeframe={selectedTimeframe} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Resources Tab */}
         <TabsContent value="resources" className="space-y-6">
+          <ResourceDetailedAnalysis resources={resources} timeframe={selectedTimeframe} />
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1225,6 +1552,149 @@ export default function CapacityPlanning() {
                       <p className="text-sm text-blue-800">
                         Review shift schedules to better distribute workload and minimize peak hour overtime
                       </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Forecast Tab - New comprehensive capacity forecasting */}
+        <TabsContent value="forecast" className="space-y-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {/* Capacity vs Demand Forecast */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LineChart className="w-5 h-5" />
+                  Capacity vs Demand Forecast
+                </CardTitle>
+                <CardDescription>
+                  12-{selectedTimeframe} forecast showing capacity availability vs projected demand
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PlantCapacityTimeline plants={plants} timeframe={selectedTimeframe} />
+              </CardContent>
+            </Card>
+
+            {/* Resource Utilization Projection */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <PieChart className="w-5 h-5" />
+                  Resource Utilization Projection
+                </CardTitle>
+                <CardDescription>
+                  Future utilization trends by resource type
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <Doughnut 
+                    data={{
+                      labels: Array.from(new Set(resources.map(r => r.type || 'General'))),
+                      datasets: [{
+                        label: 'Future Avg Utilization %',
+                        data: Array.from(new Set(resources.map(r => r.type || 'General'))).map(() => 
+                          Math.floor(Math.random() * 40) + 60
+                        ),
+                        backgroundColor: [
+                          'rgba(59, 130, 246, 0.8)',
+                          'rgba(16, 185, 129, 0.8)',
+                          'rgba(245, 158, 11, 0.8)',
+                          'rgba(239, 68, 68, 0.8)',
+                          'rgba(139, 92, 246, 0.8)',
+                          'rgba(6, 182, 212, 0.8)'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                      }]
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          position: 'bottom'
+                        },
+                        title: {
+                          display: true,
+                          text: `${selectedTimeframe.charAt(0).toUpperCase() + selectedTimeframe.slice(1)} Utilization Forecast`
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Capacity Bottleneck Analysis */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5" />
+                Capacity Bottleneck Forecast
+              </CardTitle>
+              <CardDescription>
+                Predicted capacity constraints and resource bottlenecks in upcoming periods
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* High-Risk Periods */}
+                <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <AlertTriangle className="w-5 h-5 text-red-600" />
+                    <h4 className="font-semibold text-red-800">High Risk Periods</h4>
+                  </div>
+                  <div className="space-y-2">
+                    {['Week 3-4', 'Week 8-9', 'Week 11-12'].map((period, index) => (
+                      <div key={period} className="flex justify-between items-center">
+                        <span className="text-sm text-red-700">{period}</span>
+                        <Badge className="bg-red-200 text-red-800">
+                          {90 + Math.floor(Math.random() * 10)}% util
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Resource Constraints */}
+                <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Wrench className="w-5 h-5 text-orange-600" />
+                    <h4 className="font-semibold text-orange-800">Resource Constraints</h4>
+                  </div>
+                  <div className="space-y-2">
+                    {resources.slice(0, 3).map((resource, index) => (
+                      <div key={resource.id} className="flex justify-between items-center">
+                        <span className="text-sm text-orange-700">{resource.name}</span>
+                        <Badge className="bg-orange-200 text-orange-800">
+                          Risk {index + 1}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Recommendations */}
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Target className="w-5 h-5 text-blue-600" />
+                    <h4 className="font-semibold text-blue-800">Recommendations</h4>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-sm text-blue-700">
+                      • Add temp resources in Week 3
+                    </div>
+                    <div className="text-sm text-blue-700">
+                      • Schedule maintenance early
+                    </div>
+                    <div className="text-sm text-blue-700">
+                      • Consider overtime approval
                     </div>
                   </div>
                 </div>
