@@ -70,6 +70,7 @@ import WidgetShowcase from "@/pages/widget-showcase";
 import DataImportPage from "@/pages/data-import";
 import Onboarding from "@/pages/onboarding";
 import AtpCtpPage from "@/pages/atp-ctp";
+import DataValidation from "@/pages/data-validation";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
@@ -356,6 +357,11 @@ function Router() {
           <Route path="/data-import">
             <ProtectedRoute feature="systems-management" action="view">
               <DataImportPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/data-validation">
+            <ProtectedRoute feature="systems-management" action="view">
+              <DataValidation />
             </ProtectedRoute>
           </Route>
           <Route path="/atp-ctp">

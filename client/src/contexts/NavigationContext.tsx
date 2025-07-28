@@ -59,6 +59,7 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/training': { label: 'Training', icon: 'GraduationCap' },
   '/presentation-system': { label: 'Presentation System', icon: 'Presentation' },
   '/data-import': { label: 'Master Data Setup', icon: 'Database' },
+  '/data-validation': { label: 'Data Validation', icon: 'Shield' },
   '/billing': { label: 'Billing & Usage', icon: 'CreditCard' },
   '/account': { label: 'Account Settings', icon: 'Settings' }
 };

@@ -7490,6 +7490,7 @@ Return a JSON response with this structure:
       '/optimize-orders': 'scheduling-optimizer-view',
       '/erp-import': 'erp-import-view',
       '/cockpit': 'production-cockpit-view',
+      '/data-validation': 'systems-management-view',
 
       '/systems-management-dashboard': 'systems-management-view',
       '/capacity-planning': 'capacity-planning-view',
@@ -7514,6 +7515,7 @@ Return a JSON response with this structure:
       '/optimize-orders': 'Optimize Orders - Intelligent scheduling optimizer',
       '/erp-import': 'ERP Import - External system data integration',
       '/cockpit': 'Cockpit - Customizable production management dashboard',
+      '/data-validation': 'Data Validation - Master data integrity analysis',
 
       '/systems-management-dashboard': 'Systems Management Dashboard - System configuration and settings',
       '/capacity-planning': 'Capacity Planning - Resource capacity analysis',
@@ -16571,6 +16573,19 @@ Response must be valid JSON:
     } catch (error) {
       console.error("Error fetching recipe equipment:", error);
       res.status(500).json({ error: "Failed to fetch recipe equipment" });
+    }
+  });
+
+  // Data Validation API
+  app.post("/api/data-validation/run", requireAuth, async (req, res) => {
+    try {
+      console.log('Data validation requested by user:', req.user?.id);
+      
+      const result = await storage.runDataValidation();
+      res.json(result);
+    } catch (error) {
+      console.error("Error running data validation:", error);
+      res.status(500).json({ error: "Failed to run data validation" });
     }
   });
 

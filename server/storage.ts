@@ -823,6 +823,9 @@ export interface IStorage {
   storeAIMemory(memory: any): Promise<void>;
   deleteAIMemory(entryId: string, userId: string): Promise<void>;
   updateAITraining(entryId: string, content: string, userId: string): Promise<void>;
+  
+  // Data Validation
+  runDataValidation(): Promise<any>;
   updateAITrainingPattern(pattern: any): Promise<void>;
   clearAllAIMemories(userId: string): Promise<void>;
   getAIMemoryStats(userId: string): Promise<{
@@ -8104,6 +8107,372 @@ export class DatabaseStorage implements IStorage {
       .where(eq(downtimeActions.id, id))
       .returning();
     return action;
+  }
+
+  // Data Validation Methods
+  async runDataValidation(): Promise<any> {
+    const startTime = Date.now();
+    const issues: any[] = [];
+
+    try {
+      // 1. Check operations with missing required capabilities
+      const operationsIssues = await this.validateOperationsCapabilities();
+      issues.push(...operationsIssues);
+
+      // 2. Check resources without active capabilities  
+      const resourcesIssues = await this.validateResourcesCapabilities();
+      issues.push(...resourcesIssues);
+
+      // 3. Check production orders with invalid references
+      const productionOrderIssues = await this.validateProductionOrders();
+      issues.push(...productionOrderIssues);
+
+      // 4. Check data integrity and consistency
+      const integrityIssues = await this.validateDataIntegrity();
+      issues.push(...integrityIssues);
+
+      // 5. Check relationship validation between entities
+      const relationshipIssues = await this.validateRelationships();
+      issues.push(...relationshipIssues);
+
+      // 6. Check scheduling and timeline conflicts
+      const schedulingIssues = await this.validateSchedulingConflicts();
+      issues.push(...schedulingIssues);
+
+      const executionTime = Date.now() - startTime;
+      
+      // Calculate summary statistics
+      const criticalIssues = issues.filter(i => i.severity === 'critical').length;
+      const warnings = issues.filter(i => i.severity === 'warning').length;
+      const infoItems = issues.filter(i => i.severity === 'info').length;
+      
+      // Calculate data integrity score (100 - penalty for issues)
+      const totalRecords = await this.getTotalRecordsCount();
+      const totalAffected = issues.reduce((sum, issue) => sum + issue.affectedRecords, 0);
+      const dataIntegrityScore = Math.max(0, Math.min(100, 
+        100 - (criticalIssues * 10) - (warnings * 3) - (infoItems * 1) - Math.floor((totalAffected / totalRecords) * 20)
+      ));
+
+      return {
+        summary: {
+          totalChecks: 6,
+          criticalIssues,
+          warnings,
+          infoItems,
+          dataIntegrityScore
+        },
+        issues,
+        executionTime,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Data validation error:', error);
+      throw new Error('Failed to run data validation');
+    }
+  }
+
+  private async validateOperationsCapabilities(): Promise<any[]> {
+    const issues: any[] = [];
+    
+    // Get all operations that require capabilities
+    const operationsWithCapabilities = await db
+      .select({
+        id: operations.id,
+        name: operations.name,
+        productionOrderId: operations.productionOrderId,
+        requiredCapabilities: operations.requiredCapabilities
+      })
+      .from(operations)
+      .where(sql`json_array_length(required_capabilities) > 0`);
+
+    for (const operation of operationsWithCapabilities) {
+      if (!operation.requiredCapabilities || operation.requiredCapabilities.length === 0) continue;
+
+      // Check if there are active resources with ALL required capabilities
+      const activeResourcesWithCapabilities = await db
+        .select({
+          id: resources.id,
+          name: resources.name,
+          capabilities: resources.capabilities
+        })
+        .from(resources)
+        .where(eq(resources.status, 'active'));
+
+      const hasValidResources = activeResourcesWithCapabilities.some(resource => {
+        if (!resource.capabilities || resource.capabilities.length === 0) return false;
+        return operation.requiredCapabilities.every(reqCap => 
+          resource.capabilities.includes(reqCap)
+        );
+      });
+
+      if (!hasValidResources) {
+        issues.push({
+          id: `operation-capabilities-${operation.id}`,
+          severity: 'critical',
+          category: 'Operations',
+          title: `Operation "${operation.name}" has no available resources`,
+          description: `Operation requires capabilities that no active resources possess, preventing execution.`,
+          affectedRecords: 1,
+          details: [{
+            name: operation.name,
+            description: `Required capabilities: ${operation.requiredCapabilities.join(', ')}`
+          }],
+          recommendation: 'Add resources with the required capabilities or modify the operation requirements.'
+        });
+      }
+    }
+
+    return issues;
+  }
+
+  private async validateResourcesCapabilities(): Promise<any[]> {
+    const issues: any[] = [];
+
+    // Get all active resources without capabilities
+    const resourcesWithoutCapabilities = await db
+      .select({
+        id: resources.id,
+        name: resources.name,
+        type: resources.type,
+        capabilities: resources.capabilities
+      })
+      .from(resources)
+      .where(and(
+        eq(resources.status, 'active'),
+        or(
+          sql`capabilities IS NULL`,
+          sql`json_array_length(capabilities) = 0`
+        )
+      ));
+
+    if (resourcesWithoutCapabilities.length > 0) {
+      issues.push({
+        id: 'resources-no-capabilities',
+        severity: 'warning',
+        category: 'Resources',
+        title: `${resourcesWithoutCapabilities.length} active resources have no capabilities`,
+        description: 'Resources without capabilities cannot be assigned to operations that require specific skills.',
+        affectedRecords: resourcesWithoutCapabilities.length,
+        details: resourcesWithoutCapabilities.map(resource => ({
+          name: resource.name,
+          description: `Type: ${resource.type}`
+        })),
+        recommendation: 'Assign appropriate capabilities to these resources or set them to inactive if not needed.'
+      });
+    }
+
+    return issues;
+  }
+
+  private async validateProductionOrders(): Promise<any[]> {
+    const issues: any[] = [];
+
+    // Check production orders with invalid plant references
+    const ordersWithInvalidPlants = await db
+      .select({
+        id: productionOrders.id,
+        orderNumber: productionOrders.orderNumber,
+        name: productionOrders.name,
+        plantId: productionOrders.plantId
+      })
+      .from(productionOrders)
+      .leftJoin(plants, eq(productionOrders.plantId, plants.id))
+      .where(isNull(plants.id));
+
+    if (ordersWithInvalidPlants.length > 0) {
+      issues.push({
+        id: 'production-orders-invalid-plants',
+        severity: 'critical',
+        category: 'Production Orders',
+        title: `${ordersWithInvalidPlants.length} production orders reference invalid plants`,
+        description: 'Production orders cannot be executed without valid plant references.',
+        affectedRecords: ordersWithInvalidPlants.length,
+        details: ordersWithInvalidPlants.map(order => ({
+          name: `${order.orderNumber} - ${order.name}`,
+          description: `Invalid plant ID: ${order.plantId}`
+        })),
+        recommendation: 'Update production orders to reference valid plants or create the missing plants.'
+      });
+    }
+
+    // Check production orders without operations
+    const ordersWithoutOperations = await db
+      .select({
+        id: productionOrders.id,
+        orderNumber: productionOrders.orderNumber,
+        name: productionOrders.name
+      })
+      .from(productionOrders)
+      .leftJoin(operations, eq(productionOrders.id, operations.productionOrderId))
+      .where(isNull(operations.id))
+      .groupBy(productionOrders.id, productionOrders.orderNumber, productionOrders.name);
+
+    if (ordersWithoutOperations.length > 0) {
+      issues.push({
+        id: 'production-orders-no-operations',
+        severity: 'warning',
+        category: 'Production Orders',
+        title: `${ordersWithoutOperations.length} production orders have no operations`,
+        description: 'Production orders without operations cannot be scheduled or executed.',
+        affectedRecords: ordersWithoutOperations.length,
+        details: ordersWithoutOperations.map(order => ({
+          name: `${order.orderNumber} - ${order.name}`,
+          description: 'No operations defined for this order'
+        })),
+        recommendation: 'Add operations to these production orders or mark them as cancelled if not needed.'
+      });
+    }
+
+    return issues;
+  }
+
+  private async validateDataIntegrity(): Promise<any[]> {
+    const issues: any[] = [];
+
+    // Check for duplicate resource names within same plant
+    const duplicateResources = await db
+      .select({
+        name: resources.name,
+        plantId: resources.plantId,
+        count: sql<number>`count(*)`.as('count')
+      })
+      .from(resources)
+      .where(eq(resources.status, 'active'))
+      .groupBy(resources.name, resources.plantId)
+      .having(sql`count(*) > 1`);
+
+    if (duplicateResources.length > 0) {
+      issues.push({
+        id: 'duplicate-resource-names',
+        severity: 'warning',
+        category: 'Data Integrity',
+        title: `${duplicateResources.length} resource names are duplicated within plants`,
+        description: 'Duplicate resource names can cause confusion in scheduling and reporting.',
+        affectedRecords: duplicateResources.reduce((sum, item) => sum + item.count, 0),
+        details: duplicateResources.map(item => ({
+          name: item.name,
+          description: `${item.count} resources with same name in plant ${item.plantId}`
+        })),
+        recommendation: 'Rename duplicate resources to have unique names within each plant.'
+      });
+    }
+
+    // Check for operations with invalid capability references
+    const operationsWithInvalidCapabilities = await db
+      .select({
+        id: operations.id,
+        name: operations.name,
+        requiredCapabilities: operations.requiredCapabilities
+      })
+      .from(operations)
+      .where(sql`json_array_length(required_capabilities) > 0`);
+
+    const allCapabilities = await db.select({ id: capabilities.id }).from(capabilities);
+    const validCapabilityIds = new Set(allCapabilities.map(c => c.id));
+
+    const invalidCapabilityOperations = operationsWithInvalidCapabilities.filter(op => {
+      if (!op.requiredCapabilities) return false;
+      return op.requiredCapabilities.some(capId => !validCapabilityIds.has(capId));
+    });
+
+    if (invalidCapabilityOperations.length > 0) {
+      issues.push({
+        id: 'operations-invalid-capabilities',
+        severity: 'critical',
+        category: 'Data Integrity',
+        title: `${invalidCapabilityOperations.length} operations reference invalid capabilities`,
+        description: 'Operations cannot be scheduled with invalid capability references.',
+        affectedRecords: invalidCapabilityOperations.length,
+        details: invalidCapabilityOperations.map(op => ({
+          name: op.name,
+          description: 'Contains references to non-existent capabilities'
+        })),
+        recommendation: 'Remove invalid capability references or create the missing capabilities.'
+      });
+    }
+
+    return issues;
+  }
+
+  private async validateRelationships(): Promise<any[]> {
+    const issues: any[] = [];
+
+    // Check for plants with no resources
+    const plantsWithoutResources = await db
+      .select({
+        id: plants.id,
+        name: plants.name
+      })
+      .from(plants)
+      .leftJoin(resources, eq(plants.id, resources.plantId))
+      .where(and(eq(plants.isActive, true), isNull(resources.id)))
+      .groupBy(plants.id, plants.name);
+
+    if (plantsWithoutResources.length > 0) {
+      issues.push({
+        id: 'plants-no-resources',
+        severity: 'info',
+        category: 'Relationships',
+        title: `${plantsWithoutResources.length} active plants have no resources`,
+        description: 'Plants without resources cannot execute production orders.',
+        affectedRecords: plantsWithoutResources.length,
+        details: plantsWithoutResources.map(plant => ({
+          name: plant.name,
+          description: 'No resources assigned to this plant'
+        })),
+        recommendation: 'Add resources to these plants or set them as inactive if not operational.'
+      });
+    }
+
+    return issues;
+  }
+
+  private async validateSchedulingConflicts(): Promise<any[]> {
+    const issues: any[] = [];
+
+    // Check for production orders with due dates in the past
+    const overduePO = await db
+      .select({
+        id: productionOrders.id,
+        orderNumber: productionOrders.orderNumber,
+        name: productionOrders.name,
+        dueDate: productionOrders.dueDate
+      })
+      .from(productionOrders)
+      .where(and(
+        lt(productionOrders.dueDate, new Date()),
+        notInArray(productionOrders.status, ['completed', 'cancelled'])
+      ));
+
+    if (overduePO.length > 0) {
+      issues.push({
+        id: 'overdue-production-orders',
+        severity: 'warning',
+        category: 'Scheduling',
+        title: `${overduePO.length} production orders are overdue`,
+        description: 'Production orders with past due dates require immediate attention.',
+        affectedRecords: overduePO.length,
+        details: overduePO.map(order => ({
+          name: `${order.orderNumber} - ${order.name}`,
+          description: `Due: ${order.dueDate?.toISOString().split('T')[0]}`
+        })),
+        recommendation: 'Review and reschedule overdue production orders or update their status.'
+      });
+    }
+
+    return issues;
+  }
+
+  private async getTotalRecordsCount(): Promise<number> {
+    const counts = await Promise.all([
+      db.select({ count: sql<number>`count(*)` }).from(plants),
+      db.select({ count: sql<number>`count(*)` }).from(resources),
+      db.select({ count: sql<number>`count(*)` }).from(capabilities),
+      db.select({ count: sql<number>`count(*)` }).from(productionOrders),
+      db.select({ count: sql<number>`count(*)` }).from(operations)
+    ]);
+    
+    return counts.reduce((total, result) => total + result[0].count, 0);
   }
 
   // Production Scheduler's Cockpit Methods
