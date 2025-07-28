@@ -1172,7 +1172,7 @@ export default function CapacityPlanning() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <PlantCapacityTimeline plants={plants} timeframe={selectedTimeframe} />
+              <PlantCapacityTimeline plants={[]} timeframe={selectedTimeframe} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -1575,7 +1575,7 @@ export default function CapacityPlanning() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <PlantCapacityTimeline plants={plants} timeframe={selectedTimeframe} />
+                <PlantCapacityTimeline plants={[]} timeframe={selectedTimeframe} />
               </CardContent>
             </Card>
 
