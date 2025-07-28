@@ -204,6 +204,14 @@ const featureTableMapping: Record<string, string[]> = {
     'cost_centers', 'cost_allocations', 'budgets', 'actual_costs', 'variance_analysis',
     'financial_periods', 'exchange_rates', 'price_changes', 'cost_rollups',
     'profitability_analysis'
+  ],
+  'engineering': [
+    'bills_of_materials', 'bom_items', 'recipes', 'routings', 'routing_operations',
+    'production_versions', 'work_centers', 'product_masters', 'products',
+    'product_categories', 'product_structures', 'engineering_changes',
+    'specifications', 'documents', 'alternate_routings', 'operations',
+    'capabilities', 'resource_capabilities', 'quality_specifications',
+    'material_specifications', 'process_parameters', 'technical_documents'
   ]
 };
 
@@ -218,7 +226,8 @@ const availableFeatures = [
   { value: 'maintenance', label: 'Maintenance Management' },
   { value: 'sales', label: 'Sales & Orders' },
   { value: 'purchasing', label: 'Purchasing & Procurement' },
-  { value: 'finance', label: 'Financial Management' }
+  { value: 'finance', label: 'Financial Management' },
+  { value: 'engineering', label: 'Engineering & Product Design' }
 ];
 
 // Collision detection helper function

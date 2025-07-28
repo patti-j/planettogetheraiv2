@@ -2,6 +2,23 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Engineering Filter Addition to Data Schema View (July 28, 2025)**:
+- Added comprehensive "Engineering & Product Design" filter option to Data Schema View for engineering teams
+- Engineering filter focuses on product definitions, routings, recipes, BOMs, and production versions relationships
+- Includes 22 core engineering tables: bills_of_materials, bom_items, recipes, routings, routing_operations, production_versions, work_centers, products, capabilities, specifications, and technical documents
+- Helps engineering teams understand how product structures, manufacturing processes, and technical specifications interconnect
+- Engineering filter shows tables for maintaining product definitions, process routings, recipe formulations, and production version control
+- Enhanced user experience for engineering roles who need to understand data relationships for product design and manufacturing process definition
+- Works seamlessly with existing category filtering, search functionality, and focus mode for comprehensive engineering data exploration
+
+✓ **Complete Functional Map Explore Button Implementation (July 28, 2025)**:
+- Successfully added working Explore buttons to all functional areas previously missing navigation routes
+- Enhanced functional areas with smart routing: Quality Management → Master Data (quality_tests), Maintenance Management → Maintenance page, Sales & Orders → Master Data (customers), Procurement → Master Data (vendors), Financial Management → Reports page
+- Implemented intelligent route generation with context parameters for master data filtering (e.g., `/master-data?dataType=resources`)
+- All functional area cards now provide seamless navigation from overview to actual working sections of the manufacturing system
+- Enhanced user experience with complete coverage - every functional area in the map now has working Explore functionality
+- Smart routing takes users directly to relevant data sections based on functional area focus and data type relationships
+
 ✓ **Complete Resource Requirements System Implementation (July 28, 2025)**:
 - Successfully implemented comprehensive resource requirements system allowing operations to define multiple resource needs with specific eligibility criteria and assignment logic
 - Enhanced database schema with resourceRequirements and resourceRequirementAssignments tables featuring sophisticated resource allocation capabilities
