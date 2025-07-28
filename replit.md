@@ -2,7 +2,14 @@
 
 ## Recent Changes (July 28, 2025)
 
-✓ **Data Schema View Auto-Fit Enhancement & Focus Mode Improvement (July 28, 2025)**:
+✓ **Data Schema View Anti-Overlap Enhancement & Focus Mode Improvement (July 28, 2025)**:
+- Implemented comprehensive collision detection system to prevent table overlaps that made the schema difficult to read
+- Enhanced all three layout algorithms (hierarchical, circular, grid) with dynamic spacing based on table content and count
+- Added intelligent collision resolution that automatically repositions overlapping tables to maintain readability
+- Hierarchical layout now uses dynamic column calculation and content-aware spacing with category-based organization
+- Circular layout calculates optimal radius based on table count and card dimensions to prevent arc overlaps
+- Grid layout uses optimal aspect ratio (16:9) and content-aware vertical spacing based on column count
+- All layouts now estimate card heights dynamically based on table column count for more accurate spacing
 - Implemented intelligent auto-fit functionality that reorganizes the schema view when filters are applied
 - Added useReactFlow hook with fitView integration to automatically zoom and center filtered tables
 - Filter changes now trigger smooth 800ms transition to show all relevant tables in optimal view

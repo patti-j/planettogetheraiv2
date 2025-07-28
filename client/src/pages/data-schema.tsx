@@ -220,22 +220,95 @@ const availableFeatures = [
   { value: 'finance', label: 'Financial Management' }
 ];
 
-// Layout algorithms
+// Collision detection helper function
+const hasCollision = (pos1: { x: number; y: number }, pos2: { x: number; y: number }, cardWidth: number = 320, cardHeight: number = 200, padding: number = 20) => {
+  const totalWidth = cardWidth + padding;
+  const totalHeight = cardHeight + padding;
+  
+  return !(pos1.x + totalWidth < pos2.x || 
+           pos2.x + totalWidth < pos1.x || 
+           pos1.y + totalHeight < pos2.y || 
+           pos2.y + totalHeight < pos1.y);
+};
+
+// Resolve collision by finding nearest non-overlapping position
+const resolveCollision = (newPos: { x: number; y: number }, existingPositions: { x: number; y: number }[], cardWidth: number = 320, cardHeight: number = 200) => {
+  let resolvedPos = { ...newPos };
+  const maxAttempts = 20;
+  let attempts = 0;
+  
+  while (attempts < maxAttempts) {
+    let hasAnyCollision = false;
+    
+    for (const existing of existingPositions) {
+      if (hasCollision(resolvedPos, existing, cardWidth, cardHeight)) {
+        hasAnyCollision = true;
+        // Try moving right first, then down
+        if (attempts % 2 === 0) {
+          resolvedPos.x += cardWidth + 50;
+        } else {
+          resolvedPos.y += cardHeight + 50;
+          resolvedPos.x = newPos.x; // Reset x position
+        }
+        break;
+      }
+    }
+    
+    if (!hasAnyCollision) break;
+    attempts++;
+  }
+  
+  return resolvedPos;
+};
+
+// Layout algorithms with improved collision detection and spacing
 const layoutAlgorithms = {
   hierarchical: (tables: SchemaTable[]) => {
     const categories = Array.from(new Set(tables.map(t => t.category)));
     const positions: { [key: string]: { x: number; y: number } } = {};
+    const existingPositions: { x: number; y: number }[] = [];
+    
+    // Dynamic spacing based on table count and content
+    const minCardWidth = 320;
+    const minCardHeight = 200;
+    const padding = 50;
+    
+    let currentY = 0;
     
     categories.forEach((category, categoryIndex) => {
       const categoryTables = tables.filter(t => t.category === category);
-      const startY = categoryIndex * 300;
+      
+      // Calculate optimal columns based on table count and screen utilization
+      const maxCols = Math.max(2, Math.min(5, Math.ceil(Math.sqrt(categoryTables.length * 2))));
+      const cols = Math.min(maxCols, categoryTables.length);
+      
+      // Dynamic spacing based on column count
+      const horizontalSpacing = minCardWidth + padding;
       
       categoryTables.forEach((table, tableIndex) => {
-        positions[table.name] = {
-          x: tableIndex * 400,
-          y: startY
+        const row = Math.floor(tableIndex / cols);
+        const col = tableIndex % cols;
+        
+        // Estimate card height based on column count (more columns = taller card)
+        const estimatedHeight = minCardHeight + (table.columns.length > 10 ? 60 : table.columns.length * 6);
+        
+        const proposedPosition = {
+          x: col * horizontalSpacing,
+          y: currentY + row * (estimatedHeight + padding)
         };
+        
+        // Use collision detection as backup safety measure
+        const finalPosition = resolveCollision(proposedPosition, existingPositions, minCardWidth, estimatedHeight);
+        positions[table.name] = finalPosition;
+        existingPositions.push(finalPosition);
       });
+      
+      // Update Y position for next category
+      const categoryRows = Math.ceil(categoryTables.length / cols);
+      const maxEstimatedHeight = Math.max(...categoryTables.map(t => 
+        minCardHeight + (t.columns.length > 10 ? 60 : t.columns.length * 6)
+      ));
+      currentY += categoryRows * (maxEstimatedHeight + padding) + 80; // Extra space between categories
     });
     
     return positions;
@@ -243,16 +316,32 @@ const layoutAlgorithms = {
   
   circular: (tables: SchemaTable[]) => {
     const positions: { [key: string]: { x: number; y: number } } = {};
-    const centerX = 400;
-    const centerY = 300;
-    const radius = Math.max(200, tables.length * 30);
+    const existingPositions: { x: number; y: number }[] = [];
+    const centerX = 600;
+    const centerY = 400;
+    
+    // Dynamic radius based on table count and estimated card size
+    const minRadius = 350;
+    const cardWidth = 320;
+    const cardHeight = 200;
+    
+    // Calculate minimum radius to prevent overlaps
+    // Use card width as the arc length and solve for radius
+    const arcLength = cardWidth + 80; // Add padding
+    const minRadiusForSpacing = (tables.length * arcLength) / (2 * Math.PI);
+    const calculatedRadius = Math.max(minRadius, minRadiusForSpacing);
     
     tables.forEach((table, index) => {
       const angle = (index / tables.length) * 2 * Math.PI;
-      positions[table.name] = {
-        x: centerX + radius * Math.cos(angle),
-        y: centerY + radius * Math.sin(angle)
+      const proposedPosition = {
+        x: centerX + calculatedRadius * Math.cos(angle),
+        y: centerY + calculatedRadius * Math.sin(angle)
       };
+      
+      // Use collision detection as backup
+      const finalPosition = resolveCollision(proposedPosition, existingPositions, cardWidth, cardHeight);
+      positions[table.name] = finalPosition;
+      existingPositions.push(finalPosition);
     });
     
     return positions;
@@ -260,15 +349,37 @@ const layoutAlgorithms = {
   
   grid: (tables: SchemaTable[]) => {
     const positions: { [key: string]: { x: number; y: number } } = {};
-    const cols = Math.ceil(Math.sqrt(tables.length));
+    const existingPositions: { x: number; y: number }[] = [];
+    
+    // Dynamic grid sizing
+    const minCardWidth = 320;
+    const minCardHeight = 200;
+    const padding = 50;
+    
+    // Calculate optimal grid dimensions
+    const aspectRatio = 16 / 9; // Target wider than tall layout
+    let cols = Math.ceil(Math.sqrt(tables.length * aspectRatio));
+    cols = Math.max(2, Math.min(6, cols)); // Limit between 2-6 columns
+    
+    const horizontalSpacing = minCardWidth + padding;
     
     tables.forEach((table, index) => {
       const row = Math.floor(index / cols);
       const col = index % cols;
-      positions[table.name] = {
-        x: col * 400,
-        y: row * 300
+      
+      // Estimate card height based on column count
+      const estimatedHeight = minCardHeight + (table.columns.length > 10 ? 60 : table.columns.length * 6);
+      const verticalSpacing = estimatedHeight + padding;
+      
+      const proposedPosition = {
+        x: col * horizontalSpacing,
+        y: row * verticalSpacing
       };
+      
+      // Use collision detection to ensure no overlaps
+      const finalPosition = resolveCollision(proposedPosition, existingPositions, minCardWidth, estimatedHeight);
+      positions[table.name] = finalPosition;
+      existingPositions.push(finalPosition);
     });
     
     return positions;
