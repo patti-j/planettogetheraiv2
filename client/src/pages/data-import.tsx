@@ -139,44 +139,48 @@ Create authentic manufacturing data that reflects this company's operations.`;
     setShowAIDialog(true);
   };
 
-  const dataTypes = [
-    // Core Manufacturing
-    { key: 'resources', label: 'Resources', icon: Wrench, description: 'Equipment, machinery, and personnel' },
-    { key: 'productionOrders', label: 'Production Orders', icon: Briefcase, description: 'Active production work orders' },
-    { key: 'operations', label: 'Operations', icon: Cog, description: 'Manufacturing operations and processes' },
-    { key: 'plannedOrders', label: 'Planned Orders', icon: Calendar, description: 'Future planned production orders' },
-    { key: 'capabilities', label: 'Capabilities', icon: Database, description: 'Skills and machine capabilities' },
+  // Only show supported data types that have backend API support
+  const supportedDataTypes = [
     { key: 'plants', label: 'Plants', icon: Building, description: 'Manufacturing facilities and locations' },
-    
-    // Organizational Structure
-    { key: 'sites', label: 'Sites', icon: MapPin, description: 'Manufacturing sites and locations' },
-    { key: 'departments', label: 'Departments', icon: Building2, description: 'Organizational departments' },
-    { key: 'workCenters', label: 'Work Centers', icon: Factory, description: 'Production work centers' },
-    { key: 'employees', label: 'Employees', icon: Users, description: 'Personnel and workforce' },
-    
-    // Products & Inventory
-    { key: 'items', label: 'Items', icon: Package, description: 'Products, components, and materials' },
-    { key: 'storageLocations', label: 'Storage Locations', icon: Warehouse, description: 'Storage facilities and locations' },
-    { key: 'inventory', label: 'Inventory', icon: Package2, description: 'Current stock levels and quantities' },
-    { key: 'inventoryLots', label: 'Inventory Lots', icon: Hash, description: 'Lot-controlled inventory tracking' },
-    
-    // Business Partners
+    { key: 'resources', label: 'Resources', icon: Wrench, description: 'Equipment, machinery, and personnel' },
+    { key: 'capabilities', label: 'Capabilities', icon: Database, description: 'Skills and machine capabilities' },
+    { key: 'productionOrders', label: 'Production Orders', icon: Briefcase, description: 'Active production work orders' },
     { key: 'vendors', label: 'Vendors', icon: Building2, description: 'Suppliers and vendor information' },
     { key: 'customers', label: 'Customers', icon: Users, description: 'Customer accounts and information' },
-    
-    // Sales & Orders
-    { key: 'salesOrders', label: 'Sales Orders', icon: ShoppingCart, description: 'Customer orders and sales' },
-    { key: 'purchaseOrders', label: 'Purchase Orders', icon: FileText, description: 'Supplier purchase orders' },
-    { key: 'transferOrders', label: 'Transfer Orders', icon: ArrowLeftRight, description: 'Inter-location transfers' },
-    
-    // Manufacturing Planning
-    { key: 'billsOfMaterial', label: 'Bills of Material', icon: List, description: 'Product recipes and formulas' },
-    { key: 'routings', label: 'Routings', icon: Route, description: 'Manufacturing process sequences' },
-    { key: 'forecasts', label: 'Forecasts', icon: TrendingUp, description: 'Demand and supply forecasts' },
-    
-    // System Users
-    { key: 'users', label: 'Users', icon: UserCheck, description: 'System users and operators' }
+    { key: 'stockItems', label: 'Stock Items', icon: Package, description: 'Inventory items and stock levels' }
   ];
+
+  // Record counts state
+  const [recordCounts, setRecordCounts] = useState<Record<string, number>>({});
+
+  // Fetch record counts for all supported data types
+  const { data: recordCountsData } = useQuery({
+    queryKey: ['/api/data-management/record-counts'],
+    queryFn: async () => {
+      const authToken = localStorage.getItem('authToken');
+      const response = await fetch('/api/data-management/record-counts', {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      if (!response.ok) throw new Error('Failed to fetch record counts');
+      return response.json();
+    }
+  });
+
+  // Update record counts when data is fetched
+  React.useEffect(() => {
+    if (recordCountsData) {
+      const mappedCounts: Record<string, number> = {};
+      // Map backend table names to frontend keys
+      mappedCounts.plants = recordCountsData.plants || 0;
+      mappedCounts.resources = recordCountsData.resources || 0;
+      mappedCounts.capabilities = recordCountsData.capabilities || 0;
+      mappedCounts.productionOrders = recordCountsData.production_orders || 0;
+      mappedCounts.vendors = recordCountsData.vendors || 0;
+      mappedCounts.customers = recordCountsData.customers || 0;
+      mappedCounts.stockItems = recordCountsData.stock_items || 0;
+      setRecordCounts(mappedCounts);
+    }
+  }, [recordCountsData]);
 
   // Helper functions
   const getApiEndpoint = (dataType: string): string => {
@@ -504,8 +508,12 @@ Create authentic manufacturing data that reflects this company's operations.`;
           // First load or search reset
           setAllLoadedItems(newItems);
         } else {
-          // Append new items for infinite scroll
-          setAllLoadedItems(prev => [...prev, ...newItems]);
+          // Append new items for infinite scroll - ensure no duplicates
+          setAllLoadedItems(prev => {
+            const existingIds = new Set(prev.map(item => item.id));
+            const uniqueNewItems = newItems.filter(item => !existingIds.has(item.id));
+            return [...prev, ...uniqueNewItems];
+          });
         }
         
         // Update pagination state
@@ -800,9 +808,9 @@ Create authentic manufacturing data that reflects this company's operations.`;
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {currentItems.map((item) => (
+                {currentItems.map((item, index) => (
                   <MobileTableRow 
-                    key={item.id} 
+                    key={`${item.id || index}-${dataType}-${item.name}`} 
                     item={item} 
                     dataType={dataType}
                     onEdit={() => setEditingItem(item)}
@@ -815,8 +823,8 @@ Create authentic manufacturing data that reflects this company's operations.`;
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {currentItems.map((item) => (
-              <div key={item.id} className="border rounded-lg p-4">
+            {currentItems.map((item, index) => (
+              <div key={`${item.id || index}-${dataType}-${item.name}-card`} className="border rounded-lg p-4">
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-medium">{item.name}</h4>
                   <div className="flex gap-1">
@@ -1028,7 +1036,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
                 <h4 className="font-medium text-blue-800 mb-2">Recommended data types: {recommendedDataTypes.length} types</h4>
                 <div className="flex flex-wrap gap-2">
                   {recommendedDataTypes.map((type) => {
-                    const dataType = dataTypes.find(dt => dt.key === type);
+                    const dataType = supportedDataTypes.find(dt => dt.key === type);
                     return dataType ? (
                       <Badge key={type} className="bg-blue-100 text-blue-800 border-blue-300">
                         {dataType.label}
@@ -1076,46 +1084,23 @@ Create authentic manufacturing data that reflects this company's operations.`;
                     <h3 className="text-lg font-medium">Manage Master Data</h3>
                     <p className="text-sm text-gray-600">View and edit your manufacturing data</p>
                   </div>
-                  <div className="w-full sm:w-64">
+                  <div className="w-full sm:w-80">
                     <Select value={selectedManageDataType} onValueChange={setSelectedManageDataType}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select data type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Core Manufacturing</div>
-                        <SelectItem value="resources">Resources</SelectItem>
-                        <SelectItem value="productionOrders">Production Orders</SelectItem>
-                        <SelectItem value="operations">Operations</SelectItem>
-                        <SelectItem value="plannedOrders">Planned Orders</SelectItem>
-                        <SelectItem value="capabilities">Capabilities</SelectItem>
-                        <SelectItem value="plants">Plants</SelectItem>
-                        
-                        <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide border-t mt-1 pt-2">Organization</div>
-                        <SelectItem value="sites">Sites</SelectItem>
-                        <SelectItem value="departments">Departments</SelectItem>
-                        <SelectItem value="workCenters">Work Centers</SelectItem>
-                        <SelectItem value="employees">Employees</SelectItem>
-                        
-                        <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide border-t mt-1 pt-2">Products & Inventory</div>
-                        <SelectItem value="items">Items</SelectItem>
-                        <SelectItem value="storageLocations">Storage Locations</SelectItem>
-                        <SelectItem value="inventory">Inventory</SelectItem>
-                        <SelectItem value="inventoryLots">Inventory Lots</SelectItem>
-                        
-                        <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide border-t mt-1 pt-2">Business Partners</div>
-                        <SelectItem value="vendors">Vendors</SelectItem>
-                        <SelectItem value="customers">Customers</SelectItem>
-                        
-                        <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide border-t mt-1 pt-2">Sales & Orders</div>
-                        <SelectItem value="salesOrders">Sales Orders</SelectItem>
-                        <SelectItem value="purchaseOrders">Purchase Orders</SelectItem>
-                        <SelectItem value="transferOrders">Transfer Orders</SelectItem>
-                        
-                        <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide border-t mt-1 pt-2">Manufacturing Planning</div>
-                        <SelectItem value="billsOfMaterial">Bills of Material</SelectItem>
-                        <SelectItem value="routings">Routings</SelectItem>
-                        <SelectItem value="forecasts">Forecasts</SelectItem>
-                        <SelectItem value="users">Users</SelectItem>
+                        <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Supported Data Types</div>
+                        {supportedDataTypes.map((dataType) => (
+                          <SelectItem key={dataType.key} value={dataType.key}>
+                            <div className="flex items-center justify-between w-full">
+                              <span>{dataType.label}</span>
+                              <span className="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                {recordCounts[dataType.key] !== undefined ? recordCounts[dataType.key] : '...'}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

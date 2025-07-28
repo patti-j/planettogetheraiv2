@@ -16657,6 +16657,36 @@ Response must be valid JSON:
     }
   });
 
+  // Get record counts for all supported data types
+  app.get("/api/data-management/record-counts", requireAuth, async (req, res) => {
+    try {
+      const counts = await Promise.all([
+        storage.getDataWithPagination('plants', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total),
+        storage.getDataWithPagination('resources', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total),
+        storage.getDataWithPagination('capabilities', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total),
+        storage.getDataWithPagination('production_orders', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total),
+        storage.getDataWithPagination('vendors', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total),
+        storage.getDataWithPagination('customers', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total),
+        storage.getDataWithPagination('stock_items', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total)
+      ]);
+      
+      const recordCounts = {
+        plants: counts[0],
+        resources: counts[1],
+        capabilities: counts[2],
+        production_orders: counts[3],
+        vendors: counts[4],
+        customers: counts[5],
+        stock_items: counts[6]
+      };
+      
+      res.json(recordCounts);
+    } catch (error) {
+      console.error("Error fetching record counts:", error);
+      res.status(500).json({ error: "Failed to fetch record counts" });
+    }
+  });
+
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
   app.use(errorMiddleware);
