@@ -2,6 +2,17 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Data Relationships Page Implementation (July 28, 2025)**:
+- Created comprehensive Data Relationships page for browsing database table relationships and key structures
+- Added interactive interface to explore data object types (plants, resources, etc.) and their relationships (one-to-many, many-to-many, etc.)
+- Implemented detailed relationship analysis showing foreign keys, primary keys, and cardinality between tables
+- Added categorized view organizing tables by function: Core Manufacturing, Production Management, Materials & Inventory, etc.
+- Created three main views: By Category (grouped tables), By Table (individual table focus), Relationships (connection analysis)
+- Added detailed table structure view showing columns, data types, nullable fields, and foreign key references
+- Integrated search and filtering capabilities to find specific tables and relationships quickly
+- Added navigation between related tables for easy exploration of database connections
+- Route: /data-relationships with proper authentication and navigation context integration
+
 ✓ **Complete Legacy Jobs Table Removal & Database Schema Cleanup (July 28, 2025)**:
 - Successfully removed legacy "jobs" table from database that was replaced with production_orders table  
 - Updated disruptions, production_targets, and scheduling_results tables to use production_order_id instead of job_id columns
