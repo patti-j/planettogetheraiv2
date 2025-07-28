@@ -233,6 +233,97 @@ Create authentic manufacturing data that reflects this company's operations.`;
   function ManageDataTab({ dataType }: { dataType: string }) {
     const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Mobile touch handling component
+    const MobileTableRow = ({ item, dataType, onEdit, onDelete }: any) => {
+      const [touchStart, setTouchStart] = useState(0);
+      const [showDelete, setShowDelete] = useState(false);
+
+      const handleTouchStart = (e: React.TouchEvent) => {
+        setTouchStart(e.touches[0].clientX);
+      };
+
+      const handleTouchEnd = (e: React.TouchEvent) => {
+        const touchEnd = e.changedTouches[0].clientX;
+        const diff = touchStart - touchEnd;
+        
+        if (Math.abs(diff) > 50) { // Swipe threshold
+          if (diff > 0) { // Swipe left
+            setShowDelete(true);
+          } else { // Swipe right
+            setShowDelete(false);
+          }
+        }
+      };
+
+      const handleClick = () => {
+        if (!showDelete) {
+          onEdit();
+        }
+      };
+
+      return (
+        <TableRow 
+          className="relative cursor-pointer sm:cursor-default"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onClick={handleClick}
+        >
+          <TableCell className="font-medium">
+            <div className="flex items-center justify-between">
+              <div>
+                <div>{item.name}</div>
+                <div className="text-sm text-gray-500 sm:hidden">
+                  {getItemDetails(item, dataType)}
+                </div>
+              </div>
+              {showDelete && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  className="sm:hidden"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </TableCell>
+          <TableCell className="hidden sm:table-cell">
+            {getItemDetails(item, dataType)}
+          </TableCell>
+          <TableCell className="hidden sm:table-cell">
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+                title="Edit"
+              >
+                <Edit2 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                title="Delete"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </TableCell>
+        </TableRow>
+      );
+    };
     const [categoryFilter, setCategoryFilter] = useState('all');
     const [editingItem, setEditingItem] = useState<any>(null);
     const [showAddDialog, setShowAddDialog] = useState(false);
@@ -372,41 +463,24 @@ Create authentic manufacturing data that reflects this company's operations.`;
         {/* Data Display */}
         {viewMode === 'table' ? (
           <div className="border rounded-lg overflow-hidden">
-            <div className="overflow-x-auto max-w-full">
-              <Table className="min-w-[600px] w-full table-fixed">
+            <div className="overflow-x-auto">
+              <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[30%] min-w-[180px]">Name</TableHead>
-                  <TableHead className="w-[50%] min-w-[250px]">Details</TableHead>
-                  <TableHead className="w-[20%] min-w-[100px] text-center sticky right-0 bg-white shadow-[-4px_0_8px_rgba(0,0,0,0.1)]">Actions</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead className="hidden sm:table-cell">Details</TableHead>
+                  <TableHead className="hidden sm:table-cell w-24">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {currentItems.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell>{getItemDetails(item, dataType)}</TableCell>
-                    <TableCell className="sticky right-0 bg-white shadow-[-4px_0_8px_rgba(0,0,0,0.1)]">
-                      <div className="flex gap-1 justify-center">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingItem(item)}
-                          title="Edit"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteMutation.mutate(item.id)}
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                  <MobileTableRow 
+                    key={item.id} 
+                    item={item} 
+                    dataType={dataType}
+                    onEdit={() => setEditingItem(item)}
+                    onDelete={() => deleteMutation.mutate(item.id)}
+                  />
                 ))}
               </TableBody>
             </Table>

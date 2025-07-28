@@ -2,6 +2,15 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Mobile-Friendly Touch Gestures for Data Management Tables (July 28, 2025)**:
+- Implemented mobile-friendly touch interactions for data management tables with swipe-to-delete functionality
+- Added tap-to-edit behavior on mobile devices - users can tap any row to open the edit dialog
+- Implemented swipe left gesture to reveal delete button on mobile devices for intuitive deletion
+- Created responsive table layout hiding Details and Actions columns on mobile while showing them inline
+- Mobile users see plant name with details below, can tap to edit, or swipe left to see delete button
+- Desktop users retain full table layout with separate Details and Actions columns for traditional interaction
+- Enhanced user experience by providing touch-optimized interface for small screens while preserving desktop functionality
+
 ✓ **Master Data Setup Manage Tab Implementation & JSX Error Resolution (July 28, 2025)**:
 - Completely replaced "Under Development" placeholder with fully functional ManageDataTab component
 - Implemented comprehensive data management interface with table/card views, search functionality, and pagination
