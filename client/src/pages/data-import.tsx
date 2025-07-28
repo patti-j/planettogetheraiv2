@@ -236,60 +236,86 @@ Create authentic manufacturing data that reflects this company's operations.`;
 
     // Mobile touch handling component
     const MobileTableRow = ({ item, dataType, onEdit, onDelete }: any) => {
-      const [touchStart, setTouchStart] = useState(0);
+      const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
       const [showDelete, setShowDelete] = useState(false);
+      const [isSwiping, setIsSwiping] = useState(false);
 
       const handleTouchStart = (e: React.TouchEvent) => {
-        setTouchStart(e.touches[0].clientX);
+        const touch = e.touches[0];
+        setTouchStart({ x: touch.clientX, y: touch.clientY });
+        setIsSwiping(false);
       };
 
-      const handleTouchEnd = (e: React.TouchEvent) => {
-        const touchEnd = e.changedTouches[0].clientX;
-        const diff = touchStart - touchEnd;
+      const handleTouchMove = (e: React.TouchEvent) => {
+        if (!touchStart) return;
         
-        if (Math.abs(diff) > 50) { // Swipe threshold
-          if (diff > 0) { // Swipe left
+        const touch = e.touches[0];
+        const deltaX = touchStart.x - touch.clientX;
+        const deltaY = Math.abs(touchStart.y - touch.clientY);
+        
+        console.log('Touch move:', { deltaX, deltaY, showDelete });
+        
+        // If horizontal swipe is more prominent than vertical
+        if (Math.abs(deltaX) > 20 && deltaY < 50) {
+          setIsSwiping(true);
+          e.preventDefault(); // Prevent scrolling
+          
+          if (deltaX > 50) { // Swipe left
+            console.log('Swipe left detected, showing delete');
             setShowDelete(true);
-          } else { // Swipe right
+          } else if (deltaX < -20) { // Swipe right
+            console.log('Swipe right detected, hiding delete');
             setShowDelete(false);
           }
         }
       };
 
-      const handleClick = () => {
-        if (!showDelete) {
+      const handleTouchEnd = () => {
+        setTouchStart(null);
+      };
+
+      const handleClick = (e: React.MouseEvent) => {
+        // Only trigger edit if we're not swiping and delete button isn't shown
+        if (!isSwiping && !showDelete) {
           onEdit();
         }
       };
 
       return (
         <TableRow 
-          className="relative cursor-pointer sm:cursor-default"
+          className="relative cursor-pointer sm:cursor-default select-none"
           onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onClick={handleClick}
         >
           <TableCell className="font-medium">
-            <div className="flex items-center justify-between">
-              <div>
-                <div>{item.name}</div>
+            <div className="flex items-center justify-between min-h-[60px]">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span>{item.name}</span>
+                  <span className="text-xs text-gray-400 sm:hidden">← swipe</span>
+                </div>
                 <div className="text-sm text-gray-500 sm:hidden">
                   {getItemDetails(item, dataType)}
                 </div>
               </div>
-              {showDelete && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete();
-                  }}
-                  className="sm:hidden"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
+              <div className={`transition-all duration-200 ${showDelete ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'} sm:hidden`}>
+                {showDelete && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete();
+                      setShowDelete(false);
+                    }}
+                    className="ml-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
           </TableCell>
           <TableCell className="hidden sm:table-cell">
