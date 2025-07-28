@@ -2,9 +2,12 @@
 
 ## Recent Changes (July 28, 2025)
 
-✓ **Optimization Studio New Algorithm Button Removal (July 28, 2025)**:
-- Removed "New Algorithm" button from optimization studio page header section at user request
-- Cleaned up header layout after button removal for better visual balance
+✓ **Industry Lists Consistency Fix & Optimization Studio Improvements (July 28, 2025)**:
+- Fixed industry list inconsistency between onboarding page and industry templates page by changing "other" to "custom" in onboarding flow
+- Both pages now have identical industry options: automotive, aerospace, electronics, pharmaceutical, food_beverage, textiles, chemicals, metals, manufacturing, custom
+- Ensured company info page in welcome screen matches industry templates page for seamless user experience
+- Fixed "Back to Optimization Studio" button z-index issue by adding z-50 to prevent hamburger menu blocking
+- Removed "New Algorithm" button from optimization studio page header section at user request for cleaner layout
 - Optimization studio now focuses on existing algorithms with AI-powered collaborative development workflow
 
 ✓ **AI Assistant Mobile Enhancement & Component Error Fixes (July 28, 2025)**:

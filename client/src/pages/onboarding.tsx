@@ -715,7 +715,7 @@ export default function OnboardingPage() {
                           )}
                         </div>
                       </SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="custom">Custom</SelectItem>
                     </SelectContent>
                   </Select>
                   {companyInfo.industry && hasTemplatesForIndustry(companyInfo.industry) && (
