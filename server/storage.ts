@@ -8183,7 +8183,7 @@ export class DatabaseStorage implements IStorage {
         requiredCapabilities: operations.requiredCapabilities
       })
       .from(operations)
-      .where(sql`json_array_length(required_capabilities) > 0`);
+      .where(sql`json_array_length(required_capabilities::jsonb) > 0`);
 
     for (const operation of operationsWithCapabilities) {
       if (!operation.requiredCapabilities || operation.requiredCapabilities.length === 0) continue;
@@ -8241,7 +8241,7 @@ export class DatabaseStorage implements IStorage {
         eq(resources.status, 'active'),
         or(
           sql`capabilities IS NULL`,
-          sql`json_array_length(capabilities) = 0`
+          sql`json_array_length(capabilities::jsonb) = 0`
         )
       ));
 
@@ -8365,7 +8365,7 @@ export class DatabaseStorage implements IStorage {
         requiredCapabilities: operations.requiredCapabilities
       })
       .from(operations)
-      .where(sql`json_array_length(required_capabilities) > 0`);
+      .where(sql`json_array_length(required_capabilities::jsonb) > 0`);
 
     const allCapabilities = await db.select({ id: capabilities.id }).from(capabilities);
     const validCapabilityIds = new Set(allCapabilities.map(c => c.id));

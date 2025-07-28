@@ -2,6 +2,14 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Data Validation System SQL Syntax Fix (July 28, 2025)**:
+- Fixed critical SQL syntax errors in data validation system that were causing "Failed to run data validation" errors
+- Corrected PostgreSQL JSON function calls from `json_array_length(required_capabilities)` to `json_array_length(required_capabilities::jsonb)`
+- Fixed multiple validation queries in storage.ts including operations capabilities validation and resources capabilities validation
+- Data validation system now properly executes all 6 validation checks: operations capabilities, resources capabilities, production orders, data integrity, relationships, and scheduling conflicts
+- Enhanced SQL queries with proper JSONB type casting for PostgreSQL compatibility
+- Data validation functionality restored for comprehensive master data integrity analysis
+
 ✓ **Production Manager Cockpit Configuration Implementation & Plant Manager Page Removal (July 28, 2025)**:
 - Successfully completed plant manager page removal and replaced functionality with production manager cockpit configuration
 - Created comprehensive "Production Manager Multi-Plant Cockpit" template with 7 specialized widgets for strategic oversight
