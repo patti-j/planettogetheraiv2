@@ -507,6 +507,122 @@ export default function CapacityPlanning() {
               ))}
             </div>
           </div>
+
+          {/* Capacity Improvement Recommendations */}
+          <div className="space-y-3">
+            <h4 className="font-semibold text-gray-900">Capacity Optimization Opportunities</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* High Utilization Alert */}
+              {currentWeek?.resources.filter(r => r.utilization >= 90).length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+                    <div>
+                      <h5 className="font-medium text-red-900">High Utilization Risk</h5>
+                      <p className="text-sm text-red-700 mt-1">
+                        {currentWeek.resources.filter(r => r.utilization >= 90).length} resources are operating at 90%+ capacity.
+                      </p>
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs font-medium text-red-800">Recommended Actions:</p>
+                        <ul className="text-xs text-red-700 space-y-1 pl-4">
+                          <li>• Consider adding overtime shifts or weekend coverage</li>
+                          <li>• Redistribute workload to underutilized resources</li>
+                          <li>• Schedule preventive maintenance during low-demand periods</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Underutilization Opportunity */}
+              {currentWeek?.resources.filter(r => r.utilization < 60).length > 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <TrendingUp className="w-5 h-5 text-yellow-600 mt-0.5" />
+                    <div>
+                      <h5 className="font-medium text-yellow-900">Capacity Opportunity</h5>
+                      <p className="text-sm text-yellow-700 mt-1">
+                        {currentWeek.resources.filter(r => r.utilization < 60).length} resources have available capacity.
+                      </p>
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs font-medium text-yellow-800">Optimization Ideas:</p>
+                        <ul className="text-xs text-yellow-700 space-y-1 pl-4">
+                          <li>• Schedule additional production orders</li>
+                          <li>• Move workload from overutilized resources</li>
+                          <li>• Plan training or maintenance activities</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Balanced Capacity */}
+              {currentWeek?.resources.filter(r => r.utilization >= 60 && r.utilization < 90).length === currentWeek?.resources.length && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 md:col-span-2">
+                  <div className="flex items-start gap-3">
+                    <Target className="w-5 h-5 text-green-600 mt-0.5" />
+                    <div>
+                      <h5 className="font-medium text-green-900">Optimal Capacity Balance</h5>
+                      <p className="text-sm text-green-700 mt-1">
+                        All resources are operating within optimal utilization range (60-90%). 
+                        Capacity is well-aligned with current demand.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Capacity Trend Analysis */}
+          <div className="space-y-3">
+            <h4 className="font-semibold text-gray-900">12-Week Capacity Trend</h4>
+            <div className="bg-white border rounded-lg p-4">
+              <div className="grid grid-cols-12 gap-1 mb-4">
+                {capacityData.map((week, index) => {
+                  const avgUtil = Math.floor(week.resources.reduce((sum, r) => sum + r.utilization, 0) / week.resources.length);
+                  return (
+                    <div key={index} className="text-center">
+                      <div className="text-xs text-gray-600 mb-1">W{week.weekNumber}</div>
+                      <div 
+                        className={`h-16 rounded cursor-pointer transition-all ${
+                          index === selectedWeek ? 'ring-2 ring-blue-500' :
+                          avgUtil >= 90 ? 'bg-red-500' :
+                          avgUtil >= 75 ? 'bg-orange-500' :
+                          avgUtil >= 60 ? 'bg-green-500' :
+                          'bg-gray-400'
+                        }`}
+                        style={{ opacity: index === selectedWeek ? 1 : 0.7 }}
+                        onClick={() => setSelectedWeek(index)}
+                        title={`Week ${week.weekNumber}: ${avgUtil}% avg utilization`}
+                      />
+                      <div className="text-xs text-gray-600 mt-1">{avgUtil}%</div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex items-center justify-center gap-6 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-red-500 rounded"></div>
+                  <span>Critical (90%+)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-orange-500 rounded"></div>
+                  <span>High (75-89%)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded"></div>
+                  <span>Optimal (60-74%)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-gray-400 rounded"></div>
+                  <span>Low (&lt;60%)</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
     );
