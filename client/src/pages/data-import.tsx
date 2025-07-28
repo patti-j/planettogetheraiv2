@@ -372,12 +372,13 @@ Create authentic manufacturing data that reflects this company's operations.`;
         {/* Data Display */}
         {viewMode === 'table' ? (
           <div className="border rounded-lg overflow-hidden">
-            <Table>
+            <div className="overflow-x-auto">
+              <Table className="min-w-full">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Details</TableHead>
-                  <TableHead className="w-24">Actions</TableHead>
+                  <TableHead className="w-1/4 min-w-[150px]">Name</TableHead>
+                  <TableHead className="w-1/2 min-w-[200px]">Details</TableHead>
+                  <TableHead className="w-1/4 min-w-[120px] text-center">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -386,11 +387,12 @@ Create authentic manufacturing data that reflects this company's operations.`;
                     <TableCell className="font-medium">{item.name}</TableCell>
                     <TableCell>{getItemDetails(item, dataType)}</TableCell>
                     <TableCell>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 justify-center">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => setEditingItem(item)}
+                          title="Edit"
                         >
                           <Edit2 className="h-4 w-4" />
                         </Button>
@@ -398,6 +400,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
                           variant="ghost"
                           size="sm"
                           onClick={() => deleteMutation.mutate(item.id)}
+                          title="Delete"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -407,6 +410,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
                 ))}
               </TableBody>
             </Table>
+            </div>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
