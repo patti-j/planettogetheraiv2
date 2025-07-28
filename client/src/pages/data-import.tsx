@@ -177,13 +177,272 @@ Create authentic manufacturing data that reflects this company's operations.`;
 
   // Component for managing existing data
   function ManageDataTab({ dataType }: { dataType: string }) {
+    const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('all');
+    const [editingItem, setEditingItem] = useState<any>(null);
+    const [showAddDialog, setShowAddDialog] = useState(false);
+    const [newItem, setNewItem] = useState<any>({});
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
+    // Fetch data based on data type
+    const { data: items = [], isLoading, error } = useQuery({
+      queryKey: [`/api/data-management/${getTableName(dataType)}`],
+      enabled: true,
+    });
+
+    const totalItems = items.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentItems = items.slice(startIndex, endIndex);
+
+    // Update mutation
+    const updateMutation = useMutation({
+      mutationFn: async (updatedItem: any) => {
+        const endpoint = getApiEndpoint(dataType);
+        const response = await fetch(`/api/${endpoint}/${updatedItem.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedItem)
+        });
+        if (!response.ok) throw new Error('Failed to update item');
+        return response.json();
+      },
+      onSuccess: () => {
+        toast({ title: "Success", description: "Item updated successfully" });
+        queryClient.invalidateQueries({ queryKey: [`/api/data-management/${getTableName(dataType)}`] });
+        setEditingItem(null);
+      },
+      onError: (error: any) => {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      }
+    });
+
+    // Create mutation
+    const createMutation = useMutation({
+      mutationFn: async (item: any) => {
+        const endpoint = getApiEndpoint(dataType);
+        const response = await fetch(`/api/${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(item)
+        });
+        if (!response.ok) throw new Error('Failed to create item');
+        return response.json();
+      },
+      onSuccess: () => {
+        toast({ title: "Success", description: "Item created successfully" });
+        queryClient.invalidateQueries({ queryKey: [`/api/data-management/${getTableName(dataType)}`] });
+        setShowAddDialog(false);
+        setNewItem({});
+      },
+      onError: (error: any) => {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      }
+    });
+
+    // Delete mutation
+    const deleteMutation = useMutation({
+      mutationFn: async (id: number) => {
+        const endpoint = getApiEndpoint(dataType);
+        const response = await fetch(`/api/${endpoint}/${id}`, {
+          method: 'DELETE'
+        });
+        if (!response.ok) throw new Error('Failed to delete item');
+        return response.json();
+      },
+      onSuccess: () => {
+        toast({ title: "Success", description: "Item deleted successfully" });
+        queryClient.invalidateQueries({ queryKey: [`/api/data-management/${getTableName(dataType)}`] });
+      },
+      onError: (error: any) => {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      }
+    });
+
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-4">
-        <div className="text-center py-8 text-gray-500">
-          <Database className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-          <p>Manage Data Tab - Under Development</p>
-          <p className="text-sm">This section will allow you to view and edit existing {dataType} data.</p>
+        {/* Header with Search and Controls */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-medium">Existing {dataType} Data</h3>
+            <p className="text-sm text-gray-600">
+              {totalItems} items found
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={viewMode === 'table' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('table')}
+            >
+              <Grid3X3 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'cards' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('cards')}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+            <Button onClick={() => setShowAddDialog(true)} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Add New
+            </Button>
+          </div>
         </div>
+
+        {/* Search and Filter */}
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <Input
+              placeholder={`Search ${dataType}...`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        {/* Data Display */}
+        {viewMode === 'table' ? (
+          <div className="border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Details</TableHead>
+                  <TableHead className="w-24">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {currentItems.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableCell>{getItemDetails(item, dataType)}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingItem(item)}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteMutation.mutate(item.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {currentItems.map((item) => (
+              <div key={item.id} className="border rounded-lg p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-medium">{item.name}</h4>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditingItem(item)}
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteMutation.mutate(item.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600">{getItemDetails(item, dataType)}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-600">
+              Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} items
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Dialog */}
+        <Dialog open={!!editingItem} onOpenChange={() => setEditingItem(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit {dataType}</DialogTitle>
+            </DialogHeader>
+            {editingItem && (
+              <EditItemForm
+                item={editingItem}
+                dataType={dataType}
+                onSave={(updatedItem) => updateMutation.mutate(updatedItem)}
+                onCancel={() => setEditingItem(null)}
+                isLoading={updateMutation.isPending}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Dialog */}
+        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New {dataType}</DialogTitle>
+            </DialogHeader>
+            <EditItemForm
+              item={newItem}
+              dataType={dataType}
+              onSave={(item) => createMutation.mutate(item)}
+              onCancel={() => { setShowAddDialog(false); setNewItem({}); }}
+              isLoading={createMutation.isPending}
+              isNew={true}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
@@ -348,6 +607,107 @@ Create authentic manufacturing data that reflects this company's operations.`;
           </Tabs>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// Helper function to get API endpoint based on data type
+function getApiEndpoint(dataType: string): string {
+  const endpoints: Record<string, string> = {
+    plants: 'plants',
+    resources: 'resources', 
+    capabilities: 'capabilities',
+    productionOrders: 'production-orders',
+    operations: 'operations',
+    users: 'users',
+    vendors: 'vendors',
+    customers: 'customers'
+  };
+  return endpoints[dataType] || dataType;
+}
+
+// Helper function to get table name for data management API
+function getTableName(dataType: string): string {
+  const tableNames: Record<string, string> = {
+    plants: 'plants',
+    resources: 'resources',
+    capabilities: 'capabilities', 
+    productionOrders: 'production_orders',
+    operations: 'operations',
+    users: 'users',
+    vendors: 'vendors',
+    customers: 'customers'
+  };
+  return tableNames[dataType] || dataType;
+}
+
+// Helper function to get item details for display
+function getItemDetails(item: any, dataType: string): string {
+  if (!item) return '';
+  
+  switch (dataType) {
+    case 'plants':
+      return `${item.location || ''} • ${item.timezone || ''}`;
+    case 'resources':
+      return `Type: ${item.type || ''} • Plant: ${item.plantId || ''}`;
+    case 'capabilities':
+      return item.description || '';
+    case 'productionOrders':
+      return `Priority: ${item.priority || ''} • Due: ${item.dueDate || ''}`;
+    case 'operations':
+      return `Duration: ${item.duration || ''}min • Status: ${item.status || ''}`;
+    case 'users':
+      return `Role: ${item.role || ''} • ${item.email || ''}`;
+    case 'vendors':
+      return `Contact: ${item.contactPerson || ''} • ${item.email || ''}`;
+    case 'customers':
+      return `Tier: ${item.tier || ''} • ${item.email || ''}`;
+    default:
+      return item.description || item.type || '';
+  }
+}
+
+// Simple EditItemForm component for basic editing
+function EditItemForm({ item, dataType, onSave, onCancel, isLoading, isNew = false }: {
+  item: any;
+  dataType: string;
+  onSave: (item: any) => void;
+  onCancel: () => void;
+  isLoading: boolean;
+  isNew?: boolean;
+}) {
+  const [formData, setFormData] = useState(item);
+
+  const handleSave = () => {
+    onSave(formData);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <Label htmlFor="name">Name</Label>
+        <Input
+          id="name"
+          value={formData.name || ''}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+        />
+      </div>
+      <div>
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          value={formData.description || ''}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+        />
+      </div>
+      <div className="flex gap-2">
+        <Button onClick={handleSave} disabled={isLoading} className="flex-1">
+          {isLoading ? "Saving..." : "Save"}
+        </Button>
+        <Button variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
     </div>
   );
 }
