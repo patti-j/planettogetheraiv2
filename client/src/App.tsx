@@ -73,7 +73,7 @@ import AtpCtpPage from "@/pages/atp-ctp";
 import DataValidation from "@/pages/data-validation";
 import DataMapView from "@/pages/data-map";
 import DataSchemaView from "@/pages/data-schema";
-import SchemaComparison from "@/pages/schema-comparison";
+
 import FunctionalMap from "@/pages/functional-map";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
@@ -378,11 +378,7 @@ function Router() {
               <DataSchemaView />
             </ProtectedRoute>
           </Route>
-          <Route path="/schema-comparison">
-            <ProtectedRoute feature="systems-management" action="view">
-              <SchemaComparison />
-            </ProtectedRoute>
-          </Route>
+
           <Route path="/functional-map">
             <ProtectedRoute feature="systems-management" action="view">
               <FunctionalMap />

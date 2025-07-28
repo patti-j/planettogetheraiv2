@@ -697,7 +697,7 @@ function DataSchemaViewContent() {
         throw error;
       }
     },
-    enabled: hasAppliedFilters, // Only fetch when user has applied filters
+    enabled: Boolean(hasAppliedFilters), // Only fetch when user has applied filters
   });
 
   // Wrapper functions to trigger data loading when filters are applied
@@ -1195,17 +1195,7 @@ function DataSchemaViewContent() {
             </Badge>
           </div>
           
-          {/* Schema Comparison Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.location.href = '/schema-comparison'}
-            className="flex items-center gap-2 text-blue-600 border-blue-200 hover:bg-blue-50"
-          >
-            <Database className="w-4 h-4" />
-            <span className="hidden sm:inline">Schema Comparison</span>
-            <span className="sm:hidden">Compare</span>
-          </Button>
+
         </div>
         
         <div className="flex items-center gap-2 sm:gap-3 mb-2">

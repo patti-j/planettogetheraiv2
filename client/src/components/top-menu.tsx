@@ -85,7 +85,7 @@ const featureGroups = [
       { icon: Shield, label: "Data Validation", href: "/data-validation", feature: "systems-management", action: "view", color: "bg-blue-600" },
       { icon: Network, label: "Data Map View", href: "/data-map", feature: "systems-management", action: "view", color: "bg-purple-600" },
       { icon: Database, label: "Data Schema View", href: "/data-schema", feature: "systems-management", action: "view", color: "bg-indigo-600" },
-      { icon: Database, label: "Schema Comparison", href: "/schema-comparison", feature: "systems-management", action: "view", color: "bg-blue-600" },
+
       { icon: FileX, label: "Logs", href: "/error-logs", feature: "systems-management", action: "view", color: "bg-red-500" }
     ]
   },
