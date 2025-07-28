@@ -2107,7 +2107,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
                     </div>
                     
                     {/* Desktop header */}
-                    <span className="hidden sm:block">Name</span>
+                    <span className="hidden sm:block px-4 py-3">Name</span>
                   </TableHead>
                   <TableHead className="hidden sm:table-cell">Details</TableHead>
                   <TableHead className="hidden sm:table-cell w-24">Actions</TableHead>
@@ -2554,7 +2554,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
         onFocus: handleFocus,
         onBlur: handleBlur,
         // Enhanced mobile-friendly input styling
-        className: "w-full px-2 py-1 border-0 outline-none bg-transparent text-sm h-[36px] focus:bg-white focus:border focus:border-blue-500 focus:rounded focus:z-10",
+        className: "w-full px-3 py-1 border-0 outline-none bg-transparent text-sm h-[36px] focus:bg-white focus:border focus:border-blue-500 focus:rounded focus:z-10",
         // Improved mobile input handling
         autoComplete: "off",
         autoCorrect: "off",
@@ -2582,7 +2582,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
               }
             }}
             {...commonProps}
-            className="w-full px-2 py-1 border-0 outline-none bg-transparent text-sm h-[36px] focus:bg-white focus:border focus:border-blue-500 focus:rounded"
+            className="w-full px-3 py-1 border-0 outline-none bg-transparent text-sm h-[36px] focus:bg-white focus:border focus:border-blue-500 focus:rounded"
           >
             <option value="">Select...</option>
             <option value="active">Active</option>
@@ -2618,7 +2618,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
               }
             }}
             {...commonProps}
-            className="w-full px-2 py-1 border-0 outline-none bg-transparent text-sm h-[36px] focus:bg-white focus:border focus:border-blue-500 focus:rounded"
+            className="w-full px-3 py-1 border-0 outline-none bg-transparent text-sm h-[36px] focus:bg-white focus:border focus:border-blue-500 focus:rounded"
           >
             <option value="">Select...</option>
             <option value="low">Low</option>
@@ -2721,7 +2721,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
             <thead className="bg-gray-50 border-b">
               <tr>
                 {fields.map(field => (
-                  <th key={field} className="text-left px-3 py-2 font-medium text-sm text-gray-900 min-w-[120px]">
+                  <th key={field} className="text-left px-4 py-3 font-medium text-sm text-gray-900 min-w-[120px]">
                     <div className="space-y-2">
                       {/* Column Header with Sort Button */}
                       <div className="flex items-center justify-between">
@@ -2758,7 +2758,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
                     </div>
                   </th>
                 ))}
-                <th className="text-left px-3 py-3 font-medium text-sm text-gray-900 w-[120px]">
+                <th className="text-left px-4 py-3 font-medium text-sm text-gray-900 w-[120px]">
                   Actions
                 </th>
               </tr>
@@ -2772,7 +2772,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
                       {renderCell(null, field, true, true, 0, colIndex)}
                     </td>
                   ))}
-                  <td className="px-3 py-2">
+                  <td className="px-4 py-3">
                     <div className="flex gap-1">
                       <Button
                         size="sm"
@@ -2808,7 +2808,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
                         {renderCell(item, field, false, false, actualRowIndex, colIndex)}
                       </td>
                     ))}
-                    <td className="px-3 py-2">
+                    <td className="px-4 py-3">
                       <div className="flex gap-1">
                         <Button
                           variant="ghost"

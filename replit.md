@@ -2,6 +2,14 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Table Header Layout Standardization & Clear Selections Button (July 28, 2025)**:
+- Fixed Name column header positioning in both Table and Spreadsheet views by updating padding from px-3 to px-4 for proper left margin alignment
+- Enhanced spreadsheet cell input padding from px-2 to px-3 to align with header spacing for consistent visual layout
+- Added "Clear Selections" button next to "Select All" button in Templates section that appears when any templates are selected
+- Updated all Action column cells to use consistent px-4 py-3 padding matching header structure
+- Template selection now provides separate buttons: "Select All" (always visible, disabled when all selected) and "Clear Selections" (visible when items selected)
+- Improved user experience with standardized table spacing and intuitive template selection controls
+
 ✓ **Feature-Based Filtering System for Data Schema View (July 28, 2025)**:
 - Successfully implemented comprehensive feature-based filtering system in Data Schema View for targeted database object exploration
 - Added feature selector dropdown with 9 manufacturing areas: Production Scheduling, Inventory Management, Production Management, Quality Management, Planning & Forecasting, Maintenance Management, Sales & Orders, Purchasing & Procurement, Financial Management
