@@ -50,7 +50,8 @@ import {
   insertVendorSchema, insertCustomerSchema,
   insertOptimizationScopeConfigSchema, insertOptimizationRunSchema,
   insertOptimizationProfileSchema, insertProfileUsageHistorySchema,
-  insertUserSecretSchema
+  insertUserSecretSchema,
+  insertResourceRequirementSchema, insertResourceRequirementAssignmentSchema
 } from "@shared/schema";
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -2112,6 +2113,144 @@ Rules:
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete dependency" });
+    }
+  });
+
+  // Resource Requirements
+  app.get("/api/resource-requirements", async (req, res) => {
+    try {
+      const requirements = await storage.getResourceRequirements();
+      res.json(requirements);
+    } catch (error) {
+      console.error('Resource requirements fetch error:', error);
+      res.status(500).json({ message: "Failed to fetch resource requirements", error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  app.get("/api/operations/:operationId/resource-requirements", async (req, res) => {
+    try {
+      const operationId = parseInt(req.params.operationId);
+      const requirements = await storage.getResourceRequirementsByOperationId(operationId);
+      res.json(requirements);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch resource requirements" });
+    }
+  });
+
+  app.get("/api/resource-requirements/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const requirement = await storage.getResourceRequirement(id);
+      if (!requirement) {
+        return res.status(404).json({ message: "Resource requirement not found" });
+      }
+      res.json(requirement);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch resource requirement" });
+    }
+  });
+
+  app.post("/api/resource-requirements", async (req, res) => {
+    try {
+      const requirement = insertResourceRequirementSchema.parse(req.body);
+      const newRequirement = await storage.createResourceRequirement(requirement);
+      res.status(201).json(newRequirement);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid resource requirement data" });
+    }
+  });
+
+  app.put("/api/resource-requirements/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const requirement = insertResourceRequirementSchema.partial().parse(req.body);
+      const updatedRequirement = await storage.updateResourceRequirement(id, requirement);
+      if (!updatedRequirement) {
+        return res.status(404).json({ message: "Resource requirement not found" });
+      }
+      res.json(updatedRequirement);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid resource requirement data" });
+    }
+  });
+
+  app.delete("/api/resource-requirements/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteResourceRequirement(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Resource requirement not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete resource requirement" });
+    }
+  });
+
+  // Resource Requirement Assignments
+  app.get("/api/resource-requirement-assignments", async (req, res) => {
+    try {
+      const assignments = await storage.getResourceRequirementAssignments();
+      res.json(assignments);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch resource requirement assignments" });
+    }
+  });
+
+  app.get("/api/resource-requirements/:requirementId/assignments", async (req, res) => {
+    try {
+      const requirementId = parseInt(req.params.requirementId);
+      const assignments = await storage.getResourceRequirementAssignmentsByRequirementId(requirementId);
+      res.json(assignments);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch resource requirement assignments" });
+    }
+  });
+
+  app.get("/api/resources/:resourceId/assignments", async (req, res) => {
+    try {
+      const resourceId = parseInt(req.params.resourceId);
+      const assignments = await storage.getResourceRequirementAssignmentsByResourceId(resourceId);
+      res.json(assignments);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch resource assignments" });
+    }
+  });
+
+  app.post("/api/resource-requirement-assignments", async (req, res) => {
+    try {
+      const assignment = insertResourceRequirementAssignmentSchema.parse(req.body);
+      const newAssignment = await storage.createResourceRequirementAssignment(assignment);
+      res.status(201).json(newAssignment);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid resource requirement assignment data" });
+    }
+  });
+
+  app.put("/api/resource-requirement-assignments/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const assignment = insertResourceRequirementAssignmentSchema.partial().parse(req.body);
+      const updatedAssignment = await storage.updateResourceRequirementAssignment(id, assignment);
+      if (!updatedAssignment) {
+        return res.status(404).json({ message: "Resource requirement assignment not found" });
+      }
+      res.json(updatedAssignment);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid resource requirement assignment data" });
+    }
+  });
+
+  app.delete("/api/resource-requirement-assignments/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteResourceRequirementAssignment(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Resource requirement assignment not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete resource requirement assignment" });
     }
   });
 

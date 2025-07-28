@@ -88,6 +88,9 @@ import {
   schedulingHistory, schedulingResults, algorithmPerformance,
   type SchedulingHistory, type SchedulingResult, type AlgorithmPerformance,
   type InsertSchedulingHistory, type InsertSchedulingResult, type InsertAlgorithmPerformance,
+  resourceRequirements, resourceRequirementAssignments,
+  type ResourceRequirement, type ResourceRequirementAssignment, 
+  type InsertResourceRequirement, type InsertResourceRequirementAssignment,
   strategyDocuments, developmentTasks, testSuites, testCases, architectureComponents,
   type StrategyDocument, type DevelopmentTask, type TestSuite, type TestCase, type ArchitectureComponent,
   type InsertStrategyDocument, type InsertDevelopmentTask, type InsertTestSuite, type InsertTestCase, type InsertArchitectureComponent,
@@ -165,6 +168,23 @@ export interface IStorage {
   getDependenciesByOperationId(operationId: number): Promise<Dependency[]>;
   createDependency(dependency: InsertDependency): Promise<Dependency>;
   deleteDependency(id: number): Promise<boolean>;
+  
+  // Resource Requirements
+  getResourceRequirements(): Promise<ResourceRequirement[]>;
+  getResourceRequirementsByOperationId(operationId: number): Promise<ResourceRequirement[]>;
+  getResourceRequirement(id: number): Promise<ResourceRequirement | undefined>;
+  createResourceRequirement(requirement: InsertResourceRequirement): Promise<ResourceRequirement>;
+  updateResourceRequirement(id: number, requirement: Partial<InsertResourceRequirement>): Promise<ResourceRequirement | undefined>;
+  deleteResourceRequirement(id: number): Promise<boolean>;
+  
+  // Resource Requirement Assignments
+  getResourceRequirementAssignments(): Promise<ResourceRequirementAssignment[]>;
+  getResourceRequirementAssignmentsByRequirementId(requirementId: number): Promise<ResourceRequirementAssignment[]>;
+  getResourceRequirementAssignmentsByResourceId(resourceId: number): Promise<ResourceRequirementAssignment[]>;
+  getResourceRequirementAssignment(id: number): Promise<ResourceRequirementAssignment | undefined>;
+  createResourceRequirementAssignment(assignment: InsertResourceRequirementAssignment): Promise<ResourceRequirementAssignment>;
+  updateResourceRequirementAssignment(id: number, assignment: Partial<InsertResourceRequirementAssignment>): Promise<ResourceRequirementAssignment | undefined>;
+  deleteResourceRequirementAssignment(id: number): Promise<boolean>;
   
   // Resource Views
   getResourceViews(): Promise<ResourceView[]>;
@@ -1798,6 +1818,93 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount || 0) > 0;
   }
 
+  // Resource Requirements methods
+  async getResourceRequirements(): Promise<ResourceRequirement[]> {
+    return await db.select().from(resourceRequirements);
+  }
+
+  async getResourceRequirementsByOperationId(operationId: number): Promise<ResourceRequirement[]> {
+    return await db.select().from(resourceRequirements)
+      .where(eq(resourceRequirements.operationId, operationId))
+      .orderBy(asc(resourceRequirements.priority), asc(resourceRequirements.requirementType));
+  }
+
+  async getResourceRequirement(id: number): Promise<ResourceRequirement | undefined> {
+    const [requirement] = await db.select().from(resourceRequirements)
+      .where(eq(resourceRequirements.id, id));
+    return requirement || undefined;
+  }
+
+  async createResourceRequirement(requirement: InsertResourceRequirement): Promise<ResourceRequirement> {
+    const [newRequirement] = await db.insert(resourceRequirements)
+      .values(requirement)
+      .returning();
+    return newRequirement;
+  }
+
+  async updateResourceRequirement(id: number, requirement: Partial<InsertResourceRequirement>): Promise<ResourceRequirement | undefined> {
+    const [updatedRequirement] = await db.update(resourceRequirements)
+      .set(requirement)
+      .where(eq(resourceRequirements.id, id))
+      .returning();
+    return updatedRequirement || undefined;
+  }
+
+  async deleteResourceRequirement(id: number): Promise<boolean> {
+    // First delete any assignments for this requirement
+    await db.delete(resourceRequirementAssignments)
+      .where(eq(resourceRequirementAssignments.requirementId, id));
+    
+    // Then delete the requirement itself
+    const result = await db.delete(resourceRequirements)
+      .where(eq(resourceRequirements.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Resource Requirement Assignments methods
+  async getResourceRequirementAssignments(): Promise<ResourceRequirementAssignment[]> {
+    return await db.select().from(resourceRequirementAssignments);
+  }
+
+  async getResourceRequirementAssignmentsByRequirementId(requirementId: number): Promise<ResourceRequirementAssignment[]> {
+    return await db.select().from(resourceRequirementAssignments)
+      .where(eq(resourceRequirementAssignments.requirementId, requirementId))
+      .orderBy(asc(resourceRequirementAssignments.plannedStartTime));
+  }
+
+  async getResourceRequirementAssignmentsByResourceId(resourceId: number): Promise<ResourceRequirementAssignment[]> {
+    return await db.select().from(resourceRequirementAssignments)
+      .where(eq(resourceRequirementAssignments.assignedResourceId, resourceId))
+      .orderBy(asc(resourceRequirementAssignments.plannedStartTime));
+  }
+
+  async getResourceRequirementAssignment(id: number): Promise<ResourceRequirementAssignment | undefined> {
+    const [assignment] = await db.select().from(resourceRequirementAssignments)
+      .where(eq(resourceRequirementAssignments.id, id));
+    return assignment || undefined;
+  }
+
+  async createResourceRequirementAssignment(assignment: InsertResourceRequirementAssignment): Promise<ResourceRequirementAssignment> {
+    const [newAssignment] = await db.insert(resourceRequirementAssignments)
+      .values(assignment)
+      .returning();
+    return newAssignment;
+  }
+
+  async updateResourceRequirementAssignment(id: number, assignment: Partial<InsertResourceRequirementAssignment>): Promise<ResourceRequirementAssignment | undefined> {
+    const [updatedAssignment] = await db.update(resourceRequirementAssignments)
+      .set(assignment)
+      .where(eq(resourceRequirementAssignments.id, id))
+      .returning();
+    return updatedAssignment || undefined;
+  }
+
+  async deleteResourceRequirementAssignment(id: number): Promise<boolean> {
+    const result = await db.delete(resourceRequirementAssignments)
+      .where(eq(resourceRequirementAssignments.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
   async getResourceViews(): Promise<ResourceView[]> {
     return await db.select().from(resourceViews);
   }
@@ -3158,6 +3265,26 @@ export class DatabaseStorage implements IStorage {
         toTable: 'capabilities',
         toColumn: 'id',
         description: 'operations.required_capabilities → capabilities.id (JSONB array)'
+      });
+    }
+    
+    // Resource Requirements-Resources relationships
+    if (tableName === 'resource_requirements') {
+      relationships.push({
+        type: 'many-to-many' as const,
+        fromTable: 'resource_requirements',
+        fromColumn: 'eligible_resource_ids',
+        toTable: 'resources',
+        toColumn: 'id',
+        description: 'resource_requirements.eligible_resource_ids → resources.id (JSONB array)'
+      });
+      relationships.push({
+        type: 'many-to-many' as const,
+        fromTable: 'resource_requirements',
+        fromColumn: 'required_capabilities',
+        toTable: 'capabilities',
+        toColumn: 'id',
+        description: 'resource_requirements.required_capabilities → capabilities.id (JSONB array)'
       });
     }
     

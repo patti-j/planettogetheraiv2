@@ -401,6 +401,70 @@ export const operations = pgTable("operations", {
   optimizationNotes: text("optimization_notes"), // Notes from optimization algorithms
 });
 
+// Resource Requirements - defines what resources each operation needs
+export const resourceRequirements = pgTable("resource_requirements", {
+  id: serial("id").primaryKey(),
+  operationId: integer("operation_id").references(() => operations.id).notNull(),
+  requirementName: text("requirement_name").notNull(), // e.g., "Primary Machine", "Secondary Setup", "Quality Control"
+  requirementType: text("requirement_type").notNull().default("primary"), // primary, secondary, setup, quality, maintenance
+  quantity: integer("quantity").notNull().default(1), // how many resources needed
+  duration: integer("duration"), // duration this resource is needed (in minutes), null = full operation duration
+  startOffset: integer("start_offset").default(0), // minutes after operation start when resource is needed
+  endOffset: integer("end_offset").default(0), // minutes before operation end when resource is released
+  
+  // Resource selection criteria
+  defaultResourceId: integer("default_resource_id").references(() => resources.id), // preferred resource
+  eligibleResourceIds: jsonb("eligible_resource_ids").$type<number[]>().default([]), // specific resources that can be used
+  requiredCapabilities: jsonb("required_capabilities").$type<number[]>().default([]), // capabilities needed if no eligible resources specified
+  
+  // Priority and flexibility
+  priority: text("priority").notNull().default("medium"), // low, medium, high, critical
+  isOptional: boolean("is_optional").default(false), // whether this requirement is optional
+  canBeShared: boolean("can_be_shared").default(false), // whether this resource can be shared with other operations
+  
+  // Allocation preferences
+  allocationStrategy: text("allocation_strategy").default("capability_based"), // capability_based, specific_resource, load_balanced
+  preferredSkillLevel: text("preferred_skill_level").default("any"), // any, basic, intermediate, advanced, expert
+  
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  operationRequirementIndex: index("resource_requirements_operation_idx").on(table.operationId),
+  defaultResourceIndex: index("resource_requirements_default_resource_idx").on(table.defaultResourceId),
+}));
+
+// Resource Requirement Assignments - tracks actual resource assignments for requirements  
+export const resourceRequirementAssignments = pgTable("resource_requirement_assignments", {
+  id: serial("id").primaryKey(),
+  requirementId: integer("requirement_id").references(() => resourceRequirements.id).notNull(),
+  assignedResourceId: integer("assigned_resource_id").references(() => resources.id).notNull(),
+  quantity: integer("quantity").notNull().default(1), // how many units of this resource assigned
+  
+  // Timing for this assignment
+  plannedStartTime: timestamp("planned_start_time"),
+  plannedEndTime: timestamp("planned_end_time"),
+  actualStartTime: timestamp("actual_start_time"),
+  actualEndTime: timestamp("actual_end_time"),
+  
+  // Assignment details
+  assignmentReason: text("assignment_reason").default("automatic"), // automatic, manual, optimization, capability_match
+  assignedBy: text("assigned_by"), // user who made the assignment
+  skillLevel: text("skill_level"), // skill level of assigned resource for this task
+  
+  // Status tracking
+  status: text("status").notNull().default("planned"), // planned, confirmed, in_progress, completed, cancelled
+  utilizationPercent: integer("utilization_percent").default(100), // how much of resource capacity is used
+  
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  requirementAssignmentIndex: index("resource_assignments_requirement_idx").on(table.requirementId),
+  resourceAssignmentIndex: index("resource_assignments_resource_idx").on(table.assignedResourceId),
+  statusIndex: index("resource_assignments_status_idx").on(table.status),
+}));
+
 export const dependencies = pgTable("dependencies", {
   id: serial("id").primaryKey(),
   fromOperationId: integer("from_operation_id").references(() => operations.id).notNull(),
@@ -6340,4 +6404,28 @@ export const insertProductionVersionSchema = createInsertSchema(productionVersio
 
 export type ProductionVersion = typeof productionVersions.$inferSelect;
 export type InsertProductionVersion = z.infer<typeof insertProductionVersionSchema>;
+
+// Resource Requirements Insert Schemas
+export const insertResourceRequirementSchema = createInsertSchema(resourceRequirements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertResourceRequirementAssignmentSchema = createInsertSchema(resourceRequirementAssignments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  plannedStartTime: z.union([z.string().datetime(), z.date()]).optional(),
+  plannedEndTime: z.union([z.string().datetime(), z.date()]).optional(),
+  actualStartTime: z.union([z.string().datetime(), z.date()]).optional(),
+  actualEndTime: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+// Resource Requirements Types
+export type ResourceRequirement = typeof resourceRequirements.$inferSelect;
+export type InsertResourceRequirement = z.infer<typeof insertResourceRequirementSchema>;
+export type ResourceRequirementAssignment = typeof resourceRequirementAssignments.$inferSelect;
+export type InsertResourceRequirementAssignment = z.infer<typeof insertResourceRequirementAssignmentSchema>;
 
