@@ -435,14 +435,13 @@ Create authentic manufacturing data that reflects this company's operations.`;
     { key: 'capabilities', label: 'Capabilities', icon: Database, description: 'Skills and machine capabilities' },
     { key: 'productionOrders', label: 'Production Orders', icon: Briefcase, description: 'Active production work orders' },
     { key: 'vendors', label: 'Vendors', icon: Building2, description: 'Suppliers and vendor information' },
-    { key: 'customers', label: 'Customers', icon: Users, description: 'Customer accounts and information' },
-    { key: 'stockItems', label: 'Stock Items', icon: Package, description: 'Inventory items and stock levels' }
+    { key: 'customers', label: 'Customers', icon: Users, description: 'Customer accounts and information' }
   ];
 
   // Record counts state
   const [recordCounts, setRecordCounts] = useState<Record<string, number>>({});
 
-  // Fetch record counts for all supported data types
+  // Fetch record counts for all supported data types (async, doesn't block render)
   const { data: recordCountsData } = useQuery({
     queryKey: ['/api/data-management/record-counts'],
     queryFn: async () => {
@@ -452,7 +451,9 @@ Create authentic manufacturing data that reflects this company's operations.`;
       });
       if (!response.ok) throw new Error('Failed to fetch record counts');
       return response.json();
-    }
+    },
+    staleTime: 30000, // Cache for 30 seconds
+    enabled: !!user // Only fetch when user is available
   });
 
   // Update record counts when data is fetched
@@ -466,7 +467,6 @@ Create authentic manufacturing data that reflects this company's operations.`;
       mappedCounts.productionOrders = recordCountsData.production_orders || 0;
       mappedCounts.vendors = recordCountsData.vendors || 0;
       mappedCounts.customers = recordCountsData.customers || 0;
-      mappedCounts.stockItems = recordCountsData.stock_items || 0;
       setRecordCounts(mappedCounts);
     }
   }, [recordCountsData]);
