@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -12,11 +12,20 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2, ClipboardList, AlertTriangle, Cog } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2, ClipboardList, AlertTriangle, Cog, Search, ChevronLeft, ChevronRight, ChevronUp, ArrowUpDown } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useMaxDock } from '@/contexts/MaxDockContext';
 import { useAuth } from '@/hooks/useAuth';
+
+// Simple debounce utility function
+function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
 
 interface ImportStatus {
   type: string;
@@ -30,14 +39,70 @@ function ManageDataTab({ dataType }: { dataType: string }) {
   const [editingItem, setEditingItem] = useState<any>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newItem, setNewItem] = useState<any>({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [sortField, setSortField] = useState('');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Dynamic query based on data type
-  const { data: items = [], isLoading } = useQuery<any[]>({
-    queryKey: [`/api/${getApiEndpoint(dataType)}`],
+  // High-performance paginated query
+  const { data: paginatedData, isLoading } = useQuery({
+    queryKey: [`/api/data-management/${getTableName(dataType)}`, currentPage, pageSize, searchQuery, sortField, sortDirection],
+    queryFn: async () => {
+      const requestBody = {
+        pagination: {
+          page: currentPage,
+          limit: pageSize
+        },
+        ...(searchQuery && {
+          search: {
+            query: searchQuery,
+            fields: ['name', 'description'] // Search in name and description fields
+          }
+        }),
+        ...(sortField && {
+          sort: {
+            field: sortField,
+            direction: sortDirection
+          }
+        })
+      };
+      
+      const response = await fetch(`/api/data-management/${getTableName(dataType)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(localStorage.getItem('authToken') && {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          })
+        },
+        body: JSON.stringify(requestBody)
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch data');
+      return response.json();
+    },
     enabled: true
   });
+
+  const items = paginatedData?.data || [];
+  const totalItems = paginatedData?.total || 0;
+  const totalPages = Math.ceil(totalItems / pageSize);
+
+  function getTableName(type: string): string {
+    const tableNames: Record<string, string> = {
+      'plants': 'plants',
+      'resources': 'resources', 
+      'capabilities': 'capabilities',
+      'productionOrders': 'production_orders',
+      'users': 'users',
+      'vendors': 'vendors',
+      'customers': 'customers'
+    };
+    return tableNames[type] || type;
+  }
 
   function getApiEndpoint(type: string): string {
     const endpoints: Record<string, string> = {
@@ -52,6 +117,25 @@ function ManageDataTab({ dataType }: { dataType: string }) {
     return endpoints[type] || type;
   }
 
+  // Debounced search to avoid excessive API calls
+  const debouncedSearch = useCallback(
+    debounce((query: string) => {
+      setSearchQuery(query);
+      setCurrentPage(1); // Reset to first page on search
+    }, 300),
+    []
+  );
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+    setCurrentPage(1);
+  };
+
   const updateMutation = useMutation({
     mutationFn: async (item: any) => {
       const endpoint = getApiEndpoint(dataType);
@@ -65,7 +149,7 @@ function ManageDataTab({ dataType }: { dataType: string }) {
     },
     onSuccess: () => {
       toast({ title: "Success", description: "Item updated successfully" });
-      queryClient.invalidateQueries({ queryKey: [`/api/${getApiEndpoint(dataType)}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/data-management/${getTableName(dataType)}`] });
       setEditingItem(null);
     },
     onError: (error: any) => {
@@ -86,7 +170,7 @@ function ManageDataTab({ dataType }: { dataType: string }) {
     },
     onSuccess: () => {
       toast({ title: "Success", description: "Item created successfully" });
-      queryClient.invalidateQueries({ queryKey: [`/api/${getApiEndpoint(dataType)}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/data-management/${getTableName(dataType)}`] });
       setShowAddDialog(false);
       setNewItem({});
     },
@@ -106,7 +190,7 @@ function ManageDataTab({ dataType }: { dataType: string }) {
     },
     onSuccess: () => {
       toast({ title: "Success", description: "Item deleted successfully" });
-      queryClient.invalidateQueries({ queryKey: [`/api/${getApiEndpoint(dataType)}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/data-management/${getTableName(dataType)}`] });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -123,18 +207,47 @@ function ManageDataTab({ dataType }: { dataType: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      {/* Header with Search and Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h3 className="text-lg font-medium">Existing {dataType} Data</h3>
-          <p className="text-sm text-gray-600">{items.length} items found</p>
+          <p className="text-sm text-gray-600">
+            {isLoading ? 'Loading...' : `${totalItems} items found`}
+          </p>
         </div>
-        <Button onClick={() => setShowAddDialog(true)} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Add New
-        </Button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder={`Search ${dataType}...`}
+              className="pl-10"
+              onChange={(e) => debouncedSearch(e.target.value)}
+            />
+          </div>
+          <Select value={pageSize.toString()} onValueChange={(value) => {
+            setPageSize(Number(value));
+            setCurrentPage(1);
+          }}>
+            <SelectTrigger className="w-24">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={() => setShowAddDialog(true)} size="sm" className="w-full sm:w-auto">
+            <Plus className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Add New</span>
+            <span className="sm:hidden">Add</span>
+          </Button>
+        </div>
       </div>
 
-      {items.length === 0 ? (
+      {/* Data Table */}
+      {totalItems === 0 && !isLoading ? (
         <div className="text-center py-8 text-gray-500">
           <Database className="h-12 w-12 mx-auto mb-4 text-gray-300" />
           <p>No {dataType} data found.</p>
@@ -145,47 +258,144 @@ function ManageDataTab({ dataType }: { dataType: string }) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Description</TableHead>
+                <TableHead>
+                  <Button variant="ghost" className="h-auto p-0 font-medium hover:bg-transparent" onClick={() => handleSort('name')}>
+                    Name
+                    {sortField === 'name' && (
+                      sortDirection === 'asc' ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />
+                    )}
+                    {sortField !== 'name' && <ArrowUpDown className="ml-1 h-4 w-4 opacity-50" />}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button variant="ghost" className="h-auto p-0 font-medium hover:bg-transparent" onClick={() => handleSort('description')}>
+                    Description
+                    {sortField === 'description' && (
+                      sortDirection === 'asc' ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />
+                    )}
+                    {sortField !== 'description' && <ArrowUpDown className="ml-1 h-4 w-4 opacity-50" />}
+                  </Button>
+                </TableHead>
                 <TableHead>Details</TableHead>
                 <TableHead className="w-24">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item: any) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">
-                    {item.name || item.orderNumber || item.username || item.vendorName || item.customerName || 'N/A'}
-                  </TableCell>
-                  <TableCell>
-                    {item.description || item.email || item.contactName || 'N/A'}
-                  </TableCell>
-                  <TableCell className="text-sm text-gray-600">
-                    {renderItemDetails(item, dataType)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditingItem(item)}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteMutation.mutate(item.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {isLoading ? (
+                Array.from({ length: pageSize }).map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                    <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                    <TableCell><div className="h-4 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                    <TableCell><div className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div></TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                items.map((item: any) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">
+                      {item.name || item.orderNumber || item.username || item.vendorName || item.customerName || 'N/A'}
+                    </TableCell>
+                    <TableCell>
+                      {item.description || item.email || item.contactName || 'N/A'}
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-600">
+                      {renderItemDetails(item, dataType)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingItem(item)}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteMutation.mutate(item.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
+          
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t">
+              <div className="text-sm text-gray-600">
+                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalItems)} of {totalItems} items
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  First
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span className="hidden sm:inline ml-1">Previous</span>
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }).map((_, index) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = index + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = index + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + index;
+                    } else {
+                      pageNum = currentPage - 2 + index;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  <span className="hidden sm:inline mr-1">Next</span>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  Last
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
