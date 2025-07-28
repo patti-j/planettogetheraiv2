@@ -767,34 +767,51 @@ export default function ProductionPlanningPage() {
 
       {/* Main Content with Enhanced Future Planning Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="future-planning">Future Planning</TabsTrigger>
-          <TabsTrigger value="capacity-analysis">Capacity Analysis</TabsTrigger>
-          <TabsTrigger value="demand-forecast">Demand & Forecast</TabsTrigger>
-          <TabsTrigger value="production-plans">Production Plans</TabsTrigger>
-          <TabsTrigger value="modifications">Plan Modifications</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
+          <TabsTrigger value="future-planning" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">Future Planning</span>
+            <span className="sm:hidden">Future</span>
+          </TabsTrigger>
+          <TabsTrigger value="capacity-analysis" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">Capacity Analysis</span>
+            <span className="sm:hidden">Capacity</span>
+          </TabsTrigger>
+          <TabsTrigger value="demand-forecast" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">Demand & Forecast</span>
+            <span className="sm:hidden">Demand</span>
+          </TabsTrigger>
+          <TabsTrigger value="production-plans" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">Production Plans</span>
+            <span className="sm:hidden">Plans</span>
+          </TabsTrigger>
+          <TabsTrigger value="modifications" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">Plan Modifications</span>
+            <span className="sm:hidden">Mods</span>
+          </TabsTrigger>
         </TabsList>
 
         {/* Future Planning Tab - Primary focus */}
         <TabsContent value="future-planning" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
             {/* Future Planning Timeline */}
             <div className="lg:col-span-2 space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <Forward className="w-5 h-5 text-blue-600" />
-                      Future Planning Horizon ({planningHorizon})
+                  <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <span className="flex items-center gap-2 min-w-0">
+                      <Forward className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                      <span className="text-sm sm:text-base font-semibold">
+                        Future Planning Horizon ({planningHorizon})
+                      </span>
                     </span>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
-                        <Edit2 className="w-4 h-4" />
-                        Modify
+                    <div className="flex gap-2 flex-shrink-0">
+                      <Button variant="outline" size="sm" className="text-xs">
+                        <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">Modify</span>
                       </Button>
-                      <Button variant="outline" size="sm">
-                        <RotateCcw className="w-4 h-4" />
-                        Refresh
+                      <Button variant="outline" size="sm" className="text-xs">
+                        <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">Refresh</span>
                       </Button>
                     </div>
                   </CardTitle>
@@ -802,29 +819,29 @@ export default function ProductionPlanningPage() {
                 <CardContent>
                   <div className="space-y-4">
                     {/* Planning Horizon Summary */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-3 sm:p-4 rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
                           <Package className="w-4 h-4 text-blue-600" />
-                          <span className="text-sm font-medium">Future Orders</span>
+                          <span className="text-xs sm:text-sm font-medium">Future Orders</span>
                         </div>
-                        <p className="text-2xl font-bold text-blue-600">{futureAnalysis.totalFutureCapacity}</p>
+                        <p className="text-xl sm:text-2xl font-bold text-blue-600">{futureAnalysis.totalFutureCapacity}</p>
                         <p className="text-xs text-gray-600">Production + Planned</p>
                       </div>
-                      <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                      <div className="bg-green-50 dark:bg-green-900/20 p-3 sm:p-4 rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
                           <TrendingUp className="w-4 h-4 text-green-600" />
-                          <span className="text-sm font-medium">Demand Volume</span>
+                          <span className="text-xs sm:text-sm font-medium">Demand Volume</span>
                         </div>
-                        <p className="text-2xl font-bold text-green-600">{futureAnalysis.demandVolume.toLocaleString()}</p>
+                        <p className="text-xl sm:text-2xl font-bold text-green-600">{futureAnalysis.demandVolume.toLocaleString()}</p>
                         <p className="text-xs text-gray-600">Forecasted Units</p>
                       </div>
-                      <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
+                      <div className="bg-orange-50 dark:bg-orange-900/20 p-3 sm:p-4 rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
                           <Users className="w-4 h-4 text-orange-600" />
-                          <span className="text-sm font-medium">Resource Load</span>
+                          <span className="text-xs sm:text-sm font-medium">Resource Load</span>
                         </div>
-                        <p className="text-2xl font-bold text-orange-600">
+                        <p className="text-xl sm:text-2xl font-bold text-orange-600">
                           {Math.round(futureAnalysis.resourceUtilization.reduce((avg, r) => avg + r.utilization, 0) / futureAnalysis.resourceUtilization.length)}%
                         </p>
                         <p className="text-xs text-gray-600">Avg Utilization</p>

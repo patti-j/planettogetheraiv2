@@ -2,6 +2,14 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Production Planning Mobile Layout Fix & Table Selection Implementation (July 28, 2025)**:
+- Fixed critical mobile display issues in production planning page that caused text overlapping and layout breaking
+- Enhanced card header layout with responsive flex design (flex-col on mobile, flex-row on desktop) to prevent overflow
+- Optimized tab navigation for mobile with shorter labels and responsive grid layout (2 columns on mobile, 5 on desktop)
+- Improved planning horizon summary cards with responsive padding and font sizes for better mobile readability
+- Fixed button layouts with icon-only display on mobile and proper text wrapping for card titles
+- Enhanced mobile user experience with proper spacing and responsive design patterns throughout production planning interface
+
 ✓ **Data Schema View Table Selection & Session Persistence Implementation (July 28, 2025)**:
 - Added comprehensive table selection checklist allowing users to choose specific tables to display with checkbox interface
 - Implemented "Include Related Tables" toggle to show connected tables through foreign key relationships when specific tables are selected
