@@ -10,19 +10,19 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar, CalendarIcon, Plus, Target, Clock, CheckCircle, AlertCircle, TrendingUp, BarChart3, Users, Settings, Factory, Package, Zap, TimerIcon, AlertTriangle, FileText, Edit2, Trash2, Copy, Download, Upload } from 'lucide-react';
+import { Calendar, CalendarIcon, Plus, Target, Clock, CheckCircle, AlertCircle, TrendingUp, BarChart3, Users, Settings, Factory, Package, Zap, TimerIcon, AlertTriangle, FileText, Edit2, Trash2, Copy, Download, Upload, Filter, Search, RotateCcw, Forward, Eye, EyeOff, Move, ArrowRight, ArrowLeft, Maximize2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { cn } from '@/lib/utils';
-import { format, differenceInDays, addDays, startOfWeek, endOfWeek } from 'date-fns';
+import { format, differenceInDays, addDays, startOfWeek, endOfWeek, addWeeks, addMonths, addQuarters, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, isAfter, isBefore, isWithinInterval } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { apiRequest } from '@/lib/queryClient';
-import type { ProductionPlan, ProductionTarget, ResourceAllocation, ProductionMilestone, Plant, ProductionOrder, Resource } from '@shared/schema';
+import type { ProductionPlan, ProductionTarget, ResourceAllocation, ProductionMilestone, Plant, ProductionOrder, Resource, DemandForecast, PlannedOrder } from '@shared/schema';
 
 // Form schemas
 const productionPlanSchema = z.object({
@@ -42,14 +42,19 @@ type ProductionPlanFormData = z.infer<typeof productionPlanSchema>;
 export default function ProductionPlanningPage() {
   const [selectedPlan, setSelectedPlan] = useState<ProductionPlan | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'gantt'>('list');
-  const [activeTab, setActiveTab] = useState('overview');
+  const [viewMode, setViewMode] = useState<'timeline' | 'calendar' | 'gantt' | 'capacity'>('timeline');
+  const [activeTab, setActiveTab] = useState('future-planning');
   const [filterPlant, setFilterPlant] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterPeriod, setFilterPeriod] = useState<string>('current');
+  const [filterPeriod, setFilterPeriod] = useState<string>('next-3-months');
+  const [planningHorizon, setPlanningHorizon] = useState<string>('12-weeks');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showDetailView, setShowDetailView] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const queryClient = useQueryClient();
 
-  // Fetch comprehensive production data
+  // Fetch comprehensive production data with enhanced future planning
   const { data: plans = [], isLoading: plansLoading } = useQuery<ProductionPlan[]>({
     queryKey: ['/api/production-plans'],
   });
@@ -60,6 +65,10 @@ export default function ProductionPlanningPage() {
 
   const { data: productionOrders = [] } = useQuery<ProductionOrder[]>({
     queryKey: ['/api/production-orders'],
+  });
+
+  const { data: plannedOrders = [] } = useQuery<PlannedOrder[]>({
+    queryKey: ['/api/planned-orders'],
   });
 
   const { data: resources = [] } = useQuery<Resource[]>({
@@ -76,6 +85,10 @@ export default function ProductionPlanningPage() {
 
   const { data: milestones = [] } = useQuery<ProductionMilestone[]>({
     queryKey: ['/api/production-milestones'],
+  });
+
+  const { data: forecasts = [] } = useQuery<DemandForecast[]>({
+    queryKey: ['/api/demand-forecasts'],
   });
 
   // Calculate plan metrics and insights
@@ -104,7 +117,32 @@ export default function ProductionPlanningPage() {
     };
   }, [selectedPlan, targets, allocations, milestones]);
 
-  // Filter and organize production data
+  // Enhanced future planning data with horizon calculations
+  const planningHorizonData = useMemo(() => {
+    const now = new Date();
+    let endDate = new Date();
+    
+    switch (planningHorizon) {
+      case '6-weeks':
+        endDate = addWeeks(now, 6);
+        break;
+      case '12-weeks':
+        endDate = addWeeks(now, 12);
+        break;
+      case '6-months':
+        endDate = addMonths(now, 6);
+        break;
+      case '12-months':
+        endDate = addMonths(now, 12);
+        break;
+      default:
+        endDate = addWeeks(now, 12);
+    }
+    
+    return { startDate: now, endDate };
+  }, [planningHorizon]);
+
+  // Filter and organize production data with future focus
   const filteredPlans = useMemo(() => {
     let filtered = [...plans];
     
@@ -116,6 +154,14 @@ export default function ProductionPlanningPage() {
       filtered = filtered.filter(plan => plan.status === filterStatus);
     }
     
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      filtered = filtered.filter(plan => 
+        plan.name.toLowerCase().includes(search) ||
+        plan.description?.toLowerCase().includes(search)
+      );
+    }
+    
     if (filterPeriod !== 'all') {
       const now = new Date();
       switch (filterPeriod) {
@@ -124,7 +170,25 @@ export default function ProductionPlanningPage() {
             new Date(plan.startDate) <= now && new Date(plan.endDate) >= now
           );
           break;
-        case 'upcoming':
+        case 'next-month':
+          const nextMonth = addMonths(now, 1);
+          filtered = filtered.filter(plan => 
+            new Date(plan.startDate) <= nextMonth && new Date(plan.endDate) >= now
+          );
+          break;
+        case 'next-3-months':
+          const next3Months = addMonths(now, 3);
+          filtered = filtered.filter(plan => 
+            new Date(plan.startDate) <= next3Months && new Date(plan.endDate) >= now
+          );
+          break;
+        case 'next-6-months':
+          const next6Months = addMonths(now, 6);
+          filtered = filtered.filter(plan => 
+            new Date(plan.startDate) <= next6Months && new Date(plan.endDate) >= now
+          );
+          break;
+        case 'future':
           filtered = filtered.filter(plan => new Date(plan.startDate) > now);
           break;
         case 'past':
@@ -134,7 +198,56 @@ export default function ProductionPlanningPage() {
     }
     
     return filtered.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-  }, [plans, filterPlant, filterStatus, filterPeriod]);
+  }, [plans, filterPlant, filterStatus, filterPeriod, searchTerm]);
+
+  // Future capacity and demand analysis
+  const futureAnalysis = useMemo(() => {
+    const { startDate, endDate } = planningHorizonData;
+    const now = new Date();
+    
+    // Future production orders within horizon
+    const futureOrders = productionOrders.filter(order => {
+      const orderDate = new Date(order.dueDate || order.scheduledStartDate || now);
+      return isAfter(orderDate, startDate) && isBefore(orderDate, endDate);
+    });
+    
+    // Planned orders for future production
+    const futurePlannedOrders = plannedOrders.filter(order => {
+      const orderDate = new Date(order.requiredDate);
+      return isAfter(orderDate, startDate) && isBefore(orderDate, endDate);
+    });
+    
+    // Future demand from forecasts
+    const futureDemand = forecasts.filter(forecast => {
+      const forecastDate = new Date(forecast.forecastDate);
+      return isAfter(forecastDate, startDate) && isBefore(forecastDate, endDate);
+    });
+    
+    // Resource availability analysis
+    const resourceUtilization = resources.map(resource => {
+      const allocatedHours = allocations
+        .filter(alloc => alloc.resourceId === resource.id)
+        .reduce((sum, alloc) => sum + alloc.allocatedHours, 0);
+      
+      return {
+        resourceId: resource.id,
+        resourceName: resource.name,
+        type: resource.type,
+        totalAllocated: allocatedHours,
+        utilization: allocatedHours > 0 ? Math.min(100, (allocatedHours / 160) * 100) : 0, // Assume 160 hours/month capacity
+        status: resource.status
+      };
+    });
+    
+    return {
+      futureOrders,
+      futurePlannedOrders,
+      futureDemand,
+      resourceUtilization,
+      totalFutureCapacity: futureOrders.length + futurePlannedOrders.length,
+      demandVolume: futureDemand.reduce((sum, d) => sum + d.forecastQuantity, 0)
+    };
+  }, [planningHorizonData, productionOrders, plannedOrders, forecasts, resources, allocations]);
 
   // Create production plan form
   const form = useForm<ProductionPlanFormData>({
@@ -544,10 +657,25 @@ export default function ProductionPlanningPage() {
         </Card>
       </div>
 
-      {/* Filters and View Controls */}
+      {/* Enhanced Future Planning Controls */}
       <Card className="p-4">
         <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
           <div className="flex flex-wrap gap-3">
+            <div>
+              <Label htmlFor="planningHorizon" className="text-sm font-medium">Planning Horizon</Label>
+              <Select value={planningHorizon} onValueChange={setPlanningHorizon}>
+                <SelectTrigger className="w-36">
+                  <SelectValue placeholder="Select horizon" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="6-weeks">6 Weeks</SelectItem>
+                  <SelectItem value="12-weeks">12 Weeks</SelectItem>
+                  <SelectItem value="6-months">6 Months</SelectItem>
+                  <SelectItem value="12-months">12 Months</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
             <div>
               <Label htmlFor="plantFilter" className="text-sm font-medium">Plant</Label>
               <Select value={filterPlant} onValueChange={setFilterPlant}>
@@ -566,47 +694,45 @@ export default function ProductionPlanningPage() {
             </div>
             
             <div>
-              <Label htmlFor="statusFilter" className="text-sm font-medium">Status</Label>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-36">
-                  <SelectValue placeholder="All Status" />
+              <Label htmlFor="periodFilter" className="text-sm font-medium">Time Period</Label>
+              <Select value={filterPeriod} onValueChange={setFilterPeriod}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Select period" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="current">Current</SelectItem>
+                  <SelectItem value="next-month">Next Month</SelectItem>
+                  <SelectItem value="next-3-months">Next 3 Months</SelectItem>
+                  <SelectItem value="next-6-months">Next 6 Months</SelectItem>
+                  <SelectItem value="future">All Future</SelectItem>
+                  <SelectItem value="past">Past</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div>
-              <Label htmlFor="periodFilter" className="text-sm font-medium">Period</Label>
-              <Select value={filterPeriod} onValueChange={setFilterPeriod}>
-                <SelectTrigger className="w-36">
-                  <SelectValue placeholder="All Periods" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Periods</SelectItem>
-                  <SelectItem value="current">Current</SelectItem>
-                  <SelectItem value="upcoming">Upcoming</SelectItem>
-                  <SelectItem value="past">Past</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="search" className="text-sm font-medium">Search</Label>
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search plans..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8 w-40"
+                />
+              </div>
             </div>
           </div>
           
           <div className="flex gap-2">
             <Button
-              variant={viewMode === 'list' ? 'default' : 'outline'}
+              variant={viewMode === 'timeline' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setViewMode('list')}
+              onClick={() => setViewMode('timeline')}
               className="flex items-center gap-2"
             >
-              <FileText className="w-4 h-4" />
-              List
+              <ArrowRight className="w-4 h-4" />
+              Timeline
             </Button>
             <Button
               variant={viewMode === 'calendar' ? 'default' : 'outline'}
@@ -618,23 +744,348 @@ export default function ProductionPlanningPage() {
               Calendar
             </Button>
             <Button
-              variant={viewMode === 'gantt' ? 'default' : 'outline'}
+              variant={viewMode === 'capacity' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setViewMode('gantt')}
+              onClick={() => setViewMode('capacity')}
               className="flex items-center gap-2"
             >
               <BarChart3 className="w-4 h-4" />
-              Gantt
+              Capacity
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDetailView(!showDetailView)}
+              className="flex items-center gap-2"
+            >
+              {showDetailView ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showDetailView ? 'Simple' : 'Details'}
             </Button>
           </div>
         </div>
       </Card>
 
-      {/* Main Content Area - Production Plans */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Plans List */}
-        <div className="lg:col-span-2 space-y-4">
-          {viewMode === 'list' && (
+      {/* Main Content with Enhanced Future Planning Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="future-planning">Future Planning</TabsTrigger>
+          <TabsTrigger value="capacity-analysis">Capacity Analysis</TabsTrigger>
+          <TabsTrigger value="demand-forecast">Demand & Forecast</TabsTrigger>
+          <TabsTrigger value="production-plans">Production Plans</TabsTrigger>
+          <TabsTrigger value="modifications">Plan Modifications</TabsTrigger>
+        </TabsList>
+
+        {/* Future Planning Tab - Primary focus */}
+        <TabsContent value="future-planning" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Future Planning Timeline */}
+            <div className="lg:col-span-2 space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Forward className="w-5 h-5 text-blue-600" />
+                      Future Planning Horizon ({planningHorizon})
+                    </span>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <Edit2 className="w-4 h-4" />
+                        Modify
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <RotateCcw className="w-4 h-4" />
+                        Refresh
+                      </Button>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {/* Planning Horizon Summary */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Package className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm font-medium">Future Orders</span>
+                        </div>
+                        <p className="text-2xl font-bold text-blue-600">{futureAnalysis.totalFutureCapacity}</p>
+                        <p className="text-xs text-gray-600">Production + Planned</p>
+                      </div>
+                      <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <TrendingUp className="w-4 h-4 text-green-600" />
+                          <span className="text-sm font-medium">Demand Volume</span>
+                        </div>
+                        <p className="text-2xl font-bold text-green-600">{futureAnalysis.demandVolume.toLocaleString()}</p>
+                        <p className="text-xs text-gray-600">Forecasted Units</p>
+                      </div>
+                      <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Users className="w-4 h-4 text-orange-600" />
+                          <span className="text-sm font-medium">Resource Load</span>
+                        </div>
+                        <p className="text-2xl font-bold text-orange-600">
+                          {Math.round(futureAnalysis.resourceUtilization.reduce((avg, r) => avg + r.utilization, 0) / futureAnalysis.resourceUtilization.length)}%
+                        </p>
+                        <p className="text-xs text-gray-600">Avg Utilization</p>
+                      </div>
+                    </div>
+
+                    {/* Future Timeline View */}
+                    {viewMode === 'timeline' && (
+                      <div className="space-y-3">
+                        <h4 className="font-medium flex items-center gap-2">
+                          <ArrowRight className="w-4 h-4" />
+                          Future Production Orders Timeline
+                        </h4>
+                        {futureAnalysis.futureOrders.length === 0 ? (
+                          <div className="text-center py-8 text-gray-500">
+                            <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                            <p>No future production orders found in planning horizon</p>
+                            <p className="text-sm">Expand horizon or add planned orders</p>
+                          </div>
+                        ) : (
+                          futureAnalysis.futureOrders.slice(0, 10).map((order) => (
+                            <Card key={order.id} className="p-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                  <div>
+                                    <p className="font-medium">{order.orderNumber}</p>
+                                    <p className="text-sm text-gray-600">{order.description}</p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-sm font-medium">
+                                    {format(new Date(order.dueDate || order.scheduledStartDate), 'MMM dd, yyyy')}
+                                  </p>
+                                  <Badge variant="outline">{order.status}</Badge>
+                                </div>
+                              </div>
+                            </Card>
+                          ))
+                        )}
+                      </div>
+                    )}
+
+                    {/* Future Planned Orders */}
+                    <div className="space-y-3">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <Target className="w-4 h-4" />
+                        Planned Orders ({futureAnalysis.futurePlannedOrders.length})
+                      </h4>
+                      {futureAnalysis.futurePlannedOrders.length === 0 ? (
+                        <div className="text-center py-6 text-gray-500">
+                          <Target className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                          <p className="text-sm">No planned orders in horizon</p>
+                        </div>
+                      ) : (
+                        futureAnalysis.futurePlannedOrders.slice(0, 5).map((order, index) => (
+                          <Card key={index} className="p-3 border-dashed">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                                <div>
+                                  <p className="font-medium">{order.materialNumber}</p>
+                                  <p className="text-sm text-gray-600">Qty: {order.quantity}</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-sm font-medium">
+                                  {format(new Date(order.requiredDate), 'MMM dd, yyyy')}
+                                </p>
+                                <Badge variant="secondary">Planned</Badge>
+                              </div>
+                            </div>
+                          </Card>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Future Planning Controls */}
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="w-5 h-5" />
+                    Planning Controls
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium">Planning Actions</Label>
+                    <div className="grid grid-cols-1 gap-2 mt-2">
+                      <Button variant="outline" size="sm" className="justify-start">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Future Plan
+                      </Button>
+                      <Button variant="outline" size="sm" className="justify-start">
+                        <Move className="w-4 h-4 mr-2" />
+                        Adjust Timeline
+                      </Button>
+                      <Button variant="outline" size="sm" className="justify-start">
+                        <Maximize2 className="w-4 h-4 mr-2" />
+                        Extend Horizon
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label className="text-sm font-medium">Quick Filters</Label>
+                    <div className="grid grid-cols-1 gap-2 mt-2">
+                      <Button 
+                        variant={filterStatus === 'all' ? 'default' : 'outline'} 
+                        size="sm" 
+                        onClick={() => setFilterStatus('all')}
+                        className="justify-start"
+                      >
+                        All Orders
+                      </Button>
+                      <Button 
+                        variant={filterStatus === 'high' ? 'default' : 'outline'} 
+                        size="sm" 
+                        onClick={() => setFilterStatus('high')}
+                        className="justify-start"
+                      >
+                        High Priority
+                      </Button>
+                      <Button 
+                        variant={filterStatus === 'critical' ? 'default' : 'outline'} 
+                        size="sm" 
+                        onClick={() => setFilterStatus('critical')}
+                        className="justify-start"
+                      >
+                        Critical Orders
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-orange-600" />
+                    Planning Alerts
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {futureAnalysis.resourceUtilization.filter(r => r.utilization > 90).length > 0 && (
+                      <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                        <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
+                          High Resource Utilization
+                        </p>
+                        <p className="text-xs text-orange-600 dark:text-orange-300">
+                          {futureAnalysis.resourceUtilization.filter(r => r.utilization > 90).length} resources over 90%
+                        </p>
+                      </div>
+                    )}
+                    {futureAnalysis.futureOrders.length === 0 && (
+                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                          Planning Opportunity
+                        </p>
+                        <p className="text-xs text-blue-600 dark:text-blue-300">
+                          No future orders - consider adding planned production
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Capacity Analysis Tab */}
+        <TabsContent value="capacity-analysis" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-purple-600" />
+                Resource Capacity Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {futureAnalysis.resourceUtilization.map((resource) => (
+                  <div key={resource.resourceId} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="font-medium">{resource.resourceName}</p>
+                        <p className="text-sm text-gray-600">{resource.type}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium">{Math.round(resource.utilization)}%</p>
+                        <Badge 
+                          variant={resource.utilization > 90 ? 'destructive' : resource.utilization > 70 ? 'secondary' : 'outline'}
+                        >
+                          {resource.status}
+                        </Badge>
+                      </div>
+                    </div>
+                    <Progress value={resource.utilization} className="h-2" />
+                    {resource.utilization > 90 && (
+                      <p className="text-xs text-red-600">⚠️ Capacity constraint - consider load balancing</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Demand & Forecast Tab */}
+        <TabsContent value="demand-forecast" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-green-600" />
+                Demand Forecasting & Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {futureAnalysis.futureDemand.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <TrendingUp className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                    <p>No demand forecasts available</p>
+                    <p className="text-sm">Add forecasting data to enable demand planning</p>
+                  </div>
+                ) : (
+                  futureAnalysis.futureDemand.slice(0, 10).map((forecast, index) => (
+                    <Card key={index} className="p-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">Forecast #{forecast.id}</p>
+                          <p className="text-sm text-gray-600">{forecast.forecastMethod}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium">{forecast.forecastQuantity} units</p>
+                          <p className="text-xs text-gray-600">
+                            {format(new Date(forecast.forecastDate), 'MMM dd, yyyy')}
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Production Plans Tab */}
+        <TabsContent value="production-plans" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Plans List */}
+            <div className="lg:col-span-2 space-y-4">
+              {viewMode === 'timeline' && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
@@ -753,137 +1204,128 @@ export default function ProductionPlanningPage() {
             </Card>
           )}
 
-          {viewMode === 'gantt' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Gantt Chart View</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  <BarChart3 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p>Gantt chart view coming soon</p>
-                  <p className="text-sm">Visualize production timeline and dependencies</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+              {viewMode === 'capacity' && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Capacity Chart View</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8 text-gray-500">
+                      <BarChart3 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                      <p>Capacity chart view coming soon</p>
+                      <p className="text-sm">Visualize production capacity and utilization</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
 
-        {/* Plan Details Panel */}
-        <div className="space-y-4">
-          {selectedPlan ? (
-            <>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>{selectedPlan.name}</span>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
-                        <Settings className="w-4 h-4" />
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {planMetrics && (
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <div className="text-2xl font-bold text-blue-600">{planMetrics.totalTargets}</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">Targets</div>
+            {/* Plan Details Panel */}
+            <div className="space-y-4">
+              {selectedPlan ? (
+                <>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <span>{selectedPlan.name}</span>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm">
+                            <Settings className="w-4 h-4" />
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {planMetrics && (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                            <div className="text-2xl font-bold text-blue-600">{planMetrics.totalTargets}</div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">Targets</div>
+                          </div>
+                          <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                            <div className="text-2xl font-bold text-green-600">{planMetrics.completedTargets}</div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">Completed</div>
+                          </div>
+                          <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                            <div className="text-2xl font-bold text-purple-600">{planMetrics.allocatedResources}</div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">Resources</div>
+                          </div>
+                          <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                            <div className="text-2xl font-bold text-orange-600">{Math.round(planMetrics.completionPercentage)}%</div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">Progress</div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div>
+                        <h4 className="font-medium mb-2">Plan Details</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Type:</span>
+                            <span className="capitalize">{selectedPlan.planType}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Start Date:</span>
+                            <span>{format(new Date(selectedPlan.startDate), 'MMM d, yyyy')}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">End Date:</span>
+                            <span>{format(new Date(selectedPlan.endDate), 'MMM d, yyyy')}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Target Units:</span>
+                            <span>{selectedPlan.targetUnits}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <div className="text-2xl font-bold text-green-600">{planMetrics.completedTargets}</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">Completed</div>
-                      </div>
-                      <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <div className="text-2xl font-bold text-purple-600">{planMetrics.allocatedResources}</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">Resources</div>
-                      </div>
-                      <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <div className="text-2xl font-bold text-orange-600">{Math.round(planMetrics.completionPercentage)}%</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">Progress</div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div>
-                    <h4 className="font-medium mb-2">Plan Details</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Type:</span>
-                        <span className="capitalize">{selectedPlan.planType}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Start Date:</span>
-                        <span>{format(new Date(selectedPlan.startDate), 'MMM d, yyyy')}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">End Date:</span>
-                        <span>{format(new Date(selectedPlan.endDate), 'MMM d, yyyy')}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Target Units:</span>
-                        <span>{selectedPlan.targetUnits}</span>
-                      </div>
-                    </div>
-                  </div>
 
-                  {selectedPlan.description && (
-                    <div>
-                      <h4 className="font-medium mb-2">Description</h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{selectedPlan.description}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                      {selectedPlan.description && (
+                        <div>
+                          <h4 className="font-medium mb-2">Description</h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{selectedPlan.description}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </>
+              ) : (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <Target className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                    <p className="text-gray-500">Select a production plan to view details</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        </TabsContent>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Plan Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <Button className="w-full justify-start" variant="outline">
-                    <Target className="w-4 h-4 mr-2" />
-                    Manage Targets
-                  </Button>
-                  <Button className="w-full justify-start" variant="outline">
-                    <Users className="w-4 h-4 mr-2" />
-                    Allocate Resources
-                  </Button>
-                  <Button className="w-full justify-start" variant="outline">
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Set Milestones
-                  </Button>
-                  <Button className="w-full justify-start" variant="outline">
-                    <TrendingUp className="w-4 h-4 mr-2" />
-                    View Analytics
-                  </Button>
-                  {selectedPlan.status === 'draft' && (
-                    <Button 
-                      className="w-full justify-start" 
-                      onClick={() => approvePlanMutation.mutate(selectedPlan.id)}
-                      disabled={approvePlanMutation.isPending}
-                    >
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      {approvePlanMutation.isPending ? 'Approving...' : 'Approve Plan'}
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            </>
-          ) : (
-            <Card>
-              <CardContent className="text-center py-8">
-                <Target className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-gray-500">Select a production plan to view details</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
+        {/* Plan Modifications Tab */}
+        <TabsContent value="modifications" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Edit2 className="w-5 h-5 text-purple-600" />
+                Plan Modifications & Adjustments
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-gray-500">
+                <Edit2 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p>Plan modifications interface</p>
+                <p className="text-sm">Adjust timelines, resources, and capacity allocations</p>
+                <Button className="mt-4" variant="outline">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Modification Request
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
