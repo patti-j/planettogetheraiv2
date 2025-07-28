@@ -303,19 +303,48 @@ Create authentic manufacturing data that reflects this company's operations.`;
       };
 
       const handleClick = (e: React.MouseEvent) => {
+        console.log('Row clicked, isSwiping:', isSwiping, 'showDelete:', showDelete);
         // Only trigger edit if we're not swiping and delete button isn't shown
         if (!isSwiping && !showDelete) {
           onEdit();
         }
       };
 
+      // Add a simpler swipe detection using pointer events as fallback
+      const handlePointerDown = (e: React.PointerEvent) => {
+        if (e.pointerType === 'touch') {
+          console.log('Pointer down detected (touch)');
+          setTouchStart({ x: e.clientX, y: e.clientY });
+        }
+      };
+
+      const handlePointerMove = (e: React.PointerEvent) => {
+        if (e.pointerType === 'touch' && touchStart) {
+          const deltaX = touchStart.x - e.clientX;
+          console.log('Pointer move (touch):', deltaX);
+          
+          if (Math.abs(deltaX) > 50) {
+            if (deltaX > 0) {
+              console.log('Pointer swipe left detected');
+              setShowDelete(true);
+            } else {
+              console.log('Pointer swipe right detected');
+              setShowDelete(false);
+            }
+          }
+        }
+      };
+
       return (
         <TableRow 
-          className="relative cursor-pointer sm:cursor-default select-none"
+          className="relative cursor-pointer sm:cursor-default select-none touch-pan-y"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
           onClick={handleClick}
+          style={{ touchAction: 'pan-y' }}
         >
           <TableCell className="font-medium">
             <div className="flex items-center justify-between min-h-[60px]">
