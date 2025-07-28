@@ -236,151 +236,95 @@ Create authentic manufacturing data that reflects this company's operations.`;
 
     // Mobile touch handling component
     const MobileTableRow = ({ item, dataType, onEdit, onDelete }: any) => {
-      const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
       const [showDelete, setShowDelete] = useState(false);
-      const [isSwiping, setIsSwiping] = useState(false);
 
-      const handleTouchStart = (e: React.TouchEvent) => {
-        const touch = e.touches[0];
-        setTouchStart({ x: touch.clientX, y: touch.clientY });
-        setIsSwiping(false);
-        console.log('Touch start:', touch.clientX, touch.clientY);
-      };
-
-      const handleTouchMove = (e: React.TouchEvent) => {
-        if (!touchStart) return;
+      // Simple swipe handler for dedicated swipe area
+      const handleSwipeAreaTouch = (e: React.TouchEvent) => {
+        e.stopPropagation();
+        let startX = 0;
         
-        const touch = e.touches[0];
-        const deltaX = touchStart.x - touch.clientX;
-        const deltaY = Math.abs(touchStart.y - touch.clientY);
+        const handleStart = (startEvent: TouchEvent) => {
+          startX = startEvent.touches[0].clientX;
+          console.log('Swipe area touch start:', startX);
+        };
         
-        console.log('Touch move:', { 
-          startX: touchStart.x, 
-          currentX: touch.clientX, 
-          deltaX, 
-          deltaY, 
-          showDelete 
-        });
-        
-        // If horizontal swipe is more prominent than vertical
-        if (Math.abs(deltaX) > 30) {
-          setIsSwiping(true);
+        const handleMove = (moveEvent: TouchEvent) => {
+          const currentX = moveEvent.touches[0].clientX;
+          const deltaX = startX - currentX;
+          console.log('Swipe area touch move, deltaX:', deltaX);
           
-          if (deltaX > 50) { // Swipe left
-            console.log('Swipe left detected, showing delete');
+          if (deltaX > 30) { // Swipe left
+            console.log('Swipe left detected in swipe area');
             setShowDelete(true);
           } else if (deltaX < -30) { // Swipe right
-            console.log('Swipe right detected, hiding delete');
+            console.log('Swipe right detected in swipe area');
             setShowDelete(false);
           }
-        }
+        };
+        
+        const handleEnd = () => {
+          document.removeEventListener('touchmove', handleMove);
+          document.removeEventListener('touchend', handleEnd);
+        };
+        
+        document.addEventListener('touchmove', handleMove, { passive: false });
+        document.addEventListener('touchend', handleEnd);
+        
+        handleStart(e.nativeEvent);
       };
 
-      const handleTouchEnd = (e: React.TouchEvent) => {
-        console.log('Touch end');
-        if (!touchStart) return;
-        
-        const touch = e.changedTouches[0];
-        const deltaX = touchStart.x - touch.clientX;
-        
-        console.log('Touch end deltaX:', deltaX);
-        
-        // Final swipe detection on touch end
-        if (Math.abs(deltaX) > 50) {
-          if (deltaX > 0) { // Swiped left
-            console.log('Final swipe left - showing delete');
-            setShowDelete(true);
-          } else { // Swiped right
-            console.log('Final swipe right - hiding delete');
-            setShowDelete(false);
-          }
-        }
-        
-        setTouchStart(null);
-        
-        // Reset swiping state after a delay
-        setTimeout(() => setIsSwiping(false), 100);
-      };
-
-      const handleClick = (e: React.MouseEvent) => {
-        console.log('Row clicked, isSwiping:', isSwiping, 'showDelete:', showDelete);
-        // Only trigger edit if we're not swiping and delete button isn't shown
-        if (!isSwiping && !showDelete) {
+      const handleRowClick = () => {
+        console.log('Row clicked, showDelete:', showDelete);
+        if (!showDelete) {
           onEdit();
         }
       };
 
-      // Add a simpler swipe detection using pointer events as fallback
-      const handlePointerDown = (e: React.PointerEvent) => {
-        if (e.pointerType === 'touch') {
-          console.log('Pointer down detected (touch)');
-          setTouchStart({ x: e.clientX, y: e.clientY });
-        }
-      };
-
-      const handlePointerMove = (e: React.PointerEvent) => {
-        if (e.pointerType === 'touch' && touchStart) {
-          const deltaX = touchStart.x - e.clientX;
-          console.log('Pointer move (touch):', deltaX);
-          
-          if (Math.abs(deltaX) > 50) {
-            if (deltaX > 0) {
-              console.log('Pointer swipe left detected');
-              setShowDelete(true);
-            } else {
-              console.log('Pointer swipe right detected');
-              setShowDelete(false);
-            }
-          }
-        }
-      };
-
       return (
-        <TableRow 
-          className="relative cursor-pointer sm:cursor-default select-none touch-pan-y"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onClick={handleClick}
-          style={{ touchAction: 'pan-y' }}
-        >
-          <TableCell className="font-medium">
-            <div className="flex items-center justify-between min-h-[60px]">
-              <div className="flex-1">
+        <TableRow className="relative">
+          <TableCell className="font-medium p-0">
+            <div className="flex min-h-[60px]">
+              {/* Main content area - tap to edit */}
+              <div 
+                className="flex-1 p-3 cursor-pointer sm:cursor-default"
+                onClick={handleRowClick}
+              >
                 <div className="flex items-center gap-2">
                   <span>{item.name}</span>
-                  <span className="text-xs text-gray-400 sm:hidden">← swipe</span>
-                  <button 
-                    className="text-xs bg-blue-100 px-2 py-1 rounded sm:hidden" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowDelete(!showDelete);
-                      console.log('Test button clicked, showDelete:', !showDelete);
-                    }}
-                  >
-                    Test
-                  </button>
                 </div>
                 <div className="text-sm text-gray-500 sm:hidden">
                   {getItemDetails(item, dataType)}
                 </div>
               </div>
-              <div className={`transition-all duration-200 ${showDelete ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'} sm:hidden`}>
+              
+              {/* Swipe area on mobile */}
+              <div 
+                className="w-16 bg-gray-50 flex items-center justify-center cursor-grab active:cursor-grabbing sm:hidden border-l"
+                onTouchStart={handleSwipeAreaTouch}
+              >
+                <div className="text-xs text-gray-400 text-center">
+                  <div>←</div>
+                  <div className="text-[10px]">swipe</div>
+                </div>
+              </div>
+              
+              {/* Delete button */}
+              <div className={`transition-all duration-300 overflow-hidden ${showDelete ? 'w-16' : 'w-0'} sm:hidden`}>
                 {showDelete && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete();
-                      setShowDelete(false);
-                    }}
-                    className="ml-2"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="w-16 h-full flex items-center justify-center bg-red-100">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete();
+                        setShowDelete(false);
+                      }}
+                      className="w-10 h-10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
@@ -393,10 +337,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit();
-                }}
+                onClick={() => onEdit()}
                 title="Edit"
               >
                 <Edit2 className="h-4 w-4" />
@@ -404,10 +345,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete();
-                }}
+                onClick={() => onDelete()}
                 title="Delete"
               >
                 <Trash2 className="h-4 w-4" />
