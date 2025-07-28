@@ -237,44 +237,6 @@ Create authentic manufacturing data that reflects this company's operations.`;
     // Mobile touch handling component
     const MobileTableRow = ({ item, dataType, onEdit, onDelete }: any) => {
       const [showDelete, setShowDelete] = useState(false);
-      const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
-
-      const handleLongPressStart = (e: React.TouchEvent) => {
-        console.log('Touch start detected');
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const timer = setTimeout(() => {
-          console.log('Long press timer fired - showing delete');
-          setShowDelete(true);
-          // Vibrate if available
-          if (navigator.vibrate) {
-            navigator.vibrate(50);
-          }
-        }, 500); // 500ms long press
-        
-        setLongPressTimer(timer);
-      };
-
-      const handleLongPressEnd = (e: React.TouchEvent) => {
-        console.log('Touch end detected');
-        e.preventDefault();
-        e.stopPropagation();
-        if (longPressTimer) {
-          clearTimeout(longPressTimer);
-          setLongPressTimer(null);
-        }
-      };
-
-      const handleLongPressCancel = (e: React.TouchEvent) => {
-        console.log('Touch cancelled');
-        e.preventDefault();
-        e.stopPropagation();
-        if (longPressTimer) {
-          clearTimeout(longPressTimer);
-          setLongPressTimer(null);
-        }
-      };
 
       const handleRowClick = () => {
         console.log('Row clicked, showDelete:', showDelete);
@@ -287,20 +249,15 @@ Create authentic manufacturing data that reflects this company's operations.`;
         <TableRow className="relative">
           <TableCell className="font-medium p-0">
             <div className="flex min-h-[60px]">
-              {/* Main content area - tap to edit, long press for delete */}
+              {/* Main content area - tap to edit */}
               <div 
-                className="flex-1 p-3 cursor-pointer sm:cursor-default select-none"
+                className="flex-1 p-3 cursor-pointer sm:cursor-default"
                 onClick={handleRowClick}
-                onTouchStart={handleLongPressStart}
-                onTouchEnd={handleLongPressEnd}
-                onTouchCancel={handleLongPressCancel}
-                onTouchMove={handleLongPressCancel}
-                style={{ touchAction: 'manipulation' }}
               >
                 <div className="flex items-center gap-2">
                   <span>{item.name}</span>
                   <span className="text-xs text-gray-400 sm:hidden">
-                    {showDelete ? 'tap to hide' : 'long press for delete'}
+                    {showDelete ? 'tap anywhere to hide' : 'tap ⋮ for delete'}
                   </span>
                 </div>
                 <div className="text-sm text-gray-500 sm:hidden">
@@ -328,19 +285,23 @@ Create authentic manufacturing data that reflects this company's operations.`;
                 )}
               </div>
               
-              {/* Toggle button for testing */}
-              <div className="w-12 bg-blue-50 flex items-center justify-center sm:hidden border-l">
+              {/* Toggle button */}
+              <div className="w-12 bg-gray-50 flex items-center justify-center sm:hidden border-l hover:bg-gray-100 active:bg-gray-200 transition-colors">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowDelete(!showDelete);
-                    console.log('Toggle button clicked, showDelete:', !showDelete);
+                    // Haptic feedback
+                    if (navigator.vibrate) {
+                      navigator.vibrate(30);
+                    }
                   }}
-                  className="w-8 h-8 p-0"
+                  className="w-8 h-8 p-0 hover:bg-transparent"
+                  title="Toggle delete button"
                 >
-                  <span className="text-xs">⋮</span>
+                  <span className="text-sm font-bold text-gray-600">⋮</span>
                 </Button>
               </div>
             </div>
