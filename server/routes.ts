@@ -6087,6 +6087,14 @@ Manufacturing Context Available:
 
       // Backwards scheduling algorithm implementation
       const schedule = [];
+      const debugInfo = {
+        totalOrders: allOrders.length,
+        totalOperations: operations.length,
+        totalResources: resources.length,
+        ordersWithoutOperations: [],
+        operationsWithoutResources: [],
+        resourceCapabilityMismatches: []
+      };
       
       // Calculate frozen horizon date if enabled
       let frozenHorizonDate = null;
@@ -6106,6 +6114,15 @@ Manufacturing Context Available:
       // 2. Process each production order
       for (const order of sortedOrders) {
         const orderOperations = operations.filter(op => op.productionOrderId === order.id);
+        
+        if (orderOperations.length === 0) {
+          debugInfo.ordersWithoutOperations.push({
+            orderId: order.id,
+            orderName: order.name,
+            reason: `No operations found for production order ${order.id}. Check that operations have correct productionOrderId.`
+          });
+          continue;
+        }
         
         // Sort operations by sequence (reverse for backwards scheduling)
         const sortedOps = orderOperations.sort((a, b) => (b.sequence || 0) - (a.sequence || 0));
@@ -6143,10 +6160,30 @@ Manufacturing Context Available:
           const suitableResources = resources.filter(resource => {
             const resourceCapabilities = resource.capabilities || [];
             const requiredCapabilities = operation.requiredCapabilities || [];
+            
+            // If no capabilities required, any resource can handle it
+            if (requiredCapabilities.length === 0) {
+              return true;
+            }
+            
             return requiredCapabilities.every(reqCap => 
               resourceCapabilities.some(resCap => resCap.id === reqCap.id || resCap.name === reqCap.name)
             );
           });
+
+          if (suitableResources.length === 0) {
+            debugInfo.operationsWithoutResources.push({
+              operationId: operation.id,
+              operationName: operation.name,
+              orderId: order.id,
+              orderName: order.name,
+              requiredCapabilities: operation.requiredCapabilities || [],
+              reason: operation.requiredCapabilities && operation.requiredCapabilities.length > 0 
+                ? `No resources found with required capabilities: ${operation.requiredCapabilities.map(c => c.name || c.id).join(', ')}`
+                : 'No resources available for scheduling'
+            });
+            continue;
+          }
 
           if (suitableResources.length > 0) {
             // Select resource with lowest utilization
@@ -6246,10 +6283,35 @@ Manufacturing Context Available:
       const frozenOperations = schedule.filter(op => op.frozen).length;
       const rescheduledOperations = schedule.filter(op => !op.frozen).length;
       
+      // Generate specific error message if no operations were scheduled
+      let errorMessage = null;
+      let specificReasons = [];
+      
+      if (schedule.length === 0) {
+        if (debugInfo.ordersWithoutOperations.length > 0) {
+          specificReasons.push(`${debugInfo.ordersWithoutOperations.length} production orders have no operations assigned`);
+        }
+        if (debugInfo.operationsWithoutResources.length > 0) {
+          specificReasons.push(`${debugInfo.operationsWithoutResources.length} operations cannot be scheduled due to resource capability mismatches`);
+        }
+        if (debugInfo.totalResources === 0) {
+          specificReasons.push('No resources available for scheduling');
+        }
+        if (debugInfo.totalOperations === 0) {
+          specificReasons.push('No operations exist in the system');
+        }
+        
+        errorMessage = specificReasons.length > 0 
+          ? `Unable to schedule any operations: ${specificReasons.join(', ')}`
+          : 'Unable to schedule any operations for unknown reasons';
+      }
+      
       res.json({
-        success: true,
+        success: schedule.length > 0,
         schedule: schedule,
         parameters: parameters,
+        errorMessage: errorMessage,
+        debugInfo: schedule.length === 0 ? debugInfo : undefined,
         stats: {
           totalOperations: operations.length,
           scheduledOperations: schedule.length,

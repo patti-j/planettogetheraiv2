@@ -248,18 +248,33 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
     onSuccess: (result) => {
       setScheduleResults(result.schedule || []);
       
-      // Generate comprehensive optimization summary
-      generateOptimizationSummary(result);
-      
-      toast({
-        title: "Schedule Generated",
-        description: `Successfully generated schedule for ${result.schedule?.length || 0} operations`
-      });
+      if (result.success && result.schedule && result.schedule.length > 0) {
+        // Generate comprehensive optimization summary
+        generateOptimizationSummary(result);
+        
+        toast({
+          title: "Schedule Generated",
+          description: `Successfully generated schedule for ${result.schedule.length} operations`
+        });
+      } else {
+        // Handle zero operations scheduled with specific error message
+        const errorMsg = result.errorMessage || "No operations were scheduled";
+        toast({
+          title: "No Operations Scheduled",
+          description: errorMsg,
+          variant: "destructive"
+        });
+        
+        // Log debug info for detailed analysis
+        if (result.debugInfo) {
+          console.log("Scheduling debug info:", result.debugInfo);
+        }
+      }
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
-        title: "Error",
-        description: "Failed to generate schedule",
+        title: "Scheduling Error",
+        description: error.message || "Failed to generate schedule",
         variant: "destructive"
       });
     }
