@@ -372,13 +372,13 @@ Create authentic manufacturing data that reflects this company's operations.`;
         {/* Data Display */}
         {viewMode === 'table' ? (
           <div className="border rounded-lg overflow-hidden">
-            <div className="overflow-x-auto">
-              <Table className="min-w-full">
+            <div className="overflow-x-auto max-w-full">
+              <Table className="min-w-[600px] w-full table-fixed">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-1/4 min-w-[150px]">Name</TableHead>
-                  <TableHead className="w-1/2 min-w-[200px]">Details</TableHead>
-                  <TableHead className="w-1/4 min-w-[120px] text-center">Actions</TableHead>
+                  <TableHead className="w-[30%] min-w-[180px]">Name</TableHead>
+                  <TableHead className="w-[50%] min-w-[250px]">Details</TableHead>
+                  <TableHead className="w-[20%] min-w-[100px] text-center sticky right-0 bg-white shadow-[-4px_0_8px_rgba(0,0,0,0.1)]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -386,7 +386,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.name}</TableCell>
                     <TableCell>{getItemDetails(item, dataType)}</TableCell>
-                    <TableCell>
+                    <TableCell className="sticky right-0 bg-white shadow-[-4px_0_8px_rgba(0,0,0,0.1)]">
                       <div className="flex gap-1 justify-center">
                         <Button
                           variant="ghost"
