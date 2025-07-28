@@ -23,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -37,7 +38,9 @@ import {
   Key,
   Link2,
   Filter,
-  Info
+  Info,
+  Target,
+  HelpCircle
 } from "lucide-react";
 
 interface SchemaTable {
@@ -491,7 +494,12 @@ function DataSchemaViewContent() {
 
   const handleTableClick = useCallback((event: any, node: Node) => {
     setSelectedTable(node.id);
-  }, []);
+    
+    // If focus mode is enabled, clicking a table focuses on it
+    if (focusMode) {
+      setFocusTable(node.id);
+    }
+  }, [focusMode]);
 
   if (isLoading) {
     return (
@@ -673,57 +681,86 @@ function DataSchemaViewContent() {
               <Label htmlFor="show-relationships" className="text-xs sm:text-sm">Links</Label>
             </div>
             {/* Focus toggle - compact mobile */}
-            <div className="flex items-center gap-1">
-              <Switch
-                id="focus-mode"
-                checked={focusMode}
-                onCheckedChange={(checked) => {
-                  setFocusMode(checked);
-                  if (!checked) {
-                    setFocusTable(null);
-                  }
-                }}
-                className="scale-75 sm:scale-100"
-              />
-              <Label htmlFor="focus-mode" className="text-xs sm:text-sm">Focus</Label>
-            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1">
+                    <Switch
+                      id="focus-mode"
+                      checked={focusMode}
+                      onCheckedChange={(checked) => {
+                        setFocusMode(checked);
+                        if (!checked) {
+                          setFocusTable(null);
+                        }
+                      }}
+                      className="scale-75 sm:scale-100"
+                    />
+                    <Label htmlFor="focus-mode" className="text-xs sm:text-sm flex items-center gap-1">
+                      <Target className="w-3 h-3" />
+                      Focus
+                    </Label>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">
+                    Focus mode shows only a selected table and its connected relationships. 
+                    Click any table while focus mode is enabled to isolate its network.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
         
         {/* Focus Controls - Separate row on mobile when active */}
         {focusMode && (
-          <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-200">
-            <Select 
-              value={focusTable || ""} 
-              onValueChange={(value) => setFocusTable(value || null)}
-            >
-              <SelectTrigger className="w-full sm:w-64">
-                <SelectValue placeholder="Select table to focus on..." />
-              </SelectTrigger>
-              <SelectContent>
-                {schemaData?.map(table => (
-                  <SelectItem key={table.name} value={table.name}>
-                    <div className="flex items-center gap-2">
-                      <Table className="w-3 h-3" />
-                      {table.name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="space-y-2 mt-2 pt-2 border-t border-gray-200">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Info className="w-4 h-4" />
+              <span>Click any table to focus on its relationships</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Select 
+                value={focusTable || ""} 
+                onValueChange={(value) => setFocusTable(value || null)}
+              >
+                <SelectTrigger className="w-full sm:w-64">
+                  <SelectValue placeholder="Or select a table to focus on..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {schemaData?.map(table => (
+                    <SelectItem key={table.name} value={table.name}>
+                      <div className="flex items-center gap-2">
+                        <Table className="w-3 h-3" />
+                        {table.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {focusTable && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setFocusMode(false);
+                    setFocusTable(null);
+                  }}
+                  className="shrink-0"
+                >
+                  Clear Focus
+                </Button>
+              )}
+            </div>
             
             {focusTable && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setFocusMode(false);
-                  setFocusTable(null);
-                }}
-                className="shrink-0"
-              >
-                Clear
-              </Button>
+              <div className="text-sm text-blue-600 bg-blue-50 p-2 rounded">
+                <Target className="w-4 h-4 inline mr-1" />
+                Showing <strong>{focusTable}</strong> and its connected tables
+              </div>
             )}
           </div>
         )}

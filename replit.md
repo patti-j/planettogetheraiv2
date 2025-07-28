@@ -2,15 +2,18 @@
 
 ## Recent Changes (July 28, 2025)
 
-✓ **Data Schema View Auto-Fit Enhancement & Marketing Database Cleanup (July 28, 2025)**:
+✓ **Data Schema View Auto-Fit Enhancement & Focus Mode Improvement (July 28, 2025)**:
 - Implemented intelligent auto-fit functionality that reorganizes the schema view when filters are applied
 - Added useReactFlow hook with fitView integration to automatically zoom and center filtered tables
 - Filter changes now trigger smooth 800ms transition to show all relevant tables in optimal view
 - Enhanced user experience with automatic viewport adjustment for Production Scheduling, Inventory Management, and other feature filters
+- Significantly improved Focus Mode with better visual indicators, tooltips, and clearer explanations of functionality
+- Added Target icon and comprehensive tooltip explaining focus mode: "shows only a selected table and its connected relationships"
+- Enhanced focus controls with clear instructions: "Click any table to focus on its relationships" and visual feedback showing focused table name
+- Focus mode now highlights relationships with blue animated lines while fading non-connected elements for better visual clarity
 - Successfully removed all remaining marketing tables from the actual database (not just schema)
 - Dropped 6 marketing tables: lead_captures, buyer_personas, customer_journey_stages, marketing_pages, page_analytics, ab_tests
 - Database table count reduced from 136 to 130 tables with complete marketing functionality removal
-- Database now completely focused on manufacturing ERP operations without any marketing remnants
 
 ✓ **Data Schema View Mobile Optimization (July 28, 2025)**:
 - Optimized Data Schema View header for mobile devices by reducing vertical space usage
