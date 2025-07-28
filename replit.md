@@ -2,6 +2,18 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Data Schema View Mobile Optimization (July 28, 2025)**:
+- Optimized Data Schema View header for mobile devices by reducing vertical space usage
+- Implemented responsive grid layout for controls: single column on mobile, two columns on tablet, flex row on desktop
+- Compact mobile title with smaller icons (w-5 h-5) and shorter text ("Data Schema" vs "Data Schema View")
+- Prioritized feature filter on mobile as first control element for quick access to Production Scheduling filtering
+- Hidden layout selector on mobile screens to save space while keeping core functionality accessible
+- Compact toggle switches with smaller scale (scale-75) and shorter labels ("Fields", "Links", "Focus")
+- Focus mode controls moved to separate expandable row when active to prevent overcrowding
+- Reduced padding and margins throughout header: px-3 py-2 on mobile vs px-6 py-4 on desktop
+- Mobile-optimized badge display with essential badges visible and context badges hidden on small screens
+- Improved touch interaction with full-width dropdowns on mobile for better usability
+
 ✓ **Table Header Layout Standardization & Clear Selections Button (July 28, 2025)**:
 - Fixed Name column header positioning in both Table and Spreadsheet views by updating padding from px-3 to px-4 for proper left margin alignment
 - Enhanced spreadsheet cell input padding from px-2 to px-3 to align with header spacing for consistent visual layout

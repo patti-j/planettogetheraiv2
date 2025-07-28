@@ -350,11 +350,7 @@ export default function DataSchemaView() {
   const filteredTables = useMemo(() => {
     if (!schemaData || !Array.isArray(schemaData)) return [];
     
-    console.log('Filtering with feature:', selectedFeature);
-    if (selectedFeature !== 'all') {
-      console.log('Feature tables:', featureTableMapping[selectedFeature]);
-      console.log('Available table names:', schemaData.map(t => t.name));
-    }
+
     
     let tables = schemaData.filter((table: SchemaTable) => {
       const matchesSearch = table.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -434,7 +430,7 @@ export default function DataSchemaView() {
               source: rel.fromTable,
               target: rel.toTable,
               type: 'smoothstep',
-              animated: isHighlighted,
+              animated: !!isHighlighted,
               style: { 
                 stroke: isHighlighted ? '#3b82f6' : getCategoryColor(table.category),
                 strokeWidth: isHighlighted ? 3 : 2,
@@ -551,55 +547,44 @@ export default function DataSchemaView() {
 
   return (
     <div className="h-screen flex flex-col">
-      {/* Header */}
-      <div className="border-b bg-white px-6 py-4 relative z-50">
-        <div className="flex items-center gap-3 mb-4">
-          <Database className="w-6 h-6 text-blue-600" />
-          <h1 className="text-2xl font-bold">Data Schema View</h1>
-          <Badge variant="outline">
-            {filteredTables.length} tables
+      {/* Header - Mobile Optimized */}
+      <div className="border-b bg-white px-3 sm:px-6 py-2 sm:py-4 relative z-50">
+        {/* Title Row - Compact on Mobile */}
+        <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-4">
+          <Database className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+          <h1 className="text-lg sm:text-2xl font-bold">Data Schema</h1>
+          <Badge variant="outline" className="text-xs">
+            {filteredTables.length}
           </Badge>
           {selectedFeature !== 'all' && (
-            <Badge variant="default" className="bg-emerald-500">
+            <Badge variant="default" className="bg-emerald-500 text-xs hidden sm:flex">
               <Filter className="w-3 h-3 mr-1" />
               {availableFeatures.find(f => f.value === selectedFeature)?.label}
             </Badge>
           )}
           {focusMode && focusTable && (
-            <Badge variant="default" className="bg-blue-500">
-              Focusing on: {focusTable}
+            <Badge variant="default" className="bg-blue-500 text-xs hidden md:flex">
+              Focus: {focusTable}
             </Badge>
           )}
         </div>
         
-        {/* Controls */}
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
+        {/* Controls - Responsive Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:items-center gap-2 sm:gap-4">
+          {/* Search - Full width on mobile */}
+          <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-1">
             <Search className="w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Search tables, columns..."
+              placeholder="Search tables..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-64"
+              className="w-full sm:w-64"
             />
           </div>
           
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map(category => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
+          {/* Feature Filter - Priority on mobile */}
           <Select value={selectedFeature} onValueChange={setSelectedFeature}>
-            <SelectTrigger className="w-52">
+            <SelectTrigger className="w-full sm:w-52">
               <SelectValue placeholder="Select feature" />
             </SelectTrigger>
             <SelectContent>
@@ -614,42 +599,56 @@ export default function DataSchemaView() {
             </SelectContent>
           </Select>
           
+          {/* Category Filter */}
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map(category => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          {/* Layout - Hidden on mobile, compact on tablet */}
           <Select value={layoutType} onValueChange={(value: any) => setLayoutType(value)}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full sm:w-32 hidden sm:block">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="hierarchical">Hierarchical</SelectItem>
-              <SelectItem value="circular">Circular</SelectItem>
+              <SelectItem value="hierarchical">Tree</SelectItem>
+              <SelectItem value="circular">Circle</SelectItem>
               <SelectItem value="grid">Grid</SelectItem>
             </SelectContent>
           </Select>
           
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
+          {/* Toggles - Compact on all screens */}
+          <div className="flex items-center gap-3 sm:gap-4 col-span-1 sm:col-span-2 lg:col-span-1">
+            <div className="flex items-center gap-1">
               <Switch
                 id="show-columns"
                 checked={showColumns}
                 onCheckedChange={setShowColumns}
+                className="scale-75 sm:scale-100"
               />
-              <Label htmlFor="show-columns" className="text-sm">Show Columns</Label>
+              <Label htmlFor="show-columns" className="text-xs sm:text-sm">Fields</Label>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <Switch
                 id="show-relationships"
                 checked={showRelationships}
                 onCheckedChange={setShowRelationships}
+                className="scale-75 sm:scale-100"
               />
-              <Label htmlFor="show-relationships" className="text-sm">Show Relationships</Label>
+              <Label htmlFor="show-relationships" className="text-xs sm:text-sm">Links</Label>
             </div>
-          </div>
-          
-          <Separator orientation="vertical" className="h-6" />
-          
-          {/* Focus Mode Controls */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
+            {/* Focus toggle - compact mobile */}
+            <div className="flex items-center gap-1">
               <Switch
                 id="focus-mode"
                 checked={focusMode}
@@ -659,32 +658,36 @@ export default function DataSchemaView() {
                     setFocusTable(null);
                   }
                 }}
+                className="scale-75 sm:scale-100"
               />
-              <Label htmlFor="focus-mode" className="text-sm font-medium">Focus Mode</Label>
+              <Label htmlFor="focus-mode" className="text-xs sm:text-sm">Focus</Label>
             </div>
+          </div>
+        </div>
+        
+        {/* Focus Controls - Separate row on mobile when active */}
+        {focusMode && (
+          <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-200">
+            <Select 
+              value={focusTable || ""} 
+              onValueChange={(value) => setFocusTable(value || null)}
+            >
+              <SelectTrigger className="w-full sm:w-64">
+                <SelectValue placeholder="Select table to focus on..." />
+              </SelectTrigger>
+              <SelectContent>
+                {schemaData?.map(table => (
+                  <SelectItem key={table.name} value={table.name}>
+                    <div className="flex items-center gap-2">
+                      <Table className="w-3 h-3" />
+                      {table.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             
-            {focusMode && (
-              <Select 
-                value={focusTable || ""} 
-                onValueChange={(value) => setFocusTable(value || null)}
-              >
-                <SelectTrigger className="w-64">
-                  <SelectValue placeholder="Select table to focus on..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {schemaData?.map(table => (
-                    <SelectItem key={table.name} value={table.name}>
-                      <div className="flex items-center gap-2">
-                        <Table className="w-3 h-3" />
-                        {table.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            
-            {focusMode && focusTable && (
+            {focusTable && (
               <Button
                 variant="outline"
                 size="sm"
@@ -692,12 +695,13 @@ export default function DataSchemaView() {
                   setFocusMode(false);
                   setFocusTable(null);
                 }}
+                className="shrink-0"
               >
-                Clear Focus
+                Clear
               </Button>
             )}
           </div>
-        </div>
+        )}
       </div>
 
       {/* Schema Diagram */}
