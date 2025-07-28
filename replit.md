@@ -2,6 +2,18 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Critical Profile Selection Bug Fix - Optimization Results Now Use Selected Profile Parameters (July 28, 2025)**:
+- Fixed major functional issue where profile selection in scheduler cockpit was only affecting UI display but not actual optimization calculations
+- Integrated profile parameters (efficiency multipliers, cost factors, utilization targets) into both existing order and new job optimization algorithms
+- Profile selection now genuinely affects optimization results: buffer time, overtime allowance, objective priorities, and metric calculations
+- Enhanced optimization options to display profile-specific naming (e.g., "High Performance Profile - Speed Optimized") when profiles are selected
+- Updated tradeoffs and metrics to reflect profile parameters: overtime costs vs resource strain, profile efficiency targets vs generic optimization
+- Both generateSchedulingOptionsForExisting and generateSchedulingOptions functions now use selectedProfileId to apply profile configuration
+- Optimization results now dynamically adjust based on profile objectives: minimize_makespan vs maximize_utilization vs minimize_cost vs minimize_tardiness
+- Profile system now provides real functional value - users can create profiles with specific parameters and see them applied in optimization outcomes
+- Fixed end-to-end profile workflow: create profile → select in cockpit → run optimization → see profile parameters reflected in scheduling options
+- Removed intrusive success toast notifications from profile operations to streamline user workflow experience
+
 ✓ **Complete Scheduler Optimization Profiles System Implementation (July 28, 2025)**:
 - Successfully completed comprehensive end-to-end scheduler optimization profiles system as requested
 - Implemented complete profile management UI in backwards-scheduling-algorithm.tsx with Profiles tab, profile selection, creation, and editing

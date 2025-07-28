@@ -573,97 +573,130 @@ const SchedulingOptimizer: React.FC = () => {
     setSelectedExistingProductionOrder(productionOrder);
     setIsOptimizingExisting(true);
 
+    // Get selected profile configuration or use defaults
+    const selectedProfile = selectedProfileId ? profiles.find(p => p.id === selectedProfileId) : null;
+    const profileConfig = selectedProfile?.profileConfig;
+    
+    // Extract optimization parameters from profile
+    const bufferTime = profileConfig?.algorithmParameters?.backwardsScheduling?.bufferTime || 0.5;
+    const allowOvertime = profileConfig?.algorithmParameters?.backwardsScheduling?.allowOvertime || false;
+    const primary = profileConfig?.objectives?.primary || 'minimize_makespan';
+    
+    // Adjust base metrics based on profile optimization objectives
+    const getObjectiveMultipliers = () => {
+      switch (primary) {
+        case 'minimize_makespan':
+          return { speed: 1.2, efficiency: 0.9, cost: 0.95 };
+        case 'maximize_utilization':
+          return { speed: 0.9, efficiency: 1.3, cost: 0.85 };
+        case 'minimize_cost':
+          return { speed: 0.8, efficiency: 1.1, cost: 1.4 };
+        case 'minimize_tardiness':
+          return { speed: 1.3, efficiency: 0.95, cost: 0.9 };
+        default:
+          return { speed: 1.0, efficiency: 1.0, cost: 1.0 };
+      }
+    };
+    
+    const multipliers = getObjectiveMultipliers();
+
     // Simulate analysis delay
     setTimeout(() => {
       const options: SchedulingOption[] = [];
       
-      // Option 1: Fastest completion
+      // Apply buffer time to scheduling calculations
+      const baseDelay = bufferTime;
+      
+      // Option 1: Fastest completion (adjusted by profile)
+      const fastestDuration = Math.max(2, 3 - (multipliers.speed - 1) * 2);
       options.push({
         id: 'fastest',
-        name: 'Fastest Completion',
+        name: selectedProfile ? `${selectedProfile.name} - Speed Optimized` : 'Fastest Completion',
         startDate: new Date(),
-        endDate: addDays(new Date(), 3),
-        resources: resources.slice(0, 2),
+        endDate: addDays(new Date(), fastestDuration),
+        resources: resources.slice(0, allowOvertime ? 3 : 2),
         operations: productionOrderOperations.map((op: Operation, i: number) => ({
           ...op,
           assignedResourceId: resources[i % resources.length]?.id,
-          startTime: addDays(new Date(), i * 0.5),
-          endTime: addDays(new Date(), i * 0.5 + op.duration / 24)
+          startTime: addDays(new Date(), baseDelay + i * 0.5),
+          endTime: addDays(new Date(), baseDelay + i * 0.5 + op.duration / 24)
         })),
-        efficiency: 95,
-        customerSatisfaction: 90,
-        utilization: 85,
-        cost: 1200,
-        risk: 'medium',
+        efficiency: Math.min(98, Math.round(95 * multipliers.efficiency)),
+        customerSatisfaction: Math.min(98, Math.round(90 * multipliers.speed)),
+        utilization: allowOvertime ? 95 : 85,
+        cost: Math.round(1200 * multipliers.cost),
+        risk: allowOvertime ? 'high' : 'medium',
         tradeoffs: {
-          pros: ['Fastest delivery', 'High customer satisfaction', 'Meets urgent deadlines'],
-          cons: ['Higher resource utilization', 'Potential bottlenecks', 'Higher cost']
+          pros: selectedProfile ? [`Optimized for ${selectedProfile.name}`, 'Profile-based scheduling'] : ['Fastest delivery', 'High customer satisfaction'],
+          cons: allowOvertime ? ['Overtime costs', 'Resource strain'] : ['Higher resource utilization', 'Potential bottlenecks']
         },
         metrics: {
-          totalDuration: 3,
-          resourceConflicts: 2,
+          totalDuration: fastestDuration,
+          resourceConflicts: allowOvertime ? 1 : 2,
           deliveryDelay: 0,
-          capacityUtilization: 85
+          capacityUtilization: allowOvertime ? 95 : 85
         }
       });
 
-      // Option 2: Most efficient
+      // Option 2: Most efficient (adjusted by profile)
+      const efficientDuration = Math.max(3, 5 - (multipliers.efficiency - 1) * 2);
       options.push({
         id: 'efficient',
-        name: 'Most Efficient',
-        startDate: addDays(new Date(), 1),
-        endDate: addDays(new Date(), 5),
+        name: selectedProfile ? `${selectedProfile.name} - Efficiency Optimized` : 'Most Efficient',
+        startDate: addDays(new Date(), baseDelay),
+        endDate: addDays(new Date(), efficientDuration + baseDelay),
         resources: resources.slice(0, 3),
         operations: productionOrderOperations.map((op: Operation, i: number) => ({
           ...op,
           assignedResourceId: resources[i % resources.length]?.id,
-          startTime: addDays(new Date(), 1 + i * 0.8),
-          endTime: addDays(new Date(), 1 + i * 0.8 + op.duration / 24)
+          startTime: addDays(new Date(), baseDelay + 1 + i * 0.8),
+          endTime: addDays(new Date(), baseDelay + 1 + i * 0.8 + op.duration / 24)
         })),
-        efficiency: 98,
-        customerSatisfaction: 85,
-        utilization: 70,
-        cost: 1000,
+        efficiency: Math.min(99, Math.round(98 * multipliers.efficiency)),
+        customerSatisfaction: Math.round(85 * multipliers.speed),
+        utilization: Math.round(70 * multipliers.efficiency),
+        cost: Math.round(1000 * multipliers.cost),
         risk: 'low',
         tradeoffs: {
-          pros: ['Optimal resource utilization', 'Lower cost', 'Reduced risk'],
-          cons: ['Longer delivery time', 'Less flexibility', 'Potential customer wait']
+          pros: selectedProfile ? [`Optimized for ${selectedProfile.name}`, 'Profile efficiency targets'] : ['Optimal resource utilization', 'Lower cost'],
+          cons: ['Longer delivery time', 'Less flexibility']
         },
         metrics: {
-          totalDuration: 5,
+          totalDuration: efficientDuration,
           resourceConflicts: 0,
-          deliveryDelay: 2,
-          capacityUtilization: 70
+          deliveryDelay: Math.round(2 * (1 / multipliers.speed)),
+          capacityUtilization: Math.round(70 * multipliers.efficiency)
         }
       });
 
-      // Option 3: Balanced approach
+      // Option 3: Balanced approach (adjusted by profile)
+      const balancedDuration = Math.max(3, 4 - (multipliers.speed + multipliers.efficiency - 2) * 0.5);
       options.push({
         id: 'balanced',
-        name: 'Balanced Approach',
-        startDate: addDays(new Date(), 0.5),
-        endDate: addDays(new Date(), 4),
+        name: selectedProfile ? `${selectedProfile.name} - Balanced` : 'Balanced Approach',
+        startDate: addDays(new Date(), baseDelay),
+        endDate: addDays(new Date(), balancedDuration + baseDelay),
         resources: resources.slice(0, 2),
         operations: productionOrderOperations.map((op: Operation, i: number) => ({
           ...op,
           assignedResourceId: resources[i % resources.length]?.id,
-          startTime: addDays(new Date(), 0.5 + i * 0.7),
-          endTime: addDays(new Date(), 0.5 + i * 0.7 + op.duration / 24)
+          startTime: addDays(new Date(), baseDelay + 0.5 + i * 0.7),
+          endTime: addDays(new Date(), baseDelay + 0.5 + i * 0.7 + op.duration / 24)
         })),
-        efficiency: 88,
-        customerSatisfaction: 88,
-        utilization: 78,
-        cost: 1100,
+        efficiency: Math.round(88 * (multipliers.efficiency + multipliers.speed) / 2),
+        customerSatisfaction: Math.round(88 * (multipliers.speed + 1) / 2),
+        utilization: Math.round(78 * multipliers.efficiency),
+        cost: Math.round(1100 * multipliers.cost),
         risk: 'low',
         tradeoffs: {
-          pros: ['Good balance of speed and efficiency', 'Moderate cost', 'Flexible scheduling'],
-          cons: ['Not the fastest option', 'Not the most efficient', 'Compromise solution']
+          pros: selectedProfile ? [`${selectedProfile.name} parameters applied`, 'Profile-balanced optimization'] : ['Good balance of speed and efficiency', 'Moderate cost'],
+          cons: ['Compromise solution', `Profile: ${primary.replace('_', ' ')}`]
         },
         metrics: {
-          totalDuration: 4,
+          totalDuration: balancedDuration,
           resourceConflicts: 1,
-          deliveryDelay: 1,
-          capacityUtilization: 78
+          deliveryDelay: Math.round(1 * (1 / multipliers.speed)),
+          capacityUtilization: Math.round(78 * multipliers.efficiency)
         }
       });
 
@@ -679,17 +712,48 @@ const SchedulingOptimizer: React.FC = () => {
     setLastFormData(formData);
     setIsAnalyzing(true);
 
+    // Get selected profile configuration or use defaults
+    const selectedProfile = selectedProfileId ? profiles.find(p => p.id === selectedProfileId) : null;
+    const profileConfig = selectedProfile?.profileConfig;
+    
+    // Extract optimization parameters from profile
+    const bufferTime = profileConfig?.algorithmParameters?.backwardsScheduling?.bufferTime || 0.5;
+    const allowOvertime = profileConfig?.algorithmParameters?.backwardsScheduling?.allowOvertime || false;
+    const primary = profileConfig?.objectives?.primary || 'minimize_makespan';
+    
+    // Adjust base metrics based on profile optimization objectives
+    const getObjectiveMultipliers = () => {
+      switch (primary) {
+        case 'minimize_makespan':
+          return { speed: 1.2, efficiency: 0.9, cost: 0.95 };
+        case 'maximize_utilization':
+          return { speed: 0.9, efficiency: 1.3, cost: 0.85 };
+        case 'minimize_cost':
+          return { speed: 0.8, efficiency: 1.1, cost: 1.4 };
+        case 'minimize_tardiness':
+          return { speed: 1.3, efficiency: 0.95, cost: 0.9 };
+        default:
+          return { speed: 1.0, efficiency: 1.0, cost: 1.0 };
+      }
+    };
+    
+    const multipliers = getObjectiveMultipliers();
+
     // Simulate analysis delay
     setTimeout(() => {
       const options: SchedulingOption[] = [];
       
-      // Option 1: Fastest completion
+      // Apply buffer time to scheduling calculations
+      const baseDelay = bufferTime;
+      
+      // Option 1: Fastest completion (adjusted by profile)
+      const fastestDuration = Math.max(2, 3 - (multipliers.speed - 1) * 2);
       options.push({
         id: 'fastest',
-        name: 'Fastest Completion',
+        name: selectedProfile ? `${selectedProfile.name} - Speed Optimized` : 'Fastest Completion',
         startDate: new Date(),
-        endDate: addDays(new Date(), 3),
-        resources: resources.slice(0, 2),
+        endDate: addDays(new Date(), fastestDuration),
+        resources: resources.slice(0, allowOvertime ? 3 : 2),
         operations: formData.operations.map((op, i) => ({
           id: i + 1000,
           jobId: 1000,
@@ -700,32 +764,33 @@ const SchedulingOptimizer: React.FC = () => {
           assignedResourceId: resources[i % resources.length]?.id,
           status: 'pending' as const,
           priority: formData.priority,
-          startTime: addDays(new Date(), i * 0.5),
-          endTime: addDays(new Date(), i * 0.5 + op.duration / 24)
+          startTime: addDays(new Date(), baseDelay + i * 0.5),
+          endTime: addDays(new Date(), baseDelay + i * 0.5 + op.duration / 24)
         })),
-        efficiency: 95,
-        customerSatisfaction: 90,
-        utilization: 85,
-        cost: 1200,
-        risk: 'medium',
+        efficiency: Math.min(98, Math.round(95 * multipliers.efficiency)),
+        customerSatisfaction: Math.min(98, Math.round(90 * multipliers.speed)),
+        utilization: allowOvertime ? 95 : 85,
+        cost: Math.round(1200 * multipliers.cost),
+        risk: allowOvertime ? 'high' : 'medium',
         tradeoffs: {
-          pros: ['Fastest delivery', 'High customer satisfaction', 'Meets urgent deadlines'],
-          cons: ['Higher resource utilization', 'Potential bottlenecks', 'Higher cost']
+          pros: selectedProfile ? [`Optimized for ${selectedProfile.name}`, 'Profile-based scheduling'] : ['Fastest delivery', 'High customer satisfaction'],
+          cons: allowOvertime ? ['Overtime costs', 'Resource strain'] : ['Higher resource utilization', 'Potential bottlenecks']
         },
         metrics: {
-          totalDuration: 3,
-          resourceConflicts: 2,
+          totalDuration: fastestDuration,
+          resourceConflicts: allowOvertime ? 1 : 2,
           deliveryDelay: 0,
-          capacityUtilization: 85
+          capacityUtilization: allowOvertime ? 95 : 85
         }
       });
 
-      // Option 2: Most efficient
+      // Option 2: Most efficient (adjusted by profile)
+      const efficientDuration = Math.max(3, 5 - (multipliers.efficiency - 1) * 2);
       options.push({
         id: 'efficient',
-        name: 'Most Efficient',
-        startDate: addDays(new Date(), 1),
-        endDate: addDays(new Date(), 5),
+        name: selectedProfile ? `${selectedProfile.name} - Efficiency Optimized` : 'Most Efficient',
+        startDate: addDays(new Date(), baseDelay),
+        endDate: addDays(new Date(), efficientDuration + baseDelay),
         resources: resources.slice(0, 3),
         operations: formData.operations.map((op, i) => ({
           id: i + 2000,
@@ -737,32 +802,33 @@ const SchedulingOptimizer: React.FC = () => {
           assignedResourceId: resources[i % resources.length]?.id,
           status: 'pending' as const,
           priority: formData.priority,
-          startTime: addDays(new Date(), 1 + i * 0.8),
-          endTime: addDays(new Date(), 1 + i * 0.8 + op.duration / 24)
+          startTime: addDays(new Date(), baseDelay + 1 + i * 0.8),
+          endTime: addDays(new Date(), baseDelay + 1 + i * 0.8 + op.duration / 24)
         })),
-        efficiency: 98,
-        customerSatisfaction: 85,
-        utilization: 70,
-        cost: 1000,
+        efficiency: Math.min(99, Math.round(98 * multipliers.efficiency)),
+        customerSatisfaction: Math.round(85 * multipliers.speed),
+        utilization: Math.round(70 * multipliers.efficiency),
+        cost: Math.round(1000 * multipliers.cost),
         risk: 'low',
         tradeoffs: {
-          pros: ['Optimal resource utilization', 'Lower cost', 'Reduced risk'],
-          cons: ['Longer delivery time', 'Less flexibility', 'Potential customer wait']
+          pros: selectedProfile ? [`Optimized for ${selectedProfile.name}`, 'Profile efficiency targets'] : ['Optimal resource utilization', 'Lower cost'],
+          cons: ['Longer delivery time', 'Less flexibility']
         },
         metrics: {
-          totalDuration: 5,
+          totalDuration: efficientDuration,
           resourceConflicts: 0,
-          deliveryDelay: 2,
-          capacityUtilization: 70
+          deliveryDelay: Math.round(2 * (1 / multipliers.speed)),
+          capacityUtilization: Math.round(70 * multipliers.efficiency)
         }
       });
 
-      // Option 3: Balanced approach
+      // Option 3: Balanced approach (adjusted by profile)
+      const balancedDuration = Math.max(3, 4 - (multipliers.speed + multipliers.efficiency - 2) * 0.5);
       options.push({
         id: 'balanced',
-        name: 'Balanced Approach',
-        startDate: addDays(new Date(), 0.5),
-        endDate: addDays(new Date(), 4),
+        name: selectedProfile ? `${selectedProfile.name} - Balanced` : 'Balanced Approach',
+        startDate: addDays(new Date(), baseDelay),
+        endDate: addDays(new Date(), balancedDuration + baseDelay),
         resources: resources.slice(0, 2),
         operations: formData.operations.map((op, i) => ({
           id: i + 3000,
@@ -774,23 +840,23 @@ const SchedulingOptimizer: React.FC = () => {
           assignedResourceId: resources[i % resources.length]?.id,
           status: 'pending' as const,
           priority: formData.priority,
-          startTime: addDays(new Date(), 0.5 + i * 0.7),
-          endTime: addDays(new Date(), 0.5 + i * 0.7 + op.duration / 24)
+          startTime: addDays(new Date(), baseDelay + 0.5 + i * 0.7),
+          endTime: addDays(new Date(), baseDelay + 0.5 + i * 0.7 + op.duration / 24)
         })),
-        efficiency: 88,
-        customerSatisfaction: 88,
-        utilization: 78,
-        cost: 1100,
+        efficiency: Math.round(88 * (multipliers.efficiency + multipliers.speed) / 2),
+        customerSatisfaction: Math.round(88 * (multipliers.speed + 1) / 2),
+        utilization: Math.round(78 * multipliers.efficiency),
+        cost: Math.round(1100 * multipliers.cost),
         risk: 'low',
         tradeoffs: {
-          pros: ['Good balance of speed and efficiency', 'Moderate cost', 'Flexible scheduling'],
-          cons: ['Not the fastest option', 'Not the most efficient', 'Compromise solution']
+          pros: selectedProfile ? [`${selectedProfile.name} parameters applied`, 'Profile-balanced optimization'] : ['Good balance of speed and efficiency', 'Moderate cost'],
+          cons: ['Compromise solution', `Profile: ${primary.replace('_', ' ')}`]
         },
         metrics: {
-          totalDuration: 4,
+          totalDuration: balancedDuration,
           resourceConflicts: 1,
-          deliveryDelay: 1,
-          capacityUtilization: 78
+          deliveryDelay: Math.round(1 * (1 / multipliers.speed)),
+          capacityUtilization: Math.round(78 * multipliers.efficiency)
         }
       });
 
