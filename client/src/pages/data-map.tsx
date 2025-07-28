@@ -167,12 +167,16 @@ function DataMapView() {
   ];
 
   // Fetch available objects of selected type
-  const { data: availableObjects = [] } = useQuery({
+  const { data: availableObjects = [], isLoading: isLoadingObjects, error } = useQuery({
     queryKey: ['/api/data-map/objects', selectedObjectType],
     queryFn: async () => {
       if (!selectedObjectType) return [];
+      console.log('Fetching objects for type:', selectedObjectType);
       const response = await apiRequest('GET', `/api/data-map/objects/${selectedObjectType}`);
-      return Array.isArray(response) ? response : [];
+      console.log('API response for objects:', response);
+      const result = Array.isArray(response) ? response : [];
+      console.log('Processed result:', result);
+      return result;
     },
     enabled: !!selectedObjectType,
   });
@@ -346,16 +350,30 @@ function DataMapView() {
                   <label className="text-sm font-medium text-gray-700 mb-1 block">Select Object</label>
                   <Select value={selectedObjectId} onValueChange={setSelectedObjectId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Choose an object" />
+                      <SelectValue placeholder={isLoadingObjects ? "Loading objects..." : filteredObjects.length === 0 ? "No objects found" : "Choose an object"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {filteredObjects.map((obj: any) => (
-                        <SelectItem key={obj.id} value={obj.id.toString()}>
-                          {obj.name || obj.versionNumber || obj.itemNumber || `${selectedObjectType}-${obj.id}`}
-                        </SelectItem>
-                      ))}
+                      {isLoadingObjects ? (
+                        <SelectItem value="loading" disabled>Loading...</SelectItem>
+                      ) : filteredObjects.length === 0 ? (
+                        <SelectItem value="empty" disabled>No {selectedObjectType} found</SelectItem>
+                      ) : (
+                        filteredObjects.map((obj: any) => (
+                          <SelectItem key={obj.id} value={obj.id.toString()}>
+                            {obj.name || obj.versionNumber || obj.itemNumber || `${selectedObjectType}-${obj.id}`}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
+                  {error && (
+                    <div className="text-xs text-red-500 mt-1">
+                      Error loading objects: {error.message}
+                    </div>
+                  )}
+                  <div className="text-xs text-gray-500 mt-1">
+                    Found {filteredObjects.length} objects
+                  </div>
                 </div>
 
                 <Button onClick={handleObjectSelect} className="w-full" disabled={!selectedObjectId}>
