@@ -189,10 +189,7 @@ function ShiftTemplatesTab({ templates, loading, plants, resources }: any) {
 
   const createTemplateMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest('/api/shift-templates', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
+      return await apiRequest('POST', '/api/shift-templates', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/shift-templates'] });
@@ -290,13 +287,10 @@ function AIShiftCreationForm({ plants, resources, onClose }: any) {
 
     setIsLoading(true);
     try {
-      const response = await apiRequest('/api/shifts/ai-create', {
-        method: 'POST',
-        body: {
-          requirements,
-          plants,
-          resources
-        }
+      const response = await apiRequest('POST', '/api/shifts/ai-create', {
+        requirements,
+        plants,
+        resources
       });
 
       setAiResponse(response);
@@ -314,10 +308,7 @@ function AIShiftCreationForm({ plants, resources, onClose }: any) {
     setIsLoading(true);
     try {
       for (const shift of aiResponse.shifts) {
-        await apiRequest('/api/shift-templates', {
-          method: 'POST',
-          body: shift
-        });
+        await apiRequest('POST', '/api/shift-templates', shift);
       }
 
       queryClient.invalidateQueries({ queryKey: ['/api/shift-templates'] });
@@ -730,7 +721,7 @@ function AssignmentsTab({ assignments, loading, templates, resources, plants }: 
   const queryClient = useQueryClient();
 
   const createAssignmentMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/resource-shift-assignments', { method: 'POST', body: data }),
+    mutationFn: (data: any) => apiRequest('POST', '/api/resource-shift-assignments', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/resource-shift-assignments'] });
       toast({ title: "Success", description: "Shift assignment created successfully" });
@@ -840,14 +831,11 @@ function AIShiftAssignmentForm({ templates, resources, plants, onClose }: any) {
 
     setIsLoading(true);
     try {
-      const response = await apiRequest('/api/shifts/ai-assign', {
-        method: 'POST',
-        body: {
-          requirements,
-          templates,
-          resources,
-          plants
-        }
+      const response = await apiRequest('POST', '/api/shifts/ai-assign', {
+        requirements,
+        templates,
+        resources,
+        plants
       });
 
       queryClient.invalidateQueries({ queryKey: ['/api/resource-shift-assignments'] });
@@ -1010,7 +998,7 @@ function ShiftAssignmentCard({ assignment }: any) {
   const queryClient = useQueryClient();
 
   const updateAssignmentMutation = useMutation({
-    mutationFn: (data: any) => apiRequest(`/api/resource-shift-assignments/${assignment.id}`, { method: 'PUT', body: data }),
+    mutationFn: (data: any) => apiRequest('PUT', `/api/resource-shift-assignments/${assignment.id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/resource-shift-assignments'] });
       toast({ title: "Success", description: "Assignment updated successfully" });
@@ -1022,7 +1010,7 @@ function ShiftAssignmentCard({ assignment }: any) {
   });
 
   const deleteAssignmentMutation = useMutation({
-    mutationFn: () => apiRequest(`/api/resource-shift-assignments/${assignment.id}`, { method: 'DELETE' }),
+    mutationFn: () => apiRequest('DELETE', `/api/resource-shift-assignments/${assignment.id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/resource-shift-assignments'] });
       toast({ title: "Success", description: "Assignment deleted successfully" });
@@ -1229,7 +1217,7 @@ function ShiftTemplateCard({ template }: any) {
   const queryClient = useQueryClient();
 
   const updateTemplateMutation = useMutation({
-    mutationFn: (data: any) => apiRequest(`/api/shift-templates/${template.id}`, { method: 'PUT', body: data }),
+    mutationFn: (data: any) => apiRequest('PUT', `/api/shift-templates/${template.id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/shift-templates'] });
       toast({ title: "Success", description: "Shift template updated successfully" });
@@ -1241,7 +1229,7 @@ function ShiftTemplateCard({ template }: any) {
   });
 
   const deleteTemplateMutation = useMutation({
-    mutationFn: () => apiRequest(`/api/shift-templates/${template.id}`, { method: 'DELETE' }),
+    mutationFn: () => apiRequest('DELETE', `/api/shift-templates/${template.id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/shift-templates'] });
       toast({ title: "Success", description: "Shift template deleted successfully" });
@@ -1380,10 +1368,7 @@ function UnplannedDowntimeTab({ downtime, loading, resources, users, plants }: a
   const queryClient = useQueryClient();
 
   const createDowntimeMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/unplanned-downtime', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+    mutationFn: (data: any) => apiRequest('POST', '/api/unplanned-downtime', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/unplanned-downtime'] });
       setIsCreateDialogOpen(false);
@@ -1574,10 +1559,7 @@ function OvertimeShiftsTab({ overtimeShifts, loading, resources, templates, user
   const queryClient = useQueryClient();
 
   const createOvertimeMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/overtime-shifts', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+    mutationFn: (data: any) => apiRequest('POST', '/api/overtime-shifts', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/overtime-shifts'] });
       setIsCreateDialogOpen(false);

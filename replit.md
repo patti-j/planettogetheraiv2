@@ -2,6 +2,14 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Shift Management API Call Format Fix (July 28, 2025)**:
+- Fixed all remaining API call format errors in shift-management.tsx component
+- Corrected 5 incorrect apiRequest function calls from wrong {method, body} object format to proper function signature
+- Updated createTemplateMutation, handleImplementShifts, AI assignment, downtime creation, and overtime mutations
+- All API calls now use correct apiRequest('METHOD', 'URL', data) format instead of incorrect object-based parameters
+- Shift management functionality fully restored with proper HTTP method handling for all endpoints
+- Eliminated all TypeScript LSP diagnostics and compilation errors in shift management component
+
 ✓ **Industry Template Generation NOT NULL Constraint Fix & Database Schema Correction (July 28, 2025)**:
 - Fixed critical industry template generation 500 error caused by NOT NULL constraint violation on configurations column
 - Identified schema mismatch where configurations field was required but had no default value in database
