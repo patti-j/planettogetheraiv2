@@ -396,6 +396,7 @@ function DataSchemaViewContent() {
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [focusMode, setFocusMode] = useState(false);
   const [focusTable, setFocusTable] = useState<string | null>(null);
+  const [simplifyLines, setSimplifyLines] = useState(false);
   
   const { toast } = useToast();
   const { fitView } = useReactFlow();
@@ -548,26 +549,63 @@ function DataSchemaViewContent() {
               (rel.fromTable === focusTable || rel.toTable === focusTable || 
                (connectedTableNames.includes(rel.fromTable) && connectedTableNames.includes(rel.toTable)));
             
+            // Calculate better edge routing to avoid crossovers
+            const sourcePos = positions[rel.fromTable];
+            const targetPos = positions[rel.toTable];
+            const edgeColor = isHighlighted ? '#3b82f6' : getCategoryColor(table.category);
+            
+            // Determine the best edge type based on relative positions
+            let edgeType = 'default';
+            let pathfindingType = 'grid';
+            
+            // Use different routing strategies based on layout and simplification setting
+            if (simplifyLines) {
+              edgeType = 'straight'; // Simplest routing - direct lines
+            } else if (layoutType === 'hierarchical') {
+              edgeType = 'step'; // Better for hierarchical layouts
+            } else if (layoutType === 'circular') {
+              edgeType = 'bezier'; // Smoother curves for circular layouts
+            } else {
+              edgeType = 'smoothstep'; // Default for grid
+            }
+            
+            // Add visual distinction for different relationship types
+            const isDashed = rel.type === 'one-to-many' || rel.type === 'many-to-many';
+            const strokeDasharray = isDashed ? '5,5' : undefined;
+            
             flowEdges.push({
               id: `${rel.fromTable}-${rel.toTable}-${rel.fromColumn}`,
               source: rel.fromTable,
               target: rel.toTable,
-              type: 'smoothstep',
+              type: edgeType,
               animated: !!isHighlighted,
+              pathfindingType: pathfindingType,
               style: { 
-                stroke: isHighlighted ? '#3b82f6' : getCategoryColor(table.category),
-                strokeWidth: isHighlighted ? 3 : 2,
-                opacity: focusMode && !isHighlighted ? 0.3 : 1,
+                stroke: edgeColor,
+                strokeWidth: isHighlighted ? 4 : 2,
+                opacity: focusMode && !isHighlighted ? 0.2 : 0.8,
+                strokeDasharray: strokeDasharray,
+                filter: isHighlighted ? 'drop-shadow(0px 0px 6px rgba(59, 130, 246, 0.4))' : undefined,
               },
               label: `${rel.type}`,
               labelStyle: { 
                 fontSize: 10,
-                fill: isHighlighted ? '#3b82f6' : '#666',
+                fill: isHighlighted ? '#1e40af' : '#374151',
                 fontWeight: isHighlighted ? 'bold' : 'normal',
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                padding: '2px 4px',
+                borderRadius: '3px',
+                border: isHighlighted ? '1px solid #3b82f6' : '1px solid #d1d5db',
+              },
+              labelBgStyle: {
+                fill: 'rgba(255, 255, 255, 0.9)',
+                fillOpacity: 0.9,
               },
               markerEnd: {
                 type: MarkerType.ArrowClosed,
-                color: isHighlighted ? '#3b82f6' : getCategoryColor(table.category),
+                color: edgeColor,
+                width: isHighlighted ? 12 : 8,
+                height: isHighlighted ? 12 : 8,
               }
             });
           }
@@ -576,7 +614,7 @@ function DataSchemaViewContent() {
     }
 
     return { nodes: flowNodes, edges: flowEdges };
-  }, [filteredTables, layoutType, showColumns, showRelationships, focusMode, focusTable, schemaData, getConnectedTables]);
+  }, [filteredTables, layoutType, showColumns, showRelationships, focusMode, focusTable, schemaData, getConnectedTables, simplifyLines]);
 
   const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
@@ -611,6 +649,50 @@ function DataSchemaViewContent() {
       setFocusTable(node.id);
     }
   }, [focusMode]);
+
+  // Handle edge hover for better line tracing
+  const handleEdgeMouseEnter = useCallback((_: any, edge: Edge) => {
+    setEdges((eds) =>
+      eds.map((e) => {
+        if (e.id === edge.id) {
+          return {
+            ...e,
+            style: {
+              ...e.style,
+              strokeWidth: 5,
+              stroke: '#3b82f6',
+              filter: 'drop-shadow(0px 0px 8px rgba(59, 130, 246, 0.6))',
+              zIndex: 1000,
+            },
+            animated: true,
+          };
+        }
+        return {
+          ...e,
+          style: {
+            ...e.style,
+            opacity: 0.3,
+          },
+        };
+      })
+    );
+  }, [setEdges]);
+
+  const handleEdgeMouseLeave = useCallback(() => {
+    setEdges((eds) =>
+      eds.map((e) => ({
+        ...e,
+        style: {
+          stroke: e.style?.stroke || '#666',
+          strokeWidth: e.style?.strokeWidth || 2,
+          opacity: focusMode ? (e.style?.opacity || 0.8) : 0.8,
+          filter: undefined,
+          zIndex: 1,
+        },
+        animated: false,
+      }))
+    );
+  }, [setEdges, focusMode]);
 
   if (isLoading) {
     return (
@@ -791,6 +873,31 @@ function DataSchemaViewContent() {
               />
               <Label htmlFor="show-relationships" className="text-xs sm:text-sm">Links</Label>
             </div>
+            
+            {/* Simplify Lines toggle - only shown when relationships are visible */}
+            {showRelationships && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1">
+                      <Switch
+                        id="simplify-lines"
+                        checked={simplifyLines}
+                        onCheckedChange={setSimplifyLines}
+                        className="scale-75 sm:scale-100"
+                      />
+                      <Label htmlFor="simplify-lines" className="text-xs sm:text-sm">Simple</Label>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">
+                      Simplifies relationship lines to reduce visual clutter and crossing paths. 
+                      Hover over any line to highlight it.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
             {/* Focus toggle - compact mobile */}
             <TooltipProvider>
               <Tooltip>
@@ -885,6 +992,8 @@ function DataSchemaViewContent() {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onNodeClick={handleTableClick}
+          onEdgeMouseEnter={handleEdgeMouseEnter}
+          onEdgeMouseLeave={handleEdgeMouseLeave}
           connectionMode={ConnectionMode.Loose}
           fitView
           fitViewOptions={{ padding: 0.2 }}
