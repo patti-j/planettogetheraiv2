@@ -647,7 +647,25 @@ function DataSchemaViewContent() {
   const { toast } = useToast();
   const { fitView } = useReactFlow();
 
-  // Fetch database schema information
+  // Track if user has applied filters to trigger schema loading
+  const [hasAppliedFilters, setHasAppliedFilters] = useState(() => {
+    // Check if user has any saved filters that would indicate they want to see data
+    try {
+      const savedCategory = localStorage.getItem('dataSchemaSelectedCategory');
+      const savedFeature = localStorage.getItem('dataSchemaSelectedFeature');
+      const savedSearch = localStorage.getItem('dataSchemaSearchTerm');
+      const savedTables = localStorage.getItem('dataSchemaSelectedTables');
+      
+      return (savedCategory && savedCategory !== 'all') || 
+             (savedFeature && savedFeature !== 'all') || 
+             (savedSearch && savedSearch.length > 0) ||
+             (savedTables && savedTables !== '[]');
+    } catch {
+      return false;
+    }
+  });
+
+  // Fetch database schema information only when filters are applied
   const { data: schemaData, isLoading, error } = useQuery({
     queryKey: ['/api/database/schema'],
     queryFn: async (): Promise<SchemaTable[]> => {
@@ -679,7 +697,51 @@ function DataSchemaViewContent() {
         throw error;
       }
     },
+    enabled: hasAppliedFilters, // Only fetch when user has applied filters
   });
+
+  // Wrapper functions to trigger data loading when filters are applied
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setHasAppliedFilters(true);
+    // Persist to localStorage
+    try {
+      localStorage.setItem('dataSchemaSearchTerm', value);
+    } catch {}
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setSelectedCategory(value);
+    if (value !== 'all') {
+      setHasAppliedFilters(true);
+    }
+    // Persist to localStorage
+    try {
+      localStorage.setItem('dataSchemaSelectedCategory', value);
+    } catch {}
+  };
+
+  const handleFeatureChange = (value: string) => {
+    setSelectedFeature(value);
+    if (value !== 'all') {
+      setHasAppliedFilters(true);
+    }
+    // Persist to localStorage
+    try {
+      localStorage.setItem('dataSchemaSelectedFeature', value);
+    } catch {}
+  };
+
+  const handleTableSelectionChange = (tables: string[]) => {
+    setSelectedTables(tables);
+    if (tables.length > 0) {
+      setHasAppliedFilters(true);
+    }
+    // Persist to localStorage
+    try {
+      localStorage.setItem('dataSchemaSelectedTables', JSON.stringify(tables));
+    } catch {}
+  };
 
   // Get tables connected to focus table
   const getConnectedTables = useCallback((tableName: string, tables: SchemaTable[]): string[] => {
@@ -1009,7 +1071,68 @@ function DataSchemaViewContent() {
     categoriesLength: categories.length
   });
 
-  // Handle empty data case
+  // Handle cases where data is not loaded yet or empty
+  if (!hasAppliedFilters) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <Database className="w-6 h-6 text-blue-600" />
+          <h1 className="text-2xl font-bold">Data Schema View</h1>
+        </div>
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Filter className="w-16 h-16 text-blue-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Apply Filters to View Schema</h3>
+            <p className="text-gray-600 mb-6">
+              To improve performance, the database schema loads only when you apply filters. Choose what you'd like to explore:
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto mb-6">
+              <Card className="p-4 hover:bg-blue-50 cursor-pointer transition-colors" onClick={() => handleFeatureChange('scheduling')}>
+                <div className="text-center">
+                  <h4 className="font-semibold text-blue-600 mb-2">Production Scheduling</h4>
+                  <p className="text-sm text-gray-600">Orders, operations, resources, shifts</p>
+                </div>
+              </Card>
+              <Card className="p-4 hover:bg-green-50 cursor-pointer transition-colors" onClick={() => handleFeatureChange('inventory')}>
+                <div className="text-center">
+                  <h4 className="font-semibold text-green-600 mb-2">Inventory Management</h4>
+                  <p className="text-sm text-gray-600">Stock, transactions, forecasts</p>
+                </div>
+              </Card>
+              <Card className="p-4 hover:bg-purple-50 cursor-pointer transition-colors" onClick={() => handleFeatureChange('quality')}>
+                <div className="text-center">
+                  <h4 className="font-semibold text-purple-600 mb-2">Quality Management</h4>
+                  <p className="text-sm text-gray-600">Tests, inspections, standards</p>
+                </div>
+              </Card>
+              <Card className="p-4 hover:bg-orange-50 cursor-pointer transition-colors" onClick={() => handleCategoryChange('Core Manufacturing')}>
+                <div className="text-center">
+                  <h4 className="font-semibold text-orange-600 mb-2">Core Manufacturing</h4>
+                  <p className="text-sm text-gray-600">Plants, resources, capabilities</p>
+                </div>
+              </Card>
+              <Card className="p-4 hover:bg-cyan-50 cursor-pointer transition-colors" onClick={() => handleCategoryChange('Products & Inventory')}>
+                <div className="text-center">
+                  <h4 className="font-semibold text-cyan-600 mb-2">Products & Inventory</h4>
+                  <p className="text-sm text-gray-600">BOMs, recipes, stock items</p>
+                </div>
+              </Card>
+              <Card className="p-4 hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setHasAppliedFilters(true)}>
+                <div className="text-center">
+                  <h4 className="font-semibold text-gray-600 mb-2">Load All Tables</h4>
+                  <p className="text-sm text-gray-600">See entire database schema</p>
+                </div>
+              </Card>
+            </div>
+            <div className="text-sm text-gray-500">
+              Or use the search box and filters in the header when they appear.
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!schemaData || schemaData.length === 0) {
     return (
       <div className="p-6">
@@ -1030,11 +1153,11 @@ function DataSchemaViewContent() {
               <li>• Permission restrictions</li>
             </ul>
             <Button 
-              onClick={() => window.location.reload()} 
+              onClick={() => setHasAppliedFilters(false)} 
               className="mt-4"
               variant="outline"
             >
-              Retry Loading
+              Go Back to Filters
             </Button>
           </CardContent>
         </Card>
@@ -1075,7 +1198,7 @@ function DataSchemaViewContent() {
             <Input
               placeholder="Search tables..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full sm:w-64"
             />
           </div>
@@ -1103,7 +1226,7 @@ function DataSchemaViewContent() {
           </div>
           
           {/* Feature Filter - Priority on mobile */}
-          <Select value={selectedFeature} onValueChange={setSelectedFeature}>
+          <Select value={selectedFeature} onValueChange={handleFeatureChange}>
             <SelectTrigger className="w-full sm:w-52">
               <SelectValue placeholder="Select feature" />
             </SelectTrigger>
@@ -1120,7 +1243,7 @@ function DataSchemaViewContent() {
           </Select>
           
           {/* Category Filter */}
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          <Select value={selectedCategory} onValueChange={handleCategoryChange}>
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
