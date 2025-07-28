@@ -2,6 +2,14 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Data Schema View Legend Session Persistence Implementation (July 28, 2025)**:
+- Added localStorage persistence for Data Schema View legend visibility to remember user preferences between sessions
+- Enhanced showLegend state initialization to load previous setting from localStorage, defaulting to visible (true) for new users
+- Implemented automatic persistence of legend visibility changes using useEffect hook with localStorage.setItem
+- Added error handling for localStorage operations to gracefully fallback to default behavior if storage is unavailable
+- Users' legend show/hide preference now persists across browser sessions, page refreshes, and application restarts
+- Enhanced user experience by maintaining personalized interface preferences without requiring manual configuration each session
+
 ✓ **Manufacturing Hierarchy Database Relations Implementation (July 28, 2025)**:
 - Successfully completed database relations for manufacturing hierarchy following SAP's production version approach
 - Added productionVersionId foreign key column to production_orders table with proper PostgreSQL constraints

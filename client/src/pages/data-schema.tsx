@@ -408,7 +408,25 @@ function DataSchemaViewContent() {
   const [focusMode, setFocusMode] = useState(false);
   const [focusTable, setFocusTable] = useState<string | null>(null);
   const [simplifyLines, setSimplifyLines] = useState(false);
-  const [showLegend, setShowLegend] = useState(true);
+  
+  // Initialize showLegend state from localStorage, default to true if not set
+  const [showLegend, setShowLegend] = useState(() => {
+    try {
+      const saved = localStorage.getItem('dataSchemaLegendVisible');
+      return saved ? JSON.parse(saved) : true;
+    } catch {
+      return true;
+    }
+  });
+
+  // Persist legend visibility to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('dataSchemaLegendVisible', JSON.stringify(showLegend));
+    } catch (error) {
+      console.warn('Failed to save legend visibility to localStorage:', error);
+    }
+  }, [showLegend]);
   
   const { toast } = useToast();
   const { fitView } = useReactFlow();
