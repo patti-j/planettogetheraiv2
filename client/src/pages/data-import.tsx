@@ -502,55 +502,65 @@ Create authentic manufacturing data that reflects this company's operations.`;
               <TableHeader>
                 <TableRow>
                   <TableHead>
-                    <div className="flex items-center">
-                      <span className="flex-1">Name</span>
-                      {/* Mobile header status and controls */}
-                      <div className="flex items-center sm:hidden">
-                        {/* Bulk selection status */}
-                        {bulkSelectMode && (
-                          <span className="text-sm text-gray-500 mr-2">
-                            {selectedItems.size} selected
-                          </span>
-                        )}
-                        
-                        {/* Bulk delete button */}
-                        {bulkSelectMode && selectedItems.size > 0 && (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={async () => {
-                              const selectedIds = Array.from(selectedItems);
-                              for (const id of selectedIds) {
-                                await deleteMutation.mutateAsync(Number(id));
-                              }
-                              setSelectedItems(new Set());
-                              setBulkSelectMode(false);
-                            }}
-                            className="h-6 px-2 mr-2"
-                            title={`Delete ${selectedItems.size} selected items`}
-                          >
-                            <Trash2 className="h-3 w-3 mr-1" />
-                            {selectedItems.size}
-                          </Button>
-                        )}
-                        
-                        {/* Header bulk toggle - matches row positioning exactly */}
+                    <div className="flex min-h-[60px] sm:hidden">
+                      {/* Checkbox space - matches row structure */}
+                      {bulkSelectMode && (
                         <div className="w-12 flex items-center justify-center">
-                          <Button
-                            variant={bulkSelectMode ? 'default' : 'ghost'}
-                            size="sm"
-                            onClick={() => {
-                              setBulkSelectMode(!bulkSelectMode);
-                              setSelectedItems(new Set());
-                            }}
-                            className="w-8 h-8 p-0 hover:bg-gray-100 active:bg-gray-200"
-                            title="Bulk select mode"
-                          >
-                            <span className="text-sm font-bold text-gray-600">⋮</span>
-                          </Button>
+                          <span className="text-xs text-gray-500">All</span>
+                        </div>
+                      )}
+                      
+                      {/* Content area - matches row structure */}
+                      <div className="flex-1 p-3 flex items-center justify-between">
+                        <span>Name</span>
+                        {/* Status and delete button */}
+                        <div className="flex items-center gap-2">
+                          {bulkSelectMode && (
+                            <span className="text-sm text-gray-500">
+                              {selectedItems.size} selected
+                            </span>
+                          )}
+                          {bulkSelectMode && selectedItems.size > 0 && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={async () => {
+                                const selectedIds = Array.from(selectedItems);
+                                for (const id of selectedIds) {
+                                  await deleteMutation.mutateAsync(Number(id));
+                                }
+                                setSelectedItems(new Set());
+                                setBulkSelectMode(false);
+                              }}
+                              className="h-6 px-2"
+                              title={`Delete ${selectedItems.size} selected items`}
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              {selectedItems.size}
+                            </Button>
+                          )}
                         </div>
                       </div>
+                      
+                      {/* Toggle button space - matches row structure exactly */}
+                      <div className="w-12 flex items-center justify-center">
+                        <Button
+                          variant={bulkSelectMode ? 'default' : 'ghost'}
+                          size="sm"
+                          onClick={() => {
+                            setBulkSelectMode(!bulkSelectMode);
+                            setSelectedItems(new Set());
+                          }}
+                          className="w-8 h-8 p-0 hover:bg-gray-100 active:bg-gray-200"
+                          title="Bulk select mode"
+                        >
+                          <span className="text-sm font-bold text-gray-600">⋮</span>
+                        </Button>
+                      </div>
                     </div>
+                    
+                    {/* Desktop header */}
+                    <span className="hidden sm:block">Name</span>
                   </TableHead>
                   <TableHead className="hidden sm:table-cell">Details</TableHead>
                   <TableHead className="hidden sm:table-cell w-24">Actions</TableHead>
