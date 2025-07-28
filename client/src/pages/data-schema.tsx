@@ -478,7 +478,7 @@ export default function DataSchemaView() {
   return (
     <div className="h-screen flex flex-col">
       {/* Header */}
-      <div className="border-b bg-white px-6 py-4 relative z-10">
+      <div className="border-b bg-white px-6 py-4 relative z-50">
         <div className="flex items-center gap-3 mb-4">
           <Database className="w-6 h-6 text-blue-600" />
           <h1 className="text-2xl font-bold">Data Schema View</h1>
