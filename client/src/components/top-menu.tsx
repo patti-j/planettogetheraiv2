@@ -9,7 +9,7 @@ import {
   Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, 
   Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, 
   Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, 
-  Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff, PlayCircle
+  Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff, PlayCircle, Search
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleSwitcher } from "./role-switcher";
@@ -21,6 +21,7 @@ import { useAITheme } from "@/hooks/use-ai-theme";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { useTour } from "@/contexts/TourContext";
 import { TourSelectionDialog } from "./tour-selection-dialog";
+import { Input } from "@/components/ui/input";
 
 // Define feature groups with hierarchy and visual styling
 const featureGroups = [
@@ -110,6 +111,7 @@ export default function TopMenu() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userProfileOpen, setUserProfileOpen] = useState(false);
   const [tourSelectionOpen, setTourSelectionOpen] = useState(false);
+  const [searchFilter, setSearchFilter] = useState("");
   const { user, logout } = useAuth();
   const { hasPermission } = usePermissions();
   const { isMaxOpen, setMaxOpen } = useMaxDock();
@@ -146,7 +148,7 @@ export default function TopMenu() {
     setMenuOpen(false);
   };
 
-  // Filter features based on permissions and onboarding completion
+  // Filter features based on permissions, onboarding completion, and search
   const getVisibleFeatures = (features: any[]) => {
     return features.filter(feature => {
       if (feature.href === "#max") return !isMaxOpen; // Only show Max AI when closed
@@ -160,6 +162,11 @@ export default function TopMenu() {
       
       // Check permissions for feature access
       return hasPermission(feature.feature, feature.action);
+    }).filter(feature => {
+      // Apply search filter if search term exists
+      if (!searchFilter.trim()) return true;
+      const searchTerm = searchFilter.toLowerCase();
+      return feature.label.toLowerCase().includes(searchTerm);
     });
   };
 
@@ -308,10 +315,38 @@ export default function TopMenu() {
               </div>
             </div>
 
+            {/* Search Filter */}
+            <div className="px-6 pt-4 pb-2 border-b border-gray-100">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search menu items..."
+                  value={searchFilter}
+                  onChange={(e) => setSearchFilter(e.target.value)}
+                  className="pl-9 pr-4 py-2 w-full text-sm border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                />
+                {searchFilter && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSearchFilter("")}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-gray-100"
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
+            </div>
+
             {/* Menu Content */}
             <div className="p-6 space-y-8">
               {/* Recent & Favorites Section */}
-              {recentPages.length > 0 && (
+              {recentPages.filter(page => {
+                if (!searchFilter.trim()) return true;
+                const searchTerm = searchFilter.toLowerCase();
+                return page.label.toLowerCase().includes(searchTerm);
+              }).length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2 flex-1">
@@ -328,7 +363,11 @@ export default function TopMenu() {
                   </div>
                   {/* Mobile: 3 columns, Desktop: 6 columns for more compact layout */}
                   <div className="grid grid-cols-3 md:grid-cols-6 gap-3 auto-rows-fr">
-                    {recentPages.map((page, index) => {
+                    {recentPages.filter(page => {
+                      if (!searchFilter.trim()) return true;
+                      const searchTerm = searchFilter.toLowerCase();
+                      return page.label.toLowerCase().includes(searchTerm);
+                    }).map((page, index) => {
                       // Map page paths to their original icons and colors
                       const getIconAndColorForPage = (path: string) => {
                         // Find the icon and color from the feature groups

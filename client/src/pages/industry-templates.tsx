@@ -88,7 +88,7 @@ export default function IndustryTemplates() {
   // Generate template mutation
   const generateTemplateMutation = useMutation({
     mutationFn: async (data: { industry: string; sourceUrl?: string; sourcePrompt?: string }) => {
-      return apiRequest("/api/industry-templates/generate", "POST", {
+      return apiRequest("POST", "/api/industry-templates/generate", {
         ...data,
         createdBy: user?.id || 1
       });

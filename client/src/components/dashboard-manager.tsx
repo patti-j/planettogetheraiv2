@@ -719,5 +719,6 @@ export default function DashboardManager({
         )}
       </DialogContent>
     </Dialog>
+    </DndProvider>
   );
 }
