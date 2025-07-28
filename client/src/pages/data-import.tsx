@@ -1675,9 +1675,13 @@ Create authentic manufacturing data that reflects this company's operations.`;
     // Update mutation with optimistic updates
     const updateMutation = useMutation({
       mutationFn: async (updatedItem: any) => {
+        console.log(`[updateMutation] Starting update for item:`, updatedItem);
         const authToken = localStorage.getItem('authToken');
         const endpoint = getApiEndpoint(dataType);
-        const response = await fetch(`/api/${endpoint}/${updatedItem.id}`, {
+        const url = `/api/${endpoint}/${updatedItem.id}`;
+        console.log(`[updateMutation] Making PUT request to: ${url}`);
+        
+        const response = await fetch(url, {
           method: 'PUT',
           headers: { 
             'Content-Type': 'application/json',
@@ -1685,10 +1689,21 @@ Create authentic manufacturing data that reflects this company's operations.`;
           },
           body: JSON.stringify(updatedItem)
         });
-        if (!response.ok) throw new Error('Failed to update item');
-        return response.json();
+        
+        console.log(`[updateMutation] Response status: ${response.status} ${response.statusText}`);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`[updateMutation] Error response:`, errorText);
+          throw new Error(`Failed to update item: ${response.status} ${errorText}`);
+        }
+        
+        const result = await response.json();
+        console.log(`[updateMutation] Success result:`, result);
+        return result;
       },
       onMutate: async (updatedItem) => {
+        console.log(`[updateMutation.onMutate] Optimistically updating UI for:`, updatedItem);
         // Optimistically update the UI immediately
         setAllLoadedItems(prev => 
           prev.map(item => 
@@ -1696,12 +1711,14 @@ Create authentic manufacturing data that reflects this company's operations.`;
           )
         );
       },
-      onSuccess: () => {
+      onSuccess: (data, updatedItem) => {
+        console.log(`[updateMutation.onSuccess] Update successful for item ${updatedItem.id}`);
         // Don't show toast for spreadsheet updates to reduce noise
         // Don't refresh - the optimistic update is already applied
         setEditingItem(null);
       },
       onError: (error: any, updatedItem, context) => {
+        console.error(`[updateMutation.onError] Update failed for item ${updatedItem.id}:`, error);
         // Revert optimistic update on error
         toast({ title: "Error", description: error.message, variant: "destructive" });
         // Refresh only on error to restore correct data
@@ -2201,12 +2218,23 @@ Create authentic manufacturing data that reflects this company's operations.`;
     // Excel-like cell editing functions  
     const saveCellValue = (itemId: string, field: string, newValue: any, originalValue: any) => {
       if (newValue !== originalValue) {
+        console.log(`[saveCellValue] Saving change: itemId=${itemId}, field=${field}, old="${originalValue}", new="${newValue}"`);
+        
         // Add to undo stack
         setUndoStack(prev => [...prev, { itemId, field, oldValue: originalValue, newValue }]);
         
         // Create updated item and save - onUpdate should handle this efficiently
-        const updatedItem = { ...items.find(item => item.id.toString() === itemId), [field]: newValue };
+        const originalItem = items.find(item => item.id.toString() === itemId);
+        if (!originalItem) {
+          console.error(`[saveCellValue] Could not find item with ID ${itemId}`);
+          return;
+        }
+        
+        const updatedItem = { ...originalItem, [field]: newValue };
+        console.log(`[saveCellValue] Calling onUpdate with:`, updatedItem);
         onUpdate(updatedItem);
+      } else {
+        console.log(`[saveCellValue] No change detected: "${originalValue}" === "${newValue}"`);
       }
     };
 
@@ -2310,8 +2338,9 @@ Create authentic manufacturing data that reflects this company's operations.`;
       };
 
       const handleBlur = (e: React.FocusEvent) => {
-        const newValue = e.target.value;
+        const newValue = (e.target as HTMLInputElement).value;
         if (!isNewRow && newValue !== item[field]) {
+          console.log(`Saving cell change: ${field} from "${item[field]}" to "${newValue}" for item ${item.id}`);
           // Save to backend but keep local state until success
           const originalValue = item[field];
           saveCellValue(item.id.toString(), field, newValue, originalValue);
