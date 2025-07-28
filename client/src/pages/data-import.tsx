@@ -45,6 +45,12 @@ function DataImport() {
   // Template bulk download state
   const [selectedTemplates, setSelectedTemplates] = useState<Set<string>>(new Set());
   
+  // Consolidated import state
+  const [isConsolidatedImport, setIsConsolidatedImport] = useState(false);
+  const [consolidatedFile, setConsolidatedFile] = useState<File | null>(null);
+  const [consolidatedSheets, setConsolidatedSheets] = useState<string[]>([]);
+  const [selectedSheets, setSelectedSheets] = useState<Set<string>>(new Set());
+  
   // AI Generation state
   const [showAIDialog, setShowAIDialog] = useState(false);
   const [showAISummary, setShowAISummary] = useState(false);
@@ -307,6 +313,185 @@ function DataImport() {
   // Clear template selection
   const clearTemplateSelection = () => {
     setSelectedTemplates(new Set());
+  };
+
+  // Handle consolidated file upload
+  const handleConsolidatedFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setConsolidatedFile(file);
+      
+      // Read the file to get sheet names
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheetNames = workbook.SheetNames;
+          setConsolidatedSheets(sheetNames);
+          setSelectedSheets(new Set(sheetNames)); // Select all sheets by default
+        } catch (error) {
+          console.error('Error reading consolidated file:', error);
+          toast({
+            title: "File Error",
+            description: "Could not read the Excel file. Please ensure it's a valid Excel file.",
+            variant: "destructive",
+          });
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+  };
+
+  // Toggle sheet selection for consolidated import
+  const toggleSheetSelection = (sheetName: string) => {
+    const newSelection = new Set(selectedSheets);
+    if (newSelection.has(sheetName)) {
+      newSelection.delete(sheetName);
+    } else {
+      newSelection.add(sheetName);
+    }
+    setSelectedSheets(newSelection);
+  };
+
+  // Import consolidated template
+  const importConsolidatedTemplate = async () => {
+    if (!consolidatedFile || selectedSheets.size === 0) {
+      toast({
+        title: "Import Error",
+        description: "Please select a file and at least one sheet to import.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsImporting(true);
+    const statuses: ImportStatus[] = [];
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+
+          // Process each selected sheet
+          for (const sheetName of Array.from(selectedSheets)) {
+            if (!workbook.Sheets[sheetName]) continue;
+
+            try {
+              const worksheet = workbook.Sheets[sheetName];
+              const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+              if (jsonData.length === 0) {
+                statuses.push({
+                  type: sheetName,
+                  status: 'error',
+                  message: 'No data found in sheet'
+                });
+                continue;
+              }
+
+              // Map sheet name to data type
+              const dataType = mapSheetNameToDataType(sheetName);
+              if (!dataType) {
+                statuses.push({
+                  type: sheetName,
+                  status: 'error',
+                  message: 'Unknown sheet type'
+                });
+                continue;
+              }
+
+              // Transform and validate data
+              const transformedData = transformData(jsonData, dataType);
+
+              // Import the data
+              const response = await importMutation.mutateAsync({
+                dataType,
+                data: transformedData,
+                validateOnly: false
+              });
+
+              statuses.push({
+                type: sheetName,
+                status: 'success',
+                message: `Successfully imported ${transformedData.length} records`,
+                count: transformedData.length
+              });
+
+            } catch (error) {
+              console.error(`Error processing sheet ${sheetName}:`, error);
+              statuses.push({
+                type: sheetName,
+                status: 'error',
+                message: `Failed to import: ${error instanceof Error ? error.message : 'Unknown error'}`
+              });
+            }
+          }
+
+          setImportStatuses(statuses);
+          
+          // Show summary toast
+          const successCount = statuses.filter(s => s.status === 'success').length;
+          const totalCount = statuses.length;
+          
+          toast({
+            title: "Consolidated Import Complete",
+            description: `${successCount}/${totalCount} sheets imported successfully`,
+            variant: successCount === totalCount ? "default" : "destructive",
+          });
+
+        } catch (error) {
+          console.error('Error processing consolidated file:', error);
+          toast({
+            title: "Import Error",
+            description: "Failed to process the consolidated file",
+            variant: "destructive",
+          });
+        } finally {
+          setIsImporting(false);
+        }
+      };
+      reader.readAsArrayBuffer(consolidatedFile);
+    } catch (error) {
+      console.error('Error reading file:', error);
+      setIsImporting(false);
+      toast({
+        title: "File Error",
+        description: "Could not read the file",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Map sheet name to data type
+  const mapSheetNameToDataType = (sheetName: string): string | null => {
+    const mapping: Record<string, string> = {
+      'Plants': 'plants',
+      'Resources': 'resources',
+      'Capabilities': 'capabilities',
+      'Production Orders': 'productionOrders',
+      'Operations': 'operations',
+      'Departments': 'departments',
+      'Work Centers': 'workCenters',
+      'Employees': 'employees',
+      'Users': 'users',
+      'Items': 'items',
+      'Storage Locations': 'storageLocations',
+      'Inventory': 'inventory',
+      'Inventory Lots': 'inventoryLots',
+      'Vendors': 'vendors',
+      'Customers': 'customers',
+      'Sales Orders': 'salesOrders',
+      'Purchase Orders': 'purchaseOrders',
+      'Transfer Orders': 'transferOrders',
+      'Bills of Material': 'billsOfMaterial',
+      'Routings': 'routings',
+      'Recipes': 'recipes',
+      'Forecasts': 'forecasts'
+    };
+    return mapping[sheetName] || null;
   };
 
   const getTemplateFieldDefinitions = (selectedDataType: string) => {
@@ -2532,9 +2717,45 @@ Create authentic manufacturing data that reflects this company's operations.`;
                   <h3 className="text-lg font-medium mb-2">Import Data Files</h3>
                   <p className="text-sm text-gray-600 mb-4">Upload CSV or Excel files to import your manufacturing data</p>
                 </div>
-                
-                {/* Data Type Selection for Import */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                {/* Import Type Selection */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <div 
+                    className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                      !isConsolidatedImport 
+                        ? 'border-green-300 bg-green-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setIsConsolidatedImport(false)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <Upload className="h-5 w-5 text-green-600" />
+                      <h4 className="font-medium">Single Data Type Import</h4>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-2">Import CSV or Excel files for one data type at a time</p>
+                  </div>
+                  
+                  <div 
+                    className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                      isConsolidatedImport 
+                        ? 'border-purple-300 bg-purple-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setIsConsolidatedImport(true)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <FileSpreadsheet className="h-5 w-5 text-purple-600" />
+                      <h4 className="font-medium">Consolidated Template Import</h4>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-2">Import multi-sheet Excel file with multiple data types</p>
+                  </div>
+                </div>
+
+                {!isConsolidatedImport ? (
+                  // Single Data Type Import
+                  <div className="space-y-4">
+                    {/* Data Type Selection for Import */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="import-data-type">Select Data Type</Label>
                     <Select value={selectedImportDataType} onValueChange={setSelectedImportDataType}>
@@ -2630,20 +2851,154 @@ Create authentic manufacturing data that reflects this company's operations.`;
                   )}
                 </div>
 
-                {/* Import Options */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Import Options</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <input type="checkbox" id="skip-duplicates" className="rounded" />
-                      <Label htmlFor="skip-duplicates" className="text-sm">Skip duplicate records</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input type="checkbox" id="validate-data" className="rounded" defaultChecked />
-                      <Label htmlFor="validate-data" className="text-sm">Validate data before import</Label>
+                    {/* Import Options */}
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="font-medium mb-2">Import Options</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <input type="checkbox" id="skip-duplicates" className="rounded" />
+                          <Label htmlFor="skip-duplicates" className="text-sm">Skip duplicate records</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input type="checkbox" id="validate-data" className="rounded" defaultChecked />
+                          <Label htmlFor="validate-data" className="text-sm">Validate data before import</Label>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  // Consolidated Import
+                  <div className="space-y-4">
+                    {/* Consolidated File Upload */}
+                    <div className="border-2 border-dashed border-purple-300 rounded-lg p-8 text-center">
+                      <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 text-purple-400" />
+                      <p className="text-lg font-medium mb-2">Drop your consolidated Excel file here</p>
+                      <p className="text-sm text-gray-500 mb-4">Upload multi-sheet Excel file with data types as sheet names</p>
+                      <input
+                        type="file"
+                        accept=".xlsx,.xls"
+                        onChange={handleConsolidatedFileUpload}
+                        className="hidden"
+                        id="consolidated-file-upload"
+                      />
+                      <label htmlFor="consolidated-file-upload">
+                        <Button variant="outline" asChild>
+                          <span className="cursor-pointer">
+                            <FileSpreadsheet className="h-4 w-4 mr-2" />
+                            Choose Consolidated File
+                          </span>
+                        </Button>
+                      </label>
+                    </div>
+
+                    {/* Sheet Selection */}
+                    {consolidatedSheets.length > 0 && (
+                      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-medium text-purple-800">Select Sheets to Import</h4>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => setSelectedSheets(new Set(consolidatedSheets))}
+                              className="text-xs h-6"
+                            >
+                              Select All
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => setSelectedSheets(new Set())}
+                              className="text-xs h-6"
+                            >
+                              Clear All
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {consolidatedSheets.map((sheetName) => (
+                            <div key={sheetName} className="flex items-center space-x-2">
+                              <Checkbox
+                                checked={selectedSheets.has(sheetName)}
+                                onCheckedChange={() => toggleSheetSelection(sheetName)}
+                              />
+                              <span className="text-sm">{sheetName}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-4">
+                          <Button 
+                            onClick={importConsolidatedTemplate}
+                            disabled={selectedSheets.size === 0 || isImporting}
+                            className="gap-2 bg-purple-600 hover:bg-purple-700"
+                          >
+                            {isImporting ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Upload className="h-4 w-4" />
+                            )}
+                            Import {selectedSheets.size} Selected Sheets
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Consolidated Import Info */}
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <FileSpreadsheet className="h-4 w-4 text-purple-600" />
+                        <span className="text-sm font-medium text-purple-800">How it works</span>
+                      </div>
+                      <ul className="text-sm text-purple-700 space-y-1">
+                        <li>• Upload an Excel file with separate sheets for each data type</li>
+                        <li>• Sheet names should match data type names (e.g., "Resources", "Plants", "Production Orders")</li>
+                        <li>• Each sheet should follow the template format for that data type</li>
+                        <li>• Select which sheets to import and process multiple data types at once</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {/* Import Status */}
+                {isImporting && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center space-x-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                      <span className="text-sm text-blue-800">
+                        {isConsolidatedImport ? 'Importing consolidated template...' : 'Importing data...'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Import Results */}
+                {importStatuses.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Import Results</h4>
+                    {importStatuses.map((status, index) => (
+                      <div key={index} className={`p-3 rounded-lg border ${
+                        status.status === 'success' 
+                          ? 'bg-green-50 border-green-200' 
+                          : 'bg-red-50 border-red-200'
+                      }`}>
+                        <div className="flex items-center space-x-2">
+                          {status.status === 'success' ? (
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <AlertCircle className="h-4 w-4 text-red-600" />
+                          )}
+                          <span className="text-sm font-medium">{status.type}</span>
+                          {status.count && (
+                            <Badge variant="secondary" className="text-xs">
+                              {status.count} records
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">{status.message}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </TabsContent>
             
