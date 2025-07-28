@@ -9,7 +9,7 @@ import {
   Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, 
   Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, 
   Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, 
-  Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff, PlayCircle, Search
+  Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff, PlayCircle, Search, Network
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleSwitcher } from "./role-switcher";
@@ -82,6 +82,7 @@ const featureGroups = [
       { icon: Layers, label: "Product Development", href: "/product-development", feature: "systems-management", action: "view", color: "bg-blue-600" },
       { icon: Upload, label: "Master Data Setup", href: "/data-import", feature: "systems-management", action: "view", color: "bg-green-600" },
       { icon: Shield, label: "Data Validation", href: "/data-validation", feature: "systems-management", action: "view", color: "bg-blue-600" },
+      { icon: Network, label: "Data Map View", href: "/data-map", feature: "systems-management", action: "view", color: "bg-purple-600" },
       { icon: FileX, label: "Logs", href: "/error-logs", feature: "systems-management", action: "view", color: "bg-red-500" }
     ]
   },

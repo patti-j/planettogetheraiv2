@@ -7073,14 +7073,27 @@ Return a JSON response with this structure:
         return res.status(404).json({ error: 'Secret not found' });
       }
 
-      const updateData = { ...req.body };
+      // Continue with the original secret update logic...
+      const validation = insertUserSecretSchema.safeParse({
+        ...req.body,
+        userId
+      });
       
-      // If updating the value, encrypt it
-      if (updateData.encryptedValue) {
-        updateData.encryptedValue = Buffer.from(updateData.encryptedValue).toString('base64');
+      if (!validation.success) {
+        return res.status(400).json({ 
+          error: 'Invalid secret data', 
+          details: validation.error.errors 
+        });
       }
+
+      // Simple encryption for demonstration
+      const encryptedValue = Buffer.from(validation.data.encryptedValue).toString('base64');
       
-      const updatedSecret = await storage.updateUserSecret(id, updateData);
+      const updatedSecret = await storage.updateUserSecret(id, {
+        ...validation.data,
+        encryptedValue
+      });
+      
       if (!updatedSecret) {
         return res.status(404).json({ error: 'Secret not found' });
       }
@@ -7109,15 +7122,85 @@ Return a JSON response with this structure:
         return res.status(404).json({ error: 'Secret not found' });
       }
 
-      const success = await storage.deleteUserSecret(id);
-      if (!success) {
+      const deleted = await storage.deleteUserSecret(id);
+      
+      if (!deleted) {
         return res.status(404).json({ error: 'Secret not found' });
       }
       
-      res.json({ success: true });
+      res.status(204).send();
     } catch (error) {
       console.error('Error deleting user secret:', error);
       res.status(500).json({ error: 'Failed to delete user secret' });
+    }
+  });
+
+  // Data Map API Routes
+  app.get('/api/data-map/objects/:type', requireAuth, async (req, res) => {
+    try {
+      const { type } = req.params;
+      
+      // Map data types to their corresponding storage methods
+      let objects = [];
+      switch (type) {
+        case 'plants':
+          objects = await storage.getPlants();
+          break;
+        case 'resources':
+          objects = await storage.getResources();
+          break;
+        case 'capabilities':
+          objects = await storage.getCapabilities();
+          break;
+        case 'operations':
+          objects = await storage.getOperations();
+          break;
+        case 'productionOrders':
+          objects = await storage.getProductionOrders();
+          break;
+        case 'billsOfMaterial':
+          objects = await storage.getBillsOfMaterial();
+          break;
+        case 'routings':
+          objects = await storage.getRoutings();
+          break;
+        case 'recipes':
+          objects = await storage.getRecipes();
+          break;
+        case 'productionVersions':
+          objects = await storage.getProductionVersions();
+          break;
+        case 'vendors':
+          objects = await storage.getVendors();
+          break;
+        case 'customers':
+          objects = await storage.getCustomers();
+          break;
+        default:
+          return res.status(400).json({ error: 'Invalid data type' });
+      }
+      
+      res.json(objects);
+    } catch (error) {
+      console.error('Error fetching objects:', error);
+      res.status(500).json({ error: 'Failed to fetch objects' });
+    }
+  });
+
+  app.get('/api/data-map/relationships/:type/:id', requireAuth, async (req, res) => {
+    try {
+      const { type, id } = req.params;
+      const objectId = parseInt(id);
+      
+      if (isNaN(objectId)) {
+        return res.status(400).json({ error: 'Invalid object ID' });
+      }
+      
+      const relationships = await storage.getDataRelationships(type, objectId);
+      res.json(relationships);
+    } catch (error) {
+      console.error('Error fetching relationships:', error);
+      res.status(500).json({ error: 'Failed to fetch relationships' });
     }
   });
 

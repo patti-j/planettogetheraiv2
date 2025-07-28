@@ -2838,6 +2838,271 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount || 0) > 0;
   }
 
+  // Data Map Relationships
+  async getDataRelationships(objectType: string, objectId: number): Promise<any[]> {
+    try {
+      const relationships: any[] = [];
+
+      switch (objectType) {
+        case 'plants':
+          // Find all resources in this plant
+          const plantResources = await db
+            .select()
+            .from(resources)
+            .where(eq(resources.plantId, objectId));
+          
+          plantResources.forEach(resource => {
+            relationships.push({
+              from: { id: objectId, type: 'plants' },
+              to: { ...resource, type: 'resources' },
+              relationshipType: 'contains',
+              description: 'Plant contains resource'
+            });
+          });
+
+          // Find all production orders for this plant
+          const plantOrders = await db
+            .select()
+            .from(productionOrders)
+            .where(eq(productionOrders.plantId, objectId));
+          
+          plantOrders.forEach(order => {
+            relationships.push({
+              from: { id: objectId, type: 'plants' },
+              to: { ...order, type: 'productionOrders' },
+              relationshipType: 'schedules',
+              description: 'Plant schedules production order'
+            });
+          });
+          break;
+
+        case 'resources':
+          // Find the plant this resource belongs to
+          const resourceData = await db
+            .select()
+            .from(resources)
+            .where(eq(resources.id, objectId))
+            .limit(1);
+          
+          if (resourceData[0]?.plantId) {
+            const plant = await db
+              .select()
+              .from(plants)
+              .where(eq(plants.id, resourceData[0].plantId))
+              .limit(1);
+            
+            if (plant[0]) {
+              relationships.push({
+                from: { ...resourceData[0], type: 'resources' },
+                to: { ...plant[0], type: 'plants' },
+                relationshipType: 'belongs_to',
+                description: 'Resource belongs to plant'
+              });
+            }
+          }
+
+          // Find operations that use this resource
+          const resourceOperations = await db
+            .select()
+            .from(operations)
+            .where(eq(operations.resourceId, objectId));
+          
+          resourceOperations.forEach(operation => {
+            relationships.push({
+              from: { ...resourceData[0], type: 'resources' },
+              to: { ...operation, type: 'operations' },
+              relationshipType: 'performs',
+              description: 'Resource performs operation'
+            });
+          });
+          break;
+
+        case 'productionOrders':
+          // Find operations for this production order
+          const orderOperations = await db
+            .select()
+            .from(operations)
+            .where(eq(operations.productionOrderId, objectId));
+          
+          orderOperations.forEach(operation => {
+            relationships.push({
+              from: { id: objectId, type: 'productionOrders' },
+              to: { ...operation, type: 'operations' },
+              relationshipType: 'includes',
+              description: 'Production order includes operation'
+            });
+          });
+
+          // Find the plant for this production order
+          const orderData = await db
+            .select()
+            .from(productionOrders)
+            .where(eq(productionOrders.id, objectId))
+            .limit(1);
+          
+          if (orderData[0]?.plantId) {
+            const plant = await db
+              .select()
+              .from(plants)
+              .where(eq(plants.id, orderData[0].plantId))
+              .limit(1);
+            
+            if (plant[0]) {
+              relationships.push({
+                from: { ...orderData[0], type: 'productionOrders' },
+                to: { ...plant[0], type: 'plants' },
+                relationshipType: 'scheduled_at',
+                description: 'Production order scheduled at plant'
+              });
+            }
+          }
+          break;
+
+        case 'operations':
+          // Find the production order this operation belongs to
+          const operationData = await db
+            .select()
+            .from(operations)
+            .where(eq(operations.id, objectId))
+            .limit(1);
+          
+          if (operationData[0]?.productionOrderId) {
+            const order = await db
+              .select()
+              .from(productionOrders)
+              .where(eq(productionOrders.id, operationData[0].productionOrderId))
+              .limit(1);
+            
+            if (order[0]) {
+              relationships.push({
+                from: { ...operationData[0], type: 'operations' },
+                to: { ...order[0], type: 'productionOrders' },
+                relationshipType: 'part_of',
+                description: 'Operation is part of production order'
+              });
+            }
+          }
+
+          // Find the resource that performs this operation
+          if (operationData[0]?.resourceId) {
+            const resource = await db
+              .select()
+              .from(resources)
+              .where(eq(resources.id, operationData[0].resourceId))
+              .limit(1);
+            
+            if (resource[0]) {
+              relationships.push({
+                from: { ...operationData[0], type: 'operations' },
+                to: { ...resource[0], type: 'resources' },
+                relationshipType: 'uses',
+                description: 'Operation uses resource'
+              });
+            }
+          }
+          break;
+
+        case 'productionVersions':
+          // Find related BOMs and recipes
+          const versionData = await db
+            .select()
+            .from(productionVersions)
+            .where(eq(productionVersions.id, objectId))
+            .limit(1);
+          
+          if (versionData[0]?.bomId) {
+            const bom = await db
+              .select()
+              .from(billsOfMaterial)
+              .where(eq(billsOfMaterial.id, versionData[0].bomId))
+              .limit(1);
+            
+            if (bom[0]) {
+              relationships.push({
+                from: { ...versionData[0], type: 'productionVersions' },
+                to: { ...bom[0], type: 'billsOfMaterial' },
+                relationshipType: 'uses',
+                description: 'Production version uses BOM'
+              });
+            }
+          }
+
+          if (versionData[0]?.recipeId) {
+            const recipe = await db
+              .select()
+              .from(recipes)
+              .where(eq(recipes.id, versionData[0].recipeId))
+              .limit(1);
+            
+            if (recipe[0]) {
+              relationships.push({
+                from: { ...versionData[0], type: 'productionVersions' },
+                to: { ...recipe[0], type: 'recipes' },
+                relationshipType: 'uses',
+                description: 'Production version uses recipe'
+              });
+            }
+          }
+          break;
+
+        default:
+          // For other types, return empty relationships for now
+          break;
+      }
+
+      return relationships;
+    } catch (error) {
+      console.error('Error getting data relationships:', error);
+      return [];
+    }
+  }
+
+  // Missing getter methods for data map functionality
+  async getBillsOfMaterial(): Promise<any[]> {
+    try {
+      return await db.select().from(billsOfMaterial);
+    } catch (error) {
+      console.error('Error fetching bills of material:', error);
+      return [];
+    }
+  }
+
+  async getRoutings(): Promise<any[]> {
+    try {
+      return await db.select().from(routings);
+    } catch (error) {
+      console.error('Error fetching routings:', error);
+      return [];
+    }
+  }
+
+  async getRecipes(): Promise<any[]> {
+    try {
+      return await db.select().from(recipes);
+    } catch (error) {
+      console.error('Error fetching recipes:', error);
+      return [];
+    }
+  }
+
+  async getVendors(): Promise<any[]> {
+    try {
+      return await db.select().from(vendors);
+    } catch (error) {
+      console.error('Error fetching vendors:', error);
+      return [];
+    }
+  }
+
+  async getCustomers(): Promise<any[]> {
+    try {
+      return await db.select().from(customers);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+      return [];
+    }
+  }
+
   // User Management
   async getUsers(): Promise<User[]> {
     return await db.select().from(users);
