@@ -278,11 +278,10 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
         const response = await apiRequest('GET', `/api/user-preferences/${user.id}`);
         const currentPreferences = await response.json();
         
-        // Merge recent pages and last visited route with existing dashboard layout
+        // Merge recent pages with existing dashboard layout
         const updatedDashboardLayout = {
           ...currentPreferences.dashboardLayout,
-          recentPages: pages,
-          lastVisitedRoute: lastVisitedRoute
+          recentPages: pages
         };
         
         // Save to user preferences with merged data
