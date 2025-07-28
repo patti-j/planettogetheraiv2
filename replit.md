@@ -2,6 +2,18 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Recipes Master Data Type Implementation for Process Manufacturing (July 28, 2025)**:
+- Added comprehensive "recipes" master data type for process manufacturing workflows (21 → 22 total data types)
+- Implemented recipes as process manufacturing equivalent of bills of materials for discrete manufacturing
+- Added Beaker icon and Manufacturing Planning category placement for logical organization
+- Created complete field definitions: recipe number, product code, version, batch size, expected yield %, and description
+- Enhanced structured entry component with recipes support including empty entry templates and validation
+- Added recipes to all API endpoint mappings, record count tracking, and table name mapping
+- Integrated recipes with getItemDetails function showing version, batch size, and yield percentage
+- Added recipes to bill-of-materials feature data requirements for comprehensive process manufacturing support
+- System now supports both discrete manufacturing (bills of material) and process manufacturing (recipes) workflows
+- Complete recipes functionality includes CSV import, structured entry, natural text processing, and template downloads
+
 ✓ **Complete Sites Master Data Type Removal (July 28, 2025)**:
 - Completely removed "sites" master data type from the entire system per user request
 - Removed "sites" from supportedDataTypes array, reducing total data types from 22 to 21

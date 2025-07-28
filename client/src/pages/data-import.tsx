@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2, ClipboardList, AlertTriangle, Cog, Search, ChevronLeft, ChevronRight, ChevronUp, ArrowUpDown, Filter, Eye, EyeOff, Info } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2, ClipboardList, AlertTriangle, Cog, Search, ChevronLeft, ChevronRight, ChevronUp, ArrowUpDown, Filter, Eye, EyeOff, Info, Beaker } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useMaxDock } from '@/contexts/MaxDockContext';
@@ -65,7 +65,7 @@ function DataImport() {
     'sales-orders': ['customers', 'salesOrders', 'items', 'plants'],
     'user-management': ['users', 'employees', 'departments'],
     'analytics-reporting': ['plants', 'resources', 'productionOrders', 'operations', 'forecasts'],
-    'bill-of-materials': ['billsOfMaterial', 'items', 'plants', 'routings'],
+    'bill-of-materials': ['billsOfMaterial', 'items', 'plants', 'routings', 'recipes'],
     'demand-planning': ['forecasts', 'items', 'customers', 'salesOrders'],
     'transfer-management': ['transferOrders', 'storageLocations', 'inventory', 'items']
   };
@@ -137,6 +137,8 @@ function DataImport() {
           return { routingNumber: '', itemCode: '', operationSequence: '', workCenter: '', setupTime: '' };
         case 'forecasts':
           return { itemCode: '', period: '', forecastQuantity: '', actualDemand: '', accuracy: '' };
+        case 'recipes':
+          return { recipeNumber: '', productCode: '', version: '', batchSize: '', yield: '' };
         default:
           return { name: '', description: '' };
       }
@@ -308,6 +310,15 @@ function DataImport() {
             { key: 'actualDemand', label: 'Actual Demand', type: 'number' },
             { key: 'accuracy', label: 'Accuracy %', type: 'number' }
           ];
+        case 'recipes':
+          return [
+            { key: 'recipeNumber', label: 'Recipe Number', type: 'text', required: true },
+            { key: 'productCode', label: 'Product Code', type: 'text', required: true },
+            { key: 'version', label: 'Version', type: 'text', required: true },
+            { key: 'batchSize', label: 'Batch Size', type: 'number', required: true },
+            { key: 'yield', label: 'Expected Yield %', type: 'number' },
+            { key: 'description', label: 'Description', type: 'text' }
+          ];
         default:
           return [
             { key: 'name', label: 'Name', type: 'text', required: true },
@@ -338,6 +349,7 @@ function DataImport() {
         transferOrders: 'transfer-orders',
         billsOfMaterial: 'bills-of-material',
         routings: 'routings',
+        recipes: 'recipes',
         forecasts: 'forecasts'
       };
       return endpoints[dataType] || dataType;
@@ -679,6 +691,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
     // Manufacturing Planning
     { key: 'billsOfMaterial', label: 'Bills of Material', icon: List, description: 'Product structure and component lists', category: 'Manufacturing Planning' },
     { key: 'routings', label: 'Routings', icon: Route, description: 'Manufacturing process routings', category: 'Manufacturing Planning' },
+    { key: 'recipes', label: 'Recipes', icon: Beaker, description: 'Process manufacturing recipes and formulations', category: 'Manufacturing Planning' },
     { key: 'forecasts', label: 'Forecasts', icon: TrendingUp, description: 'Demand forecasts and planning data', category: 'Manufacturing Planning' }
   ];
 
@@ -725,6 +738,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
       mappedCounts.transferOrders = recordCountsData.transfer_orders || 0;
       mappedCounts.billsOfMaterial = recordCountsData.bills_of_material || 0;
       mappedCounts.routings = recordCountsData.routings || 0;
+      mappedCounts.recipes = recordCountsData.recipes || 0;
       mappedCounts.forecasts = recordCountsData.forecasts || 0;
       setRecordCounts(mappedCounts);
     }
@@ -754,6 +768,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
       transferOrders: 'transfer-orders',
       billsOfMaterial: 'bills-of-material',
       routings: 'routings',
+      recipes: 'recipes',
       forecasts: 'forecasts'
     };
     return endpoints[dataType] || dataType;
@@ -782,6 +797,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
       transferOrders: 'transfer_orders',
       billsOfMaterial: 'bills_of_material',
       routings: 'routings',
+      recipes: 'recipes',
       forecasts: 'forecasts'
     };
     return tableNames[dataType] || dataType;
@@ -833,6 +849,8 @@ Create authentic manufacturing data that reflects this company's operations.`;
         return `Version: ${item.version || ''} • Items: ${item.components?.length || ''}`;
       case 'routings':
         return `Steps: ${item.operations?.length || ''} • Duration: ${item.totalDuration || ''}min`;
+      case 'recipes':
+        return `Version: ${item.version || ''} • Batch Size: ${item.batchSize || ''} • Yield: ${item.yield || ''}%`;
       case 'forecasts':
         return `Period: ${item.period || ''} • Demand: ${item.forecast || ''}`;
       default:
