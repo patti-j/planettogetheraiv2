@@ -502,18 +502,18 @@ Create authentic manufacturing data that reflects this company's operations.`;
               <TableHeader>
                 <TableRow>
                   <TableHead>
-                    <div className="flex items-center justify-between">
-                      <span>Name</span>
-                      {/* Mobile header controls */}
-                      <div className="flex items-center gap-2 sm:hidden">
+                    <div className="flex items-center">
+                      <span className="flex-1">Name</span>
+                      {/* Mobile header status and controls */}
+                      <div className="flex items-center sm:hidden">
                         {/* Bulk selection status */}
                         {bulkSelectMode && (
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-gray-500 mr-2">
                             {selectedItems.size} selected
                           </span>
                         )}
                         
-                        {/* Bulk delete button - only show when items are selected */}
+                        {/* Bulk delete button */}
                         {bulkSelectMode && selectedItems.size > 0 && (
                           <Button
                             variant="destructive"
@@ -526,7 +526,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
                               setSelectedItems(new Set());
                               setBulkSelectMode(false);
                             }}
-                            className="h-6 px-2"
+                            className="h-6 px-2 mr-2"
                             title={`Delete ${selectedItems.size} selected items`}
                           >
                             <Trash2 className="h-3 w-3 mr-1" />
@@ -534,7 +534,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
                           </Button>
                         )}
                         
-                        {/* Bulk mode toggle - aligned with row buttons */}
+                        {/* Header bulk toggle - matches row positioning exactly */}
                         <div className="w-12 flex items-center justify-center">
                           <Button
                             variant={bulkSelectMode ? 'default' : 'ghost'}
