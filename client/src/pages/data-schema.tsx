@@ -152,6 +152,69 @@ const getCategoryColor = (category: string): string => {
   return colors[category] || colors.default;
 };
 
+// Feature to table mapping - defines which tables are relevant for each manufacturing feature
+const featureTableMapping: Record<string, string[]> = {
+  'scheduling': [
+    'production_orders', 'operations', 'resources', 'resource_capabilities', 'capabilities',
+    'shift_templates', 'resource_shift_assignments', 'resource_downtime', 'resource_overtime',
+    'production_versions', 'routings', 'routing_operations', 'work_centers', 'calendar_exceptions'
+  ],
+  'inventory': [
+    'stock_items', 'inventory_transactions', 'warehouses', 'storage_locations', 
+    'inventory_adjustments', 'cycle_counts', 'material_requirements', 'suppliers',
+    'purchase_orders', 'goods_receipts', 'inventory_reservations'
+  ],
+  'production': [
+    'production_orders', 'operations', 'bills_of_materials', 'bom_items', 'recipes',
+    'production_versions', 'routings', 'routing_operations', 'work_centers',
+    'quality_inspections', 'production_lots', 'batch_records'
+  ],
+  'quality': [
+    'quality_inspections', 'quality_test_results', 'quality_specifications',
+    'quality_control_plans', 'non_conformances', 'corrective_actions',
+    'inspection_lots', 'quality_certificates', 'sampling_procedures'
+  ],
+  'planning': [
+    'demand_forecasts', 'production_plans', 'material_requirements', 'capacity_requirements',
+    'master_production_schedule', 'sales_orders', 'planned_orders', 'mrp_runs',
+    'demand_planning_scenarios', 'capacity_planning'
+  ],
+  'maintenance': [
+    'resources', 'maintenance_schedules', 'maintenance_work_orders', 'maintenance_tasks',
+    'preventive_maintenance', 'equipment_history', 'spare_parts', 'maintenance_costs',
+    'downtime_records', 'resource_downtime'
+  ],
+  'sales': [
+    'sales_orders', 'customers', 'customer_contacts', 'sales_order_items',
+    'delivery_schedules', 'customer_forecasts', 'price_lists', 'sales_contracts',
+    'order_confirmations', 'shipping_notices'
+  ],
+  'purchasing': [
+    'purchase_orders', 'suppliers', 'supplier_contacts', 'purchase_requisitions',
+    'goods_receipts', 'supplier_evaluations', 'contracts', 'purchase_agreements',
+    'vendor_managed_inventory', 'supplier_schedules'
+  ],
+  'finance': [
+    'cost_centers', 'cost_allocations', 'budgets', 'actual_costs', 'variance_analysis',
+    'financial_periods', 'exchange_rates', 'price_changes', 'cost_rollups',
+    'profitability_analysis'
+  ]
+};
+
+// Get available features from the mapping
+const availableFeatures = [
+  { value: 'all', label: 'All Objects' },
+  { value: 'scheduling', label: 'Production Scheduling' },
+  { value: 'inventory', label: 'Inventory Management' },
+  { value: 'production', label: 'Production Management' },
+  { value: 'quality', label: 'Quality Management' },
+  { value: 'planning', label: 'Planning & Forecasting' },
+  { value: 'maintenance', label: 'Maintenance Management' },
+  { value: 'sales', label: 'Sales & Orders' },
+  { value: 'purchasing', label: 'Purchasing & Procurement' },
+  { value: 'finance', label: 'Financial Management' }
+];
+
 // Layout algorithms
 const layoutAlgorithms = {
   hierarchical: (tables: SchemaTable[]) => {
@@ -210,6 +273,7 @@ const layoutAlgorithms = {
 export default function DataSchemaView() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedFeature, setSelectedFeature] = useState<string>('all');
   const [layoutType, setLayoutType] = useState<'hierarchical' | 'circular' | 'grid'>('hierarchical');
   const [showColumns, setShowColumns] = useState(true);
   const [showRelationships, setShowRelationships] = useState(true);
@@ -282,7 +346,7 @@ export default function DataSchemaView() {
     return Array.from(connected);
   }, []);
 
-  // Filter tables based on search, category and focus mode
+  // Filter tables based on search, category, feature and focus mode
   const filteredTables = useMemo(() => {
     if (!schemaData || !Array.isArray(schemaData)) return [];
     
@@ -293,7 +357,11 @@ export default function DataSchemaView() {
       
       const matchesCategory = selectedCategory === 'all' || table.category === selectedCategory;
       
-      return matchesSearch && matchesCategory;
+      const matchesFeature = selectedFeature === 'all' || 
+                             (featureTableMapping[selectedFeature] && 
+                              featureTableMapping[selectedFeature].includes(table.name));
+      
+      return matchesSearch && matchesCategory && matchesFeature;
     });
     
     // Apply focus mode filtering
@@ -303,7 +371,7 @@ export default function DataSchemaView() {
     }
     
     return tables;
-  }, [schemaData, searchTerm, selectedCategory, focusMode, focusTable, getConnectedTables]);
+  }, [schemaData, searchTerm, selectedCategory, selectedFeature, focusMode, focusTable, getConnectedTables]);
 
   // Get unique categories
   const categories = useMemo(() => {
@@ -485,6 +553,12 @@ export default function DataSchemaView() {
           <Badge variant="outline">
             {filteredTables.length} tables
           </Badge>
+          {selectedFeature !== 'all' && (
+            <Badge variant="default" className="bg-emerald-500">
+              <Filter className="w-3 h-3 mr-1" />
+              {availableFeatures.find(f => f.value === selectedFeature)?.label}
+            </Badge>
+          )}
           {focusMode && focusTable && (
             <Badge variant="default" className="bg-blue-500">
               Focusing on: {focusTable}
@@ -513,6 +587,22 @@ export default function DataSchemaView() {
               {categories.map(category => (
                 <SelectItem key={category} value={category}>
                   {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Select value={selectedFeature} onValueChange={setSelectedFeature}>
+            <SelectTrigger className="w-52">
+              <SelectValue placeholder="Select feature" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableFeatures.map(feature => (
+                <SelectItem key={feature.value} value={feature.value}>
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 text-blue-500" />
+                    {feature.label}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>

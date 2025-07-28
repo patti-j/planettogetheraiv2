@@ -2,6 +2,17 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Feature-Based Filtering System for Data Schema View (July 28, 2025)**:
+- Successfully implemented comprehensive feature-based filtering system in Data Schema View for targeted database object exploration
+- Added feature selector dropdown with 9 manufacturing areas: Production Scheduling, Inventory Management, Production Management, Quality Management, Planning & Forecasting, Maintenance Management, Sales & Orders, Purchasing & Procurement, Financial Management
+- Created detailed feature-to-table mapping system linking database tables to relevant manufacturing features (e.g., scheduling shows production_orders, operations, resources, shift_templates, etc.)
+- Enhanced filtering logic to combine search, category, and feature filters for comprehensive data exploration capabilities
+- Added visual feature indicator badge in header showing active feature filter with emerald color scheme and filter icon
+- Users can now focus on specific manufacturing areas to see only relevant database objects instead of viewing all 136+ tables
+- Feature filtering works seamlessly with existing category filtering, search functionality, and focus mode for multi-dimensional data exploration
+- Enhanced user experience by reducing cognitive load and allowing targeted analysis of database schema components
+- Data Schema View header z-index fixed (z-50) to prevent hamburger menu overlap on desktop for proper logo visibility
+
 ✓ **Complete Marketing System Removal (July 28, 2025)**:
 - Successfully removed all marketing functionality from the system to maintain exclusive focus on manufacturing ERP capabilities
 - Removed all marketing database schema tables from shared/schema.ts: customerJourneyStages, buyerPersonas, marketingPages, contentBlocks, customerStories, leadCaptures, pageAnalytics, abTests, manufacturingSegments
