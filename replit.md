@@ -2,6 +2,16 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Data Schema View MiniMap Mobile Optimization & Hide Toggle Implementation (July 28, 2025)**:
+- Made MiniMap (view finder) smaller and hideable to save mobile screen real estate as requested
+- Added toggle button in top-right control panel with Eye/EyeOff icons for showing/hiding the MiniMap
+- Implemented responsive sizing: 32x24 (128x96px) on mobile, 48x32 (192x128px) on larger screens using Tailwind classes
+- Added localStorage persistence for MiniMap visibility preference with smart defaults (hidden on mobile, visible on desktop)
+- Enhanced MiniMap styling with glassmorphism background, border, and rounded corners for better visual integration
+- Toggle button shows visual feedback when MiniMap is visible (blue ring indicator) for clear state indication
+- Users can now hide the MiniMap completely when they need maximum screen space for schema exploration
+- Mobile users get more screen real estate by default while desktop users retain the navigation aid
+
 ✓ **Data Schema View Legend Session Persistence Implementation (July 28, 2025)**:
 - Added localStorage persistence for Data Schema View legend visibility to remember user preferences between sessions
 - Enhanced showLegend state initialization to load previous setting from localStorage, defaulting to visible (true) for new users

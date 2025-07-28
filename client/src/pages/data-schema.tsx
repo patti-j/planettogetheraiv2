@@ -419,6 +419,18 @@ function DataSchemaViewContent() {
     }
   });
 
+  // Initialize showMiniMap state from localStorage, default to false on mobile, true on desktop
+  const [showMiniMap, setShowMiniMap] = useState(() => {
+    try {
+      const saved = localStorage.getItem('dataSchemaMiniMapVisible');
+      if (saved) return JSON.parse(saved);
+      // Default to false on mobile (< 768px), true on desktop
+      return window.innerWidth >= 768;
+    } catch {
+      return window.innerWidth >= 768;
+    }
+  });
+
   // Persist legend visibility to localStorage whenever it changes
   useEffect(() => {
     try {
@@ -427,6 +439,15 @@ function DataSchemaViewContent() {
       console.warn('Failed to save legend visibility to localStorage:', error);
     }
   }, [showLegend]);
+
+  // Persist minimap visibility to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('dataSchemaMiniMapVisible', JSON.stringify(showMiniMap));
+    } catch (error) {
+      console.warn('Failed to save minimap visibility to localStorage:', error);
+    }
+  }, [showMiniMap]);
   
   const { toast } = useToast();
   const { fitView } = useReactFlow();
@@ -1118,13 +1139,39 @@ function DataSchemaViewContent() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowMiniMap(!showMiniMap)}
+                    className={`bg-white/90 backdrop-blur-sm hover:bg-white ${showMiniMap ? 'ring-2 ring-blue-200' : ''}`}
+                  >
+                    {showMiniMap ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{showMiniMap ? 'Hide' : 'Show'} view finder (minimap)</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </Panel>
           
-          <MiniMap 
-            nodeStrokeColor={(n) => getCategoryColor(n.data?.table?.category || 'default')}
-            nodeColor={(n) => getCategoryColor(n.data?.table?.category || 'default')}
-            nodeBorderRadius={2}
-          />
+          {showMiniMap && (
+            <MiniMap 
+              nodeStrokeColor={(n) => getCategoryColor(n.data?.table?.category || 'default')}
+              nodeColor={(n) => getCategoryColor(n.data?.table?.category || 'default')}
+              nodeBorderRadius={2}
+              className="!w-32 !h-24 sm:!w-48 sm:!h-32"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                border: '1px solid #e5e7eb',
+                borderRadius: '6px',
+              }}
+            />
+          )}
           
           {showLegend && (
             <Panel position="bottom-right">
