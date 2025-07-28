@@ -430,6 +430,7 @@ function DataImport() {
                 <optgroup label="Manufacturing Planning">
                   <SelectItem value="billsOfMaterial">Bills of Material</SelectItem>
                   <SelectItem value="routings">Routings</SelectItem>
+                  <SelectItem value="recipes">Recipes</SelectItem>
                   <SelectItem value="forecasts">Forecasts</SelectItem>
                 </optgroup>
               </SelectContent>
@@ -1644,17 +1645,27 @@ Create authentic manufacturing data that reflects this company's operations.`;
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Supported Data Types</div>
-                        {supportedDataTypes.map((dataType) => (
-                          <SelectItem key={dataType.key} value={dataType.key}>
-                            <div className="flex items-center justify-between w-full">
-                              <span>{dataType.label}</span>
-                              <span className="ml-2 text-xs text-gray-400">
-                                {recordCounts[dataType.key] !== undefined ? recordCounts[dataType.key] : '...'}
-                              </span>
+                        {/* Group data types by category */}
+                        {['Core Manufacturing', 'Organization', 'Products & Inventory', 'Business Partners', 'Sales & Orders', 'Manufacturing Planning'].map((category) => {
+                          const categoryTypes = supportedDataTypes.filter(dt => dt.category === category);
+                          return (
+                            <div key={category}>
+                              <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide border-b">
+                                {category}
+                              </div>
+                              {categoryTypes.map((dataType) => (
+                                <SelectItem key={dataType.key} value={dataType.key}>
+                                  <div className="flex items-center justify-between w-full">
+                                    <span>{dataType.label}</span>
+                                    <span className="ml-2 text-xs text-gray-400">
+                                      {recordCounts[dataType.key] !== undefined ? recordCounts[dataType.key] : '...'}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              ))}
                             </div>
-                          </SelectItem>
-                        ))}
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>

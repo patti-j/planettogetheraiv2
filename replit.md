@@ -13,6 +13,7 @@
 - Added recipes to bill-of-materials feature data requirements for comprehensive process manufacturing support
 - System now supports both discrete manufacturing (bills of material) and process manufacturing (recipes) workflows
 - Complete recipes functionality includes CSV import, structured entry, natural text processing, and template downloads
+- Organized master data types dropdown with category grouping for improved user experience and navigation
 
 ✓ **Complete Sites Master Data Type Removal (July 28, 2025)**:
 - Completely removed "sites" master data type from the entire system per user request
