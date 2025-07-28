@@ -1186,12 +1186,29 @@ function DataSchemaViewContent() {
       {!isFullScreen && (
         <div className="border-b bg-white px-3 sm:px-6 py-2 sm:py-4 relative z-10">
         {/* Title Row - Compact on Mobile with hamburger menu clearance */}
-        <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-4 ml-12 md:ml-0">
-          <Database className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-          <h1 className="text-lg sm:text-2xl font-bold">Data Schema</h1>
-          <Badge variant="outline" className="text-xs">
-            {filteredTables.length}
-          </Badge>
+        <div className="flex items-center justify-between mb-2 sm:mb-4 ml-12 md:ml-0">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Database className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+            <h1 className="text-lg sm:text-2xl font-bold">Data Schema</h1>
+            <Badge variant="outline" className="text-xs">
+              {filteredTables.length}
+            </Badge>
+          </div>
+          
+          {/* Schema Comparison Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.href = '/schema-comparison'}
+            className="flex items-center gap-2 text-blue-600 border-blue-200 hover:bg-blue-50"
+          >
+            <Database className="w-4 h-4" />
+            <span className="hidden sm:inline">Schema Comparison</span>
+            <span className="sm:hidden">Compare</span>
+          </Button>
+        </div>
+        
+        <div className="flex items-center gap-2 sm:gap-3 mb-2">
           {selectedFeature !== 'all' && (
             <Badge variant="default" className="bg-emerald-500 text-xs hidden sm:flex">
               <Filter className="w-3 h-3 mr-1" />
