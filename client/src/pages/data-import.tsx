@@ -42,6 +42,9 @@ function DataImport() {
   // Import data type selector
   const [selectedImportDataType, setSelectedImportDataType] = useState('');
   
+  // Template bulk download state
+  const [selectedTemplates, setSelectedTemplates] = useState<Set<string>>(new Set());
+  
   // AI Generation state
   const [showAIDialog, setShowAIDialog] = useState(false);
   const [showAISummary, setShowAISummary] = useState(false);
@@ -261,6 +264,49 @@ function DataImport() {
     a.download = `${dataType}_template.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
+  };
+
+  // Function to download all templates as individual CSV files
+  const downloadAllTemplates = () => {
+    const templatesToDownload = selectedTemplates.size > 0 
+      ? Array.from(selectedTemplates) 
+      : supportedDataTypes.map(dt => dt.key);
+
+    templatesToDownload.forEach((dataType, index) => {
+      // Add a small delay between downloads to prevent browser blocking
+      setTimeout(() => {
+        downloadTemplate(dataType);
+      }, index * 200);
+    });
+
+    toast({
+      title: "Templates Downloaded",
+      description: `${templatesToDownload.length} template files downloaded successfully`,
+    });
+
+    // Clear selection after download
+    setSelectedTemplates(new Set());
+  };
+
+  // Toggle template selection
+  const toggleTemplateSelection = (dataType: string) => {
+    const newSelection = new Set(selectedTemplates);
+    if (newSelection.has(dataType)) {
+      newSelection.delete(dataType);
+    } else {
+      newSelection.add(dataType);
+    }
+    setSelectedTemplates(newSelection);
+  };
+
+  // Select all templates
+  const selectAllTemplates = () => {
+    setSelectedTemplates(new Set(supportedDataTypes.map(dt => dt.key)));
+  };
+
+  // Clear template selection
+  const clearTemplateSelection = () => {
+    setSelectedTemplates(new Set());
   };
 
   const getTemplateFieldDefinitions = (selectedDataType: string) => {
@@ -2680,18 +2726,62 @@ Create authentic manufacturing data that reflects this company's operations.`;
             
             <TabsContent value="templates" className="mt-6">
               <div className="space-y-4">
+                {/* Header with bulk download */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <FileSpreadsheet className="h-5 w-5 text-blue-600" />
-                    <h3 className="text-lg font-medium text-blue-800">Import Templates</h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <FileSpreadsheet className="h-5 w-5 text-blue-600" />
+                      <h3 className="text-lg font-medium text-blue-800">Import Templates</h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {selectedTemplates.size > 0 && (
+                        <div className="flex items-center gap-1 text-xs text-gray-600">
+                          <span>{selectedTemplates.size} selected</span>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={clearTemplateSelection}
+                            className="h-6 px-2 text-xs"
+                          >
+                            Clear
+                          </Button>
+                        </div>
+                      )}
+                      <Button 
+                        onClick={downloadAllTemplates}
+                        className="gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                        size="sm"
+                      >
+                        <Download className="h-4 w-4" />
+                        <span className="hidden sm:inline">
+                          {selectedTemplates.size > 0 
+                            ? `Download ${selectedTemplates.size} Selected` 
+                            : 'Download All Templates'
+                          }
+                        </span>
+                        <span className="sm:hidden">
+                          {selectedTemplates.size > 0 ? `Download ${selectedTemplates.size}` : 'Download All'}
+                        </span>
+                      </Button>
+                    </div>
                   </div>
                   <p className="text-sm text-blue-700 mb-2">
                     Download properly formatted templates to use with the <strong>Import Data</strong> tab. 
                     These templates include sample data and proper column headers for successful imports.
                   </p>
-                  <p className="text-xs text-blue-600">
-                    💡 Tip: Download a template, fill it with your data, then upload it in the Import tab above.
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-blue-600">
+                      💡 Tip: Use "Download All" to get all templates at once, or select specific ones below.
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={selectedTemplates.size === supportedDataTypes.length ? clearTemplateSelection : selectAllTemplates}
+                      className="text-xs h-6"
+                    >
+                      {selectedTemplates.size === supportedDataTypes.length ? 'Select None' : 'Select All'}
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Multi-Template Option */}
@@ -2714,62 +2804,34 @@ Create authentic manufacturing data that reflects this company's operations.`;
 
                 {/* Template Categories */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Core Manufacturing */}
-                  <div className="border rounded-lg p-4">
-                    <h4 className="font-medium mb-3">Core Manufacturing</h4>
-                    <div className="space-y-2">
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <Download className="h-4 w-4 mr-2" />
-                        Resources Template
-                      </Button>
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <Download className="h-4 w-4 mr-2" />
-                        Plants Template
-                      </Button>
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <Download className="h-4 w-4 mr-2" />
-                        Capabilities Template
-                      </Button>
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <Download className="h-4 w-4 mr-2" />
-                        Production Orders Template
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Business Partners */}
-                  <div className="border rounded-lg p-4">
-                    <h4 className="font-medium mb-3">Business Partners</h4>
-                    <div className="space-y-2">
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <Download className="h-4 w-4 mr-2" />
-                        Vendors Template
-                      </Button>
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <Download className="h-4 w-4 mr-2" />
-                        Customers Template
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Inventory & Orders */}
-                  <div className="border rounded-lg p-4">
-                    <h4 className="font-medium mb-3">Inventory & Orders</h4>
-                    <div className="space-y-2">
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <Download className="h-4 w-4 mr-2" />
-                        Items Template
-                      </Button>
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <Download className="h-4 w-4 mr-2" />
-                        Storage Locations Template
-                      </Button>
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <Download className="h-4 w-4 mr-2" />
-                        Sales Orders Template
-                      </Button>
-                    </div>
-                  </div>
+                  {['Core Manufacturing', 'Organization', 'Products & Inventory', 'Business Partners', 'Sales & Orders', 'Manufacturing Planning'].map((category) => {
+                    const categoryTypes = supportedDataTypes.filter(dt => dt.category === category);
+                    return categoryTypes.length > 0 ? (
+                      <div key={category} className="border rounded-lg p-4">
+                        <h4 className="font-medium mb-3">{category}</h4>
+                        <div className="space-y-2">
+                          {categoryTypes.map((dataType) => (
+                            <div key={dataType.key} className="flex items-center gap-2">
+                              <Checkbox
+                                checked={selectedTemplates.has(dataType.key)}
+                                onCheckedChange={() => toggleTemplateSelection(dataType.key)}
+                                className="flex-shrink-0"
+                              />
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="flex-1 justify-start"
+                                onClick={() => downloadTemplate(dataType.key)}
+                              >
+                                <Download className="h-4 w-4 mr-2" />
+                                {dataType.label} Template
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null;
+                  })}
                 </div>
 
                 {/* Template Info */}
