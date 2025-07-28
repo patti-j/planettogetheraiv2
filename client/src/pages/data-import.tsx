@@ -183,9 +183,24 @@ Create authentic manufacturing data that reflects this company's operations.`;
       capabilities: 'capabilities',
       productionOrders: 'production-orders',
       operations: 'operations',
+      plannedOrders: 'planned-orders',
       users: 'users',
       vendors: 'vendors',
-      customers: 'customers'
+      customers: 'customers',
+      sites: 'sites',
+      departments: 'departments',
+      workCenters: 'work-centers',
+      employees: 'employees',
+      items: 'items',
+      storageLocations: 'storage-locations',
+      inventory: 'inventory',
+      inventoryLots: 'inventory-lots',
+      salesOrders: 'sales-orders',
+      purchaseOrders: 'purchase-orders',
+      transferOrders: 'transfer-orders',
+      billsOfMaterial: 'bills-of-material',
+      routings: 'routings',
+      forecasts: 'forecasts'
     };
     return endpoints[dataType] || dataType;
   };
@@ -197,9 +212,24 @@ Create authentic manufacturing data that reflects this company's operations.`;
       capabilities: 'capabilities', 
       productionOrders: 'production_orders',
       operations: 'operations',
+      plannedOrders: 'planned_orders',
       users: 'users',
       vendors: 'vendors',
-      customers: 'customers'
+      customers: 'customers',
+      sites: 'sites',
+      departments: 'departments',
+      workCenters: 'work_centers',
+      employees: 'employees',
+      items: 'items',
+      storageLocations: 'storage_locations',
+      inventory: 'inventory',
+      inventoryLots: 'inventory_lots',
+      salesOrders: 'sales_orders',
+      purchaseOrders: 'purchase_orders',
+      transferOrders: 'transfer_orders',
+      billsOfMaterial: 'bills_of_material',
+      routings: 'routings',
+      forecasts: 'forecasts'
     };
     return tableNames[dataType] || dataType;
   };
@@ -218,14 +248,44 @@ Create authentic manufacturing data that reflects this company's operations.`;
         return `Priority: ${item.priority || ''} • Due: ${item.dueDate || ''}`;
       case 'operations':
         return `Duration: ${item.duration || ''}min • Status: ${item.status || ''}`;
+      case 'plannedOrders':
+        return `Quantity: ${item.quantity || ''} • Plan Date: ${item.plannedDate || ''}`;
       case 'users':
         return `Role: ${item.role || ''} • ${item.email || ''}`;
       case 'vendors':
         return `Contact: ${item.contactPerson || ''} • ${item.email || ''}`;
       case 'customers':
         return `Tier: ${item.tier || ''} • ${item.email || ''}`;
+      case 'sites':
+        return `Location: ${item.location || ''} • Type: ${item.type || ''}`;
+      case 'departments':
+        return `Manager: ${item.manager || ''} • Site: ${item.siteId || ''}`;
+      case 'workCenters':
+        return `Capacity: ${item.capacity || ''} • Department: ${item.departmentId || ''}`;
+      case 'employees':
+        return `Role: ${item.role || ''} • Department: ${item.departmentId || ''}`;
+      case 'items':
+        return `Type: ${item.type || ''} • Unit: ${item.unit || ''}`;
+      case 'storageLocations':
+        return `Type: ${item.type || ''} • Capacity: ${item.capacity || ''}`;
+      case 'inventory':
+        return `Quantity: ${item.quantity || ''} • Location: ${item.locationId || ''}`;
+      case 'inventoryLots':
+        return `Lot: ${item.lotNumber || ''} • Expiry: ${item.expiryDate || ''}`;
+      case 'salesOrders':
+        return `Customer: ${item.customerId || ''} • Total: ${item.total || ''}`;
+      case 'purchaseOrders':
+        return `Vendor: ${item.vendorId || ''} • Total: ${item.total || ''}`;
+      case 'transferOrders':
+        return `From: ${item.fromLocation || ''} • To: ${item.toLocation || ''}`;
+      case 'billsOfMaterial':
+        return `Version: ${item.version || ''} • Items: ${item.components?.length || ''}`;
+      case 'routings':
+        return `Steps: ${item.operations?.length || ''} • Duration: ${item.totalDuration || ''}min`;
+      case 'forecasts':
+        return `Period: ${item.period || ''} • Demand: ${item.forecast || ''}`;
       default:
-        return item.description || item.type || '';
+        return item.description || item.type || item.status || '';
     }
   };
 
@@ -373,8 +433,24 @@ Create authentic manufacturing data that reflects this company's operations.`;
         'capabilities': 'capabilities',
         'productionOrders': 'production_orders',
         'operations': 'operations',
+        'plannedOrders': 'planned_orders',
         'vendors': 'vendors',
         'customers': 'customers',
+        'users': 'users',
+        'sites': 'sites',
+        'departments': 'departments',
+        'workCenters': 'work_centers',
+        'employees': 'employees',
+        'items': 'items',
+        'storageLocations': 'storage_locations',
+        'inventory': 'inventory',
+        'inventoryLots': 'inventory_lots',
+        'salesOrders': 'sales_orders',
+        'purchaseOrders': 'purchase_orders',
+        'transferOrders': 'transfer_orders',
+        'billsOfMaterial': 'bills_of_material',
+        'routings': 'routings',
+        'forecasts': 'forecasts',
         'stockItems': 'stock_items'
       };
       return mapping[dataType] || dataType;
