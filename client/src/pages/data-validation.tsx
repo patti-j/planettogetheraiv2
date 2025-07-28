@@ -67,13 +67,28 @@ function DataValidation() {
     },
     onSuccess: (result) => {
       console.log('Validation result:', result);
-      console.log('Summary:', result.summary);
-      setValidationResult(result);
+      console.log('Summary:', result?.summary);
       
-      if (result.summary) {
+      // Ensure result has the expected structure
+      const safeResult = {
+        summary: result?.summary || {
+          totalChecks: 0,
+          criticalIssues: 0,
+          warnings: 0,
+          infoItems: 0,
+          dataIntegrityScore: 0
+        },
+        issues: result?.issues || [],
+        executionTime: result?.executionTime || 0,
+        timestamp: result?.timestamp || new Date().toISOString()
+      };
+      
+      setValidationResult(safeResult);
+      
+      if (safeResult.summary) {
         toast({
           title: "Validation Complete",
-          description: `Found ${result.summary.criticalIssues || 0} critical issues and ${result.summary.warnings || 0} warnings`,
+          description: `Found ${safeResult.summary.criticalIssues || 0} critical issues and ${safeResult.summary.warnings || 0} warnings`,
         });
       } else {
         toast({
@@ -231,7 +246,7 @@ function DataValidation() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <AlertTriangle className="h-5 w-5" />
-                  Validation Issues ({validationResult.issues.length})
+                  Validation Issues ({validationResult.issues?.length || 0})
                 </CardTitle>
                 <CardDescription>
                   Click on any issue to view detailed information and recommendations
@@ -239,7 +254,7 @@ function DataValidation() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {validationResult.issues.map((issue) => (
+                  {validationResult.issues?.map((issue) => (
                     <div
                       key={issue.id}
                       className={`
@@ -275,7 +290,7 @@ function DataValidation() {
                     </div>
                   ))}
                   
-                  {validationResult.issues.length === 0 && (
+                  {(validationResult.issues?.length || 0) === 0 && (
                     <div className="text-center py-8 text-gray-500">
                       <CheckCircle className="h-12 w-12 mx-auto mb-3 text-green-500" />
                       <p className="font-medium">No issues found!</p>
