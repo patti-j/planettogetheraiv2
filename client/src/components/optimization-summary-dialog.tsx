@@ -107,7 +107,7 @@ export const OptimizationSummaryDialog: React.FC<OptimizationSummaryDialogProps>
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] sm:w-[90vw] md:max-w-4xl lg:max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Zap className="w-5 h-5 text-emerald-600" />
@@ -125,7 +125,7 @@ export const OptimizationSummaryDialog: React.FC<OptimizationSummaryDialogProps>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600">{summary.scheduledOperations}</div>
                   <div className="text-sm text-gray-600">Operations Scheduled</div>
@@ -290,13 +290,13 @@ export const OptimizationSummaryDialog: React.FC<OptimizationSummaryDialogProps>
                   <thead>
                     <tr className="border-b">
                       <th className="text-left p-2">Status</th>
-                      <th className="text-left p-2">Job</th>
+                      <th className="text-left p-2 hidden sm:table-cell">Job</th>
                       <th className="text-left p-2">Operation</th>
-                      <th className="text-left p-2">Resource</th>
-                      <th className="text-left p-2">Start Time</th>
-                      <th className="text-left p-2">End Time</th>
-                      <th className="text-left p-2">Duration</th>
-                      <th className="text-left p-2">Notes</th>
+                      <th className="text-left p-2 hidden md:table-cell">Resource</th>
+                      <th className="text-left p-2 hidden lg:table-cell">Start Time</th>
+                      <th className="text-left p-2 hidden lg:table-cell">End Time</th>
+                      <th className="text-left p-2 hidden md:table-cell">Duration</th>
+                      <th className="text-left p-2 hidden lg:table-cell">Notes</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -310,20 +310,25 @@ export const OptimizationSummaryDialog: React.FC<OptimizationSummaryDialogProps>
                             </Badge>
                           </div>
                         </td>
-                        <td className="p-2">
+                        <td className="p-2 hidden sm:table-cell">
                           <div className="text-sm font-medium">{(result as any).jobName || 'Unknown Job'}</div>
                           <div className="text-xs text-gray-500">ID: {(result as any).jobId || 'N/A'}</div>
                         </td>
-                        <td className="p-2 font-medium">{result.operationName}</td>
-                        <td className="p-2">{result.resourceName}</td>
-                        <td className="p-2">
+                        <td className="p-2 font-medium">
+                          <div>{result.operationName}</div>
+                          <div className="text-xs text-gray-500 sm:hidden">
+                            {result.resourceName} • {result.duration}h
+                          </div>
+                        </td>
+                        <td className="p-2 hidden md:table-cell">{result.resourceName}</td>
+                        <td className="p-2 hidden lg:table-cell">
                           {result.startTime ? format(new Date(result.startTime), 'MMM dd, HH:mm') : 'Not scheduled'}
                         </td>
-                        <td className="p-2">
+                        <td className="p-2 hidden lg:table-cell">
                           {result.endTime ? format(new Date(result.endTime), 'MMM dd, HH:mm') : 'Not scheduled'}
                         </td>
-                        <td className="p-2">{result.duration}h</td>
-                        <td className="p-2 text-xs text-gray-600">
+                        <td className="p-2 hidden md:table-cell">{result.duration}h</td>
+                        <td className="p-2 text-xs text-gray-600 hidden lg:table-cell">
                           {result.notes && result.notes.length > 0 ? result.notes.join(', ') : '-'}
                         </td>
                       </tr>
@@ -343,7 +348,7 @@ export const OptimizationSummaryDialog: React.FC<OptimizationSummaryDialogProps>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="text-center">
                   <div className="text-xl font-bold text-blue-600">{summary.statistics.averageUtilization}%</div>
                   <div className="text-sm text-gray-600">Average Utilization</div>
