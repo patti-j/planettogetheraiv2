@@ -88,7 +88,10 @@ export default function IndustryTemplates() {
   // Generate template mutation
   const generateTemplateMutation = useMutation({
     mutationFn: async (data: { industry: string; sourceUrl?: string; sourcePrompt?: string }) => {
-      return apiRequest("/api/industry-templates/generate", "POST", data);
+      return apiRequest("/api/industry-templates/generate", "POST", {
+        ...data,
+        createdBy: user?.id || 1
+      });
     },
     onSuccess: (data) => {
       toast({
@@ -127,8 +130,7 @@ export default function IndustryTemplates() {
     generateTemplateMutation.mutate({
       industry: customIndustry,
       sourceUrl: sourceUrl || undefined,
-      sourcePrompt: sourcePrompt || undefined,
-      createdBy: user?.id || 1 // Use current user ID or fallback to 1
+      sourcePrompt: sourcePrompt || undefined
     });
   };
 

@@ -2,7 +2,10 @@
 
 ## Recent Changes (July 28, 2025)
 
-✓ **Complete Interface Terminology Update: "Op Sequencer" to "Sequencer" (July 28, 2025)**:
+✓ **Industry Templates API Fix & Interface Terminology Update (July 28, 2025)**:
+- Fixed industry templates generate API error by adding missing `createdBy` parameter to frontend mutation function
+- Resolved "Invalid HTTP method" error that was preventing AI template generation from working properly
+- Updated generateTemplateMutation to include user ID in API requests for proper backend validation
 - Successfully renamed all "Op Sequencer" references to "Sequencer" throughout the entire application interface
 - Updated mobile-schedule.tsx component to use "Sequencer" terminology in page titles and component references
 - Fixed remaining TypeScript Job type references to ProductionOrder type for consistent type safety
