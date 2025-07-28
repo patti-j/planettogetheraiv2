@@ -35,6 +35,9 @@ function DataImport() {
   const [showAllDataTypes, setShowAllDataTypes] = useState(false);
   const [dataTypeUsage, setDataTypeUsage] = useState<Record<string, number>>({});
   
+  // Data type selector for Manage Data tab - default to resources which has sample data
+  const [selectedManageDataType, setSelectedManageDataType] = useState('resources');
+  
   // AI Generation state
   const [showAIDialog, setShowAIDialog] = useState(false);
   const [showAISummary, setShowAISummary] = useState(false);
@@ -1016,7 +1019,61 @@ Create authentic manufacturing data that reflects this company's operations.`;
               </TabsTrigger>
             </TabsList>
             <TabsContent value="manage" className="mt-6">
-              <ManageDataTab dataType="plants" />
+              <div className="space-y-4">
+                {/* Data Type Selector */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-medium">Manage Master Data</h3>
+                    <p className="text-sm text-gray-600">View and edit your manufacturing data</p>
+                  </div>
+                  <div className="w-full sm:w-64">
+                    <Select value={selectedManageDataType} onValueChange={setSelectedManageDataType}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select data type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Core Manufacturing</div>
+                        <SelectItem value="resources">Resources</SelectItem>
+                        <SelectItem value="productionOrders">Production Orders</SelectItem>
+                        <SelectItem value="operations">Operations</SelectItem>
+                        <SelectItem value="plannedOrders">Planned Orders</SelectItem>
+                        <SelectItem value="capabilities">Capabilities</SelectItem>
+                        <SelectItem value="plants">Plants</SelectItem>
+                        
+                        <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide border-t mt-1 pt-2">Organization</div>
+                        <SelectItem value="sites">Sites</SelectItem>
+                        <SelectItem value="departments">Departments</SelectItem>
+                        <SelectItem value="workCenters">Work Centers</SelectItem>
+                        <SelectItem value="employees">Employees</SelectItem>
+                        
+                        <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide border-t mt-1 pt-2">Products & Inventory</div>
+                        <SelectItem value="items">Items</SelectItem>
+                        <SelectItem value="storageLocations">Storage Locations</SelectItem>
+                        <SelectItem value="inventory">Inventory</SelectItem>
+                        <SelectItem value="inventoryLots">Inventory Lots</SelectItem>
+                        
+                        <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide border-t mt-1 pt-2">Business Partners</div>
+                        <SelectItem value="vendors">Vendors</SelectItem>
+                        <SelectItem value="customers">Customers</SelectItem>
+                        
+                        <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide border-t mt-1 pt-2">Sales & Orders</div>
+                        <SelectItem value="salesOrders">Sales Orders</SelectItem>
+                        <SelectItem value="purchaseOrders">Purchase Orders</SelectItem>
+                        <SelectItem value="transferOrders">Transfer Orders</SelectItem>
+                        
+                        <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide border-t mt-1 pt-2">Manufacturing Planning</div>
+                        <SelectItem value="billsOfMaterial">Bills of Material</SelectItem>
+                        <SelectItem value="routings">Routings</SelectItem>
+                        <SelectItem value="forecasts">Forecasts</SelectItem>
+                        <SelectItem value="users">Users</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                {/* Data Management Component */}
+                <ManageDataTab key={selectedManageDataType} dataType={selectedManageDataType} />
+              </div>
             </TabsContent>
             <TabsContent value="import" className="mt-6">
               <div className="text-center py-8 text-gray-500">
