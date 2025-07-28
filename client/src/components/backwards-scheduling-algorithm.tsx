@@ -452,13 +452,29 @@ export default function BackwardsSchedulingAlgorithm() {
       </div>
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="profiles">Profiles</TabsTrigger>
-          <TabsTrigger value="algorithm">How it Works</TabsTrigger>
-          <TabsTrigger value="parameters">Parameters</TabsTrigger>
-          <TabsTrigger value="results">Results</TabsTrigger>
-        </TabsList>
+        {/* Mobile: Horizontal scrolling tabs */}
+        <div className="sm:hidden">
+          <div className="flex overflow-x-auto pb-2 space-x-1">
+            <TabsList className="flex w-max gap-1">
+              <TabsTrigger value="overview" className="flex-shrink-0 text-sm px-3">Overview</TabsTrigger>
+              <TabsTrigger value="profiles" className="flex-shrink-0 text-sm px-3">Profiles</TabsTrigger>
+              <TabsTrigger value="algorithm" className="flex-shrink-0 text-sm px-3">How it Works</TabsTrigger>
+              <TabsTrigger value="parameters" className="flex-shrink-0 text-sm px-3">Parameters</TabsTrigger>
+              <TabsTrigger value="results" className="flex-shrink-0 text-sm px-3">Results</TabsTrigger>
+            </TabsList>
+          </div>
+        </div>
+        
+        {/* Desktop: Grid layout */}
+        <div className="hidden sm:block">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="overview" className="text-sm">Overview</TabsTrigger>
+            <TabsTrigger value="profiles" className="text-sm">Profiles</TabsTrigger>
+            <TabsTrigger value="algorithm" className="text-sm">How it Works</TabsTrigger>
+            <TabsTrigger value="parameters" className="text-sm">Parameters</TabsTrigger>
+            <TabsTrigger value="results" className="text-sm">Results</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="overview" className="space-y-6">
           {/* Algorithm Summary */}
