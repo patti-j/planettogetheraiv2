@@ -49,6 +49,7 @@ export const productionOrders = pgTable("production_orders", {
   actualEndDate: timestamp("actual_end_date"),
   itemNumber: text("item_number"), // Reference to items table
   salesOrderNumber: text("sales_order_number"), // Reference to sales order
+  productionVersionId: integer("production_version_id").references(() => productionVersions.id), // Links to production version which defines how to produce this item
   createdAt: timestamp("created_at").defaultNow(),
   plantId: integer("plant_id").references(() => plants.id).notNull(),
 });
@@ -6170,6 +6171,47 @@ export const forecastsRelations = relations(forecasts, ({ one }) => ({
     references: [sites.id],
   }),
 }));
+
+export const productionOrdersRelations = relations(productionOrders, ({ one, many }) => ({
+  plant: one(plants, {
+    fields: [productionOrders.plantId],
+    references: [plants.id],
+  }),
+  productionVersion: one(productionVersions, {
+    fields: [productionOrders.productionVersionId],
+    references: [productionVersions.id],
+  }),
+  operations: many(operations),
+}));
+
+export const productionVersionsRelations = relations(productionVersions, ({ one, many }) => ({
+  plant: one(plants, {
+    fields: [productionVersions.plantId],
+    references: [plants.id],
+  }),
+  bom: one(billsOfMaterial, {
+    fields: [productionVersions.bomId],
+    references: [billsOfMaterial.id],
+  }),
+  recipe: one(recipes, {
+    fields: [productionVersions.recipeId],
+    references: [recipes.id],
+  }),
+  productionOrders: many(productionOrders),
+}));
+
+export const operationsRelations = relations(operations, ({ one }) => ({
+  productionOrder: one(productionOrders, {
+    fields: [operations.productionOrderId],
+    references: [productionOrders.id],
+  }),
+  assignedResource: one(resources, {
+    fields: [operations.assignedResourceId],
+    references: [resources.id],
+  }),
+}));
+
+
 
 // ===== ERP INSERT SCHEMAS =====
 

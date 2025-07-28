@@ -2,6 +2,19 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Manufacturing Hierarchy Database Relations Implementation (July 28, 2025)**:
+- Successfully completed database relations for manufacturing hierarchy following SAP's production version approach
+- Added productionVersionId foreign key column to production_orders table with proper PostgreSQL constraints
+- Implemented comprehensive Drizzle ORM relations for production orders, production versions, operations, recipes, and bills of materials
+- Production orders now properly link to production versions via productionVersionId field, which link to either routing + BOM (discrete manufacturing) or recipes (process manufacturing)
+- Added productionOrdersRelations with plant and productionVersion relationships plus operations many-to-many relation
+- Created productionVersionsRelations with plant, bom, recipe, and productionOrders relationships for complete SAP-style hierarchy
+- Fixed operationsRelations to use correct assignedResourceId field instead of non-existent resourceId for resource assignments
+- Enhanced recipesRelations and operationsRelations to support production version linkage and resource allocation
+- Database schema now supports proper manufacturing hierarchy: Production Order → Production Version → BOM/Recipe + Routing for complete traceability
+- Relations enable complex queries and data exploration in Data Schema View with proper foreign key relationships and referential integrity
+- Manufacturing system now follows industry-standard SAP approach for production version management and order-to-recipe/BOM linkage
+
 ✓ **Data Map Legend Toggle Implementation (July 28, 2025)**:
 - Added toggleable legend panel to data map view with show/hide functionality for better user control
 - Implemented toggle button in header with visual state indicators (ToggleRight/ToggleLeft icons) showing active/inactive legend state
