@@ -44,7 +44,8 @@ import {
   ArrowRight,
   Info,
   Grid3X3,
-  Network
+  Network,
+  X
 } from 'lucide-react';
 import { Link } from 'wouter';
 
@@ -301,6 +302,7 @@ function FunctionalMapContent() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'network'>('grid');
+  const [showHelpPanel, setShowHelpPanel] = useState(true);
   const { fitView } = useReactFlow();
 
   // Filter functional areas
@@ -671,23 +673,35 @@ function FunctionalMapContent() {
               <Background color="#e5e7eb" gap={20} />
               <Controls />
               
-              {/* Network Info Panel */}
-              <Panel position="top-left" className="bg-white/90 backdrop-blur-sm rounded-lg p-4 shadow-lg">
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-sm flex items-center gap-2">
-                    <Network className="w-4 h-4" />
-                    Functional Network
-                  </h3>
-                  <div className="text-xs text-gray-600 space-y-1">
-                    <div>• Click nodes to highlight connections</div>
-                    <div>• Drag nodes to rearrange layout</div>
-                    <div>• Use controls to zoom and pan</div>
+              {/* Network Info Panel - Dismissible */}
+              {showHelpPanel && (
+                <Panel position="top-left" className="bg-white/90 backdrop-blur-sm rounded-lg p-4 shadow-lg">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-sm flex items-center gap-2">
+                        <Network className="w-4 h-4" />
+                        Functional Network
+                      </h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowHelpPanel(false)}
+                        className="h-6 w-6 p-0 hover:bg-gray-200"
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                    <div className="text-xs text-gray-600 space-y-1">
+                      <div>• Click nodes to highlight connections</div>
+                      <div>• Drag nodes to rearrange layout</div>
+                      <div>• Use controls to zoom and pan</div>
+                    </div>
+                    <div className="pt-2 border-t border-gray-200 text-xs text-gray-500">
+                      {filteredAreas.length} areas • {edges.length} connections
+                    </div>
                   </div>
-                  <div className="pt-2 border-t border-gray-200 text-xs text-gray-500">
-                    {filteredAreas.length} areas • {edges.length} connections
-                  </div>
-                </div>
-              </Panel>
+                </Panel>
+              )}
 
               {/* Connection Legend */}
               <Panel position="bottom-right" className="bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
