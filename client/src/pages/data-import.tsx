@@ -641,6 +641,90 @@ Create authentic manufacturing data that reflects this company's operations.`;
     setShowAIDialog(true);
   };
 
+  // AI Generation Mutation
+  const aiGenerationMutation = useMutation({
+    mutationFn: async (generationData: any) => {
+      const response = await fetch('/api/data-import/generate-sample-data', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify(generationData)
+      });
+      if (!response.ok) throw new Error('Failed to generate AI sample data');
+      return await response.json();
+    },
+    onSuccess: (result) => {
+      setAiGenerationResult(result);
+      setShowAIDialog(false);
+      setShowAISummary(true);
+      queryClient.invalidateQueries({ queryKey: ['/api/data-management'] });
+      toast({ 
+        title: "AI Generation Complete", 
+        description: `Generated ${result.totalRecords || 0} records across ${result.importResults?.length || 0} data types` 
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "AI Generation Failed", 
+        description: error.message || "Failed to generate sample data",
+        variant: "destructive" 
+      });
+    }
+  });
+
+  // AI Modify Mutation
+  const aiModifyMutation = useMutation({
+    mutationFn: async (modifyData: any) => {
+      const response = await fetch('/api/data-import/modify-data', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify(modifyData)
+      });
+      if (!response.ok) throw new Error('Failed to modify data with AI');
+      return await response.json();
+    },
+    onSuccess: (result) => {
+      setAiModifyResult(result);
+      setShowAIModifyDialog(false);
+      setShowAIModifySummary(true);
+      queryClient.invalidateQueries({ queryKey: ['/api/data-management'] });
+      toast({ 
+        title: "AI Modification Complete", 
+        description: `Modified ${result.affectedRecords || 0} records` 
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "AI Modification Failed", 
+        description: error.message || "Failed to modify data",
+        variant: "destructive" 
+      });
+    }
+  });
+
+  const executeAIGeneration = () => {
+    const generationData = {
+      prompt: aiPrompt,
+      sampleSize: aiSampleSize,
+      selectedDataTypes: recommendedDataTypes,
+      deleteExistingData: deleteExistingData
+    };
+    aiGenerationMutation.mutate(generationData);
+  };
+
+  const executeAIModification = () => {
+    const modifyData = {
+      prompt: aiModifyPrompt,
+      selectedDataTypes: [selectedManageDataType]
+    };
+    aiModifyMutation.mutate(modifyData);
+  };
+
   // Comprehensive list of all master data types organized by category
   const supportedDataTypes = [
     // Core Manufacturing
@@ -1902,6 +1986,190 @@ Create authentic manufacturing data that reflects this company's operations.`;
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* AI Generation Dialog */}
+      <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-purple-600" />
+              AI Sample Data Generation
+            </DialogTitle>
+            <DialogDescription>
+              Generate realistic manufacturing data using AI based on your company profile
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="ai-prompt">AI Generation Prompt</Label>
+              <Textarea
+                id="ai-prompt"
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                className="min-h-[120px]"
+                placeholder="Describe the type of manufacturing data you need..."
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Sample Size</Label>
+                <Select value={aiSampleSize} onValueChange={(value: any) => setAiSampleSize(value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select sample size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="small">Small (1-2 plants)</SelectItem>
+                    <SelectItem value="medium">Medium (3-5 plants)</SelectItem>
+                    <SelectItem value="large">Large (5-10 plants)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center space-x-2 pt-6">
+                <input 
+                  type="checkbox" 
+                  id="delete-existing" 
+                  checked={deleteExistingData}
+                  onChange={(e) => setDeleteExistingData(e.target.checked)}
+                  className="rounded" 
+                />
+                <Label htmlFor="delete-existing" className="text-sm">Delete existing data first</Label>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3">
+              <Button variant="outline" onClick={() => setShowAIDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={executeAIGeneration}
+                disabled={aiGenerationMutation.isPending || !aiPrompt.trim()}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              >
+                {aiGenerationMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Generate Data
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Modification Dialog */}
+      <Dialog open={showAIModifyDialog} onOpenChange={setShowAIModifyDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit2 className="h-5 w-5 text-purple-600" />
+              AI Data Modification
+            </DialogTitle>
+            <DialogDescription>
+              Modify existing data using natural language descriptions
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="ai-modify-prompt">Modification Instructions</Label>
+              <Textarea
+                id="ai-modify-prompt"
+                value={aiModifyPrompt}
+                onChange={(e) => setAiModifyPrompt(e.target.value)}
+                className="min-h-[120px]"
+                placeholder="Example: Add 3 CNC machines to Plant A, Update all high priority orders to critical, Remove outdated equipment from Plant B..."
+              />
+            </div>
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h4 className="font-medium text-blue-800 mb-2">Examples of modifications:</h4>
+              <ul className="text-sm text-blue-700 space-y-1">
+                <li>• "Add 3 CNC machines to Plant A"</li>
+                <li>• "Update all high priority orders to critical"</li>
+                <li>• "Change all medium priority production orders to high"</li>
+                <li>• "Add capability 'Advanced Welding' to all welding resources"</li>
+              </ul>
+            </div>
+            <div className="flex justify-end space-x-3">
+              <Button variant="outline" onClick={() => setShowAIModifyDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={executeAIModification}
+                disabled={aiModifyMutation.isPending || !aiModifyPrompt.trim()}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              >
+                {aiModifyMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Modifying...
+                  </>
+                ) : (
+                  <>
+                    <Edit2 className="h-4 w-4 mr-2" />
+                    Modify Data
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Generation Summary Dialog */}
+      <Dialog open={showAISummary} onOpenChange={setShowAISummary}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>AI Generation Complete</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {aiGenerationResult && (
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-600 mb-2">
+                  {aiGenerationResult.totalRecords || 0}
+                </div>
+                <p className="text-sm text-gray-600">
+                  Records generated across {aiGenerationResult.importResults?.length || 0} data types
+                </p>
+              </div>
+            )}
+            <div className="flex justify-end">
+              <Button onClick={() => setShowAISummary(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Modification Summary Dialog */}
+      <Dialog open={showAIModifySummary} onOpenChange={setShowAIModifySummary}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>AI Modification Complete</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {aiModifyResult && (
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-600 mb-2">
+                  {aiModifyResult.affectedRecords || 0}
+                </div>
+                <p className="text-sm text-gray-600">
+                  Records successfully modified
+                </p>
+              </div>
+            )}
+            <div className="flex justify-end">
+              <Button onClick={() => setShowAIModifySummary(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
