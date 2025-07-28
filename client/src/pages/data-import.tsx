@@ -2707,7 +2707,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
             <Database className="h-5 w-5 text-blue-600 mr-2" />
             <h1 className="text-xl md:text-2xl font-bold">Master Data Setup</h1>
           </div>
-          <p className="text-sm md:text-base text-muted-foreground">
+          <p className="text-sm md:text-base text-muted-foreground pr-4 sm:pr-0">
             Set up your company's core manufacturing data quickly and easily. 
             Upload files, enter data in spreadsheet format, use text input, or download templates to get started.
           </p>
