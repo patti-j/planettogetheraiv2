@@ -281,14 +281,6 @@ Create authentic manufacturing data that reflects this company's operations.`;
               >
                 <div className="flex items-center gap-2">
                   <span>{item.name}</span>
-                  <span className="text-xs text-gray-400 sm:hidden">
-                    {bulkSelectMode 
-                      ? (isSelected ? 'selected' : 'tap to select')
-                      : showDelete 
-                        ? 'tap anywhere to hide' 
-                        : 'tap ⋮ for delete'
-                    }
-                  </span>
                 </div>
                 <div className="text-sm text-gray-500 sm:hidden">
                   {getItemDetails(item, dataType)}
