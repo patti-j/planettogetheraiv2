@@ -44,7 +44,7 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/forklift-driver': { label: 'Forklift Driver', icon: 'Truck' },
   '/maintenance': { label: 'Maintenance', icon: 'Wrench' },
   '/disruption-management': { label: 'Disruption Management', icon: 'AlertTriangle' },
-  '/plant-manager-dashboard': { label: 'Plant Manager', icon: 'Building' },
+
   '/business-goals': { label: 'Business Goals', icon: 'TrendingUp' },
   '/systems-management-dashboard': { label: 'Systems Management', icon: 'Server' },
   '/systems-integration': { label: 'System Integration', icon: 'Database' },

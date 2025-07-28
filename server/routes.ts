@@ -191,7 +191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Demo user mapping for different roles
       const demoUsers = {
         'director': { id: 'demo_director', username: 'demo_director', role: 'Director' },
-        'plant-manager': { id: 'demo_plant', username: 'demo_plant_manager', role: 'Plant Manager' },
+
         'production-scheduler': { id: 'demo_scheduler', username: 'demo_scheduler', role: 'Production Scheduler' },
         'it-administrator': { id: 'demo_it_admin', username: 'demo_it_admin', role: 'IT Administrator' },
         'systems-manager': { id: 'demo_systems', username: 'demo_systems_manager', role: 'Systems Manager' },
@@ -1365,7 +1365,7 @@ Rules:
             isDemo: true,
             role: 'Plant Manager',
             activeRole: { id: 'demo_plant_role', name: 'Plant Manager' },
-            permissions: ['plant-manager-view', 'capacity-planning-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+            permissions: ['production-cockpit-view', 'capacity-planning-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
             roles: [{ id: 'demo_plant_role', name: 'Plant Manager' }]
           },
           'demo_scheduler': { 
@@ -5587,7 +5587,7 @@ Manufacturing Context Available:
         const demoPermissions = {
           'demo_support': ['help-view', 'systems-management-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
           'demo_director': ['business-goals-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
-          'demo_plant': ['plant-manager-view', 'capacity-planning-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+          'demo_plant': ['production-cockpit-view', 'capacity-planning-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
           'demo_scheduler': ['schedule-view', 'boards-view', 'shop-floor-view', 'analytics-view', 'scheduling-optimizer-view', 'capacity-planning-view', 'business-goals-view', 'ai-assistant-view', 'feedback-view'],
           'demo_it_admin': ['systems-management-view', 'role-management-view', 'user-management-view', 'ai-assistant-view', 'feedback-view'],
           'demo_systems': ['systems-management-view', 'role-management-view', 'user-management-view', 'training-view', 'ai-assistant-view', 'feedback-view'],
@@ -7421,7 +7421,7 @@ Return a JSON response with this structure:
     // Create role-specific opening based on common concerns
     const roleOpenings: {[key: string]: string} = {
       'production-scheduler': 'As a Production Scheduler, you know how critical efficient scheduling is.',
-      'plant-manager': 'As a Plant Manager, you need complete visibility into operations.',
+      'production-manager': 'As a Production Manager, you need complete visibility into multi-plant operations.',
       'director': 'As a Director, strategic insights drive your decisions.',
       'systems-manager': 'As a Systems Manager, seamless integration is key.',
       'trainer': 'As a Trainer, comprehensive learning tools are essential.',
@@ -7489,7 +7489,7 @@ Return a JSON response with this structure:
       '/maintenance': 'maintenance-view',
       '/optimize-orders': 'scheduling-optimizer-view',
       '/erp-import': 'erp-import-view',
-      '/plant-manager-dashboard': 'plant-manager-view',
+
       '/systems-management-dashboard': 'systems-management-view',
       '/capacity-planning': 'capacity-planning-view',
       '/visual-factory': 'visual-factory-view',
@@ -7512,7 +7512,7 @@ Return a JSON response with this structure:
       '/maintenance': 'Maintenance - Equipment maintenance management',
       '/optimize-orders': 'Optimize Orders - Intelligent scheduling optimizer',
       '/erp-import': 'ERP Import - External system data integration',
-      '/plant-manager-dashboard': 'Plant Manager Dashboard - Overall plant operations management',
+
       '/systems-management-dashboard': 'Systems Management Dashboard - System configuration and settings',
       '/capacity-planning': 'Capacity Planning - Resource capacity analysis',
       '/visual-factory': 'Visual Factory - Large screen displays for manufacturing',

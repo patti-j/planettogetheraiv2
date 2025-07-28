@@ -37,7 +37,7 @@ import DemandPlanning from "@/pages/demand-planning";
 import ERPImport from "@/pages/erp-import";
 import SystemIntegrationsPage from "@/pages/system-integrations";
 import ApiIntegrationsPage from "@/pages/api-integrations";
-import PlantManager from "@/pages/plant-manager";
+
 import SystemsManagement from "@/pages/systems-management";
 import CapacityPlanning from "@/pages/capacity-planning";
 import VisualFactory from "@/pages/visual-factory";
@@ -281,11 +281,7 @@ function Router() {
               <ERPImport />
             </ProtectedRoute>
           </Route>
-          <Route path="/plant-manager-dashboard">
-            <ProtectedRoute feature="plant-manager" action="view">
-              <PlantManager />
-            </ProtectedRoute>
-          </Route>
+
           <Route path="/systems-management-dashboard">
             <ProtectedRoute feature="systems-management" action="view">
               <SystemsManagement />

@@ -64,7 +64,7 @@ const featureGroups = [
     title: "Management",
     priority: "medium",
     features: [
-      { icon: Building, label: "Plant Manager", href: "/plant-manager-dashboard", feature: "plant-manager", action: "view", color: "bg-slate-500" },
+
       { icon: TrendingUp, label: "Business Goals", href: "/business-goals", feature: "business-goals", action: "view", color: "bg-cyan-500" },
       { icon: BarChart3, label: "Analytics", href: "/analytics", feature: "analytics", action: "view", color: "bg-teal-500" },
       { icon: FileText, label: "Reports", href: "/reports", feature: "reports", action: "view", color: "bg-blue-600" }
