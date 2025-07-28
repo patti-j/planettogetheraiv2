@@ -201,24 +201,33 @@ export default function DataSchemaView() {
   const { data: schemaData, isLoading, error } = useQuery({
     queryKey: ['/api/database/schema'],
     queryFn: async (): Promise<SchemaTable[]> => {
-      const response = await apiRequest('GET', '/api/database/schema');
-      console.log('Raw API response:', typeof response, response);
-      
-      // Handle both direct array and wrapped response formats
-      let data: SchemaTable[] = [];
-      if (Array.isArray(response)) {
-        data = response as SchemaTable[];
-      } else if (response && typeof response === 'object' && Array.isArray((response as any).data)) {
-        data = (response as any).data as SchemaTable[];
-      } else if (response && typeof response === 'object') {
-        // If it's an object but not wrapped in data, try to convert to array
-        data = Object.values(response).filter(item => 
-          item && typeof item === 'object' && (item as any).name
-        ) as SchemaTable[];
+      try {
+        const response = await fetch('/api/database/schema', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Raw API response:', typeof data, data);
+        
+        // The response should be an array directly
+        if (Array.isArray(data)) {
+          console.log('Schema data processed:', data.length, 'tables');
+          return data as SchemaTable[];
+        } else {
+          console.error('Expected array but got:', typeof data);
+          return [];
+        }
+      } catch (error) {
+        console.error('Failed to fetch schema data:', error);
+        throw error;
       }
-      
-      console.log('Schema data processed:', data.length, 'tables');
-      return data;
     },
   });
 
@@ -392,7 +401,7 @@ export default function DataSchemaView() {
   return (
     <div className="h-screen flex flex-col">
       {/* Header */}
-      <div className="border-b bg-white px-6 py-4">
+      <div className="border-b bg-white px-6 py-4 relative z-10">
         <div className="flex items-center gap-3 mb-4">
           <Database className="w-6 h-6 text-blue-600" />
           <h1 className="text-2xl font-bold">Data Schema View</h1>
