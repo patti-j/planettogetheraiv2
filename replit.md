@@ -2,7 +2,11 @@
 
 ## Recent Changes (July 28, 2025)
 
-✓ **Production Planning Mobile Layout Fix & Table Selection Implementation (July 28, 2025)**:
+✓ **AI Algorithm Assistant Mobile Scrolling Fix & Production Planning Layout Fix (July 28, 2025)**:
+- Fixed critical mobile scrolling issue in AI algorithm development assistant dialog conversation area
+- Enhanced scrolling configuration with proper WebKit overflow scrolling, touch action pan-y, and overscroll behavior contain for iOS Safari compatibility
+- Simplified DOM structure by removing unnecessary nested containers that were interfering with mobile touch scrolling
+- AI assistant conversation area now scrolls properly on all mobile devices with native momentum scrolling
 - Fixed critical mobile display issues in production planning page that caused text overlapping and layout breaking
 - Enhanced card header layout with responsive flex design (flex-col on mobile, flex-row on desktop) to prevent overflow
 - Optimized tab navigation for mobile with shorter labels and responsive grid layout (2 columns on mobile, 5 on desktop)

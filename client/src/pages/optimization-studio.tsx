@@ -398,7 +398,7 @@ export default function OptimizationStudio() {
                   AI Collaborate
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] sm:w-full overflow-hidden flex flex-col" style={{ WebkitOverflowScrolling: 'touch' }}>
+              <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] sm:w-full flex flex-col" style={{ WebkitOverflowScrolling: 'touch' }}>
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <Brain className="w-5 h-5" />
@@ -414,7 +414,7 @@ export default function OptimizationStudio() {
                   </DialogDescription>
                 </DialogHeader>
                 
-                <div className="flex-1 overflow-hidden flex flex-col space-y-4">
+                <div className="flex-1 flex flex-col space-y-4 overflow-hidden">
                   {!aiSessionActive ? (
                     /* Initial Introduction */
                     <div className="space-y-4">
@@ -470,7 +470,14 @@ export default function OptimizationStudio() {
                       </div>
 
                       {/* Conversation Area */}
-                      <div className="flex-1 overflow-y-auto border rounded-lg p-2 sm:p-4 space-y-4 bg-gray-50 min-h-[200px] max-h-[300px] sm:max-h-[400px] overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+                      <div 
+                        className="flex-1 overflow-y-auto border rounded-lg p-2 sm:p-4 space-y-4 bg-gray-50 min-h-[200px] max-h-[300px] sm:max-h-[400px]" 
+                        style={{ 
+                          WebkitOverflowScrolling: 'touch',
+                          overscrollBehavior: 'contain',
+                          touchAction: 'pan-y'
+                        }}
+                      >
                         {aiSessionMessages.map((message, index) => (
                           <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[85%] sm:max-w-[80%] p-2 sm:p-3 rounded-lg ${
