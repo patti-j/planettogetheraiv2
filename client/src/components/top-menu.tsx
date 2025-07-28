@@ -308,16 +308,39 @@ export default function TopMenu() {
               </div>
             </div>
 
-            {/* Mobile-only user controls */}
-            <div className="sm:hidden px-4 py-3 border-b border-gray-200 bg-gray-25">
+            {/* Mobile-only user controls and search - combined to save vertical space */}
+            <div className="sm:hidden px-4 py-3 border-b border-gray-200 bg-gray-25 space-y-3">
+              {/* User controls row */}
               <div className="flex items-center justify-center space-x-4">
                 <TrainingModeExit />
                 <RoleSwitcher userId={user?.id || 0} currentRole={currentRoleForSwitcher} />
               </div>
+              
+              {/* Search row */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search menu items..."
+                  value={searchFilter}
+                  onChange={(e) => setSearchFilter(e.target.value)}
+                  className="pl-9 pr-4 py-2 w-full text-sm border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                />
+                {searchFilter && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSearchFilter("")}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-gray-100"
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
             </div>
 
-            {/* Search Filter */}
-            <div className="px-6 pt-4 pb-2 border-b border-gray-100">
+            {/* Desktop search filter */}
+            <div className="hidden sm:block px-6 pt-4 pb-2 border-b border-gray-100">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input

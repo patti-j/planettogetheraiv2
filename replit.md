@@ -2,6 +2,13 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Mobile Menu Search Optimization & Layout Improvement (July 28, 2025)**:
+- Moved menu search next to role switching controls in mobile hamburger menu to save vertical space
+- Combined user controls (role switching, training mode) and search filter into single compact section on mobile
+- Separated desktop and mobile search layouts: desktop keeps original spacing, mobile uses space-efficient vertical stacking
+- Enhanced mobile UX by reducing overall menu height and improving screen real estate utilization
+- Search functionality maintains full capability while taking up less vertical space on mobile devices
+
 ✓ **Data Validation System SQL Syntax Fix (July 28, 2025)**:
 - Fixed critical SQL syntax errors in data validation system that were causing "Failed to run data validation" errors
 - Corrected PostgreSQL JSON function calls from `json_array_length(required_capabilities)` to `json_array_length(required_capabilities::jsonb)`
