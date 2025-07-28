@@ -6269,6 +6269,24 @@ export const forecasts = pgTable("forecasts", {
 
 // ===== ERP RELATIONS =====
 
+// Plants Relations
+export const plantsRelations = relations(plants, ({ many }) => ({
+  resources: many(resources),
+  productionOrders: many(productionOrders),
+  departments: many(departments),
+  workCenters: many(workCenters),
+  productionVersions: many(productionVersions),
+  plannedOrders: many(plannedOrders),
+}));
+
+// Resources Relations
+export const resourcesRelations = relations(resources, ({ one }) => ({
+  plant: one(plants, {
+    fields: [resources.plantId],
+    references: [plants.id],
+  }),
+}));
+
 export const departmentsRelations = relations(departments, ({ one, many }) => ({
   parentDepartment: one(departments, {
     fields: [departments.parentDepartmentId],
