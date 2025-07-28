@@ -1366,7 +1366,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
                           <SelectItem key={dataType.key} value={dataType.key}>
                             <div className="flex items-center justify-between w-full">
                               <span>{dataType.label}</span>
-                              <span className="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                              <span className="ml-2 text-xs text-gray-400">
                                 {recordCounts[dataType.key] !== undefined ? recordCounts[dataType.key] : '...'}
                               </span>
                             </div>

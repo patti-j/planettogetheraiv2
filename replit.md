@@ -2,6 +2,18 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Structured Entry Component Performance & UI Enhancement (July 28, 2025)**:
+- Fixed backend API database errors by removing all references to non-existent "stock_items" table from supported data types and record count mapping
+- Implemented asynchronous record count loading with 30-second caching to prevent blocking screen render during page startup
+- Cleaned up supported data types to only show 6 working table types (plants, resources, capabilities, production orders, vendors, customers)
+- Enhanced record count display in dropdown by removing gray background boxes and using lighter gray text (gray-400) for less visual intrusion
+- Record counts API now loads in background without slowing page startup, showing "..." placeholder until data loads
+- Implemented fully functional structured data entry component with spreadsheet-like interface for bulk data entry
+- Added responsive design with desktop table view and mobile card layout for optimal user experience across devices
+- Created dynamic form fields that adjust based on selected data type with proper validation and API integration
+- Structured entry component includes Add/Remove row functionality, form validation, and real-time submission to backend APIs
+- System now efficiently handles manufacturing data entry with enterprise-grade performance and mobile responsiveness
+
 ✓ **High-Performance Pagination & Mobile-Friendly Data Management Tables (July 28, 2025)**:
 - Replaced client-side data loading with server-side pagination API to handle thousands of records efficiently
 - Implemented 20 items per page pagination with search functionality and real-time filtering
