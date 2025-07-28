@@ -2,6 +2,14 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Storage Locations Engineering Filter Fix & Gantt Chart TypeScript Cleanup (July 28, 2025)**:
+- Added storage_locations table to Engineering & Product Design filter in Data Schema View as requested
+- Engineering teams can now see storage locations alongside other engineering tables for understanding material storage during manufacturing processes
+- Successfully completed comprehensive TypeScript cleanup in gantt-chart.tsx component - replaced all Job type references with ProductionOrder
+- Fixed all property references from jobId to productionOrderId and corrected sequence property to order property to match schema
+- Fixed form component prop issues (onSubmit → onSuccess) and resolved all LSP diagnostics - component now has zero TypeScript errors
+- Gantt chart component is now fully compatible with updated schema and displays production orders correctly
+
 ✓ **Critical Navigation Infinite Loop Fix & Essential Functionality Restoration (July 28, 2025)**:
 - Successfully resolved the infinite navigation loop issue that was causing automatic redirects to data map page
 - Root cause identified: multiple components (NavigationContext, MaxDockContext, useSessionPersistence) making simultaneous automatic database API calls
