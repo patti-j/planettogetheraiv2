@@ -341,27 +341,29 @@ export default function TopMenu() {
               </div>
             </div>
 
-            {/* Desktop search filter */}
+            {/* Desktop search filter - centered and constrained width */}
             <div className="hidden sm:block px-6 pt-4 pb-2 border-b border-gray-100">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="Search menu items..."
-                  value={searchFilter}
-                  onChange={(e) => setSearchFilter(e.target.value)}
-                  className="pl-9 pr-4 py-2 w-full text-sm border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                />
-                {searchFilter && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSearchFilter("")}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-gray-100"
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                )}
+              <div className="flex justify-center">
+                <div className="relative w-full max-w-md">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Search menu items..."
+                    value={searchFilter}
+                    onChange={(e) => setSearchFilter(e.target.value)}
+                    className="pl-9 pr-4 py-2 w-full text-sm border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  {searchFilter && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSearchFilter("")}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-gray-100"
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 
