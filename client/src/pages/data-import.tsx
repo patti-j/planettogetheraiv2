@@ -175,6 +175,60 @@ Create authentic manufacturing data that reflects this company's operations.`;
     { key: 'users', label: 'Users', icon: UserCheck, description: 'System users and operators' }
   ];
 
+  // Helper functions
+  const getApiEndpoint = (dataType: string): string => {
+    const endpoints: Record<string, string> = {
+      plants: 'plants',
+      resources: 'resources', 
+      capabilities: 'capabilities',
+      productionOrders: 'production-orders',
+      operations: 'operations',
+      users: 'users',
+      vendors: 'vendors',
+      customers: 'customers'
+    };
+    return endpoints[dataType] || dataType;
+  };
+
+  const getTableName = (dataType: string): string => {
+    const tableNames: Record<string, string> = {
+      plants: 'plants',
+      resources: 'resources',
+      capabilities: 'capabilities', 
+      productionOrders: 'production_orders',
+      operations: 'operations',
+      users: 'users',
+      vendors: 'vendors',
+      customers: 'customers'
+    };
+    return tableNames[dataType] || dataType;
+  };
+
+  const getItemDetails = (item: any, dataType: string): string => {
+    if (!item) return '';
+    
+    switch (dataType) {
+      case 'plants':
+        return `${item.location || ''} • ${item.timezone || ''}`;
+      case 'resources':
+        return `Type: ${item.type || ''} • Plant: ${item.plantId || ''}`;
+      case 'capabilities':
+        return item.description || '';
+      case 'productionOrders':
+        return `Priority: ${item.priority || ''} • Due: ${item.dueDate || ''}`;
+      case 'operations':
+        return `Duration: ${item.duration || ''}min • Status: ${item.status || ''}`;
+      case 'users':
+        return `Role: ${item.role || ''} • ${item.email || ''}`;
+      case 'vendors':
+        return `Contact: ${item.contactPerson || ''} • ${item.email || ''}`;
+      case 'customers':
+        return `Tier: ${item.tier || ''} • ${item.email || ''}`;
+      default:
+        return item.description || item.type || '';
+    }
+  };
+
   // Component for managing existing data
   function ManageDataTab({ dataType }: { dataType: string }) {
     const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
@@ -447,6 +501,51 @@ Create authentic manufacturing data that reflects this company's operations.`;
     );
   }
 
+  // Simple EditItemForm component for basic editing
+  function EditItemForm({ item, dataType, onSave, onCancel, isLoading, isNew = false }: {
+    item: any;
+    dataType: string;
+    onSave: (item: any) => void;
+    onCancel: () => void;
+    isLoading: boolean;
+    isNew?: boolean;
+  }) {
+    const [formData, setFormData] = useState(item);
+
+    const handleSave = () => {
+      onSave(formData);
+    };
+
+    return (
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            value={formData.name || ''}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          />
+        </div>
+        <div>
+          <Label htmlFor="description">Description</Label>
+          <Textarea
+            id="description"
+            value={formData.description || ''}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          />
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={handleSave} disabled={isLoading} className="flex-1">
+            {isLoading ? "Saving..." : "Save"}
+          </Button>
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`
       p-3 sm:p-6 space-y-4 sm:space-y-6
@@ -607,107 +706,6 @@ Create authentic manufacturing data that reflects this company's operations.`;
           </Tabs>
         </CardContent>
       </Card>
-    </div>
-  );
-}
-
-// Helper function to get API endpoint based on data type
-function getApiEndpoint(dataType: string): string {
-  const endpoints: Record<string, string> = {
-    plants: 'plants',
-    resources: 'resources', 
-    capabilities: 'capabilities',
-    productionOrders: 'production-orders',
-    operations: 'operations',
-    users: 'users',
-    vendors: 'vendors',
-    customers: 'customers'
-  };
-  return endpoints[dataType] || dataType;
-}
-
-// Helper function to get table name for data management API
-function getTableName(dataType: string): string {
-  const tableNames: Record<string, string> = {
-    plants: 'plants',
-    resources: 'resources',
-    capabilities: 'capabilities', 
-    productionOrders: 'production_orders',
-    operations: 'operations',
-    users: 'users',
-    vendors: 'vendors',
-    customers: 'customers'
-  };
-  return tableNames[dataType] || dataType;
-}
-
-// Helper function to get item details for display
-function getItemDetails(item: any, dataType: string): string {
-  if (!item) return '';
-  
-  switch (dataType) {
-    case 'plants':
-      return `${item.location || ''} • ${item.timezone || ''}`;
-    case 'resources':
-      return `Type: ${item.type || ''} • Plant: ${item.plantId || ''}`;
-    case 'capabilities':
-      return item.description || '';
-    case 'productionOrders':
-      return `Priority: ${item.priority || ''} • Due: ${item.dueDate || ''}`;
-    case 'operations':
-      return `Duration: ${item.duration || ''}min • Status: ${item.status || ''}`;
-    case 'users':
-      return `Role: ${item.role || ''} • ${item.email || ''}`;
-    case 'vendors':
-      return `Contact: ${item.contactPerson || ''} • ${item.email || ''}`;
-    case 'customers':
-      return `Tier: ${item.tier || ''} • ${item.email || ''}`;
-    default:
-      return item.description || item.type || '';
-  }
-}
-
-// Simple EditItemForm component for basic editing
-function EditItemForm({ item, dataType, onSave, onCancel, isLoading, isNew = false }: {
-  item: any;
-  dataType: string;
-  onSave: (item: any) => void;
-  onCancel: () => void;
-  isLoading: boolean;
-  isNew?: boolean;
-}) {
-  const [formData, setFormData] = useState(item);
-
-  const handleSave = () => {
-    onSave(formData);
-  };
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <Label htmlFor="name">Name</Label>
-        <Input
-          id="name"
-          value={formData.name || ''}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-        />
-      </div>
-      <div>
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          value={formData.description || ''}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-        />
-      </div>
-      <div className="flex gap-2">
-        <Button onClick={handleSave} disabled={isLoading} className="flex-1">
-          {isLoading ? "Saving..." : "Save"}
-        </Button>
-        <Button variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-      </div>
     </div>
   );
 }
