@@ -101,7 +101,11 @@ interface ScheduleResult {
   };
 }
 
-export default function BackwardsSchedulingAlgorithm() {
+interface BackwardsSchedulingAlgorithmProps {
+  onNavigateBack?: () => void;
+}
+
+export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: BackwardsSchedulingAlgorithmProps) {
   const [isRunning, setIsRunning] = useState(false);
   const [selectedTab, setSelectedTab] = useState("overview");
   const [scheduleResults, setScheduleResults] = useState<ScheduleResult[]>([]);
@@ -414,15 +418,25 @@ export default function BackwardsSchedulingAlgorithm() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <ArrowLeft className="w-6 h-6 text-blue-500" />
-            Backwards Scheduling Algorithm
-            <Badge variant="secondary">Production Scheduling</Badge>
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Advanced backwards scheduling that starts from due dates and works backwards to optimize start times
-          </p>
+        <div className="flex items-start gap-3">
+          {/* Blue arrow navigation button positioned to avoid hamburger menu */}
+          <Button
+            onClick={onNavigateBack}
+            variant="ghost"
+            size="icon"
+            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 mt-1 flex-shrink-0 ml-12 sm:ml-0"
+          >
+            <ArrowLeft className="w-6 h-6" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              Backwards Scheduling Algorithm
+              <Badge variant="secondary">Production Scheduling</Badge>
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Advanced backwards scheduling that starts from due dates and works backwards to optimize start times
+            </p>
+          </div>
         </div>
         <Button 
           onClick={handleRunScheduling}
