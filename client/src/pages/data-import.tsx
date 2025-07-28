@@ -2631,7 +2631,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
         ml-3 mr-3
         ${isMaxOpen ? 'md:ml-0 md:mr-0' : 'md:ml-12 md:mr-12'}
       `}>
-        <div className="space-y-1">
+        <div className="space-y-1 relative z-10">
           <div className="flex items-center gap-2">
             <Database className="h-5 w-5 text-blue-600 mr-2" />
             <h1 className="text-xl md:text-2xl font-bold">Master Data Setup</h1>

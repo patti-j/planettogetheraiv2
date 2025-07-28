@@ -17,6 +17,7 @@
 - Reorganized template section with proper responsive design and clear button hierarchy
 - Enhanced Templates section with mobile-optimized layout: centered full-width download button, cleaner visual hierarchy, and improved spacing
 - Added smart template selection text and simplified description for better user experience
+- Fixed hamburger menu z-index issue that was covering the Master Data Setup page logo and title by adding proper z-10 positioning
 
 ✓ **Master Data Setup Feature Selection Edit Button Implementation (July 28, 2025)**:
 - Added edit button next to "Selected Features" section in Master Data Setup page for easy feature modification
