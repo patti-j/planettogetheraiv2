@@ -672,7 +672,6 @@ function DataSchemaViewContent() {
               target: rel.toTable,
               type: edgeType,
               animated: !!isHighlighted,
-              pathfindingType: pathfindingType,
               style: { 
                 stroke: edgeColor,
                 strokeWidth: isHighlighted ? 4 : 2,

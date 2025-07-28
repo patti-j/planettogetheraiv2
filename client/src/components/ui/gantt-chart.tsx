@@ -20,10 +20,10 @@ import { apiRequest } from "@/lib/queryClient";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { useToast } from "@/hooks/use-toast";
-import type { Job, Operation, Resource, Capability, ResourceView } from "@shared/schema";
+import type { ProductionOrder, Operation, Resource, Capability, ResourceView } from "@shared/schema";
 
 interface GanttChartProps {
-  jobs: Job[];
+  jobs: ProductionOrder[];
   operations: Operation[];
   resources: Resource[];
   capabilities: Capability[];
@@ -53,7 +53,7 @@ export default function GanttChart({
   const [operationDialogOpen, setOperationDialogOpen] = useState(false);
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [resourceDialogOpen, setResourceDialogOpen] = useState(false);
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [selectedJob, setSelectedJob] = useState<ProductionOrder | null>(null);
   const [jobDialogOpen, setJobDialogOpen] = useState(false);
   // Default zoom level (session-only persistence)
   const [timeUnit, setTimeUnit] = useState<TimeUnit>("day");
@@ -707,7 +707,7 @@ export default function GanttChart({
   }, []);
 
   const getOperationsByJob = useCallback((jobId: number) => {
-    return operations.filter(op => op.jobId === jobId).sort((a, b) => a.order - b.order);
+    return operations.filter(op => op.productionOrderId === jobId).sort((a, b) => (a.order || 0) - (b.order || 0));
   }, [operations]);
 
   const getJobStatusColor = (status: string) => {
@@ -1095,8 +1095,8 @@ export default function GanttChart({
                           <OperationBlock
                           operation={operation}
                           resourceName={getResourceName(operation.assignedResourceId || 0)}
-                          jobName={jobs.find(job => job.id === operation.jobId)?.name}
-                          job={jobs.find(job => job.id === operation.jobId)}
+                          jobName={jobs.find(job => job.id === operation.productionOrderId)?.name}
+                          job={jobs.find(job => job.id === operation.productionOrderId)}
                           timelineWidth={timelineWidth}
                           dayWidth={periodWidth}
                           timeUnit={timeUnit}
@@ -1252,8 +1252,8 @@ export default function GanttChart({
                   key={operation.id}
                   operation={operation}
                   resourceName={resource.name}
-                  jobName={jobs.find(job => job.id === operation.jobId)?.name}
-                  job={jobs.find(job => job.id === operation.jobId)}
+                  jobName={jobs.find(job => job.id === operation.productionOrderId)?.name}
+                  job={jobs.find(job => job.id === operation.productionOrderId)}
                   timelineWidth={timelineWidth}
                   dayWidth={periodWidth}
                   timeUnit={timeUnit}
@@ -1317,8 +1317,8 @@ export default function GanttChart({
                   key={operation.id}
                   operation={operation}
                   resourceName={resource.name}
-                  jobName={jobs.find(job => job.id === operation.jobId)?.name}
-                  job={jobs.find(job => job.id === operation.jobId)}
+                  jobName={jobs.find(job => job.id === operation.productionOrderId)?.name}
+                  job={jobs.find(job => job.id === operation.productionOrderId)}
                   timelineWidth={timelineWidth}
                   dayWidth={periodWidth}
                   timeUnit={timeUnit}
@@ -1350,7 +1350,7 @@ export default function GanttChart({
   const renderCustomersView = () => {
     // Group jobs by customer
     const customerGroups = useMemo(() => {
-      const groups: { [customer: string]: Job[] } = {};
+      const groups: { [customer: string]: ProductionOrder[] } = {};
       jobs.forEach(job => {
         const customer = job.customer || "Unknown Customer";
         if (!groups[customer]) {
@@ -1371,7 +1371,7 @@ export default function GanttChart({
       setExpandedCustomers(newExpanded);
     };
 
-    const renderCustomerRow = (customer: string, customerJobs: Job[]) => {
+    const renderCustomerRow = (customer: string, customerJobs: ProductionOrder[]) => {
       const isExpanded = expandedCustomers.has(customer);
       
       return (
@@ -1442,7 +1442,7 @@ export default function GanttChart({
                 >
                   <div className="relative w-full h-full">
                     {operations
-                      .filter(op => op.jobId === job.id)
+                      .filter(op => op.productionOrderId === job.id)
                       .map(operation => (
                         <OperationBlock
                           key={operation.id}
@@ -1902,7 +1902,7 @@ export default function GanttChart({
                 jobs={jobs}
                 resources={resources}
                 capabilities={capabilities}
-                onCancel={() => setOperationDialogOpen(false)}
+                onSuccess={() => setOperationDialogOpen(false)}
               />
             )}
           </DialogContent>
@@ -1918,7 +1918,7 @@ export default function GanttChart({
               <ResourceForm
                 resource={selectedResource}
                 capabilities={capabilities}
-                onCancel={() => setResourceDialogOpen(false)}
+                onSuccess={() => setResourceDialogOpen(false)}
               />
             )}
           </DialogContent>
@@ -1928,7 +1928,7 @@ export default function GanttChart({
         {selectedJob && (
           <JobDetailsDialog
             job={selectedJob}
-            operations={operations.filter(op => op.jobId === selectedJob.id)}
+            operations={operations.filter(op => op.productionOrderId === selectedJob.id)}
             resources={resources}
             capabilities={capabilities}
             open={jobDialogOpen}
