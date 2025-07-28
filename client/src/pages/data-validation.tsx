@@ -66,6 +66,8 @@ function DataValidation() {
       return await apiRequest('POST', '/api/data-validation/run', {});
     },
     onSuccess: (result) => {
+      console.log('Validation result:', result);
+      console.log('Summary:', result.summary);
       setValidationResult(result);
       toast({
         title: "Validation Complete",
@@ -153,7 +155,12 @@ function DataValidation() {
                 <CheckCircle className="h-5 w-5 text-green-500" />
                 <div>
                   <p className="text-sm text-gray-600">Data Integrity Score</p>
-                  <p className="text-2xl font-bold text-green-600">{validationResult.summary.dataIntegrityScore}%</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {validationResult.summary.dataIntegrityScore !== undefined 
+                      ? `${validationResult.summary.dataIntegrityScore}%` 
+                      : 'N/A'
+                    }
+                  </p>
                 </div>
               </div>
             </CardContent>
