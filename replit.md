@@ -2,6 +2,14 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Spreadsheet Keyboard Navigation Implementation for Faster Data Entry (July 28, 2025)**:
+- Added Tab and Enter key navigation support to spreadsheet view for efficient keyboard-only data entry
+- Tab/Enter moves cursor to next cell rightward, automatically wrapping to first column of next row when reaching row end
+- Implemented cell focus tracking with data-cell attributes for precise navigation positioning
+- Enhanced all input types (text, number, date, select) with consistent keyboard navigation behavior
+- Users can now rapidly enter data without using mouse, improving productivity for bulk data entry workflows
+- Navigation respects row boundaries and prevents moving beyond available data rows and columns
+
 ✓ **Mobile Menu Search Optimization & Layout Improvement (July 28, 2025)**:
 - Moved menu search next to role switching controls in mobile hamburger menu to save vertical space
 - Combined user controls (role switching, training mode) and search filter into single compact section on mobile

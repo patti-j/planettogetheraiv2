@@ -1866,6 +1866,9 @@ Create authentic manufacturing data that reflects this company's operations.`;
     isLoading: boolean;
   }) {
     const [editData, setEditData] = useState<Record<string, any>>({});
+    
+    // Keyboard navigation state
+    const [focusedCell, setFocusedCell] = useState<{row: number, col: number} | null>(null);
 
     const getFieldsForDataType = (dataType: string) => {
       const commonFields = ['name', 'description'];
@@ -1882,6 +1885,42 @@ Create authentic manufacturing data that reflects this company's operations.`;
     };
 
     const fields = getFieldsForDataType(dataType);
+    const totalRows = items.length + (showNewRow ? 1 : 0);
+    const totalCols = fields.length;
+
+    // Keyboard navigation functions
+    const moveToNextCell = (currentRow: number, currentCol: number) => {
+      let nextRow = currentRow;
+      let nextCol = currentCol + 1;
+      
+      // If we've reached the end of the row, wrap to the first column of the next row
+      if (nextCol >= totalCols) {
+        nextCol = 0;
+        nextRow = currentRow + 1;
+      }
+      
+      // If we've reached the end of all rows, don't move
+      if (nextRow >= totalRows) {
+        return;
+      }
+      
+      setFocusedCell({ row: nextRow, col: nextCol });
+      
+      // Focus the next input
+      setTimeout(() => {
+        const nextInput = document.querySelector(`[data-cell="${nextRow}-${nextCol}"]`) as HTMLInputElement;
+        if (nextInput) {
+          nextInput.focus();
+        }
+      }, 0);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent, rowIndex: number, colIndex: number) => {
+      if (e.key === 'Tab' || e.key === 'Enter') {
+        e.preventDefault();
+        moveToNextCell(rowIndex, colIndex);
+      }
+    };
 
     const startEdit = (itemId: string, item: any) => {
       setEditingRows(prev => new Set([...prev, itemId]));
@@ -1939,7 +1978,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
       }));
     };
 
-    const renderCell = (item: any, field: string, isEditing: boolean, isNewRow = false) => {
+    const renderCell = (item: any, field: string, isEditing: boolean, isNewRow = false, rowIndex?: number, colIndex?: number) => {
       const value = isNewRow ? newRowData[field] || '' : (isEditing ? editData[item.id]?.[field] : item[field]) || '';
       
       if (!isEditing && !isNewRow) {
@@ -1958,12 +1997,19 @@ Create authentic manufacturing data that reflects this company's operations.`;
         }
       };
 
+      // Common props for keyboard navigation
+      const keyboardProps = rowIndex !== undefined && colIndex !== undefined ? {
+        'data-cell': `${rowIndex}-${colIndex}`,
+        onKeyDown: (e: React.KeyboardEvent) => handleKeyDown(e, rowIndex, colIndex)
+      } : {};
+
       if (field === 'status' && (dataType === 'resources' || dataType === 'operations' || dataType === 'productionOrders')) {
         return (
           <select 
             value={value} 
             onChange={(e) => handleChange(e.target.value)}
             className="w-full px-2 py-1 border rounded text-sm h-[36px]"
+            {...keyboardProps}
           >
             <option value="">Select...</option>
             <option value="active">Active</option>
@@ -1985,6 +2031,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
             value={value} 
             onChange={(e) => handleChange(e.target.value)}
             className="w-full px-2 py-1 border rounded text-sm h-[36px]"
+            {...keyboardProps}
           >
             <option value="">Select...</option>
             <option value="low">Low</option>
@@ -2002,6 +2049,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
             value={value ? (typeof value === 'string' ? value.split('T')[0] : value) : ''}
             onChange={(e) => handleChange(e.target.value)}
             className="w-full px-2 py-1 border rounded text-sm h-[36px]"
+            {...keyboardProps}
           />
         );
       }
@@ -2014,6 +2062,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
             onChange={(e) => handleChange(e.target.value)}
             className="w-full px-2 py-1 border rounded text-sm h-[36px]"
             min="0"
+            {...keyboardProps}
           />
         );
       }
@@ -2025,6 +2074,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
           onChange={(e) => handleChange(e.target.value)}
           className="w-full px-2 py-1 border rounded text-sm h-[36px]"
           placeholder={field === 'name' ? 'Enter name...' : ''}
+          {...keyboardProps}
         />
       );
     };
@@ -2049,9 +2099,9 @@ Create authentic manufacturing data that reflects this company's operations.`;
               {/* New Row */}
               {showNewRow && (
                 <tr className="border-b bg-blue-50">
-                  {fields.map(field => (
+                  {fields.map((field, colIndex) => (
                     <td key={field} className="border-r">
-                      {renderCell(null, field, true, true)}
+                      {renderCell(null, field, true, true, 0, colIndex)}
                     </td>
                   ))}
                   <td className="px-3 py-2">
@@ -2079,15 +2129,16 @@ Create authentic manufacturing data that reflects this company's operations.`;
               )}
               
               {/* Data Rows */}
-              {items.map((item) => {
+              {items.map((item, rowIndex) => {
                 const itemId = item.id.toString();
                 const isEditing = editingRows.has(itemId);
+                const actualRowIndex = showNewRow ? rowIndex + 1 : rowIndex; // Adjust for new row
                 
                 return (
                   <tr key={itemId} className={`border-b hover:bg-gray-50 ${isEditing ? 'bg-yellow-50' : ''}`}>
-                    {fields.map(field => (
+                    {fields.map((field, colIndex) => (
                       <td key={field} className="border-r">
-                        {renderCell(item, field, isEditing)}
+                        {renderCell(item, field, isEditing, false, actualRowIndex, colIndex)}
                       </td>
                     ))}
                     <td className="px-3 py-2">
