@@ -233,23 +233,48 @@ Create authentic manufacturing data that reflects this company's operations.`;
   function ManageDataTab({ dataType }: { dataType: string }) {
     const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
     const [searchTerm, setSearchTerm] = useState('');
+    const [bulkSelectMode, setBulkSelectMode] = useState(false);
+    const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
 
     // Mobile touch handling component
     const MobileTableRow = ({ item, dataType, onEdit, onDelete }: any) => {
       const [showDelete, setShowDelete] = useState(false);
+      const isSelected = selectedItems.has(item.id?.toString() || '');
 
       const handleRowClick = () => {
-        console.log('Row clicked, showDelete:', showDelete);
-        if (!showDelete) {
+        console.log('Row clicked, showDelete:', showDelete, 'bulkSelectMode:', bulkSelectMode);
+        if (bulkSelectMode) {
+          // In bulk mode, toggle selection
+          const newSelected = new Set(selectedItems);
+          const itemId = item.id?.toString() || '';
+          if (newSelected.has(itemId)) {
+            newSelected.delete(itemId);
+          } else {
+            newSelected.add(itemId);
+          }
+          setSelectedItems(newSelected);
+        } else if (!showDelete) {
           onEdit();
         }
       };
 
       return (
-        <TableRow className="relative">
+        <TableRow className={`relative ${isSelected && bulkSelectMode ? 'bg-blue-50' : ''}`}>
           <TableCell className="font-medium p-0">
             <div className="flex min-h-[60px]">
-              {/* Main content area - tap to edit */}
+              {/* Checkbox for bulk selection mode */}
+              {bulkSelectMode && (
+                <div className="w-12 flex items-center justify-center sm:hidden">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={handleRowClick}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                </div>
+              )}
+              
+              {/* Main content area - tap to edit or select */}
               <div 
                 className="flex-1 p-3 cursor-pointer sm:cursor-default"
                 onClick={handleRowClick}
@@ -257,7 +282,12 @@ Create authentic manufacturing data that reflects this company's operations.`;
                 <div className="flex items-center gap-2">
                   <span>{item.name}</span>
                   <span className="text-xs text-gray-400 sm:hidden">
-                    {showDelete ? 'tap anywhere to hide' : 'tap ⋮ for delete'}
+                    {bulkSelectMode 
+                      ? (isSelected ? 'selected' : 'tap to select')
+                      : showDelete 
+                        ? 'tap anywhere to hide' 
+                        : 'tap ⋮ for delete'
+                    }
                   </span>
                 </div>
                 <div className="text-sm text-gray-500 sm:hidden">
@@ -265,45 +295,49 @@ Create authentic manufacturing data that reflects this company's operations.`;
                 </div>
               </div>
               
-              {/* Delete button */}
-              <div className={`transition-all duration-300 overflow-hidden ${showDelete ? 'w-16' : 'w-0'} sm:hidden`}>
-                {showDelete && (
-                  <div className="w-16 h-full flex items-center justify-center bg-red-100">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete();
-                        setShowDelete(false);
-                      }}
-                      className="w-10 h-10"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
+              {/* Delete button - only show in normal mode */}
+              {!bulkSelectMode && (
+                <div className={`transition-all duration-300 overflow-hidden ${showDelete ? 'w-16' : 'w-0'} sm:hidden`}>
+                  {showDelete && (
+                    <div className="w-16 h-full flex items-center justify-center bg-red-100">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete();
+                          setShowDelete(false);
+                        }}
+                        className="w-10 h-10"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
               
-              {/* Toggle button */}
-              <div className="w-12 bg-gray-50 flex items-center justify-center sm:hidden border-l hover:bg-gray-100 active:bg-gray-200 transition-colors">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowDelete(!showDelete);
-                    // Haptic feedback
-                    if (navigator.vibrate) {
-                      navigator.vibrate(30);
-                    }
-                  }}
-                  className="w-8 h-8 p-0 hover:bg-transparent"
-                  title="Toggle delete button"
-                >
-                  <span className="text-sm font-bold text-gray-600">⋮</span>
-                </Button>
-              </div>
+              {/* Toggle button - only show in normal mode */}
+              {!bulkSelectMode && (
+                <div className="w-12 flex items-center justify-center sm:hidden">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDelete(!showDelete);
+                      // Haptic feedback
+                      if (navigator.vibrate) {
+                        navigator.vibrate(30);
+                      }
+                    }}
+                    className="w-8 h-8 p-0 hover:bg-gray-100 active:bg-gray-200"
+                    title="Toggle delete button"
+                  >
+                    <span className="text-sm font-bold text-gray-600">⋮</span>
+                  </Button>
+                </div>
+              )}
             </div>
           </TableCell>
           <TableCell className="hidden sm:table-cell">
@@ -435,6 +469,43 @@ Create authentic manufacturing data that reflects this company's operations.`;
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {/* Bulk mode toggle for mobile - only show in table view */}
+            {viewMode === 'table' && (
+              <Button
+                variant={bulkSelectMode ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => {
+                  setBulkSelectMode(!bulkSelectMode);
+                  setSelectedItems(new Set());
+                }}
+                className="sm:hidden"
+                title="Bulk select mode"
+              >
+                <span className="text-sm font-bold">⋮</span>
+              </Button>
+            )}
+            
+            {/* Bulk delete button - only show when items are selected */}
+            {bulkSelectMode && selectedItems.size > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={async () => {
+                  const selectedIds = Array.from(selectedItems);
+                  for (const id of selectedIds) {
+                    await deleteMutation.mutateAsync(Number(id));
+                  }
+                  setSelectedItems(new Set());
+                  setBulkSelectMode(false);
+                }}
+                className="sm:hidden"
+                title={`Delete ${selectedItems.size} selected items`}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                {selectedItems.size}
+              </Button>
+            )}
+            
             <Button
               variant={viewMode === 'table' ? 'default' : 'ghost'}
               size="sm"
@@ -475,7 +546,17 @@ Create authentic manufacturing data that reflects this company's operations.`;
               <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
+                  <TableHead>
+                    <div className="flex items-center justify-between">
+                      <span>Name</span>
+                      {/* Mobile bulk selection status */}
+                      {bulkSelectMode && (
+                        <span className="text-sm text-gray-500 sm:hidden">
+                          {selectedItems.size} selected
+                        </span>
+                      )}
+                    </div>
+                  </TableHead>
                   <TableHead className="hidden sm:table-cell">Details</TableHead>
                   <TableHead className="hidden sm:table-cell w-24">Actions</TableHead>
                 </TableRow>

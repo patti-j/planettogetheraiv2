@@ -2,15 +2,17 @@
 
 ## Recent Changes (July 28, 2025)
 
-✓ **Mobile-Friendly Touch Gestures for Data Management Tables (July 28, 2025)**:
+✓ **Mobile-Friendly Touch Gestures & Bulk Operations for Data Management Tables (July 28, 2025)**:
 - Implemented mobile-friendly touch interactions for data management tables with reliable delete button access
 - Added tap-to-edit behavior on mobile devices - users can tap any row to open the edit dialog
 - Created toggle button (⋮) on right side of each mobile row for immediate delete button access
-- Attempted multiple touch gesture approaches (swipe, long-press, pointer events) but touch events appear intercepted by table/dialog components
-- Created responsive table layout hiding Details and Actions columns on mobile while showing them inline
-- Mobile users see plant name with details below, can tap to edit, or use toggle button for delete access
-- Desktop users retain full table layout with separate Details and Actions columns for traditional interaction
-- Enhanced user experience by providing reliable mobile interface with working toggle button solution
+- Removed gray background and vertical border from row toggle buttons for cleaner, less obtrusive design
+- Added header-level ⋮ button for bulk selection mode with checkbox-based multi-selection functionality
+- Implemented bulk delete operations - header shows delete button with count when items are selected
+- Bulk mode slides in checkboxes on left side of rows and hides individual row delete toggles for cleaner interface
+- Selected rows highlight with blue background and show selection status in header ("X selected")
+- Bulk delete button shows trash icon with count of selected items for clear user feedback
+- Enhanced user experience with comprehensive single and bulk deletion workflows optimized for mobile touch interaction
 
 ✓ **Master Data Setup Manage Tab Implementation & JSX Error Resolution (July 28, 2025)**:
 - Completely replaced "Under Development" placeholder with fully functional ManageDataTab component
