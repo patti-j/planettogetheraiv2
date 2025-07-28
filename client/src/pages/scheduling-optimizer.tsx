@@ -21,7 +21,13 @@ import {
   Minimize2,
   X,
   GitCompare,
-  Sparkles
+  Sparkles,
+  BookmarkPlus,
+  Settings,
+  Star,
+  Edit,
+  Trash2,
+  Save
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,13 +42,14 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format, addDays, differenceInDays } from 'date-fns';
 import { apiRequest } from '@/lib/queryClient';
-import type { ProductionOrder, Operation, Resource, Capability } from '@shared/schema';
+import type { ProductionOrder, Operation, Resource, Capability, OptimizationProfile, ProfileUsageHistory } from '@shared/schema';
 import { ScheduleEvaluationSystem } from '@/components/schedule-evaluation-system';
 import { useAITheme } from '@/hooks/use-ai-theme';
 import { usePermissions } from '@/hooks/useAuth';
@@ -369,6 +376,43 @@ const NewJobForm: React.FC<{
   );
 };
 
+// Profile form schema
+const profileFormSchema = z.object({
+  name: z.string().min(1, "Profile name is required"),
+  description: z.string().optional(),
+  algorithmId: z.number().default(1),
+  profileConfig: z.object({
+    scope: z.object({
+      plantIds: z.array(z.number()).default([]),
+      resourceIds: z.array(z.number()).default([])
+    }),
+    objectives: z.object({
+      primary: z.enum(['minimize_makespan', 'maximize_utilization', 'minimize_cost', 'minimize_tardiness']),
+      weights: z.object({
+        cost: z.number().min(0).max(1).default(0.3),
+        time: z.number().min(0).max(1).default(0.7)
+      })
+    }),
+    constraints: z.object({
+      maxExecutionTime: z.number().min(10).max(600).default(60),
+      resourceCapacityLimits: z.boolean().default(true)
+    }),
+    algorithmParameters: z.object({
+      backwardsScheduling: z.object({
+        bufferTime: z.number().min(0).max(5).default(0.5),
+        allowOvertime: z.boolean().default(false),
+        prioritizeByDueDate: z.boolean().default(true)
+      })
+    }),
+    includePlannedOrders: z.object({
+      enabled: z.boolean().default(true),
+      weight: z.number().min(0).max(1).default(0.7)
+    })
+  })
+});
+
+type ProfileFormData = z.infer<typeof profileFormSchema>;
+
 const SchedulingOptimizer: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -384,6 +428,12 @@ const SchedulingOptimizer: React.FC = () => {
   const [isOptimizingExisting, setIsOptimizingExisting] = useState(false);
   const [showEvaluationSystem, setShowEvaluationSystem] = useState(false);
   const evaluationSystemRef = useRef<HTMLDivElement>(null);
+
+  // Profile management state
+  const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null);
+  const [showCreateProfile, setShowCreateProfile] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState<number | null>(null);
+  const [showProfileSelection, setShowProfileSelection] = useState(false);
 
 
 
@@ -422,6 +472,98 @@ const SchedulingOptimizer: React.FC = () => {
     refetchOnWindowFocus: false,
     refetchInterval: false
   });
+
+  // Profile management queries
+  const { data: profiles = [] } = useQuery<OptimizationProfile[]>({
+    queryKey: ['/api/optimization/profiles'],
+    refetchOnWindowFocus: false
+  });
+
+  const { data: profileHistory = [] } = useQuery<ProfileUsageHistory[]>({
+    queryKey: ['/api/optimization/profiles/usage-history'],
+    refetchOnWindowFocus: false
+  });
+
+  // Profile management mutations
+  const createProfileMutation = useMutation({
+    mutationFn: async (data: ProfileFormData) => {
+      const response = await apiRequest('POST', '/api/optimization/profiles', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/optimization/profiles'] });
+      setShowCreateProfile(false);
+      toast({
+        title: "Profile Created",
+        description: "Optimization profile created successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create optimization profile.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: ProfileFormData }) => {
+      const response = await apiRequest('PUT', `/api/optimization/profiles/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/optimization/profiles'] });
+      setShowEditProfile(null);
+      toast({
+        title: "Profile Updated",
+        description: "Optimization profile updated successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update optimization profile.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const deleteProfileMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest('DELETE', `/api/optimization/profiles/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/optimization/profiles'] });
+      if (selectedProfileId === deleteProfileMutation.variables) {
+        setSelectedProfileId(null);
+      }
+      toast({
+        title: "Profile Deleted",
+        description: "Optimization profile deleted successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete optimization profile.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Profile selection helper
+  const handleSelectProfile = (profileId: number) => {
+    setSelectedProfileId(profileId);
+    const profile = profiles.find(p => p.id === profileId);
+    if (profile) {
+      toast({
+        title: "Profile Selected",
+        description: `Selected "${profile.name}" profile for optimization.`,
+      });
+    }
+  };
 
 
 
@@ -926,6 +1068,21 @@ const SchedulingOptimizer: React.FC = () => {
             <span className="sm:hidden">New</span>
           </Button>
           <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowProfileSelection(true)}
+            className="flex items-center gap-1 md:gap-2 text-xs md:text-sm"
+          >
+            <Settings className="w-3 h-3 md:w-4 md:h-4" />
+            <span className="hidden sm:inline">
+              {selectedProfileId ? 
+                profiles.find(p => p.id === selectedProfileId)?.name || 'Select Profile' 
+                : 'Select Profile'
+              }
+            </span>
+            <span className="sm:hidden">Profile</span>
+          </Button>
+          <Button
             variant={showEvaluationSystem ? "default" : "outline"}
             size="sm"
             onClick={() => {
@@ -1217,7 +1374,561 @@ const SchedulingOptimizer: React.FC = () => {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Profile Selection Dialog */}
+      <Dialog open={showProfileSelection} onOpenChange={setShowProfileSelection}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              Optimization Profile Selection
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Profile Selection */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Star className="w-5 h-5 text-amber-500" />
+                Available Profiles
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {profiles.map((profile) => (
+                  <Card 
+                    key={profile.id} 
+                    className={`cursor-pointer transition-all ${
+                      selectedProfileId === profile.id 
+                        ? 'ring-2 ring-blue-500 bg-blue-50' 
+                        : 'hover:bg-gray-50'
+                    }`}
+                    onClick={() => handleSelectProfile(profile.id)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-900">{profile.name}</h4>
+                          {profile.description && (
+                            <p className="text-sm text-gray-600 mt-1">{profile.description}</p>
+                          )}
+                          <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                            <span>Algorithm: Backwards Scheduling</span>
+                            <span>Created: {format(new Date(profile.createdAt), 'MMM dd, yyyy')}</span>
+                          </div>
+                          
+                          {/* Profile Key Parameters */}
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-md">
+                              {profile.profileConfig.objectives.primary.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </span>
+                            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-md">
+                              Buffer: {profile.profileConfig.algorithmParameters.backwardsScheduling.bufferTime}h
+                            </span>
+                            {profile.profileConfig.algorithmParameters.backwardsScheduling.allowOvertime && (
+                              <span className="px-2 py-1 bg-amber-100 text-amber-700 text-xs rounded-md">
+                                Overtime OK
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 ml-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowEditProfile(profile.id);
+                            }}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteProfileMutation.mutate(profile.id);
+                            }}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              
+              {/* Create New Profile Button */}
+              <div className="mt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCreateProfile(true)}
+                  className="w-full border-dashed border-2 border-gray-300 hover:border-gray-400"
+                >
+                  <BookmarkPlus className="w-4 h-4 mr-2" />
+                  Create New Profile
+                </Button>
+              </div>
+            </div>
+
+            {/* Profile Usage History */}
+            {profileHistory.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-green-500" />
+                  Recent Profile Usage
+                </h3>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {profileHistory.slice(0, 10).map((usage) => {
+                    const profile = profiles.find(p => p.id === usage.profileId);
+                    return (
+                      <div key={usage.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg text-sm">
+                        <div>
+                          <span className="font-medium">{profile?.name || 'Unknown Profile'}</span>
+                          <span className="text-gray-500 ml-2">
+                            {format(new Date(usage.executedAt), 'MMM dd, HH:mm')}
+                          </span>
+                        </div>
+                        <div className="text-gray-600">
+                          {usage.executionTime ? `${usage.executionTime.toFixed(1)}s` : 'N/A'}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex justify-end gap-2 mt-6">
+            <Button variant="outline" onClick={() => setShowProfileSelection(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                setShowProfileSelection(false);
+                if (selectedProfileId) {
+                  toast({
+                    title: "Profile Applied",
+                    description: "Selected optimization profile will be used for scheduling algorithms.",
+                  });
+                }
+              }}
+              disabled={!selectedProfileId}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Use Selected Profile
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Profile Dialog */}
+      <ProfileFormDialog
+        open={showCreateProfile}
+        onOpenChange={setShowCreateProfile}
+        onSubmit={createProfileMutation.mutate}
+        isLoading={createProfileMutation.isPending}
+        resources={resources}
+        title="Create Optimization Profile"
+        submitText="Create Profile"
+      />
+
+      {/* Edit Profile Dialog */}
+      {showEditProfile && (
+        <ProfileFormDialog
+          open={!!showEditProfile}
+          onOpenChange={() => setShowEditProfile(null)}
+          onSubmit={(data) => updateProfileMutation.mutate({ id: showEditProfile, data })}
+          isLoading={updateProfileMutation.isPending}
+          resources={resources}
+          title="Edit Optimization Profile"
+          submitText="Update Profile"
+          initialData={profiles.find(p => p.id === showEditProfile)}
+        />
+      )}
     </div>
+  );
+};
+
+// Profile Form Dialog Component
+interface ProfileFormDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (data: ProfileFormData) => void;
+  isLoading: boolean;
+  resources?: Resource[];
+  title: string;
+  submitText: string;
+  initialData?: OptimizationProfile;
+}
+
+const ProfileFormDialog: React.FC<ProfileFormDialogProps> = ({
+  open,
+  onOpenChange,
+  onSubmit,
+  isLoading,
+  resources = [],
+  title,
+  submitText,
+  initialData
+}) => {
+  const form = useForm<ProfileFormData>({
+    resolver: zodResolver(profileFormSchema),
+    defaultValues: initialData ? {
+      name: initialData.name,
+      description: initialData.description || '',
+      algorithmId: initialData.algorithmId,
+      profileConfig: initialData.profileConfig
+    } : {
+      name: '',
+      description: '',
+      algorithmId: 1,
+      profileConfig: {
+        scope: {
+          plantIds: [],
+          resourceIds: []
+        },
+        objectives: {
+          primary: 'minimize_makespan',
+          weights: {
+            cost: 0.3,
+            time: 0.7
+          }
+        },
+        constraints: {
+          maxExecutionTime: 60,
+          resourceCapacityLimits: true
+        },
+        algorithmParameters: {
+          backwardsScheduling: {
+            bufferTime: 0.5,
+            allowOvertime: false,
+            prioritizeByDueDate: true
+          }
+        },
+        includePlannedOrders: {
+          enabled: true,
+          weight: 0.7
+        }
+      }
+    }
+  });
+
+  const handleSubmit = (data: ProfileFormData) => {
+    onSubmit(data);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <BookmarkPlus className="w-5 h-5" />
+            {title}
+          </DialogTitle>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Basic Information</h3>
+              
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Profile Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Enter profile name" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} placeholder="Describe this optimization profile" rows={2} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <Separator />
+
+            {/* Objectives */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Optimization Objectives</h3>
+              
+              <FormField
+                control={form.control}
+                name="profileConfig.objectives.primary"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Primary Objective</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select primary objective" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="minimize_makespan">Minimize Makespan</SelectItem>
+                        <SelectItem value="maximize_utilization">Maximize Utilization</SelectItem>
+                        <SelectItem value="minimize_cost">Minimize Cost</SelectItem>
+                        <SelectItem value="minimize_tardiness">Minimize Tardiness</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="profileConfig.objectives.weights.cost"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cost Weight ({(field.value * 100).toFixed(0)}%)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="range" 
+                          min="0" 
+                          max="1" 
+                          step="0.1"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="profileConfig.objectives.weights.time"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Time Weight ({(field.value * 100).toFixed(0)}%)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="range" 
+                          min="0" 
+                          max="1" 
+                          step="0.1"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Algorithm Parameters */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Algorithm Parameters</h3>
+              
+              <FormField
+                control={form.control}
+                name="profileConfig.algorithmParameters.backwardsScheduling.bufferTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Buffer Time (hours)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="5" 
+                        step="0.1"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="profileConfig.algorithmParameters.backwardsScheduling.allowOvertime"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                      <div className="space-y-0.5">
+                        <FormLabel>Allow Overtime</FormLabel>
+                        <div className="text-sm text-muted-foreground">
+                          Allow scheduling beyond normal hours
+                        </div>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="profileConfig.algorithmParameters.backwardsScheduling.prioritizeByDueDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                      <div className="space-y-0.5">
+                        <FormLabel>Prioritize by Due Date</FormLabel>
+                        <div className="text-sm text-muted-foreground">
+                          Sort orders by due date priority
+                        </div>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Planned Orders */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Planned Orders Integration</h3>
+              
+              <FormField
+                control={form.control}
+                name="profileConfig.includePlannedOrders.enabled"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Include Planned Orders</FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Consider planned orders in optimization
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {form.watch('profileConfig.includePlannedOrders.enabled') && (
+                <FormField
+                  control={form.control}
+                  name="profileConfig.includePlannedOrders.weight"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Planned Orders Weight ({(field.value * 100).toFixed(0)}%)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="range" 
+                          min="0" 
+                          max="1" 
+                          step="0.1"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Constraints */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Constraints</h3>
+              
+              <FormField
+                control={form.control}
+                name="profileConfig.constraints.maxExecutionTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max Execution Time (seconds)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="10" 
+                        max="600"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="profileConfig.constraints.resourceCapacityLimits"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Resource Capacity Limits</FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Enforce resource capacity constraints
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4 mr-2" />
+                )}
+                {submitText}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 };
 
