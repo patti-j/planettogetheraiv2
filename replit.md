@@ -2,6 +2,13 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Data Schema View Filter Configuration Enhancement (July 28, 2025)**:
+- Added capacity_planning_scenarios table to Production Scheduling filter as requested
+- Capacity planning scenarios now visible when filtering by Production Scheduling in Data Schema View
+- Ensured capacity planning scenarios excluded from Engineering & Product Design filter to maintain proper categorization
+- Updated feature-to-table mapping to correctly categorize capacity planning scenarios as production scheduling functionality
+- Manufacturing teams can now explore capacity planning scenarios alongside other production scheduling tables
+
 ✓ **Data Schema View Full-Screen Mode Implementation (July 28, 2025)**:
 - Added full-screen toggle button in top-right control panel with Maximize/Minimize icons for maximum map real estate
 - Implemented complete header hiding in full-screen mode to allocate entire screen to the schema visualization

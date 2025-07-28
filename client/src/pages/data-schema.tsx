@@ -166,7 +166,7 @@ const featureTableMapping: Record<string, string[]> = {
     'production_orders', 'planned_orders', 'operations', 'resources', 'resource_capabilities', 'capabilities',
     'shift_templates', 'resource_shift_assignments', 'resource_downtime', 'resource_overtime',
     'production_versions', 'routings', 'routing_operations', 'work_centers', 'calendar_exceptions',
-    'recipes', 'bills_of_materials', 'bom_items'
+    'recipes', 'bills_of_materials', 'bom_items', 'capacity_planning_scenarios'
   ],
   'inventory': [
     'stock_items', 'inventory_transactions', 'warehouses', 'storage_locations', 
