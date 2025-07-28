@@ -61,6 +61,7 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/data-import': { label: 'Master Data Setup', icon: 'Database' },
   '/data-validation': { label: 'Data Validation', icon: 'Shield' },
   '/data-schema': { label: 'Data Schema View', icon: 'Network' },
+  '/data-map': { label: 'Data Relationship Map', icon: 'Network' },
   '/billing': { label: 'Billing & Usage', icon: 'CreditCard' },
   '/account': { label: 'Account Settings', icon: 'Settings' }
 };
@@ -177,19 +178,63 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     }
   }, [onboardingStatus && typeof onboardingStatus === 'object' && 'isCompleted' in onboardingStatus ? onboardingStatus.isCompleted : false]);
 
+  // Helper function to generate label from path
+  const generateLabelFromPath = (path: string): { label: string; icon: string } => {
+    // Remove leading slash and split by hyphens/slashes
+    const segments = path.replace(/^\//, '').split(/[-\/]/).filter(Boolean);
+    
+    // Capitalize each segment and join with spaces
+    const label = segments
+      .map(segment => segment.charAt(0).toUpperCase() + segment.slice(1))
+      .join(' ');
+    
+    // Default icon based on common patterns
+    let icon = 'FileText'; // Default icon
+    
+    if (path.includes('data')) icon = 'Database';
+    else if (path.includes('analytics') || path.includes('report')) icon = 'BarChart3';
+    else if (path.includes('dashboard') || path.includes('cockpit')) icon = 'Monitor';
+    else if (path.includes('schedule') || path.includes('planning')) icon = 'Calendar';
+    else if (path.includes('optimization') || path.includes('algorithm')) icon = 'Sparkles';
+    else if (path.includes('management') || path.includes('admin')) icon = 'Settings';
+    else if (path.includes('production') || path.includes('manufacturing')) icon = 'Factory';
+    else if (path.includes('inventory') || path.includes('stock')) icon = 'Package';
+    else if (path.includes('maintenance') || path.includes('repair')) icon = 'Wrench';
+    else if (path.includes('quality') || path.includes('inspection')) icon = 'Shield';
+    else if (path.includes('capacity') || path.includes('resource')) icon = 'Briefcase';
+    else if (path.includes('shift') || path.includes('workforce')) icon = 'Clock';
+    else if (path.includes('visual') || path.includes('display')) icon = 'Eye';
+    else if (path.includes('chat') || path.includes('message')) icon = 'MessageSquare';
+    else if (path.includes('training') || path.includes('education')) icon = 'GraduationCap';
+    else if (path.includes('business') || path.includes('goals')) icon = 'TrendingUp';
+    else if (path.includes('system') || path.includes('integration')) icon = 'Server';
+    else if (path.includes('extension') || path.includes('plugin')) icon = 'Code';
+    else if (path.includes('template') || path.includes('industry')) icon = 'Building';
+    else if (path.includes('feedback') || path.includes('support')) icon = 'MessageCircle';
+    else if (path.includes('billing') || path.includes('account')) icon = 'CreditCard';
+    
+    return { label: label || 'Page', icon };
+  };
+
   // Track current page when location changes and save last visited route
   useEffect(() => {
     const currentPath = location;
-    const pageInfo = pageMapping[currentPath];
     
-    // Always save the last visited route for session persistence (excluding login)
+    // Always save the last visited route for session persistence (excluding login and home)
     if (currentPath !== '/login' && currentPath !== '/') {
       setLastVisitedRoute(currentPath);
     }
     
-    if (pageInfo && currentPath !== '/') { // Don't track home page visits
-      addRecentPage(currentPath, pageInfo.label, pageInfo.icon);
+    // Don't track home page visits or login page
+    if (currentPath === '/' || currentPath === '/login') {
+      return;
     }
+    
+    // Get page info from mapping or generate it
+    const pageInfo = pageMapping[currentPath] || generateLabelFromPath(currentPath);
+    
+    // Always track the page visit
+    addRecentPage(currentPath, pageInfo.label, pageInfo.icon);
   }, [location]);
 
   const addRecentPage = (path: string, label: string, icon?: string) => {

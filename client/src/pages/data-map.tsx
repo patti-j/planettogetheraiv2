@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { useNavigation } from '@/contexts/NavigationContext';
 import { Network, Database, Factory, Package, Users, Wrench, Cog, Building, List, Route, Beaker, Settings, TrendingUp, Edit2, Maximize2, X, Search, Info, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -143,6 +144,12 @@ function DataMapView() {
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { addRecentPage } = useNavigation();
+
+  // Register this page as visited
+  useEffect(() => {
+    addRecentPage('/data-map', 'Data Relationship Map', 'Network');
+  }, [addRecentPage]);
 
   // Supported data types for the map
   const dataTypes = [

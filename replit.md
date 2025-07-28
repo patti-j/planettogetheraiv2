@@ -2,6 +2,19 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Enhanced Navigation Tracking System for Robust Recent Pages Management (July 28, 2025)**:
+- Fixed Data Relationship Map not appearing in recent pages by adding missing mapping in NavigationContext pageMapping
+- Enhanced navigation tracking system to automatically handle future menu additions without requiring manual pageMapping updates
+- Implemented intelligent label and icon generation for unmapped routes using path analysis and keyword detection
+- Added automatic page tracking that works for any valid route: generates sensible labels from URL paths and assigns appropriate icons
+- Created comprehensive icon mapping system based on URL patterns: data→Database, analytics→BarChart3, production→Factory, etc.
+- Navigation system now future-proof - any new page automatically gets tracked in recent pages with contextually appropriate labels and icons
+- Enhanced generateLabelFromPath function converts URLs like "/data-relationship-map" to "Data Relationship Map" with Network icon
+- System ensures all main pages (existing and future) are properly tracked in recent pages without requiring developer intervention
+- Fixed recurring navigation tracking issues by making the system automatically adaptive to new routes and menu additions
+
+## Recent Changes (July 28, 2025)
+
 ✓ **BOM Material Requirements & Product Outputs Schema Enhancement (July 28, 2025)**:
 - Enhanced Bills of Material (BOM) structure with comprehensive material requirements and product outputs tracking
 - Added bomMaterialRequirements table supporting material inputs with required quantities, units, material types, consumption types, scrap percentages, and lead time offsets
