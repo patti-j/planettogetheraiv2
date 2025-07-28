@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,10 @@ import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { 
   Calendar, Users, Settings, Target, TrendingUp, AlertTriangle, Plus, BookOpen, Zap, Briefcase,
-  Clock, Activity, BarChart3, Factory, Gauge, Timer, Wrench, UserCheck, ClipboardList
+  Clock, Activity, BarChart3, Factory, Gauge, Timer, Wrench, UserCheck, ClipboardList, 
+  ChevronUp, ChevronDown, Info
 } from "lucide-react";
+import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isWeekend, differenceInDays } from "date-fns";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -212,6 +214,304 @@ export default function CapacityPlanning() {
     createScenarioMutation.mutate(data);
   };
 
+  // Capacity Visualization Component
+  const CapacityVisualization = () => {
+    const [selectedWeek, setSelectedWeek] = useState(0);
+    const [expandedResource, setExpandedResource] = useState<number | null>(null);
+    
+    // Generate capacity data for visualization
+    const capacityData = useMemo(() => {
+      const startDate = new Date();
+      const weeks = Array.from({ length: 12 }, (_, i) => {
+        const weekStart = addDays(startDate, i * 7);
+        const weekEnd = addDays(weekStart, 6);
+        const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
+        
+        return {
+          weekNumber: i + 1,
+          weekStart,
+          weekEnd,
+          label: `Week ${i + 1} (${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d')})`,
+          days: days.map(day => ({
+            date: day,
+            isWeekend: isWeekend(day),
+            isHoliday: false, // TODO: Add holiday logic
+            workingHours: isWeekend(day) ? 0 : 16, // 2 shifts × 8 hours
+          })),
+          resources: resources.map(resource => {
+            const baseCapacity = 16; // 2 shifts × 8 hours per day
+            const demandVariation = Math.sin(i * 0.5) * 0.3 + 0.7; // Simulate demand variation
+            const capacityUtilization = Math.min(demandVariation + (Math.random() * 0.2), 1);
+            
+            return {
+              id: resource.id,
+              name: resource.name,
+              type: resource.type,
+              capacity: baseCapacity * 5, // 5 working days
+              demand: Math.floor(baseCapacity * 5 * capacityUtilization),
+              utilization: Math.floor(capacityUtilization * 100),
+              overtime: Math.max(0, Math.floor((capacityUtilization - 0.9) * baseCapacity * 5)),
+              efficiency: 85 + Math.floor(Math.random() * 15), // 85-100%
+              issues: capacityUtilization > 0.95 ? ['High utilization risk'] : 
+                     capacityUtilization < 0.6 ? ['Underutilized capacity'] : [],
+              shifts: [
+                { name: 'Day Shift', hours: 8, staff: 2, efficiency: 90 },
+                { name: 'Night Shift', hours: 8, staff: 1, efficiency: 85 }
+              ]
+            };
+          })
+        };
+      });
+      
+      return weeks;
+    }, [resources]);
+
+    const currentWeek = capacityData[selectedWeek];
+    
+    const weeklyStats = useMemo(() => {
+      if (!currentWeek) return { totalCapacity: 0, totalDemand: 0, avgUtilization: 0, overtimeHours: 0 };
+      
+      return currentWeek.resources.reduce((acc, resource) => ({
+        totalCapacity: acc.totalCapacity + resource.capacity,
+        totalDemand: acc.totalDemand + resource.demand,
+        avgUtilization: acc.avgUtilization + resource.utilization,
+        overtimeHours: acc.overtimeHours + resource.overtime
+      }), { totalCapacity: 0, totalDemand: 0, avgUtilization: 0, overtimeHours: 0 });
+    }, [currentWeek]);
+
+    if (currentWeek) {
+      weeklyStats.avgUtilization = Math.floor(weeklyStats.avgUtilization / currentWeek.resources.length);
+    }
+
+    return (
+      <Card className="col-span-full">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-blue-600" />
+                Capacity vs Demand Analysis
+              </CardTitle>
+              <CardDescription>
+                12-week capacity planning view with shift schedules, holidays, and production demands
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedWeek(Math.max(0, selectedWeek - 1))}
+                disabled={selectedWeek === 0}
+              >
+                <ChevronUp className="w-4 h-4" />
+              </Button>
+              <span className="text-sm font-medium min-w-[120px] text-center">
+                {currentWeek?.label}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedWeek(Math.min(capacityData.length - 1, selectedWeek + 1))}
+                disabled={selectedWeek === capacityData.length - 1}
+              >
+                <ChevronDown className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Weekly Overview Stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-blue-50 p-3 rounded-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <Factory className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-900">Total Capacity</span>
+              </div>
+              <div className="text-lg font-bold text-blue-900">{weeklyStats.totalCapacity}h</div>
+            </div>
+            <div className="bg-orange-50 p-3 rounded-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <Target className="w-4 h-4 text-orange-600" />
+                <span className="text-sm font-medium text-orange-900">Total Demand</span>
+              </div>
+              <div className="text-lg font-bold text-orange-900">{weeklyStats.totalDemand}h</div>
+            </div>
+            <div className="bg-green-50 p-3 rounded-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <Gauge className="w-4 h-4 text-green-600" />
+                <span className="text-sm font-medium text-green-900">Avg Utilization</span>
+              </div>
+              <div className="text-lg font-bold text-green-900">{weeklyStats.avgUtilization}%</div>
+            </div>
+            <div className="bg-red-50 p-3 rounded-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <Clock className="w-4 h-4 text-red-600" />
+                <span className="text-sm font-medium text-red-900">Overtime</span>
+              </div>
+              <div className="text-lg font-bold text-red-900">{weeklyStats.overtimeHours}h</div>
+            </div>
+          </div>
+
+          {/* Resource Capacity Chart */}
+          <div className="space-y-3">
+            <h4 className="font-semibold text-gray-900">Resource Capacity Analysis</h4>
+            {currentWeek?.resources.map((resource) => (
+              <div key={resource.id} className="border rounded-lg p-4 bg-white">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setExpandedResource(expandedResource === resource.id ? null : resource.id)}
+                      className="p-1"
+                    >
+                      {expandedResource === resource.id ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      )}
+                    </Button>
+                    <div>
+                      <h5 className="font-medium text-gray-900">{resource.name}</h5>
+                      <span className="text-sm text-gray-500">{resource.type}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <div className="text-sm text-gray-500">Utilization</div>
+                      <div className={`text-lg font-bold ${
+                        resource.utilization >= 90 ? 'text-red-600' :
+                        resource.utilization >= 75 ? 'text-orange-600' :
+                        'text-green-600'
+                      }`}>
+                        {resource.utilization}%
+                      </div>
+                    </div>
+                    {resource.issues.length > 0 && (
+                      <Badge variant={resource.utilization >= 90 ? 'destructive' : 'secondary'}>
+                        <AlertTriangle className="w-3 h-3 mr-1" />
+                        {resource.issues.length} Issue{resource.issues.length > 1 ? 's' : ''}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Capacity vs Demand Bar */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Capacity vs Demand</span>
+                    <span>{resource.demand}h / {resource.capacity}h</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-6 relative overflow-hidden">
+                    {/* Capacity bar (background) */}
+                    <div className="w-full h-full bg-blue-100"></div>
+                    {/* Demand bar (foreground) */}
+                    <div 
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        resource.utilization >= 95 ? 'bg-red-500' :
+                        resource.utilization >= 85 ? 'bg-orange-500' :
+                        resource.utilization >= 75 ? 'bg-yellow-500' :
+                        'bg-green-500'
+                      }`}
+                      style={{ width: `${Math.min(resource.utilization, 100)}%` }}
+                    ></div>
+                    {/* Overtime indicator */}
+                    {resource.overtime > 0 && (
+                      <div 
+                        className="absolute top-0 h-full bg-red-700 opacity-80"
+                        style={{ 
+                          left: `${Math.min(resource.utilization, 100)}%`,
+                          width: `${Math.min((resource.overtime / resource.capacity) * 100, 100 - resource.utilization)}%`
+                        }}
+                      ></div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Expanded Details */}
+                {expandedResource === resource.id && (
+                  <div className="mt-4 pt-4 border-t space-y-4">
+                    {/* Shift Details */}
+                    <div>
+                      <h6 className="font-medium text-gray-900 mb-2">Shift Schedule</h6>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {resource.shifts.map((shift, index) => (
+                          <div key={index} className="bg-gray-50 p-3 rounded">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <div className="font-medium text-sm">{shift.name}</div>
+                                <div className="text-xs text-gray-600">{shift.hours}h × {shift.staff} staff</div>
+                              </div>
+                              <Badge variant="outline" className="text-xs">
+                                {shift.efficiency}% efficiency
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Issues and Recommendations */}
+                    {resource.issues.length > 0 && (
+                      <div>
+                        <h6 className="font-medium text-gray-900 mb-2">Issues & Recommendations</h6>
+                        <div className="space-y-2">
+                          {resource.issues.map((issue, index) => (
+                            <div key={index} className="flex items-start gap-2 text-sm">
+                              <AlertTriangle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                              <div>
+                                <div className="text-gray-900">{issue}</div>
+                                <div className="text-gray-600 text-xs mt-1">
+                                  {issue.includes('High utilization') && 
+                                    'Consider adding overtime shifts or redistributing workload to other resources.'
+                                  }
+                                  {issue.includes('Underutilized') && 
+                                    'Resource has excess capacity. Consider scheduling additional production orders or maintenance.'
+                                  }
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Week Timeline View */}
+          <div className="space-y-3">
+            <h4 className="font-semibold text-gray-900">Daily Schedule Overview</h4>
+            <div className="grid grid-cols-7 gap-2">
+              {currentWeek?.days.map((day, index) => (
+                <div key={index} className={`p-3 rounded-lg text-center ${
+                  day.isWeekend ? 'bg-gray-100 text-gray-500' : 
+                  day.isHoliday ? 'bg-red-100 text-red-600' : 
+                  'bg-blue-50 text-blue-900'
+                }`}>
+                  <div className="text-xs font-medium">
+                    {format(day.date, 'EEE')}
+                  </div>
+                  <div className="text-lg font-bold">
+                    {format(day.date, 'd')}
+                  </div>
+                  <div className="text-xs mt-1">
+                    {day.workingHours}h
+                  </div>
+                  {day.isHoliday && (
+                    <div className="text-xs mt-1 text-red-600">Holiday</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   // AI Recommendations Component
   const AIRecommendationsPanel = () => (
     <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
@@ -395,6 +695,8 @@ export default function CapacityPlanning() {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
+          {/* Add the capacity visualization as the main feature */}
+          <CapacityVisualization />
           {/* Capacity by Resource Type */}
           <Card>
             <CardHeader>
@@ -608,10 +910,10 @@ export default function CapacityPlanning() {
                         </div>
                       </div>
 
-                      {shift.breaks && (
+                      {shift.description && (
                         <div className="mt-3 pt-3 border-t">
-                          <p className="text-sm font-medium text-gray-700 mb-1">Break Schedule</p>
-                          <p className="text-sm text-gray-600">{shift.breaks}</p>
+                          <p className="text-sm font-medium text-gray-700 mb-1">Description</p>
+                          <p className="text-sm text-gray-600">{shift.description}</p>
                         </div>
                       )}
                     </div>
