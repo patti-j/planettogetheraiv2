@@ -1,7 +1,7 @@
 import { 
   plants, capabilities, resources, productionOrders, plannedOrders, operations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
   shiftTemplates, resourceShiftAssignments,
-  recipes, recipePhases, recipeFormulas, recipeEquipment, vendors, customers,
+  recipes, recipePhases, recipeFormulas, recipeEquipment, vendors, customers, productionVersions,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
   capacityPlanningScenarios, staffingPlans, shiftPlans, equipmentPlans, capacityProjections,
@@ -12,7 +12,7 @@ import {
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
   type Plant, type Capability, type Resource, type ProductionOrder, type PlannedOrder, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
   type ShiftTemplate, type ResourceShiftAssignment,
-  type Recipe, type RecipePhase, type RecipeFormula, type RecipeEquipment, type Vendor, type Customer,
+  type Recipe, type RecipePhase, type RecipeFormula, type RecipeEquipment, type Vendor, type Customer, type ProductionVersion,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
   type CapacityPlanningScenario, type StaffingPlan, type ShiftPlan, type EquipmentPlan, type CapacityProjection,
@@ -24,7 +24,7 @@ import {
   type InsertPlant, type InsertCapability, type InsertResource, type InsertProductionOrder, type InsertPlannedOrder, 
   type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
   type InsertShiftTemplate, type InsertResourceShiftAssignment,
-  type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertRecipeEquipment, type InsertVendor, type InsertCustomer,
+  type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertRecipeEquipment, type InsertVendor, type InsertCustomer, type InsertProductionVersion,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
   type InsertCapacityPlanningScenario, type InsertStaffingPlan, type InsertShiftPlan, type InsertEquipmentPlan, type InsertCapacityProjection,
@@ -1233,6 +1233,14 @@ export interface IStorage {
   createRecipeEquipment(equipment: InsertRecipeEquipment): Promise<RecipeEquipment>;
   updateRecipeEquipment(id: number, equipment: Partial<InsertRecipeEquipment>): Promise<RecipeEquipment | undefined>;
   deleteRecipeEquipment(id: number): Promise<boolean>;
+
+  // Production Versions
+  getProductionVersions(plantId?: number): Promise<ProductionVersion[]>;
+  getProductionVersion(id: number): Promise<ProductionVersion | undefined>;
+  getProductionVersionByNumber(versionNumber: string, itemNumber: string, plantId: number): Promise<ProductionVersion | undefined>;
+  createProductionVersion(version: InsertProductionVersion): Promise<ProductionVersion>;
+  updateProductionVersion(id: number, version: Partial<InsertProductionVersion>): Promise<ProductionVersion | undefined>;
+  deleteProductionVersion(id: number): Promise<boolean>;
 
   // Vendors
   getVendors(): Promise<Vendor[]>;
@@ -10045,6 +10053,52 @@ export class DatabaseStorage implements IStorage {
 
   async deleteRecipeEquipment(id: number): Promise<boolean> {
     const result = await db.delete(recipeEquipment).where(eq(recipeEquipment.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Production Versions
+  async getProductionVersions(plantId?: number): Promise<ProductionVersion[]> {
+    const conditions: any[] = [];
+    if (plantId) {
+      conditions.push(eq(productionVersions.plantId, plantId));
+    }
+    
+    if (conditions.length > 0) {
+      return await db.select().from(productionVersions).where(and(...conditions)).orderBy(productionVersions.versionNumber);
+    }
+    return await db.select().from(productionVersions).orderBy(productionVersions.versionNumber);
+  }
+
+  async getProductionVersion(id: number): Promise<ProductionVersion | undefined> {
+    const [version] = await db.select().from(productionVersions).where(eq(productionVersions.id, id));
+    return version || undefined;
+  }
+
+  async getProductionVersionByNumber(versionNumber: string, itemNumber: string, plantId: number): Promise<ProductionVersion | undefined> {
+    const [version] = await db.select().from(productionVersions)
+      .where(and(
+        eq(productionVersions.versionNumber, versionNumber),
+        eq(productionVersions.itemNumber, itemNumber),
+        eq(productionVersions.plantId, plantId)
+      ));
+    return version || undefined;
+  }
+
+  async createProductionVersion(version: InsertProductionVersion): Promise<ProductionVersion> {
+    const [newVersion] = await db.insert(productionVersions).values(version).returning();
+    return newVersion;
+  }
+
+  async updateProductionVersion(id: number, version: Partial<InsertProductionVersion>): Promise<ProductionVersion | undefined> {
+    const [updated] = await db.update(productionVersions)
+      .set({ ...version, updatedAt: new Date() })
+      .where(eq(productionVersions.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteProductionVersion(id: number): Promise<boolean> {
+    const result = await db.delete(productionVersions).where(eq(productionVersions.id, id));
     return result.rowCount > 0;
   }
 

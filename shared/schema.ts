@@ -284,6 +284,94 @@ export const recipeEquipment = pgTable("recipe_equipment", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Production Versions - Links BOMs/Recipes with Routings to define material consumption per operation
+// Similar to SAP's Production Version concept
+export const productionVersions = pgTable("production_versions", {
+  id: serial("id").primaryKey(),
+  versionNumber: text("version_number").notNull(), // e.g., "PV-001", "V1.0"
+  itemNumber: text("item_number").notNull(), // What product this version produces
+  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  
+  // Validity period
+  validFrom: timestamp("valid_from").notNull(), // When this version becomes active
+  validTo: timestamp("valid_to"), // When this version expires (null = unlimited)
+  
+  // Links to BOM and Recipe
+  bomId: integer("bom_id").references(() => billsOfMaterial.id), // For discrete manufacturing
+  recipeId: integer("recipe_id").references(() => recipes.id), // For process manufacturing
+  
+  // Routing information - links operations to material consumption
+  routingOperations: jsonb("routing_operations").$type<Array<{
+    operation_number: string; // e.g., "010", "020", "030"
+    operation_name: string;
+    work_center: string; // resource/work center where operation is performed
+    setup_time: number; // minutes
+    run_time_per_unit: number; // minutes per unit
+    required_capabilities: number[]; // capability IDs needed
+    
+    // Material consumption for this operation
+    material_consumption: Array<{
+      item_number: string;
+      item_description: string;
+      quantity_per_unit: number; // how much consumed per finished unit
+      unit: string; // kg, lbs, pieces, etc.
+      consumption_type: string; // "automatic", "manual", "backflush"
+      scrap_percentage: number; // expected scrap %
+      issue_storage_location: string; // where material comes from
+      consumption_posting: string; // when to post consumption (operation_start, operation_end, order_completion)
+    }>;
+    
+    // By-products or co-products produced in this operation
+    outputs: Array<{
+      item_number: string;
+      item_description: string;
+      quantity_per_unit: number;
+      unit: string;
+      output_type: string; // "by_product", "co_product", "rework", "scrap"
+      receipt_storage_location: string;
+    }>;
+  }>>().default([]),
+  
+  // Production parameters
+  lotSizeMin: integer("lot_size_min").default(1), // minimum production quantity
+  lotSizeMax: integer("lot_size_max"), // maximum production quantity (null = unlimited)
+  standardLotSize: integer("standard_lot_size").default(100), // typical batch size
+  
+  // Costing and planning parameters
+  planningStrategy: text("planning_strategy").default("make_to_stock"), // make_to_stock, make_to_order, assemble_to_order
+  procurementType: text("procurement_type").default("in_house"), // in_house, external, both
+  leadTime: integer("lead_time").default(0), // production lead time in days
+  
+  // Alternative production methods
+  alternativeVersions: jsonb("alternative_versions").$type<Array<{
+    version_id: number;
+    priority: number; // 1 = highest priority
+    usage_probability: number; // percentage (0-100)
+    conditions: string; // when to use this alternative
+  }>>().default([]),
+  
+  // Status and control
+  status: text("status").notNull().default("active"), // active, inactive, planned, obsolete
+  description: text("description"),
+  changeNumber: text("change_number"), // engineering change number
+  approvedBy: text("approved_by"),
+  approvedDate: timestamp("approved_date"),
+  
+  // Revision tracking
+  revisionLevel: text("revision_level").default("A"), // A, B, C, etc.
+  revisionReason: text("revision_reason"),
+  
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: integer("created_by"), // user ID who created this version
+}, (table) => ({
+  // Ensure only one active version per item-plant combination at any given time
+  uniqueActiveVersion: unique("unique_active_version").on(table.itemNumber, table.plantId, table.validFrom),
+  itemPlantIndex: index("production_versions_item_plant_idx").on(table.itemNumber, table.plantId),
+  validityIndex: index("production_versions_validity_idx").on(table.validFrom, table.validTo),
+}));
+
 export const operations = pgTable("operations", {
   id: serial("id").primaryKey(),
   productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
@@ -6622,4 +6710,14 @@ export const insertUserSecretSchema = createInsertSchema(userSecrets).omit({
 
 export type UserSecret = typeof userSecrets.$inferSelect;
 export type InsertUserSecret = z.infer<typeof insertUserSecretSchema>;
+
+// Production Version Schema
+export const insertProductionVersionSchema = createInsertSchema(productionVersions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type ProductionVersion = typeof productionVersions.$inferSelect;
+export type InsertProductionVersion = z.infer<typeof insertProductionVersionSchema>;
 

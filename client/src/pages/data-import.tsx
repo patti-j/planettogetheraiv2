@@ -617,6 +617,8 @@ function DataImport() {
           return { itemCode: '', period: '', forecastQuantity: '', actualDemand: '', accuracy: '' };
         case 'recipes':
           return { recipeNumber: '', productCode: '', version: '', batchSize: '', yield: '' };
+        case 'productionVersions':
+          return { versionNumber: '', itemNumber: '', plantId: '', validFrom: '', validTo: '', description: '' };
         default:
           return { name: '', description: '' };
       }
@@ -797,6 +799,21 @@ function DataImport() {
             { key: 'yield', label: 'Expected Yield %', type: 'number' },
             { key: 'description', label: 'Description', type: 'text' }
           ];
+        case 'productionVersions':
+          return [
+            { key: 'versionNumber', label: 'Version Number', type: 'text', required: true },
+            { key: 'itemNumber', label: 'Item Number', type: 'text', required: true },
+            { key: 'plantId', label: 'Plant ID', type: 'number', required: true },
+            { key: 'validFrom', label: 'Valid From', type: 'date', required: true },
+            { key: 'validTo', label: 'Valid To', type: 'date' },
+            { key: 'bomId', label: 'BOM ID', type: 'number' },
+            { key: 'recipeId', label: 'Recipe ID', type: 'number' },
+            { key: 'standardLotSize', label: 'Standard Lot Size', type: 'number' },
+            { key: 'planningStrategy', label: 'Planning Strategy', type: 'select', options: ['make_to_stock', 'make_to_order', 'assemble_to_order'] },
+            { key: 'leadTime', label: 'Lead Time (days)', type: 'number' },
+            { key: 'status', label: 'Status', type: 'select', options: ['active', 'inactive', 'planned', 'obsolete'] },
+            { key: 'description', label: 'Description', type: 'text' }
+          ];
         default:
           return [
             { key: 'name', label: 'Name', type: 'text', required: true },
@@ -828,6 +845,7 @@ function DataImport() {
         billsOfMaterial: 'bills-of-material',
         routings: 'routings',
         recipes: 'recipes',
+        productionVersions: 'production-versions',
         forecasts: 'forecasts'
       };
       return endpoints[dataType] || dataType;
@@ -1311,6 +1329,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
     { key: 'billsOfMaterial', label: 'Bills of Material', icon: List, description: 'Product structure and component lists', category: 'Manufacturing Planning' },
     { key: 'routings', label: 'Routings', icon: Route, description: 'Manufacturing process routings', category: 'Manufacturing Planning' },
     { key: 'recipes', label: 'Recipes', icon: Beaker, description: 'Process manufacturing recipes and formulations', category: 'Manufacturing Planning' },
+    { key: 'productionVersions', label: 'Production Versions', icon: Settings, description: 'Links BOMs/recipes with routings and defines material consumption per operation', category: 'Manufacturing Planning' },
     { key: 'forecasts', label: 'Forecasts', icon: TrendingUp, description: 'Demand forecasts and planning data', category: 'Manufacturing Planning' }
   ];
 
@@ -1417,6 +1436,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
       billsOfMaterial: 'bills_of_material',
       routings: 'routings',
       recipes: 'recipes',
+      productionVersions: 'production_versions',
       forecasts: 'forecasts'
     };
     return tableNames[dataType] || dataType;
@@ -1470,6 +1490,8 @@ Create authentic manufacturing data that reflects this company's operations.`;
         return `Steps: ${item.operations?.length || ''} • Duration: ${item.totalDuration || ''}min`;
       case 'recipes':
         return `Version: ${item.version || ''} • Batch Size: ${item.batchSize || ''} • Yield: ${item.yield || ''}%`;
+      case 'productionVersions':
+        return `Item: ${item.itemNumber || ''} • Valid From: ${item.validFrom || ''} • Strategy: ${item.planningStrategy || ''}`;
       case 'forecasts':
         return `Period: ${item.period || ''} • Demand: ${item.forecast || ''}`;
       default:

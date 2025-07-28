@@ -48,7 +48,7 @@ import {
   insertStrategyDocumentSchema, insertDevelopmentTaskSchema, insertTestSuiteSchema, insertTestCaseSchema, insertArchitectureComponentSchema,
   insertApiIntegrationSchema, insertApiMappingSchema, insertApiTestSchema, insertApiCredentialSchema, insertApiAuditLogSchema,
   insertSchedulingHistorySchema, insertSchedulingResultSchema, insertAlgorithmPerformanceSchema,
-  insertRecipeSchema, insertRecipePhaseSchema, insertRecipeFormulaSchema, insertRecipeEquipmentSchema,
+  insertRecipeSchema, insertRecipePhaseSchema, insertRecipeFormulaSchema, insertRecipeEquipmentSchema, insertProductionVersionSchema,
   insertVendorSchema, insertCustomerSchema,
   insertOptimizationScopeConfigSchema, insertOptimizationRunSchema,
   insertOptimizationProfileSchema, insertProfileUsageHistorySchema,
@@ -16711,6 +16711,92 @@ Response must be valid JSON:
     } catch (error) {
       console.error("Error creating recipe equipment:", error);
       res.status(500).json({ error: "Failed to create recipe equipment" });
+    }
+  });
+
+  // Production Versions Management
+  app.get("/api/production-versions", async (req, res) => {
+    try {
+      const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : undefined;
+      const versions = await storage.getProductionVersions(plantId);
+      res.json(versions);
+    } catch (error) {
+      console.error("Error fetching production versions:", error);
+      res.status(500).json({ error: "Failed to fetch production versions" });
+    }
+  });
+
+  app.get("/api/production-versions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid production version ID" });
+      }
+
+      const version = await storage.getProductionVersion(id);
+      if (!version) {
+        return res.status(404).json({ error: "Production version not found" });
+      }
+      res.json(version);
+    } catch (error) {
+      console.error("Error fetching production version:", error);
+      res.status(500).json({ error: "Failed to fetch production version" });
+    }
+  });
+
+  app.post("/api/production-versions", async (req, res) => {
+    try {
+      const validation = insertProductionVersionSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid production version data", details: validation.error.errors });
+      }
+
+      const version = await storage.createProductionVersion(validation.data);
+      res.status(201).json(version);
+    } catch (error) {
+      console.error("Error creating production version:", error);
+      res.status(500).json({ error: "Failed to create production version" });
+    }
+  });
+
+  app.put("/api/production-versions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid production version ID" });
+      }
+
+      const validation = insertProductionVersionSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid production version data", details: validation.error.errors });
+      }
+
+      const version = await storage.updateProductionVersion(id, validation.data);
+      if (!version) {
+        return res.status(404).json({ error: "Production version not found" });
+      }
+      res.json(version);
+    } catch (error) {
+      console.error("Error updating production version:", error);
+      res.status(500).json({ error: "Failed to update production version" });
+    }
+  });
+
+  app.delete("/api/production-versions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid production version ID" });
+      }
+
+      const success = await storage.deleteProductionVersion(id);
+      if (!success) {
+        return res.status(404).json({ error: "Production version not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting production version:", error);
+      res.status(500).json({ error: "Failed to delete production version" });
     }
   });
 
