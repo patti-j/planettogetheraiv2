@@ -2,6 +2,16 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Data Map Legend Toggle Implementation (July 28, 2025)**:
+- Added toggleable legend panel to data map view with show/hide functionality for better user control
+- Implemented toggle button in header with visual state indicators (ToggleRight/ToggleLeft icons) showing active/inactive legend state
+- Created comprehensive legend panel positioned at bottom-right with glassmorphism design (backdrop-blur-sm) and dismissible close button
+- Legend displays data type icons with color coding: Plants (green), Resources (blue), Capabilities (purple), Operations (orange), Production Orders (red)
+- Added node actions section explaining user interactions: click to focus relationships, edit button to modify, expand for details
+- Legend panel includes proper close button with hover effects and can be hidden via toggle button or direct close action
+- Enhanced data map user experience with contextual information always accessible when needed but hideable for cleaner view
+- Default legend state is visible (showLegend: true) providing immediate user guidance on first visit
+
 ✓ **Functional Map Network View Implementation & Mobile Optimization (July 28, 2025)**:
 - Implemented comprehensive network view for the functional map showing interconnections between manufacturing functional areas
 - Added view toggle between Grid View and Network View in the functional map header for flexible exploration

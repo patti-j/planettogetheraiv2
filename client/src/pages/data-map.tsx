@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
-import { Network, Database, Factory, Package, Users, Wrench, Cog, Building, List, Route, Beaker, Settings, TrendingUp, Edit2, Maximize2, X, Search } from 'lucide-react';
+import { Network, Database, Factory, Package, Users, Wrench, Cog, Building, List, Route, Beaker, Settings, TrendingUp, Edit2, Maximize2, X, Search, Info, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -136,6 +136,7 @@ function DataMapView() {
   const [focusedObject, setFocusedObject] = useState<DataObject | null>(null);
   const [editingObject, setEditingObject] = useState<DataObject | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showLegend, setShowLegend] = useState(true);
   
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -283,9 +284,20 @@ function DataMapView() {
       <Panel position="top-left" className="m-4">
         <Card className="w-80">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Network className="w-5 h-5 text-blue-600" />
-              Data Relationship Map
+            <CardTitle className="flex items-center justify-between text-lg">
+              <div className="flex items-center gap-2">
+                <Network className="w-5 h-5 text-blue-600" />
+                Data Relationship Map
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowLegend(!showLegend)}
+                className="h-8 w-8 p-0"
+                title={showLegend ? "Hide Legend" : "Show Legend"}
+              >
+                {showLegend ? <ToggleRight className="w-4 h-4 text-blue-600" /> : <ToggleLeft className="w-4 h-4 text-gray-400" />}
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -384,6 +396,73 @@ function DataMapView() {
       >
         <Background color="#f1f5f9" gap={20} />
         <Controls />
+        
+        {/* Legend Panel */}
+        {showLegend && (
+          <Panel position="bottom-right">
+            <Card className="bg-white/90 backdrop-blur-sm">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Info className="w-4 h-4" />
+                    Legend
+                  </h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowLegend(false)}
+                    className="h-6 w-6 p-0 hover:bg-gray-100 -mt-1 ml-3"
+                  >
+                    <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+                  </Button>
+                </div>
+                <div className="space-y-2 text-xs">
+                  <h4 className="font-medium text-sm">Data Types:</h4>
+                  <div className="grid grid-cols-1 gap-1">
+                    <div className="flex items-center gap-2">
+                      <Building className="w-3 h-3 text-green-600" />
+                      <span>Plants</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Wrench className="w-3 h-3 text-blue-600" />
+                      <span>Resources</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Database className="w-3 h-3 text-purple-600" />
+                      <span>Capabilities</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Cog className="w-3 h-3 text-orange-600" />
+                      <span>Operations</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Package className="w-3 h-3 text-red-600" />
+                      <span>Production Orders</span>
+                    </div>
+                  </div>
+                  
+                  <div className="border-t pt-2 mt-3">
+                    <h4 className="font-medium text-sm mb-1">Node Actions:</h4>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span>Click to focus relationships</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Edit2 className="w-3 h-3 text-gray-500" />
+                        <span>Edit button to modify</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Maximize2 className="w-3 h-3 text-gray-500" />
+                        <span>Expand for details</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Panel>
+        )}
       </ReactFlow>
 
       {/* Edit Object Dialog */}
