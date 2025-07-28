@@ -240,11 +240,12 @@ Create authentic manufacturing data that reflects this company's operations.`;
       const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
 
       const handleLongPressStart = (e: React.TouchEvent) => {
+        console.log('Touch start detected');
         e.preventDefault();
-        console.log('Long press started');
+        e.stopPropagation();
         
         const timer = setTimeout(() => {
-          console.log('Long press detected - showing delete');
+          console.log('Long press timer fired - showing delete');
           setShowDelete(true);
           // Vibrate if available
           if (navigator.vibrate) {
@@ -255,8 +256,20 @@ Create authentic manufacturing data that reflects this company's operations.`;
         setLongPressTimer(timer);
       };
 
-      const handleLongPressEnd = () => {
-        console.log('Touch ended');
+      const handleLongPressEnd = (e: React.TouchEvent) => {
+        console.log('Touch end detected');
+        e.preventDefault();
+        e.stopPropagation();
+        if (longPressTimer) {
+          clearTimeout(longPressTimer);
+          setLongPressTimer(null);
+        }
+      };
+
+      const handleLongPressCancel = (e: React.TouchEvent) => {
+        console.log('Touch cancelled');
+        e.preventDefault();
+        e.stopPropagation();
         if (longPressTimer) {
           clearTimeout(longPressTimer);
           setLongPressTimer(null);
@@ -276,11 +289,13 @@ Create authentic manufacturing data that reflects this company's operations.`;
             <div className="flex min-h-[60px]">
               {/* Main content area - tap to edit, long press for delete */}
               <div 
-                className="flex-1 p-3 cursor-pointer sm:cursor-default"
+                className="flex-1 p-3 cursor-pointer sm:cursor-default select-none"
                 onClick={handleRowClick}
                 onTouchStart={handleLongPressStart}
                 onTouchEnd={handleLongPressEnd}
-                onTouchCancel={handleLongPressEnd}
+                onTouchCancel={handleLongPressCancel}
+                onTouchMove={handleLongPressCancel}
+                style={{ touchAction: 'manipulation' }}
               >
                 <div className="flex items-center gap-2">
                   <span>{item.name}</span>
