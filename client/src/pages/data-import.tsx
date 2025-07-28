@@ -399,40 +399,22 @@ function DataImport() {
                 <SelectValue placeholder="Choose data type to enter" />
               </SelectTrigger>
               <SelectContent>
-                <optgroup label="Core Manufacturing">
-                  <SelectItem value="plants">Plants</SelectItem>
-                  <SelectItem value="resources">Resources</SelectItem>
-                  <SelectItem value="capabilities">Capabilities</SelectItem>
-                  <SelectItem value="operations">Operations</SelectItem>
-                </optgroup>
-                <optgroup label="Organization">
-                  <SelectItem value="departments">Departments</SelectItem>
-                  <SelectItem value="workCenters">Work Centers</SelectItem>
-                  <SelectItem value="employees">Employees</SelectItem>
-                  <SelectItem value="users">Users</SelectItem>
-                </optgroup>
-                <optgroup label="Products & Inventory">
-                  <SelectItem value="items">Items</SelectItem>
-                  <SelectItem value="storageLocations">Storage Locations</SelectItem>
-                  <SelectItem value="inventory">Inventory</SelectItem>
-                  <SelectItem value="inventoryLots">Inventory Lots</SelectItem>
-                </optgroup>
-                <optgroup label="Business Partners">
-                  <SelectItem value="vendors">Vendors</SelectItem>
-                  <SelectItem value="customers">Customers</SelectItem>
-                </optgroup>
-                <optgroup label="Sales & Orders">
-                  <SelectItem value="productionOrders">Production Orders</SelectItem>
-                  <SelectItem value="salesOrders">Sales Orders</SelectItem>
-                  <SelectItem value="purchaseOrders">Purchase Orders</SelectItem>
-                  <SelectItem value="transferOrders">Transfer Orders</SelectItem>
-                </optgroup>
-                <optgroup label="Manufacturing Planning">
-                  <SelectItem value="billsOfMaterial">Bills of Material</SelectItem>
-                  <SelectItem value="routings">Routings</SelectItem>
-                  <SelectItem value="recipes">Recipes</SelectItem>
-                  <SelectItem value="forecasts">Forecasts</SelectItem>
-                </optgroup>
+                {/* Group data types by category */}
+                {['Core Manufacturing', 'Organization', 'Products & Inventory', 'Business Partners', 'Sales & Orders', 'Manufacturing Planning'].map((category) => {
+                  const categoryTypes = supportedDataTypes.filter(dt => dt.category === category);
+                  return (
+                    <div key={category}>
+                      <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide border-b bg-gray-50">
+                        {category}
+                      </div>
+                      {categoryTypes.map((dataType) => (
+                        <SelectItem key={dataType.key} value={dataType.key}>
+                          {dataType.label}
+                        </SelectItem>
+                      ))}
+                    </div>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
@@ -1694,13 +1676,22 @@ Create authentic manufacturing data that reflects this company's operations.`;
                         <SelectValue placeholder="Choose data type to import" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="resources">Resources</SelectItem>
-                        <SelectItem value="plants">Plants</SelectItem>
-                        <SelectItem value="capabilities">Capabilities</SelectItem>
-                        <SelectItem value="productionOrders">Production Orders</SelectItem>
-                        <SelectItem value="operations">Operations</SelectItem>
-                        <SelectItem value="vendors">Vendors</SelectItem>
-                        <SelectItem value="customers">Customers</SelectItem>
+                        {/* Group data types by category */}
+                        {['Core Manufacturing', 'Organization', 'Products & Inventory', 'Business Partners', 'Sales & Orders', 'Manufacturing Planning'].map((category) => {
+                          const categoryTypes = supportedDataTypes.filter(dt => dt.category === category);
+                          return (
+                            <div key={category}>
+                              <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide border-b bg-gray-50">
+                                {category}
+                              </div>
+                              {categoryTypes.map((dataType) => (
+                                <SelectItem key={dataType.key} value={dataType.key}>
+                                  {dataType.label}
+                                </SelectItem>
+                              ))}
+                            </div>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1761,10 +1752,22 @@ Create authentic manufacturing data that reflects this company's operations.`;
                         <SelectValue placeholder="Choose data type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="resources">Resources</SelectItem>
-                        <SelectItem value="plants">Plants</SelectItem>
-                        <SelectItem value="capabilities">Capabilities</SelectItem>
-                        <SelectItem value="productionOrders">Production Orders</SelectItem>
+                        {/* Group data types by category */}
+                        {['Core Manufacturing', 'Organization', 'Products & Inventory', 'Business Partners', 'Sales & Orders', 'Manufacturing Planning'].map((category) => {
+                          const categoryTypes = supportedDataTypes.filter(dt => dt.category === category);
+                          return (
+                            <div key={category}>
+                              <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide border-b bg-gray-50">
+                                {category}
+                              </div>
+                              {categoryTypes.map((dataType) => (
+                                <SelectItem key={dataType.key} value={dataType.key}>
+                                  {dataType.label}
+                                </SelectItem>
+                              ))}
+                            </div>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>
