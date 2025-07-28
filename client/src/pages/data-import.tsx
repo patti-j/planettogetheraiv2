@@ -543,7 +543,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
                       </div>
                       
                       {/* Toggle button space - matches row structure exactly */}
-                      <div className="w-12 flex items-center justify-center mr-1">
+                      <div className="w-12 flex items-center justify-center ml-1">
                         <Button
                           variant={bulkSelectMode ? 'default' : 'ghost'}
                           size="sm"
