@@ -2600,10 +2600,12 @@ Create authentic manufacturing data that reflects this company's operations.`;
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => window.open('/onboarding?step=1', '_blank')}
-                    className="text-blue-600 hover:text-blue-700 p-1 h-auto"
+                    onClick={() => window.location.href = '/onboarding?step=1'}
+                    className="text-blue-600 hover:text-blue-700 flex items-center gap-1 px-2 py-1 h-auto"
+                    title="Edit feature selections"
                   >
-                    <ExternalLink className="h-4 w-4" />
+                    <Edit2 className="h-4 w-4" />
+                    <span className="text-xs">Edit</span>
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">

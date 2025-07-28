@@ -2,6 +2,13 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Master Data Setup Feature Selection Edit Button Implementation (July 28, 2025)**:
+- Added edit button next to "Selected Features" section in Master Data Setup page for easy feature modification
+- Enhanced button includes Edit2 icon with "Edit" label and descriptive tooltip "Edit feature selections"
+- Button navigates directly to onboarding feature selection step (step=1) for seamless user workflow
+- Improved user experience by allowing quick access to modify onboarding choices without menu navigation
+- Streamlined feature selection editing process with clear visual indication and intuitive placement
+
 ✓ **Mobile Menu Search Optimization & Layout Improvement (July 28, 2025)**:
 - Moved menu search next to role switching controls in mobile hamburger menu to save vertical space
 - Combined user controls (role switching, training mode) and search filter into single compact section on mobile
