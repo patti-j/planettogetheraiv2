@@ -2415,10 +2415,6 @@ Create authentic manufacturing data that reflects this company's operations.`;
                 <span className="hidden sm:inline">Manage Data</span>
                 <span className="sm:hidden">Manage</span>
               </TabsTrigger>
-              <TabsTrigger value="import" className="text-xs sm:text-sm">
-                <span className="hidden sm:inline">Import Data</span>
-                <span className="sm:hidden">Import</span>
-              </TabsTrigger>
               <TabsTrigger value="structured" className="text-xs sm:text-sm">
                 <span className="hidden sm:inline">Structured Entry</span>
                 <span className="sm:hidden">Structured</span>
@@ -2426,6 +2422,10 @@ Create authentic manufacturing data that reflects this company's operations.`;
               <TabsTrigger value="text" className="text-xs sm:text-sm">
                 <span className="hidden sm:inline">Text Entry</span>
                 <span className="sm:hidden">Text</span>
+              </TabsTrigger>
+              <TabsTrigger value="import" className="text-xs sm:text-sm">
+                <span className="hidden sm:inline">Import Data</span>
+                <span className="sm:hidden">Import</span>
               </TabsTrigger>
               <TabsTrigger value="templates" className="text-xs sm:text-sm">
                 <span className="hidden sm:inline">Templates</span>
