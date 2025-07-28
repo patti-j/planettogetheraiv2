@@ -146,21 +146,11 @@ function DashboardWithAutoTour() {
 
 // MainContentArea is now replaced by SplitPaneLayout
 
-// Hook for handling session persistence redirection
+// Hook for handling session persistence redirection - TEMPORARILY DISABLED
 function useSessionPersistence() {
-  const { user, isAuthenticated, isLoading } = useAuth();
-  const { lastVisitedRoute } = useNavigation();
-  const [location, setLocation] = useLocation();
-
-  useEffect(() => {
-    if (!isLoading && isAuthenticated && user && lastVisitedRoute) {
-      // Only redirect if user is on root page and has a saved last visited route
-      if (location === '/' && lastVisitedRoute !== '/' && lastVisitedRoute !== '/login') {
-        console.log('Redirecting to last visited route:', lastVisitedRoute);
-        setLocation(lastVisitedRoute);
-      }
-    }
-  }, [isAuthenticated, isLoading, user, lastVisitedRoute, location, setLocation]);
+  // Temporarily disabled to break infinite loop
+  // TODO: Re-enable after fixing navigation context issues
+  console.log('useSessionPersistence disabled to break infinite loop');
 }
 
 function Router() {

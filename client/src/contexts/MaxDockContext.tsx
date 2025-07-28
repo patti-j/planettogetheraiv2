@@ -50,11 +50,8 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [canvasHeight, setCanvasHeight] = useState(300);
   const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]); // Canvas items state
 
-  // User preferences query and mutation for authenticated users
-  const { data: userPreferences } = useQuery({
-    queryKey: [`/api/user-preferences/${user?.id}`],
-    enabled: !!user?.id,
-  });
+  // TEMPORARILY DISABLED - User preferences query to break infinite loop
+  const userPreferences = null; // Disabled to break infinite loop
 
   const updatePreferencesMutation = useMutation({
     mutationFn: (preferences: any) => 
@@ -72,27 +69,16 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Load user preferences when available
+  // TEMPORARILY DISABLED - Load user preferences to break infinite loop
   useEffect(() => {
-    if (userPreferences && (userPreferences as any).maxAiState) {
-      const maxState = (userPreferences as any).maxAiState;
-      if (maxState.isOpen !== undefined) setIsMaxOpen(maxState.isOpen);
-      if (maxState.width) setMaxWidth(maxState.width);
-      if (maxState.currentPage) setCurrentPage(maxState.currentPage);
-      if (maxState.mobileLayoutMode) setMobileLayoutMode(maxState.mobileLayoutMode);
-      if (maxState.currentFullscreenView) setCurrentFullscreenView(maxState.currentFullscreenView);
-      if (maxState.isCanvasVisible !== undefined) setIsCanvasVisible(maxState.isCanvasVisible);
-      if (maxState.canvasHeight) setCanvasHeight(maxState.canvasHeight);
-    }
+    console.log('MaxDockContext preferences loading disabled to break infinite loop');
+    // Temporarily disabled to break infinite loop
   }, [userPreferences]);
 
-  // Save state to database only
+  // TEMPORARILY DISABLED - Save state to database to break infinite loop
   const saveMaxState = (updates: any) => {
-    // Save to database for authenticated users only
-    if (user?.id) {
-      const maxAiState = updates;
-      updatePreferencesMutation.mutate({ maxAiState });
-    }
+    // Temporarily disabled to break infinite loop
+    console.log('MaxDockContext saveMaxState disabled to break infinite loop:', updates);
   };
 
   const setMaxOpen = (open: boolean) => {

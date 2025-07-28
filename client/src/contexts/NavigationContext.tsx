@@ -109,62 +109,19 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     return pages;
   };
 
-  // Load recent pages from user preferences (database only)
+  // TEMPORARILY DISABLED - Load recent pages from user preferences to break infinite loop
   useEffect(() => {
-    const loadRecentPages = async () => {
-      if (isAuthenticated && user?.id) {
-        try {
-          const response = await apiRequest('GET', `/api/user-preferences/${user.id}`);
-          const preferences = await response.json();
-          const savedRecentPages = preferences?.dashboardLayout?.recentPages || [];
-          
-          // Load last visited route
-          const savedLastVisitedRoute = preferences?.dashboardLayout?.lastVisitedRoute;
-          if (savedLastVisitedRoute) {
-            setLastVisitedRouteState(savedLastVisitedRoute);
-          }
-          
-          // If no recent pages exist, initialize with default pinned "Getting Started"
-          if (!Array.isArray(savedRecentPages) || savedRecentPages.length === 0) {
-            const defaultRecentPages = [{
-              path: '/onboarding',
-              label: 'Getting Started',
-              icon: 'BookOpen',
-              timestamp: Date.now(),
-              isPinned: true
-            }];
-            const processedPages = ensureGettingStartedPinned(defaultRecentPages);
-            setRecentPages(processedPages);
-            // Save default to database
-            saveRecentPages(processedPages);
-          } else {
-            const processedPages = ensureGettingStartedPinned(savedRecentPages.slice(0, MAX_RECENT_PAGES));
-            setRecentPages(processedPages);
-            // Save back to database if auto-pinning occurred
-            if (JSON.stringify(processedPages) !== JSON.stringify(savedRecentPages.slice(0, MAX_RECENT_PAGES))) {
-              saveRecentPages(processedPages);
-            }
-          }
-        } catch (error) {
-          console.warn('Failed to load recent pages from database:', error);
-          // Initialize with default pinned "Getting Started" on error
-          const defaultRecentPages = [{
-            path: '/onboarding',
-            label: 'Getting Started',
-            icon: 'BookOpen',
-            timestamp: Date.now(),
-            isPinned: true
-          }];
-          const processedPages = ensureGettingStartedPinned(defaultRecentPages);
-          setRecentPages(processedPages);
-        }
-      } else {
-        // Not authenticated, clear recent pages
-        setRecentPages([]);
-      }
-    };
-
-    loadRecentPages();
+    console.log('NavigationContext loadRecentPages temporarily disabled to break infinite loop');
+    
+    // Set default pages only - no database calls
+    const defaultRecentPages = [{
+      path: '/onboarding',
+      label: 'Getting Started',
+      icon: 'BookOpen',
+      timestamp: Date.now(),
+      isPinned: true
+    }];
+    setRecentPages(defaultRecentPages);
   }, [isAuthenticated, user?.id]);
 
   // Re-apply auto-pinning logic when onboarding status changes
@@ -274,27 +231,10 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   };
 
   const saveRecentPages = async (pages: RecentPage[]) => {
-    if (isAuthenticated && user?.id) {
-      try {
-        // First get current preferences to merge
-        const response = await apiRequest('GET', `/api/user-preferences/${user.id}`);
-        const currentPreferences = await response.json();
-        
-        // Merge recent pages with existing dashboard layout
-        const updatedDashboardLayout = {
-          ...currentPreferences.dashboardLayout,
-          recentPages: pages
-        };
-        
-        // Save to user preferences with merged data
-        await apiRequest('PUT', `/api/user-preferences`, {
-          dashboardLayout: updatedDashboardLayout
-        });
-      } catch (error) {
-        console.warn('Failed to save recent pages to database:', error);
-      }
-    }
-    // Only save for authenticated users - no localStorage fallback
+    // Temporarily disable automatic saving to break infinite loop
+    // TODO: Only save when explicitly called from trackMenuClick
+    console.log('saveRecentPages called - temporarily disabled to prevent infinite loop');
+    return;
   };
 
   const togglePinPage = (path: string) => {
@@ -343,30 +283,11 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     // Only clear for authenticated users - no localStorage fallback
   };
 
-  // Function to set last visited route and save to database
+  // Function to set last visited route - TEMPORARILY DISABLED to break infinite loop
   const setLastVisitedRoute = async (route: string) => {
     setLastVisitedRouteState(route);
-    
-    if (isAuthenticated && user?.id) {
-      try {
-        // First get current preferences to merge
-        const response = await apiRequest('GET', `/api/user-preferences/${user.id}`);
-        const currentPreferences = await response.json();
-        
-        // Merge last visited route with existing dashboard layout
-        const updatedDashboardLayout = {
-          ...currentPreferences.dashboardLayout,
-          lastVisitedRoute: route
-        };
-        
-        // Save to user preferences with merged data
-        await apiRequest('PUT', `/api/user-preferences`, {
-          dashboardLayout: updatedDashboardLayout
-        });
-      } catch (error) {
-        console.warn('Failed to save last visited route to database:', error);
-      }
-    }
+    // Temporarily disabled automatic database saving to break infinite loop
+    console.log('setLastVisitedRoute called but database saving disabled:', route);
   };
 
   return (
