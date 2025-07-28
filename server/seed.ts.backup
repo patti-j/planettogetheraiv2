@@ -2496,8 +2496,7 @@ async function seedMarketingData() {
       }
     ];
 
-    // Marketing functionality removed - customerStories table no longer exists
-    // await db.insert(customerStories).values(customerStoryData);
+    await db.insert(customerStories).values(customerStoryData);
 
     // Seed content blocks for dynamic marketing content
     const contentBlockData = [
@@ -2553,8 +2552,7 @@ async function seedMarketingData() {
       }
     ];
 
-    // Marketing functionality removed - contentBlocks table no longer exists
-    // await db.insert(contentBlocks).values(contentBlockData);
+    await db.insert(contentBlocks).values(contentBlockData);
 
     // Seed marketing pages configuration  
     const marketingPageData = [
@@ -2598,8 +2596,7 @@ async function seedMarketingData() {
       }
     ];
 
-    // Marketing functionality removed - marketingPages table no longer exists
-    // await db.insert(marketingPages).values(marketingPageData);
+    await db.insert(marketingPages).values(marketingPageData);
 
     console.log("✓ Marketing data seeded successfully");
     console.log("  - 3 customer success stories created");
