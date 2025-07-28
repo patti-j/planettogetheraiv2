@@ -1127,7 +1127,14 @@ Create authentic manufacturing data that reflects this company's operations.`;
         }
         
         const result = await response.json();
-        const newItems = result.data || [];
+        const rawItems = result.data || [];
+        
+        // Filter out items with empty or invalid names and ensure they have proper structure
+        const newItems = rawItems.filter((item: any) => 
+          item && 
+          (item.name && item.name.trim() !== '') && 
+          item.id
+        );
         
         if (page === 1) {
           // First load or search reset
@@ -1441,45 +1448,65 @@ Create authentic manufacturing data that reflects this company's operations.`;
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {currentItems.map((item, index) => (
-                  <MobileTableRow 
-                    key={`${item.id || index}-${dataType}-${item.name}`} 
-                    item={item} 
-                    dataType={dataType}
-                    onEdit={() => setEditingItem(item)}
-                    onDelete={() => deleteMutation.mutate(item.id)}
-                  />
-                ))}
+                {currentItems.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center py-8 text-gray-500">
+                      {debouncedSearchTerm ? `No ${dataType} found matching "${debouncedSearchTerm}"` : `No ${dataType} data available`}
+                      <div className="mt-2 text-sm">
+                        {debouncedSearchTerm ? 'Try adjusting your search terms' : 'Add some data using the "Add New" button above'}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  currentItems.map((item, index) => (
+                    <MobileTableRow 
+                      key={`${item.id || index}-${dataType}-${item.name}`} 
+                      item={item} 
+                      dataType={dataType}
+                      onEdit={() => setEditingItem(item)}
+                      onDelete={() => deleteMutation.mutate(item.id)}
+                    />
+                  ))
+                )}
               </TableBody>
             </Table>
             </div>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {currentItems.map((item, index) => (
-              <div key={`${item.id || index}-${dataType}-${item.name}-card`} className="border rounded-lg p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-medium">{item.name}</h4>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setEditingItem(item)}
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteMutation.mutate(item.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+            {currentItems.length === 0 ? (
+              <div className="col-span-full text-center py-8 text-gray-500">
+                {debouncedSearchTerm ? `No ${dataType} found matching "${debouncedSearchTerm}"` : `No ${dataType} data available`}
+                <div className="mt-2 text-sm">
+                  {debouncedSearchTerm ? 'Try adjusting your search terms' : 'Add some data using the "Add New" button above'}
                 </div>
-                <p className="text-sm text-gray-600">{getItemDetails(item, dataType)}</p>
               </div>
-            ))}
+            ) : (
+              currentItems.map((item, index) => (
+                <div key={`${item.id || index}-${dataType}-${item.name}-card`} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-medium">{item.name || 'Unnamed'}</h4>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditingItem(item)}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteMutation.mutate(item.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600">{getItemDetails(item, dataType)}</p>
+                </div>
+              ))
+            )}
           </div>
         )}
 
