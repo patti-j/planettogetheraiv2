@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -149,6 +149,13 @@ export default function ProductionPlanningPage() {
     },
   });
 
+  // Set default plant when plants are loaded
+  useEffect(() => {
+    if (plants.length > 0 && !form.getValues('plantId')) {
+      form.setValue('plantId', plants[0].id);
+    }
+  }, [plants, form]);
+
   const createPlanMutation = useMutation({
     mutationFn: async (data: ProductionPlanFormData) => {
       return await apiRequest('POST', '/api/production-plans', {
@@ -165,10 +172,12 @@ export default function ProductionPlanningPage() {
         description: "Production plan created successfully",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error("Production plan creation error:", error);
+      const errorMessage = error?.message || "Failed to create production plan";
       toast({
         title: "Error",
-        description: "Failed to create production plan",
+        description: errorMessage,
         variant: "destructive",
       });
     },

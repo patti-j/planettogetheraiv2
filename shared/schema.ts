@@ -5087,6 +5087,13 @@ export const insertProductionPlanSchema = createInsertSchema(productionPlans).om
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  startDate: z.union([z.string().datetime(), z.date()]).transform((val) => {
+    return typeof val === 'string' ? new Date(val) : val;
+  }),
+  endDate: z.union([z.string().datetime(), z.date()]).transform((val) => {
+    return typeof val === 'string' ? new Date(val) : val;
+  }),
 });
 
 export const insertProductionTargetSchema = createInsertSchema(productionTargets).omit({
