@@ -1,5 +1,5 @@
 import { 
-  plants, capabilities, resources, productionOrders, plannedOrders, operations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
+  plants, capabilities, resources, plantResources, productionOrders, plannedOrders, operations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
   shiftTemplates, resourceShiftAssignments,
   recipes, recipePhases, recipeFormulas, recipeEquipment, vendors, customers, productionVersions,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
@@ -10,7 +10,7 @@ import {
   disruptions, disruptionActions, disruptionEscalations,
   stockItems, stockTransactions, stockBalances, demandForecasts, demandDrivers, demandHistory, stockOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
-  type Plant, type Capability, type Resource, type ProductionOrder, type PlannedOrder, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
+  type Plant, type Capability, type Resource, type PlantResource, type ProductionOrder, type PlannedOrder, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
   type ShiftTemplate, type ResourceShiftAssignment,
   type Recipe, type RecipePhase, type RecipeFormula, type RecipeEquipment, type Vendor, type Customer, type ProductionVersion,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
@@ -21,7 +21,7 @@ import {
   type Disruption, type DisruptionAction, type DisruptionEscalation,
   type StockItem, type StockTransaction, type StockBalance, type DemandForecast, type DemandDriver, type DemandHistory, type StockOptimizationScenario, type OptimizationRecommendation,
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
-  type InsertPlant, type InsertCapability, type InsertResource, type InsertProductionOrder, type InsertPlannedOrder, 
+  type InsertPlant, type InsertCapability, type InsertResource, type InsertPlantResource, type InsertProductionOrder, type InsertPlannedOrder, 
   type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
   type InsertShiftTemplate, type InsertResourceShiftAssignment,
   type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertRecipeEquipment, type InsertVendor, type InsertCustomer, type InsertProductionVersion,
@@ -124,6 +124,13 @@ export interface IStorage {
   createResource(resource: InsertResource): Promise<Resource>;
   updateResource(id: number, resource: Partial<InsertResource>): Promise<Resource | undefined>;
   deleteResource(id: number): Promise<boolean>;
+  
+  // Plant Resources (Junction Table)
+  getResourcesByPlantId(plantId: number): Promise<Resource[]>;
+  getPlantsByResourceId(resourceId: number): Promise<Plant[]>;
+  assignResourceToPlant(plantId: number, resourceId: number, isPrimary?: boolean): Promise<PlantResource>;
+  removeResourceFromPlant(plantId: number, resourceId: number): Promise<boolean>;
+  updatePlantResourceAssignment(plantId: number, resourceId: number, updates: Partial<InsertPlantResource>): Promise<PlantResource | undefined>;
   
   // Jobs (alias for Production Orders for legacy compatibility)
   getJobs(): Promise<ProductionOrder[]>;
@@ -1666,8 +1673,62 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteResource(id: number): Promise<boolean> {
+    // First remove all plant-resource associations
+    await db.delete(plantResources).where(eq(plantResources.resourceId, id));
+    
     const result = await db.delete(resources).where(eq(resources.id, id));
     return (result.rowCount || 0) > 0;
+  }
+
+  // Plant Resources (Junction Table)
+  async getResourcesByPlantId(plantId: number): Promise<Resource[]> {
+    const result = await db
+      .select({ resource: resources })
+      .from(plantResources)
+      .innerJoin(resources, eq(plantResources.resourceId, resources.id))
+      .where(eq(plantResources.plantId, plantId));
+    
+    return result.map(r => r.resource);
+  }
+
+  async getPlantsByResourceId(resourceId: number): Promise<Plant[]> {
+    const result = await db
+      .select({ plant: plants })
+      .from(plantResources)
+      .innerJoin(plants, eq(plantResources.plantId, plants.id))
+      .where(eq(plantResources.resourceId, resourceId));
+    
+    return result.map(r => r.plant);
+  }
+
+  async assignResourceToPlant(plantId: number, resourceId: number, isPrimary: boolean = true): Promise<PlantResource> {
+    const [assignment] = await db
+      .insert(plantResources)
+      .values({ plantId, resourceId, isPrimary })
+      .returning();
+    return assignment;
+  }
+
+  async removeResourceFromPlant(plantId: number, resourceId: number): Promise<boolean> {
+    const result = await db
+      .delete(plantResources)
+      .where(and(
+        eq(plantResources.plantId, plantId),
+        eq(plantResources.resourceId, resourceId)
+      ));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async updatePlantResourceAssignment(plantId: number, resourceId: number, updates: Partial<InsertPlantResource>): Promise<PlantResource | undefined> {
+    const [updated] = await db
+      .update(plantResources)
+      .set(updates)
+      .where(and(
+        eq(plantResources.plantId, plantId),
+        eq(plantResources.resourceId, resourceId)
+      ))
+      .returning();
+    return updated || undefined;
   }
 
   async getJobs(): Promise<ProductionOrder[]> {
@@ -2875,18 +2936,22 @@ export class DatabaseStorage implements IStorage {
 
       switch (objectType) {
         case 'plants':
-          // Find all resources in this plant
-          const plantResources = await db
-            .select()
-            .from(resources)
-            .where(eq(resources.plantId, objectId));
+          // Find all resources in this plant via junction table
+          const plantResourceMappings = await db
+            .select({
+              resource: resources,
+              plantResource: plantResources
+            })
+            .from(plantResources)
+            .innerJoin(resources, eq(plantResources.resourceId, resources.id))
+            .where(eq(plantResources.plantId, objectId));
           
-          plantResources.forEach(resource => {
+          plantResourceMappings.forEach(({ resource, plantResource }) => {
             relationships.push({
               from: { id: objectId, type: 'plants' },
               to: { ...resource, type: 'resources' },
               relationshipType: 'contains',
-              description: 'Plant contains resource'
+              description: `Plant contains resource${plantResource.isPrimary ? ' (Primary)' : ''}`
             });
           });
 
@@ -2907,29 +2972,30 @@ export class DatabaseStorage implements IStorage {
           break;
 
         case 'resources':
-          // Find the plant this resource belongs to
+          // Find the plants this resource belongs to via junction table
           const resourceData = await db
             .select()
             .from(resources)
             .where(eq(resources.id, objectId))
             .limit(1);
-          
-          if (resourceData[0]?.plantId) {
-            const plant = await db
-              .select()
-              .from(plants)
-              .where(eq(plants.id, resourceData[0].plantId))
-              .limit(1);
             
-            if (plant[0]) {
-              relationships.push({
-                from: { ...resourceData[0], type: 'resources' },
-                to: { ...plant[0], type: 'plants' },
-                relationshipType: 'belongs_to',
-                description: 'Resource belongs to plant'
-              });
-            }
-          }
+          const resourcePlantMappings = await db
+            .select({
+              plant: plants,
+              plantResource: plantResources
+            })
+            .from(plantResources)
+            .innerJoin(plants, eq(plantResources.plantId, plants.id))
+            .where(eq(plantResources.resourceId, objectId));
+            
+          resourcePlantMappings.forEach(({ plant, plantResource }) => {
+            relationships.push({
+              from: { ...resourceData[0], type: 'resources' },
+              to: { ...plant, type: 'plants' },
+              relationshipType: 'belongs_to',
+              description: `Resource belongs to plant${plantResource.isPrimary ? ' (Primary)' : ''}`
+            });
+          });
 
           // Find operations that use this resource
           const resourceOperations = await db

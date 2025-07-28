@@ -27,10 +27,20 @@ export const resources = pgTable("resources", {
   status: text("status").notNull().default("active"),
   capabilities: jsonb("capabilities").$type<number[]>().default([]),
   photo: text("photo"), // Base64 encoded photo data
-  plantId: integer("plant_id").references(() => plants.id),
-  isShared: boolean("is_shared").default(false), // Can be used across multiple plants
-  sharedPlants: jsonb("shared_plants").$type<number[]>().default([]), // Array of plant IDs if shared
+  // Removed plantId - now using many-to-many relationship via plantResources junction table
+  // Removed isShared and sharedPlants - now handled by multiple entries in plantResources table
 });
+
+// Junction table for many-to-many relationship between plants and resources
+export const plantResources = pgTable("plant_resources", {
+  id: serial("id").primaryKey(),
+  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  resourceId: integer("resource_id").references(() => resources.id).notNull(),
+  isPrimary: boolean("is_primary").default(true), // Indicates if this is the primary plant for this resource
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  plantResourceUnique: unique().on(table.plantId, table.resourceId),
+}));
 
 // Production Orders (formerly jobs) - firm manufacturing orders ready for execution
 export const productionOrders = pgTable("production_orders", {
@@ -1041,6 +1051,11 @@ export const insertResourceSchema = createInsertSchema(resources).omit({
   id: true,
 });
 
+export const insertPlantResourceSchema = createInsertSchema(plantResources).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertProductionOrderSchema = createInsertSchema(productionOrders).omit({
   id: true,
   createdAt: true,
@@ -1886,6 +1901,9 @@ export type Capability = typeof capabilities.$inferSelect;
 
 export type InsertResource = z.infer<typeof insertResourceSchema>;
 export type Resource = typeof resources.$inferSelect;
+
+export type InsertPlantResource = z.infer<typeof insertPlantResourceSchema>;
+export type PlantResource = typeof plantResources.$inferSelect;
 
 export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
 export type ProductionOrder = typeof productionOrders.$inferSelect;
@@ -6271,7 +6289,7 @@ export const forecasts = pgTable("forecasts", {
 
 // Plants Relations
 export const plantsRelations = relations(plants, ({ many }) => ({
-  resources: many(resources),
+  plantResources: many(plantResources),
   productionOrders: many(productionOrders),
   departments: many(departments),
   workCenters: many(workCenters),
@@ -6280,10 +6298,19 @@ export const plantsRelations = relations(plants, ({ many }) => ({
 }));
 
 // Resources Relations
-export const resourcesRelations = relations(resources, ({ one }) => ({
+export const resourcesRelations = relations(resources, ({ many }) => ({
+  plantResources: many(plantResources),
+}));
+
+// Plant Resources Junction Table Relations
+export const plantResourcesRelations = relations(plantResources, ({ one }) => ({
   plant: one(plants, {
-    fields: [resources.plantId],
+    fields: [plantResources.plantId],
     references: [plants.id],
+  }),
+  resource: one(resources, {
+    fields: [plantResources.resourceId],
+    references: [resources.id],
   }),
 }));
 
