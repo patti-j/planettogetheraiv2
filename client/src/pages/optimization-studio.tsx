@@ -12,7 +12,7 @@ import {
   Maximize2, Minimize2, Sparkles, Brain, Target, Cpu, Play, 
   CheckCircle, Settings, Database, Monitor, TrendingUp, 
   Code, TestTube, Rocket, BarChart3, Layers, Package,
-  Plus, Search, Filter, Edit3, Trash2, Copy, Eye, ArrowLeft, Clock
+  Plus, Search, Filter, Edit3, Trash2, Copy, Eye, Clock
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -357,14 +357,6 @@ export default function OptimizationStudio() {
         </Button>
         
         <div className={`p-3 sm:p-6 space-y-4 sm:space-y-6 ${isMaximized ? '' : ''}`}>
-          <Button 
-            onClick={() => setShowBackwardsScheduling(false)}
-            variant="outline"
-            className="mb-4 relative z-50"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Optimization Studio
-          </Button>
           <BackwardsSchedulingAlgorithm />
         </div>
       </div>

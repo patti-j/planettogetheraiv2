@@ -2,7 +2,9 @@
 
 ## Recent Changes (July 28, 2025)
 
-✓ **Production Plan Creation Authentication Fix (July 28, 2025)**:
+✓ **Backwards Scheduling Algorithm UI Cleanup & Production Plan Authentication Fix (July 28, 2025)**:
+- Removed unnecessary "Back to Optimization Studio" button from backwards scheduling algorithm editing interface for cleaner UX
+- Cleaned up unused ArrowLeft import from optimization-studio.tsx component
 - Fixed "Failed to create production plan" error by replacing direct fetch calls with authenticated apiRequest function
 - Updated createPlanMutation to use apiRequest('POST', '/api/production-plans', data) instead of manual fetch with headers
 - Fixed approvePlanMutation to use apiRequest('PATCH', `/api/production-plans/${planId}/approve`, data) for proper authentication
