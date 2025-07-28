@@ -1257,15 +1257,6 @@ Create authentic manufacturing data that reflects this company's operations.`;
             <span className="hidden sm:inline">AI Modify Data</span>
             <span className="sm:hidden">AI Modify</span>
           </Button>
-          <Button 
-            onClick={() => setShowConsolidatedDialog(true)}
-            variant="outline"
-            className="gap-2"
-          >
-            <FileSpreadsheet className="h-4 w-4" />
-            <span className="hidden sm:inline">Consolidated Template</span>
-            <span className="sm:hidden">Multi-Template</span>
-          </Button>
         </div>
       </div>
 
@@ -1511,6 +1502,24 @@ Create authentic manufacturing data that reflects this company's operations.`;
                 <div>
                   <h3 className="text-lg font-medium mb-2">Download Templates</h3>
                   <p className="text-sm text-gray-600 mb-4">Download CSV templates with sample data and proper formatting</p>
+                </div>
+
+                {/* Multi-Template Option */}
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium text-blue-800 mb-1">All Templates in One</h4>
+                      <p className="text-sm text-blue-600">Download a consolidated template with all data types in separate sheets</p>
+                    </div>
+                    <Button 
+                      onClick={() => setShowConsolidatedDialog(true)}
+                      className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    >
+                      <FileSpreadsheet className="h-4 w-4" />
+                      <span className="hidden sm:inline">Consolidated Template</span>
+                      <span className="sm:hidden">Multi-Template</span>
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Template Categories */}

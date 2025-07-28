@@ -7,6 +7,10 @@
 - Implemented asynchronous record count loading with 30-second caching to prevent blocking screen render during page startup
 - Cleaned up supported data types to only show 6 working table types (plants, resources, capabilities, production orders, vendors, customers)
 - Enhanced record count display in dropdown by removing gray background boxes and using lighter gray text (gray-400) for less visual intrusion
+- Fixed dropdown text truncation by separating selected value display from dropdown options - selected values now show full text without record counts
+- Record counts only visible in dropdown options to prevent UI updates when data changes, eliminating "..." truncation issues
+- Moved Consolidated Template button from page header down into Templates section with enhanced visual presentation
+- Added special highlighted container for multi-template option with gradient background and clear descriptive text
 - Record counts API now loads in background without slowing page startup, showing "..." placeholder until data loads
 - Implemented fully functional structured data entry component with spreadsheet-like interface for bulk data entry
 - Added responsive design with desktop table view and mobile card layout for optimal user experience across devices
