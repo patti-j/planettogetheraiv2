@@ -1584,14 +1584,13 @@ Create authentic manufacturing data that reflects this company's operations.`;
   }
 
   return (
-    <div className={`
-      p-3 sm:p-6 space-y-4 sm:space-y-6
-      ml-3 mr-3
-      ${isMaxOpen ? 'md:ml-0 md:mr-0' : 'md:ml-12 md:mr-12'}
-      max-w-full overflow-x-hidden
-    `}>
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className={`
+        flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4
+        ml-3 mr-3
+        ${isMaxOpen ? 'md:ml-0 md:mr-0' : 'md:ml-12 md:mr-12'}
+      `}>
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Database className="h-5 w-5 text-blue-600 mr-2" />
@@ -1623,8 +1622,12 @@ Create authentic manufacturing data that reflects this company's operations.`;
       </div>
 
       {/* Feature-Based Recommendations */}
-      {recommendedDataTypes.length > 0 && (
-        <Card className="border-blue-200 bg-blue-50">
+      <div className={`
+        ml-3 mr-3
+        ${isMaxOpen ? 'md:ml-0 md:mr-0' : 'md:ml-12 md:mr-12'}
+      `}>
+        {recommendedDataTypes.length > 0 && (
+          <Card className="border-blue-200 bg-blue-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-blue-800">
               <Lightbulb className="h-5 w-5" />
@@ -1672,10 +1675,15 @@ Create authentic manufacturing data that reflects this company's operations.`;
             </div>
           </CardContent>
         </Card>
-      )}
+        )}
+      </div>
 
       {/* Main Content */}
-      <Card>
+      <div className={`
+        ml-3 mr-3
+        ${isMaxOpen ? 'md:ml-0 md:mr-0' : 'md:ml-12 md:mr-12'}
+      `}>
+        <Card>
         <CardContent className="p-3 sm:p-6">
           <Tabs defaultValue="manage">
             <TabsList className="grid w-full grid-cols-5">
@@ -2354,6 +2362,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
           </div>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }
