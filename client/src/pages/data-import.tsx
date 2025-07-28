@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2, ClipboardList, AlertTriangle, Cog, Search, ChevronLeft, ChevronRight, ChevronUp, ArrowUpDown, Filter, Eye, EyeOff, Info, Beaker, Table as TableIcon, Undo2, Shield, BarChart3, Clock, Settings, Save, ArrowRightLeft } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2, ClipboardList, AlertTriangle, Cog, Search, ChevronLeft, ChevronRight, ChevronUp, ArrowUpDown, Filter, Eye, EyeOff, Info, Beaker, Table as TableIcon, Undo2, Shield, BarChart3, Clock, Settings, Save, ArrowRightLeft, Brain } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useMaxDock } from '@/contexts/MaxDockContext';
@@ -73,20 +73,14 @@ function DataImport() {
   const [showFeatureDialog, setShowFeatureDialog] = useState(false);
   const [tempSelectedFeatures, setTempSelectedFeatures] = useState<string[]>([]);
 
-  // Available features for selection
+  // Available features for selection - matches onboarding.tsx featureModules exactly
   const availableFeatures = [
-    { id: 'production-scheduling', name: 'Production Scheduling', icon: Calendar, description: 'Schedule and optimize production workflows' },
-    { id: 'inventory-planning', name: 'Inventory Planning AI', icon: Package, description: 'AI-powered inventory optimization and forecasting' },
-    { id: 'quality-management', name: 'Quality Management', icon: Shield, description: 'Quality control and compliance tracking' },
-    { id: 'capacity-optimization', name: 'Capacity Optimization', icon: TrendingUp, description: 'Production capacity forecasting and optimization' },
-    { id: 'job-management', name: 'Job Management', icon: ClipboardList, description: 'Work order and job tracking systems' },
-    { id: 'production-plan-optimization', name: 'Production Plan Optimization', icon: ClipboardList, description: 'Production plans and targets optimization' },
-    { id: 'user-management', name: 'User Management', icon: Users, description: 'Role-based access control and team management' },
-    { id: 'dashboard-analytics', name: 'Dashboard & Analytics', icon: BarChart3, description: 'Real-time dashboards and business intelligence' },
-    { id: 'shift-management', name: 'Shift Management', icon: Clock, description: 'Workforce scheduling and shift planning' },
-    { id: 'bill-of-materials', name: 'Bill of Materials', icon: FileText, description: 'Product structure and component management' },
-    { id: 'sequencer-optimization', name: 'Sequencer Optimization', icon: ArrowRightLeft, description: 'Operation sequencing and workflow optimization' },
-    { id: 'demand-planning', name: 'Demand Planning', icon: TrendingUp, description: 'Demand forecasting and production scheduling alignment' },
+    { id: 'production-scheduling', name: 'Schedule Optimization', icon: BarChart3, description: 'Plan and schedule your production operations with drag-and-drop Gantt charts' },
+    { id: 'capacity-planning', name: 'Capacity Optimization', icon: TrendingUp, description: 'Plan and forecast production capacity across your facilities and resources' },
+    { id: 'inventory-optimization', name: 'Inventory Management', icon: Package, description: 'Track materials, optimize stock levels, and manage supply chain' },
+    { id: 'production-planning', name: 'Production Plan Optimization', icon: ClipboardList, description: 'Create and manage production plans, targets, and milestones' },
+    { id: 'maintenance-management', name: 'Maintenance Planning', icon: Wrench, description: 'Schedule preventive maintenance and track equipment health' },
+    { id: 'ai-optimization', name: 'AI Optimization', icon: Brain, description: 'Leverage artificial intelligence for automated optimization and insights' },
   ];
 
   // Feature to data requirements mapping
@@ -1079,6 +1073,38 @@ function DataImport() {
     staleTime: 0, // Force fresh data
   });
 
+  // Calculate recommended data types based on selected features
+  const calculateRecommendedDataTypes = (features: string[]) => {
+    const recommendedTypes = new Set<string>();
+    features.forEach((feature: string) => {
+      const requirements = featureDataRequirements[feature as keyof typeof featureDataRequirements];
+      if (requirements) {
+        requirements.forEach(type => recommendedTypes.add(type));
+      }
+    });
+    setRecommendedDataTypes(Array.from(recommendedTypes));
+  };
+
+  // Transform data function for import processing
+  const transformData = (jsonData: any[], dataType: string) => {
+    // Basic data transformation - adjust field names if needed
+    return jsonData;
+  };
+
+  // Import mutation for data import
+  const importMutation = useMutation({
+    mutationFn: async ({ dataType, data, validateOnly }: { dataType: string; data: any[]; validateOnly: boolean }) => {
+      const endpoint = getImportApiEndpoint(dataType);
+      return await apiRequest('POST', `/api/${endpoint}/import`, { data, validateOnly });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/data-management'] });
+    },
+    onError: (error: any) => {
+      console.error('Import failed:', error);
+    }
+  });
+
   // Load recommended data types from onboarding features
   useEffect(() => {
     console.log('Master Data Setup effect triggered with onboarding data:', onboardingData);
@@ -1086,21 +1112,8 @@ function DataImport() {
     if (onboardingData && typeof onboardingData === 'object' && 'selectedFeatures' in onboardingData && (onboardingData as any).selectedFeatures) {
       const features = (onboardingData as any).selectedFeatures;
       setOnboardingFeatures(features);
-      
-      // Collect recommended data types based on selected features
-      const recommendedTypes = new Set<string>();
-      features.forEach((feature: string) => {
-        const requirements = featureDataRequirements[feature as keyof typeof featureDataRequirements];
-        if (requirements) {
-          requirements.forEach(type => recommendedTypes.add(type));
-        }
-      });
-      
-      const recommendedArray = Array.from(recommendedTypes);
-      setRecommendedDataTypes(recommendedArray);
-      
-      console.log('Recommended data types based on features:', recommendedArray);
-      console.log('Selected features:', features);
+      calculateRecommendedDataTypes(features);
+      console.log('Recommended data types based on features:', features);
     }
   }, [onboardingData]);
 
@@ -1196,11 +1209,11 @@ Create authentic manufacturing data that reflects this company's operations.`;
     mutationFn: async (features: string[]) => {
       // Get the onboarding ID from the onboarding status
       const statusResponse = await apiRequest('GET', '/api/onboarding/status');
-      if (!statusResponse?.id) {
+      if (!statusResponse || typeof statusResponse !== 'object' || !('id' in statusResponse)) {
         throw new Error('No onboarding record found');
       }
       
-      return await apiRequest('PUT', `/api/onboarding/company/${statusResponse.id}`, { 
+      return await apiRequest('PUT', `/api/onboarding/company/${(statusResponse as any).id}`, { 
         selectedFeatures: features 
       });
     },
