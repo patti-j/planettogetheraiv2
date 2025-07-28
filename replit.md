@@ -2,7 +2,11 @@
 
 ## Recent Changes (July 28, 2025)
 
-✓ **Industry Lists Consistency Fix & Optimization Studio Improvements (July 28, 2025)**:
+✓ **Master Data Setup Mobile Layout Fix & Industry Lists Consistency (July 28, 2025)**:
+- Fixed Master Data Setup page mobile overflow issue by implementing proper responsive container structure
+- Added mobile-responsive margins (ml-3 mr-3 on mobile, md:ml-12 md:mr-12 on desktop) with Max AI panel integration
+- Implemented overflow protection (max-w-full overflow-x-hidden) to prevent content extending beyond screen width
+- Added proper header layout with hamburger menu clearance and responsive padding (p-3 sm:p-6)
 - Fixed industry list inconsistency between onboarding page and industry templates page by changing "other" to "custom" in onboarding flow
 - Both pages now have identical industry options: automotive, aerospace, electronics, pharmaceutical, food_beverage, textiles, chemicals, metals, manufacturing, custom
 - Ensured company info page in welcome screen matches industry templates page for seamless user experience

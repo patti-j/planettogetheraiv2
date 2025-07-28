@@ -101,14 +101,28 @@ function ManageDataTab({ dataType }: { dataType: string }) {
 }
 
 export default function DataImport() {
+  const { isMaxOpen } = useMaxDock();
+
   return (
-    <div className="space-y-4">
+    <div className={`
+      p-3 sm:p-6 space-y-4 sm:space-y-6
+      ml-3 mr-3
+      ${isMaxOpen ? 'md:ml-0 md:mr-0' : 'md:ml-12 md:mr-12'}
+      max-w-full overflow-x-hidden
+    `}>
+      {/* Header */}
+      <div className="relative">
+        <div className="md:ml-0 ml-12">
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+            <Database className="w-6 h-6 mr-2" />
+            Master Data Setup
+          </h1>
+          <p className="text-sm md:text-base text-gray-600">Import, manage, and generate sample data for your manufacturing system</p>
+        </div>
+      </div>
+
       <Card>
-        <CardHeader>
-          <CardTitle>Master Data Setup</CardTitle>
-          <CardDescription>Import, manage, and generate sample data for your manufacturing system</CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6">
           <Tabs defaultValue="manage">
             <TabsList>
               <TabsTrigger value="manage">Manage Data</TabsTrigger>

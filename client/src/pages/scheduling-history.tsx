@@ -72,15 +72,19 @@ export default function SchedulingHistory() {
   const queryClient = useQueryClient();
 
   // Fetch scheduling history
-  const { data: historyData = [], isLoading: historyLoading } = useQuery<SchedulingHistory[]>({
+  const { data: historyData = [], isLoading: historyLoading, error: historyError } = useQuery<SchedulingHistory[]>({
     queryKey: ["/api/scheduling-history"],
     enabled: true,
+    retry: 3,
+    retryDelay: 1000,
   });
 
   // Fetch algorithm performance data
-  const { data: performanceData = [], isLoading: performanceLoading } = useQuery<AlgorithmPerformance[]>({
+  const { data: performanceData = [], isLoading: performanceLoading, error: performanceError } = useQuery<AlgorithmPerformance[]>({
     queryKey: ["/api/algorithm-performance"],
     enabled: true,
+    retry: 3,
+    retryDelay: 1000,
   });
 
   // Fetch scheduling results for selected history
@@ -152,6 +156,16 @@ export default function SchedulingHistory() {
     }
   };
 
+  // Debug logging
+  console.log("Scheduling History Debug:", {
+    historyLoading,
+    performanceLoading,
+    historyError: historyError?.message,
+    performanceError: performanceError?.message,
+    historyData: historyData?.length,
+    performanceData: performanceData?.length
+  });
+
   if (historyLoading || performanceLoading) {
     return (
       <div className="p-6 space-y-6">
@@ -174,6 +188,49 @@ export default function SchedulingHistory() {
             </Card>
           ))}
         </div>
+      </div>
+    );
+  }
+
+  // Show error state if data failed to load
+  if (historyError || performanceError) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Scheduling History</h1>
+            <p className="text-muted-foreground">Track and analyze algorithm execution results</p>
+          </div>
+        </div>
+        <Card className="border-red-200">
+          <CardHeader>
+            <CardTitle className="text-red-600 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Data Loading Error
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {historyError && (
+              <div className="mb-2">
+                <strong>History Error:</strong> {historyError.message}
+              </div>
+            )}
+            {performanceError && (
+              <div>
+                <strong>Performance Error:</strong> {performanceError.message}
+              </div>
+            )}
+            <Button 
+              onClick={() => {
+                queryClient.invalidateQueries({ queryKey: ["/api/scheduling-history"] });
+                queryClient.invalidateQueries({ queryKey: ["/api/algorithm-performance"] });
+              }}
+              className="mt-4"
+            >
+              Retry Loading Data
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
