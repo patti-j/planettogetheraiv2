@@ -202,7 +202,23 @@ export default function DataSchemaView() {
     queryKey: ['/api/database/schema'],
     queryFn: async (): Promise<SchemaTable[]> => {
       const response = await apiRequest('GET', '/api/database/schema');
-      return response as unknown as SchemaTable[];
+      console.log('Raw API response:', typeof response, response);
+      
+      // Handle both direct array and wrapped response formats
+      let data: SchemaTable[] = [];
+      if (Array.isArray(response)) {
+        data = response as SchemaTable[];
+      } else if (response && typeof response === 'object' && Array.isArray((response as any).data)) {
+        data = (response as any).data as SchemaTable[];
+      } else if (response && typeof response === 'object') {
+        // If it's an object but not wrapped in data, try to convert to array
+        data = Object.values(response).filter(item => 
+          item && typeof item === 'object' && (item as any).name
+        ) as SchemaTable[];
+      }
+      
+      console.log('Schema data processed:', data.length, 'tables');
+      return data;
     },
   });
 
@@ -314,6 +330,7 @@ export default function DataSchemaView() {
   }
 
   if (error) {
+    console.error('Schema loading error:', error);
     return (
       <div className="p-6">
         <div className="flex items-center gap-3 mb-6">
@@ -323,6 +340,49 @@ export default function DataSchemaView() {
         <Card className="border-red-200 bg-red-50">
           <CardContent className="p-6">
             <p className="text-red-600">Failed to load database schema. Please try again.</p>
+            <pre className="mt-2 text-xs text-red-500">{String(error)}</pre>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Add debugging
+  console.log('Render check:', { 
+    schemaDataExists: !!schemaData, 
+    isArray: Array.isArray(schemaData), 
+    length: schemaData?.length,
+    filteredTablesLength: filteredTables.length,
+    categoriesLength: categories.length
+  });
+
+  // Handle empty data case
+  if (!schemaData || schemaData.length === 0) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <Database className="w-6 h-6 text-blue-600" />
+          <h1 className="text-2xl font-bold">Data Schema View</h1>
+        </div>
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Database className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Database Schema Available</h3>
+            <p className="text-gray-600 mb-4">
+              Unable to load database schema information. This could be due to:
+            </p>
+            <ul className="text-sm text-gray-500 text-left max-w-md mx-auto space-y-1">
+              <li>• Database connection issues</li>
+              <li>• No tables in the database</li>
+              <li>• Permission restrictions</li>
+            </ul>
+            <Button 
+              onClick={() => window.location.reload()} 
+              className="mt-4"
+              variant="outline"
+            >
+              Retry Loading
+            </Button>
           </CardContent>
         </Card>
       </div>

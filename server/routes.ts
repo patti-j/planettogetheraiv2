@@ -17220,60 +17220,44 @@ Response must be valid JSON:
     }
   });
 
-  // Database Schema endpoint
+  // Database Schema endpoint - simplified to avoid complex queries
   app.get("/api/database/schema", async (req, res) => {
     try {
-      const schemaQuery = `
-        SELECT 
-          t.table_name,
-          t.table_comment,
-          COALESCE(
-            json_agg(
-              json_build_object(
-                'name', c.column_name,
-                'type', c.data_type,
-                'nullable', c.is_nullable = 'YES',
-                'default', c.column_default,
-                'comment', c.column_comment
-              ) ORDER BY c.ordinal_position
-            ) FILTER (WHERE c.column_name IS NOT NULL), 
-            '[]'::json
-          ) as columns,
-          COALESCE(
-            json_agg(
-              DISTINCT json_build_object(
-                'fromTable', tc.table_name,
-                'toTable', ccu.table_name,
-                'fromColumn', kcu.column_name,
-                'toColumn', ccu.column_name,
-                'type', 'foreign_key'
-              )
-            ) FILTER (WHERE tc.constraint_type = 'FOREIGN KEY'), 
-            '[]'::json
-          ) as relationships
-        FROM information_schema.tables t
-        LEFT JOIN information_schema.columns c ON t.table_name = c.table_name 
-          AND t.table_schema = c.table_schema
-        LEFT JOIN information_schema.table_constraints tc ON t.table_name = tc.table_name 
-          AND t.table_schema = tc.table_schema
-        LEFT JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name 
-          AND tc.table_schema = kcu.table_schema
-        LEFT JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name 
-          AND tc.table_schema = ccu.table_schema
-        WHERE t.table_schema = 'public' 
-          AND t.table_type = 'BASE TABLE'
-        GROUP BY t.table_name, t.table_comment
-        ORDER BY t.table_name;
+      // First get table names
+      const tablesQuery = `
+        SELECT table_name, table_comment
+        FROM information_schema.tables
+        WHERE table_schema = 'public' 
+          AND table_type = 'BASE TABLE'
+        ORDER BY table_name;
       `;
       
-      const result = await db.execute(schemaQuery);
+      const tablesResult = await db.execute(tablesQuery);
+      console.log('Found tables:', tablesResult.rows.length);
       
-      // Transform the result to add categories based on table naming patterns
-      const tables = result.rows.map((row: any) => {
-        const tableName = row.table_name;
-        let category = 'Other';
+      // For each table, get columns separately
+      const tables = [];
+      for (const tableRow of tablesResult.rows) {
+        const tableName = (tableRow as any).table_name;
         
-        // Categorize tables based on naming patterns
+        // Get columns for this table
+        const columnsQuery = `
+          SELECT 
+            column_name,
+            data_type,
+            is_nullable,
+            column_default,
+            '' as column_comment
+          FROM information_schema.columns
+          WHERE table_schema = 'public' 
+            AND table_name = $1
+          ORDER BY ordinal_position;
+        `;
+        
+        const columnsResult = await db.execute(columnsQuery, [tableName]);
+        
+        // Categorize table
+        let category = 'Other';
         if (tableName.includes('user') || tableName.includes('role') || tableName.includes('auth') || tableName.includes('session')) {
           category = 'Authentication & Users';
         } else if (tableName.includes('production') || tableName.includes('job') || tableName.includes('order')) {
@@ -17294,15 +17278,22 @@ Response must be valid JSON:
           category = 'System Configuration';
         }
         
-        return {
+        tables.push({
           name: tableName,
-          description: row.table_comment || `Database table: ${tableName}`,
+          description: (tableRow as any).table_comment || `Database table: ${tableName}`,
           category,
-          columns: Array.isArray(row.columns) ? row.columns : [],
-          relationships: Array.isArray(row.relationships) ? row.relationships : []
-        };
-      });
+          columns: columnsResult.rows.map((col: any) => ({
+            name: col.column_name,
+            type: col.data_type,
+            nullable: col.is_nullable === 'YES',
+            default: col.column_default,
+            comment: col.column_comment || ''
+          })),
+          relationships: [] // Simplified - no relationships for now
+        });
+      }
       
+      console.log('Processed tables:', tables.length);
       res.json(tables);
     } catch (error) {
       console.error("Error fetching database schema:", error);
