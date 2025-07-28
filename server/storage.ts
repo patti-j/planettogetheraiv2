@@ -8214,50 +8214,114 @@ export class DatabaseStorage implements IStorage {
   private async validateOperationsCapabilities(): Promise<any[]> {
     const issues: any[] = [];
     
+    // Get all capabilities for reference
+    const allCapabilities = await db.select({
+      id: capabilities.id,
+      name: capabilities.name
+    }).from(capabilities);
+    
+    const capabilityMap = new Map(allCapabilities.map(cap => [cap.id, cap.name]));
+    
     // Get all operations that require capabilities
     const operationsWithCapabilities = await db
       .select({
         id: operations.id,
         name: operations.name,
         productionOrderId: operations.productionOrderId,
-        requiredCapabilities: operations.requiredCapabilities
+        requiredCapabilities: operations.requiredCapabilities,
+        status: operations.status
       })
       .from(operations)
       .where(sql`jsonb_array_length(${operations.requiredCapabilities}) > 0`);
 
+    // Get production order info for context
+    const productionOrders = await db.select({
+      id: productionOrders.id,
+      name: productionOrders.name,
+      orderNumber: productionOrders.orderNumber
+    }).from(productionOrders);
+    
+    const productionOrderMap = new Map(productionOrders.map(po => [po.id, po]));
+
+    // Get all active resources with their capabilities
+    const activeResourcesWithCapabilities = await db
+      .select({
+        id: resources.id,
+        name: resources.name,
+        type: resources.type,
+        capabilities: resources.capabilities
+      })
+      .from(resources)
+      .where(eq(resources.status, 'active'));
+
     for (const operation of operationsWithCapabilities) {
       if (!operation.requiredCapabilities || operation.requiredCapabilities.length === 0) continue;
 
-      // Check if there are active resources with ALL required capabilities
-      const activeResourcesWithCapabilities = await db
-        .select({
-          id: resources.id,
-          name: resources.name,
-          capabilities: resources.capabilities
-        })
-        .from(resources)
-        .where(eq(resources.status, 'active'));
-
-      const hasValidResources = activeResourcesWithCapabilities.some(resource => {
+      // Find resources that have ALL required capabilities
+      const suitableResources = activeResourcesWithCapabilities.filter(resource => {
         if (!resource.capabilities || resource.capabilities.length === 0) return false;
         return operation.requiredCapabilities.every(reqCap => 
           resource.capabilities.includes(reqCap)
         );
       });
 
-      if (!hasValidResources) {
+      if (suitableResources.length === 0) {
+        // Get capability names for better readability
+        const requiredCapabilityNames = operation.requiredCapabilities
+          .map(capId => capabilityMap.get(capId) || `Unknown (${capId})`)
+          .join(', ');
+
+        // Get production order context
+        const productionOrder = productionOrderMap.get(operation.productionOrderId);
+        const operationContext = productionOrder 
+          ? `${productionOrder.name} (${productionOrder.orderNumber})`
+          : `Production Order ${operation.productionOrderId}`;
+
+        // Find which specific capabilities are missing from all resources
+        const missingCapabilities = operation.requiredCapabilities.filter(reqCap => {
+          return !activeResourcesWithCapabilities.some(resource => 
+            resource.capabilities && resource.capabilities.includes(reqCap)
+          );
+        });
+
+        const partiallyAvailableCapabilities = operation.requiredCapabilities.filter(reqCap => {
+          return activeResourcesWithCapabilities.some(resource => 
+            resource.capabilities && resource.capabilities.includes(reqCap)
+          ) && !suitableResources.some(resource => 
+            resource.capabilities && resource.capabilities.includes(reqCap)
+          );
+        });
+
+        let detailedDescription = `Operation requires capabilities that no active resources possess, preventing scheduling and execution.`;
+        
+        if (missingCapabilities.length > 0) {
+          const missingCapNames = missingCapabilities
+            .map(capId => capabilityMap.get(capId) || `Unknown (${capId})`)
+            .join(', ');
+          detailedDescription += ` Missing capabilities: ${missingCapNames}.`;
+        }
+
+        if (partiallyAvailableCapabilities.length > 0) {
+          const partialCapNames = partiallyAvailableCapabilities
+            .map(capId => capabilityMap.get(capId) || `Unknown (${capId})`)
+            .join(', ');
+          detailedDescription += ` Some capabilities exist but no single resource has all requirements: ${partialCapNames}.`;
+        }
+
         issues.push({
           id: `operation-capabilities-${operation.id}`,
           severity: 'critical',
-          category: 'Operations',
-          title: `Operation "${operation.name}" has no available resources`,
-          description: `Operation requires capabilities that no active resources possess, preventing execution.`,
+          category: 'Scheduling',
+          title: `Operation "${operation.name}" cannot be scheduled - no suitable resources`,
+          description: detailedDescription,
           affectedRecords: 1,
           details: [{
             name: operation.name,
-            description: `Required capabilities: ${operation.requiredCapabilities.join(', ')}`
+            description: `From ${operationContext} | Required: ${requiredCapabilityNames} | Status: ${operation.status || 'planned'}`
           }],
-          recommendation: 'Add resources with the required capabilities or modify the operation requirements.'
+          recommendation: missingCapabilities.length > 0 
+            ? `Add active resources with missing capabilities: ${missingCapabilities.map(capId => capabilityMap.get(capId)).join(', ')}.`
+            : 'Ensure at least one active resource has all required capabilities, or split operation into multiple steps.'
         });
       }
     }
