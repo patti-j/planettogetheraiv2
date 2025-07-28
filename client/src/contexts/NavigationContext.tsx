@@ -216,14 +216,9 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     return { label: label || 'Page', icon };
   };
 
-  // Track current page when location changes and save last visited route
+  // Track current page when location changes
   useEffect(() => {
     const currentPath = location;
-    
-    // Always save the last visited route for session persistence (excluding login and home)
-    if (currentPath !== '/login' && currentPath !== '/') {
-      setLastVisitedRoute(currentPath);
-    }
     
     // Don't track home page visits or login page
     if (currentPath === '/' || currentPath === '/login') {
@@ -347,14 +342,8 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     // Only clear for authenticated users - no localStorage fallback
   };
 
-  // Function to set last visited route and save to database (with throttling)
+  // Function to set last visited route and save to database
   const setLastVisitedRoute = async (route: string) => {
-    // Only update if the route actually changed
-    if (lastVisitedRoute === route) {
-      return;
-    }
-    
-    console.log('Setting last visited route from', lastVisitedRoute, 'to', route);
     setLastVisitedRouteState(route);
     
     if (isAuthenticated && user?.id) {
@@ -362,11 +351,6 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
         // First get current preferences to merge
         const response = await apiRequest('GET', `/api/user-preferences/${user.id}`);
         const currentPreferences = await response.json();
-        
-        // Only update if the route is different from what's already saved
-        if (currentPreferences?.dashboardLayout?.lastVisitedRoute === route) {
-          return;
-        }
         
         // Merge last visited route with existing dashboard layout
         const updatedDashboardLayout = {
