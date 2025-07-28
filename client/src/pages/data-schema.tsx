@@ -70,15 +70,35 @@ interface SchemaRelationship {
 
 // Custom node component for database tables
 const TableNode = ({ data }: { data: any }) => {
-  const { table, showColumns, showRelationships } = data;
+  const { table, showColumns, showRelationships, isFocused, isConnected } = data;
   
+  const getCardClassName = () => {
+    let baseClasses = "min-w-[250px] max-w-[350px] shadow-lg border-2 transition-all duration-200";
+    
+    if (isFocused) {
+      return `${baseClasses} ring-4 ring-blue-500 ring-opacity-50 border-blue-500 scale-105`;
+    } else if (isConnected) {
+      return `${baseClasses} border-blue-300 bg-blue-50/30`;
+    } else {
+      return baseClasses;
+    }
+  };
+
+  const getCardStyle = () => {
+    if (isFocused || isConnected) {
+      return { borderColor: '#3b82f6' };
+    } else {
+      return { borderColor: getCategoryColor(table.category) };
+    }
+  };
+
   return (
-    <Card className="min-w-[250px] max-w-[350px] shadow-lg border-2" 
-          style={{ borderColor: getCategoryColor(table.category) }}>
+    <Card className={getCardClassName()} style={getCardStyle()}>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-sm">
           <Table className="w-4 h-4" />
           {table.name}
+          {isFocused && <Badge variant="default" className="text-xs bg-blue-500 text-white">FOCUS</Badge>}
           <Badge variant="outline" className="text-xs">
             {table.category}
           </Badge>
@@ -194,6 +214,8 @@ export default function DataSchemaView() {
   const [showColumns, setShowColumns] = useState(true);
   const [showRelationships, setShowRelationships] = useState(true);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
+  const [focusMode, setFocusMode] = useState(false);
+  const [focusTable, setFocusTable] = useState<string | null>(null);
   
   const { toast } = useToast();
 
@@ -231,11 +253,40 @@ export default function DataSchemaView() {
     },
   });
 
-  // Filter tables based on search and category
+  // Get tables connected to focus table
+  const getConnectedTables = useCallback((tableName: string, tables: SchemaTable[]): string[] => {
+    const connected = new Set<string>();
+    const targetTable = tables.find(t => t.name === tableName);
+    
+    if (!targetTable) return [];
+    
+    // Add the focus table itself
+    connected.add(tableName);
+    
+    // Find tables this table references (through foreign keys)
+    targetTable.columns.forEach(column => {
+      if (column.foreignKey) {
+        connected.add(column.foreignKey.table);
+      }
+    });
+    
+    // Find tables that reference this table
+    tables.forEach(table => {
+      table.columns.forEach(column => {
+        if (column.foreignKey && column.foreignKey.table === tableName) {
+          connected.add(table.name);
+        }
+      });
+    });
+    
+    return Array.from(connected);
+  }, []);
+
+  // Filter tables based on search, category and focus mode
   const filteredTables = useMemo(() => {
     if (!schemaData || !Array.isArray(schemaData)) return [];
     
-    return schemaData.filter((table: SchemaTable) => {
+    let tables = schemaData.filter((table: SchemaTable) => {
       const matchesSearch = table.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            table.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            table.columns.some((col: any) => col.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -244,7 +295,15 @@ export default function DataSchemaView() {
       
       return matchesSearch && matchesCategory;
     });
-  }, [schemaData, searchTerm, selectedCategory]);
+    
+    // Apply focus mode filtering
+    if (focusMode && focusTable) {
+      const connectedTableNames = getConnectedTables(focusTable, schemaData);
+      tables = tables.filter(table => connectedTableNames.includes(table.name));
+    }
+    
+    return tables;
+  }, [schemaData, searchTerm, selectedCategory, focusMode, focusTable, getConnectedTables]);
 
   // Get unique categories
   const categories = useMemo(() => {
@@ -258,21 +317,33 @@ export default function DataSchemaView() {
     
     const positions = layoutAlgorithms[layoutType](filteredTables);
     
-    const flowNodes: Node[] = filteredTables.map(table => ({
-      id: table.name,
-      type: 'default',
-      position: positions[table.name],
-      data: { 
-        table, 
-        showColumns, 
-        showRelationships,
-        label: <TableNode data={{ table, showColumns, showRelationships }} />
-      },
-      style: {
-        background: 'transparent',
-        border: 'none',
-      }
-    }));
+    // Get connected tables if in focus mode
+    const connectedTableNames = focusMode && focusTable && schemaData 
+      ? getConnectedTables(focusTable, schemaData) 
+      : [];
+    
+    const flowNodes: Node[] = filteredTables.map(table => {
+      const isFocused = focusMode && table.name === focusTable;
+      const isConnected = focusMode && focusTable && connectedTableNames.includes(table.name) && table.name !== focusTable;
+      
+      return {
+        id: table.name,
+        type: 'default',
+        position: positions[table.name],
+        data: { 
+          table, 
+          showColumns, 
+          showRelationships,
+          isFocused,
+          isConnected,
+          label: <TableNode data={{ table, showColumns, showRelationships, isFocused, isConnected }} />
+        },
+        style: {
+          background: 'transparent',
+          border: 'none',
+        }
+      };
+    });
 
     const flowEdges: Edge[] = [];
     
@@ -280,24 +351,30 @@ export default function DataSchemaView() {
       filteredTables.forEach(table => {
         table.relationships.forEach(rel => {
           if (filteredTables.some(t => t.name === rel.toTable)) {
+            const isHighlighted = focusMode && focusTable && 
+              (rel.fromTable === focusTable || rel.toTable === focusTable || 
+               (connectedTableNames.includes(rel.fromTable) && connectedTableNames.includes(rel.toTable)));
+            
             flowEdges.push({
               id: `${rel.fromTable}-${rel.toTable}-${rel.fromColumn}`,
               source: rel.fromTable,
               target: rel.toTable,
               type: 'smoothstep',
-              animated: false,
+              animated: isHighlighted,
               style: { 
-                stroke: getCategoryColor(table.category),
-                strokeWidth: 2,
+                stroke: isHighlighted ? '#3b82f6' : getCategoryColor(table.category),
+                strokeWidth: isHighlighted ? 3 : 2,
+                opacity: focusMode && !isHighlighted ? 0.3 : 1,
               },
               label: `${rel.type}`,
               labelStyle: { 
                 fontSize: 10,
-                fill: '#666',
+                fill: isHighlighted ? '#3b82f6' : '#666',
+                fontWeight: isHighlighted ? 'bold' : 'normal',
               },
               markerEnd: {
                 type: MarkerType.ArrowClosed,
-                color: getCategoryColor(table.category),
+                color: isHighlighted ? '#3b82f6' : getCategoryColor(table.category),
               }
             });
           }
@@ -306,7 +383,7 @@ export default function DataSchemaView() {
     }
 
     return { nodes: flowNodes, edges: flowEdges };
-  }, [filteredTables, layoutType, showColumns, showRelationships]);
+  }, [filteredTables, layoutType, showColumns, showRelationships, focusMode, focusTable, schemaData, getConnectedTables]);
 
   const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
@@ -408,6 +485,11 @@ export default function DataSchemaView() {
           <Badge variant="outline">
             {filteredTables.length} tables
           </Badge>
+          {focusMode && focusTable && (
+            <Badge variant="default" className="bg-blue-500">
+              Focusing on: {focusTable}
+            </Badge>
+          )}
         </div>
         
         {/* Controls */}
@@ -465,6 +547,59 @@ export default function DataSchemaView() {
               />
               <Label htmlFor="show-relationships" className="text-sm">Show Relationships</Label>
             </div>
+          </div>
+          
+          <Separator orientation="vertical" className="h-6" />
+          
+          {/* Focus Mode Controls */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="focus-mode"
+                checked={focusMode}
+                onCheckedChange={(checked) => {
+                  setFocusMode(checked);
+                  if (!checked) {
+                    setFocusTable(null);
+                  }
+                }}
+              />
+              <Label htmlFor="focus-mode" className="text-sm font-medium">Focus Mode</Label>
+            </div>
+            
+            {focusMode && (
+              <Select 
+                value={focusTable || ""} 
+                onValueChange={(value) => setFocusTable(value || null)}
+              >
+                <SelectTrigger className="w-64">
+                  <SelectValue placeholder="Select table to focus on..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {schemaData?.map(table => (
+                    <SelectItem key={table.name} value={table.name}>
+                      <div className="flex items-center gap-2">
+                        <Table className="w-3 h-3" />
+                        {table.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            
+            {focusMode && focusTable && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setFocusMode(false);
+                  setFocusTable(null);
+                }}
+              >
+                Clear Focus
+              </Button>
+            )}
           </div>
         </div>
       </div>
