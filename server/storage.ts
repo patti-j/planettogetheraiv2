@@ -1,5 +1,6 @@
 import { 
   plants, capabilities, resources, productionOrders, plannedOrders, operations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
+  shiftTemplates, resourceShiftAssignments,
   recipes, recipePhases, recipeFormulas, recipeEquipment, vendors, customers,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
@@ -10,6 +11,7 @@ import {
   stockItems, stockTransactions, stockBalances, demandForecasts, demandDrivers, demandHistory, stockOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
   type Plant, type Capability, type Resource, type ProductionOrder, type PlannedOrder, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
+  type ShiftTemplate, type ResourceShiftAssignment,
   type Recipe, type RecipePhase, type RecipeFormula, type RecipeEquipment, type Vendor, type Customer,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
@@ -21,6 +23,7 @@ import {
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
   type InsertPlant, type InsertCapability, type InsertResource, type InsertProductionOrder, type InsertPlannedOrder, 
   type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
+  type InsertShiftTemplate, type InsertResourceShiftAssignment,
   type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertRecipeEquipment, type InsertVendor, type InsertCustomer,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
@@ -8164,6 +8167,14 @@ export class DatabaseStorage implements IStorage {
         console.error('Scheduling validation error:', error);
       }
 
+      // 7. Check active resources have shift assignments with working hours
+      try {
+        const shiftAssignmentIssues = await this.validateResourceShiftAssignments();
+        issues.push(...shiftAssignmentIssues);
+      } catch (error) {
+        console.error('Resource shift assignment validation error:', error);
+      }
+
       const executionTime = Date.now() - startTime;
       
       // Calculate summary statistics
@@ -8196,7 +8207,7 @@ export class DatabaseStorage implements IStorage {
 
       return {
         summary: {
-          totalChecks: 6,
+          totalChecks: 7,
           criticalIssues,
           warnings,
           infoItems,
@@ -8562,6 +8573,81 @@ export class DatabaseStorage implements IStorage {
           description: `Due: ${order.dueDate?.toISOString().split('T')[0]}`
         })),
         recommendation: 'Review and reschedule overdue production orders or update their status.'
+      });
+    }
+
+    return issues;
+  }
+
+  private async validateResourceShiftAssignments(): Promise<any[]> {
+    const issues: any[] = [];
+
+    // Check for active resources without shift assignments
+    const resourcesWithoutShifts = await db
+      .select({
+        id: resources.id,
+        name: resources.name,
+        plantId: resources.plantId,
+        status: resources.status
+      })
+      .from(resources)
+      .leftJoin(resourceShiftAssignments, eq(resources.id, resourceShiftAssignments.resourceId))
+      .where(and(
+        eq(resources.status, 'active'),
+        isNull(resourceShiftAssignments.resourceId)
+      ))
+      .groupBy(resources.id, resources.name, resources.plantId, resources.status);
+
+    if (resourcesWithoutShifts.length > 0) {
+      issues.push({
+        id: 'resources-no-shift-assignments',
+        severity: 'critical',
+        category: 'Shift Management',
+        title: `${resourcesWithoutShifts.length} active resources have no shift assignments`,
+        description: 'Active resources must have shift assignments with working hours to be scheduled for production.',
+        affectedRecords: resourcesWithoutShifts.length,
+        details: resourcesWithoutShifts.map(resource => ({
+          name: resource.name,
+          description: `Resource ID ${resource.id} in Plant ${resource.plantId} has no shift assignments`
+        })),
+        recommendation: 'Assign shift templates to these resources or change their status to inactive if not operational.'
+      });
+    }
+
+    // Check for resources with shift assignments but no working hours
+    const resourcesWithZeroHours = await db
+      .select({
+        resourceId: resourceShiftAssignments.resourceId,
+        resourceName: resources.name,
+        shiftTemplateName: shiftTemplates.name,
+        startTime: shiftTemplates.startTime,
+        endTime: shiftTemplates.endTime
+      })
+      .from(resourceShiftAssignments)
+      .innerJoin(resources, eq(resourceShiftAssignments.resourceId, resources.id))
+      .innerJoin(shiftTemplates, eq(resourceShiftAssignments.shiftTemplateId, shiftTemplates.id))
+      .where(and(
+        eq(resources.status, 'active'),
+        or(
+          isNull(shiftTemplates.startTime),
+          isNull(shiftTemplates.endTime),
+          eq(shiftTemplates.startTime, shiftTemplates.endTime)
+        )
+      ));
+
+    if (resourcesWithZeroHours.length > 0) {
+      issues.push({
+        id: 'resources-zero-working-hours',
+        severity: 'warning',
+        category: 'Shift Management',
+        title: `${resourcesWithZeroHours.length} active resources have shift assignments with no working hours`,
+        description: 'Resources with zero working hours cannot be effectively scheduled for production tasks.',
+        affectedRecords: resourcesWithZeroHours.length,
+        details: resourcesWithZeroHours.map(resource => ({
+          name: resource.resourceName,
+          description: `Assigned to shift template "${resource.shiftTemplateName}" with ${resource.startTime || 'undefined'} - ${resource.endTime || 'undefined'} hours`
+        })),
+        recommendation: 'Update shift templates to include proper start and end times, or assign different shift templates with working hours.'
       });
     }
 
