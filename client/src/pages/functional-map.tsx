@@ -277,6 +277,21 @@ function FunctionalAreaNode({ data }: { data: FunctionalArea & { isSelected: boo
   );
 }
 
+// Utility functions for the node component
+const getCategoryColor = (category: string) => {
+  const cat = categories.find(c => c.id === category);
+  return cat ? cat.color : 'bg-gray-500';
+};
+
+const getPriorityBadgeSmall = (priority: string) => {
+  const colors = {
+    high: 'bg-red-50 text-red-600 border-red-200',
+    medium: 'bg-yellow-50 text-yellow-600 border-yellow-200',
+    low: 'bg-green-50 text-green-600 border-green-200'
+  };
+  return colors[priority as keyof typeof colors] || 'bg-gray-50 text-gray-600 border-gray-200';
+};
+
 const nodeTypes = {
   functionalArea: FunctionalAreaNode,
 };
@@ -307,10 +322,7 @@ function FunctionalMapContent() {
     return area ? area.connections : [];
   };
 
-  const getCategoryColor = (category: string) => {
-    const cat = categories.find(c => c.id === category);
-    return cat ? cat.color : 'bg-gray-500';
-  };
+
 
   const getPriorityBadge = (priority: string) => {
     const colors = {
@@ -321,14 +333,7 @@ function FunctionalMapContent() {
     return colors[priority as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
-  const getPriorityBadgeSmall = (priority: string) => {
-    const colors = {
-      high: 'bg-red-50 text-red-600 border-red-200',
-      medium: 'bg-yellow-50 text-yellow-600 border-yellow-200',
-      low: 'bg-green-50 text-green-600 border-green-200'
-    };
-    return colors[priority as keyof typeof colors] || 'bg-gray-50 text-gray-600 border-gray-200';
-  };
+
 
   // Generate network nodes and edges
   const { nodes, edges } = useMemo(() => {
