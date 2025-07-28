@@ -1672,7 +1672,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
       return () => window.removeEventListener('scroll', handleScroll);
     }, [currentPage, hasMoreData, isLoadingMore, initialLoading]);
 
-    // Update mutation
+    // Update mutation with optimistic updates
     const updateMutation = useMutation({
       mutationFn: async (updatedItem: any) => {
         const authToken = localStorage.getItem('authToken');
@@ -1688,17 +1688,27 @@ Create authentic manufacturing data that reflects this company's operations.`;
         if (!response.ok) throw new Error('Failed to update item');
         return response.json();
       },
+      onMutate: async (updatedItem) => {
+        // Optimistically update the UI immediately
+        setAllLoadedItems(prev => 
+          prev.map(item => 
+            item.id === updatedItem.id ? { ...item, ...updatedItem } : item
+          )
+        );
+      },
       onSuccess: () => {
-        toast({ title: "Success", description: "Item updated successfully" });
-        // Refresh data by loading page 1 again
+        // Don't show toast for spreadsheet updates to reduce noise
+        // Don't refresh - the optimistic update is already applied
+        setEditingItem(null);
+      },
+      onError: (error: any, updatedItem, context) => {
+        // Revert optimistic update on error
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+        // Refresh only on error to restore correct data
         setCurrentPage(1);
         setAllLoadedItems([]);
         setHasMoreData(true);
         loadMoreData(1);
-        setEditingItem(null);
-      },
-      onError: (error: any) => {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
       }
     });
 
@@ -2119,6 +2129,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
     onUndoStackChange?: (undoFunction: () => void, hasUndo: boolean) => void;
   }) {
     const [editData, setEditData] = useState<Record<string, any>>({});
+    const [localUpdates, setLocalUpdates] = useState<Record<string, any>>({});
     
     // Keyboard navigation state
     const [focusedCell, setFocusedCell] = useState<{row: number, col: number} | null>(null);
@@ -2182,13 +2193,13 @@ Create authentic manufacturing data that reflects this company's operations.`;
       }
     };
 
-    // Excel-like cell editing functions
+    // Excel-like cell editing functions  
     const saveCellValue = (itemId: string, field: string, newValue: any, originalValue: any) => {
       if (newValue !== originalValue) {
         // Add to undo stack
         setUndoStack(prev => [...prev, { itemId, field, oldValue: originalValue, newValue }]);
         
-        // Save immediately
+        // Create updated item and save - onUpdate should handle this efficiently
         const updatedItem = { ...items.find(item => item.id.toString() === itemId), [field]: newValue };
         onUpdate(updatedItem);
       }
@@ -2275,24 +2286,39 @@ Create authentic manufacturing data that reflects this company's operations.`;
     };
 
     const renderCell = (item: any, field: string, isEditing: boolean, isNewRow = false, rowIndex?: number, colIndex?: number) => {
-      const currentValue = isNewRow ? newRowData[field] || '' : item[field] || '';
+      // Get current value from local updates first, then item data, or default to empty
+      const localKey = item ? `${item.id}_${field}` : '';
+      const currentValue = isNewRow 
+        ? newRowData[field] || '' 
+        : (localUpdates[localKey] !== undefined ? localUpdates[localKey] : item[field] || '');
       
       const handleChange = (newValue: any) => {
         if (isNewRow) {
           updateNewRowField(field, newValue);
         } else {
-          // For existing rows, update local state but don't save yet
-          const updatedItems = items.map(i => 
-            i.id === item.id ? { ...i, [field]: newValue } : i
-          );
-          // This is a temporary local update for responsive UI
+          // Update local state immediately for responsive UI
+          setLocalUpdates(prev => ({
+            ...prev,
+            [`${item.id}_${field}`]: newValue
+          }));
         }
       };
 
       const handleBlur = (e: React.FocusEvent) => {
         const newValue = e.target.value;
         if (!isNewRow && newValue !== item[field]) {
-          saveCellValue(item.id.toString(), field, newValue, item[field]);
+          // Save to backend but keep local state until success
+          const originalValue = item[field];
+          saveCellValue(item.id.toString(), field, newValue, originalValue);
+          
+          // Clear local update after saving (will use updated item data)
+          setTimeout(() => {
+            setLocalUpdates(prev => {
+              const newUpdates = { ...prev };
+              delete newUpdates[`${item.id}_${field}`];
+              return newUpdates;
+            });
+          }, 100);
         }
       };
 
@@ -2310,7 +2336,13 @@ Create authentic manufacturing data that reflects this company's operations.`;
         } : {}),
         onFocus: handleFocus,
         onBlur: handleBlur,
-        className: "w-full px-2 py-1 border-0 outline-none bg-transparent text-sm h-[36px] focus:bg-white focus:border focus:border-blue-500 focus:rounded"
+        // Enhanced mobile-friendly input styling
+        className: "w-full px-2 py-1 border-0 outline-none bg-transparent text-sm h-[36px] focus:bg-white focus:border focus:border-blue-500 focus:rounded focus:z-10",
+        // Improved mobile input handling
+        autoComplete: "off",
+        autoCorrect: "off",
+        autoCapitalize: "off",
+        spellCheck: false
       };
 
       if (field === 'status' && (dataType === 'resources' || dataType === 'operations' || dataType === 'productionOrders')) {
@@ -2320,7 +2352,16 @@ Create authentic manufacturing data that reflects this company's operations.`;
             onChange={(e) => {
               handleChange(e.target.value);
               if (!isNewRow) {
+                // Save immediately for select dropdowns
                 saveCellValue(item.id.toString(), field, e.target.value, item[field]);
+                // Clear local update after saving
+                setTimeout(() => {
+                  setLocalUpdates(prev => {
+                    const newUpdates = { ...prev };
+                    delete newUpdates[`${item.id}_${field}`];
+                    return newUpdates;
+                  });
+                }, 100);
               }
             }}
             {...commonProps}
@@ -2347,7 +2388,16 @@ Create authentic manufacturing data that reflects this company's operations.`;
             onChange={(e) => {
               handleChange(e.target.value);
               if (!isNewRow) {
+                // Save immediately for select dropdowns
                 saveCellValue(item.id.toString(), field, e.target.value, item[field]);
+                // Clear local update after saving
+                setTimeout(() => {
+                  setLocalUpdates(prev => {
+                    const newUpdates = { ...prev };
+                    delete newUpdates[`${item.id}_${field}`];
+                    return newUpdates;
+                  });
+                }, 100);
               }
             }}
             {...commonProps}
