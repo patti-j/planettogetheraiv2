@@ -40,7 +40,8 @@ import {
   Filter,
   Info,
   Target,
-  HelpCircle
+  HelpCircle,
+  X
 } from "lucide-react";
 
 interface SchemaTable {
@@ -407,6 +408,7 @@ function DataSchemaViewContent() {
   const [focusMode, setFocusMode] = useState(false);
   const [focusTable, setFocusTable] = useState<string | null>(null);
   const [simplifyLines, setSimplifyLines] = useState(false);
+  const [showLegend, setShowLegend] = useState(true);
   
   const { toast } = useToast();
   const { fitView } = useReactFlow();
@@ -1106,48 +1108,61 @@ function DataSchemaViewContent() {
             nodeBorderRadius={2}
           />
           
-          <Panel position="bottom-right">
-            <Card className="bg-white/90 backdrop-blur-sm">
-              <CardContent className="p-4">
-                <h3 className="font-semibold mb-2 flex items-center gap-2">
-                  <Info className="w-4 h-4" />
-                  Legend
-                </h3>
-                <div className="space-y-2 text-xs">
-                  <div className="flex items-center gap-2">
-                    <Key className="w-3 h-3 text-yellow-500" />
-                    <span>Primary Key</span>
+          {showLegend && (
+            <Panel position="bottom-right">
+              <Card className="bg-white/90 backdrop-blur-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <Info className="w-4 h-4" />
+                      Legend
+                    </h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowLegend(false)}
+                      className="h-8 w-8 p-0 hover:bg-gray-100"
+                      title="Close Legend"
+                    >
+                      <X className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+                    </Button>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Link2 className="w-3 h-3 text-blue-500" />
-                    <span>Foreign Key</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-red-500">*</span>
-                    <span>Required Field</span>
-                  </div>
-                </div>
-                
-                <Separator className="my-3" />
-                
-                <div className="space-y-1">
-                  <h4 className="font-medium">Categories:</h4>
-                  {categories.slice(0, 5).map(category => (
-                    <div key={category} className="flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 rounded"
-                        style={{ backgroundColor: getCategoryColor(category) }}
-                      />
-                      <span className="text-xs">{category}</span>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex items-center gap-2">
+                      <Key className="w-3 h-3 text-yellow-500" />
+                      <span>Primary Key</span>
                     </div>
-                  ))}
-                  {categories.length > 5 && (
-                    <span className="text-xs text-gray-500">+{categories.length - 5} more</span>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </Panel>
+                    <div className="flex items-center gap-2">
+                      <Link2 className="w-3 h-3 text-blue-500" />
+                      <span>Foreign Key</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-red-500">*</span>
+                      <span>Required Field</span>
+                    </div>
+                  </div>
+                  
+                  <Separator className="my-3" />
+                  
+                  <div className="space-y-1">
+                    <h4 className="font-medium">Categories:</h4>
+                    {categories.slice(0, 5).map(category => (
+                      <div key={category} className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded"
+                          style={{ backgroundColor: getCategoryColor(category) }}
+                        />
+                        <span className="text-xs">{category}</span>
+                      </div>
+                    ))}
+                    {categories.length > 5 && (
+                      <span className="text-xs text-gray-500">+{categories.length - 5} more</span>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </Panel>
+          )}
         </ReactFlow>
       </div>
     </div>
