@@ -2231,7 +2231,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
     );
   }
 
-  // Spreadsheet View Component with Undo state management
+  // Spreadsheet View Component with Undo state management, sorting, and filtering
   function SpreadsheetView({ 
     dataType, 
     items, 
@@ -2270,6 +2270,10 @@ Create authentic manufacturing data that reflects this company's operations.`;
     // Excel-like editing state
     const [cellHistory, setCellHistory] = useState<Record<string, any>>({});
     const [undoStack, setUndoStack] = useState<Array<{itemId: string, field: string, oldValue: any, newValue: any}>>([]);
+    
+    // Sorting and filtering state
+    const [sortConfig, setSortConfig] = useState<{field: string, direction: 'asc' | 'desc'} | null>(null);
+    const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
 
     const getFieldsForDataType = (dataType: string) => {
       const commonFields = ['name', 'description'];
@@ -2285,8 +2289,76 @@ Create authentic manufacturing data that reflects this company's operations.`;
       return [...commonFields, ...(typeSpecificFields[dataType] || [])];
     };
 
+    // Sorting and filtering functions
+    const handleSort = (field: string) => {
+      setSortConfig(current => {
+        if (current?.field === field) {
+          return { field, direction: current.direction === 'asc' ? 'desc' : 'asc' };
+        }
+        return { field, direction: 'asc' };
+      });
+    };
+
+    const handleFilterChange = (field: string, value: string) => {
+      setColumnFilters(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    };
+
+    // Apply filtering and sorting to items
+    const processedItems = React.useMemo(() => {
+      let filteredItems = [...items];
+
+      // Apply column filters
+      Object.entries(columnFilters).forEach(([field, filterValue]) => {
+        if (filterValue.trim()) {
+          filteredItems = filteredItems.filter(item => {
+            const itemValue = item[field]?.toString()?.toLowerCase() || '';
+            return itemValue.includes(filterValue.toLowerCase());
+          });
+        }
+      });
+
+      // Apply sorting
+      if (sortConfig) {
+        filteredItems.sort((a, b) => {
+          const aValue = a[sortConfig.field];
+          const bValue = b[sortConfig.field];
+          
+          // Handle null/undefined values
+          if (aValue == null && bValue == null) return 0;
+          if (aValue == null) return sortConfig.direction === 'asc' ? 1 : -1;
+          if (bValue == null) return sortConfig.direction === 'asc' ? -1 : 1;
+          
+          // Handle different data types
+          if (typeof aValue === 'number' && typeof bValue === 'number') {
+            return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+          }
+          
+          if (aValue instanceof Date && bValue instanceof Date) {
+            return sortConfig.direction === 'asc' 
+              ? aValue.getTime() - bValue.getTime() 
+              : bValue.getTime() - aValue.getTime();
+          }
+          
+          // String comparison
+          const aStr = aValue.toString().toLowerCase();
+          const bStr = bValue.toString().toLowerCase();
+          
+          if (sortConfig.direction === 'asc') {
+            return aStr.localeCompare(bStr);
+          } else {
+            return bStr.localeCompare(aStr);
+          }
+        });
+      }
+
+      return filteredItems;
+    }, [items, columnFilters, sortConfig]);
+
     const fields = getFieldsForDataType(dataType);
-    const totalRows = items.length + (showNewRow ? 1 : 0);
+    const totalRows = processedItems.length + (showNewRow ? 1 : 0);
     const totalCols = fields.length;
 
     // Keyboard navigation functions
@@ -2593,13 +2665,97 @@ Create authentic manufacturing data that reflects this company's operations.`;
 
     return (
       <div className="border rounded-lg overflow-hidden">
+        {/* Filter Status Bar */}
+        {(Object.keys(columnFilters).some(key => columnFilters[key]?.trim()) || sortConfig) && (
+          <div className="bg-blue-50 border-b px-4 py-2 flex items-center justify-between text-sm">
+            <div className="flex items-center gap-4">
+              <span className="text-blue-700 font-medium">Active Filters:</span>
+              <div className="flex items-center gap-2">
+                {Object.entries(columnFilters).map(([field, value]) => {
+                  if (!value?.trim()) return null;
+                  return (
+                    <Badge key={field} variant="secondary" className="bg-blue-100 text-blue-800">
+                      {field}: "{value}"
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleFilterChange(field, '')}
+                        className="h-4 w-4 p-0 ml-1 hover:bg-blue-200"
+                      >
+                        <X className="h-2 w-2" />
+                      </Button>
+                    </Badge>
+                  );
+                })}
+                {sortConfig && (
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    Sorted by {sortConfig.field} ({sortConfig.direction})
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSortConfig(null)}
+                      className="h-4 w-4 p-0 ml-1 hover:bg-green-200"
+                    >
+                      <X className="h-2 w-2" />
+                    </Button>
+                  </Badge>
+                )}
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setColumnFilters({});
+                setSortConfig(null);
+              }}
+              className="text-xs h-6"
+            >
+              Clear All
+            </Button>
+          </div>
+        )}
+        
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b">
               <tr>
                 {fields.map(field => (
-                  <th key={field} className="text-left px-3 py-3 font-medium text-sm text-gray-900 min-w-[120px]">
-                    {field.charAt(0).toUpperCase() + field.slice(1)}
+                  <th key={field} className="text-left px-3 py-2 font-medium text-sm text-gray-900 min-w-[120px]">
+                    <div className="space-y-2">
+                      {/* Column Header with Sort Button */}
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">
+                          {field.charAt(0).toUpperCase() + field.slice(1)}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSort(field)}
+                          className="h-6 w-6 p-0 hover:bg-gray-200"
+                          title={`Sort by ${field}`}
+                        >
+                          {sortConfig?.field === field ? (
+                            sortConfig.direction === 'asc' ? (
+                              <ChevronUp className="h-3 w-3" />
+                            ) : (
+                              <ChevronDown className="h-3 w-3" />
+                            )
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                          )}
+                        </Button>
+                      </div>
+                      
+                      {/* Column Filter Input */}
+                      <Input
+                        placeholder={`Filter ${field}...`}
+                        value={columnFilters[field] || ''}
+                        onChange={(e) => handleFilterChange(field, e.target.value)}
+                        className="h-6 text-xs border-gray-300 focus:border-blue-500"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
                   </th>
                 ))}
                 <th className="text-left px-3 py-3 font-medium text-sm text-gray-900 w-[120px]">
@@ -2641,7 +2797,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
               )}
               
               {/* Data Rows - Excel-like editing */}
-              {items.map((item, rowIndex) => {
+              {processedItems.map((item, rowIndex) => {
                 const itemId = item.id.toString();
                 const actualRowIndex = showNewRow ? rowIndex + 1 : rowIndex; // Adjust for new row
                 
@@ -2670,7 +2826,33 @@ Create authentic manufacturing data that reflects this company's operations.`;
                 );
               })}
               
-              {/* Empty State */}
+              {/* Empty State - No items after filtering */}
+              {processedItems.length === 0 && items.length > 0 && (
+                <tr>
+                  <td colSpan={fields.length + 1} className="text-center py-8 text-gray-500">
+                    <div className="flex flex-col items-center gap-3">
+                      <Filter className="h-8 w-8 text-gray-400" />
+                      <div>
+                        <p className="font-medium">No items match current filters</p>
+                        <p className="text-sm text-gray-400">Try adjusting your column filters or sorting options</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setColumnFilters({});
+                          setSortConfig(null);
+                        }}
+                        className="mt-2"
+                      >
+                        Clear All Filters
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              
+              {/* Empty State - No data at all */}
               {items.length === 0 && !showNewRow && (
                 <tr>
                   <td colSpan={fields.length + 1} className="text-center py-8 text-gray-500">
