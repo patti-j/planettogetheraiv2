@@ -74,24 +74,33 @@ export const plannedOrders = pgTable("planned_orders", {
   productionOrderId: integer("production_order_id").references(() => productionOrders.id), // If converted
 });
 
-// Process Manufacturing Recipes - combines formulation and processing instructions
+// SAP S/4HANA Process Industries Master Recipes - Header level (equivalent of routing for process manufacturing)
 export const recipes = pgTable("recipes", {
   id: serial("id").primaryKey(),
   recipeNumber: text("recipe_number").notNull().unique(), // e.g., "RCP-001"
   recipeName: text("recipe_name").notNull(),
-  productItemNumber: text("product_item_number").notNull(), // What this recipe produces
+  materialNumber: text("material_number").notNull(), // Finished or intermediate product the recipe is for
+  plantId: integer("plant_id").references(() => plants.id).notNull(),
   recipeVersion: text("recipe_version").notNull().default("1.0"),
   recipeType: text("recipe_type").notNull().default("master"), // master, pilot, trial, development
-  status: text("status").notNull().default("active"), // active, inactive, pending, obsolete, under_review
-  batchSize: integer("batch_size").notNull(), // Standard batch size in base unit
-  batchUnit: text("batch_unit").notNull().default("kg"), // kg, lbs, liters, gallons, etc.
-  yieldFactor: integer("yield_factor").notNull().default(100), // percentage (95 = 95% yield)
-  scaleMinimum: integer("scale_minimum").default(50), // minimum scale percentage
-  scaleMaximum: integer("scale_maximum").default(200), // maximum scale percentage
+  status: text("status").notNull().default("created"), // created, released_for_planning, released_for_execution, obsolete
+  baseQuantity: numeric("base_quantity", { precision: 10, scale: 4 }).notNull(), // Standard quantity the recipe is designed for
+  baseUnit: text("base_unit").notNull().default("kg"), // Base unit of measure
+  validityDateFrom: timestamp("validity_date_from").notNull(), // When recipe becomes valid
+  validityDateTo: timestamp("validity_date_to"), // When recipe expires (null = unlimited)
+  
+  // Process Manufacturing specific attributes
+  yieldFactor: numeric("yield_factor", { precision: 5, scale: 2 }).notNull().default("100"), // percentage (95.5 = 95.5% yield)
+  scaleMinimum: numeric("scale_minimum", { precision: 5, scale: 2 }).default("50"), // minimum scale percentage
+  scaleMaximum: numeric("scale_maximum", { precision: 5, scale: 2 }).default("200"), // maximum scale percentage
   totalCycleTime: integer("total_cycle_time"), // total time in minutes
+  
+  // Recipe documentation
   description: text("description"),
   processNotes: text("process_notes"),
   safetyNotes: text("safety_notes"),
+  
+  // Quality and environmental specifications
   qualitySpecifications: jsonb("quality_specifications").$type<{
     target_yield: number;
     min_yield: number;
@@ -111,43 +120,202 @@ export const recipes = pgTable("recipes", {
     pressure_range: { min: number; max: number };
     atmosphere: string; // nitrogen, air, vacuum, etc.
   }>(),
-  effectiveDate: timestamp("effective_date").notNull(),
-  endDate: timestamp("end_date"),
+  
+  // Audit fields
   createdBy: text("created_by").notNull(),
   approvedBy: text("approved_by"),
   approvedDate: timestamp("approved_date"),
-  plantId: integer("plant_id").references(() => plants.id).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  materialPlantIdx: unique().on(table.materialNumber, table.plantId, table.recipeVersion),
+}));
 
-// Recipe Phases - define process steps (e.g., mixing, heating, cooling)
+// Recipe Operations - define individual processing steps (like operations in discrete manufacturing routing)
+export const recipeOperations = pgTable("recipe_operations", {
+  id: serial("id").primaryKey(),
+  recipeId: integer("recipe_id").references(() => recipes.id).notNull(),
+  operationNumber: text("operation_number").notNull(), // e.g., "0010", "0020"
+  operationName: text("operation_name").notNull(), // e.g., "Mixing", "Heating", "Filling"
+  workCenterId: integer("work_center_id").references(() => workCenters.id).notNull(), // Equipment or production line
+  controlKey: text("control_key").notNull().default("PP01"), // Defines scheduling, costing, confirmation behavior
+  description: text("description"),
+  
+  // Standard values for scheduling and costing
+  setupTime: integer("setup_time").default(0), // minutes
+  processingTime: integer("processing_time").notNull(), // minutes per base quantity
+  teardownTime: integer("teardown_time").default(0), // minutes
+  queueTime: integer("queue_time").default(0), // minutes
+  moveTime: integer("move_time").default(0), // minutes
+  
+  // Resource requirements (human, machine, utility)
+  laborHours: numeric("labor_hours", { precision: 8, scale: 2 }).default("0"), // Labor hours per base quantity
+  machineHours: numeric("machine_hours", { precision: 8, scale: 2 }).default("0"), // Machine hours per base quantity
+  utilityConsumption: jsonb("utility_consumption").$type<Array<{
+    utility_type: string; // steam, electricity, water, nitrogen, etc.
+    consumption_rate: number; // units per hour
+    unit: string; // kWh, m3, kg/hr, etc.
+  }>>().default([]),
+  
+  // Cost factors
+  setupCost: numeric("setup_cost", { precision: 10, scale: 2 }).default("0"),
+  processingCost: numeric("processing_cost", { precision: 10, scale: 2 }).default("0"),
+  
+  // Process control and safety
+  criticalOperation: boolean("critical_operation").default(false), // Requires special attention
+  safetyRequirements: text("safety_requirements"),
+  requiredCapabilities: jsonb("required_capabilities").$type<number[]>().default([]), // Required worker/equipment capabilities
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  recipeOperationIdx: unique().on(table.recipeId, table.operationNumber),
+}));
+
+// Recipe Phases - subdivisions of operations for more granular control (PP-PI specific)
 export const recipePhases = pgTable("recipe_phases", {
   id: serial("id").primaryKey(),
   recipeId: integer("recipe_id").references(() => recipes.id).notNull(),
-  phaseName: text("phase_name").notNull(),
-  phaseOrder: integer("phase_order").notNull(),
-  phaseType: text("phase_type").notNull(),
+  operationId: integer("operation_id").references(() => recipeOperations.id).notNull(), // Which operation this phase belongs to
+  phaseNumber: text("phase_number").notNull(), // e.g., "A", "B" within operation
+  phaseName: text("phase_name").notNull(), // e.g., "Mixing", "Heating"
+  phaseType: text("phase_type").notNull(), // process, quality_check, setup, cleanup
   description: text("description"),
+  
+  // Timing
   duration: integer("duration"), // minutes
-  temperatureMin: numeric("temperature_min"),
-  temperatureMax: numeric("temperature_max"),
-  pressureMin: numeric("pressure_min"),
-  pressureMax: numeric("pressure_max"),
-  phMin: numeric("ph_min"),
-  phMax: numeric("ph_max"),
-  agitationSpeed: numeric("agitation_speed"),
-  holdTime: integer("hold_time"),
-  transferCriteria: text("transfer_criteria"),
-  processInstructions: text("process_instructions"),
+  setupTime: integer("setup_time").default(0), // phase-specific setup
+  
+  // Resource assignment - can be more specific than operation level
+  specificResourceId: integer("specific_resource_id").references(() => resources.id), // Specific vessel or machine
+  resourceCapabilities: jsonb("resource_capabilities").$type<number[]>().default([]),
+  
+  // Process parameters and control
+  processParameters: jsonb("process_parameters").$type<{
+    temperature: { target: number; min: number; max: number; unit: string };
+    pressure: { target: number; min: number; max: number; unit: string };
+    ph: { target: number; min: number; max: number };
+    agitation_speed: { target: number; min: number; max: number; unit: string };
+    flow_rate: { target: number; min: number; max: number; unit: string };
+    residence_time: { target: number; min: number; max: number; unit: string };
+  }>(),
+  
+  // Environmental controls
+  environmentalControls: jsonb("environmental_controls").$type<{
+    atmosphere: string; // nitrogen, air, vacuum
+    humidity: { target: number; min: number; max: number };
+    cleanliness_level: string; // ISO class or similar
+  }>(),
+  
+  // Process instructions and automation
+  processInstructions: text("process_instructions"), // Step-by-step instructions
+  automationInstructions: jsonb("automation_instructions").$type<{
+    control_recipe_name: string;
+    parameters: Array<{
+      parameter_name: string;
+      parameter_value: string;
+      parameter_type: string; // setpoint, alarm_limit, interlock
+    }>;
+  }>(),
+  
+  // Quality and safety
+  qualityChecks: jsonb("quality_checks").$type<Array<{
+    check_name: string;
+    check_type: string; // visual, measurement, test
+    specification: string;
+    frequency: string; // continuous, start, end, hourly
+    mandatory: boolean;
+  }>>().default([]),
   safetyRequirements: text("safety_requirements"),
-  environmentalControls: jsonb("environmental_controls"),
-  equipmentSetup: jsonb("equipment_setup"),
-  processParameters: jsonb("process_parameters"),
-  qualityChecks: jsonb("quality_checks"),
+  
+  // Process control system integration
+  piSheetReference: text("pi_sheet_reference"), // Reference to PI sheet for automation
+  controlSystemMessages: jsonb("control_system_messages").$type<Array<{
+    message_type: string; // start, stop, alarm, parameter_change
+    message_content: string;
+  }>>().default([]),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  operationPhaseIdx: unique().on(table.operationId, table.phaseNumber),
+}));
+
+// Recipe Operation Relationships - define sequence and dependencies between operations/phases
+export const recipeOperationRelationships = pgTable("recipe_operation_relationships", {
+  id: serial("id").primaryKey(),
+  recipeId: integer("recipe_id").references(() => recipes.id).notNull(),
+  predecessorOperationId: integer("predecessor_operation_id").references(() => recipeOperations.id).notNull(),
+  successorOperationId: integer("successor_operation_id").references(() => recipeOperations.id).notNull(),
+  predecessorPhaseId: integer("predecessor_phase_id").references(() => recipePhases.id), // Optional: specific phase dependency
+  successorPhaseId: integer("successor_phase_id").references(() => recipePhases.id), // Optional: specific phase dependency
+  
+  // Relationship type defines scheduling logic
+  relationshipType: text("relationship_type").notNull().default("FS"), // FS=Finish-Start, SS=Start-Start, FF=Finish-Finish, SF=Start-Finish
+  lagTime: integer("lag_time").default(0), // Minutes between operations (can be negative for lead time)
+  
+  // Dependency strength and conditions
+  dependencyType: text("dependency_type").notNull().default("mandatory"), // mandatory, preferred, optional
+  condition: text("condition"), // Optional condition for the dependency (e.g., "if temperature > 80°C")
+  
+  // Process flow control
+  splitMergeType: text("split_merge_type"), // parallel_split, exclusive_choice, simple_merge, synchronizing_merge
+  branchCondition: text("branch_condition"), // Condition for branching logic
+  
+  // Documentation
+  description: text("description"),
+  notes: text("notes"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  recipeRelationIdx: unique().on(table.recipeId, table.predecessorOperationId, table.successorOperationId),
+}));
+
+// Recipe Material Assignments - materials assigned to specific phases (from BOM)
+export const recipeMaterialAssignments = pgTable("recipe_material_assignments", {
+  id: serial("id").primaryKey(),
+  recipeId: integer("recipe_id").references(() => recipes.id).notNull(),
+  operationId: integer("operation_id").references(() => recipeOperations.id).notNull(),
+  phaseId: integer("phase_id").references(() => recipePhases.id).notNull(), // Which phase uses this material
+  materialNumber: text("material_number").notNull(), // Reference to material/component
+  materialDescription: text("material_description"),
+  
+  // Quantity and consumption
+  requiredQuantity: numeric("required_quantity", { precision: 10, scale: 4 }).notNull(),
+  unitOfMeasure: text("unit_of_measure").notNull(),
+  consumptionType: text("consumption_type").notNull().default("direct"), // direct, backflush, manual
+  
+  // Process-specific material handling
+  additionMethod: text("addition_method"), // continuous, batch, staged, manual
+  additionSequence: integer("addition_sequence").default(1), // Order of addition within phase
+  additionRate: numeric("addition_rate", { precision: 8, scale: 2 }), // Rate of addition (units per minute)
+  additionTemperature: numeric("addition_temperature", { precision: 5, scale: 1 }), // Target temperature during addition
+  
+  // Material staging and shop floor control
+  stagingLocation: text("staging_location"), // Where material should be staged
+  stagingTiming: integer("staging_timing"), // Minutes before operation start
+  handlingInstructions: text("handling_instructions"),
+  
+  // Batch tracing and compliance
+  lotTrackingRequired: boolean("lot_tracking_required").default(false),
+  serialTrackingRequired: boolean("serial_tracking_required").default(false),
+  qualityControlRequired: boolean("quality_control_required").default(false),
+  
+  // Substitution and flexibility
+  substituteAllowed: boolean("substitute_allowed").default(false),
+  substituteMaterials: jsonb("substitute_materials").$type<Array<{
+    material_number: string;
+    material_description: string;
+    conversion_factor: number;
+    notes: string;
+  }>>().default([]),
+  
+  // Documentation
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  recipePhaseMatIdx: unique().on(table.recipeId, table.phaseId, table.materialNumber),
+}));
 
 // Vendors - supplier information for recipe materials and equipment
 export const vendors = pgTable("vendors", {
@@ -3175,21 +3343,37 @@ export type InsertStockOptimizationScenario = z.infer<typeof insertStockOptimiza
 export type OptimizationRecommendation = typeof optimizationRecommendations.$inferSelect;
 export type InsertOptimizationRecommendation = z.infer<typeof insertOptimizationRecommendationSchema>;
 
-// Recipe Insert Schemas
+// Recipe Insert Schemas - SAP S/4HANA Process Industries Structure
 export const insertRecipeSchema = createInsertSchema(recipes).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 }).extend({
-  effectiveDate: z.union([z.string().datetime(), z.date()]),
-  endDate: z.union([z.string().datetime(), z.date()]).optional(),
+  validityDateFrom: z.union([z.string().datetime(), z.date()]),
+  validityDateTo: z.union([z.string().datetime(), z.date()]).optional(),
   approvedDate: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertRecipeOperationSchema = createInsertSchema(recipeOperations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertRecipePhaseSchema = createInsertSchema(recipePhases).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertRecipeOperationRelationshipSchema = createInsertSchema(recipeOperationRelationships).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertRecipeMaterialAssignmentSchema = createInsertSchema(recipeMaterialAssignments).omit({
+  id: true,
+  createdAt: true,
 });
 
 export const insertRecipeFormulaSchema = createInsertSchema(recipeFormulas).omit({
@@ -3217,12 +3401,21 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   updatedAt: true,
 });
 
-// Recipe Types
+// Recipe Types - SAP S/4HANA Process Industries Structure
 export type Recipe = typeof recipes.$inferSelect;
 export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
 
+export type RecipeOperation = typeof recipeOperations.$inferSelect;
+export type InsertRecipeOperation = z.infer<typeof insertRecipeOperationSchema>;
+
 export type RecipePhase = typeof recipePhases.$inferSelect;
 export type InsertRecipePhase = z.infer<typeof insertRecipePhaseSchema>;
+
+export type RecipeOperationRelationship = typeof recipeOperationRelationships.$inferSelect;
+export type InsertRecipeOperationRelationship = z.infer<typeof insertRecipeOperationRelationshipSchema>;
+
+export type RecipeMaterialAssignment = typeof recipeMaterialAssignments.$inferSelect;
+export type InsertRecipeMaterialAssignment = z.infer<typeof insertRecipeMaterialAssignmentSchema>;
 
 export type RecipeFormula = typeof recipeFormulas.$inferSelect;
 export type InsertRecipeFormula = z.infer<typeof insertRecipeFormulaSchema>;
@@ -5541,15 +5734,39 @@ export const algorithmPerformanceRelations = relations(algorithmPerformance, ({ 
   }),
 }));
 
-// Recipe Relations
+// Recipe Relations - SAP S/4HANA Process Industries Structure
 export const recipesRelations = relations(recipes, ({ one, many }) => ({
   plant: one(plants, {
     fields: [recipes.plantId],
     references: [plants.id],
   }),
+  operations: many(recipeOperations),
   phases: many(recipePhases),
+  operationRelationships: many(recipeOperationRelationships, {
+    relationName: "recipeToRelationships"
+  }),
+  materialAssignments: many(recipeMaterialAssignments),
   formulas: many(recipeFormulas),
   equipment: many(recipeEquipment),
+}));
+
+export const recipeOperationsRelations = relations(recipeOperations, ({ one, many }) => ({
+  recipe: one(recipes, {
+    fields: [recipeOperations.recipeId],
+    references: [recipes.id],
+  }),
+  workCenter: one(workCenters, {
+    fields: [recipeOperations.workCenterId],
+    references: [workCenters.id],
+  }),
+  phases: many(recipePhases),
+  materialAssignments: many(recipeMaterialAssignments),
+  predecessorRelationships: many(recipeOperationRelationships, {
+    relationName: "predecessorOperation"
+  }),
+  successorRelationships: many(recipeOperationRelationships, {
+    relationName: "successorOperation"
+  }),
 }));
 
 export const recipePhasesRelations = relations(recipePhases, ({ one, many }) => ({
@@ -5557,8 +5774,58 @@ export const recipePhasesRelations = relations(recipePhases, ({ one, many }) => 
     fields: [recipePhases.recipeId],
     references: [recipes.id],
   }),
+  operation: one(recipeOperations, {
+    fields: [recipePhases.operationId],
+    references: [recipeOperations.id],
+  }),
+  specificResource: one(resources, {
+    fields: [recipePhases.specificResourceId],
+    references: [resources.id],
+  }),
+  materialAssignments: many(recipeMaterialAssignments),
   formulas: many(recipeFormulas),
   equipment: many(recipeEquipment),
+}));
+
+export const recipeOperationRelationshipsRelations = relations(recipeOperationRelationships, ({ one }) => ({
+  recipe: one(recipes, {
+    fields: [recipeOperationRelationships.recipeId],
+    references: [recipes.id],
+    relationName: "recipeToRelationships"
+  }),
+  predecessorOperation: one(recipeOperations, {
+    fields: [recipeOperationRelationships.predecessorOperationId],
+    references: [recipeOperations.id],
+    relationName: "predecessorOperation"
+  }),
+  successorOperation: one(recipeOperations, {
+    fields: [recipeOperationRelationships.successorOperationId],
+    references: [recipeOperations.id],
+    relationName: "successorOperation"
+  }),
+  predecessorPhase: one(recipePhases, {
+    fields: [recipeOperationRelationships.predecessorPhaseId],
+    references: [recipePhases.id],
+  }),
+  successorPhase: one(recipePhases, {
+    fields: [recipeOperationRelationships.successorPhaseId],
+    references: [recipePhases.id],
+  }),
+}));
+
+export const recipeMaterialAssignmentsRelations = relations(recipeMaterialAssignments, ({ one }) => ({
+  recipe: one(recipes, {
+    fields: [recipeMaterialAssignments.recipeId],
+    references: [recipes.id],
+  }),
+  operation: one(recipeOperations, {
+    fields: [recipeMaterialAssignments.operationId],
+    references: [recipeOperations.id],
+  }),
+  phase: one(recipePhases, {
+    fields: [recipeMaterialAssignments.phaseId],
+    references: [recipePhases.id],
+  }),
 }));
 
 export const recipeFormulasRelations = relations(recipeFormulas, ({ one }) => ({

@@ -209,7 +209,7 @@ const featureTableMapping: Record<string, string[]> = {
     'profitability_analysis'
   ],
   'engineering': [
-    'bills_of_materials', 'bom_items', 'bom_material_requirements', 'bom_product_outputs', 'recipes', 'routings', 'routing_operations',
+    'bills_of_materials', 'bom_items', 'bom_material_requirements', 'bom_product_outputs', 'recipes', 'recipe_operations', 'recipe_phases', 'recipe_operation_relationships', 'recipe_material_assignments', 'routings', 'routing_operations',
     'production_versions', 'work_centers', 'product_masters', 'products',
     'product_categories', 'product_structures', 'engineering_changes',
     'specifications', 'documents', 'alternate_routings', 'operations',
