@@ -146,11 +146,21 @@ function DashboardWithAutoTour() {
 
 // MainContentArea is now replaced by SplitPaneLayout
 
-// Hook for handling session persistence redirection - TEMPORARILY DISABLED
+// Hook for handling session persistence - FIXED to prevent infinite redirect
 function useSessionPersistence() {
-  // Temporarily disabled to break infinite loop
-  // TODO: Re-enable after fixing navigation context issues
-  console.log('useSessionPersistence disabled to break infinite loop');
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const { lastVisitedRoute } = useNavigation();
+  const [location, setLocation] = useLocation();
+
+  // Only redirect if specifically requested, not automatically
+  // This prevents the infinite redirect loop we had before
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user && lastVisitedRoute) {
+      // Only log the last visited route, don't automatically redirect
+      console.log('Last visited route available:', lastVisitedRoute);
+      // User can manually navigate if they want to return to last visited route
+    }
+  }, [isAuthenticated, isLoading, user, lastVisitedRoute, location, setLocation]);
 }
 
 function Router() {

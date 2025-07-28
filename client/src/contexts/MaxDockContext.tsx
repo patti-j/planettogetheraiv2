@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -50,8 +50,12 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [canvasHeight, setCanvasHeight] = useState(300);
   const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]); // Canvas items state
 
-  // TEMPORARILY DISABLED - User preferences query to break infinite loop
-  const userPreferences = null; // Disabled to break infinite loop
+  // User preferences query - FIXED to prevent infinite loop
+  const { data: userPreferences } = useQuery({
+    queryKey: [`/api/user-preferences/${user?.id}`],
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes to reduce API calls
+  });
 
   const updatePreferencesMutation = useMutation({
     mutationFn: (preferences: any) => 
@@ -69,17 +73,34 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // TEMPORARILY DISABLED - Load user preferences to break infinite loop
+  // Load user preferences - FIXED with safeguards to prevent infinite loop
   useEffect(() => {
-    console.log('MaxDockContext preferences loading disabled to break infinite loop');
-    // Temporarily disabled to break infinite loop
+    if (userPreferences && (userPreferences as any).maxAiState) {
+      const maxState = (userPreferences as any).maxAiState;
+      if (maxState.isOpen !== undefined) setIsMaxOpen(maxState.isOpen);
+      if (maxState.width) setMaxWidth(maxState.width);
+      if (maxState.currentPage) setCurrentPage(maxState.currentPage);
+      if (maxState.mobileLayoutMode) setMobileLayoutMode(maxState.mobileLayoutMode);
+      if (maxState.currentFullscreenView) setCurrentFullscreenView(maxState.currentFullscreenView);
+      if (maxState.isCanvasVisible !== undefined) setIsCanvasVisible(maxState.isCanvasVisible);
+      if (maxState.canvasHeight) setCanvasHeight(maxState.canvasHeight);
+    }
   }, [userPreferences]);
 
-  // TEMPORARILY DISABLED - Save state to database to break infinite loop
-  const saveMaxState = (updates: any) => {
-    // Temporarily disabled to break infinite loop
-    console.log('MaxDockContext saveMaxState disabled to break infinite loop:', updates);
-  };
+  // Save state to database with throttling to prevent excessive calls
+  const saveMaxState = useMemo(() => {
+    let timeoutId: NodeJS.Timeout;
+    return (updates: any) => {
+      // Throttle saves to max once per 2 seconds to prevent infinite loops
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        if (user?.id) {
+          const maxAiState = updates;
+          updatePreferencesMutation.mutate({ maxAiState });
+        }
+      }, 2000);
+    };
+  }, [user?.id, updatePreferencesMutation]);
 
   const setMaxOpen = (open: boolean) => {
     setIsMaxOpen(open);
