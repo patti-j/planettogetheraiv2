@@ -3228,19 +3228,21 @@ Create authentic manufacturing data that reflects this company's operations.`;
 
                 {/* Multi-Template Option */}
                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
+                  <div className="text-center space-y-3">
                     <div>
                       <h4 className="font-medium text-blue-800 mb-1">All Templates in One</h4>
                       <p className="text-sm text-blue-600">Download a consolidated template with all data types in separate sheets</p>
                     </div>
-                    <Button 
-                      onClick={() => setShowConsolidatedDialog(true)}
-                      className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                    >
-                      <FileSpreadsheet className="h-4 w-4" />
-                      <span className="hidden sm:inline">Consolidated Template</span>
-                      <span className="sm:hidden">Multi-Template</span>
-                    </Button>
+                    <div className="flex justify-center">
+                      <Button 
+                        onClick={() => setShowConsolidatedDialog(true)}
+                        className="w-full sm:w-auto gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                      >
+                        <FileSpreadsheet className="h-4 w-4" />
+                        <span className="hidden sm:inline">Consolidated Template</span>
+                        <span className="sm:hidden">Multi-Template</span>
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
