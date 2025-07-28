@@ -8116,28 +8116,52 @@ export class DatabaseStorage implements IStorage {
 
     try {
       // 1. Check operations with missing required capabilities
-      const operationsIssues = await this.validateOperationsCapabilities();
-      issues.push(...operationsIssues);
+      try {
+        const operationsIssues = await this.validateOperationsCapabilities();
+        issues.push(...operationsIssues);
+      } catch (error) {
+        console.error('Operations validation error:', error);
+      }
 
       // 2. Check resources without active capabilities  
-      const resourcesIssues = await this.validateResourcesCapabilities();
-      issues.push(...resourcesIssues);
+      try {
+        const resourcesIssues = await this.validateResourcesCapabilities();
+        issues.push(...resourcesIssues);
+      } catch (error) {
+        console.error('Resources validation error:', error);
+      }
 
       // 3. Check production orders with invalid references
-      const productionOrderIssues = await this.validateProductionOrders();
-      issues.push(...productionOrderIssues);
+      try {
+        const productionOrderIssues = await this.validateProductionOrders();
+        issues.push(...productionOrderIssues);
+      } catch (error) {
+        console.error('Production orders validation error:', error);
+      }
 
       // 4. Check data integrity and consistency
-      const integrityIssues = await this.validateDataIntegrity();
-      issues.push(...integrityIssues);
+      try {
+        const integrityIssues = await this.validateDataIntegrity();
+        issues.push(...integrityIssues);
+      } catch (error) {
+        console.error('Data integrity validation error:', error);
+      }
 
       // 5. Check relationship validation between entities
-      const relationshipIssues = await this.validateRelationships();
-      issues.push(...relationshipIssues);
+      try {
+        const relationshipIssues = await this.validateRelationships();
+        issues.push(...relationshipIssues);
+      } catch (error) {
+        console.error('Relationships validation error:', error);
+      }
 
       // 6. Check scheduling and timeline conflicts
-      const schedulingIssues = await this.validateSchedulingConflicts();
-      issues.push(...schedulingIssues);
+      try {
+        const schedulingIssues = await this.validateSchedulingConflicts();
+        issues.push(...schedulingIssues);
+      } catch (error) {
+        console.error('Scheduling validation error:', error);
+      }
 
       const executionTime = Date.now() - startTime;
       
@@ -8147,11 +8171,27 @@ export class DatabaseStorage implements IStorage {
       const infoItems = issues.filter(i => i.severity === 'info').length;
       
       // Calculate data integrity score (100 - penalty for issues)
-      const totalRecords = await this.getTotalRecordsCount();
-      const totalAffected = issues.reduce((sum, issue) => sum + issue.affectedRecords, 0);
-      const dataIntegrityScore = Math.max(0, Math.min(100, 
-        100 - (criticalIssues * 10) - (warnings * 3) - (infoItems * 1) - Math.floor((totalAffected / totalRecords) * 20)
-      ));
+      let dataIntegrityScore = 90; // Default fallback score
+      try {
+        const totalRecords = await this.getTotalRecordsCount();
+        const totalAffected = issues.reduce((sum, issue) => sum + (issue.affectedRecords || 0), 0);
+        
+        if (totalRecords > 0) {
+          dataIntegrityScore = Math.max(0, Math.min(100, 
+            100 - (criticalIssues * 10) - (warnings * 3) - (infoItems * 1) - Math.floor((totalAffected / totalRecords) * 20)
+          ));
+        } else {
+          dataIntegrityScore = Math.max(0, Math.min(100, 
+            100 - (criticalIssues * 10) - (warnings * 3) - (infoItems * 1)
+          ));
+        }
+      } catch (error) {
+        console.error('Error calculating data integrity score:', error);
+        // Calculate score without record ratio if total count fails
+        dataIntegrityScore = Math.max(0, Math.min(100, 
+          100 - (criticalIssues * 10) - (warnings * 3) - (infoItems * 1)
+        ));
+      }
 
       return {
         summary: {

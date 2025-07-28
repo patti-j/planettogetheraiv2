@@ -69,10 +69,18 @@ function DataValidation() {
       console.log('Validation result:', result);
       console.log('Summary:', result.summary);
       setValidationResult(result);
-      toast({
-        title: "Validation Complete",
-        description: `Found ${result.summary.criticalIssues} critical issues and ${result.summary.warnings} warnings`,
-      });
+      
+      if (result.summary) {
+        toast({
+          title: "Validation Complete",
+          description: `Found ${result.summary.criticalIssues || 0} critical issues and ${result.summary.warnings || 0} warnings`,
+        });
+      } else {
+        toast({
+          title: "Validation Complete",
+          description: "Data validation completed successfully",
+        });
+      }
     },
     onError: (error) => {
       toast({
@@ -147,7 +155,7 @@ function DataValidation() {
       </div>
 
       {/* Validation Summary */}
-      {validationResult && (
+      {validationResult && validationResult.summary && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4">
@@ -172,7 +180,7 @@ function DataValidation() {
                 <XCircle className="h-5 w-5 text-red-500" />
                 <div>
                   <p className="text-sm text-gray-600">Critical Issues</p>
-                  <p className="text-2xl font-bold text-red-600">{validationResult.summary.criticalIssues}</p>
+                  <p className="text-2xl font-bold text-red-600">{validationResult.summary.criticalIssues || 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -184,7 +192,7 @@ function DataValidation() {
                 <AlertTriangle className="h-5 w-5 text-yellow-500" />
                 <div>
                   <p className="text-sm text-gray-600">Warnings</p>
-                  <p className="text-2xl font-bold text-yellow-600">{validationResult.summary.warnings}</p>
+                  <p className="text-2xl font-bold text-yellow-600">{validationResult.summary.warnings || 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -196,12 +204,22 @@ function DataValidation() {
                 <Database className="h-5 w-5 text-blue-500" />
                 <div>
                   <p className="text-sm text-gray-600">Total Checks</p>
-                  <p className="text-2xl font-bold text-blue-600">{validationResult.summary.totalChecks}</p>
+                  <p className="text-2xl font-bold text-blue-600">{validationResult.summary.totalChecks || 0}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Error state when validation result is incomplete */}
+      {validationResult && !validationResult.summary && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Validation completed but returned incomplete results. Please check the console for details.
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Validation Results */}
