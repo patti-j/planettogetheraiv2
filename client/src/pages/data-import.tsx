@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2, ClipboardList, AlertTriangle, Cog, Search, ChevronLeft, ChevronRight, ChevronUp, ArrowUpDown, Filter, Eye, EyeOff, Info, Beaker, Table as TableIcon } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2, ClipboardList, AlertTriangle, Cog, Search, ChevronLeft, ChevronRight, ChevronUp, ArrowUpDown, Filter, Eye, EyeOff, Info, Beaker, Table as TableIcon, Undo2 } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useMaxDock } from '@/contexts/MaxDockContext';
@@ -1173,6 +1173,10 @@ Create authentic manufacturing data that reflects this company's operations.`;
     const [newRowData, setNewRowData] = useState<any>({});
     const [showNewRow, setShowNewRow] = useState(false);
     
+    // Undo functionality state
+    const [undoFunction, setUndoFunction] = useState<(() => void) | null>(null);
+    const [hasUndo, setHasUndo] = useState(false);
+    
     // Debounce search with longer delay for mobile to prevent keyboard hiding
     React.useEffect(() => {
       const timer = setTimeout(() => {
@@ -1604,14 +1608,26 @@ Create authentic manufacturing data that reflects this company's operations.`;
               <TableIcon className="h-4 w-4" />
             </Button>
             {viewMode === 'spreadsheet' ? (
-              <Button 
-                onClick={() => setShowNewRow(true)} 
-                size="sm"
-                disabled={showNewRow}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Row
-              </Button>
+              <>
+                <Button 
+                  onClick={() => setShowNewRow(true)} 
+                  size="sm"
+                  disabled={showNewRow}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Row
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  disabled={!hasUndo}
+                  onClick={() => undoFunction && undoFunction()}
+                  title="Undo last change (Ctrl+Z)"
+                >
+                  <Undo2 className="h-4 w-4 mr-2" />
+                  Undo
+                </Button>
+              </>
             ) : (
               <Button onClick={() => setShowAddDialog(true)} size="sm">
                 <Plus className="h-4 w-4 mr-2" />
@@ -1648,6 +1664,10 @@ Create authentic manufacturing data that reflects this company's operations.`;
             onCreate={(item) => createMutation.mutate(item)}
             onDelete={(id) => deleteMutation.mutate(id)}
             isLoading={updateMutation.isPending || createMutation.isPending || deleteMutation.isPending}
+            onUndoStackChange={(undoFn, hasUndoChanges) => {
+              setUndoFunction(() => undoFn);
+              setHasUndo(hasUndoChanges);
+            }}
           />
         ) : viewMode === 'table' ? (
           <div className="border rounded-lg overflow-hidden">
@@ -1837,7 +1857,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
     );
   }
 
-  // Spreadsheet View Component
+  // Spreadsheet View Component with Undo state management
   function SpreadsheetView({ 
     dataType, 
     items, 
@@ -1850,7 +1870,8 @@ Create authentic manufacturing data that reflects this company's operations.`;
     onUpdate, 
     onCreate, 
     onDelete, 
-    isLoading 
+    isLoading,
+    onUndoStackChange 
   }: {
     dataType: string;
     items: any[];
@@ -1864,11 +1885,16 @@ Create authentic manufacturing data that reflects this company's operations.`;
     onCreate: (item: any) => void;
     onDelete: (id: number) => void;
     isLoading: boolean;
+    onUndoStackChange?: (undoFunction: () => void, hasUndo: boolean) => void;
   }) {
     const [editData, setEditData] = useState<Record<string, any>>({});
     
     // Keyboard navigation state
     const [focusedCell, setFocusedCell] = useState<{row: number, col: number} | null>(null);
+    
+    // Excel-like editing state
+    const [cellHistory, setCellHistory] = useState<Record<string, any>>({});
+    const [undoStack, setUndoStack] = useState<Array<{itemId: string, field: string, oldValue: any, newValue: any}>>([]);
 
     const getFieldsForDataType = (dataType: string) => {
       const commonFields = ['name', 'description'];
@@ -1919,33 +1945,72 @@ Create authentic manufacturing data that reflects this company's operations.`;
       if (e.key === 'Tab' || e.key === 'Enter') {
         e.preventDefault();
         moveToNextCell(rowIndex, colIndex);
+      } else if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        handleUndo();
       }
     };
 
+    // Excel-like cell editing functions
+    const saveCellValue = (itemId: string, field: string, newValue: any, originalValue: any) => {
+      if (newValue !== originalValue) {
+        // Add to undo stack
+        setUndoStack(prev => [...prev, { itemId, field, oldValue: originalValue, newValue }]);
+        
+        // Save immediately
+        const updatedItem = { ...items.find(item => item.id.toString() === itemId), [field]: newValue };
+        onUpdate(updatedItem);
+      }
+    };
+
+    const handleUndo = () => {
+      if (undoStack.length > 0) {
+        const lastAction = undoStack[undoStack.length - 1];
+        const newUndoStack = undoStack.slice(0, -1);
+        setUndoStack(newUndoStack);
+        
+        // Revert the value
+        const updatedItem = { ...items.find(item => item.id.toString() === lastAction.itemId), [lastAction.field]: lastAction.oldValue };
+        onUpdate(updatedItem);
+        
+        // Notify parent about undo stack change
+        if (onUndoStackChange) {
+          onUndoStackChange(handleUndo, newUndoStack.length > 0);
+        }
+      }
+    };
+
+    // Notify parent when undo stack changes
+    useEffect(() => {
+      if (onUndoStackChange) {
+        onUndoStackChange(handleUndo, undoStack.length > 0);
+      }
+    }, [undoStack.length]);
+
+    // Keyboard shortcut for Ctrl+Z undo
+    useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.ctrlKey && e.key === 'z' && undoStack.length > 0) {
+          e.preventDefault();
+          handleUndo();
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [undoStack.length]);
+
     const startEdit = (itemId: string, item: any) => {
-      setEditingRows(prev => new Set([...prev, itemId]));
-      setEditData(prev => ({ ...prev, [itemId]: { ...item } }));
+      // Store original values for undo
+      setCellHistory(prev => ({ ...prev, [itemId]: { ...item } }));
     };
 
     const cancelEdit = (itemId: string) => {
-      setEditingRows(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(itemId);
-        return newSet;
-      });
-      setEditData(prev => {
-        const newData = { ...prev };
-        delete newData[itemId];
-        return newData;
-      });
+      // No longer needed for Excel-like behavior
     };
 
     const saveEdit = (itemId: string) => {
-      const updatedItem = editData[itemId];
-      if (updatedItem) {
-        onUpdate(updatedItem);
-        cancelEdit(itemId);
-      }
+      // No longer needed for Excel-like behavior
     };
 
     const saveNewRow = () => {
@@ -1979,37 +2044,56 @@ Create authentic manufacturing data that reflects this company's operations.`;
     };
 
     const renderCell = (item: any, field: string, isEditing: boolean, isNewRow = false, rowIndex?: number, colIndex?: number) => {
-      const value = isNewRow ? newRowData[field] || '' : (isEditing ? editData[item.id]?.[field] : item[field]) || '';
+      const currentValue = isNewRow ? newRowData[field] || '' : item[field] || '';
       
-      if (!isEditing && !isNewRow) {
-        return (
-          <div className="px-3 py-2 min-h-[40px] flex items-center">
-            {field === 'dueDate' && value ? new Date(value).toLocaleDateString() : (value || '-')}
-          </div>
-        );
-      }
-
       const handleChange = (newValue: any) => {
         if (isNewRow) {
           updateNewRowField(field, newValue);
         } else {
-          updateEditField(item.id, field, newValue);
+          // For existing rows, update local state but don't save yet
+          const updatedItems = items.map(i => 
+            i.id === item.id ? { ...i, [field]: newValue } : i
+          );
+          // This is a temporary local update for responsive UI
         }
       };
 
-      // Common props for keyboard navigation
-      const keyboardProps = rowIndex !== undefined && colIndex !== undefined ? {
-        'data-cell': `${rowIndex}-${colIndex}`,
-        onKeyDown: (e: React.KeyboardEvent) => handleKeyDown(e, rowIndex, colIndex)
-      } : {};
+      const handleBlur = (e: React.FocusEvent) => {
+        const newValue = e.target.value;
+        if (!isNewRow && newValue !== item[field]) {
+          saveCellValue(item.id.toString(), field, newValue, item[field]);
+        }
+      };
+
+      const handleFocus = () => {
+        if (!isNewRow) {
+          startEdit(item.id.toString(), item);
+        }
+      };
+
+      // Common props for keyboard navigation and Excel-like behavior
+      const commonProps = {
+        ...(rowIndex !== undefined && colIndex !== undefined ? {
+          'data-cell': `${rowIndex}-${colIndex}`,
+          onKeyDown: (e: React.KeyboardEvent) => handleKeyDown(e, rowIndex, colIndex)
+        } : {}),
+        onFocus: handleFocus,
+        onBlur: handleBlur,
+        className: "w-full px-2 py-1 border-0 outline-none bg-transparent text-sm h-[36px] focus:bg-white focus:border focus:border-blue-500 focus:rounded"
+      };
 
       if (field === 'status' && (dataType === 'resources' || dataType === 'operations' || dataType === 'productionOrders')) {
         return (
           <select 
-            value={value} 
-            onChange={(e) => handleChange(e.target.value)}
-            className="w-full px-2 py-1 border rounded text-sm h-[36px]"
-            {...keyboardProps}
+            value={currentValue} 
+            onChange={(e) => {
+              handleChange(e.target.value);
+              if (!isNewRow) {
+                saveCellValue(item.id.toString(), field, e.target.value, item[field]);
+              }
+            }}
+            {...commonProps}
+            className="w-full px-2 py-1 border-0 outline-none bg-transparent text-sm h-[36px] focus:bg-white focus:border focus:border-blue-500 focus:rounded"
           >
             <option value="">Select...</option>
             <option value="active">Active</option>
@@ -2028,10 +2112,15 @@ Create authentic manufacturing data that reflects this company's operations.`;
       if (field === 'priority' && dataType === 'productionOrders') {
         return (
           <select 
-            value={value} 
-            onChange={(e) => handleChange(e.target.value)}
-            className="w-full px-2 py-1 border rounded text-sm h-[36px]"
-            {...keyboardProps}
+            value={currentValue} 
+            onChange={(e) => {
+              handleChange(e.target.value);
+              if (!isNewRow) {
+                saveCellValue(item.id.toString(), field, e.target.value, item[field]);
+              }
+            }}
+            {...commonProps}
+            className="w-full px-2 py-1 border-0 outline-none bg-transparent text-sm h-[36px] focus:bg-white focus:border focus:border-blue-500 focus:rounded"
           >
             <option value="">Select...</option>
             <option value="low">Low</option>
@@ -2046,10 +2135,9 @@ Create authentic manufacturing data that reflects this company's operations.`;
         return (
           <input
             type="date"
-            value={value ? (typeof value === 'string' ? value.split('T')[0] : value) : ''}
+            value={currentValue ? (typeof currentValue === 'string' ? currentValue.split('T')[0] : currentValue) : ''}
             onChange={(e) => handleChange(e.target.value)}
-            className="w-full px-2 py-1 border rounded text-sm h-[36px]"
-            {...keyboardProps}
+            {...commonProps}
           />
         );
       }
@@ -2058,11 +2146,10 @@ Create authentic manufacturing data that reflects this company's operations.`;
         return (
           <input
             type="number"
-            value={value}
+            value={currentValue}
             onChange={(e) => handleChange(e.target.value)}
-            className="w-full px-2 py-1 border rounded text-sm h-[36px]"
             min="0"
-            {...keyboardProps}
+            {...commonProps}
           />
         );
       }
@@ -2070,11 +2157,10 @@ Create authentic manufacturing data that reflects this company's operations.`;
       return (
         <input
           type="text"
-          value={value}
+          value={currentValue}
           onChange={(e) => handleChange(e.target.value)}
-          className="w-full px-2 py-1 border rounded text-sm h-[36px]"
           placeholder={field === 'name' ? 'Enter name...' : ''}
-          {...keyboardProps}
+          {...commonProps}
         />
       );
     };
@@ -2128,65 +2214,30 @@ Create authentic manufacturing data that reflects this company's operations.`;
                 </tr>
               )}
               
-              {/* Data Rows */}
+              {/* Data Rows - Excel-like editing */}
               {items.map((item, rowIndex) => {
                 const itemId = item.id.toString();
-                const isEditing = editingRows.has(itemId);
                 const actualRowIndex = showNewRow ? rowIndex + 1 : rowIndex; // Adjust for new row
                 
                 return (
-                  <tr key={itemId} className={`border-b hover:bg-gray-50 ${isEditing ? 'bg-yellow-50' : ''}`}>
+                  <tr key={itemId} className="border-b hover:bg-gray-50">
                     {fields.map((field, colIndex) => (
-                      <td key={field} className="border-r">
-                        {renderCell(item, field, isEditing, false, actualRowIndex, colIndex)}
+                      <td key={field} className="border-r p-0">
+                        {renderCell(item, field, false, false, actualRowIndex, colIndex)}
                       </td>
                     ))}
                     <td className="px-3 py-2">
                       <div className="flex gap-1">
-                        {isEditing ? (
-                          <>
-                            <Button
-                              size="sm"
-                              onClick={() => saveEdit(itemId)}
-                              disabled={isLoading}
-                              className="h-8 px-2 text-xs"
-                            >
-                              Save
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => cancelEdit(itemId)}
-                              disabled={isLoading}
-                              className="h-8 px-2 text-xs"
-                            >
-                              Cancel
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => startEdit(itemId, item)}
-                              disabled={isLoading || editingRows.size > 0}
-                              className="h-8 px-2 text-xs"
-                              title="Edit"
-                            >
-                              <Edit2 className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onDelete(item.id)}
-                              disabled={isLoading}
-                              className="h-8 px-2 text-xs text-red-600 hover:text-red-700"
-                              title="Delete"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </>
-                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDelete(item.id)}
+                          disabled={isLoading}
+                          className="h-8 px-2 text-xs text-red-600 hover:text-red-700"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                       </div>
                     </td>
                   </tr>
