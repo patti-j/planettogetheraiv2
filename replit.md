@@ -25,6 +25,8 @@
 - Improved planning horizon summary cards with responsive padding and font sizes for better mobile readability
 - Fixed button layouts with icon-only display on mobile and proper text wrapping for card titles
 - Enhanced mobile user experience with proper spacing and responsive design patterns throughout production planning interface
+- Fixed Timeline/Calendar/Capacity button crowding issue by adding proper margin-bottom spacing (mb-4 sm:mb-6) and flex-wrap for mobile responsiveness
+- Resolved TypeScript errors with proper null handling for date formatting and correct property references (itemNumber instead of materialNumber)
 
 ✓ **Data Schema View Table Selection & Session Persistence Implementation (July 28, 2025)**:
 - Added comprehensive table selection checklist allowing users to choose specific tables to display with checkbox interface

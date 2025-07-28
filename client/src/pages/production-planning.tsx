@@ -724,7 +724,7 @@ export default function ProductionPlanningPage() {
             </div>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 mb-4 sm:mb-6">
             <Button
               variant={viewMode === 'timeline' ? 'default' : 'outline'}
               size="sm"
@@ -874,7 +874,7 @@ export default function ProductionPlanningPage() {
                                 </div>
                                 <div className="text-right">
                                   <p className="text-sm font-medium">
-                                    {format(new Date(order.dueDate || order.scheduledStartDate), 'MMM dd, yyyy')}
+                                    {format(new Date(order.dueDate || order.scheduledStartDate || new Date()), 'MMM dd, yyyy')}
                                   </p>
                                   <Badge variant="outline">{order.status}</Badge>
                                 </div>
@@ -903,7 +903,7 @@ export default function ProductionPlanningPage() {
                               <div className="flex items-center gap-3">
                                 <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                                 <div>
-                                  <p className="font-medium">{order.materialNumber}</p>
+                                  <p className="font-medium">{order.itemNumber}</p>
                                   <p className="text-sm text-gray-600">Qty: {order.quantity}</p>
                                 </div>
                               </div>
