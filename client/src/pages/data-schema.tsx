@@ -748,7 +748,12 @@ function DataSchemaViewContent() {
     const connected = new Set<string>();
     const targetTable = tables.find(t => t.name === tableName);
     
-    if (!targetTable) return [];
+    if (!targetTable) {
+      console.log(`Target table ${tableName} not found in tables`);
+      return [];
+    }
+    
+    console.log(`Analyzing table ${tableName} with ${targetTable.columns.length} columns`);
     
     // Add the focus table itself
     connected.add(tableName);
@@ -756,6 +761,7 @@ function DataSchemaViewContent() {
     // Find tables this table references (through foreign keys)
     targetTable.columns.forEach(column => {
       if (column.foreignKey) {
+        console.log(`${tableName}.${column.name} references ${column.foreignKey.table}.${column.foreignKey.column}`);
         connected.add(column.foreignKey.table);
       }
     });
@@ -764,24 +770,33 @@ function DataSchemaViewContent() {
     tables.forEach(table => {
       table.columns.forEach(column => {
         if (column.foreignKey && column.foreignKey.table === tableName) {
+          console.log(`${table.name}.${column.name} references ${tableName}.${column.foreignKey.column}`);
           connected.add(table.name);
         }
       });
     });
     
-    return Array.from(connected);
+    const result = Array.from(connected);
+    console.log(`Connected tables for ${tableName}:`, result);
+    return result;
   }, []);
 
   // Get related tables for selected tables
   const getRelatedTablesForSelection = useCallback((tableNames: string[], tables: SchemaTable[]): string[] => {
     const related = new Set<string>();
     
+    console.log('Getting related tables for:', tableNames);
+    console.log('Available tables count:', tables.length);
+    
     tableNames.forEach(tableName => {
       const connectedTables = getConnectedTables(tableName, tables);
+      console.log(`Connected tables for ${tableName}:`, connectedTables);
       connectedTables.forEach(t => related.add(t));
     });
     
-    return Array.from(related);
+    const result = Array.from(related);
+    console.log('Final related tables:', result);
+    return result;
   }, [getConnectedTables]);
 
   // Filter tables based on search, category, feature, focus mode, and table selection
