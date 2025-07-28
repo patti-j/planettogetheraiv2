@@ -3102,6 +3102,11 @@ export class DatabaseStorage implements IStorage {
           description: `${tableName}.${rel.from_column} → ${rel.to_table}.${rel.to_column}`
         }));
 
+        // Add manual relationship definitions for JSONB-based connections
+        // These relationships exist in the schema but are stored as JSONB arrays, not formal foreign keys
+        const manualRelationships = this.getManualRelationships(tableName);
+        relationships.push(...manualRelationships);
+
         // Categorize tables based on naming patterns and known structure
         const category = this.categorizeTable(tableName);
         const description = this.getTableDescription(tableName);
@@ -3120,6 +3125,56 @@ export class DatabaseStorage implements IStorage {
       console.error('Error getting database schema:', error);
       return [];
     }
+  }
+
+  private getManualRelationships(tableName: string): Array<{
+    type: 'one-to-many' | 'many-to-many';
+    fromTable: string;
+    fromColumn: string;
+    toTable: string;
+    toColumn: string;
+    description: string;
+  }> {
+    const relationships = [];
+    
+    // Resources-Capabilities relationship (JSONB array in resources table)
+    if (tableName === 'resources') {
+      relationships.push({
+        type: 'many-to-many' as const,
+        fromTable: 'resources',
+        fromColumn: 'capabilities',
+        toTable: 'capabilities',
+        toColumn: 'id',
+        description: 'resources.capabilities → capabilities.id (JSONB array)'
+      });
+    }
+    
+    // Operations-Capabilities relationship (JSONB array in operations table)
+    if (tableName === 'operations') {
+      relationships.push({
+        type: 'many-to-many' as const,
+        fromTable: 'operations',
+        fromColumn: 'required_capabilities',
+        toTable: 'capabilities',
+        toColumn: 'id',
+        description: 'operations.required_capabilities → capabilities.id (JSONB array)'
+      });
+    }
+    
+    // Add more JSONB-based relationships as needed
+    // Bill of Materials items relationship (JSONB array)
+    if (tableName === 'bills_of_materials') {
+      relationships.push({
+        type: 'one-to-many' as const,
+        fromTable: 'bills_of_materials',
+        fromColumn: 'items',
+        toTable: 'bom_items',
+        toColumn: 'bom_id',
+        description: 'bills_of_materials.items → bom_items.bom_id (JSONB structure)'
+      });
+    }
+    
+    return relationships;
   }
 
   private categorizeTable(tableName: string): string {
