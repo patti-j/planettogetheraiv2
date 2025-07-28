@@ -185,6 +185,8 @@ export default function ProductionCockpit() {
   const [optimizationDialog, setOptimizationDialog] = useState(false);
   const [optimizationHistoryDialog, setOptimizationHistoryDialog] = useState(false);
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<any>(null);
+  const [selectedProfile, setSelectedProfile] = useState<any>(null);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [algorithmParameters, setAlgorithmParameters] = useState<any>({});
 
   const { toast } = useToast();
@@ -243,6 +245,30 @@ export default function ProductionCockpit() {
   // Fetch optimization algorithms
   const { data: algorithms = [] } = useQuery<any[]>({
     queryKey: ["/api/optimization/algorithms"],
+  });
+
+  // Fetch optimization profiles for selected algorithm
+  const { data: profiles = [] } = useQuery({
+    queryKey: ['/api/optimization-profiles/algorithm', selectedAlgorithm?.id],
+    queryFn: async () => {
+      if (!selectedAlgorithm?.id) return [];
+      const response = await fetch(`/api/optimization-profiles/algorithm/${selectedAlgorithm.id}`);
+      if (!response.ok) throw new Error('Failed to fetch profiles');
+      return response.json();
+    },
+    enabled: !!selectedAlgorithm?.id
+  });
+
+  // Fetch default profile for selected algorithm
+  const { data: defaultProfile } = useQuery({
+    queryKey: ['/api/optimization-profiles/algorithm', selectedAlgorithm?.id, 'default'],
+    queryFn: async () => {
+      if (!selectedAlgorithm?.id) return null;
+      const response = await fetch(`/api/optimization-profiles/algorithm/${selectedAlgorithm.id}/default`);
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!selectedAlgorithm?.id
   });
 
   // Fetch scheduling history
@@ -366,7 +392,7 @@ export default function ProductionCockpit() {
 
   // Optimization execution mutation
   const optimizationMutation = useMutation({
-    mutationFn: (data: { algorithmId: number; parameters: any }) =>
+    mutationFn: (data: { algorithmId: number; profileId?: number; parameters: any }) =>
       fetch("/api/optimization/execute", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -399,6 +425,13 @@ export default function ProductionCockpit() {
       setSelectedLayout(defaultLayout.id);
     }
   }, [layouts, selectedLayout]);
+
+  // Auto-select default profile when algorithm is selected
+  useEffect(() => {
+    if (selectedAlgorithm && defaultProfile && !selectedProfile) {
+      setSelectedProfile(defaultProfile);
+    }
+  }, [selectedAlgorithm, defaultProfile, selectedProfile]);
 
   const handleCreateLayout = () => {
     createLayoutMutation.mutate({
@@ -665,35 +698,72 @@ export default function ProductionCockpit() {
                   </div>
 
                   {selectedAlgorithm && (
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        {selectedAlgorithm.description}
-                      </p>
-                      <div className="bg-muted p-3 rounded-lg">
-                        <p className="text-sm font-medium mb-2">Execution Scope:</p>
-                        <p className="text-xs text-muted-foreground">
-                          • {jobs.length} active jobs will be optimized
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          • {operations.length} operations will be analyzed
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          • {resources.length} resources available for assignment
-                        </p>
+                    <>
+                      <div>
+                        <Label htmlFor="profile-select">Optimization Profile</Label>
+                        <div className="flex gap-2">
+                          <Select
+                            value={selectedProfile?.id?.toString()}
+                            onValueChange={(value) => {
+                              const profile = profiles.find((p: any) => p.id === parseInt(value));
+                              setSelectedProfile(profile);
+                            }}
+                          >
+                            <SelectTrigger className="flex-1">
+                              <SelectValue placeholder="Choose optimization profile..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {profiles.map((profile: any) => (
+                                <SelectItem key={profile.id.toString()} value={profile.id.toString()}>
+                                  <div className="flex items-center gap-2">
+                                    {profile.name}
+                                    {profile.isDefault && (
+                                      <Badge variant="secondary" className="text-xs">Default</Badge>
+                                    )}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => setShowProfileDialog(true)}
+                            disabled={!selectedProfile}
+                          >
+                            <Settings className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
+
+                      {selectedProfile && (
+                        <div className="bg-muted p-3 rounded-lg">
+                          <p className="text-sm font-medium mb-2">Profile: {selectedProfile.name}</p>
+                          {selectedProfile.description && (
+                            <p className="text-xs text-muted-foreground mb-2">{selectedProfile.description}</p>
+                          )}
+                          <div className="text-xs text-muted-foreground space-y-1">
+                            <p><strong>Execution Scope:</strong></p>
+                            <p>• {jobs.length} active jobs will be optimized</p>
+                            <p>• {operations.length} operations will be analyzed</p>
+                            <p>• {resources.length} resources available for assignment</p>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   <Button 
                     onClick={() => {
-                      if (selectedAlgorithm) {
+                      if (selectedAlgorithm && selectedProfile) {
                         optimizationMutation.mutate({
                           algorithmId: selectedAlgorithm.id,
+                          profileId: selectedProfile.id,
                           parameters: algorithmParameters
                         });
                       }
                     }}
-                    disabled={!selectedAlgorithm || optimizationMutation.isPending}
+                    disabled={!selectedAlgorithm || !selectedProfile || optimizationMutation.isPending}
                     className="w-full"
                   >
                     {optimizationMutation.isPending ? "Running..." : "Execute Optimization"}
@@ -752,6 +822,76 @@ export default function ProductionCockpit() {
                     </div>
                   )}
                 </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Profile Adjustment Dialog */}
+            <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5 text-blue-500" />
+                    Optimization Profile Settings
+                  </DialogTitle>
+                </DialogHeader>
+                {selectedProfile && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium">Profile Name</Label>
+                        <p className="text-sm text-muted-foreground">{selectedProfile.name}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Algorithm</Label>
+                        <p className="text-sm text-muted-foreground">{selectedAlgorithm?.displayName || selectedAlgorithm?.name}</p>
+                      </div>
+                    </div>
+                    
+                    {selectedProfile.description && (
+                      <div>
+                        <Label className="text-sm font-medium">Description</Label>
+                        <p className="text-sm text-muted-foreground">{selectedProfile.description}</p>
+                      </div>
+                    )}
+
+                    <div className="bg-muted p-4 rounded-lg">
+                      <Label className="text-sm font-medium mb-3 block">Profile Configuration</Label>
+                      <div className="space-y-3">
+                        {selectedProfile.profileConfig && (
+                          <div className="space-y-2">
+                            {Object.entries(selectedProfile.profileConfig).map(([key, value]) => (
+                              <div key={key} className="flex justify-between items-center">
+                                <span className="text-xs capitalize font-medium">{key.replace(/([A-Z])/g, ' $1')}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => setShowProfileDialog(false)}
+                      >
+                        Close
+                      </Button>
+                      <Button 
+                        className="flex-1"
+                        onClick={() => {
+                          // Navigate to optimization studio for full profile editing
+                          window.location.href = '/optimization-studio';
+                        }}
+                      >
+                        Edit in Optimization Studio
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </DialogContent>
             </Dialog>
 
