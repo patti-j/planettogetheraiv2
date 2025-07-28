@@ -396,7 +396,7 @@ function Router() {
               <PresentationSystemPage />
             </ProtectedRoute>
           </Route>
-          <Route path="/production-cockpit">
+          <Route path="/cockpit">
             <ProtectedRoute feature="production-cockpit" action="view">
               <ProductionCockpit />
             </ProtectedRoute>

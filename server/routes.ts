@@ -7489,6 +7489,7 @@ Return a JSON response with this structure:
       '/maintenance': 'maintenance-view',
       '/optimize-orders': 'scheduling-optimizer-view',
       '/erp-import': 'erp-import-view',
+      '/cockpit': 'production-cockpit-view',
 
       '/systems-management-dashboard': 'systems-management-view',
       '/capacity-planning': 'capacity-planning-view',
@@ -7512,6 +7513,7 @@ Return a JSON response with this structure:
       '/maintenance': 'Maintenance - Equipment maintenance management',
       '/optimize-orders': 'Optimize Orders - Intelligent scheduling optimizer',
       '/erp-import': 'ERP Import - External system data integration',
+      '/cockpit': 'Cockpit - Customizable production management dashboard',
 
       '/systems-management-dashboard': 'Systems Management Dashboard - System configuration and settings',
       '/capacity-planning': 'Capacity Planning - Resource capacity analysis',
