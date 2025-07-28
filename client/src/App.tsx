@@ -72,6 +72,7 @@ import Onboarding from "@/pages/onboarding";
 import AtpCtpPage from "@/pages/atp-ctp";
 import DataValidation from "@/pages/data-validation";
 import DataMapView from "@/pages/data-map";
+import DataSchemaView from "@/pages/data-schema";
 import NotFound from "@/pages/not-found";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
@@ -368,6 +369,11 @@ function Router() {
           <Route path="/data-map">
             <ProtectedRoute feature="systems-management" action="view">
               <DataMapView />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/data-schema">
+            <ProtectedRoute feature="systems-management" action="view">
+              <DataSchemaView />
             </ProtectedRoute>
           </Route>
           <Route path="/atp-ctp">

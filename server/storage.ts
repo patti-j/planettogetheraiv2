@@ -3103,6 +3103,189 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Database Schema Analysis
+  async getDatabaseSchema(): Promise<any[]> {
+    try {
+      // Get all table names and their basic info
+      const tablesQuery = await db.execute(sql`
+        SELECT 
+          t.table_name,
+          obj_description(c.oid) as table_comment
+        FROM information_schema.tables t
+        LEFT JOIN pg_class c ON c.relname = t.table_name
+        WHERE t.table_schema = 'public'
+          AND t.table_type = 'BASE TABLE'
+        ORDER BY t.table_name
+      `);
+
+      const tables = [];
+      
+      for (const tableRow of tablesQuery.rows) {
+        const tableName = tableRow.table_name as string;
+        
+        // Get column information
+        const columnsQuery = await db.execute(sql`
+          SELECT 
+            c.column_name,
+            c.data_type,
+            c.is_nullable,
+            c.column_default,
+            tc.constraint_type,
+            kcu.table_name as foreign_table,
+            kcu.column_name as foreign_column
+          FROM information_schema.columns c
+          LEFT JOIN information_schema.key_column_usage kcu 
+            ON c.table_name = kcu.table_name AND c.column_name = kcu.column_name
+          LEFT JOIN information_schema.table_constraints tc 
+            ON kcu.constraint_name = tc.constraint_name
+          WHERE c.table_name = ${tableName}
+          ORDER BY c.ordinal_position
+        `);
+
+        const columns = columnsQuery.rows.map((col: any) => ({
+          name: col.column_name,
+          type: col.data_type,
+          nullable: col.is_nullable === 'YES',
+          primaryKey: col.constraint_type === 'PRIMARY KEY',
+          foreignKey: col.constraint_type === 'FOREIGN KEY' ? {
+            table: col.foreign_table,
+            column: col.foreign_column
+          } : undefined,
+          defaultValue: col.column_default
+        }));
+
+        // Get relationships
+        const relationshipsQuery = await db.execute(sql`
+          SELECT 
+            tc.constraint_type,
+            kcu.column_name as from_column,
+            ccu.table_name as to_table,
+            ccu.column_name as to_column
+          FROM information_schema.table_constraints tc
+          JOIN information_schema.key_column_usage kcu 
+            ON tc.constraint_name = kcu.constraint_name
+          JOIN information_schema.constraint_column_usage ccu 
+            ON ccu.constraint_name = tc.constraint_name
+          WHERE tc.table_name = ${tableName}
+            AND tc.constraint_type = 'FOREIGN KEY'
+        `);
+
+        const relationships = relationshipsQuery.rows.map((rel: any) => ({
+          type: 'one-to-many' as const,
+          fromTable: tableName,
+          fromColumn: rel.from_column,
+          toTable: rel.to_table,
+          toColumn: rel.to_column,
+          description: `${tableName}.${rel.from_column} → ${rel.to_table}.${rel.to_column}`
+        }));
+
+        // Categorize tables based on naming patterns and known structure
+        const category = this.categorizeTable(tableName);
+        const description = this.getTableDescription(tableName);
+
+        tables.push({
+          name: tableName,
+          columns,
+          relationships,
+          description,
+          category
+        });
+      }
+
+      return tables;
+    } catch (error) {
+      console.error('Error getting database schema:', error);
+      return [];
+    }
+  }
+
+  private categorizeTable(tableName: string): string {
+    // Manufacturing core entities
+    if (['plants', 'resources', 'capabilities', 'operations', 'production_orders', 'routings', 'bills_of_material', 'recipes', 'production_versions'].includes(tableName)) {
+      return 'Core Manufacturing';
+    }
+    
+    // Organization
+    if (['departments', 'work_centers', 'employees', 'users', 'roles', 'permissions'].includes(tableName)) {
+      return 'Organization';
+    }
+    
+    // Products & Inventory
+    if (['items', 'storage_locations', 'inventory', 'inventory_lots', 'stock_items', 'stock_transactions', 'stock_balances'].includes(tableName)) {
+      return 'Products & Inventory';
+    }
+    
+    // Business Partners
+    if (['vendors', 'customers'].includes(tableName)) {
+      return 'Business Partners';
+    }
+    
+    // Sales & Orders
+    if (['sales_orders', 'purchase_orders', 'transfer_orders', 'forecasts', 'planned_orders'].includes(tableName)) {
+      return 'Sales & Orders';
+    }
+    
+    // Manufacturing Planning
+    if (['shift_templates', 'resource_shift_assignments', 'capacity_planning_scenarios', 'production_plans', 'production_targets'].includes(tableName)) {
+      return 'Manufacturing Planning';
+    }
+    
+    // System Management
+    if (['system_users', 'system_health', 'system_environments', 'system_upgrades', 'system_audit_logs', 'system_settings', 'error_logs'].includes(tableName)) {
+      return 'System Management';
+    }
+    
+    // Communication & Collaboration
+    if (['chat_channels', 'chat_messages', 'feedback', 'disruptions'].includes(tableName)) {
+      return 'Communication';
+    }
+    
+    // AI & Optimization
+    if (['optimization_profiles', 'scheduling_history', 'algorithm_performance', 'optimization_runs'].includes(tableName)) {
+      return 'AI & Optimization';
+    }
+    
+    // Default category
+    return 'System Data';
+  }
+
+  private getTableDescription(tableName: string): string {
+    const descriptions: Record<string, string> = {
+      plants: 'Manufacturing facilities and production sites',
+      resources: 'Production equipment, machines, and manufacturing resources',
+      capabilities: 'Skills and abilities that resources can perform',
+      operations: 'Individual manufacturing steps and processes',
+      production_orders: 'Orders for manufacturing specific products',
+      routings: 'Step-by-step manufacturing process definitions',
+      bills_of_material: 'Product structure and component relationships',
+      recipes: 'Process manufacturing formulations and procedures',
+      production_versions: 'Links between products, routings, and BOMs/recipes',
+      departments: 'Organizational departments and divisions',
+      work_centers: 'Specific production work areas',
+      employees: 'Workforce and personnel information',
+      users: 'System users and authentication data',
+      roles: 'User roles and access levels',
+      permissions: 'System permissions and security settings',
+      items: 'Products, materials, and inventory items',
+      storage_locations: 'Warehouse locations and storage areas',
+      inventory: 'Current inventory levels and stock data',
+      vendors: 'Suppliers and vendor information',
+      customers: 'Customer data and contact information',
+      sales_orders: 'Customer orders and sales data',
+      purchase_orders: 'Procurement orders and purchasing data',
+      shift_templates: 'Work shift patterns and schedules',
+      resource_shift_assignments: 'Assignment of resources to specific shifts',
+      capacity_planning_scenarios: 'What-if capacity planning scenarios',
+      production_plans: 'High-level production planning data',
+      optimization_profiles: 'Saved optimization algorithm configurations',
+      scheduling_history: 'Historical scheduling execution data',
+      disruptions: 'Production disruptions and incidents',
+      feedback: 'User feedback and improvement suggestions'
+    };
+    
+    return descriptions[tableName] || 'System data table';
+  }
+
   // User Management
   async getUsers(): Promise<User[]> {
     return await db.select().from(users);

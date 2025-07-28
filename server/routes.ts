@@ -7135,6 +7135,17 @@ Return a JSON response with this structure:
     }
   });
 
+  // Database Schema API Route
+  app.get('/api/database/schema', requireAuth, async (req, res) => {
+    try {
+      const schemaData = await storage.getDatabaseSchema();
+      res.json(schemaData);
+    } catch (error) {
+      console.error('Error fetching database schema:', error);
+      res.status(500).json({ error: 'Failed to fetch database schema' });
+    }
+  });
+
   // Data Map API Routes
   app.get('/api/data-map/objects/:type', requireAuth, async (req, res) => {
     try {
