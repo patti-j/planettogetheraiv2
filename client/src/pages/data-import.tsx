@@ -534,19 +534,21 @@ Create authentic manufacturing data that reflects this company's operations.`;
                           </Button>
                         )}
                         
-                        {/* Bulk mode toggle */}
-                        <Button
-                          variant={bulkSelectMode ? 'default' : 'ghost'}
-                          size="sm"
-                          onClick={() => {
-                            setBulkSelectMode(!bulkSelectMode);
-                            setSelectedItems(new Set());
-                          }}
-                          className="h-6 w-6 p-0"
-                          title="Bulk select mode"
-                        >
-                          <span className="text-sm font-bold">⋮</span>
-                        </Button>
+                        {/* Bulk mode toggle - aligned with row buttons */}
+                        <div className="w-12 flex items-center justify-center">
+                          <Button
+                            variant={bulkSelectMode ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => {
+                              setBulkSelectMode(!bulkSelectMode);
+                              setSelectedItems(new Set());
+                            }}
+                            className="w-8 h-8 p-0 hover:bg-gray-100 active:bg-gray-200"
+                            title="Bulk select mode"
+                          >
+                            <span className="text-sm font-bold text-gray-600">⋮</span>
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </TableHead>
