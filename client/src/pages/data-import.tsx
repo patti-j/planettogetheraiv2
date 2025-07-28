@@ -237,40 +237,30 @@ Create authentic manufacturing data that reflects this company's operations.`;
     // Mobile touch handling component
     const MobileTableRow = ({ item, dataType, onEdit, onDelete }: any) => {
       const [showDelete, setShowDelete] = useState(false);
+      const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
 
-      // Simple swipe handler for dedicated swipe area
-      const handleSwipeAreaTouch = (e: React.TouchEvent) => {
-        e.stopPropagation();
-        let startX = 0;
+      const handleLongPressStart = (e: React.TouchEvent) => {
+        e.preventDefault();
+        console.log('Long press started');
         
-        const handleStart = (startEvent: TouchEvent) => {
-          startX = startEvent.touches[0].clientX;
-          console.log('Swipe area touch start:', startX);
-        };
-        
-        const handleMove = (moveEvent: TouchEvent) => {
-          const currentX = moveEvent.touches[0].clientX;
-          const deltaX = startX - currentX;
-          console.log('Swipe area touch move, deltaX:', deltaX);
-          
-          if (deltaX > 30) { // Swipe left
-            console.log('Swipe left detected in swipe area');
-            setShowDelete(true);
-          } else if (deltaX < -30) { // Swipe right
-            console.log('Swipe right detected in swipe area');
-            setShowDelete(false);
+        const timer = setTimeout(() => {
+          console.log('Long press detected - showing delete');
+          setShowDelete(true);
+          // Vibrate if available
+          if (navigator.vibrate) {
+            navigator.vibrate(50);
           }
-        };
+        }, 500); // 500ms long press
         
-        const handleEnd = () => {
-          document.removeEventListener('touchmove', handleMove);
-          document.removeEventListener('touchend', handleEnd);
-        };
-        
-        document.addEventListener('touchmove', handleMove, { passive: false });
-        document.addEventListener('touchend', handleEnd);
-        
-        handleStart(e.nativeEvent);
+        setLongPressTimer(timer);
+      };
+
+      const handleLongPressEnd = () => {
+        console.log('Touch ended');
+        if (longPressTimer) {
+          clearTimeout(longPressTimer);
+          setLongPressTimer(null);
+        }
       };
 
       const handleRowClick = () => {
@@ -284,27 +274,22 @@ Create authentic manufacturing data that reflects this company's operations.`;
         <TableRow className="relative">
           <TableCell className="font-medium p-0">
             <div className="flex min-h-[60px]">
-              {/* Main content area - tap to edit */}
+              {/* Main content area - tap to edit, long press for delete */}
               <div 
                 className="flex-1 p-3 cursor-pointer sm:cursor-default"
                 onClick={handleRowClick}
+                onTouchStart={handleLongPressStart}
+                onTouchEnd={handleLongPressEnd}
+                onTouchCancel={handleLongPressEnd}
               >
                 <div className="flex items-center gap-2">
                   <span>{item.name}</span>
+                  <span className="text-xs text-gray-400 sm:hidden">
+                    {showDelete ? 'tap to hide' : 'long press for delete'}
+                  </span>
                 </div>
                 <div className="text-sm text-gray-500 sm:hidden">
                   {getItemDetails(item, dataType)}
-                </div>
-              </div>
-              
-              {/* Swipe area on mobile */}
-              <div 
-                className="w-16 bg-gray-50 flex items-center justify-center cursor-grab active:cursor-grabbing sm:hidden border-l"
-                onTouchStart={handleSwipeAreaTouch}
-              >
-                <div className="text-xs text-gray-400 text-center">
-                  <div>←</div>
-                  <div className="text-[10px]">swipe</div>
                 </div>
               </div>
               
@@ -326,6 +311,22 @@ Create authentic manufacturing data that reflects this company's operations.`;
                     </Button>
                   </div>
                 )}
+              </div>
+              
+              {/* Toggle button for testing */}
+              <div className="w-12 bg-blue-50 flex items-center justify-center sm:hidden border-l">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDelete(!showDelete);
+                    console.log('Toggle button clicked, showDelete:', !showDelete);
+                  }}
+                  className="w-8 h-8 p-0"
+                >
+                  <span className="text-xs">⋮</span>
+                </Button>
               </div>
             </div>
           </TableCell>
