@@ -63,9 +63,9 @@ import {
   type PresentationMaterial, type PresentationContentSuggestion, type PresentationProject,
   type InsertPresentation, type InsertPresentationSlide, type InsertPresentationTourIntegration, type InsertPresentationLibrary, type InsertPresentationAnalytics, type InsertPresentationAIContent,
   type InsertPresentationMaterial, type InsertPresentationContentSuggestion, type InsertPresentationProject,
-  customerJourneyStages, manufacturingSegments, buyerPersonas, marketingPages, contentBlocks, customerStories, leadCaptures, pageAnalytics, abTests, emailCampaigns,
-  type CustomerJourneyStage, type ManufacturingSegment, type BuyerPersona, type MarketingPage, type ContentBlock, type CustomerStory, type LeadCapture, type PageAnalytics, type ABTest, type EmailCampaign,
-  type InsertCustomerJourneyStage, type InsertManufacturingSegment, type InsertBuyerPersona, type InsertMarketingPage, type InsertContentBlock, type InsertCustomerStory, type InsertLeadCapture, type InsertPageAnalytics, type InsertABTest, type InsertEmailCampaign,
+  customerJourneyStages, manufacturingSegments, buyerPersonas, marketingPages, contentBlocks, customerStories, leadCaptures, pageAnalytics, abTests,
+  type CustomerJourneyStage, type ManufacturingSegment, type BuyerPersona, type MarketingPage, type ContentBlock, type CustomerStory, type LeadCapture, type PageAnalytics, type ABTest,
+  type InsertCustomerJourneyStage, type InsertManufacturingSegment, type InsertBuyerPersona, type InsertMarketingPage, type InsertContentBlock, type InsertCustomerStory, type InsertLeadCapture, type InsertPageAnalytics, type InsertABTest,
   productionPlans, productionTargets, resourceAllocations, productionMilestones,
   type ProductionPlan, type ProductionTarget, type ResourceAllocation, type ProductionMilestone,
   type InsertProductionPlan, type InsertProductionTarget, type InsertResourceAllocation, type InsertProductionMilestone,
@@ -946,13 +946,7 @@ export interface IStorage {
   startABTest(id: number): Promise<ABTest | undefined>;
   endABTest(id: number): Promise<ABTest | undefined>;
 
-  // Email Campaigns
-  getEmailCampaigns(type?: string, language?: string): Promise<EmailCampaign[]>;
-  getEmailCampaign(id: number): Promise<EmailCampaign | undefined>;
-  createEmailCampaign(campaign: InsertEmailCampaign): Promise<EmailCampaign>;
-  updateEmailCampaign(id: number, updates: Partial<InsertEmailCampaign>): Promise<EmailCampaign | undefined>;
-  deleteEmailCampaign(id: number): Promise<boolean>;
-  sendEmailCampaign(id: number): Promise<EmailCampaign | undefined>;
+
 
   getPresentationTourIntegrations(presentationId?: number): Promise<PresentationTourIntegration[]>;
   createPresentationTourIntegration(integration: InsertPresentationTourIntegration): Promise<PresentationTourIntegration>;
@@ -6959,53 +6953,7 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  // Email Campaigns
-  async getEmailCampaigns(status?: string, language?: string): Promise<EmailCampaign[]> {
-    let query = db.select().from(emailCampaigns);
-    
-    const conditions = [];
-    if (status) conditions.push(eq(emailCampaigns.status, status));
-    if (language) conditions.push(eq(emailCampaigns.language, language));
-    
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-    
-    return await query.orderBy(desc(emailCampaigns.createdAt));
-  }
 
-  async getEmailCampaign(id: number): Promise<EmailCampaign | undefined> {
-    const [campaign] = await db.select().from(emailCampaigns)
-      .where(eq(emailCampaigns.id, id));
-    return campaign;
-  }
-
-  async createEmailCampaign(campaign: InsertEmailCampaign): Promise<EmailCampaign> {
-    const [newCampaign] = await db.insert(emailCampaigns).values(campaign).returning();
-    return newCampaign;
-  }
-
-  async updateEmailCampaign(id: number, campaign: Partial<InsertEmailCampaign>): Promise<EmailCampaign | undefined> {
-    const [updated] = await db.update(emailCampaigns)
-      .set({ ...campaign, updatedAt: new Date() })
-      .where(eq(emailCampaigns.id, id))
-      .returning();
-    return updated;
-  }
-
-  async updateEmailCampaignStats(id: number, stats: {
-    sentCount?: number;
-    openRate?: number;
-    clickRate?: number;
-    conversionRate?: number;
-    unsubscribeRate?: number;
-  }): Promise<EmailCampaign | undefined> {
-    const [updated] = await db.update(emailCampaigns)
-      .set({ ...stats, updatedAt: new Date() })
-      .where(eq(emailCampaigns.id, id))
-      .returning();
-    return updated;
-  }
 
   // Production Planning System Implementation
   // Production Plans

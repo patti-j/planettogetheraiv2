@@ -4968,47 +4968,7 @@ export const abTests = pgTable("ab_tests", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Email campaigns and nurture sequences
-export const emailCampaigns = pgTable("email_campaigns", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  type: text("type").notNull(), // welcome, nurture, promotional, educational, demo_follow_up
-  targetSegments: jsonb("target_segments").$type<number[]>().default([]),
-  targetPersonas: jsonb("target_personas").$type<number[]>().default([]),
-  triggerConditions: jsonb("trigger_conditions").$type<{
-    page_visits?: string[];
-    form_submissions?: string[];
-    lead_score_threshold?: number;
-    days_since_signup?: number;
-    industry?: string[];
-    company_size?: string[];
-  }>(),
-  subject: text("subject").notNull(),
-  content: jsonb("content").$type<{
-    text_version: string;
-    html_version: string;
-    personalization_fields: string[];
-    dynamic_content: Array<{
-      condition: string;
-      content: string;
-    }>;
-  }>().notNull(),
-  language: text("language").notNull().default("en"),
-  sendTime: jsonb("send_time").$type<{
-    delay_hours?: number;
-    optimal_time?: boolean;
-    specific_time?: string;
-    timezone?: string;
-  }>(),
-  status: text("status").default("draft"), // draft, scheduled, sending, sent, paused
-  sentCount: integer("sent_count").default(0),
-  openRate: integer("open_rate").default(0), // percentage * 100
-  clickRate: integer("click_rate").default(0), // percentage * 100
-  conversionRate: integer("conversion_rate").default(0), // percentage * 100
-  unsubscribeRate: integer("unsubscribe_rate").default(0), // percentage * 100
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+
 
 // Schema definitions for inserts
 export const insertCustomerJourneyStageSchema = createInsertSchema(customerJourneyStages).omit({
@@ -5061,11 +5021,7 @@ export const insertABTestSchema = createInsertSchema(abTests).omit({
   updatedAt: true,
 });
 
-export const insertEmailCampaignSchema = createInsertSchema(emailCampaigns).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+
 
 // Marketing System Types
 export type CustomerJourneyStage = typeof customerJourneyStages.$inferSelect;
@@ -5095,8 +5051,7 @@ export type InsertPageAnalytics = z.infer<typeof insertPageAnalyticsSchema>;
 export type ABTest = typeof abTests.$inferSelect;
 export type InsertABTest = z.infer<typeof insertABTestSchema>;
 
-export type EmailCampaign = typeof emailCampaigns.$inferSelect;
-export type InsertEmailCampaign = z.infer<typeof insertEmailCampaignSchema>;
+
 
 // Production Planning Tables
 

@@ -40,7 +40,7 @@ import {
   insertPresentationLibrarySchema, insertPresentationAnalyticsSchema, insertPresentationAIContentSchema,
   insertCustomerJourneyStageSchema, insertManufacturingSegmentSchema, insertBuyerPersonaSchema,
   insertMarketingPageSchema, insertContentBlockSchema, insertCustomerStorySchema,
-  insertLeadCaptureSchema, insertPageAnalyticsSchema, insertABTestSchema, insertEmailCampaignSchema,
+  insertLeadCaptureSchema, insertPageAnalyticsSchema, insertABTestSchema,
   insertProductionPlanSchema, insertProductionTargetSchema, insertResourceAllocationSchema, insertProductionMilestoneSchema,
   insertShiftTemplateSchema, insertResourceShiftAssignmentSchema, insertShiftScenarioSchema, 
   insertHolidaySchema, insertResourceAbsenceSchema, insertShiftCoverageSchema, insertShiftUtilizationSchema,
@@ -13592,101 +13592,7 @@ Create a natural, conversational voice script that explains this feature to some
     }
   });
 
-  // Email Campaigns
-  app.get("/api/marketing/email-campaigns", async (req, res) => {
-    try {
-      const status = req.query.status as string | undefined;
-      const language = req.query.language as string | undefined;
-      const campaigns = await storage.getEmailCampaigns(status, language);
-      res.json(campaigns);
-    } catch (error) {
-      console.error("Error fetching email campaigns:", error);
-      res.status(500).json({ error: "Failed to fetch email campaigns" });
-    }
-  });
 
-  app.get("/api/marketing/email-campaigns/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ error: "Invalid campaign ID" });
-      }
-
-      const campaign = await storage.getEmailCampaign(id);
-      if (!campaign) {
-        return res.status(404).json({ error: "Email campaign not found" });
-      }
-      res.json(campaign);
-    } catch (error) {
-      console.error("Error fetching email campaign:", error);
-      res.status(500).json({ error: "Failed to fetch email campaign" });
-    }
-  });
-
-  app.post("/api/marketing/email-campaigns", async (req, res) => {
-    try {
-      const validation = insertEmailCampaignSchema.safeParse(req.body);
-      if (!validation.success) {
-        return res.status(400).json({ error: "Invalid campaign data", details: validation.error.errors });
-      }
-
-      const campaign = await storage.createEmailCampaign(validation.data);
-      res.status(201).json(campaign);
-    } catch (error) {
-      console.error("Error creating email campaign:", error);
-      res.status(500).json({ error: "Failed to create email campaign" });
-    }
-  });
-
-  app.put("/api/marketing/email-campaigns/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ error: "Invalid campaign ID" });
-      }
-
-      const validation = insertEmailCampaignSchema.partial().safeParse(req.body);
-      if (!validation.success) {
-        return res.status(400).json({ error: "Invalid campaign data", details: validation.error.errors });
-      }
-
-      const campaign = await storage.updateEmailCampaign(id, validation.data);
-      if (!campaign) {
-        return res.status(404).json({ error: "Email campaign not found" });
-      }
-      res.json(campaign);
-    } catch (error) {
-      console.error("Error updating email campaign:", error);
-      res.status(500).json({ error: "Failed to update email campaign" });
-    }
-  });
-
-  app.put("/api/marketing/email-campaigns/:id/stats", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ error: "Invalid campaign ID" });
-      }
-
-      const { sentCount, openRate, clickRate, conversionRate, unsubscribeRate } = req.body;
-      
-      const campaign = await storage.updateEmailCampaignStats(id, {
-        sentCount,
-        openRate,
-        clickRate,
-        conversionRate,
-        unsubscribeRate
-      });
-      
-      if (!campaign) {
-        return res.status(404).json({ error: "Email campaign not found" });
-      }
-      res.json(campaign);
-    } catch (error) {
-      console.error("Error updating email campaign stats:", error);
-      res.status(500).json({ error: "Failed to update email campaign stats" });
-    }
-  });
 
   // Production Planning API Routes
   
