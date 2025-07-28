@@ -244,6 +244,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
         const touch = e.touches[0];
         setTouchStart({ x: touch.clientX, y: touch.clientY });
         setIsSwiping(false);
+        console.log('Touch start:', touch.clientX, touch.clientY);
       };
 
       const handleTouchMove = (e: React.TouchEvent) => {
@@ -253,25 +254,52 @@ Create authentic manufacturing data that reflects this company's operations.`;
         const deltaX = touchStart.x - touch.clientX;
         const deltaY = Math.abs(touchStart.y - touch.clientY);
         
-        console.log('Touch move:', { deltaX, deltaY, showDelete });
+        console.log('Touch move:', { 
+          startX: touchStart.x, 
+          currentX: touch.clientX, 
+          deltaX, 
+          deltaY, 
+          showDelete 
+        });
         
         // If horizontal swipe is more prominent than vertical
-        if (Math.abs(deltaX) > 20 && deltaY < 50) {
+        if (Math.abs(deltaX) > 30) {
           setIsSwiping(true);
-          e.preventDefault(); // Prevent scrolling
           
           if (deltaX > 50) { // Swipe left
             console.log('Swipe left detected, showing delete');
             setShowDelete(true);
-          } else if (deltaX < -20) { // Swipe right
+          } else if (deltaX < -30) { // Swipe right
             console.log('Swipe right detected, hiding delete');
             setShowDelete(false);
           }
         }
       };
 
-      const handleTouchEnd = () => {
+      const handleTouchEnd = (e: React.TouchEvent) => {
+        console.log('Touch end');
+        if (!touchStart) return;
+        
+        const touch = e.changedTouches[0];
+        const deltaX = touchStart.x - touch.clientX;
+        
+        console.log('Touch end deltaX:', deltaX);
+        
+        // Final swipe detection on touch end
+        if (Math.abs(deltaX) > 50) {
+          if (deltaX > 0) { // Swiped left
+            console.log('Final swipe left - showing delete');
+            setShowDelete(true);
+          } else { // Swiped right
+            console.log('Final swipe right - hiding delete');
+            setShowDelete(false);
+          }
+        }
+        
         setTouchStart(null);
+        
+        // Reset swiping state after a delay
+        setTimeout(() => setIsSwiping(false), 100);
       };
 
       const handleClick = (e: React.MouseEvent) => {
