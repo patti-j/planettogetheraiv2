@@ -2,6 +2,22 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Production Plan Creation Authentication Fix (July 28, 2025)**:
+- Fixed "Failed to create production plan" error by replacing direct fetch calls with authenticated apiRequest function
+- Updated createPlanMutation to use apiRequest('POST', '/api/production-plans', data) instead of manual fetch with headers
+- Fixed approvePlanMutation to use apiRequest('PATCH', `/api/production-plans/${planId}/approve`, data) for proper authentication
+- Production plan creation and approval now working correctly with proper session authentication
+- Eliminated authentication failures that were preventing production planning functionality
+
+✓ **Resource Shift Assignment Data Validation Implementation (July 28, 2025)**:
+- Added comprehensive data validation check to ensure active resources have shift assignments with working hours
+- Implemented validateResourceShiftAssignments function with critical and warning severity checks
+- Critical check: Active resources without any shift assignments (prevents scheduling failures)
+- Warning check: Active resources with shift assignments but zero working hours (identifies invalid shift templates)
+- Enhanced data validation system from 6 to 7 total validation checks with detailed recommendations
+- Added proper database schema imports for shiftTemplates and resourceShiftAssignments tables
+- Validation provides actionable recommendations for assigning shifts or updating resource status for proper capacity planning
+
 ✓ **Shift Management API Call Format Fix (July 28, 2025)**:
 - Fixed all remaining API call format errors in shift-management.tsx component
 - Corrected 5 incorrect apiRequest function calls from wrong {method, body} object format to proper function signature

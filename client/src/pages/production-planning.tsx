@@ -151,16 +151,10 @@ export default function ProductionPlanningPage() {
 
   const createPlanMutation = useMutation({
     mutationFn: async (data: ProductionPlanFormData) => {
-      const response = await fetch('/api/production-plans', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...data,
-          status: 'draft',
-        }),
+      return await apiRequest('POST', '/api/production-plans', {
+        ...data,
+        status: 'draft',
       });
-      if (!response.ok) throw new Error('Failed to create production plan');
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/production-plans'] });
@@ -182,13 +176,9 @@ export default function ProductionPlanningPage() {
 
   const approvePlanMutation = useMutation({
     mutationFn: async (planId: number) => {
-      const response = await fetch(`/api/production-plans/${planId}/approve`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ approvedBy: 'Current User' }),
+      return await apiRequest('PATCH', `/api/production-plans/${planId}/approve`, {
+        approvedBy: 'Current User'
       });
-      if (!response.ok) throw new Error('Failed to approve plan');
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/production-plans'] });
