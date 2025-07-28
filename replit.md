@@ -2,7 +2,7 @@
 
 ## Recent Changes (July 28, 2025)
 
-✓ **Data Relationships Page Implementation (July 28, 2025)**:
+✓ **Data Relationships Page Implementation & Navigation Loop Fix (July 28, 2025)**:
 - Created comprehensive Data Relationships page for browsing database table relationships and key structures
 - Added interactive interface to explore data object types (plants, resources, etc.) and their relationships (one-to-many, many-to-many, etc.)
 - Implemented detailed relationship analysis showing foreign keys, primary keys, and cardinality between tables
@@ -12,6 +12,9 @@
 - Integrated search and filtering capabilities to find specific tables and relationships quickly
 - Added navigation between related tables for easy exploration of database connections
 - Route: /data-relationships with proper authentication and navigation context integration
+- Fixed critical infinite navigation loop issue by removing problematic useEffect and implementing user preference save throttling
+- Enhanced NavigationContext with 2-second minimum save interval to prevent UI lockups and excessive database calls
+- Removed unused trackMenuClick function that was causing TypeScript compilation errors
 
 ✓ **Complete Legacy Jobs Table Removal & Database Schema Cleanup (July 28, 2025)**:
 - Successfully removed legacy "jobs" table from database that was replaced with production_orders table  

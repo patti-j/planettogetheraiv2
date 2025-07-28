@@ -72,6 +72,10 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   const [lastVisitedRoute, setLastVisitedRouteState] = useState<string | null>(null);
   const [location] = useLocation();
   const { user, isAuthenticated } = useAuth();
+  
+  // Throttling state to prevent infinite loops
+  const [lastSaveTime, setLastSaveTime] = useState<number>(0);
+  const [pendingSave, setPendingSave] = useState<RecentPage[] | null>(null);
 
   // Check onboarding status to determine if Getting Started should be auto-pinned
   const { data: onboardingStatus } = useQuery({
@@ -170,16 +174,16 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     loadRecentPages();
   }, [isAuthenticated, user?.id]);
 
-  // Re-apply auto-pinning logic when onboarding status changes
-  useEffect(() => {
-    if (recentPages.length > 0) {
-      const processedPages = ensureGettingStartedPinned(recentPages);
-      if (JSON.stringify(processedPages) !== JSON.stringify(recentPages)) {
-        setRecentPages(processedPages);
-        saveRecentPages(processedPages);
-      }
-    }
-  }, [onboardingStatus && typeof onboardingStatus === 'object' && 'isCompleted' in onboardingStatus ? onboardingStatus.isCompleted : false]);
+  // DISABLED: Re-apply auto-pinning logic when onboarding status changes - was causing infinite loop
+  // useEffect(() => {
+  //   if (recentPages.length > 0) {
+  //     const processedPages = ensureGettingStartedPinned(recentPages);
+  //     if (JSON.stringify(processedPages) !== JSON.stringify(recentPages)) {
+  //       setRecentPages(processedPages);
+  //       saveRecentPages(processedPages);
+  //     }
+  //   }
+  // }, [onboardingStatus && typeof onboardingStatus === 'object' && 'isCompleted' in onboardingStatus ? onboardingStatus.isCompleted : false]);
 
   // Helper function to generate label from path
   const generateLabelFromPath = (path: string): { label: string; icon: string } => {
@@ -221,21 +225,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
 
   // Don't automatically track location changes - only track explicit navigation
   
-  // Function to manually track menu clicks
-  const trackMenuClick = (path: string, label?: string, icon?: string) => {
-    // Don't track home page visits or login page
-    if (path === '/' || path === '/login') {
-      return;
-    }
-    
-    // Get page info from mapping or generate it
-    const pageInfo = pageMapping[path] || generateLabelFromPath(path);
-    const finalLabel = label || pageInfo.label;
-    const finalIcon = icon || pageInfo.icon;
-    
-    // Track the page visit
-    addRecentPage(path, finalLabel, finalIcon);
-  };
+  // Remove unused trackMenuClick function that was causing TypeScript errors
 
   const addRecentPage = (path: string, label: string, icon?: string) => {
     setRecentPages(current => {
@@ -277,25 +267,39 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   };
 
   const saveRecentPages = async (pages: RecentPage[]) => {
-    if (isAuthenticated && user?.id) {
-      try {
-        // First get current preferences to merge
-        const response = await apiRequest('GET', `/api/user-preferences/${user.id}`);
-        const currentPreferences = await response.json();
-        
-        // Merge recent pages with existing dashboard layout
-        const updatedDashboardLayout = {
-          ...currentPreferences.dashboardLayout,
-          recentPages: pages
-        };
-        
-        // Save to user preferences with merged data
-        await apiRequest('PUT', `/api/user-preferences`, {
-          dashboardLayout: updatedDashboardLayout
-        });
-      } catch (error) {
-        console.warn('Failed to save recent pages to database:', error);
-      }
+    if (!isAuthenticated || !user?.id) return;
+    
+    const now = Date.now();
+    const MIN_SAVE_INTERVAL = 2000; // 2 seconds minimum between saves
+    
+    // If we saved recently, queue this save for later
+    if (now - lastSaveTime < MIN_SAVE_INTERVAL) {
+      setPendingSave(pages);
+      return;
+    }
+    
+    try {
+      setLastSaveTime(now);
+      
+      // First get current preferences to merge
+      const response = await apiRequest('GET', `/api/user-preferences/${user.id}`);
+      const currentPreferences = await response.json();
+      
+      // Merge recent pages with existing dashboard layout
+      const updatedDashboardLayout = {
+        ...currentPreferences.dashboardLayout,
+        recentPages: pages
+      };
+      
+      // Save to user preferences with merged data
+      await apiRequest('PUT', `/api/user-preferences`, {
+        dashboardLayout: updatedDashboardLayout
+      });
+      
+      // Clear any pending save since we just saved
+      setPendingSave(null);
+    } catch (error) {
+      console.warn('Failed to save recent pages to database:', error);
     }
   };
 
@@ -376,7 +380,6 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     <NavigationContext.Provider value={{
       recentPages,
       addRecentPage,
-      trackMenuClick,
       clearRecentPages,
       togglePinPage,
       lastVisitedRoute,
