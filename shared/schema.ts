@@ -5129,7 +5129,7 @@ export const industryTemplates = pgTable("industry_templates", {
   version: text("version").notNull().default("1.0.0"),
   targetIndustry: text("target_industry").notNull(),
   companySize: text("company_size").notNull().default("medium"), // small, medium, large, enterprise
-  configuration: jsonb("configurations").$type<{
+  configurations: jsonb("configurations").$type<{
     // Data volume configurations by company size
     dataVolumes?: {
       small?: {

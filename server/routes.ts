@@ -10468,19 +10468,60 @@ Create a natural, conversational voice script that explains this feature to some
       let templateData;
       try {
         templateData = JSON.parse(generatedContent);
+        console.log("AI generated templateData:", JSON.stringify(templateData, null, 2));
       } catch (parseError) {
         console.error("Failed to parse AI template response:", parseError);
         return res.status(500).json({ message: "AI generated invalid template format" });
       }
 
+      // Ensure configurations field has a valid structure
+      const defaultConfiguration = {
+        dataVolumes: {
+          small: {
+            plants: { min: 1, max: 2 },
+            resourcesPerPlant: { min: 3, max: 8 },
+            capabilities: { min: 8, max: 15 },
+            ordersPerPlant: { min: 5, max: 15 },
+            operationsPerOrder: { min: 2, max: 5 }
+          },
+          medium: {
+            plants: { min: 2, max: 5 },
+            resourcesPerPlant: { min: 5, max: 12 },
+            capabilities: { min: 15, max: 30 },
+            ordersPerPlant: { min: 10, max: 25 },
+            operationsPerOrder: { min: 3, max: 7 }
+          },
+          large: {
+            plants: { min: 3, max: 8 },
+            resourcesPerPlant: { min: 8, max: 20 },
+            capabilities: { min: 25, max: 50 },
+            ordersPerPlant: { min: 15, max: 40 },
+            operationsPerOrder: { min: 4, max: 10 }
+          },
+          enterprise: {
+            plants: { min: 5, max: 15 },
+            resourcesPerPlant: { min: 15, max: 40 },
+            capabilities: { min: 40, max: 100 },
+            ordersPerPlant: { min: 25, max: 80 },
+            operationsPerOrder: { min: 5, max: 12 }
+          }
+        }
+      };
+
       // Create the industry template
-      const newTemplate = await storage.createIndustryTemplate({
+      const templateInsertData = {
         ...templateData,
         isAiGenerated: true,
         sourceUrl: sourceUrl || null,
         sourcePrompt: sourcePrompt || null,
-        createdBy
-      });
+        createdBy,
+        configurations: templateData.configurations || templateData.configuration || defaultConfiguration
+      };
+      
+      console.log("Template insert data configurations:", JSON.stringify(templateInsertData.configurations, null, 2));
+      console.log("Template insert data structure:", JSON.stringify(templateInsertData, null, 2));
+      
+      const newTemplate = await storage.createIndustryTemplate(templateInsertData);
 
       res.json(newTemplate);
     } catch (error) {
