@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { db } from "./db";
 import * as schema from "@shared/schema";
 import { sql } from "drizzle-orm";
+import { z } from "zod";
 import { createSafeHandler, errorMiddleware, ValidationError, DatabaseError, NotFoundError, AuthenticationError } from "./error-handler";
 import { 
   insertPlantSchema, insertCapabilitySchema, insertResourceSchema, insertProductionOrderSchema, insertPlannedOrderSchema, 
@@ -50,6 +51,7 @@ import {
   insertRecipeSchema, insertRecipePhaseSchema, insertRecipeFormulaSchema, insertRecipeEquipmentSchema,
   insertVendorSchema, insertCustomerSchema,
   insertOptimizationScopeConfigSchema, insertOptimizationRunSchema,
+  insertOptimizationProfileSchema, insertProfileUsageHistorySchema,
   insertUserSecretSchema
 } from "@shared/schema";
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio } from "./ai-agent";
@@ -13912,6 +13914,233 @@ Create a natural, conversational voice script that explains this feature to some
     } catch (error) {
       console.error("Error updating optimization run status:", error);
       res.status(500).json({ error: "Failed to update optimization run status" });
+    }
+  });
+
+  // Optimization Profiles API Routes - Algorithm-specific execution configurations
+  
+  // Get optimization profiles
+  app.get("/api/optimization-profiles", async (req, res) => {
+    try {
+      const { algorithmId, userId } = req.query;
+      const profiles = await storage.getOptimizationProfiles(
+        algorithmId ? parseInt(algorithmId as string) : undefined,
+        userId ? parseInt(userId as string) : undefined
+      );
+      res.json(profiles);
+    } catch (error) {
+      console.error("Error fetching optimization profiles:", error);
+      res.status(500).json({ error: "Failed to fetch optimization profiles" });
+    }
+  });
+
+  // Get single optimization profile
+  app.get("/api/optimization-profiles/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid profile ID" });
+      }
+      const profile = await storage.getOptimizationProfile(id);
+      if (!profile) {
+        return res.status(404).json({ error: "Optimization profile not found" });
+      }
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching optimization profile:", error);
+      res.status(500).json({ error: "Failed to fetch optimization profile" });
+    }
+  });
+
+  // Create optimization profile
+  app.post("/api/optimization-profiles", requireAuth, async (req, res) => {
+    try {
+      const validatedData = insertOptimizationProfileSchema.parse(req.body);
+      const profile = await storage.createOptimizationProfile(validatedData);
+      res.status(201).json(profile);
+    } catch (error) {
+      console.error("Error creating optimization profile:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid profile data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create optimization profile" });
+    }
+  });
+
+  // Update optimization profile
+  app.put("/api/optimization-profiles/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid profile ID" });
+      }
+      
+      const validatedData = insertOptimizationProfileSchema.partial().parse(req.body);
+      const profile = await storage.updateOptimizationProfile(id, validatedData);
+      if (!profile) {
+        return res.status(404).json({ error: "Optimization profile not found" });
+      }
+      res.json(profile);
+    } catch (error) {
+      console.error("Error updating optimization profile:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid profile data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to update optimization profile" });
+    }
+  });
+
+  // Delete optimization profile
+  app.delete("/api/optimization-profiles/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid profile ID" });
+      }
+      
+      const deleted = await storage.deleteOptimizationProfile(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Optimization profile not found" });
+      }
+      res.json({ message: "Optimization profile deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting optimization profile:", error);
+      res.status(500).json({ error: "Failed to delete optimization profile" });
+    }
+  });
+
+  // Get default optimization profile for algorithm
+  app.get("/api/optimization-profiles/algorithm/:algorithmId/default", async (req, res) => {
+    try {
+      const algorithmId = parseInt(req.params.algorithmId);
+      if (isNaN(algorithmId)) {
+        return res.status(400).json({ error: "Invalid algorithm ID" });
+      }
+      
+      const profile = await storage.getDefaultOptimizationProfile(algorithmId);
+      if (!profile) {
+        return res.status(404).json({ error: "No default profile found for algorithm" });
+      }
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching default optimization profile:", error);
+      res.status(500).json({ error: "Failed to fetch default optimization profile" });
+    }
+  });
+
+  // Set optimization profile as default
+  app.post("/api/optimization-profiles/:id/set-default", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid profile ID" });
+      }
+      
+      await storage.setOptimizationProfileAsDefault(id);
+      res.json({ message: "Profile set as default successfully" });
+    } catch (error) {
+      console.error("Error setting profile as default:", error);
+      res.status(500).json({ error: "Failed to set profile as default" });
+    }
+  });
+
+  // Duplicate optimization profile
+  app.post("/api/optimization-profiles/:id/duplicate", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid profile ID" });
+      }
+      
+      const { name, userId } = req.body;
+      if (!name || !userId) {
+        return res.status(400).json({ error: "Name and userId are required" });
+      }
+      
+      const duplicate = await storage.duplicateOptimizationProfile(id, name, userId);
+      res.status(201).json(duplicate);
+    } catch (error) {
+      console.error("Error duplicating optimization profile:", error);
+      res.status(500).json({ error: "Failed to duplicate optimization profile" });
+    }
+  });
+
+  // Get shared optimization profiles for algorithm
+  app.get("/api/optimization-profiles/algorithm/:algorithmId/shared", async (req, res) => {
+    try {
+      const algorithmId = parseInt(req.params.algorithmId);
+      if (isNaN(algorithmId)) {
+        return res.status(400).json({ error: "Invalid algorithm ID" });
+      }
+      
+      const profiles = await storage.getSharedOptimizationProfiles(algorithmId);
+      res.json(profiles);
+    } catch (error) {
+      console.error("Error fetching shared optimization profiles:", error);
+      res.status(500).json({ error: "Failed to fetch shared optimization profiles" });
+    }
+  });
+
+  // Validate optimization profile
+  app.post("/api/optimization-profiles/validate", async (req, res) => {
+    try {
+      const validatedProfile = insertOptimizationProfileSchema.parse(req.body);
+      const validation = await storage.validateOptimizationProfile(validatedProfile as any);
+      res.json(validation);
+    } catch (error) {
+      console.error("Error validating optimization profile:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid profile data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to validate optimization profile" });
+    }
+  });
+
+  // Profile Usage History API Routes
+  
+  // Get profile usage history
+  app.get("/api/profile-usage-history", async (req, res) => {
+    try {
+      const { profileId, userId } = req.query;
+      const history = await storage.getProfileUsageHistory(
+        profileId ? parseInt(profileId as string) : undefined,
+        userId ? parseInt(userId as string) : undefined
+      );
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching profile usage history:", error);
+      res.status(500).json({ error: "Failed to fetch profile usage history" });
+    }
+  });
+
+  // Create profile usage history entry
+  app.post("/api/profile-usage-history", requireAuth, async (req, res) => {
+    try {
+      const validatedData = insertProfileUsageHistorySchema.parse(req.body);
+      const usage = await storage.createProfileUsageHistory(validatedData);
+      res.status(201).json(usage);
+    } catch (error) {
+      console.error("Error creating profile usage history:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid usage data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create profile usage history" });
+    }
+  });
+
+  // Get profile usage statistics
+  app.get("/api/optimization-profiles/:id/stats", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid profile ID" });
+      }
+      
+      const stats = await storage.getProfileUsageStats(id);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching profile usage stats:", error);
+      res.status(500).json({ error: "Failed to fetch profile usage stats" });
     }
   });
 

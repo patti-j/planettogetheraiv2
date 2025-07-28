@@ -4033,6 +4033,172 @@ export const optimizationRuns = pgTable("optimization_runs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Optimization Profiles - Algorithm-specific execution configurations for schedulers
+export const optimizationProfiles = pgTable("optimization_profiles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  algorithmId: integer("algorithm_id").references(() => optimizationAlgorithms.id).notNull(),
+  isDefault: boolean("is_default").default(false),
+  isShared: boolean("is_shared").default(false), // Can be used by other schedulers
+  profileConfig: jsonb("profile_config").$type<{
+    // General scheduler options
+    includePlannedOrders?: {
+      enabled: boolean;
+      weight?: number; // Priority weight vs production orders (0.1-1.0)
+      convertToProduction?: boolean; // Auto-convert planned orders when scheduled
+    };
+    
+    // Scope selection
+    scope?: {
+      plantIds?: number[]; // Which plants to include in optimization
+      resourceIds?: number[]; // Specific resources to optimize
+      resourceTypes?: string[]; // Filter by resource type
+      capabilityIds?: number[]; // Required capabilities
+      productionOrderIds?: number[]; // Specific orders to include
+      excludeOrderIds?: number[]; // Orders to exclude
+      dateRange?: {
+        start: string;
+        end: string;
+      };
+    };
+    
+    // Algorithm-specific parameters (varies by algorithm)
+    algorithmParameters?: {
+      // Backwards Scheduling specific
+      backwardsScheduling?: {
+        bufferTime?: number; // Buffer time in minutes
+        allowOvertime?: boolean;
+        maxOvertimePerDay?: number; // Minutes
+        prioritizeByDueDate?: boolean;
+        considerSetupTimes?: boolean;
+        setupTimeMatrix?: Record<string, Record<string, number>>;
+      };
+      
+      // Forward Scheduling specific  
+      forwardScheduling?: {
+        startDate?: string;
+        prioritizeByPriority?: boolean;
+        loadBalancing?: boolean;
+        allowResourceSwitching?: boolean;
+        maxQueueTime?: number; // Minutes
+      };
+      
+      // Job Shop Scheduling specific
+      jobShopScheduling?: {
+        optimizationStrategy?: "makespan" | "flow_time" | "resource_utilization";
+        allowPreemption?: boolean;
+        sequenceOptimization?: boolean;
+        bottleneckFocus?: boolean;
+      };
+      
+      // Capacity Planning specific
+      capacityPlanning?: {
+        planningHorizon?: number; // Days
+        considerMaintenance?: boolean;
+        allowCapacityExpansion?: boolean;
+        demandVariability?: number; // Percentage
+      };
+      
+      // Custom algorithm parameters
+      custom?: Record<string, any>;
+    };
+    
+    // Optimization objectives and weights
+    objectives?: {
+      primary: "minimize_makespan" | "minimize_cost" | "maximize_throughput" | "minimize_lateness" | "maximize_utilization";
+      secondary?: string[];
+      weights?: Record<string, number>; // Objective importance weights
+    };
+    
+    // Constraints
+    constraints?: {
+      maxExecutionTime?: number; // Minutes
+      resourceCapacityLimits?: boolean;
+      shiftConstraints?: boolean;
+      skillRequirements?: boolean;
+      qualityConstraints?: boolean;
+      safetyRequirements?: boolean;
+      customConstraints?: Record<string, any>;
+    };
+    
+    // Performance settings
+    performance?: {
+      maxIterations?: number;
+      convergenceThreshold?: number;
+      parallelProcessing?: boolean;
+      memoryLimit?: number; // MB
+      timeoutMinutes?: number;
+    };
+    
+    // Output preferences
+    output?: {
+      includeGanttChart?: boolean;
+      includeResourceUtilization?: boolean;
+      includeKPIReports?: boolean;
+      emailNotification?: boolean;
+      exportFormat?: "excel" | "pdf" | "csv" | "json";
+    };
+  }>().notNull().default({}),
+  
+  // Validation rules for the profile
+  validationRules: jsonb("validation_rules").$type<{
+    requiredFields?: string[];
+    constraints?: Array<{
+      field: string;
+      operator: "gt" | "lt" | "gte" | "lte" | "eq" | "ne" | "in" | "range";
+      value: any;
+      message: string;
+    }>;
+    dependencies?: Array<{
+      ifField: string;
+      ifValue: any;
+      thenRequire: string[];
+      thenForbid?: string[];
+    }>;
+  }>().default({}),
+  
+  // Usage statistics
+  metadata: jsonb("metadata").$type<{
+    usageCount?: number;
+    lastUsed?: string;
+    averageExecutionTime?: number; // Minutes
+    successRate?: number; // Percentage
+    typicalDataSize?: {
+      orders: number;
+      resources: number;
+      operations: number;
+    };
+    compatibleAlgorithmVersions?: string[];
+  }>().default({}),
+  
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  updatedBy: integer("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Profile Usage History - Track when profiles are used in optimization runs
+export const profileUsageHistory = pgTable("profile_usage_history", {
+  id: serial("id").primaryKey(),
+  profileId: integer("profile_id").references(() => optimizationProfiles.id).notNull(),
+  optimizationRunId: integer("optimization_run_id").references(() => optimizationRuns.id).notNull(),
+  profileSnapshot: jsonb("profile_snapshot").$type<typeof optimizationProfiles.$inferSelect.profileConfig>().notNull(),
+  executionResults: jsonb("execution_results").$type<{
+    executionTime?: number; // Minutes
+    dataProcessed?: {
+      orders: number;
+      resources: number;
+      operations: number;
+    };
+    kpis?: Record<string, number>;
+    errors?: string[];
+    warnings?: string[];
+  }>(),
+  usedBy: integer("used_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Extension Studio Insert Schemas
 export const insertExtensionSchema = createInsertSchema(extensions).omit({
   id: true,
@@ -4131,12 +4297,31 @@ export const insertOptimizationRunSchema = createInsertSchema(optimizationRuns).
   createdAt: true,
 });
 
+// Optimization Profiles Insert Schemas
+export const insertOptimizationProfileSchema = createInsertSchema(optimizationProfiles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertProfileUsageHistorySchema = createInsertSchema(profileUsageHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Optimization Scope Configuration Types
 export type OptimizationScopeConfig = typeof optimizationScopeConfigs.$inferSelect;
 export type InsertOptimizationScopeConfig = z.infer<typeof insertOptimizationScopeConfigSchema>;
 
 export type OptimizationRun = typeof optimizationRuns.$inferSelect;
 export type InsertOptimizationRun = z.infer<typeof insertOptimizationRunSchema>;
+
+// Optimization Profiles Types
+export type OptimizationProfile = typeof optimizationProfiles.$inferSelect;
+export type InsertOptimizationProfile = z.infer<typeof insertOptimizationProfileSchema>;
+
+export type ProfileUsageHistory = typeof profileUsageHistory.$inferSelect;
+export type InsertProfileUsageHistory = z.infer<typeof insertProfileUsageHistorySchema>;
 
 // Error Logging and Monitoring Tables
 export const errorLogs = pgTable("error_logs", {

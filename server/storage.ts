@@ -66,9 +66,9 @@ import {
   productionPlans, productionTargets, resourceAllocations, productionMilestones,
   type ProductionPlan, type ProductionTarget, type ResourceAllocation, type ProductionMilestone,
   type InsertProductionPlan, type InsertProductionTarget, type InsertResourceAllocation, type InsertProductionMilestone,
-  optimizationAlgorithms, algorithmTests, algorithmDeployments, extensionData, optimizationScopeConfigs, optimizationRuns,
-  type OptimizationAlgorithm, type AlgorithmTest, type AlgorithmDeployment, type ExtensionData, type OptimizationScopeConfig, type OptimizationRun,
-  type InsertOptimizationAlgorithm, type InsertAlgorithmTest, type InsertAlgorithmDeployment, type InsertExtensionData, type InsertOptimizationScopeConfig, type InsertOptimizationRun,
+  optimizationAlgorithms, algorithmTests, algorithmDeployments, extensionData, optimizationScopeConfigs, optimizationRuns, optimizationProfiles, profileUsageHistory,
+  type OptimizationAlgorithm, type AlgorithmTest, type AlgorithmDeployment, type ExtensionData, type OptimizationScopeConfig, type OptimizationRun, type OptimizationProfile, type ProfileUsageHistory,
+  type InsertOptimizationAlgorithm, type InsertAlgorithmTest, type InsertAlgorithmDeployment, type InsertExtensionData, type InsertOptimizationScopeConfig, type InsertOptimizationRun, type InsertOptimizationProfile, type InsertProfileUsageHistory,
   userSecrets, type UserSecret, type InsertUserSecret,
   industryTemplates, userIndustryTemplates, templateConfigurations,
   type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
@@ -96,7 +96,7 @@ import {
   // type InsertAccountInfo, type InsertBillingHistory, type InsertUsageMetrics
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, gt, lt, like, ilike, ne, not, inArray } from "drizzle-orm";
+import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, gt, lt, like, ilike, ne, not, inArray, avg, max, countDistinct } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export interface IStorage {
@@ -1080,6 +1080,29 @@ export interface IStorage {
   deleteOptimizationRun(id: number): Promise<boolean>;
   getOptimizationRunsByStatus(status: string): Promise<OptimizationRun[]>;
   updateOptimizationRunStatus(id: number, status: string, error?: string): Promise<OptimizationRun | undefined>;
+
+  // Optimization Profiles Management - Algorithm-specific execution configurations
+  getOptimizationProfiles(algorithmId?: number, userId?: number): Promise<OptimizationProfile[]>;
+  getOptimizationProfile(id: number): Promise<OptimizationProfile | undefined>;
+  createOptimizationProfile(profile: InsertOptimizationProfile): Promise<OptimizationProfile>;
+  updateOptimizationProfile(id: number, updates: Partial<InsertOptimizationProfile>): Promise<OptimizationProfile | undefined>;
+  deleteOptimizationProfile(id: number): Promise<boolean>;
+  getDefaultOptimizationProfile(algorithmId: number): Promise<OptimizationProfile | undefined>;
+  setOptimizationProfileAsDefault(id: number): Promise<void>;
+  duplicateOptimizationProfile(id: number, newName: string, userId: number): Promise<OptimizationProfile>;
+  getSharedOptimizationProfiles(algorithmId: number): Promise<OptimizationProfile[]>;
+  validateOptimizationProfile(profile: OptimizationProfile): Promise<{ isValid: boolean; errors: string[] }>;
+
+  // Profile Usage History Management
+  getProfileUsageHistory(profileId?: number, userId?: number): Promise<ProfileUsageHistory[]>;
+  createProfileUsageHistory(usage: InsertProfileUsageHistory): Promise<ProfileUsageHistory>;
+  getProfileUsageStats(profileId: number): Promise<{
+    totalUsage: number;
+    averageExecutionTime: number;
+    successRate: number;
+    lastUsed: Date | null;
+    userCount: number;
+  }>;
 
   // Product Development
   // Strategy Documents
@@ -7163,6 +7186,200 @@ export class DatabaseStorage implements IStorage {
     }
     
     return await this.updateOptimizationRun(id, updates);
+  }
+
+  // Optimization Profiles Management - Algorithm-specific execution configurations
+  async getOptimizationProfiles(algorithmId?: number, userId?: number): Promise<OptimizationProfile[]> {
+    let query = db.select().from(optimizationProfiles);
+    
+    const conditions = [];
+    if (algorithmId) conditions.push(eq(optimizationProfiles.algorithmId, algorithmId));
+    if (userId) conditions.push(eq(optimizationProfiles.createdBy, userId));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(optimizationProfiles.createdAt));
+  }
+
+  async getOptimizationProfile(id: number): Promise<OptimizationProfile | undefined> {
+    const [profile] = await db.select()
+      .from(optimizationProfiles)
+      .where(eq(optimizationProfiles.id, id));
+    return profile;
+  }
+
+  async createOptimizationProfile(profile: InsertOptimizationProfile): Promise<OptimizationProfile> {
+    const [newProfile] = await db
+      .insert(optimizationProfiles)
+      .values({
+        ...profile,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return newProfile;
+  }
+
+  async updateOptimizationProfile(id: number, updates: Partial<InsertOptimizationProfile>): Promise<OptimizationProfile | undefined> {
+    const [updated] = await db
+      .update(optimizationProfiles)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(optimizationProfiles.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteOptimizationProfile(id: number): Promise<boolean> {
+    const result = await db.delete(optimizationProfiles).where(eq(optimizationProfiles.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getDefaultOptimizationProfile(algorithmId: number): Promise<OptimizationProfile | undefined> {
+    const [profile] = await db.select()
+      .from(optimizationProfiles)
+      .where(and(
+        eq(optimizationProfiles.algorithmId, algorithmId),
+        eq(optimizationProfiles.isDefault, true)
+      ));
+    return profile;
+  }
+
+  async setOptimizationProfileAsDefault(id: number): Promise<void> {
+    // First get the profile to know which algorithm
+    const profile = await this.getOptimizationProfile(id);
+    if (!profile) return;
+
+    // Remove default from all profiles for this algorithm
+    await db.update(optimizationProfiles)
+      .set({ isDefault: false, updatedAt: new Date() })
+      .where(eq(optimizationProfiles.algorithmId, profile.algorithmId));
+
+    // Set this profile as default
+    await db.update(optimizationProfiles)
+      .set({ isDefault: true, updatedAt: new Date() })
+      .where(eq(optimizationProfiles.id, id));
+  }
+
+  async duplicateOptimizationProfile(id: number, newName: string, userId: number): Promise<OptimizationProfile> {
+    const originalProfile = await this.getOptimizationProfile(id);
+    if (!originalProfile) {
+      throw new Error('Profile not found');
+    }
+
+    const duplicatedProfile = {
+      name: newName,
+      algorithmId: originalProfile.algorithmId,
+      description: `Copy of ${originalProfile.name}`,
+      configuration: originalProfile.configuration,
+      isDefault: false,
+      isShared: false,
+      createdBy: userId
+    };
+
+    return await this.createOptimizationProfile(duplicatedProfile);
+  }
+
+  async getSharedOptimizationProfiles(algorithmId: number): Promise<OptimizationProfile[]> {
+    return await db.select()
+      .from(optimizationProfiles)
+      .where(and(
+        eq(optimizationProfiles.algorithmId, algorithmId),
+        eq(optimizationProfiles.isShared, true)
+      ))
+      .orderBy(desc(optimizationProfiles.createdAt));
+  }
+
+  async validateOptimizationProfile(profile: OptimizationProfile): Promise<{ isValid: boolean; errors: string[] }> {
+    const errors: string[] = [];
+
+    // Basic validation
+    if (!profile.name || profile.name.trim().length === 0) {
+      errors.push('Profile name is required');
+    }
+
+    if (!profile.algorithmId) {
+      errors.push('Algorithm ID is required');
+    }
+
+    // Validate configuration structure
+    if (!profile.configuration || typeof profile.configuration !== 'object') {
+      errors.push('Configuration must be a valid object');
+    } else {
+      // Algorithm-specific validation would go here
+      // Each algorithm can define its own validation rules
+      const config = profile.configuration as any;
+      
+      // Example: validate common parameters
+      if (config.plannedOrdersWeight !== undefined) {
+        if (typeof config.plannedOrdersWeight !== 'number' || config.plannedOrdersWeight < 0 || config.plannedOrdersWeight > 1) {
+          errors.push('Planned orders weight must be a number between 0 and 1');
+        }
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+
+  // Profile Usage History Management
+  async getProfileUsageHistory(profileId?: number, userId?: number): Promise<ProfileUsageHistory[]> {
+    let query = db.select().from(profileUsageHistory);
+    
+    const conditions = [];
+    if (profileId) conditions.push(eq(profileUsageHistory.profileId, profileId));
+    if (userId) conditions.push(eq(profileUsageHistory.userId, userId));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(profileUsageHistory.createdAt));
+  }
+
+  async createProfileUsageHistory(usage: InsertProfileUsageHistory): Promise<ProfileUsageHistory> {
+    const [newUsage] = await db
+      .insert(profileUsageHistory)
+      .values({
+        ...usage,
+        createdAt: new Date()
+      })
+      .returning();
+    return newUsage;
+  }
+
+  async getProfileUsageStats(profileId: number): Promise<{
+    totalUsage: number;
+    averageExecutionTime: number;
+    successRate: number;
+    lastUsed: Date | null;
+    userCount: number;
+  }> {
+    try {
+      const stats = await db.select({
+        totalUsage: count(),
+        lastUsed: max(profileUsageHistory.createdAt),
+        userCount: countDistinct(profileUsageHistory.usedBy)
+      })
+      .from(profileUsageHistory)
+      .where(eq(profileUsageHistory.profileId, profileId));
+
+      const result = stats[0];
+
+      return {
+        totalUsage: result.totalUsage || 0,
+        averageExecutionTime: 0, // Would need to parse from executionResults JSON
+        successRate: 100, // Assume success for now, would need to analyze executionResults
+        lastUsed: result.lastUsed,
+        userCount: result.userCount || 0
+      };
+    } catch (error) {
+      console.error('Error in getProfileUsageStats:', error);
+      throw error;
+    }
   }
 
   // Comprehensive Shift Management System Implementation

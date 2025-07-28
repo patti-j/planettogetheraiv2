@@ -10,17 +10,23 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { 
   Clock, Target, Settings, Play, CheckCircle, AlertTriangle, 
   Info, TrendingUp, Calendar, Users, Zap, BarChart3,
-  ArrowLeft, ArrowRight, Layers, Brain
+  ArrowLeft, ArrowRight, Layers, Brain, BookmarkPlus, Edit,
+  Save, Trash2, History, Star
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { OptimizationSummaryDialog } from "./optimization-summary-dialog";
 import { addDays, format } from "date-fns";
-import type { ProductionOrder, PlannedOrder, Operation, Resource } from "@shared/schema";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import type { ProductionOrder, PlannedOrder, Operation, Resource, OptimizationProfile, ProfileUsageHistory } from "@shared/schema";
 
 interface BackwardsSchedulingParams {
   bufferTime: number;
@@ -35,6 +41,43 @@ interface BackwardsSchedulingParams {
   includePlannedOrders: boolean;
   plannedOrderWeight: number;
 }
+
+// Profile form schema for validation
+const profileFormSchema = z.object({
+  name: z.string().min(1, 'Profile name is required'),
+  description: z.string().optional(),
+  algorithmId: z.number().default(1), // Backwards scheduling algorithm ID
+  profileConfig: z.object({
+    scope: z.object({
+      plantIds: z.array(z.number()).default([]),
+      resourceIds: z.array(z.number()).default([])
+    }),
+    objectives: z.object({
+      primary: z.enum(['minimize_makespan', 'maximize_utilization', 'minimize_cost', 'minimize_tardiness']).default('minimize_makespan'),
+      weights: z.object({
+        cost: z.number().min(0).max(1).default(0.3),
+        time: z.number().min(0).max(1).default(0.7)
+      })
+    }),
+    constraints: z.object({
+      maxExecutionTime: z.number().min(10).max(600).default(60),
+      resourceCapacityLimits: z.boolean().default(true)
+    }),
+    algorithmParameters: z.object({
+      backwardsScheduling: z.object({
+        bufferTime: z.number().min(0).max(5).default(0.5),
+        allowOvertime: z.boolean().default(false),
+        prioritizeByDueDate: z.boolean().default(true)
+      })
+    }),
+    includePlannedOrders: z.object({
+      enabled: z.boolean().default(true),
+      weight: z.number().min(0).max(1).default(0.7)
+    })
+  })
+});
+
+type ProfileFormData = z.infer<typeof profileFormSchema>;
 
 interface ScheduleResult {
   operationId: number;
@@ -64,6 +107,9 @@ export default function BackwardsSchedulingAlgorithm() {
   const [scheduleResults, setScheduleResults] = useState<ScheduleResult[]>([]);
   const [showSummaryDialog, setShowSummaryDialog] = useState(false);
   const [optimizationSummary, setOptimizationSummary] = useState<any>(null);
+  const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null);
+  const [showCreateProfile, setShowCreateProfile] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState<number | null>(null);
   const [parameters, setParameters] = useState<BackwardsSchedulingParams>({
     bufferTime: 0.5,
     priorityWeight: 1.0,
@@ -100,6 +146,87 @@ export default function BackwardsSchedulingAlgorithm() {
   const { data: operations = [] } = useQuery<Operation[]>({
     queryKey: ['/api/operations'],
     refetchOnWindowFocus: false
+  });
+
+  // Fetch optimization profiles for backwards scheduling algorithm
+  const { data: profiles = [] } = useQuery<OptimizationProfile[]>({
+    queryKey: ['/api/optimization-profiles'],
+    refetchOnWindowFocus: false
+  });
+
+  // Fetch profile usage history
+  const { data: profileHistory = [] } = useQuery<ProfileUsageHistory[]>({
+    queryKey: ['/api/profile-usage-history'],
+    refetchOnWindowFocus: false
+  });
+
+  // Profile management mutations
+  const createProfileMutation = useMutation({
+    mutationFn: async (profileData: ProfileFormData) => {
+      const response = await apiRequest('POST', '/api/optimization-profiles', profileData);
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Profile Created",
+        description: "Optimization profile has been saved successfully.",
+      });
+      setShowCreateProfile(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/optimization-profiles'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Create Profile",
+        description: error.message || "Failed to save optimization profile",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<ProfileFormData> }) => {
+      const response = await apiRequest('PUT', `/api/optimization-profiles/${id}`, data);
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Profile Updated",
+        description: "Optimization profile has been updated successfully.",
+      });
+      setShowEditProfile(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/optimization-profiles'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Update Profile",
+        description: error.message || "Failed to update optimization profile",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const deleteProfileMutation = useMutation({
+    mutationFn: async (profileId: number) => {
+      const response = await apiRequest('DELETE', `/api/optimization-profiles/${profileId}`);
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Profile Deleted",
+        description: "Optimization profile has been deleted successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/optimization-profiles'] });
+      if (selectedProfileId === undefined) {
+        setSelectedProfileId(null);
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Delete Profile",
+        description: error.message || "Failed to delete optimization profile",
+        variant: "destructive",
+      });
+    }
   });
 
   // Run backwards scheduling algorithm
@@ -141,6 +268,32 @@ export default function BackwardsSchedulingAlgorithm() {
       });
     }
   });
+
+  // Helper functions for profile management
+  const loadProfileParameters = (profile: OptimizationProfile) => {
+    if (profile.profileConfig?.algorithmParameters?.backwardsScheduling) {
+      const config = profile.profileConfig.algorithmParameters.backwardsScheduling;
+      setParameters(prev => ({
+        ...prev,
+        bufferTime: config.bufferTime || prev.bufferTime,
+        allowOvertime: config.allowOvertime || prev.allowOvertime,
+        includePlannedOrders: profile.profileConfig?.includePlannedOrders?.enabled || prev.includePlannedOrders,
+        plannedOrderWeight: profile.profileConfig?.includePlannedOrders?.weight || prev.plannedOrderWeight
+      }));
+    }
+  };
+
+  const handleSelectProfile = (profileId: number) => {
+    setSelectedProfileId(profileId);
+    const profile = profiles.find(p => p.id === profileId);
+    if (profile) {
+      loadProfileParameters(profile);
+      toast({
+        title: "Profile Selected",
+        description: `Loaded parameters from "${profile.name}" profile.`,
+      });
+    }
+  };
 
   const handleRunScheduling = () => {
     setIsRunning(true);
@@ -299,8 +452,9 @@ export default function BackwardsSchedulingAlgorithm() {
       </div>
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="profiles">Profiles</TabsTrigger>
           <TabsTrigger value="algorithm">How it Works</TabsTrigger>
           <TabsTrigger value="parameters">Parameters</TabsTrigger>
           <TabsTrigger value="results">Results</TabsTrigger>
@@ -392,6 +546,137 @@ export default function BackwardsSchedulingAlgorithm() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="profiles" className="space-y-6">
+          {/* Profile Selection */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookmarkPlus className="w-5 h-5 text-emerald-500" />
+                Optimization Profiles
+                <Badge variant="outline">{profiles.length} profiles</Badge>
+              </CardTitle>
+              <CardDescription>
+                Select and manage optimization profiles to control algorithm execution parameters
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <Label>Select Profile</Label>
+                  <Select 
+                    value={selectedProfileId?.toString() || ''} 
+                    onValueChange={(value) => value && handleSelectProfile(parseInt(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose an optimization profile..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {profiles.map((profile) => (
+                        <SelectItem key={profile.id} value={profile.id.toString()}>
+                          <div className="flex items-center gap-2">
+                            <span>{profile.name}</span>
+                            {profile.isDefault && <Star className="w-3 h-3 text-yellow-500" />}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button 
+                  onClick={() => setShowCreateProfile(true)}
+                  variant="outline"
+                  className="mt-6"
+                >
+                  <BookmarkPlus className="w-4 h-4 mr-2" />
+                  Create Profile
+                </Button>
+              </div>
+
+              {selectedProfileId && (
+                <div className="mt-4 p-4 bg-emerald-50 rounded-lg">
+                  {(() => {
+                    const profile = profiles.find(p => p.id === selectedProfileId);
+                    if (!profile) return null;
+                    
+                    return (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-semibold text-emerald-800">{profile.name}</h4>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => setShowEditProfile(profile.id)}
+                            >
+                              <Edit className="w-3 h-3 mr-1" />
+                              Edit
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => deleteProfileMutation.mutate(profile.id)}
+                            >
+                              <Trash2 className="w-3 h-3 mr-1" />
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                        {profile.description && (
+                          <p className="text-sm text-emerald-700">{profile.description}</p>
+                        )}
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="font-medium">Primary Objective:</span> {' '}
+                            <span className="capitalize">{profile.profileConfig?.objectives?.primary?.replace('_', ' ')}</span>
+                          </div>
+                          <div>
+                            <span className="font-medium">Planned Orders:</span> {' '}
+                            <span>{profile.profileConfig?.includePlannedOrders?.enabled ? 'Enabled' : 'Disabled'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Profile Usage History */}
+          {profileHistory.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <History className="w-5 h-5 text-blue-500" />
+                  Recent Profile Usage
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {profileHistory.slice(0, 5).map((usage) => {
+                    const profile = profiles.find(p => p.id === usage.profileId);
+                    return (
+                      <div key={usage.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium">{profile?.name || 'Unknown Profile'}</p>
+                          <p className="text-sm text-gray-600">
+                            {new Date(usage.createdAt).toLocaleDateString()} at {new Date(usage.createdAt).toLocaleTimeString()}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-gray-600">
+                            {usage.executionResults?.executionTime ? `${usage.executionResults.executionTime}min` : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="algorithm" className="space-y-6">
@@ -802,6 +1087,305 @@ export default function BackwardsSchedulingAlgorithm() {
         onOpenChange={setShowSummaryDialog}
         summary={optimizationSummary}
       />
+
+      {/* Create Profile Dialog */}
+      <ProfileFormDialog
+        open={showCreateProfile}
+        onOpenChange={setShowCreateProfile}
+        onSubmit={(data) => createProfileMutation.mutate(data)}
+        isLoading={createProfileMutation.isPending}
+        title="Create Optimization Profile"
+        description="Create a new optimization profile for backwards scheduling algorithm"
+      />
+
+      {/* Edit Profile Dialog */}
+      {showEditProfile && (
+        <ProfileFormDialog
+          open={true}
+          onOpenChange={() => setShowEditProfile(null)}
+          onSubmit={(data) => updateProfileMutation.mutate({ id: showEditProfile, data })}
+          isLoading={updateProfileMutation.isPending}
+          title="Edit Optimization Profile"
+          description="Modify the optimization profile settings"
+          defaultValues={profiles.find(p => p.id === showEditProfile)}
+        />
+      )}
     </div>
+  );
+}
+
+// Profile Form Dialog Component
+interface ProfileFormDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (data: ProfileFormData) => void;
+  isLoading: boolean;
+  title: string;
+  description: string;
+  defaultValues?: OptimizationProfile;
+}
+
+function ProfileFormDialog({ open, onOpenChange, onSubmit, isLoading, title, description, defaultValues }: ProfileFormDialogProps) {
+  const form = useForm<ProfileFormData>({
+    resolver: zodResolver(profileFormSchema),
+    defaultValues: defaultValues ? {
+      name: defaultValues.name,
+      description: defaultValues.description || '',
+      algorithmId: defaultValues.algorithmId,
+      profileConfig: defaultValues.profileConfig || {
+        scope: { plantIds: [], resourceIds: [] },
+        objectives: { primary: 'minimize_makespan', weights: { cost: 0.3, time: 0.7 } },
+        constraints: { maxExecutionTime: 60, resourceCapacityLimits: true },
+        algorithmParameters: {
+          backwardsScheduling: { bufferTime: 0.5, allowOvertime: false, prioritizeByDueDate: true }
+        },
+        includePlannedOrders: { enabled: true, weight: 0.7 }
+      }
+    } : {
+      name: '',
+      description: '',
+      algorithmId: 1,
+      profileConfig: {
+        scope: { plantIds: [], resourceIds: [] },
+        objectives: { primary: 'minimize_makespan', weights: { cost: 0.3, time: 0.7 } },
+        constraints: { maxExecutionTime: 60, resourceCapacityLimits: true },
+        algorithmParameters: {
+          backwardsScheduling: { bufferTime: 0.5, allowOvertime: false, prioritizeByDueDate: true }
+        },
+        includePlannedOrders: { enabled: true, weight: 0.7 }
+      }
+    }
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <p className="text-sm text-gray-600">{description}</p>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Basic Profile Information */}
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Profile Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Fast Production Schedule" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Describe when to use this profile..."
+                        rows={2}
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Objectives Configuration */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Optimization Objectives</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="profileConfig.objectives.primary"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Primary Objective</FormLabel>
+                      <FormControl>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="minimize_makespan">Minimize Makespan</SelectItem>
+                            <SelectItem value="maximize_utilization">Maximize Utilization</SelectItem>
+                            <SelectItem value="minimize_cost">Minimize Cost</SelectItem>
+                            <SelectItem value="minimize_tardiness">Minimize Tardiness</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Algorithm Parameters */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Algorithm Parameters</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="profileConfig.algorithmParameters.backwardsScheduling.bufferTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Buffer Time (hours)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.1" 
+                          min="0" 
+                          max="5"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="profileConfig.algorithmParameters.backwardsScheduling.allowOvertime"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between">
+                      <FormLabel>Allow Overtime</FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="profileConfig.includePlannedOrders.enabled"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between">
+                      <FormLabel>Include Planned Orders</FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch('profileConfig.includePlannedOrders.enabled') && (
+                  <FormField
+                    control={form.control}
+                    name="profileConfig.includePlannedOrders.weight"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Planned Orders Weight</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.1" 
+                            min="0" 
+                            max="1"
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Constraints */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Constraints</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="profileConfig.constraints.maxExecutionTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Max Execution Time (seconds)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="10" 
+                          max="600"
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="profileConfig.constraints.resourceCapacityLimits"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between">
+                      <FormLabel>Enforce Resource Capacity Limits</FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Save className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Profile
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }
