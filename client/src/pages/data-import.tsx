@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import * as XLSX from 'xlsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -38,11 +39,18 @@ function DataImport() {
   // Data type selector for Manage Data tab - default to resources which has sample data
   const [selectedManageDataType, setSelectedManageDataType] = useState('resources');
   
+  // Import data type selector
+  const [selectedImportDataType, setSelectedImportDataType] = useState('');
+  
   // AI Generation state
   const [showAIDialog, setShowAIDialog] = useState(false);
   const [showAISummary, setShowAISummary] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiSampleSize, setAiSampleSize] = useState<'small' | 'medium' | 'large'>('medium');
+  
+  // AI Modification state  
+  const [showModifyDialog, setShowModifyDialog] = useState(false);
+  const [modifyPrompt, setModifyPrompt] = useState('');
   const [aiGenerationResult, setAiGenerationResult] = useState<any>(null);
   const [deleteExistingData, setDeleteExistingData] = useState(false);
 
@@ -71,6 +79,231 @@ function DataImport() {
   };
 
   const [showConsolidatedDialog, setShowConsolidatedDialog] = useState(false);
+
+  // File upload handlers
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedImportDataType) return;
+
+    const isCSV = file.name.endsWith('.csv');
+    const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+    
+    if (!isCSV && !isExcel) {
+      toast({
+        title: "Invalid file format",
+        description: "Please upload a CSV or Excel file (.csv, .xlsx, .xls)",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      let data: any[] = [];
+      
+      if (isCSV) {
+        // Handle CSV files
+        const text = await file.text();
+        const lines = text.split('\n');
+        if (lines.length < 2) {
+          toast({
+            title: "Invalid CSV file",
+            description: "CSV file must have header row and at least one data row",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+        data = lines.slice(1)
+          .filter(line => line.trim())
+          .map(line => {
+            const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+            const obj: any = {};
+            headers.forEach((header, index) => {
+              obj[header] = values[index] || '';
+            });
+            return obj;
+          });
+      } else {
+        // Handle Excel files
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        data = XLSX.utils.sheet_to_json(worksheet);
+      }
+
+      if (data.length === 0) {
+        toast({
+          title: "No data found",
+          description: "The file doesn't contain any valid data rows",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Process the data for import
+      await processImportData(data, selectedImportDataType);
+      
+    } catch (error) {
+      console.error('File upload error:', error);
+      toast({
+        title: "File upload failed",
+        description: "Error processing the file. Please check the format and try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const processImportData = async (data: any[], dataType: string) => {
+    try {
+      setIsImporting(true);
+      const authToken = localStorage.getItem('authToken');
+      const endpoint = getImportApiEndpoint(dataType);
+      
+      let successCount = 0;
+      let errorCount = 0;
+      
+      for (const record of data) {
+        try {
+          const response = await fetch(`/api/${endpoint}`, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(record)
+          });
+          
+          if (response.ok) {
+            successCount++;
+          } else {
+            errorCount++;
+          }
+        } catch (error) {
+          errorCount++;
+        }
+      }
+      
+      toast({
+        title: "Import completed",
+        description: `Successfully imported ${successCount} records. ${errorCount > 0 ? `${errorCount} failed.` : ''}`,
+        variant: successCount > 0 ? "default" : "destructive"
+      });
+      
+      // Clear the file input
+      const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
+      
+    } catch (error) {
+      console.error('Import error:', error);
+      toast({
+        title: "Import failed",
+        description: "Error importing data. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const getImportApiEndpoint = (dataType: string) => {
+    const endpoints: Record<string, string> = {
+      plants: 'plants',
+      resources: 'resources', 
+      capabilities: 'capabilities',
+      productionOrders: 'production-orders',
+      operations: 'operations',
+      departments: 'departments',
+      workCenters: 'work-centers',
+      employees: 'employees',
+      users: 'users',
+      items: 'items',
+      storageLocations: 'storage-locations',
+      inventory: 'inventory',
+      inventoryLots: 'inventory-lots',
+      vendors: 'vendors',
+      customers: 'customers',
+      salesOrders: 'sales-orders',
+      purchaseOrders: 'purchase-orders',
+      transferOrders: 'transfer-orders',
+      billsOfMaterial: 'bills-of-material',
+      routings: 'routings',
+      recipes: 'recipes',
+      forecasts: 'forecasts'
+    };
+    return endpoints[dataType] || dataType;
+  };
+
+  const downloadTemplate = (dataType: string) => {
+    if (!dataType) return;
+    
+    // Create CSV content based on data type
+    const fields = getTemplateFieldDefinitions(dataType);
+    const headers = fields.map(f => f.label).join(',');
+    const sampleRow = fields.map(f => {
+      switch (f.type) {
+        case 'number': return '100';
+        case 'date': return '2024-01-01';
+        case 'select': return f.options?.[0] || 'Option1';
+        case 'email': return 'example@company.com';
+        default: return `Sample ${f.label}`;
+      }
+    }).join(',');
+    
+    const csvContent = `${headers}\n${sampleRow}`;
+    
+    // Download the file
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${dataType}_template.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const getTemplateFieldDefinitions = (selectedDataType: string) => {
+    switch (selectedDataType) {
+      case 'plants':
+        return [
+          { key: 'name', label: 'Plant Name', type: 'text', required: true },
+          { key: 'location', label: 'Location', type: 'text' },
+          { key: 'manager', label: 'Manager', type: 'text' },
+          { key: 'capacity', label: 'Capacity', type: 'number' },
+          { key: 'description', label: 'Description', type: 'text' }
+        ];
+      case 'resources':
+        return [
+          { key: 'name', label: 'Resource Name', type: 'text', required: true },
+          { key: 'type', label: 'Type', type: 'select', options: ['Machine', 'Tool', 'Equipment', 'Workstation'] },
+          { key: 'capacity', label: 'Capacity', type: 'number' },
+          { key: 'location', label: 'Location', type: 'text' },
+          { key: 'description', label: 'Description', type: 'text' }
+        ];
+      case 'capabilities':
+        return [
+          { key: 'name', label: 'Capability Name', type: 'text', required: true },
+          { key: 'description', label: 'Description', type: 'text' },
+          { key: 'category', label: 'Category', type: 'select', options: ['Manufacturing', 'Assembly', 'Quality Control', 'Packaging'] }
+        ];
+      case 'productionOrders':
+        return [
+          { key: 'orderNumber', label: 'Order Number', type: 'text', required: true },
+          { key: 'productName', label: 'Product Name', type: 'text', required: true },
+          { key: 'quantity', label: 'Quantity', type: 'number', required: true },
+          { key: 'priority', label: 'Priority', type: 'select', options: ['Low', 'Medium', 'High', 'Critical'] },
+          { key: 'status', label: 'Status', type: 'select', options: ['Pending', 'In Progress', 'Completed', 'On Hold'] },
+          { key: 'dueDate', label: 'Due Date', type: 'date' },
+          { key: 'description', label: 'Description', type: 'text' }
+        ];
+      default:
+        return [
+          { key: 'name', label: 'Name', type: 'text', required: true },
+          { key: 'description', label: 'Description', type: 'text' }
+        ];
+    }
+  };
 
   // Structured Entry Component
   function StructuredEntryComponent() {
@@ -2148,15 +2381,15 @@ Create authentic manufacturing data that reflects this company's operations.`;
             <TabsContent value="import" className="mt-6">
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-medium mb-2">Import CSV Data</h3>
-                  <p className="text-sm text-gray-600 mb-4">Upload CSV files to import your manufacturing data</p>
+                  <h3 className="text-lg font-medium mb-2">Import Data Files</h3>
+                  <p className="text-sm text-gray-600 mb-4">Upload CSV or Excel files to import your manufacturing data</p>
                 </div>
                 
                 {/* Data Type Selection for Import */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="import-data-type">Select Data Type</Label>
-                    <Select>
+                    <Select value={selectedImportDataType} onValueChange={setSelectedImportDataType}>
                       <SelectTrigger>
                         <SelectValue placeholder="Choose data type to import" />
                       </SelectTrigger>
@@ -2180,17 +2413,73 @@ Create authentic manufacturing data that reflects this company's operations.`;
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="flex items-end">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => downloadTemplate(selectedImportDataType)}
+                      disabled={!selectedImportDataType}
+                      className="gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download Template
+                    </Button>
+                  </div>
                 </div>
 
                 {/* File Upload Area */}
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                   <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-lg font-medium mb-2">Drop your CSV file here</p>
-                  <p className="text-sm text-gray-500 mb-4">or click to browse files</p>
-                  <Button variant="outline">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Choose File
-                  </Button>
+                  <p className="text-lg font-medium mb-2">Drop your CSV or Excel file here</p>
+                  <p className="text-sm text-gray-500 mb-4">Supports .csv, .xlsx, and .xls files</p>
+                  <input
+                    type="file"
+                    accept=".csv,.xlsx,.xls"
+                    onChange={(e) => handleFileUpload(e)}
+                    className="hidden"
+                    id="file-upload"
+                    disabled={!selectedImportDataType}
+                  />
+                  <label htmlFor="file-upload">
+                    <Button variant="outline" asChild disabled={!selectedImportDataType}>
+                      <span className="cursor-pointer">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Choose File
+                      </span>
+                    </Button>
+                  </label>
+                </div>
+
+                {/* Import Status */}
+                {isImporting && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center space-x-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                      <span className="text-sm text-blue-800">Importing data...</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Import Templates Helper */}
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <FileSpreadsheet className="h-4 w-4 text-amber-600" />
+                    <span className="text-sm font-medium text-amber-800">Need a template?</span>
+                  </div>
+                  <p className="text-sm text-amber-700 mb-3">
+                    Download a properly formatted template for your selected data type to ensure successful import.
+                  </p>
+                  {selectedImportDataType && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => downloadTemplate(selectedImportDataType)}
+                      className="bg-white border-amber-300 text-amber-700 hover:bg-amber-50"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download {supportedDataTypes.find(dt => dt.key === selectedImportDataType)?.label} Template
+                    </Button>
+                  )}
                 </div>
 
                 {/* Import Options */}
@@ -2289,9 +2578,18 @@ Create authentic manufacturing data that reflects this company's operations.`;
             
             <TabsContent value="templates" className="mt-6">
               <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Download Templates</h3>
-                  <p className="text-sm text-gray-600 mb-4">Download CSV templates with sample data and proper formatting</p>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <FileSpreadsheet className="h-5 w-5 text-blue-600" />
+                    <h3 className="text-lg font-medium text-blue-800">Import Templates</h3>
+                  </div>
+                  <p className="text-sm text-blue-700 mb-2">
+                    Download properly formatted templates to use with the <strong>Import Data</strong> tab. 
+                    These templates include sample data and proper column headers for successful imports.
+                  </p>
+                  <p className="text-xs text-blue-600">
+                    💡 Tip: Download a template, fill it with your data, then upload it in the Import tab above.
+                  </p>
                 </div>
 
                 {/* Multi-Template Option */}
