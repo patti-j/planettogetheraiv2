@@ -2,6 +2,14 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **AI Generation Dialog Restoration & Complete Data Type Integration (July 28, 2025)**:
+- Restored original comprehensive AI generation dialog with company information display, industry-specific sample sizing, and enhanced UX
+- Fixed missing AI mutation implementations and dialog components that were preventing AI functionality from working
+- Enhanced AI generation dialog includes detailed company context, recommended data types with badges, and pharmaceutical industry enterprise scaling
+- Restored visual sample size selection with interactive cards showing industry-specific record counts and descriptions
+- Added comprehensive delete existing data options with proper warnings and confirmation messaging
+- Enhanced dialog layout with proper mobile responsiveness and wider dialog design (max-w-4xl) for better user experience
+
 ✓ **Complete Data Type Integration Across All Tabs with Mobile Search Optimization (July 28, 2025)**:
 - Added comprehensive categorized data type dropdowns to all tabs: Import Data, Structured Entry, Natural Text Entry, and Templates
 - Fixed SQL syntax error in pagination queries that was preventing data from loading properly in ManageData tab

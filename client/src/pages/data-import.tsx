@@ -1987,76 +1987,248 @@ Create authentic manufacturing data that reflects this company's operations.`;
         </CardContent>
       </Card>
 
-      {/* AI Generation Dialog */}
+      {/* AI Sample Data Generation Dialog */}
       <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent 
+          className="w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto"
+          onOpenAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
               <Sparkles className="h-5 w-5 text-purple-600" />
               AI Sample Data Generation
             </DialogTitle>
-            <DialogDescription>
-              Generate realistic manufacturing data using AI based on your company profile
+            <DialogDescription className="text-xs sm:text-sm">
+              Let AI generate realistic sample data for your manufacturing company based on your onboarding information.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="ai-prompt">AI Generation Prompt</Label>
+
+          <div className="space-y-6">
+            {/* Company Info Display */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="font-medium text-blue-900 mb-2">Company Information</h3>
+              <div className="text-sm text-blue-800">
+                <p>AI will generate data based on your company information from the onboarding process.</p>
+                {(() => {
+                  const dataTypesToGenerate = selectedDataTypes.length > 0 ? selectedDataTypes : recommendedDataTypes;
+                  return dataTypesToGenerate.length > 0 && (
+                    <div className="mt-3">
+                      <p className="mb-2">
+                        {selectedDataTypes.length > 0 ? 'Selected' : 'Recommended'} data types: 
+                        <Badge variant="secondary" className="ml-2">{dataTypesToGenerate.length} types</Badge>
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {dataTypesToGenerate.map(key => {
+                          const dataType = supportedDataTypes.find(dt => dt.key === key);
+                          return (
+                            <Badge key={key} variant="outline" className="text-xs bg-white/50">
+                              {dataType?.label}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Sample Size Selection */}
+            <div className="space-y-3">
+              <Label className="text-sm sm:text-base font-medium">Sample Data Size</Label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {(() => {
+                  // Get industry-specific descriptions
+                  const getIndustryDescriptions = () => {
+                    const companyInfo = userPreferences && 'companyInfo' in userPreferences ? userPreferences.companyInfo as any : {};
+                    const industry = companyInfo.industry?.toLowerCase() || 'general manufacturing';
+                    
+                    if (industry.includes('automotive')) {
+                      return {
+                        small: { records: '1-2 plants, 4-6 resources per plant, 8-12 orders per plant, 2-4 operations per order', description: 'Minimal automotive production setup' },
+                        medium: { records: '2-4 plants, 5-9 resources per plant, 10-18 orders per plant, 3-6 operations per order', description: 'Typical automotive production' },
+                        large: { records: '4-8 plants, 6-10 resources per plant, 12-19 orders per plant, 4-8 operations per order', description: 'Large automotive manufacturing' }
+                      };
+                    } else if (industry.includes('pharmaceutical')) {
+                      return {
+                        small: { records: '1-2 plants, 8-12 resources per plant, 25-40 orders per plant, 4-7 operations per order', description: 'Small pharma production setup' },
+                        medium: { records: '2-4 plants, 12-18 resources per plant, 40-65 orders per plant, 5-8 operations per order', description: 'Mid-scale pharmaceutical production' },
+                        large: { records: '5-15 plants, 20-30 resources per plant, 80-120 orders per plant, 8-12 operations per order', description: 'Enterprise pharmaceutical operations' }
+                      };
+                    } else if (industry.includes('electronics')) {
+                      return {
+                        small: { records: '1-2 plants, 5-8 resources per plant, 12-20 orders per plant, 2-4 operations per order', description: 'Small electronics production' },
+                        medium: { records: '2-4 plants, 6-10 resources per plant, 15-25 orders per plant, 3-6 operations per order', description: 'Mid-scale electronics manufacturing' },
+                        large: { records: '4-7 plants, 9-14 resources per plant, 21-36 orders per plant, 4-8 operations per order', description: 'Large electronics operations' }
+                      };
+                    } else if (industry.includes('food') || industry.includes('beverage')) {
+                      return {
+                        small: { records: '1-2 plants, 2-4 resources per plant, 10-18 orders per plant, 2-4 operations per order', description: 'Small food/beverage production' },
+                        medium: { records: '2-4 plants, 3-5 resources per plant, 12-20 orders per plant, 3-6 operations per order', description: 'Regional food manufacturing' },
+                        large: { records: '3-6 plants, 5-8 resources per plant, 20-30 orders per plant, 4-8 operations per order', description: 'National food/beverage operations' }
+                      };
+                    } else {
+                      return {
+                        small: { records: '1-2 plants, 2-3 resources per plant, 3-5 orders per plant, 2-4 operations per order', description: 'Minimal data for quick testing' },
+                        medium: { records: '3-5 plants, 2-3 resources per plant, 4-6 orders per plant, 3-5 operations per order', description: 'Balanced dataset for evaluation' },
+                        large: { records: '5-10 plants, 2-4 resources per plant, 3-5 orders per plant, 3-5 operations per order', description: 'Comprehensive data for full testing' }
+                      };
+                    }
+                  };
+                  
+                  const industryDescriptions = getIndustryDescriptions();
+                  
+                  return [
+                    {
+                      value: 'small',
+                      label: 'Small Sample',
+                      description: industryDescriptions.small.description,
+                      details: industryDescriptions.small.records
+                    },
+                    {
+                      value: 'medium',
+                      label: 'Medium Sample',
+                      description: industryDescriptions.medium.description,
+                      details: industryDescriptions.medium.records
+                    },
+                    {
+                      value: 'large',
+                      label: 'Large Sample',
+                      description: industryDescriptions.large.description,
+                      details: industryDescriptions.large.records
+                    }
+                  ];
+                })().map((option) => (
+                  <div
+                    key={option.value}
+                    className={`relative cursor-pointer rounded-lg border-2 p-4 transition-all ${
+                      aiSampleSize === option.value
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setAiSampleSize(option.value as 'small' | 'medium' | 'large')}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <div className={`flex h-4 w-4 items-center justify-center rounded-full border-2 ${
+                        aiSampleSize === option.value ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+                      }`}>
+                        {aiSampleSize === option.value && (
+                          <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium ${
+                          aiSampleSize === option.value ? 'text-blue-900' : 'text-gray-900'
+                        }`}>
+                          {option.label}
+                        </p>
+                        <p className={`text-xs ${
+                          aiSampleSize === option.value ? 'text-blue-700' : 'text-gray-600'
+                        }`}>
+                          {option.description}
+                        </p>
+                        <p className={`text-xs ${
+                          aiSampleSize === option.value ? 'text-blue-600' : 'text-gray-500'
+                        }`}>
+                          {option.details}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Delete Existing Data Option */}
+            <div className="space-y-3">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div className="space-y-3 flex-1">
+                    <div>
+                      <h4 className="font-medium text-amber-900">Data Generation Options</h4>
+                      <p className="text-sm text-amber-800 mt-1">
+                        Choose whether to add to existing data or start fresh.
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        id="delete-existing"
+                        checked={deleteExistingData}
+                        onCheckedChange={setDeleteExistingData}
+                        className="mt-0.5"
+                      />
+                      <div className="space-y-1">
+                        <Label 
+                          htmlFor="delete-existing" 
+                          className="text-sm font-medium text-amber-900 cursor-pointer"
+                        >
+                          Delete all existing master data first
+                        </Label>
+                        <p className="text-xs text-amber-700">
+                          ⚠️ <strong>Warning:</strong> This will permanently delete all existing plants, resources, capabilities, 
+                          production orders, operations, and other master data. This action cannot be undone.
+                        </p>
+                        {deleteExistingData && (
+                          <div className="bg-red-50 border border-red-200 rounded p-2 mt-2">
+                            <p className="text-xs text-red-800 font-medium">
+                              🔥 Deletion confirmed: All master data will be permanently removed before generating new data.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* AI Prompt Editor */}
+            <div className="space-y-3">
+              <Label htmlFor="ai-prompt" className="text-sm sm:text-base font-medium">
+                Generation Instructions
+              </Label>
               <Textarea
                 id="ai-prompt"
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
-                className="min-h-[120px]"
-                placeholder="Describe the type of manufacturing data you need..."
+                placeholder="Describe what kind of sample data you want to generate..."
+                className="min-h-[150px] sm:min-h-[200px] text-sm"
+                autoFocus={false}
               />
+              <p className="text-xs text-muted-foreground">
+                Edit the prompt above to customize the AI-generated sample data. The prompt includes your company information and selected data types.
+              </p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Sample Size</Label>
-                <Select value={aiSampleSize} onValueChange={(value: any) => setAiSampleSize(value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select sample size" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="small">Small (1-2 plants)</SelectItem>
-                    <SelectItem value="medium">Medium (3-5 plants)</SelectItem>
-                    <SelectItem value="large">Large (5-10 plants)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center space-x-2 pt-6">
-                <input 
-                  type="checkbox" 
-                  id="delete-existing" 
-                  checked={deleteExistingData}
-                  onChange={(e) => setDeleteExistingData(e.target.checked)}
-                  className="rounded" 
-                />
-                <Label htmlFor="delete-existing" className="text-sm">Delete existing data first</Label>
-              </div>
-            </div>
-            <div className="flex justify-end space-x-3">
-              <Button variant="outline" onClick={() => setShowAIDialog(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={executeAIGeneration}
-                disabled={aiGenerationMutation.isPending || !aiPrompt.trim()}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-              >
-                {aiGenerationMutation.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Generate Data
-                  </>
-                )}
-              </Button>
-            </div>
+
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-between gap-3 pt-6 border-t">
+            <Button
+              variant="outline"
+              onClick={() => setShowAIDialog(false)}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={executeAIGeneration}
+              disabled={aiGenerationMutation.isPending}
+              className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            >
+              {aiGenerationMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Generate Sample Data</span>
+                  <span className="sm:hidden">Generate Data</span>
+                </>
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
