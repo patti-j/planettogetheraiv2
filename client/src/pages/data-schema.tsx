@@ -160,9 +160,10 @@ const getCategoryColor = (category: string): string => {
 // Feature to table mapping - defines which tables are relevant for each manufacturing feature
 const featureTableMapping: Record<string, string[]> = {
   'scheduling': [
-    'production_orders', 'operations', 'resources', 'resource_capabilities', 'capabilities',
+    'production_orders', 'planned_orders', 'operations', 'resources', 'resource_capabilities', 'capabilities',
     'shift_templates', 'resource_shift_assignments', 'resource_downtime', 'resource_overtime',
-    'production_versions', 'routings', 'routing_operations', 'work_centers', 'calendar_exceptions'
+    'production_versions', 'routings', 'routing_operations', 'work_centers', 'calendar_exceptions',
+    'recipes', 'bills_of_materials', 'bom_items'
   ],
   'inventory': [
     'stock_items', 'inventory_transactions', 'warehouses', 'storage_locations', 
