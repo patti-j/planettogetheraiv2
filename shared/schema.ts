@@ -3772,7 +3772,7 @@ export const optimizationAlgorithms = pgTable("optimization_algorithms", {
   name: text("name").notNull(),
   displayName: text("display_name").notNull(),
   description: text("description"),
-  category: text("category").notNull(), // schedule_optimization, inventory_optimization, capacity_optimization, demand_forecasting, ctp_optimization
+  category: text("category").notNull(), // schedule_optimization, inventory_optimization, capacity_optimization, demand_forecasting, ctp_optimization, order_optimization
   type: text("type").notNull(), // standard, custom, derived
   baseAlgorithmId: integer("base_algorithm_id").references(() => optimizationAlgorithms.id), // For derived algorithms
   version: text("version").notNull().default("1.0.0"),

@@ -236,7 +236,8 @@ export default function OptimizationStudio() {
     { value: "inventory_optimization", label: "Inventory Optimization" },
     { value: "capacity_optimization", label: "Capacity Optimization" },
     { value: "demand_forecasting", label: "Demand Forecasting" },
-    { value: "ctp_optimization", label: "Capable to Promise (CTP) Optimization" }
+    { value: "ctp_optimization", label: "Capable to Promise (CTP) Optimization" },
+    { value: "order_optimization", label: "Order Optimization" }
   ];
 
   const getStatusColor = (status: string) => {

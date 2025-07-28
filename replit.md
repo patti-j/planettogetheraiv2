@@ -2,6 +2,16 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Master Data Setup Feature Selection Consistency Fix & Order Optimization Category Addition (July 28, 2025)**:
+- Fixed Master Data Setup feature selection inconsistency by updating availableFeatures to match onboarding exactly
+- Reduced feature list from 10 to 6 features matching onboarding welcome page selections for consistent user experience
+- Added missing Brain and Wrench icon imports to support new feature icons in Master Data Setup
+- Fixed all TypeScript compilation errors including missing transformData, importMutation, and calculateRecommendedDataTypes functions  
+- Enhanced feature selection dialog with proper type safety and error handling for seamless user workflow
+- Added "Order Optimization" to optimization studio category list for enhanced scheduling capabilities
+- Updated database schema comment to include order_optimization category alongside existing optimization types
+- Feature selection dialog now properly integrated with backend API for persistent feature updates across onboarding and Master Data Setup
+
 ✓ **Excel-Like Mobile Cell Editing Implementation & Templates Layout Fix (July 28, 2025)**:
 - Fixed critical mobile keyboard input issue where typing in cells wouldn't display text
 - Implemented local state management for immediate UI responsiveness during cell editing  
