@@ -16854,6 +16854,25 @@ Response must be valid JSON:
         
         const columnsResult = await db.execute(columnsQuery, [tableName]);
         
+        // Get foreign key relationships for this table
+        const foreignKeysQuery = `
+          SELECT 
+            kcu.column_name,
+            ccu.table_name AS foreign_table_name,
+            ccu.column_name AS foreign_column_name
+          FROM information_schema.table_constraints AS tc
+          JOIN information_schema.key_column_usage AS kcu
+            ON tc.constraint_name = kcu.constraint_name
+            AND tc.table_schema = kcu.table_schema
+          JOIN information_schema.constraint_column_usage AS ccu
+            ON ccu.constraint_name = tc.constraint_name
+            AND ccu.table_schema = tc.table_schema
+          WHERE tc.constraint_type = 'FOREIGN KEY'
+            AND tc.table_name = $1;
+        `;
+        
+        const foreignKeysResult = await db.execute(foreignKeysQuery, [tableName]);
+        
         // Categorize table
         let category = 'Other';
         if (tableName.includes('user') || tableName.includes('role') || tableName.includes('auth') || tableName.includes('session')) {
@@ -16876,6 +16895,15 @@ Response must be valid JSON:
           category = 'System Configuration';
         }
         
+        // Create a map of foreign keys by column name
+        const foreignKeyMap = new Map();
+        foreignKeysResult.rows.forEach((fk: any) => {
+          foreignKeyMap.set(fk.column_name, {
+            table: fk.foreign_table_name,
+            column: fk.foreign_column_name
+          });
+        });
+        
         tables.push({
           name: tableName,
           description: (tableRow as any).table_comment || `Database table: ${tableName}`,
@@ -16885,9 +16913,10 @@ Response must be valid JSON:
             type: col.data_type,
             nullable: col.is_nullable === 'YES',
             default: col.column_default,
-            comment: col.column_comment || ''
+            comment: col.column_comment || '',
+            foreignKey: foreignKeyMap.get(col.column_name) || null
           })),
-          relationships: [] // Simplified - no relationships for now
+          relationships: [] // Will be populated later if needed
         });
       }
       
