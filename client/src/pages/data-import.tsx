@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -365,26 +365,81 @@ Create authentic manufacturing data that reflects this company's operations.`;
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
-    // Fetch data based on data type
-    const { data: items = [], isLoading, error } = useQuery({
-      queryKey: [`/api/${getApiEndpoint(dataType)}`],
-      enabled: true,
+    // Map data types to table names for pagination API
+    const getTableName = (dataType: string) => {
+      const mapping: Record<string, string> = {
+        'plants': 'plants',
+        'resources': 'resources',
+        'capabilities': 'capabilities',
+        'productionOrders': 'production_orders',
+        'operations': 'operations',
+        'vendors': 'vendors',
+        'customers': 'customers',
+        'stockItems': 'stock_items'
+      };
+      return mapping[dataType] || dataType;
+    };
+
+    // Use high-performance pagination API
+    const { data: paginatedData, isLoading, error } = useQuery({
+      queryKey: [`/api/data-management/${getTableName(dataType)}`, currentPage, searchTerm],
+      queryFn: async () => {
+        const authToken = localStorage.getItem('authToken');
+        const response = await fetch(`/api/data-management/${getTableName(dataType)}`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({
+            pagination: {
+              page: currentPage,
+              limit: itemsPerPage
+            },
+            search: searchTerm ? {
+              query: searchTerm,
+              fields: ['name', 'description']
+            } : undefined,
+            sort: [{ field: 'name', direction: 'asc' }]
+          })
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch data');
+        }
+        return response.json();
+      },
+      enabled: !!dataType
     });
 
-    const itemsArray = Array.isArray(items) ? items : [];
-    const totalItems = itemsArray.length;
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const currentItems = itemsArray.slice(startIndex, endIndex);
+    // Extract data and pagination info from API response
+    const currentItems = paginatedData?.data || [];
+    const pagination = paginatedData?.pagination || {
+      page: 1,
+      limit: itemsPerPage,
+      total: 0,
+      totalPages: 1,
+      hasNext: false,
+      hasPrev: false
+    };
+
+    // Reset to page 1 when search term changes
+    React.useEffect(() => {
+      setCurrentPage(1);
+      setSelectedItems(new Set());
+      setBulkSelectMode(false);
+    }, [searchTerm, dataType]);
 
     // Update mutation
     const updateMutation = useMutation({
       mutationFn: async (updatedItem: any) => {
+        const authToken = localStorage.getItem('authToken');
         const endpoint = getApiEndpoint(dataType);
         const response = await fetch(`/api/${endpoint}/${updatedItem.id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
           body: JSON.stringify(updatedItem)
         });
         if (!response.ok) throw new Error('Failed to update item');
@@ -392,7 +447,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
       },
       onSuccess: () => {
         toast({ title: "Success", description: "Item updated successfully" });
-        queryClient.invalidateQueries({ queryKey: [`/api/${getApiEndpoint(dataType)}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/data-management/${getTableName(dataType)}`] });
         setEditingItem(null);
       },
       onError: (error: any) => {
@@ -403,10 +458,14 @@ Create authentic manufacturing data that reflects this company's operations.`;
     // Create mutation
     const createMutation = useMutation({
       mutationFn: async (item: any) => {
+        const authToken = localStorage.getItem('authToken');
         const endpoint = getApiEndpoint(dataType);
         const response = await fetch(`/api/${endpoint}`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
           body: JSON.stringify(item)
         });
         if (!response.ok) throw new Error('Failed to create item');
@@ -414,7 +473,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
       },
       onSuccess: () => {
         toast({ title: "Success", description: "Item created successfully" });
-        queryClient.invalidateQueries({ queryKey: [`/api/${getApiEndpoint(dataType)}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/data-management/${getTableName(dataType)}`] });
         setShowAddDialog(false);
         setNewItem({});
       },
@@ -426,16 +485,49 @@ Create authentic manufacturing data that reflects this company's operations.`;
     // Delete mutation
     const deleteMutation = useMutation({
       mutationFn: async (id: number) => {
+        const authToken = localStorage.getItem('authToken');
         const endpoint = getApiEndpoint(dataType);
         const response = await fetch(`/api/${endpoint}/${id}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          headers: { 
+            'Authorization': `Bearer ${authToken}`
+          }
         });
         if (!response.ok) throw new Error('Failed to delete item');
         return response.json();
       },
       onSuccess: () => {
         toast({ title: "Success", description: "Item deleted successfully" });
-        queryClient.invalidateQueries({ queryKey: [`/api/${getApiEndpoint(dataType)}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/data-management/${getTableName(dataType)}`] });
+      },
+      onError: (error: any) => {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      }
+    });
+
+    // Bulk delete mutation using high-performance API
+    const bulkDeleteMutation = useMutation({
+      mutationFn: async (ids: string[]) => {
+        const authToken = localStorage.getItem('authToken');
+        const response = await fetch(`/api/data-management/${getTableName(dataType)}/bulk-delete`, {
+          method: 'DELETE',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({ ids: ids.map(id => Number(id)) })
+        });
+        if (!response.ok) throw new Error('Failed to delete items');
+        return response.json();
+      },
+      onSuccess: (data) => {
+        toast({ 
+          title: "Success", 
+          description: `${data.deleted} items deleted successfully` 
+        });
+        queryClient.invalidateQueries({ queryKey: [`/api/data-management/${getTableName(dataType)}`] });
+        setSelectedItems(new Set());
+        setBulkSelectMode(false);
       },
       onError: (error: any) => {
         toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -457,7 +549,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
           <div>
             <h3 className="text-lg font-medium">Existing {dataType} Data</h3>
             <p className="text-sm text-gray-600">
-              {totalItems} items found
+              {pagination.total} items found • Page {pagination.page} of {pagination.totalPages}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -521,13 +613,9 @@ Create authentic manufacturing data that reflects this company's operations.`;
                               <Button
                                 variant="destructive"
                                 size="sm"
-                                onClick={async () => {
+                                onClick={() => {
                                   const selectedIds = Array.from(selectedItems);
-                                  for (const id of selectedIds) {
-                                    await deleteMutation.mutateAsync(Number(id));
-                                  }
-                                  setSelectedItems(new Set());
-                                  setBulkSelectMode(false);
+                                  bulkDeleteMutation.mutate(selectedIds);
                                 }}
                                 className="h-6 px-2 ml-2"
                                 title={`Delete ${selectedItems.size} selected items`}
@@ -613,25 +701,28 @@ Create authentic manufacturing data that reflects this company's operations.`;
         )}
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {pagination.totalPages > 1 && (
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-600">
-              Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} items
+              Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} items
             </p>
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
+                disabled={!pagination.hasPrev}
               >
                 Previous
               </Button>
+              <span className="flex items-center px-3 text-sm text-gray-600">
+                Page {pagination.page} of {pagination.totalPages}
+              </span>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
+                disabled={!pagination.hasNext}
               >
                 Next
               </Button>
