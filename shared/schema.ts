@@ -292,6 +292,12 @@ export const productionVersions = pgTable("production_versions", {
   itemNumber: text("item_number").notNull(), // What product this version produces
   plantId: integer("plant_id").references(() => plants.id).notNull(),
   
+  // Plant validity - which plants this version is valid for
+  validPlants: jsonb("valid_plants").$type<number[]>().notNull().default([]), // Array of plant IDs
+  
+  // MRP (Material Requirements Planning) control
+  mrpRelevant: boolean("mrp_relevant").notNull().default(true), // Whether this version can be used by MRP
+  
   // Validity period
   validFrom: timestamp("valid_from").notNull(), // When this version becomes active
   validTo: timestamp("valid_to"), // When this version expires (null = unlimited)
@@ -332,10 +338,10 @@ export const productionVersions = pgTable("production_versions", {
     }>;
   }>>().default([]),
   
-  // Production parameters
-  lotSizeMin: integer("lot_size_min").default(1), // minimum production quantity
-  lotSizeMax: integer("lot_size_max"), // maximum production quantity (null = unlimited)
-  standardLotSize: integer("standard_lot_size").default(100), // typical batch size
+  // Production parameters and lot size validation
+  lotSizeMin: integer("lot_size_min").notNull().default(1), // minimum production quantity for this version
+  lotSizeMax: integer("lot_size_max").notNull(), // maximum production quantity for this version
+  standardLotSize: integer("standard_lot_size").notNull().default(100), // typical batch size
   
   // Costing and planning parameters
   planningStrategy: text("planning_strategy").default("make_to_stock"), // make_to_stock, make_to_order, assemble_to_order

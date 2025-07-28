@@ -618,7 +618,7 @@ function DataImport() {
         case 'recipes':
           return { recipeNumber: '', productCode: '', version: '', batchSize: '', yield: '' };
         case 'productionVersions':
-          return { versionNumber: '', itemNumber: '', plantId: '', validFrom: '', validTo: '', description: '' };
+          return { versionNumber: '', itemNumber: '', plantId: '', validPlants: '', mrpRelevant: 'true', validFrom: '', validTo: '', lotSizeMin: '1', lotSizeMax: '1000', standardLotSize: '100', description: '' };
         default:
           return { name: '', description: '' };
       }
@@ -804,11 +804,15 @@ function DataImport() {
             { key: 'versionNumber', label: 'Version Number', type: 'text', required: true },
             { key: 'itemNumber', label: 'Item Number', type: 'text', required: true },
             { key: 'plantId', label: 'Plant ID', type: 'number', required: true },
+            { key: 'validPlants', label: 'Valid Plants (comma-separated IDs)', type: 'text', required: true },
+            { key: 'mrpRelevant', label: 'MRP Relevant', type: 'select', options: ['true', 'false'], required: true },
             { key: 'validFrom', label: 'Valid From', type: 'date', required: true },
             { key: 'validTo', label: 'Valid To', type: 'date' },
+            { key: 'lotSizeMin', label: 'Minimum Lot Size', type: 'number', required: true },
+            { key: 'lotSizeMax', label: 'Maximum Lot Size', type: 'number', required: true },
+            { key: 'standardLotSize', label: 'Standard Lot Size', type: 'number', required: true },
             { key: 'bomId', label: 'BOM ID', type: 'number' },
             { key: 'recipeId', label: 'Recipe ID', type: 'number' },
-            { key: 'standardLotSize', label: 'Standard Lot Size', type: 'number' },
             { key: 'planningStrategy', label: 'Planning Strategy', type: 'select', options: ['make_to_stock', 'make_to_order', 'assemble_to_order'] },
             { key: 'leadTime', label: 'Lead Time (days)', type: 'number' },
             { key: 'status', label: 'Status', type: 'select', options: ['active', 'inactive', 'planned', 'obsolete'] },
@@ -1491,7 +1495,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
       case 'recipes':
         return `Version: ${item.version || ''} • Batch Size: ${item.batchSize || ''} • Yield: ${item.yield || ''}%`;
       case 'productionVersions':
-        return `Item: ${item.itemNumber || ''} • Valid From: ${item.validFrom || ''} • Strategy: ${item.planningStrategy || ''}`;
+        return `Item: ${item.itemNumber || ''} • Plants: ${Array.isArray(item.validPlants) ? item.validPlants.join(',') : item.validPlants || ''} • MRP: ${item.mrpRelevant ? 'Yes' : 'No'} • Lot Size: ${item.lotSizeMin || ''}-${item.lotSizeMax || ''}`;
       case 'forecasts':
         return `Period: ${item.period || ''} • Demand: ${item.forecast || ''}`;
       default:
