@@ -121,8 +121,9 @@ export default function IntegratedAIAssistant() {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
   
-  // Docking state
-  const { isDocked, dockPosition, setDockState } = useMaxDock();
+  // Docking state - using placeholder since MaxDockContext doesn't have these properties
+  const [isDocked, setIsDocked] = useState(false);
+  const [dockPosition, setDockPosition] = useState<'left' | 'right' | 'top' | 'bottom'>('right');
   const [showDockZones, setShowDockZones] = useState(false);
   
   const { toast } = useToast();
@@ -160,34 +161,38 @@ export default function IntegratedAIAssistant() {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     const dockWidth = 400;
-    const dockHeight = 300;
 
     switch (dock) {
       case 'left':
         setPosition({ x: 0, y: 0 });
         setSize({ width: dockWidth, height: viewportHeight });
-        setDockState(true, 'left', dockWidth, viewportHeight);
+        setIsDocked(true);
+        setDockPosition('left');
         break;
       case 'right':
         setPosition({ x: viewportWidth - dockWidth, y: 0 });
         setSize({ width: dockWidth, height: viewportHeight });
-        setDockState(true, 'right', dockWidth, viewportHeight);
+        setIsDocked(true);
+        setDockPosition('right');
         break;
       case 'top':
         setPosition({ x: 0, y: 0 });
-        setSize({ width: viewportWidth, height: dockHeight });
-        setDockState(true, 'top', viewportWidth, dockHeight);
+        setSize({ width: viewportWidth, height: 300 });
+        setIsDocked(true);
+        setDockPosition('top');
         break;
       case 'bottom':
-        setPosition({ x: 0, y: viewportHeight - dockHeight });
-        setSize({ width: viewportWidth, height: dockHeight });
-        setDockState(true, 'bottom', viewportWidth, dockHeight);
+        setPosition({ x: 0, y: viewportHeight - 300 });
+        setSize({ width: viewportWidth, height: 300 });
+        setIsDocked(true);
+        setDockPosition('bottom');
         break;
     }
   };
 
   const undockWindow = () => {
-    setDockState(false, null, 0, 0);
+    setIsDocked(false);
+    setDockPosition('right');
     // Move to center of screen when undocking
     const centerX = Math.max(0, (window.innerWidth - 400) / 2);
     const centerY = Math.max(0, (window.innerHeight - 500) / 2);
@@ -220,7 +225,8 @@ export default function IntegratedAIAssistant() {
     if (isDragging) {
       // If currently docked, first undock the window
       if (isDocked) {
-        setDockState(false, null, 0, 0);
+        setIsDocked(false);
+        setDockPosition('right');
       }
       
       const newX = Math.max(0, Math.min(window.innerWidth - size.width, e.clientX - dragOffset.x));
@@ -944,7 +950,11 @@ export default function IntegratedAIAssistant() {
             )}
 
             {/* Messages */}
-            <ScrollArea className="flex-1 p-3 min-h-0" style={{ maxHeight: `${size.height - 200}px` }}>
+            <div className="flex-1 p-3 min-h-0 overflow-y-auto" 
+                 style={{ 
+                   maxHeight: `${size.height - 200}px`,
+                   minHeight: `${Math.min(200, size.height - 200)}px`
+                 }}>
               <div className="space-y-3">
                 {messages.length === 0 && (
                   <div className="text-center text-gray-500 text-sm py-8">
@@ -960,7 +970,7 @@ export default function IntegratedAIAssistant() {
                     className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[80%] p-2 rounded-lg text-sm ${
+                      className={`max-w-[85%] sm:max-w-[80%] p-2 sm:p-3 rounded-lg text-sm ${
                         message.type === 'user'
                           ? 'bg-blue-500 text-white'
                           : 'bg-gray-100 text-gray-900'
@@ -975,24 +985,26 @@ export default function IntegratedAIAssistant() {
                 ))}
                 <div ref={messagesEndRef} />
               </div>
-            </ScrollArea>
+            </div>
 
             {/* Input */}
             <div className="p-3 border-t bg-gray-50 flex-shrink-0">
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <div className="flex-1 flex gap-1">
-                  <Input
+                  <textarea
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
                     placeholder="Ask me anything about your operations..."
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    className="text-sm"
+                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
+                    className="flex-1 text-sm border border-gray-300 rounded px-3 py-2 resize-none"
+                    rows={2}
+                    style={{ minHeight: '40px' }}
                   />
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={isListening ? stopListening : startListening}
-                    className={`px-2 ${isListening ? 'bg-red-50 border-red-200' : ''}`}
+                    className={`px-2 h-10 ${isListening ? 'bg-red-50 border-red-200' : ''}`}
                   >
                     {isListening ? <MicOff className="h-4 w-4 text-red-500" /> : <Mic className="h-4 w-4" />}
                   </Button>
@@ -1001,7 +1013,7 @@ export default function IntegratedAIAssistant() {
                   onClick={handleSendMessage}
                   disabled={!inputMessage.trim() || sendMessageMutation.isPending}
                   size="sm"
-                  className="px-3"
+                  className="px-3 h-10 w-full sm:w-auto"
                 >
                   {sendMessageMutation.isPending ? (
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />

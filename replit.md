@@ -2,7 +2,24 @@
 
 ## Recent Changes (July 28, 2025)
 
-✓ **Smart Data Type Filtering System Implementation (July 28, 2025)**:
+✓ **AI Assistant Mobile Enhancement & Component Error Fixes (July 28, 2025)**:
+- Fixed AI Development Algorithm Assistant dialog mobile scrolling issues with responsive design and proper overflow handling
+- Enhanced dialog width for mobile devices (w-[95vw] sm:w-full) and improved conversation area scrolling (min-h-[200px] max-h-[300px] sm:max-h-[400px])
+- Improved message bubbles for mobile with better spacing (max-w-[85%] sm:max-w-[80%], p-2 sm:p-3) and responsive text sizing
+- Enhanced AI dialog input area with responsive layout (flex-col sm:flex-row) and mobile-optimized textarea (rows=2, text-sm)
+- Fixed LSP TypeScript errors in integrated-ai-assistant.tsx by removing non-existent MaxDockContext properties (isDocked, dockPosition, setDockState)
+- Replaced missing docking functionality with local state management for AI assistant window positioning
+- Fixed Master Data Setup component Card import issues by replacing Card/CardContent with native div elements for cards view mode
+- Added getCategoryOptions function to Master Data Setup to support category filtering for resources, capabilities, production orders, vendors, and customers
+- Enhanced ATP/CTP screen mobile layout consistency with proper border margins (ml-3 mr-3 with md:ml-12 md:mr-12)
+- AI assistant conversation area now uses native overflow-y-auto instead of ScrollArea component for better mobile compatibility
+
+✓ **Mobile Responsiveness Enhancement & Smart Data Type Filtering System (July 28, 2025)**:
+- Fixed AI Development Algorithm Assistant dialog mobile scrolling issues with responsive design and proper overflow handling
+- Enhanced dialog width for mobile devices (w-[95vw] sm:w-full) and improved conversation area scrolling (min-h-[200px] max-h-[300px] sm:max-h-[400px])
+- Improved message bubbles for mobile with better spacing (max-w-[85%] sm:max-w-[80%], p-2 sm:p-3) and responsive text sizing
+- Fixed ATP/CTP screen mobile margins to ensure consistent left/right borders (ml-3 mr-3 with md:ml-12 md:mr-12)
+- Enhanced AI dialog input area with responsive layout (flex-col sm:flex-row) and mobile-optimized textarea (rows=2, text-sm)
 - Successfully implemented intelligent data type filtering system in Master Data Setup to reduce UI complexity and screen real estate usage
 - Added priority-based organization categorizing data types as Essential, Useful, and Advanced based on user's feature selections from onboarding
 - Created smart filtering logic that shows only relevant data types by default (Essential + Recommended from onboarding features)
@@ -15,6 +32,7 @@
 - Enhanced user experience by eliminating overwhelming choice paralysis while maintaining full access to advanced functionality
 - Smart filtering uses existing featureDataRequirements mapping to determine which data types are needed for selected onboarding features
 - Advanced users can always access all data types, while new users see only what they need to get started effectively
+- Fixed missing getCategoryOptions function in Master Data Setup with proper category filtering for resources, capabilities, production orders, vendors, and customers
 
 ✓ **Industry Templates API Fix & Interface Terminology Update (July 28, 2025)**:
 - Fixed industry templates generate API error by adding missing `createdBy` parameter to frontend mutation function

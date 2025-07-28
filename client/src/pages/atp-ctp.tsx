@@ -166,7 +166,7 @@ export default function AtpCtpPage() {
   };
 
   return (
-    <div className={`space-y-6 p-4 ${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
+    <div className={`space-y-6 p-3 sm:p-6 ${isMaxOpen ? 'md:ml-0 md:mr-0' : 'md:ml-12 md:mr-12'} ml-3 mr-3`}>
       {/* Header */}
       <div className="flex items-center gap-2">
         <Package className="w-6 h-6 text-blue-600" />
