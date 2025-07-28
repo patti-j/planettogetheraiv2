@@ -2,6 +2,16 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Sales Orders & Demand Forecasting Database Tables Created & Related Tables Fix (July 28, 2025)**:
+- Successfully created missing database tables that were defined in schema but not in actual database
+- Created sales_orders, sales_order_lines, purchase_orders, purchase_order_lines tables with proper structure
+- Created demand_forecasts, demand_history tables to complement existing demand_drivers table
+- Fixed Data Schema View foreign key relationship detection for proper "Include Related Tables" functionality
+- Enhanced database schema API with improved foreign key detection using separate queries for accuracy
+- Plants table now properly shows related tables: algorithm_performance, holidays, jobs, plant_resources, production_orders, production_plans, production_versions, scheduling_history, shift_templates
+- Database synchronization completed - all schema-defined tables now exist and relationships are properly detected
+- Data Schema View now fully functional with accurate table relationships and filtering capabilities
+
 ✓ **Schema Comparison Features Removed (July 28, 2025)**:
 - Successfully removed schema comparison interface and related components per user request
 - Cleaned up App.tsx routes, navigation menu items, and import statements

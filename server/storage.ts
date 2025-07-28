@@ -3216,34 +3216,51 @@ export class DatabaseStorage implements IStorage {
       for (const tableRow of tablesQuery.rows) {
         const tableName = tableRow.table_name as string;
         
-        // Get column information
+        // Get column information with proper foreign key detection
         const columnsQuery = await db.execute(sql`
           SELECT 
             c.column_name,
             c.data_type,
             c.is_nullable,
             c.column_default,
-            tc.constraint_type,
-            kcu.table_name as foreign_table,
-            kcu.column_name as foreign_column
+            CASE WHEN pk.column_name IS NOT NULL THEN 'PRIMARY KEY' ELSE NULL END as constraint_type
           FROM information_schema.columns c
-          LEFT JOIN information_schema.key_column_usage kcu 
-            ON c.table_name = kcu.table_name AND c.column_name = kcu.column_name
-          LEFT JOIN information_schema.table_constraints tc 
-            ON kcu.constraint_name = tc.constraint_name
+          LEFT JOIN information_schema.key_column_usage pk 
+            ON c.table_name = pk.table_name AND c.column_name = pk.column_name
+            AND pk.constraint_name LIKE '%_pkey'
           WHERE c.table_name = ${tableName}
           ORDER BY c.ordinal_position
         `);
+
+        // Get foreign key information separately for better accuracy
+        const foreignKeysQuery = await db.execute(sql`
+          SELECT 
+            kcu.column_name,
+            ccu.table_name AS foreign_table_name,
+            ccu.column_name AS foreign_column_name
+          FROM information_schema.table_constraints AS tc 
+          JOIN information_schema.key_column_usage AS kcu
+            ON tc.constraint_name = kcu.constraint_name
+          JOIN information_schema.constraint_column_usage AS ccu
+            ON ccu.constraint_name = tc.constraint_name
+          WHERE tc.constraint_type = 'FOREIGN KEY' 
+            AND tc.table_name = ${tableName}
+        `);
+
+        const foreignKeyMap = new Map();
+        foreignKeysQuery.rows.forEach((fk: any) => {
+          foreignKeyMap.set(fk.column_name, {
+            table: fk.foreign_table_name,
+            column: fk.foreign_column_name
+          });
+        });
 
         const columns = columnsQuery.rows.map((col: any) => ({
           name: col.column_name,
           type: col.data_type,
           nullable: col.is_nullable === 'YES',
           primaryKey: col.constraint_type === 'PRIMARY KEY',
-          foreignKey: col.constraint_type === 'FOREIGN KEY' ? {
-            table: col.foreign_table,
-            column: col.foreign_column
-          } : undefined,
+          foreignKey: foreignKeyMap.get(col.column_name),
           defaultValue: col.column_default
         }));
 
