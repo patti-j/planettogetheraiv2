@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
+import * as schema from "@shared/schema";
 import { sql } from "drizzle-orm";
 import { createSafeHandler, errorMiddleware, ValidationError, DatabaseError, NotFoundError, AuthenticationError } from "./error-handler";
 import { 
@@ -16657,6 +16658,8 @@ Response must be valid JSON:
         storage.getDataWithPagination('resources', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total),
         storage.getDataWithPagination('capabilities', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total),
         storage.getDataWithPagination('production_orders', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total),
+        // Direct SQL count for operations since it's not in data management API yet
+        db.select({ count: sql`count(*)` }).from(schema.operations).then(r => r[0].count),
         storage.getDataWithPagination('vendors', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total),
         storage.getDataWithPagination('customers', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total)
       ]);
@@ -16666,8 +16669,9 @@ Response must be valid JSON:
         resources: counts[1],
         capabilities: counts[2],
         production_orders: counts[3],
-        vendors: counts[4],
-        customers: counts[5]
+        operations: counts[4],
+        vendors: counts[5],
+        customers: counts[6]
       };
       
       res.json(recordCounts);
