@@ -28,7 +28,7 @@ import { useAITheme } from "@/hooks/use-ai-theme";
 import { useMaxDock } from "@/contexts/MaxDockContext";
 import { usePermissions } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
-import type { Job, Operation, Resource, Capability } from "@shared/schema";
+import type { ProductionOrder, Operation, Resource, Capability } from "@shared/schema";
 import { addDays, format } from "date-fns";
 
 interface Metrics {
@@ -133,7 +133,7 @@ export default function Dashboard() {
   const { hasPermission } = usePermissions();
   const queryClient = useQueryClient();
 
-  const { data: jobs = [] } = useQuery<Job[]>({
+  const { data: jobs = [] } = useQuery<ProductionOrder[]>({
     queryKey: ["/api/jobs"],
   });
 
@@ -879,12 +879,12 @@ export default function Dashboard() {
                     </TabsContent>
                   </Tabs>
                   
-                  {/* Op Sequencer Section */}
+                  {/* Sequencer Section */}
                   <div className="border-t border-gray-200 h-1/2 flex flex-col">
                     <div className="border-b border-gray-200 bg-gray-50 px-4 py-2">
                       <div className="flex items-center">
                         <Smartphone className="w-4 h-4 mr-2 text-primary" />
-                        <span className="text-sm font-medium text-gray-700">Op Sequencer</span>
+                        <span className="text-sm font-medium text-gray-700">Sequencer</span>
                       </div>
                     </div>
                     <div className="flex-1 overflow-hidden">

@@ -15,11 +15,11 @@ import { format } from "date-fns";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { apiRequest } from "@/lib/queryClient";
-import type { Job, Operation, Resource, Capability } from "@shared/schema";
+import type { ProductionOrder, Operation, Resource, Capability } from "@shared/schema";
 import { safeCanDrop } from "@/lib/drag-drop-error-handler";
 
 interface MobileScheduleProps {
-  jobs: Job[];
+  jobs: ProductionOrder[];
   operations: Operation[];
   resources: Resource[];
   capabilities: Capability[];
@@ -28,7 +28,7 @@ interface MobileScheduleProps {
 interface DraggableOperationCardProps {
   operation: Operation;
   index: number;
-  job: Job | undefined;
+  job: ProductionOrder | undefined;
   resource: Resource | undefined;
   requiredCapabilities: Capability[];
   statusInfo: { color: string; icon: any; label: string };
@@ -700,7 +700,7 @@ export default function MobileSchedule({
     }
 
     try {
-      const job = jobs.find(j => j.id === operation.jobId);
+      const job = jobs.find(j => j.id === operation.productionOrderId);
       const resource = resources.find(r => r.id === operation.assignedResourceId);
       
       // Safe access to requiredCapabilities with multiple fallbacks
@@ -766,7 +766,7 @@ export default function MobileSchedule({
         {/* Header */}
         <div className="bg-white border-b border-gray-200 p-4 flex-shrink-0">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-semibold text-gray-800">Op Sequencer</h1>
+            <h1 className="text-xl font-semibold text-gray-800">Sequencer</h1>
             <div className="flex items-center space-x-2">
               {/* Multi-Resource View Toggle */}
               <div className="flex items-center space-x-2">
