@@ -350,6 +350,12 @@ export default function DataSchemaView() {
   const filteredTables = useMemo(() => {
     if (!schemaData || !Array.isArray(schemaData)) return [];
     
+    console.log('Filtering with feature:', selectedFeature);
+    if (selectedFeature !== 'all') {
+      console.log('Feature tables:', featureTableMapping[selectedFeature]);
+      console.log('Available table names:', schemaData.map(t => t.name));
+    }
+    
     let tables = schemaData.filter((table: SchemaTable) => {
       const matchesSearch = table.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            table.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
