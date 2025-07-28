@@ -519,10 +519,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             };
           } else if (industryLower.includes('pharmaceutical') || industryLower.includes('pharma')) {
             return {
-              small: { plants: { min: 1, max: 2 }, resourcesPerPlant: { min: 8, max: 12 }, capabilities: { min: 15, max: 20 }, ordersPerPlant: { min: 25, max: 40 }, operationsPerOrder: { min: 4, max: 7 } },
-              medium: { plants: { min: 2, max: 4 }, resourcesPerPlant: { min: 12, max: 18 }, capabilities: { min: 25, max: 35 }, ordersPerPlant: { min: 40, max: 65 }, operationsPerOrder: { min: 5, max: 8 } },
-              large: { plants: { min: 4, max: 8 }, resourcesPerPlant: { min: 18, max: 25 }, capabilities: { min: 40, max: 60 }, ordersPerPlant: { min: 65, max: 100 }, operationsPerOrder: { min: 6, max: 10 } },
-              enterprise: { plants: { min: 5, max: 15 }, resourcesPerPlant: { min: 20, max: 30 }, capabilities: { min: 50, max: 80 }, ordersPerPlant: { min: 80, max: 120 }, operationsPerOrder: { min: 8, max: 12 } }
+              small: { plants: { min: 1, max: 2 }, resourcesPerPlant: { min: 8, max: 12 }, capabilities: { min: 15, max: 20 }, ordersPerPlant: { min: 8, max: 15 }, operationsPerOrder: { min: 4, max: 7 } },
+              medium: { plants: { min: 2, max: 4 }, resourcesPerPlant: { min: 12, max: 18 }, capabilities: { min: 25, max: 35 }, ordersPerPlant: { min: 12, max: 20 }, operationsPerOrder: { min: 5, max: 8 } },
+              large: { plants: { min: 4, max: 8 }, resourcesPerPlant: { min: 18, max: 25 }, capabilities: { min: 40, max: 60 }, ordersPerPlant: { min: 15, max: 25 }, operationsPerOrder: { min: 6, max: 10 } },
+              enterprise: { plants: { min: 5, max: 8 }, resourcesPerPlant: { min: 20, max: 30 }, capabilities: { min: 50, max: 80 }, ordersPerPlant: { min: 20, max: 30 }, operationsPerOrder: { min: 8, max: 12 } }
             };
           } else if (industryLower.includes('electronics') || industryLower.includes('semiconductor')) {
             return {
@@ -720,7 +720,21 @@ Create authentic pharmaceutical manufacturing data for ${companyInfo.name} with 
         max_tokens: 4000
       });
 
-      const generatedData = JSON.parse(response.choices[0].message.content);
+      const rawContent = response.choices[0].message.content;
+      console.log('Raw OpenAI response length:', rawContent?.length);
+      console.log('Raw OpenAI response preview:', rawContent?.substring(0, 200) + '...');
+      
+      if (!rawContent) {
+        throw new Error('No content received from OpenAI');
+      }
+      
+      let generatedData;
+      try {
+        generatedData = JSON.parse(rawContent);
+      } catch (parseError) {
+        console.error('JSON parse error. Raw content:', rawContent);
+        throw new Error(`Failed to parse OpenAI response: ${parseError.message}`);
+      }
       
       // Validate and potentially supplement generated data to meet minimum requirements
       console.log('Generated data summary:');

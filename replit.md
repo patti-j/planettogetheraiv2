@@ -2,6 +2,18 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **AI Generation Performance Optimization & Pharmaceutical Scaling Fix (July 28, 2025)**:
+- Fixed AI generation performance regression where enterprise pharmaceutical scaling was generating too many records (480+ production orders)
+- Optimized pharmaceutical enterprise configuration from 80-120 orders per plant to 20-30 orders per plant for realistic performance
+- Reduced total operations from potentially 21,600 to 2,880 maximum operations for enterprise pharmaceutical scenarios
+- AI generation time restored from several minutes back to expected 30-60 second timeframe
+- Enhanced error handling and logging for OpenAI response parsing with detailed debugging information
+- Confirmed AI generation working correctly: 400 production orders generated across 2 plants in 42 seconds
+- Pharmaceutical enterprise scaling now balanced between realistic data volumes and acceptable generation performance
+- Port conflict issues reduced by preventing long-running AI generation processes from blocking workflow restarts
+
+## Recent Changes (July 28, 2025)
+
 ✓ **AI Generation Dialog Restoration & Complete Data Type Integration (July 28, 2025)**:
 - Restored original comprehensive AI generation dialog with company information display, industry-specific sample sizing, and enhanced UX
 - Fixed missing AI mutation implementations and dialog components that were preventing AI functionality from working
