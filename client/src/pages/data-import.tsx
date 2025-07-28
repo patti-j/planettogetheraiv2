@@ -426,7 +426,10 @@ Create authentic manufacturing data that reflects this company's operations.`;
     const [showAddDialog, setShowAddDialog] = useState(false);
     const [newItem, setNewItem] = useState<any>({});
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+    const [allLoadedItems, setAllLoadedItems] = useState<any[]>([]);
+    const [hasMoreData, setHasMoreData] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const itemsPerPage = 20;
 
     // Map data types to table names for pagination API
     const getTableName = (dataType: string) => {
@@ -459,10 +462,17 @@ Create authentic manufacturing data that reflects this company's operations.`;
       return mapping[dataType] || dataType;
     };
 
-    // Use high-performance pagination API
-    const { data: paginatedData, isLoading, error } = useQuery({
-      queryKey: [`/api/data-management/${getTableName(dataType)}`, currentPage, searchTerm],
-      queryFn: async () => {
+    // Load more data function for infinite scroll
+    const loadMoreData = async (page: number) => {
+      if (isLoadingMore || (!hasMoreData && page > 1)) return;
+      
+      if (page === 1) {
+        setInitialLoading(true);
+      } else {
+        setIsLoadingMore(true);
+      }
+      
+      try {
         const authToken = localStorage.getItem('authToken');
         const response = await fetch(`/api/data-management/${getTableName(dataType)}`, {
           method: 'POST',
@@ -472,7 +482,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
           },
           body: JSON.stringify({
             pagination: {
-              page: currentPage,
+              page: page,
               limit: itemsPerPage
             },
             search: searchTerm ? {
@@ -482,31 +492,72 @@ Create authentic manufacturing data that reflects this company's operations.`;
             sort: [{ field: 'name', direction: 'asc' }]
           })
         });
+        
         if (!response.ok) {
           throw new Error('Failed to fetch data');
         }
-        return response.json();
-      },
-      enabled: !!dataType
-    });
-
-    // Extract data and pagination info from API response
-    const currentItems = paginatedData?.data || [];
-    const pagination = paginatedData?.pagination || {
-      page: 1,
-      limit: itemsPerPage,
-      total: 0,
-      totalPages: 1,
-      hasNext: false,
-      hasPrev: false
+        
+        const result = await response.json();
+        const newItems = result.data || [];
+        
+        if (page === 1) {
+          // First load or search reset
+          setAllLoadedItems(newItems);
+        } else {
+          // Append new items for infinite scroll
+          setAllLoadedItems(prev => [...prev, ...newItems]);
+        }
+        
+        // Update pagination state
+        setHasMoreData(result.pagination?.hasNext || false);
+        setCurrentPage(page);
+        
+      } catch (error) {
+        console.error('Failed to load data:', error);
+      } finally {
+        if (page === 1) {
+          setInitialLoading(false);
+        } else {
+          setIsLoadingMore(false);
+        }
+      }
     };
 
-    // Reset to page 1 when search term changes
+    // Initial loading state
+    const [initialLoading, setInitialLoading] = useState(true);
+
+    // Use accumulated data for infinite scroll
+    const currentItems = allLoadedItems;
+
+    // Reset data when search term or data type changes
     React.useEffect(() => {
       setCurrentPage(1);
+      setAllLoadedItems([]);
+      setHasMoreData(true);
       setSelectedItems(new Set());
       setBulkSelectMode(false);
+      if (dataType) {
+        loadMoreData(1);
+      }
     }, [searchTerm, dataType]);
+
+    // Scroll detection for infinite scroll
+    React.useEffect(() => {
+      const handleScroll = () => {
+        if (
+          window.innerHeight + document.documentElement.scrollTop >= 
+          document.documentElement.offsetHeight - 1000 && // Load when 1000px from bottom
+          hasMoreData && 
+          !isLoadingMore &&
+          !initialLoading
+        ) {
+          loadMoreData(currentPage + 1);
+        }
+      };
+
+      window.addEventListener('scroll', handleScroll);
+      return () => window.removeEventListener('scroll', handleScroll);
+    }, [currentPage, hasMoreData, isLoadingMore, initialLoading]);
 
     // Update mutation
     const updateMutation = useMutation({
@@ -526,7 +577,11 @@ Create authentic manufacturing data that reflects this company's operations.`;
       },
       onSuccess: () => {
         toast({ title: "Success", description: "Item updated successfully" });
-        queryClient.invalidateQueries({ queryKey: [`/api/data-management/${getTableName(dataType)}`] });
+        // Refresh data by loading page 1 again
+        setCurrentPage(1);
+        setAllLoadedItems([]);
+        setHasMoreData(true);
+        loadMoreData(1);
         setEditingItem(null);
       },
       onError: (error: any) => {
@@ -552,7 +607,11 @@ Create authentic manufacturing data that reflects this company's operations.`;
       },
       onSuccess: () => {
         toast({ title: "Success", description: "Item created successfully" });
-        queryClient.invalidateQueries({ queryKey: [`/api/data-management/${getTableName(dataType)}`] });
+        // Refresh data by loading page 1 again
+        setCurrentPage(1);
+        setAllLoadedItems([]);
+        setHasMoreData(true);
+        loadMoreData(1);
         setShowAddDialog(false);
         setNewItem({});
       },
@@ -604,7 +663,11 @@ Create authentic manufacturing data that reflects this company's operations.`;
           title: "Success", 
           description: `${data.deleted} items deleted successfully` 
         });
-        queryClient.invalidateQueries({ queryKey: [`/api/data-management/${getTableName(dataType)}`] });
+        // Refresh data by loading page 1 again
+        setCurrentPage(1);
+        setAllLoadedItems([]);
+        setHasMoreData(true);
+        loadMoreData(1);
         setSelectedItems(new Set());
         setBulkSelectMode(false);
       },
@@ -613,7 +676,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
       }
     });
 
-    if (isLoading) {
+    if (initialLoading) {
       return (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-8 w-8 animate-spin" />
@@ -628,7 +691,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
           <div>
             <h3 className="text-lg font-medium">Existing {dataType} Data</h3>
             <p className="text-sm text-gray-600">
-              {pagination.total} items found • Page {pagination.page} of {pagination.totalPages}
+              {currentItems.length} items loaded {!hasMoreData ? '(all data loaded)' : '(scroll for more)'}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -779,33 +842,20 @@ Create authentic manufacturing data that reflects this company's operations.`;
           </div>
         )}
 
-        {/* Pagination */}
-        {pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-600">
-              Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} items
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={!pagination.hasPrev}
-              >
-                Previous
-              </Button>
-              <span className="flex items-center px-3 text-sm text-gray-600">
-                Page {pagination.page} of {pagination.totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
-                disabled={!pagination.hasNext}
-              >
-                Next
-              </Button>
+        {/* Infinite Scroll Loading Indicator */}
+        {isLoadingMore && (
+          <div className="flex items-center justify-center py-4">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              Loading more data...
             </div>
+          </div>
+        )}
+        
+        {/* End of data indicator */}
+        {!hasMoreData && currentItems.length > 0 && (
+          <div className="text-center py-4 text-sm text-gray-500">
+            No more data to load
           </div>
         )}
 
