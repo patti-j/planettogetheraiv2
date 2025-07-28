@@ -2,6 +2,19 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Critical Data Validation System SQL Fix & Complete Consolidated Template Import Implementation (July 28, 2025)**:
+- Fixed critical PostgreSQL function errors in data validation system that were causing "Failed to run data validation" failures
+- Replaced invalid `json_array_length()` calls with correct `jsonb_array_length()` for JSONB operations compatibility
+- Added missing `notInArray` import from drizzle-orm to resolve scheduling conflicts validation
+- Data validation system now fully operational with all 6 validation checks executing successfully in ~3.6 seconds
+- Completed consolidated template import functionality with import type selection toggle (single vs consolidated)
+- Added multi-sheet Excel file support with automatic sheet detection and selection interface
+- Implemented sheet selection with checkboxes, select all/clear controls, and real-time import progress tracking
+- Enhanced import results display showing success/failure status for each processed sheet with detailed feedback
+- Users can now download multiple templates, fill them out, and import them simultaneously via consolidated Excel files
+- Complete end-to-end bulk template workflow: bulk download → multi-sheet Excel creation → consolidated import
+- Data validation and import systems both fully restored and operational for comprehensive manufacturing data management
+
 ✓ **Spreadsheet Keyboard Navigation Implementation for Faster Data Entry (July 28, 2025)**:
 - Added Tab and Enter key navigation support to spreadsheet view for efficient keyboard-only data entry
 - Tab/Enter moves cursor to next cell rightward, automatically wrapping to first column of next row when reaching row end

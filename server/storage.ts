@@ -96,7 +96,7 @@ import {
   // type InsertAccountInfo, type InsertBillingHistory, type InsertUsageMetrics
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, gt, lt, like, ilike, ne, not, inArray, avg, max, countDistinct } from "drizzle-orm";
+import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, gt, lt, like, ilike, ne, not, inArray, notInArray, avg, max, countDistinct } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export interface IStorage {
@@ -8183,7 +8183,7 @@ export class DatabaseStorage implements IStorage {
         requiredCapabilities: operations.requiredCapabilities
       })
       .from(operations)
-      .where(sql`json_array_length(required_capabilities::jsonb) > 0`);
+      .where(sql`jsonb_array_length(${operations.requiredCapabilities}) > 0`);
 
     for (const operation of operationsWithCapabilities) {
       if (!operation.requiredCapabilities || operation.requiredCapabilities.length === 0) continue;
@@ -8240,8 +8240,8 @@ export class DatabaseStorage implements IStorage {
       .where(and(
         eq(resources.status, 'active'),
         or(
-          sql`capabilities IS NULL`,
-          sql`json_array_length(capabilities::jsonb) = 0`
+          sql`${resources.capabilities} IS NULL`,
+          sql`jsonb_array_length(${resources.capabilities}) = 0`
         )
       ));
 
@@ -8365,7 +8365,7 @@ export class DatabaseStorage implements IStorage {
         requiredCapabilities: operations.requiredCapabilities
       })
       .from(operations)
-      .where(sql`json_array_length(required_capabilities::jsonb) > 0`);
+      .where(sql`jsonb_array_length(${operations.requiredCapabilities}) > 0`);
 
     const allCapabilities = await db.select({ id: capabilities.id }).from(capabilities);
     const validCapabilityIds = new Set(allCapabilities.map(c => c.id));
