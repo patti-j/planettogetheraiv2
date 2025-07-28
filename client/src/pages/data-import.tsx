@@ -510,40 +510,42 @@ Create authentic manufacturing data that reflects this company's operations.`;
                         </div>
                       )}
                       
-                      {/* Content area - matches row structure */}
-                      <div className="flex-1 p-3 flex items-center justify-between">
-                        <span>Name</span>
-                        {/* Status and delete button */}
-                        <div className="flex items-center gap-2">
-                          {bulkSelectMode && (
-                            <span className="text-sm text-gray-500">
-                              {selectedItems.size} selected
-                            </span>
-                          )}
-                          {bulkSelectMode && selectedItems.size > 0 && (
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={async () => {
-                                const selectedIds = Array.from(selectedItems);
-                                for (const id of selectedIds) {
-                                  await deleteMutation.mutateAsync(Number(id));
-                                }
-                                setSelectedItems(new Set());
-                                setBulkSelectMode(false);
-                              }}
-                              className="h-6 px-2"
-                              title={`Delete ${selectedItems.size} selected items`}
-                            >
-                              <Trash2 className="h-3 w-3 mr-1" />
-                              {selectedItems.size}
-                            </Button>
-                          )}
+                      {/* Content area - matches row structure exactly */}
+                      <div className="flex-1 p-3">
+                        <div className="flex items-center justify-between">
+                          <span>Name</span>
+                          {/* Status and delete button */}
+                          <div className="flex items-center gap-2">
+                            {bulkSelectMode && (
+                              <span className="text-sm text-gray-500">
+                                {selectedItems.size} selected
+                              </span>
+                            )}
+                            {bulkSelectMode && selectedItems.size > 0 && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={async () => {
+                                  const selectedIds = Array.from(selectedItems);
+                                  for (const id of selectedIds) {
+                                    await deleteMutation.mutateAsync(Number(id));
+                                  }
+                                  setSelectedItems(new Set());
+                                  setBulkSelectMode(false);
+                                }}
+                                className="h-6 px-2"
+                                title={`Delete ${selectedItems.size} selected items`}
+                              >
+                                <Trash2 className="h-3 w-3 mr-1" />
+                                {selectedItems.size}
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
                       
                       {/* Toggle button space - matches row structure exactly */}
-                      <div className="w-12 flex items-center justify-center ml-1">
+                      <div className="w-12 flex items-center justify-center">
                         <Button
                           variant={bulkSelectMode ? 'default' : 'ghost'}
                           size="sm"
