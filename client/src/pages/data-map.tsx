@@ -281,8 +281,8 @@ function DataMapView() {
   return (
     <div className="h-screen w-full bg-white">
       {/* Header Panel */}
-      <Panel position="top-left" className="m-4">
-        <Card className="w-80">
+      <Panel position="top-left" className="m-2 sm:m-4">
+        <Card className="w-72 sm:w-80">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center justify-between text-lg">
               <div className="flex items-center gap-2">
@@ -293,10 +293,10 @@ function DataMapView() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowLegend(!showLegend)}
-                className="h-8 w-8 p-0"
+                className="h-10 w-10 sm:h-8 sm:w-8 p-0"
                 title={showLegend ? "Hide Legend" : "Show Legend"}
               >
-                {showLegend ? <ToggleRight className="w-4 h-4 text-blue-600" /> : <ToggleLeft className="w-4 h-4 text-gray-400" />}
+                {showLegend ? <ToggleRight className="w-5 h-5 sm:w-4 sm:h-4 text-blue-600" /> : <ToggleLeft className="w-5 h-5 sm:w-4 sm:h-4 text-gray-400" />}
               </Button>
             </CardTitle>
           </CardHeader>
@@ -399,9 +399,9 @@ function DataMapView() {
         
         {/* Legend Panel */}
         {showLegend && (
-          <Panel position="bottom-right">
-            <Card className="bg-white/90 backdrop-blur-sm">
-              <CardContent className="p-4">
+          <Panel position="bottom-right" className="m-2 sm:m-4">
+            <Card className="bg-white/90 backdrop-blur-sm w-64 sm:w-auto">
+              <CardContent className="p-3 sm:p-4">
                 <div className="flex items-start justify-between mb-2">
                   <h3 className="font-semibold flex items-center gap-2">
                     <Info className="w-4 h-4" />
@@ -411,9 +411,9 @@ function DataMapView() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowLegend(false)}
-                    className="h-6 w-6 p-0 hover:bg-gray-100 -mt-1 ml-3"
+                    className="h-8 w-8 sm:h-6 sm:w-6 p-0 hover:bg-gray-100 -mt-1 ml-3"
                   >
-                    <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+                    <X className="w-4 h-4 sm:w-3 sm:h-3 text-gray-400 hover:text-gray-600" />
                   </Button>
                 </div>
                 <div className="space-y-2 text-xs">
