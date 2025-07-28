@@ -119,6 +119,7 @@ const functionalAreas: FunctionalArea[] = [
     connections: ['production-scheduling', 'inventory-management'],
     features: ['Quality control', 'Testing protocols', 'Compliance tracking', 'Defect management'],
     dataTypes: ['Quality Tests', 'Inspection Results', 'Quality Standards'],
+    route: '/master-data',
     color: 'bg-red-500',
     priority: 'medium'
   },
@@ -131,6 +132,7 @@ const functionalAreas: FunctionalArea[] = [
     connections: ['resource-management', 'production-scheduling'],
     features: ['Preventive maintenance', 'Work orders', 'Equipment tracking', 'Downtime analysis'],
     dataTypes: ['Maintenance Plans', 'Work Orders', 'Equipment History'],
+    route: '/maintenance',
     color: 'bg-yellow-500',
     priority: 'medium'
   },
@@ -143,6 +145,7 @@ const functionalAreas: FunctionalArea[] = [
     connections: ['production-scheduling', 'inventory-management', 'demand-planning'],
     features: ['Order management', 'Customer tracking', 'Delivery planning', 'Order promising'],
     dataTypes: ['Sales Orders', 'Customers', 'Order Items'],
+    route: '/master-data',
     color: 'bg-teal-500',
     priority: 'high'
   },
@@ -155,6 +158,7 @@ const functionalAreas: FunctionalArea[] = [
     connections: ['inventory-management', 'production-scheduling'],
     features: ['Purchase orders', 'Supplier management', 'Material planning', 'Cost optimization'],
     dataTypes: ['Purchase Orders', 'Vendors', 'Purchase Items'],
+    route: '/master-data',
     color: 'bg-cyan-500',
     priority: 'medium'
   },
@@ -167,6 +171,7 @@ const functionalAreas: FunctionalArea[] = [
     connections: ['procurement', 'sales-orders'],
     features: ['Cost tracking', 'Profitability analysis', 'Budget management', 'Financial reporting'],
     dataTypes: ['Cost Centers', 'Financial Transactions', 'Budgets'],
+    route: '/reports',
     color: 'bg-emerald-500',
     priority: 'low'
   },
@@ -244,6 +249,39 @@ export default function FunctionalMap() {
       low: 'bg-green-100 text-green-800'
     };
     return colors[priority as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+  };
+
+  // Generate smart explore routes with context
+  const getExploreRoute = (area: FunctionalArea) => {
+    if (!area.route) return '#';
+    
+    // Add specific context for master data routes
+    if (area.route === '/master-data') {
+      const dataTypeMap: Record<string, string> = {
+        'resource-management': 'resources',
+        'inventory-management': 'stock_items',
+        'quality-management': 'quality_tests',
+        'sales-orders': 'customers',
+        'procurement': 'vendors'
+      };
+      
+      const dataType = dataTypeMap[area.id];
+      if (dataType) {
+        return `/master-data?dataType=${dataType}`;
+      }
+    }
+    
+    // Add specific context for capacity planning
+    if (area.id === 'capacity-planning') {
+      return '/capacity-planning';
+    }
+    
+    // Add specific context for production scheduling
+    if (area.id === 'production-scheduling') {
+      return '/mobile-schedule';
+    }
+    
+    return area.route;
   };
 
   return (
@@ -424,7 +462,7 @@ export default function FunctionalMap() {
                     {/* Action Button */}
                     {area.route && (
                       <div className="pt-2 border-t">
-                        <Link href={area.route}>
+                        <Link href={getExploreRoute(area)}>
                           <Button size="sm" className="w-full" variant="outline">
                             <ArrowRight className="w-4 h-4 mr-2" />
                             Explore
@@ -523,7 +561,7 @@ export default function FunctionalMap() {
 
                 {area.route && (
                   <div className="mt-6 pt-6 border-t">
-                    <Link href={area.route}>
+                    <Link href={getExploreRoute(area)}>
                       <Button>
                         <ArrowRight className="w-4 h-4 mr-2" />
                         Go to {area.name}
