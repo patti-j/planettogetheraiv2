@@ -16536,7 +16536,7 @@ Response must be valid JSON:
   app.post("/api/data-management/:table", requireAuth, async (req, res) => {
     try {
       const { table } = req.params;
-      const validTables = ['plants', 'resources', 'capabilities', 'production_orders', 'vendors', 'customers', 'stock_items'];
+      const validTables = ['plants', 'resources', 'capabilities', 'production_orders', 'vendors', 'customers'];
       
       if (!validTables.includes(table)) {
         return res.status(400).json({ error: `Invalid table: ${table}` });
@@ -16565,9 +16565,6 @@ Response must be valid JSON:
         case 'customers':
           response = await storage.getCustomersWithPagination(request);
           break;
-        case 'stock_items':
-          response = await storage.getStockItemsWithPagination(request);
-          break;
         default:
           return res.status(400).json({ error: `Unsupported table: ${table}` });
       }
@@ -16582,7 +16579,7 @@ Response must be valid JSON:
   app.put("/api/data-management/:table/bulk-update", requireAuth, async (req, res) => {
     try {
       const { table } = req.params;
-      const validTables = ['plants', 'resources', 'capabilities', 'production_orders', 'vendors', 'customers', 'stock_items'];
+      const validTables = ['plants', 'resources', 'capabilities', 'production_orders', 'vendors', 'customers'];
       
       if (!validTables.includes(table)) {
         return res.status(400).json({ error: `Invalid table: ${table}` });
@@ -16605,7 +16602,7 @@ Response must be valid JSON:
   app.delete("/api/data-management/:table/bulk-delete", requireAuth, async (req, res) => {
     try {
       const { table } = req.params;
-      const validTables = ['plants', 'resources', 'capabilities', 'production_orders', 'vendors', 'customers', 'stock_items'];
+      const validTables = ['plants', 'resources', 'capabilities', 'production_orders', 'vendors', 'customers'];
       
       if (!validTables.includes(table)) {
         return res.status(400).json({ error: `Invalid table: ${table}` });
@@ -16631,7 +16628,7 @@ Response must be valid JSON:
       const { table } = req.params;
       const { q, fields, limit = 10 } = req.query;
       
-      const validTables = ['plants', 'resources', 'capabilities', 'production_orders', 'vendors', 'customers', 'stock_items'];
+      const validTables = ['plants', 'resources', 'capabilities', 'production_orders', 'vendors', 'customers'];
       
       if (!validTables.includes(table)) {
         return res.status(400).json({ error: `Invalid table: ${table}` });
@@ -16666,8 +16663,7 @@ Response must be valid JSON:
         storage.getDataWithPagination('capabilities', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total),
         storage.getDataWithPagination('production_orders', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total),
         storage.getDataWithPagination('vendors', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total),
-        storage.getDataWithPagination('customers', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total),
-        storage.getDataWithPagination('stock_items', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total)
+        storage.getDataWithPagination('customers', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total)
       ]);
       
       const recordCounts = {
@@ -16676,8 +16672,7 @@ Response must be valid JSON:
         capabilities: counts[2],
         production_orders: counts[3],
         vendors: counts[4],
-        customers: counts[5],
-        stock_items: counts[6]
+        customers: counts[5]
       };
       
       res.json(recordCounts);

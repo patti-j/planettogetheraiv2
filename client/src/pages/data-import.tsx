@@ -68,6 +68,295 @@ function DataImport() {
   };
 
   const [showConsolidatedDialog, setShowConsolidatedDialog] = useState(false);
+
+  // Structured Entry Component
+  function StructuredEntryComponent() {
+    const [selectedDataType, setSelectedDataType] = useState<string>('');
+    const [entries, setEntries] = useState<any[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const addRow = () => {
+      const newEntry = getEmptyEntry(selectedDataType);
+      setEntries([...entries, newEntry]);
+    };
+
+    const removeRow = (index: number) => {
+      setEntries(entries.filter((_, i) => i !== index));
+    };
+
+    const updateEntry = (index: number, field: string, value: any) => {
+      const newEntries = [...entries];
+      newEntries[index] = { ...newEntries[index], [field]: value };
+      setEntries(newEntries);
+    };
+
+    const getEmptyEntry = (dataType: string) => {
+      switch (dataType) {
+        case 'resources':
+          return { name: '', type: '', description: '', location: '', capacity: '' };
+        case 'plants':
+          return { name: '', location: '', timezone: '', description: '' };
+        case 'capabilities':
+          return { name: '', description: '', category: '' };
+        case 'productionOrders':
+          return { orderNumber: '', name: '', priority: '', dueDate: '', description: '' };
+        default:
+          return { name: '', description: '' };
+      }
+    };
+
+    const getFieldDefinitions = (dataType: string) => {
+      switch (dataType) {
+        case 'resources':
+          return [
+            { key: 'name', label: 'Resource Name', type: 'text', required: true },
+            { key: 'type', label: 'Type', type: 'select', options: ['Machine', 'Personnel', 'Equipment'], required: true },
+            { key: 'description', label: 'Description', type: 'text' },
+            { key: 'location', label: 'Location', type: 'text' },
+            { key: 'capacity', label: 'Capacity', type: 'number' }
+          ];
+        case 'plants':
+          return [
+            { key: 'name', label: 'Plant Name', type: 'text', required: true },
+            { key: 'location', label: 'Location', type: 'text', required: true },
+            { key: 'timezone', label: 'Timezone', type: 'text' },
+            { key: 'description', label: 'Description', type: 'text' }
+          ];
+        case 'capabilities':
+          return [
+            { key: 'name', label: 'Capability Name', type: 'text', required: true },
+            { key: 'description', label: 'Description', type: 'text' },
+            { key: 'category', label: 'Category', type: 'text' }
+          ];
+        case 'productionOrders':
+          return [
+            { key: 'orderNumber', label: 'Order Number', type: 'text', required: true },
+            { key: 'name', label: 'Order Name', type: 'text', required: true },
+            { key: 'priority', label: 'Priority', type: 'select', options: ['Low', 'Medium', 'High', 'Critical'] },
+            { key: 'dueDate', label: 'Due Date', type: 'date' },
+            { key: 'description', label: 'Description', type: 'text' }
+          ];
+        default:
+          return [
+            { key: 'name', label: 'Name', type: 'text', required: true },
+            { key: 'description', label: 'Description', type: 'text' }
+          ];
+      }
+    };
+
+    const getApiEndpoint = (dataType: string) => {
+      switch (dataType) {
+        case 'resources': return 'resources';
+        case 'plants': return 'plants';
+        case 'capabilities': return 'capabilities';
+        case 'productionOrders': return 'production-orders';
+        default: return dataType;
+      }
+    };
+
+    const submitEntries = async () => {
+      if (!selectedDataType || entries.length === 0) return;
+      
+      setIsSubmitting(true);
+      try {
+        const authToken = localStorage.getItem('authToken');
+        const endpoint = getApiEndpoint(selectedDataType);
+        
+        for (const entry of entries) {
+          await fetch(`/api/${endpoint}`, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(entry)
+          });
+        }
+        
+        toast({ title: "Success", description: `${entries.length} ${selectedDataType} entries created successfully` });
+        setEntries([]);
+      } catch (error) {
+        toast({ title: "Error", description: "Failed to save entries", variant: "destructive" });
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
+
+    const fields = getFieldDefinitions(selectedDataType);
+
+    return (
+      <div className="space-y-4">
+        {/* Data Type Selection */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label>Select Data Type</Label>
+            <Select value={selectedDataType} onValueChange={(value) => {
+              setSelectedDataType(value);
+              setEntries([]);
+            }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose data type to enter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="resources">Resources</SelectItem>
+                <SelectItem value="plants">Plants</SelectItem>
+                <SelectItem value="capabilities">Capabilities</SelectItem>
+                <SelectItem value="productionOrders">Production Orders</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-end gap-2">
+            <Button 
+              variant="outline" 
+              onClick={addRow}
+              disabled={!selectedDataType}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Row
+            </Button>
+            {entries.length > 0 && (
+              <Button onClick={submitEntries} disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+                Save All
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Spreadsheet Interface */}
+        {selectedDataType && (
+          <div className="border rounded-lg overflow-hidden">
+            {/* Desktop View */}
+            <div className="hidden md:block overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {fields.map(field => (
+                      <TableHead key={field.key}>
+                        {field.label}
+                        {field.required && <span className="text-red-500 ml-1">*</span>}
+                      </TableHead>
+                    ))}
+                    <TableHead className="w-20">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {entries.map((entry, index) => (
+                    <TableRow key={index}>
+                      {fields.map(field => (
+                        <TableCell key={field.key}>
+                          {field.type === 'select' ? (
+                            <Select 
+                              value={entry[field.key] || ''} 
+                              onValueChange={(value) => updateEntry(index, field.key, value)}
+                            >
+                              <SelectTrigger className="h-8 text-sm">
+                                <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {field.options?.map(option => (
+                                  <SelectItem key={option} value={option}>{option}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <input
+                              type={field.type}
+                              value={entry[field.key] || ''}
+                              onChange={(e) => updateEntry(index, field.key, e.target.value)}
+                              className="w-full h-8 px-2 border rounded text-sm"
+                              placeholder={field.label}
+                            />
+                          )}
+                        </TableCell>
+                      ))}
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeRow(index)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile View */}
+            <div className="md:hidden space-y-4 p-4">
+              {entries.map((entry, index) => (
+                <div key={index} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-medium">Entry #{index + 1}</h4>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeRow(index)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {fields.map(field => (
+                    <div key={field.key} className="space-y-1">
+                      <Label className="text-sm">
+                        {field.label}
+                        {field.required && <span className="text-red-500 ml-1">*</span>}
+                      </Label>
+                      {field.type === 'select' ? (
+                        <Select 
+                          value={entry[field.key] || ''} 
+                          onValueChange={(value) => updateEntry(index, field.key, value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {field.options?.map(option => (
+                              <SelectItem key={option} value={option}>{option}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <input
+                          type={field.type}
+                          value={entry[field.key] || ''}
+                          onChange={(e) => updateEntry(index, field.key, e.target.value)}
+                          className="w-full px-3 py-2 border rounded"
+                          placeholder={field.label}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* Empty State */}
+            {entries.length === 0 && (
+              <div className="p-8 text-center text-gray-500">
+                <Grid3X3 className="h-8 w-8 mx-auto mb-2" />
+                <p className="text-sm">Click "Add Row" to start entering {selectedDataType || 'data'}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Data Type Not Selected */}
+        {!selectedDataType && (
+          <div className="border rounded-lg p-8 text-center text-gray-500">
+            <ClipboardList className="h-8 w-8 mx-auto mb-2" />
+            <p className="text-sm">Select a data type above to start entering data</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isMaxOpen } = useMaxDock();
@@ -435,33 +724,15 @@ Create authentic manufacturing data that reflects this company's operations.`;
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const itemsPerPage = 20;
 
-    // Map data types to table names for pagination API
+    // Map data types to table names for pagination API - only supported tables
     const getTableName = (dataType: string) => {
       const mapping: Record<string, string> = {
         'plants': 'plants',
         'resources': 'resources',
         'capabilities': 'capabilities',
         'productionOrders': 'production_orders',
-        'operations': 'operations',
-        'plannedOrders': 'planned_orders',
         'vendors': 'vendors',
-        'customers': 'customers',
-        'users': 'users',
-        'sites': 'sites',
-        'departments': 'departments',
-        'workCenters': 'work_centers',
-        'employees': 'employees',
-        'items': 'items',
-        'storageLocations': 'storage_locations',
-        'inventory': 'inventory',
-        'inventoryLots': 'inventory_lots',
-        'salesOrders': 'sales_orders',
-        'purchaseOrders': 'purchase_orders',
-        'transferOrders': 'transfer_orders',
-        'billsOfMaterial': 'bills_of_material',
-        'routings': 'routings',
-        'forecasts': 'forecasts',
-        'stockItems': 'stock_items'
+        'customers': 'customers'
       };
       return mapping[dataType] || dataType;
     };
@@ -1173,46 +1444,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
                   <p className="text-sm text-gray-600 mb-4">Enter data in spreadsheet format for quick bulk entry</p>
                 </div>
 
-                {/* Data Type Selection for Structured Entry */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="structured-data-type">Select Data Type</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose data type to enter" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="resources">Resources</SelectItem>
-                        <SelectItem value="plants">Plants</SelectItem>
-                        <SelectItem value="capabilities">Capabilities</SelectItem>
-                        <SelectItem value="productionOrders">Production Orders</SelectItem>
-                        <SelectItem value="operations">Operations</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex items-end">
-                    <Button variant="outline">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Row
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Spreadsheet-like Interface Placeholder */}
-                <div className="border rounded-lg">
-                  <div className="bg-gray-50 p-3 border-b">
-                    <div className="grid grid-cols-4 gap-4 text-sm font-medium">
-                      <div>Name</div>
-                      <div>Type</div>
-                      <div>Description</div>
-                      <div>Actions</div>
-                    </div>
-                  </div>
-                  <div className="p-4 text-center text-gray-500">
-                    <Grid3X3 className="h-8 w-8 mx-auto mb-2" />
-                    <p className="text-sm">Select a data type above to start entering data</p>
-                  </div>
-                </div>
+                <StructuredEntryComponent />
               </div>
             </TabsContent>
             
