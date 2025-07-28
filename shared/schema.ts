@@ -992,7 +992,7 @@ export const disruptions = pgTable("disruptions", {
   status: text("status").notNull().default("active"), // active, resolved, monitoring, escalated
   description: text("description"),
   affectedResourceId: integer("affected_resource_id").references(() => resources.id),
-  affectedJobId: integer("affected_job_id").references(() => productionOrders.id),
+  affectedProductionOrderId: integer("affected_production_order_id").references(() => productionOrders.id),
   affectedOperationId: integer("affected_operation_id").references(() => operations.id),
   startTime: timestamp("start_time").notNull(),
   estimatedDuration: integer("estimated_duration"), // in hours
@@ -1001,11 +1001,11 @@ export const disruptions = pgTable("disruptions", {
   assignedTo: text("assigned_to"),
   impactAssessment: jsonb("impact_assessment").$type<{
     delayedOperations: number;
-    affectedJobs: number;
+    affectedProductionOrders: number;
     estimatedDelay: number; // hours
     financialImpact: number;
     customerImpact: string;
-  }>().default({ delayedOperations: 0, affectedJobs: 0, estimatedDelay: 0, financialImpact: 0, customerImpact: "none" }),
+  }>().default({ delayedOperations: 0, affectedProductionOrders: 0, estimatedDelay: 0, financialImpact: 0, customerImpact: "none" }),
   resolutionPlan: text("resolution_plan"),
   resolutionNotes: text("resolution_notes"),
   preventiveMeasures: text("preventive_measures"),
@@ -3822,7 +3822,7 @@ export const schedulingResults = pgTable("scheduling_results", {
   id: serial("id").primaryKey(),
   historyId: integer("history_id").references(() => schedulingHistory.id).notNull(),
   operationId: integer("operation_id").references(() => operations.id).notNull(),
-  jobId: integer("job_id").references(() => productionOrders.id).notNull(),
+  productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
   resourceId: integer("resource_id").references(() => resources.id),
   originalStartTime: timestamp("original_start_time"),
   originalEndTime: timestamp("original_end_time"),
@@ -5015,7 +5015,7 @@ export const productionPlans = pgTable("production_plans", {
 export const productionTargets = pgTable("production_targets", {
   id: serial("id").primaryKey(),
   planId: integer("plan_id").references(() => productionPlans.id).notNull(),
-  jobId: integer("job_id").references(() => productionOrders.id).notNull(),
+  productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
   targetQuantity: integer("target_quantity").notNull(),
   actualQuantity: integer("actual_quantity").notNull().default(0),
   targetStartDate: timestamp("target_start_date").notNull(),
@@ -5740,8 +5740,8 @@ export const schedulingResultsRelations = relations(schedulingResults, ({ one })
     fields: [schedulingResults.operationId],
     references: [operations.id],
   }),
-  job: one(productionOrders, {
-    fields: [schedulingResults.jobId],
+  productionOrder: one(productionOrders, {
+    fields: [schedulingResults.productionOrderId],
     references: [productionOrders.id],
   }),
   resource: one(resources, {

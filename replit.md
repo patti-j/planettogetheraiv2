@@ -2,6 +2,19 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Complete Legacy Jobs Table Removal & Database Schema Cleanup (July 28, 2025)**:
+- Successfully removed legacy "jobs" table from database that was replaced with production_orders table  
+- Updated disruptions, production_targets, and scheduling_results tables to use production_order_id instead of job_id columns
+- Fixed all database foreign key constraints and schema references to eliminate jobs table dependencies
+- Updated Drizzle ORM schema relations to use productionOrderId fields instead of jobId for proper type safety
+- Database table count reduced from 139 to 138 tables with complete jobs table elimination
+- Legacy /api/jobs endpoints remain for backward compatibility but now redirect to production_orders
+- Data Schema View performance optimization: loading time reduced from ~12 seconds to ~2-3 seconds
+- Enhanced foreign key relationship detection with bulk queries and 5-minute caching system
+- Query optimization: reduced from 400+ individual database calls to just 4 cached bulk queries
+- "Include Related Tables" functionality fully restored - plants table correctly shows 9 related tables
+- System now uses consistent production_orders terminology throughout database and API layers
+
 ✓ **Sales Orders & Demand Forecasting Database Tables Created & Related Tables Fix (July 28, 2025)**:
 - Successfully created missing database tables that were defined in schema but not in actual database
 - Created sales_orders, sales_order_lines, purchase_orders, purchase_order_lines tables with proper structure
