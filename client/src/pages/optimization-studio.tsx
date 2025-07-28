@@ -399,7 +399,7 @@ export default function OptimizationStudio() {
                   AI Collaborate
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] sm:w-full flex flex-col" style={{ WebkitOverflowScrolling: 'touch' }}>
+              <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] sm:w-full flex flex-col overflow-hidden" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <Brain className="w-5 h-5" />
@@ -415,10 +415,10 @@ export default function OptimizationStudio() {
                   </DialogDescription>
                 </DialogHeader>
                 
-                <div className="flex-1 flex flex-col space-y-4 overflow-hidden">
+                <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
                   {!aiSessionActive ? (
                     /* Initial Introduction */
-                    <div className="space-y-4">
+                    <div className="flex-1 overflow-y-auto space-y-4 p-1" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
                       <Card className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
                         <div className="flex items-start gap-4">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center flex-shrink-0">
@@ -455,9 +455,9 @@ export default function OptimizationStudio() {
                     </div>
                   ) : (
                     /* Active Session Interface */
-                    <>
+                    <div className="flex-1 flex flex-col space-y-4 overflow-hidden">
                       {/* Progress Indicator */}
-                      <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="bg-gray-50 p-4 rounded-lg flex-shrink-0">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-medium">Development Progress</span>
                           <span className="text-sm text-gray-600">{aiSessionStep}/5 Steps Complete</span>
@@ -472,11 +472,12 @@ export default function OptimizationStudio() {
 
                       {/* Conversation Area */}
                       <div 
-                        className="flex-1 overflow-y-auto border rounded-lg p-2 sm:p-4 space-y-4 bg-gray-50 min-h-[200px] max-h-[300px] sm:max-h-[400px]" 
+                        className="flex-1 overflow-y-auto border rounded-lg p-2 sm:p-4 space-y-4 bg-gray-50" 
                         style={{ 
                           WebkitOverflowScrolling: 'touch',
                           overscrollBehavior: 'contain',
-                          touchAction: 'pan-y'
+                          touchAction: 'pan-y',
+                          minHeight: 0
                         }}
                       >
                         {aiSessionMessages.map((message, index) => (
@@ -570,7 +571,7 @@ export default function OptimizationStudio() {
                           </div>
                         </div>
                       </div>
-                    </>
+                    </div>
                   )}
                 </div>
               </DialogContent>
