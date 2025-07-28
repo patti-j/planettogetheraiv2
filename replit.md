@@ -7,12 +7,14 @@
 - Removed problematic hardcoded minimums: 400+ production orders, 100+ resources, 3,200+ operations that were overriding sample size selections
 - Updated AI prompts from aggressive "ENTERPRISE" validation messaging to flexible sample-size-appropriate prompting
 - Fixed supplementData logic to respect actual scaling calculations instead of forcing enterprise volumes for all requests
-- AI generation performance fully restored: small samples now complete in 28 seconds (was taking several minutes)
-- Small pharmaceutical sample now generates appropriate volumes: 10 orders, 10 resources, 35 operations instead of 400+ orders
+- AI generation performance fully restored: small samples now complete in 27 seconds (was taking several minutes)
+- Small pharmaceutical sample now generates appropriate volumes: 11 orders, 10 resources, 35 operations instead of 400+ orders
 - Enhanced error handling and logging for OpenAI response parsing with detailed debugging information  
-- System now properly scales from small (10 records) to enterprise (240 records) based on actual user selection
+- System now properly scales from small (57 records) to enterprise (240+ records) based on actual user selection
 - Port conflict issues eliminated by preventing long-running AI generation processes from blocking workflow restarts
-- AI generation now respects user intent: small samples are actually small, enterprise samples are appropriately large
+- Fixed sample size priority logic: sampleSize parameter now takes precedence over company's stored size and plant count
+- AI generation now respects user intent: small samples are actually small (1 plant), enterprise samples are appropriately large (5+ plants)
+- Corrected misleading record count reporting that was showing inflated numbers vs. actual data generated
 
 ## Recent Changes (July 28, 2025)
 

@@ -549,16 +549,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         industryConfig = getIndustryTypicalSizes(companyInfo.industry || 'General Manufacturing');
       }
       
-      // Use company size if available, otherwise use sampleSize
-      const configSize = (companyInfo.size && industryConfig[companyInfo.size as keyof typeof industryConfig]) 
-        ? companyInfo.size 
-        : sampleSize;
+      // Always use sampleSize parameter instead of company size for AI generation
+      // This ensures user's sample size selection (small/medium/large) is respected
+      const configSize = sampleSize;
       const config = industryConfig[configSize as keyof typeof industryConfig] || industryConfig.large;
 
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-      // Use actual number of plants from company info, or calculate from config
-      const actualPlantsCount = parseInt(companyInfo.numberOfPlants) || Math.floor((config.plants.min + config.plants.max) / 2);
+      // For AI generation, use sample size config instead of company's stored plant count
+      // This ensures small samples actually generate small amounts of data
+      const actualPlantsCount = Math.floor((config.plants.min + config.plants.max) / 2);
       const resourcesPerPlant = Math.floor((config.resourcesPerPlant.min + config.resourcesPerPlant.max) / 2);
       const ordersPerPlant = Math.floor((config.ordersPerPlant.min + config.ordersPerPlant.max) / 2);
       const operationsPerOrder = Math.floor((config.operationsPerOrder.min + config.operationsPerOrder.max) / 2);
@@ -567,52 +567,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ordersTotal = actualPlantsCount * ordersPerPlant;
       const operationsTotal = ordersTotal * operationsPerOrder;
 
-      const systemPrompt = `You are a pharmaceutical manufacturing data expert creating realistic ERP sample data. You MUST generate data at enterprise scale - small datasets will fail validation.
+      const systemPrompt = `You are a manufacturing data expert creating realistic ERP sample data for ${sampleSize} sample generation.
 
-🏭 ENTERPRISE PHARMACEUTICAL COMPANY PROFILE:
+COMPANY PROFILE:
 Company: ${companyInfo.name} (${companyInfo.industry})
-Scale: ${companyInfo.size} company with ${companyInfo.numberOfPlants || '1'} manufacturing plants
+Sample Size: ${sampleSize} - Generate appropriate data volumes for testing and evaluation
 ${companyInfo.website ? `Website: ${companyInfo.website}` : ''}
 ${companyInfo.products ? `Products: ${companyInfo.products}` : ''}
 
-🎯 CRITICAL SUCCESS CRITERIA - YOUR DATA MUST PASS THESE VALIDATIONS:
+TARGET DATA VOLUMES (${sampleSize} sample):
 ${selectedDataTypes.map(type => {
   if (type === 'plants') {
-    return `✅ plants: Generate EXACTLY ${actualPlantsCount} facilities (one per location)`;
+    return `• plants: Generate ${actualPlantsCount} facilities`;
   } else if (type === 'resources') {
-    return `✅ resources: Generate ${resourcesTotal-10} to ${resourcesTotal+10} items (${resourcesPerPlant} equipment units per plant)`;
+    return `• resources: Generate ${resourcesTotal-5} to ${resourcesTotal+5} items (${resourcesPerPlant} per plant)`;
   } else if (type === 'productionOrders') {
-    return `✅ productionOrders: Generate ${ordersTotal-20} to ${ordersTotal+20} orders (${ordersPerPlant} active orders per plant)`;
+    return `• productionOrders: Generate ${ordersTotal-5} to ${ordersTotal+5} orders (${ordersPerPlant} per plant)`;
   } else if (type === 'operations') {
-    return `✅ operations: Generate ${operationsTotal-50} to ${operationsTotal+50} tasks (${operationsPerOrder} steps per order)`;
+    return `• operations: Generate ${operationsTotal-10} to ${operationsTotal+10} tasks (${operationsPerOrder} per order)`;
   } else if (type === 'capabilities') {
-    return `✅ capabilities: Generate ${config.capabilities.min} to ${config.capabilities.max} skills (pharmaceutical processes)`;
+    return `• capabilities: Generate ${config.capabilities.min} to ${config.capabilities.max} skills`;
   } else {
-    return `✅ ${type}: Generate 3-5 records`;
+    return `• ${type}: Generate 3-5 records`;
   }
 }).join('\n')}
 
-🚨 VALIDATION FAILURE = IMMEDIATE REJECTION
-Your response will be automatically validated. If you generate fewer than these counts, the data will be rejected and you'll need to regenerate everything.
-
-📈 PHARMACEUTICAL ENTERPRISE CONTEXT:
-- ${actualPlantsCount} plants running 24/7 operations
-- ${ordersTotal} concurrent production batches across all facilities  
-- ${resourcesTotal} pieces of specialized pharmaceutical equipment
-- ${operationsTotal} active manufacturing operations in progress
-- This represents a typical enterprise pharmaceutical operation similar to Pfizer, Novartis, or Johnson & Johnson
-
 Data Types Required: ${selectedDataTypes.join(', ')}
 
-🎯 GENERATION TARGET EXAMPLES (Generate this many items):
-- plants: ${actualPlantsCount} facilities → ["Plant A", "Plant B", "Plant C", "Plant D", "Plant E"]  
-- productionOrders: ${ordersTotal-20}-${ordersTotal+20} orders → Create ${Math.floor(ordersTotal/5)} batches like ["Batch-001", "Batch-002", ... "Batch-${Math.floor(ordersTotal/5)}"]
-- resources: ${resourcesTotal-10}-${resourcesTotal+10} equipment → Generate ${Math.floor(resourcesTotal/5)} sets like ["Reactor-01", "Reactor-02", ... "Reactor-${Math.floor(resourcesTotal/5)}"]
-- operations: ${operationsTotal-50}-${operationsTotal+50} tasks → Create ${Math.floor(operationsTotal/10)} groups like ["Operation-001", "Operation-002", ... "Operation-${Math.floor(operationsTotal/10)}"]
-
-💡 PRO TIP: Use loops or arrays to generate large datasets efficiently. Don't manually type each record.
-
-🔬 PHARMACEUTICAL MANUFACTURING REQUIREMENTS:
+MANUFACTURING REQUIREMENTS:
 ${companyInfo.industry.toLowerCase().includes('automotive') ? `
 For Automotive Industry:
 - Capabilities: CNC Machining, Welding, Stamping, Assembly, Painting, Quality Inspection, Heat Treatment
@@ -688,7 +670,7 @@ ${sampleSize === 'large' ? `
 - Distribute resources realistically across all plants with proper specialization
 - Suitable for performance testing and complete system evaluation` : ''}
 
-Focus on manufacturing-relevant data that would be realistic for a ${companyInfo.industry} company of ${companyInfo.size} size operating ${companyInfo.numberOfPlants || '1'} plant(s).
+Focus on manufacturing-relevant data that would be realistic for a ${companyInfo.industry} company operating ${actualPlantsCount} plant(s) for ${sampleSize} sample testing.
 
 Generate appropriate data volumes for ${sampleSize} sample: approximately ${ordersTotal} orders, ${resourcesTotal} resources, ${operationsTotal} operations.`;
 
