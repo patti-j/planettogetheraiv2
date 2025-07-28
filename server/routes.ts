@@ -690,18 +690,17 @@ ${sampleSize === 'large' ? `
 
 Focus on manufacturing-relevant data that would be realistic for a ${companyInfo.industry} company of ${companyInfo.size} size operating ${companyInfo.numberOfPlants || '1'} plant(s).
 
-🚨 CRITICAL: Your response will be automatically validated. Generate enterprise volumes: ${ordersTotal} orders, ${resourcesTotal} resources, ${operationsTotal} operations. Small datasets will fail validation.`;
+Generate appropriate data volumes for ${sampleSize} sample: approximately ${ordersTotal} orders, ${resourcesTotal} resources, ${operationsTotal} operations.`;
 
-      const finalUserPrompt = `ENTERPRISE PHARMACEUTICAL DATA GENERATION TASK
+      const finalUserPrompt = `${sampleSize.toUpperCase()} SAMPLE DATA GENERATION
 
 Company: ${companyInfo.name} (${companyInfo.industry}, ${companyInfo.size})
-Validation Target: Generate ${ordersTotal} production orders across ${actualPlantsCount} plants
+Sample Size: ${sampleSize} - Generate approximately ${ordersTotal} production orders across ${actualPlantsCount} plants
 
-PASS/FAIL CRITERIA:
-✅ PASS: Generate ${ordersTotal-20} to ${ordersTotal+20} production orders
-✅ PASS: Generate ${resourcesTotal-10} to ${resourcesTotal+10} resources  
-✅ PASS: Generate ${operationsTotal-50} to ${operationsTotal+50} operations
-❌ FAIL: Generate fewer than required minimums
+TARGET VOLUMES (flexible ranges):
+- Production Orders: ${Math.max(ordersTotal-10, 5)} to ${ordersTotal+10} 
+- Resources: ${Math.max(resourcesTotal-5, 3)} to ${resourcesTotal+10}
+- Operations: ${Math.max(operationsTotal-20, 10)} to ${operationsTotal+50}
 
 This data represents realistic pharmaceutical enterprise operations. Generate enterprise-scale manufacturing data that matches the volumes specified above.
 
@@ -771,19 +770,19 @@ Create authentic pharmaceutical manufacturing data for ${companyInfo.name} with 
         return supplemented;
       };
 
-      // Apply minimum requirements for enterprise pharmaceutical scaling
-      console.log(`📊 Expected volumes: ${ordersTotal} orders, ${resourcesTotal} resources, ${operationsTotal} operations for enterprise pharmaceutical`);
+      // Apply scaling requirements based on sample size (no hardcoded minimums)
+      console.log(`📊 Expected volumes: ${ordersTotal} orders, ${resourcesTotal} resources, ${operationsTotal} operations for ${sampleSize} ${companyInfo.industry}`);
       
       if (generatedData.dataTypes.productionOrders) {
-        const targetOrders = Math.max(ordersTotal - 20, 400); // Minimum 400 for enterprise
+        const targetOrders = Math.max(ordersTotal - 10, 5); // Allow small samples to be actually small
         generatedData.dataTypes.productionOrders = supplementData('productionOrders', generatedData.dataTypes.productionOrders, targetOrders);
       }
       if (generatedData.dataTypes.resources) {
-        const targetResources = Math.max(resourcesTotal - 10, 100); // Minimum 100 for enterprise  
+        const targetResources = Math.max(resourcesTotal - 5, 3); // Allow small samples to be actually small  
         generatedData.dataTypes.resources = supplementData('resources', generatedData.dataTypes.resources, targetResources);
       }
       if (generatedData.dataTypes.operations) {
-        const targetOperations = Math.max(operationsTotal - 50, 3200); // Minimum 3200 for enterprise
+        const targetOperations = Math.max(operationsTotal - 20, 10); // Allow small samples to be actually small
         generatedData.dataTypes.operations = supplementData('operations', generatedData.dataTypes.operations, targetOperations);
       }
 
