@@ -214,7 +214,8 @@ const featureTableMapping: Record<string, string[]> = {
     'product_categories', 'product_structures', 'engineering_changes',
     'specifications', 'documents', 'alternate_routings', 'operations',
     'capabilities', 'resource_capabilities', 'quality_specifications',
-    'material_specifications', 'process_parameters', 'technical_documents'
+    'material_specifications', 'process_parameters', 'technical_documents',
+    'resources', 'plants', 'resource_requirements'
   ]
 };
 
