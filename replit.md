@@ -29,6 +29,14 @@
 - Tab headers now display properly on all screen sizes: "Overview", "Profiles", "How it Works", "Parameters", "Results"
 - Mobile users get horizontal scrolling tabs while desktop users retain grid layout for optimal experience across devices
 
+✓ **Toast Notification Optimization & Close Button Enhancement (July 28, 2025)**:
+- Removed intrusive profile selection confirmation pop-up that was getting in the way of user workflow
+- Reduced toast auto-dismiss timeout from 17 minutes to 5 seconds for better user experience
+- Verified toast notifications include close X button in top-right corner for immediate dismissal
+- Removed unnecessary success toast notifications for profile creation and updates to reduce interruptions
+- Toast system now provides non-intrusive feedback while maintaining error notifications for critical issues
+- Enhanced toaster component already includes copy button for error messages with visual feedback
+
 ✓ **AI Generation Performance Restoration & Root Cause Fix (July 28, 2025)**:
 - Identified and fixed root cause of AI generation performance regression: hardcoded enterprise minimums forcing massive data creation regardless of sample size
 - Removed problematic hardcoded minimums: 400+ production orders, 100+ resources, 3,200+ operations that were overriding sample size selections

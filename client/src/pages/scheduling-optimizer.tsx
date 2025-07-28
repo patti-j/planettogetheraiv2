@@ -493,10 +493,6 @@ const SchedulingOptimizer: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/optimization/profiles'] });
       setShowCreateProfile(false);
-      toast({
-        title: "Profile Created",
-        description: "Optimization profile created successfully.",
-      });
     },
     onError: () => {
       toast({
@@ -515,10 +511,6 @@ const SchedulingOptimizer: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/optimization/profiles'] });
       setShowEditProfile(null);
-      toast({
-        title: "Profile Updated",
-        description: "Optimization profile updated successfully.",
-      });
     },
     onError: () => {
       toast({
@@ -1509,12 +1501,6 @@ const SchedulingOptimizer: React.FC = () => {
             <Button 
               onClick={() => {
                 setShowProfileSelection(false);
-                if (selectedProfileId) {
-                  toast({
-                    title: "Profile Applied",
-                    description: "Selected optimization profile will be used for scheduling algorithms.",
-                  });
-                }
               }}
               disabled={!selectedProfileId}
             >

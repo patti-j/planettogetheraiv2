@@ -167,10 +167,6 @@ export default function BackwardsSchedulingAlgorithm() {
       return await response.json();
     },
     onSuccess: () => {
-      toast({
-        title: "Profile Created",
-        description: "Optimization profile has been saved successfully.",
-      });
       setShowCreateProfile(false);
       queryClient.invalidateQueries({ queryKey: ['/api/optimization-profiles'] });
     },
@@ -189,10 +185,6 @@ export default function BackwardsSchedulingAlgorithm() {
       return await response.json();
     },
     onSuccess: () => {
-      toast({
-        title: "Profile Updated",
-        description: "Optimization profile has been updated successfully.",
-      });
       setShowEditProfile(null);
       queryClient.invalidateQueries({ queryKey: ['/api/optimization-profiles'] });
     },
