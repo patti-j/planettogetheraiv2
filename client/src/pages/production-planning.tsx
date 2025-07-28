@@ -432,13 +432,9 @@ export default function ProductionPlanningPage() {
           <CardContent className="p-8 text-center">
             <Target className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Production Plans</h3>
-            <p className="text-gray-600 mb-4">
-              Get started by creating your first production plan to track goals and allocate resources.
+            <p className="text-gray-600">
+              Get started by creating your first production plan using the "New Plan" button above to track goals and allocate resources.
             </p>
-            <Button onClick={() => setCreateDialogOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Create First Plan
-            </Button>
           </CardContent>
         </Card>
       ) : (
