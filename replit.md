@@ -2,6 +2,13 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Menu Terminology Update - Production Cockpit Renamed to Cockpit (July 28, 2025)**:
+- Changed main navigation menu item from "Production Cockpit" to simply "Cockpit" to reflect flexible, user-customizable nature
+- Updated NavigationContext page mapping to display "Cockpit" in recent pages and navigation tracking
+- Cockpit concept now emphasizes that each user can have one or more customizable cockpit views for any manufacturing focus area
+- Menu terminology reflects that cockpits are not limited to production but can control any aspect of manufacturing operations
+- Enhanced flexibility allows users to create personalized dashboard views tailored to their specific role and responsibilities
+
 ✓ **Critical Profile Selection Bug Fix - Optimization Results Now Use Selected Profile Parameters (July 28, 2025)**:
 - Fixed major functional issue where profile selection in scheduler cockpit was only affecting UI display but not actual optimization calculations
 - Integrated profile parameters (efficiency multipliers, cost factors, utilization targets) into both existing order and new job optimization algorithms

@@ -29,7 +29,7 @@ const MAX_RECENT_PAGES = 6;
 const pageMapping: Record<string, { label: string; icon: string }> = {
   '/': { label: 'Dashboard', icon: 'BarChart3' },
   '/production-schedule': { label: 'Production Schedule', icon: 'BarChart3' },
-  '/production-cockpit': { label: 'Production Cockpit', icon: 'Monitor' },
+  '/production-cockpit': { label: 'Cockpit', icon: 'Monitor' },
   '/boards': { label: 'Boards', icon: 'Columns3' },
   '/analytics': { label: 'Analytics', icon: 'BarChart3' },
   '/reports': { label: 'Reports', icon: 'FileText' },
@@ -77,7 +77,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
 
   // Helper function to check if onboarding is complete
   const isOnboardingComplete = () => {
-    return onboardingStatus?.isCompleted === true;
+    return onboardingStatus && typeof onboardingStatus === 'object' && 'isCompleted' in onboardingStatus ? onboardingStatus.isCompleted === true : false;
   };
 
   // Helper function to ensure Getting Started is auto-pinned when needed
@@ -173,7 +173,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
         saveRecentPages(processedPages);
       }
     }
-  }, [onboardingStatus?.isCompleted]);
+  }, [onboardingStatus && typeof onboardingStatus === 'object' && 'isCompleted' in onboardingStatus ? onboardingStatus.isCompleted : false]);
 
   // Track current page when location changes and save last visited route
   useEffect(() => {
