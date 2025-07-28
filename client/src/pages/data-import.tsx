@@ -501,7 +501,8 @@ Create authentic manufacturing data that reflects this company's operations.`;
               <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>
+                  <TableHead className="p-0">
+                    {/* Mobile header - matches row structure exactly */}
                     <div className="flex min-h-[60px] sm:hidden">
                       {/* Checkbox space - matches row structure */}
                       {bulkSelectMode && (
@@ -510,18 +511,13 @@ Create authentic manufacturing data that reflects this company's operations.`;
                         </div>
                       )}
                       
-                      {/* Content area - matches row structure exactly */}
-                      <div className="flex-1 p-3">
-                        <div className="flex items-center justify-between">
-                          <span>Name</span>
-                          {/* Status and delete button */}
-                          <div className="flex items-center gap-2">
-                            {bulkSelectMode && (
-                              <span className="text-sm text-gray-500">
-                                {selectedItems.size} selected
-                              </span>
-                            )}
-                            {bulkSelectMode && selectedItems.size > 0 && (
+                      {/* Content area - exact copy of row structure */}
+                      <div className="flex-1 p-3 flex items-center">
+                        <span>Name</span>
+                        <span className="ml-auto text-sm text-gray-500">
+                          {bulkSelectMode && selectedItems.size > 0 && (
+                            <>
+                              {selectedItems.size} selected
                               <Button
                                 variant="destructive"
                                 size="sm"
@@ -533,16 +529,21 @@ Create authentic manufacturing data that reflects this company's operations.`;
                                   setSelectedItems(new Set());
                                   setBulkSelectMode(false);
                                 }}
-                                className="h-6 px-2"
+                                className="h-6 px-2 ml-2"
                                 title={`Delete ${selectedItems.size} selected items`}
                               >
                                 <Trash2 className="h-3 w-3 mr-1" />
                                 {selectedItems.size}
                               </Button>
-                            )}
-                          </div>
-                        </div>
+                            </>
+                          )}
+                        </span>
                       </div>
+                      
+                      {/* Delete button space when not in bulk mode */}
+                      {!bulkSelectMode && (
+                        <div className="w-0"></div>
+                      )}
                       
                       {/* Toggle button space - matches row structure exactly */}
                       <div className="w-12 flex items-center justify-center">
