@@ -20,7 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { OptimizationSummaryDialog } from "./optimization-summary-dialog";
 import { addDays, format } from "date-fns";
-import type { Job, Operation, Resource } from "@shared/schema";
+import type { ProductionOrder, PlannedOrder, Operation, Resource } from "@shared/schema";
 
 interface BackwardsSchedulingParams {
   bufferTime: number;
@@ -32,18 +32,21 @@ interface BackwardsSchedulingParams {
   workingDays: number[];
   frozenHorizonEnabled: boolean;
   frozenHorizonDays: number;
+  includePlannedOrders: boolean;
+  plannedOrderWeight: number;
 }
 
 interface ScheduleResult {
   operationId: number;
-  jobId: number;
-  jobName: string;
+  productionOrderId: number;
+  productionOrderName: string;
   operationName: string;
   resourceId: number;
   resourceName: string;
   startTime: string;
   endTime: string;
   duration: number;
+  isPlannedOrder?: boolean;
   frozen?: boolean;
   optimizationFlags?: {
     isEarly: boolean;
@@ -70,15 +73,22 @@ export default function BackwardsSchedulingAlgorithm() {
     workingHoursEnd: 17,
     workingDays: [1, 2, 3, 4, 5],
     frozenHorizonEnabled: true,
-    frozenHorizonDays: 3
+    frozenHorizonDays: 3,
+    includePlannedOrders: true,
+    plannedOrderWeight: 0.7
   });
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch jobs and resources for scheduling
-  const { data: jobs = [] } = useQuery<Job[]>({
-    queryKey: ['/api/jobs'],
+  // Fetch production orders, planned orders, and resources for scheduling
+  const { data: productionOrders = [] } = useQuery<ProductionOrder[]>({
+    queryKey: ['/api/production-orders'],
+    refetchOnWindowFocus: false
+  });
+
+  const { data: plannedOrders = [] } = useQuery<PlannedOrder[]>({
+    queryKey: ['/api/planned-orders'],
     refetchOnWindowFocus: false
   });
 
@@ -101,7 +111,8 @@ export default function BackwardsSchedulingAlgorithm() {
         '/api/optimization/algorithms/backwards-scheduling/run',
         {
           parameters: params,
-          jobs,
+          productionOrders,
+          plannedOrders,
           resources,
           operations
         }
@@ -341,8 +352,8 @@ export default function BackwardsSchedulingAlgorithm() {
                 <div className="flex items-center gap-2">
                   <BarChart3 className="w-4 h-4 text-blue-500" />
                   <div>
-                    <p className="text-sm text-gray-600">Jobs to Schedule</p>
-                    <p className="text-xl font-bold">{jobs.length}</p>
+                    <p className="text-sm text-gray-600">Orders to Schedule</p>
+                    <p className="text-xl font-bold">{productionOrders.length + (parameters.includePlannedOrders ? plannedOrders.length : 0)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -614,6 +625,45 @@ export default function BackwardsSchedulingAlgorithm() {
                 </div>
               </div>
 
+              {/* Planned Orders Integration */}
+              <div className="space-y-4 p-4 border border-emerald-200 bg-emerald-50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-emerald-500" />
+                    <Label className="text-base font-semibold text-emerald-900">Planned Orders Integration</Label>
+                  </div>
+                  <Switch
+                    id="includePlannedOrders"
+                    checked={parameters.includePlannedOrders}
+                    onCheckedChange={(checked) => updateParameter('includePlannedOrders', checked)}
+                  />
+                </div>
+                
+                <p className="text-sm text-emerald-700">
+                  Include planned orders in the scheduling process. Planned orders are provisional orders that may become firm production orders.
+                </p>
+
+                {parameters.includePlannedOrders && (
+                  <div className="space-y-2">
+                    <Label>Planned Order Weight: {parameters.plannedOrderWeight}</Label>
+                    <Slider
+                      value={[parameters.plannedOrderWeight]}
+                      onValueChange={([value]) => updateParameter('plannedOrderWeight', value)}
+                      max={1}
+                      min={0.1}
+                      step={0.1}
+                      className="w-full"
+                    />
+                    <div className="text-xs text-emerald-600">
+                      Weight factor for planned orders vs. confirmed production orders (0.1 = low priority, 1.0 = equal priority)
+                    </div>
+                    <div className="text-xs text-emerald-500">
+                      Current: {plannedOrders.length} planned orders available for scheduling
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Frozen Horizon */}
               <div className="space-y-4 p-4 border border-blue-200 bg-blue-50 rounded-lg">
                 <div className="flex items-center justify-between">
@@ -675,7 +725,7 @@ export default function BackwardsSchedulingAlgorithm() {
                     <table className="w-full border-collapse border border-gray-200">
                       <thead>
                         <tr className="bg-gray-50">
-                          <th className="border border-gray-200 px-4 py-2 text-left">Job</th>
+                          <th className="border border-gray-200 px-4 py-2 text-left">Production Order</th>
                           <th className="border border-gray-200 px-4 py-2 text-left">Operation</th>
                           <th className="border border-gray-200 px-4 py-2 text-left">Resource</th>
                           <th className="border border-gray-200 px-4 py-2 text-left">Start Time</th>
@@ -689,8 +739,13 @@ export default function BackwardsSchedulingAlgorithm() {
                           <tr key={index} className="hover:bg-gray-50">
                             <td className="border border-gray-200 px-4 py-2">
                               <div>
-                                <div className="font-medium">{result.jobName}</div>
-                                <div className="text-sm text-gray-500">ID: {result.jobId}</div>
+                                <div className="font-medium">{result.productionOrderName}</div>
+                                <div className="text-sm text-gray-500">ID: {result.productionOrderId}</div>
+                                {result.isPlannedOrder && (
+                                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 mt-1">
+                                    Planned Order
+                                  </Badge>
+                                )}
                               </div>
                             </td>
                             <td className="border border-gray-200 px-4 py-2">

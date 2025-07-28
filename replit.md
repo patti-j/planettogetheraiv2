@@ -1,5 +1,20 @@
 # PlanetTogether - Manufacturing Production Scheduler
 
+## Recent Changes (July 28, 2025)
+
+✓ **Complete Backwards Scheduling Algorithm Jobs-to-Production-Orders Migration (July 28, 2025)**:
+- Successfully completed comprehensive migration of backwards scheduling algorithm from job-based to production order-based structure
+- Updated backend API endpoint `/api/optimization/algorithms/backwards-scheduling/run` to receive productionOrders and plannedOrders instead of jobs
+- Enhanced validation to require productionOrders array and treat plannedOrders as optional parameter for planned order consideration
+- Added intelligent planned order integration with configurable weight factors and isPlannedOrder flags for scheduling differentiation
+- Updated algorithm core logic to process production orders with proper sorting by priority and due date
+- Fixed operation filtering to use productionOrderId instead of jobId for correct data relationships
+- Enhanced schedule result structure with productionOrderId, productionOrderName, and isPlannedOrder properties for proper identification
+- Updated optimization insights to reference "order due date" terminology instead of "job due date" for consistency
+- Enhanced statistics reporting to show ordersProcessed and plannedOrdersIncluded counts instead of jobsProcessed
+- Algorithm now properly handles combined production orders and planned orders with configurable priority weighting
+- Backwards scheduling system fully migrated to production order terminology while maintaining all optimization capabilities
+
 ## Recent Changes (July 27, 2025)
 
 ✓ **Industry Template Data Volume Integration & Enhanced AI Prompting (July 27, 2025)**:

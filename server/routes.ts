@@ -6054,11 +6054,30 @@ Manufacturing Context Available:
   // Backwards Scheduling Algorithm
   app.post("/api/optimization/algorithms/backwards-scheduling/run", requireAuth, async (req, res) => {
     try {
-      const { parameters, jobs, resources, operations } = req.body;
+      const { parameters, productionOrders, plannedOrders, resources, operations } = req.body;
       
       // Input validation
-      if (!parameters || !Array.isArray(jobs) || !Array.isArray(resources) || !Array.isArray(operations)) {
-        return res.status(400).json({ error: "Invalid input data" });
+      if (!parameters || !Array.isArray(productionOrders) || !Array.isArray(resources) || !Array.isArray(operations)) {
+        return res.status(400).json({ error: "Missing required parameters: parameters, productionOrders, resources, operations" });
+      }
+
+      // Planned orders are optional
+      const allPlannedOrders = Array.isArray(plannedOrders) ? plannedOrders : [];
+
+      // Combine production orders and planned orders if specified
+      let allOrders = [...productionOrders];
+      if (parameters.includePlannedOrders && allPlannedOrders.length > 0) {
+        // Mark planned orders with isPlannedOrder flag and apply weight
+        const weightedPlannedOrders = allPlannedOrders.map(order => ({
+          ...order,
+          isPlannedOrder: true,
+          priority: Math.round((order.priority || 3) * (parameters.plannedOrderWeight || 0.7))
+        }));
+        allOrders = [...productionOrders, ...weightedPlannedOrders];
+      }
+
+      if (allOrders.length === 0) {
+        return res.status(400).json({ error: "No production orders provided for scheduling" });
       }
 
       // Backwards scheduling algorithm implementation
@@ -6071,22 +6090,22 @@ Manufacturing Context Available:
         frozenHorizonDate.setDate(frozenHorizonDate.getDate() + parameters.frozenHorizonDays);
       }
       
-      // 1. Sort jobs by priority and due date
-      const sortedJobs = [...jobs].sort((a, b) => {
+      // 1. Sort orders by priority and due date
+      const sortedOrders = [...allOrders].sort((a, b) => {
         const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
         const priorityDiff = (priorityOrder[a.priority] || 3) - (priorityOrder[b.priority] || 3);
         if (priorityDiff !== 0) return priorityDiff;
         return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
       });
 
-      // 2. Process each job
-      for (const job of sortedJobs) {
-        const jobOperations = operations.filter(op => op.jobId === job.id);
+      // 2. Process each production order
+      for (const order of sortedOrders) {
+        const orderOperations = operations.filter(op => op.productionOrderId === order.id);
         
         // Sort operations by sequence (reverse for backwards scheduling)
-        const sortedOps = jobOperations.sort((a, b) => (b.sequence || 0) - (a.sequence || 0));
+        const sortedOps = orderOperations.sort((a, b) => (b.sequence || 0) - (a.sequence || 0));
         
-        let currentEndTime = new Date(job.dueDate);
+        let currentEndTime = new Date(order.dueDate);
         
         for (const operation of sortedOps) {
           // Check if operation is within frozen horizon
@@ -6097,12 +6116,13 @@ Manufacturing Context Available:
               const assignedResource = resources.find(r => r.id === operation.resourceId) || resources[0];
               schedule.push({
                 operationId: operation.id,
-                jobId: job.id,
-                jobName: job.name,
+                productionOrderId: order.id,
+                productionOrderName: order.name,
                 operationName: operation.name,
                 resourceId: operation.resourceId || resources[0]?.id,
                 resourceName: assignedResource?.name || 'Unknown Resource',
                 startTime: operation.scheduledStartDate,
+                isPlannedOrder: order.isPlannedOrder || false,
                 endTime: operation.scheduledEndDate || new Date(operationStartDate.getTime() + (operation.estimatedDuration || 4) * 60 * 60 * 1000).toISOString(),
                 duration: operation.estimatedDuration || 4,
                 frozen: true
@@ -6156,7 +6176,7 @@ Manufacturing Context Available:
             }
             
             // Calculate optimization insights for this operation
-            const dueDate = new Date(job.dueDate);
+            const dueDate = new Date(order.dueDate);
             const timeToDeadline = (dueDate.getTime() - finalEndTime.getTime()) / (1000 * 60 * 60); // hours
             const scheduleDeviation = Math.round(timeToDeadline);
             
@@ -6170,10 +6190,10 @@ Manufacturing Context Available:
             // Early/Late detection
             if (timeToDeadline > 24) {
               isEarly = true;
-              optimizationNotes = `Operation scheduled ${Math.round(timeToDeadline)} hours before job due date. Consider moving closer to deadline to reduce WIP inventory.`;
+              optimizationNotes = `Operation scheduled ${Math.round(timeToDeadline)} hours before order due date. Consider moving closer to deadline to reduce WIP inventory.`;
             } else if (timeToDeadline < 0) {
               isLate = true;
-              optimizationNotes = `Operation scheduled ${Math.abs(Math.round(timeToDeadline))} hours after job due date. Requires immediate attention to meet delivery commitments.`;
+              optimizationNotes = `Operation scheduled ${Math.abs(Math.round(timeToDeadline))} hours after order due date. Requires immediate attention to meet delivery commitments.`;
             }
             
             // Bottleneck detection (simplified - based on resource utilization)
@@ -6184,21 +6204,22 @@ Manufacturing Context Available:
             }
             
             // Criticality assessment
-            if (job.priority === 'critical' || job.priority === 'high') {
-              criticality = job.priority;
-              optimizationNotes += ` High priority job requires careful monitoring and expedited processing.`;
+            if (order.priority === 'critical' || order.priority === 'high') {
+              criticality = order.priority;
+              optimizationNotes += ` High priority order requires careful monitoring and expedited processing.`;
             }
             
             schedule.push({
               operationId: operation.id,
-              jobId: job.id,
-              jobName: job.name,
+              productionOrderId: order.id,
+              productionOrderName: order.name,
               operationName: operation.name,
               resourceId: selectedResource.id,
               resourceName: selectedResource.name,
               startTime: finalStartTime.toISOString(),
               endTime: finalEndTime.toISOString(),
               duration: duration,
+              isPlannedOrder: order.isPlannedOrder || false,
               frozen: false,
               optimizationFlags: {
                 isEarly,
@@ -6227,7 +6248,8 @@ Manufacturing Context Available:
         stats: {
           totalOperations: operations.length,
           scheduledOperations: schedule.length,
-          jobsProcessed: sortedJobs.length,
+          ordersProcessed: sortedOrders.length,
+          plannedOrdersIncluded: parameters.includePlannedOrders ? allPlannedOrders.length : 0,
           frozenOperations: frozenOperations,
           rescheduledOperations: rescheduledOperations
         }
