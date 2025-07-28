@@ -323,6 +323,16 @@ Create authentic manufacturing data that reflects this company's operations.`;
                 <div className="flex items-center gap-2">
                   <span>{item.name}</span>
                   <span className="text-xs text-gray-400 sm:hidden">← swipe</span>
+                  <button 
+                    className="text-xs bg-blue-100 px-2 py-1 rounded sm:hidden" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDelete(!showDelete);
+                      console.log('Test button clicked, showDelete:', !showDelete);
+                    }}
+                  >
+                    Test
+                  </button>
                 </div>
                 <div className="text-sm text-gray-500 sm:hidden">
                   {getItemDetails(item, dataType)}
