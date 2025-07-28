@@ -864,25 +864,49 @@ function DataSchemaViewContent() {
           
           {/* Toggles - Compact on all screens */}
           <div className="flex items-center gap-3 sm:gap-4 col-span-1 sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center gap-1">
-              <Switch
-                id="show-columns"
-                checked={showColumns}
-                onCheckedChange={setShowColumns}
-                className="scale-75 sm:scale-100"
-              />
-              <Label htmlFor="show-columns" className="text-xs sm:text-sm">Fields</Label>
-            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1">
+                    <Switch
+                      id="show-columns"
+                      checked={showColumns}
+                      onCheckedChange={setShowColumns}
+                      className="scale-75 sm:scale-100"
+                    />
+                    <Label htmlFor="show-columns" className="text-xs sm:text-sm">Fields</Label>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">
+                    <strong>Show Table Fields:</strong> Display individual columns/fields inside each table card. 
+                    Turn off to show only table names for a cleaner overview.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             
-            <div className="flex items-center gap-1">
-              <Switch
-                id="show-relationships"
-                checked={showRelationships}
-                onCheckedChange={setShowRelationships}
-                className="scale-75 sm:scale-100"
-              />
-              <Label htmlFor="show-relationships" className="text-xs sm:text-sm">Links</Label>
-            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1">
+                    <Switch
+                      id="show-relationships"
+                      checked={showRelationships}
+                      onCheckedChange={setShowRelationships}
+                      className="scale-75 sm:scale-100"
+                    />
+                    <Label htmlFor="show-relationships" className="text-xs sm:text-sm">Lines</Label>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">
+                    <strong>Show Relationship Lines:</strong> Display connecting lines between related tables. 
+                    Turn off to hide all relationship connections for a simpler view.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             
             {/* Simplify Lines toggle - only shown when relationships are visible */}
             {showRelationships && (
@@ -896,13 +920,13 @@ function DataSchemaViewContent() {
                         onCheckedChange={setSimplifyLines}
                         className="scale-75 sm:scale-100"
                       />
-                      <Label htmlFor="simplify-lines" className="text-xs sm:text-sm">Simple</Label>
+                      <Label htmlFor="simplify-lines" className="text-xs sm:text-sm">Straight Lines</Label>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p className="max-w-xs">
-                      Simplifies relationship lines to reduce visual clutter and crossing paths. 
-                      Hover over any line to highlight it.
+                      <strong>Straight Lines Mode:</strong> Shows direct straight-line connections between tables instead of curved/stepped paths. 
+                      Reduces visual clutter but may cause line crossings. Turn off for curved relationship paths.
                     </p>
                   </TooltipContent>
                 </Tooltip>

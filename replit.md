@@ -2,13 +2,16 @@
 
 ## Recent Changes (July 28, 2025)
 
-✓ **Engineering Filter Addition to Data Schema View (July 28, 2025)**:
+✓ **Engineering Filter Addition & Toggle Clarity Enhancement for Data Schema View (July 28, 2025)**:
 - Added comprehensive "Engineering & Product Design" filter option to Data Schema View for engineering teams
 - Engineering filter focuses on product definitions, routings, recipes, BOMs, and production versions relationships
 - Includes 22 core engineering tables: bills_of_materials, bom_items, recipes, routings, routing_operations, production_versions, work_centers, products, capabilities, specifications, and technical documents
 - Helps engineering teams understand how product structures, manufacturing processes, and technical specifications interconnect
 - Engineering filter shows tables for maintaining product definitions, process routings, recipe formulations, and production version control
 - Enhanced user experience for engineering roles who need to understand data relationships for product design and manufacturing process definition
+- Improved toggle button clarity with descriptive tooltips: "Fields" shows table columns, "Lines" shows relationships, "Straight Lines" simplifies connection paths, "Focus" isolates table networks
+- Added comprehensive tooltips explaining what each interactive control does to eliminate user confusion about toggle functionality
+- Enhanced toggle labels: "Simple" renamed to "Straight Lines" with clear explanation of straight vs curved relationship paths
 - Works seamlessly with existing category filtering, search functionality, and focus mode for comprehensive engineering data exploration
 
 ✓ **Complete Functional Map Explore Button Implementation (July 28, 2025)**:
