@@ -617,8 +617,8 @@ function DataImport() {
   useEffect(() => {
     console.log('Master Data Setup effect triggered with onboarding data:', onboardingData);
     
-    if (onboardingData && 'selectedFeatures' in onboardingData && onboardingData.selectedFeatures) {
-      const features = onboardingData.selectedFeatures;
+    if (onboardingData && 'selectedFeatures' in onboardingData && (onboardingData as any).selectedFeatures) {
+      const features = (onboardingData as any).selectedFeatures;
       setOnboardingFeatures(features);
       
       // Collect recommended data types based on selected features
@@ -639,7 +639,7 @@ function DataImport() {
   }, [onboardingData]);
 
   const handleGenerateAISampleData = () => {
-    const companyInfo = userPreferences && 'companyInfo' in userPreferences ? userPreferences.companyInfo : null;
+    const companyInfo = userPreferences && 'companyInfo' in userPreferences ? userPreferences.companyInfo as any : null;
     if (companyInfo) {
       // Build AI prompt with company information
       const prompt = `Generate realistic sample data for ${companyInfo.name}, a ${companyInfo.size} ${companyInfo.industry} company with ${companyInfo.numberOfPlants || '3'} manufacturing plants. 
@@ -866,6 +866,15 @@ Create authentic manufacturing data that reflects this company's operations.`;
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [bulkSelectMode, setBulkSelectMode] = useState(false);
     const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+    
+    // Debounce search with longer delay for mobile to prevent keyboard hiding
+    React.useEffect(() => {
+      const timer = setTimeout(() => {
+        setDebouncedSearchTerm(searchTerm);
+      }, 800); // Increased delay for mobile stability
+      
+      return () => clearTimeout(timer);
+    }, [searchTerm]);
 
     // Mobile touch handling component
     const MobileTableRow = ({ item, dataType, onEdit, onDelete }: any) => {
@@ -1057,7 +1066,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
           // Append new items for infinite scroll - ensure no duplicates
           setAllLoadedItems(prev => {
             const existingIds = new Set(prev.map(item => item.id));
-            const uniqueNewItems = newItems.filter(item => !existingIds.has(item.id));
+            const uniqueNewItems = newItems.filter((item: any) => !existingIds.has(item.id));
             return [...prev, ...uniqueNewItems];
           });
         }
@@ -1083,13 +1092,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
     // Use accumulated data for infinite scroll
     const currentItems = allLoadedItems;
 
-    // Debounce search term to prevent excessive API calls and focus loss
-    React.useEffect(() => {
-      const timer = setTimeout(() => {
-        setDebouncedSearchTerm(searchTerm);
-      }, 300);
-      return () => clearTimeout(timer);
-    }, [searchTerm]);
+
 
     // Reset data when debounced search term or data type changes
     React.useEffect(() => {
@@ -1650,7 +1653,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
                           const categoryTypes = supportedDataTypes.filter(dt => dt.category === category);
                           return (
                             <div key={category}>
-                              <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide border-b">
+                              <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide border-b bg-gray-50">
                                 {category}
                               </div>
                               {categoryTypes.map((dataType) => (

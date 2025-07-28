@@ -9391,7 +9391,7 @@ export class DatabaseStorage implements IStorage {
 
     // Apply all conditions at once if any exist
     if (allConditions.length > 0) {
-      const finalCondition = and(...allConditions);
+      const finalCondition = allConditions.length === 1 ? allConditions[0] : and(...allConditions);
       query = query.where(finalCondition);
       countQuery = countQuery.where(finalCondition);
     }
