@@ -9353,7 +9353,10 @@ export class DatabaseStorage implements IStorage {
 
     // Build base query
     let query = db.select().from(dbTable);
-    let countQuery = db.select({ count: sql<number>`count(*)` }).from(dbTable);
+    let countQuery = db.select({ count: sql<number>`count(*)::int` }).from(dbTable);
+
+    // Collect all conditions to apply at once
+    const allConditions = [];
 
     // Apply search filters
     if (search?.query && search.fields) {
@@ -9361,13 +9364,12 @@ export class DatabaseStorage implements IStorage {
         ilike(dbTable[field], `%${search.query}%`)
       );
       const searchCondition = or(...searchConditions);
-      query = query.where(searchCondition);
-      countQuery = countQuery.where(searchCondition);
+      allConditions.push(searchCondition);
     }
 
     // Apply filters
     if (filters && filters.length > 0) {
-      const conditions = filters.map(filter => {
+      const filterConditions = filters.map(filter => {
         const field = dbTable[filter.field];
         switch (filter.operator) {
           case 'eq': return eq(field, filter.value);
@@ -9384,12 +9386,14 @@ export class DatabaseStorage implements IStorage {
           default: return eq(field, filter.value);
         }
       });
-      
-      if (conditions.length > 0) {
-        const filterCondition = and(...conditions);
-        query = query.where(filterCondition);
-        countQuery = countQuery.where(filterCondition);
-      }
+      allConditions.push(...filterConditions);
+    }
+
+    // Apply all conditions at once if any exist
+    if (allConditions.length > 0) {
+      const finalCondition = and(...allConditions);
+      query = query.where(finalCondition);
+      countQuery = countQuery.where(finalCondition);
     }
 
     // Apply sorting

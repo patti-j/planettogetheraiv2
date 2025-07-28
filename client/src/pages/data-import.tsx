@@ -589,6 +589,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
   function ManageDataTab({ dataType }: { dataType: string }) {
     const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
     const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [bulkSelectMode, setBulkSelectMode] = useState(false);
     const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
 
@@ -760,8 +761,8 @@ Create authentic manufacturing data that reflects this company's operations.`;
               page: page,
               limit: itemsPerPage
             },
-            search: searchTerm ? {
-              query: searchTerm,
+            search: debouncedSearchTerm ? {
+              query: debouncedSearchTerm,
               fields: ['name', 'description']
             } : undefined,
             sort: [{ field: 'name', direction: 'asc' }]
@@ -808,7 +809,15 @@ Create authentic manufacturing data that reflects this company's operations.`;
     // Use accumulated data for infinite scroll
     const currentItems = allLoadedItems;
 
-    // Reset data when search term or data type changes
+    // Debounce search term to prevent excessive API calls and focus loss
+    React.useEffect(() => {
+      const timer = setTimeout(() => {
+        setDebouncedSearchTerm(searchTerm);
+      }, 300);
+      return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    // Reset data when debounced search term or data type changes
     React.useEffect(() => {
       setCurrentPage(1);
       setAllLoadedItems([]);
@@ -818,7 +827,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
       if (dataType) {
         loadMoreData(1);
       }
-    }, [searchTerm, dataType]);
+    }, [debouncedSearchTerm, dataType]);
 
     // Scroll detection for infinite scroll
     React.useEffect(() => {
