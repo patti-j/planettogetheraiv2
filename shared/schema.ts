@@ -5084,6 +5084,19 @@ export const insertProductionTargetSchema = createInsertSchema(productionTargets
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  targetStartDate: z.union([z.string().datetime(), z.date()]).transform((val) => {
+    return typeof val === 'string' ? new Date(val) : val;
+  }),
+  targetEndDate: z.union([z.string().datetime(), z.date()]).transform((val) => {
+    return typeof val === 'string' ? new Date(val) : val;
+  }),
+  actualStartDate: z.union([z.string().datetime(), z.date(), z.null()]).transform((val) => {
+    return val === null ? null : (typeof val === 'string' ? new Date(val) : val);
+  }).optional(),
+  actualEndDate: z.union([z.string().datetime(), z.date(), z.null()]).transform((val) => {
+    return val === null ? null : (typeof val === 'string' ? new Date(val) : val);
+  }).optional(),
 });
 
 export const insertResourceAllocationSchema = createInsertSchema(resourceAllocations).omit({

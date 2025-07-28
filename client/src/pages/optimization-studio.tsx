@@ -232,6 +232,7 @@ export default function OptimizationStudio() {
 
   const categories = [
     { value: "all", label: "All Categories" },
+    { value: "production_planning", label: "Production Planning" },
     { value: "schedule_optimization", label: "Schedule Optimization" },
     { value: "inventory_optimization", label: "Inventory Optimization" },
     { value: "capacity_optimization", label: "Capacity Optimization" },

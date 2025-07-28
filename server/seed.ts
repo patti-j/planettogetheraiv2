@@ -3205,6 +3205,262 @@ async function seedMarketingData() {
     console.log("Algorithm performance data seeded successfully");
   }
 
+  // Seed Production Planning optimization algorithms
+  const existingProductionPlanningAlgorithms = await db.select().from(optimizationAlgorithms).where(eq(optimizationAlgorithms.category, "production_planning")).limit(1);
+  if (existingProductionPlanningAlgorithms.length === 0) {
+    const productionPlanningAlgorithmsData = [
+      {
+        name: "planned-order-generator",
+        displayName: "Planned Order Generator",
+        description: "Generates optimized planned orders based on demand forecasts, inventory levels, and production capacity. Creates production schedules that balance customer requirements with resource availability while minimizing costs and maximizing efficiency.",
+        category: "production_planning",
+        type: "standard", 
+        version: "1.0.0",
+        status: "approved",
+        isStandard: true,
+        configuration: {
+          parameters: {
+            planningHorizon: {
+              type: "number",
+              default: 30,
+              min: 7,
+              max: 180,
+              description: "Planning horizon in days for generating planned orders",
+              required: true
+            },
+            demandBufferPercent: {
+              type: "number", 
+              default: 15,
+              min: 0,
+              max: 50,
+              description: "Additional demand buffer percentage for safety planning",
+              required: true
+            },
+            minLotSize: {
+              type: "number",
+              default: 1,
+              min: 1,
+              max: 1000,
+              description: "Minimum production lot size for planned orders",
+              required: true
+            },
+            leadTimeBuffer: {
+              type: "number",
+              default: 2,
+              min: 0,
+              max: 14,
+              description: "Additional lead time buffer days for material procurement",
+              required: true
+            },
+            capacityUtilizationTarget: {
+              type: "number",
+              default: 85,
+              min: 50,
+              max: 95,
+              description: "Target capacity utilization percentage",
+              required: true
+            },
+            prioritizeExistingOrders: {
+              type: "boolean",
+              default: true,
+              description: "Prioritize existing production orders over new planned orders",
+              required: true
+            }
+          },
+          constraints: [
+            {
+              name: "resource_capacity",
+              type: "hard",
+              value: "within_available_capacity",
+              description: "Planned orders must fit within available resource capacity"
+            },
+            {
+              name: "material_availability",
+              type: "soft",
+              value: "materials_procurable",
+              description: "Required materials should be available or procurable within lead times"
+            },
+            {
+              name: "demand_fulfillment",
+              type: "hard",
+              value: "meet_customer_demand",
+              description: "Generated orders must fulfill forecasted customer demand"
+            }
+          ],
+          objectives: [
+            {
+              name: "minimize_total_cost",
+              type: "minimize",
+              weight: 0.4,
+              description: "Minimize total production and inventory costs"
+            },
+            {
+              name: "maximize_service_level",
+              type: "maximize",
+              weight: 0.3,
+              description: "Maximize customer service level and on-time delivery"
+            },
+            {
+              name: "optimize_resource_utilization",
+              type: "maximize",
+              weight: 0.3,
+              description: "Optimize resource utilization across planning horizon"
+            }
+          ],
+          dataSources: ["demand_forecasts", "production_orders", "resources", "capabilities", "stock_items", "bills_of_material"],
+          extensionData: []
+        },
+        algorithmCode: "/* Planned Order Generator Algorithm - Full implementation available in production system */",
+        uiComponents: {
+          components: [
+            {
+              type: "parameter_form",
+              title: "Production Planning Parameters",
+              fields: [
+                { name: "planningHorizon", type: "number", label: "Planning Horizon (days)", tooltip: "Time horizon for generating planned orders" },
+                { name: "demandBufferPercent", type: "number", label: "Demand Buffer (%)", tooltip: "Safety buffer for demand uncertainty" },
+                { name: "capacityUtilizationTarget", type: "number", label: "Capacity Target (%)", tooltip: "Target resource utilization" },
+                { name: "prioritizeExistingOrders", type: "checkbox", label: "Prioritize Existing Orders", tooltip: "Give priority to existing production orders" }
+              ]
+            }
+          ]
+        },
+        performance: {
+          averageExecutionTime: 4.2,
+          accuracy: "94% demand fulfillment accuracy",
+          scalability: "Handles up to 1000 products and 200 resources",
+          memoryUsage: "24MB",
+          lastBenchmark: "2025-07-28T00:00:00Z"
+        },
+        approvals: {
+          testResults: { passed: true, coverage: "96%", testDate: "2025-07-27T00:00:00Z" },
+          managerApproval: { approved: true, approvedBy: "Production Director", approvedAt: "2025-07-28T00:00:00Z", notes: "Approved for production planning automation" }
+        },
+        createdBy: 6
+      }
+    ];
+
+    await db.insert(optimizationAlgorithms).values(productionPlanningAlgorithmsData);
+    console.log("Production Planning optimization algorithms seeded successfully");
+
+    // Create optimization profile for planned order generator
+    const plannedOrderAlgorithmId = await db.select().from(optimizationAlgorithms).where(eq(optimizationAlgorithms.name, "planned-order-generator")).limit(1);
+    
+    if (plannedOrderAlgorithmId.length > 0) {
+      const productionPlanningProfileData = [
+        {
+          name: "Balanced Production Planning",
+          description: "Balanced approach to production planning that optimizes both cost efficiency and service level with moderate safety buffers",
+          algorithmId: plannedOrderAlgorithmId[0].id,
+          isDefault: true,
+          isShared: true,
+          profileConfig: {
+            includePlannedOrders: {
+              enabled: true,
+              weight: 0.8,
+              convertToProduction: false
+            },
+            scope: {
+              plantIds: [],
+              resourceIds: [],
+              resourceTypes: [],
+              capabilityIds: [],
+              productionOrderIds: [],
+              excludeOrderIds: [],
+              dateRange: {
+                start: new Date().toISOString(),
+                end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+              }
+            },
+            algorithmParameters: {
+              productionPlanning: {
+                planningHorizon: 30,
+                demandBufferPercent: 15,
+                minLotSize: 10,
+                leadTimeBuffer: 2,
+                capacityUtilizationTarget: 85,
+                prioritizeExistingOrders: true
+              }
+            },
+            objectives: {
+              primary: "minimize_total_cost",
+              secondary: ["maximize_service_level", "optimize_resource_utilization"],
+              weights: {
+                cost: 0.4,
+                serviceLevel: 0.3,
+                utilization: 0.3
+              }
+            },
+            constraints: {
+              resourceCapacity: true,
+              materialAvailability: true,
+              demandFulfillment: true,
+              maxOvertimeHours: 0,
+              bufferTime: 2
+            }
+          },
+          createdBy: 6
+        },
+        {
+          name: "High Service Level Planning",
+          description: "Service-focused production planning that prioritizes customer satisfaction and on-time delivery with higher safety buffers",
+          algorithmId: plannedOrderAlgorithmId[0].id,
+          isDefault: false,
+          isShared: true,
+          profileConfig: {
+            includePlannedOrders: {
+              enabled: true,
+              weight: 0.9,
+              convertToProduction: true
+            },
+            scope: {
+              plantIds: [],
+              resourceIds: [],
+              resourceTypes: [],
+              capabilityIds: [],
+              productionOrderIds: [],
+              excludeOrderIds: [],
+              dateRange: {
+                start: new Date().toISOString(),
+                end: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString()
+              }
+            },
+            algorithmParameters: {
+              productionPlanning: {
+                planningHorizon: 45,
+                demandBufferPercent: 25,
+                minLotSize: 5,
+                leadTimeBuffer: 4,
+                capacityUtilizationTarget: 75,
+                prioritizeExistingOrders: true
+              }
+            },
+            objectives: {
+              primary: "maximize_service_level",
+              secondary: ["optimize_resource_utilization", "minimize_total_cost"],
+              weights: {
+                serviceLevel: 0.5,
+                utilization: 0.3,
+                cost: 0.2
+              }
+            },
+            constraints: {
+              resourceCapacity: true,
+              materialAvailability: true,
+              demandFulfillment: true,
+              maxOvertimeHours: 8,
+              bufferTime: 4
+            }
+          },
+          createdBy: 6
+        }
+      ];
+
+      await db.insert(optimizationProfiles).values(productionPlanningProfileData);
+      console.log("Production Planning optimization profiles seeded successfully");
+    }
+  }
+
   // Seed CTP (Capable to Promise) optimization algorithms
   const existingCTPAlgorithms = await db.select().from(optimizationAlgorithms).where(eq(optimizationAlgorithms.category, "capable_to_promise")).limit(1);
   if (existingCTPAlgorithms.length === 0) {

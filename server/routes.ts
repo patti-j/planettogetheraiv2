@@ -6464,6 +6464,180 @@ Manufacturing Context Available:
     }
   });
 
+  // Planned Order Generation Algorithm
+  app.post("/api/optimization/algorithms/planned-order-generator/run", requireAuth, async (req, res) => {
+    try {
+      const { parameters, demandForecasts, productionOrders, resources, stockItems, billsOfMaterial } = req.body;
+      
+      // Input validation
+      if (!parameters) {
+        return res.status(400).json({ error: "Missing required parameters" });
+      }
+
+      // Get all required data if not provided
+      const allProductionTargets = await storage.getProductionTargets() || [];
+      const allProductionOrders = Array.isArray(productionOrders) ? productionOrders : await storage.getProductionOrders();
+      const allResources = Array.isArray(resources) ? resources : await storage.getResources();
+
+      // Extract parameters with defaults
+      const planningHorizon = parameters.planningHorizon || 30;
+      const demandBufferPercent = parameters.demandBufferPercent || 15;
+      const minLotSize = parameters.minLotSize || 1;
+      const leadTimeBuffer = parameters.leadTimeBuffer || 2;
+      const capacityUtilizationTarget = parameters.capacityUtilizationTarget || 85;
+      const prioritizeExistingOrders = parameters.prioritizeExistingOrders !== false;
+
+      // Calculate planning window
+      const planningStartDate = new Date();
+      const planningEndDate = new Date();
+      planningEndDate.setDate(planningStartDate.getDate() + planningHorizon);
+
+      // Generate planned orders based on production targets and customer demand patterns
+      const plannedOrders = [];
+      const debugInfo = {
+        totalProductionTargets: allProductionTargets.length,
+        totalResources: allResources.length,
+        planningHorizon: planningHorizon,
+        generatedOrders: 0,
+        skippedTargets: [],
+        resourceUtilization: []
+      };
+
+      // Process each production target to generate planned orders
+      for (const target of allProductionTargets) {
+        // Skip if target is outside planning horizon
+        const targetDate = new Date(target.targetEndDate);
+        if (targetDate < planningStartDate || targetDate > planningEndDate) {
+          debugInfo.skippedTargets.push({
+            targetId: target.id,
+            reason: 'Outside planning horizon',
+            targetDate: targetDate.toISOString()
+          });
+          continue;
+        }
+
+        // Calculate required quantity with buffer
+        const baseQuantity = target.targetQuantity || 0;
+        const bufferedQuantity = Math.ceil(baseQuantity * (1 + demandBufferPercent / 100));
+        const lotQuantity = Math.max(minLotSize, bufferedQuantity);
+
+        // Calculate start date considering lead time buffer
+        const requiredDate = new Date(target.targetEndDate);
+        const startDate = new Date(requiredDate);
+        startDate.setDate(startDate.getDate() - leadTimeBuffer);
+
+        // Find suitable resource for production
+        const suitableResource = allResources.find(resource => 
+          resource.status === 'active' && 
+          (resource.type === 'production' || 
+           resource.capabilities?.length > 0 ||
+           ['Reactor', 'Tablet Press', 'Packaging Line', 'Filling Line', 'Mixer', 'Granulator', 'Coating Machine'].includes(resource.type))
+        );
+
+        if (!suitableResource) {
+          debugInfo.skippedTargets.push({
+            targetId: target.id,
+            reason: 'No suitable production resource available',
+            product: target.productId
+          });
+          continue;
+        }
+
+        // Generate planned order
+        const plannedOrder = {
+          id: `planned_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          orderNumber: `PLN-${String(plannedOrders.length + 1).padStart(4, '0')}`,
+          name: `Planned Order for ${target.productId || 'Product'}`,
+          productId: target.productId,
+          plantId: target.plantId || suitableResource.plantId || 1,
+          quantity: lotQuantity,
+          priority: 'medium',
+          status: 'planned',
+          dueDate: requiredDate.toISOString(),
+          startDate: startDate.toISOString(),
+          resourceId: suitableResource.id,
+          productionTargetId: target.id,
+          isGenerated: true,
+          generatedAt: new Date().toISOString(),
+          parameters: {
+            originalTarget: baseQuantity,
+            bufferPercent: demandBufferPercent,
+            leadTimeBuffer: leadTimeBuffer,
+            minLotSize: minLotSize
+          }
+        };
+
+        plannedOrders.push(plannedOrder);
+        debugInfo.generatedOrders++;
+      }
+
+      // Calculate resource utilization impact
+      const resourceUtilizationMap = new Map();
+      for (const order of plannedOrders) {
+        const resourceId = order.resourceId;
+        if (!resourceUtilizationMap.has(resourceId)) {
+          resourceUtilizationMap.set(resourceId, {
+            resourceId: resourceId,
+            resourceName: allResources.find(r => r.id === resourceId)?.name || 'Unknown',
+            plannedOrders: 0,
+            totalQuantity: 0
+          });
+        }
+        
+        const utilization = resourceUtilizationMap.get(resourceId);
+        utilization.plannedOrders++;
+        utilization.totalQuantity += order.quantity;
+      }
+
+      debugInfo.resourceUtilization = Array.from(resourceUtilizationMap.values());
+
+      // Generate optimization insights
+      const insights = [];
+      
+      if (plannedOrders.length === 0) {
+        insights.push("No planned orders were generated. Check production targets and resource availability.");
+      } else {
+        insights.push(`Generated ${plannedOrders.length} planned orders covering ${planningHorizon} days horizon`);
+        
+        const avgLotSize = plannedOrders.reduce((sum, order) => sum + order.quantity, 0) / plannedOrders.length;
+        insights.push(`Average lot size: ${Math.round(avgLotSize)} units`);
+        
+        const resourceCount = new Set(plannedOrders.map(order => order.resourceId)).size;
+        insights.push(`Utilizing ${resourceCount} production resources`);
+        
+        if (debugInfo.skippedTargets.length > 0) {
+          insights.push(`${debugInfo.skippedTargets.length} production targets were skipped due to constraints`);
+        }
+      }
+
+      // Calculate success metrics
+      const totalTargetValue = allProductionTargets.reduce((sum, target) => sum + (target.targetQuantity || 0), 0);
+      const totalPlannedValue = plannedOrders.reduce((sum, order) => sum + order.quantity, 0);
+      const fulfillmentRate = totalTargetValue > 0 ? (totalPlannedValue / totalTargetValue) * 100 : 0;
+
+      res.json({
+        success: plannedOrders.length > 0,
+        plannedOrders: plannedOrders,
+        parameters: parameters,
+        insights: insights,
+        debugInfo: debugInfo,
+        stats: {
+          totalProductionTargets: allProductionTargets.length,
+          generatedPlannedOrders: plannedOrders.length,
+          skippedTargets: debugInfo.skippedTargets.length,
+          planningHorizon: planningHorizon,
+          fulfillmentRate: Math.round(fulfillmentRate),
+          totalTargetValue: totalTargetValue,
+          totalPlannedValue: totalPlannedValue,
+          resourcesUtilized: resourceUtilizationMap.size
+        }
+      });
+    } catch (error) {
+      console.error("Error running planned order generation algorithm:", error);
+      res.status(500).json({ error: "Failed to run planned order generation algorithm" });
+    }
+  });
+
   // Optimization Execute Endpoint
   app.post("/api/optimization/execute", requireAuth, async (req, res) => {
     try {
