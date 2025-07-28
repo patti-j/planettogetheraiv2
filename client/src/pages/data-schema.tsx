@@ -271,7 +271,7 @@ const layoutAlgorithms = {
   }
 };
 
-export default function DataSchemaView() {
+function DataSchemaViewContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedFeature, setSelectedFeature] = useState<string>('all');
@@ -713,70 +713,76 @@ export default function DataSchemaView() {
 
       {/* Schema Diagram */}
       <div className="flex-1 relative">
-        <ReactFlowProvider>
-          <ReactFlow
-            nodes={flowNodes}
-            edges={flowEdges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onNodeClick={handleTableClick}
-            connectionMode={ConnectionMode.Loose}
-            fitView
-            fitViewOptions={{ padding: 0.2 }}
-          >
-            <Background />
-            <Controls />
-            <MiniMap 
-              nodeStrokeColor={(n) => getCategoryColor(n.data?.table?.category || 'default')}
-              nodeColor={(n) => getCategoryColor(n.data?.table?.category || 'default')}
-              nodeBorderRadius={2}
-            />
-            
-            <Panel position="bottom-right">
-              <Card className="bg-white/90 backdrop-blur-sm">
-                <CardContent className="p-4">
-                  <h3 className="font-semibold mb-2 flex items-center gap-2">
-                    <Info className="w-4 h-4" />
-                    Legend
-                  </h3>
-                  <div className="space-y-2 text-xs">
-                    <div className="flex items-center gap-2">
-                      <Key className="w-3 h-3 text-yellow-500" />
-                      <span>Primary Key</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Link2 className="w-3 h-3 text-blue-500" />
-                      <span>Foreign Key</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-red-500">*</span>
-                      <span>Required Field</span>
-                    </div>
+        <ReactFlow
+          nodes={flowNodes}
+          edges={flowEdges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onNodeClick={handleTableClick}
+          connectionMode={ConnectionMode.Loose}
+          fitView
+          fitViewOptions={{ padding: 0.2 }}
+        >
+          <Background />
+          <Controls />
+          <MiniMap 
+            nodeStrokeColor={(n) => getCategoryColor(n.data?.table?.category || 'default')}
+            nodeColor={(n) => getCategoryColor(n.data?.table?.category || 'default')}
+            nodeBorderRadius={2}
+          />
+          
+          <Panel position="bottom-right">
+            <Card className="bg-white/90 backdrop-blur-sm">
+              <CardContent className="p-4">
+                <h3 className="font-semibold mb-2 flex items-center gap-2">
+                  <Info className="w-4 h-4" />
+                  Legend
+                </h3>
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <Key className="w-3 h-3 text-yellow-500" />
+                    <span>Primary Key</span>
                   </div>
-                  
-                  <Separator className="my-3" />
-                  
-                  <div className="space-y-1">
-                    <h4 className="font-medium">Categories:</h4>
-                    {categories.slice(0, 5).map(category => (
-                      <div key={category} className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded"
-                          style={{ backgroundColor: getCategoryColor(category) }}
-                        />
-                        <span className="text-xs">{category}</span>
-                      </div>
-                    ))}
-                    {categories.length > 5 && (
-                      <span className="text-xs text-gray-500">+{categories.length - 5} more</span>
-                    )}
+                  <div className="flex items-center gap-2">
+                    <Link2 className="w-3 h-3 text-blue-500" />
+                    <span>Foreign Key</span>
                   </div>
-                </CardContent>
-              </Card>
-            </Panel>
-          </ReactFlow>
-        </ReactFlowProvider>
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-500">*</span>
+                    <span>Required Field</span>
+                  </div>
+                </div>
+                
+                <Separator className="my-3" />
+                
+                <div className="space-y-1">
+                  <h4 className="font-medium">Categories:</h4>
+                  {categories.slice(0, 5).map(category => (
+                    <div key={category} className="flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded"
+                        style={{ backgroundColor: getCategoryColor(category) }}
+                      />
+                      <span className="text-xs">{category}</span>
+                    </div>
+                  ))}
+                  {categories.length > 5 && (
+                    <span className="text-xs text-gray-500">+{categories.length - 5} more</span>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </Panel>
+        </ReactFlow>
       </div>
     </div>
+  );
+}
+
+export default function DataSchemaView() {
+  return (
+    <ReactFlowProvider>
+      <DataSchemaViewContent />
+    </ReactFlowProvider>
   );
 }
