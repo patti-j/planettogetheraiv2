@@ -242,15 +242,16 @@ Create authentic manufacturing data that reflects this company's operations.`;
 
     // Fetch data based on data type
     const { data: items = [], isLoading, error } = useQuery({
-      queryKey: [`/api/data-management/${getTableName(dataType)}`],
+      queryKey: [`/api/${getApiEndpoint(dataType)}`],
       enabled: true,
     });
 
-    const totalItems = items.length;
+    const itemsArray = Array.isArray(items) ? items : [];
+    const totalItems = itemsArray.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    const currentItems = items.slice(startIndex, endIndex);
+    const currentItems = itemsArray.slice(startIndex, endIndex);
 
     // Update mutation
     const updateMutation = useMutation({
@@ -266,7 +267,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
       },
       onSuccess: () => {
         toast({ title: "Success", description: "Item updated successfully" });
-        queryClient.invalidateQueries({ queryKey: [`/api/data-management/${getTableName(dataType)}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/${getApiEndpoint(dataType)}`] });
         setEditingItem(null);
       },
       onError: (error: any) => {
@@ -288,7 +289,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
       },
       onSuccess: () => {
         toast({ title: "Success", description: "Item created successfully" });
-        queryClient.invalidateQueries({ queryKey: [`/api/data-management/${getTableName(dataType)}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/${getApiEndpoint(dataType)}`] });
         setShowAddDialog(false);
         setNewItem({});
       },
@@ -309,7 +310,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
       },
       onSuccess: () => {
         toast({ title: "Success", description: "Item deleted successfully" });
-        queryClient.invalidateQueries({ queryKey: [`/api/data-management/${getTableName(dataType)}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/${getApiEndpoint(dataType)}`] });
       },
       onError: (error: any) => {
         toast({ title: "Error", description: error.message, variant: "destructive" });
