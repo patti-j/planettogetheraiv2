@@ -63,7 +63,7 @@ function DataImport() {
     'maintenance-scheduling': ['resources', 'plants', 'users', 'employees', 'workCenters'],
     'procurement': ['vendors', 'purchaseOrders', 'items', 'plants', 'storageLocations'],
     'sales-orders': ['customers', 'salesOrders', 'items', 'plants'],
-    'user-management': ['users', 'employees', 'departments', 'sites'],
+    'user-management': ['users', 'employees', 'departments'],
     'analytics-reporting': ['plants', 'resources', 'productionOrders', 'operations', 'forecasts'],
     'bill-of-materials': ['billsOfMaterial', 'items', 'plants', 'routings'],
     'demand-planning': ['forecasts', 'items', 'customers', 'salesOrders'],
@@ -105,8 +105,6 @@ function DataImport() {
           return { orderNumber: '', name: '', priority: '', dueDate: '', description: '' };
         case 'operations':
           return { name: '', description: '', duration: '', sequence: '', status: '' };
-        case 'sites':
-          return { name: '', address: '', city: '', country: '', description: '' };
         case 'departments':
           return { name: '', code: '', manager: '', description: '' };
         case 'workCenters':
@@ -182,14 +180,6 @@ function DataImport() {
             { key: 'duration', label: 'Duration (minutes)', type: 'number' },
             { key: 'sequence', label: 'Sequence', type: 'number' },
             { key: 'status', label: 'Status', type: 'select', options: ['Pending', 'In Progress', 'Completed', 'On Hold'] }
-          ];
-        case 'sites':
-          return [
-            { key: 'name', label: 'Site Name', type: 'text', required: true },
-            { key: 'address', label: 'Address', type: 'text' },
-            { key: 'city', label: 'City', type: 'text' },
-            { key: 'country', label: 'Country', type: 'text' },
-            { key: 'description', label: 'Description', type: 'text' }
           ];
         case 'departments':
           return [
@@ -333,7 +323,6 @@ function DataImport() {
         capabilities: 'capabilities',
         productionOrders: 'production-orders',
         operations: 'operations',
-        sites: 'sites',
         departments: 'departments',
         workCenters: 'work-centers',
         employees: 'employees',
@@ -405,7 +394,6 @@ function DataImport() {
                   <SelectItem value="operations">Operations</SelectItem>
                 </optgroup>
                 <optgroup label="Organization">
-                  <SelectItem value="sites">Sites</SelectItem>
                   <SelectItem value="departments">Departments</SelectItem>
                   <SelectItem value="workCenters">Work Centers</SelectItem>
                   <SelectItem value="employees">Employees</SelectItem>
@@ -616,7 +604,7 @@ function DataImport() {
   useEffect(() => {
     console.log('Master Data Setup effect triggered with onboarding data:', onboardingData);
     
-    if (onboardingData?.selectedFeatures) {
+    if (onboardingData && 'selectedFeatures' in onboardingData && onboardingData.selectedFeatures) {
       const features = onboardingData.selectedFeatures;
       setOnboardingFeatures(features);
       
@@ -638,7 +626,7 @@ function DataImport() {
   }, [onboardingData]);
 
   const handleGenerateAISampleData = () => {
-    const companyInfo = userPreferences?.companyInfo;
+    const companyInfo = userPreferences && 'companyInfo' in userPreferences ? userPreferences.companyInfo : null;
     if (companyInfo) {
       // Build AI prompt with company information
       const prompt = `Generate realistic sample data for ${companyInfo.name}, a ${companyInfo.size} ${companyInfo.industry} company with ${companyInfo.numberOfPlants || '3'} manufacturing plants. 
@@ -667,7 +655,6 @@ Create authentic manufacturing data that reflects this company's operations.`;
     { key: 'operations', label: 'Operations', icon: Cog, description: 'Manufacturing process steps and tasks', category: 'Core Manufacturing' },
     
     // Organization
-    { key: 'sites', label: 'Sites', icon: MapPin, description: 'Company sites and facility locations', category: 'Organization' },
     { key: 'departments', label: 'Departments', icon: Building2, description: 'Organizational departments and divisions', category: 'Organization' },
     { key: 'workCenters', label: 'Work Centers', icon: Factory, description: 'Production work centers and stations', category: 'Organization' },
     { key: 'employees', label: 'Employees', icon: UserCheck, description: 'Staff and personnel information', category: 'Organization' },
@@ -723,7 +710,6 @@ Create authentic manufacturing data that reflects this company's operations.`;
       mappedCounts.capabilities = recordCountsData.capabilities || 0;
       mappedCounts.productionOrders = recordCountsData.production_orders || 0;
       mappedCounts.operations = recordCountsData.operations || 0;
-      mappedCounts.sites = recordCountsData.sites || 0;
       mappedCounts.departments = recordCountsData.departments || 0;
       mappedCounts.workCenters = recordCountsData.work_centers || 0;
       mappedCounts.employees = recordCountsData.employees || 0;
@@ -756,7 +742,6 @@ Create authentic manufacturing data that reflects this company's operations.`;
       users: 'users',
       vendors: 'vendors',
       customers: 'customers',
-      sites: 'sites',
       departments: 'departments',
       workCenters: 'work-centers',
       employees: 'employees',
@@ -785,7 +770,6 @@ Create authentic manufacturing data that reflects this company's operations.`;
       users: 'users',
       vendors: 'vendors',
       customers: 'customers',
-      sites: 'sites',
       departments: 'departments',
       workCenters: 'work_centers',
       employees: 'employees',
@@ -825,10 +809,8 @@ Create authentic manufacturing data that reflects this company's operations.`;
         return `Contact: ${item.contactPerson || ''} • ${item.email || ''}`;
       case 'customers':
         return `Tier: ${item.tier || ''} • ${item.email || ''}`;
-      case 'sites':
-        return `Location: ${item.location || ''} • Type: ${item.type || ''}`;
       case 'departments':
-        return `Manager: ${item.manager || ''} • Site: ${item.siteId || ''}`;
+        return `Manager: ${item.manager || ''} • Code: ${item.code || ''}`;
       case 'workCenters':
         return `Capacity: ${item.capacity || ''} • Department: ${item.departmentId || ''}`;
       case 'employees':

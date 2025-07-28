@@ -2,6 +2,17 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Complete Sites Master Data Type Removal (July 28, 2025)**:
+- Completely removed "sites" master data type from the entire system per user request
+- Removed "sites" from supportedDataTypes array, reducing total data types from 22 to 21
+- Eliminated "sites" from all field definitions, CSV templates, and API endpoint mappings
+- Removed "sites" from feature data requirements mapping (user-management feature no longer includes sites)
+- Updated record count mapping and table name mapping to exclude sites references
+- Fixed departments item details to show department code instead of removed siteId reference
+- Removed sites case from getItemDetails switch statement for cleaner data display
+- System now operates with 21 comprehensive master data types without any sites functionality
+- Database schema and storage layer remain unchanged (sites table was never implemented)
+
 ✓ **Structured Entry Component Performance & UI Enhancement (July 28, 2025)**:
 - Fixed backend API database errors by removing all references to non-existent "stock_items" table from supported data types and record count mapping
 - Implemented asynchronous record count loading with 30-second caching to prevent blocking screen render during page startup
