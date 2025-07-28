@@ -599,7 +599,7 @@ function DataImport() {
   useEffect(() => {
     console.log('Master Data Setup effect triggered with onboarding data:', onboardingData);
     
-    if (onboardingData && 'selectedFeatures' in onboardingData && (onboardingData as any).selectedFeatures) {
+    if (onboardingData && typeof onboardingData === 'object' && 'selectedFeatures' in onboardingData && (onboardingData as any).selectedFeatures) {
       const features = (onboardingData as any).selectedFeatures;
       setOnboardingFeatures(features);
       
@@ -621,7 +621,7 @@ function DataImport() {
   }, [onboardingData]);
 
   const handleGenerateAISampleData = () => {
-    const companyInfo = userPreferences && 'companyInfo' in userPreferences ? userPreferences.companyInfo as any : null;
+    const companyInfo = (userPreferences as any)?.companyInfo || null;
     if (companyInfo) {
       // Build AI prompt with company information
       const prompt = `Generate realistic sample data for ${companyInfo.name}, a ${companyInfo.size} ${companyInfo.industry} company with ${companyInfo.numberOfPlants || '3'} manufacturing plants. 
@@ -708,10 +708,14 @@ Create authentic manufacturing data that reflects this company's operations.`;
   });
 
   const executeAIGeneration = () => {
+    // Get company info from user preferences
+    const companyInfo = (userPreferences as any)?.companyInfo || {};
+    
     const generationData = {
       prompt: aiPrompt,
+      companyInfo: companyInfo,
+      selectedDataTypes: selectedDataTypes.length > 0 ? selectedDataTypes : recommendedDataTypes,
       sampleSize: aiSampleSize,
-      selectedDataTypes: recommendedDataTypes,
       deleteExistingData: deleteExistingData
     };
     aiGenerationMutation.mutate(generationData);
@@ -2039,7 +2043,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
                 {(() => {
                   // Get industry-specific descriptions
                   const getIndustryDescriptions = () => {
-                    const companyInfo = userPreferences && 'companyInfo' in userPreferences ? userPreferences.companyInfo as any : {};
+                    const companyInfo = (userPreferences as any)?.companyInfo || {};
                     const industry = companyInfo.industry?.toLowerCase() || 'general manufacturing';
                     
                     if (industry.includes('automotive')) {
@@ -2155,7 +2159,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
                       <Checkbox
                         id="delete-existing"
                         checked={deleteExistingData}
-                        onCheckedChange={setDeleteExistingData}
+                        onCheckedChange={(checked) => setDeleteExistingData(checked === true)}
                         className="mt-0.5"
                       />
                       <div className="space-y-1">
