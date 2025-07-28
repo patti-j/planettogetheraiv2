@@ -1823,12 +1823,13 @@ Create authentic manufacturing data that reflects this company's operations.`;
               {currentItems.length} items loaded {!hasMoreData ? '(all data loaded)' : '(scroll for more)'}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
             <Button
               variant={viewMode === 'table' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('table')}
               title="Table View"
+              className="flex-shrink-0"
             >
               <Grid3X3 className="h-4 w-4" />
             </Button>
@@ -1837,6 +1838,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
               size="sm"
               onClick={() => setViewMode('cards')}
               title="Card View"
+              className="flex-shrink-0"
             >
               <List className="h-4 w-4" />
             </Button>
@@ -1845,6 +1847,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
               size="sm"
               onClick={() => setViewMode('spreadsheet')}
               title="Spreadsheet View"
+              className="flex-shrink-0"
             >
               <TableIcon className="h-4 w-4" />
             </Button>
@@ -1854,9 +1857,10 @@ Create authentic manufacturing data that reflects this company's operations.`;
                   onClick={() => setShowNewRow(true)} 
                   size="sm"
                   disabled={showNewRow}
+                  className="flex-shrink-0"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Row
+                  <Plus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Add Row</span>
                 </Button>
                 <Button 
                   variant="outline"
@@ -1864,15 +1868,16 @@ Create authentic manufacturing data that reflects this company's operations.`;
                   disabled={!hasUndo}
                   onClick={() => undoFunction && undoFunction()}
                   title="Undo last change (Ctrl+Z)"
+                  className="flex-shrink-0"
                 >
-                  <Undo2 className="h-4 w-4 mr-2" />
-                  Undo
+                  <Undo2 className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Undo</span>
                 </Button>
               </>
             ) : (
-              <Button onClick={() => setShowAddDialog(true)} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add New
+              <Button onClick={() => setShowAddDialog(true)} size="sm" className="flex-shrink-0">
+                <Plus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Add New</span>
               </Button>
             )}
           </div>
