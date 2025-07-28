@@ -1266,6 +1266,7 @@ export interface IStorage {
   getResourcesWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Resource>>;
   getCapabilitiesWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Capability>>;
   getProductionOrdersWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<ProductionOrder>>;
+  getOperationsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Operation>>;
   getVendorsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Vendor>>;
   getCustomersWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Customer>>;
   getStockItemsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<StockItem>>;
@@ -10031,6 +10032,7 @@ export class DatabaseStorage implements IStorage {
       resources,
       capabilities,
       production_orders: productionOrders,
+      operations,
       vendors,
       customers,
       stock_items: stockItems
@@ -10228,6 +10230,10 @@ export class DatabaseStorage implements IStorage {
 
   async getProductionOrdersWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<ProductionOrder>> {
     return this.getDataWithPagination<ProductionOrder>('production_orders', request);
+  }
+
+  async getOperationsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Operation>> {
+    return this.getDataWithPagination<Operation>('operations', request);
   }
 
   async getVendorsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Vendor>> {

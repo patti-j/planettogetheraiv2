@@ -16826,7 +16826,7 @@ Response must be valid JSON:
   app.post("/api/data-management/:table", requireAuth, async (req, res) => {
     try {
       const { table } = req.params;
-      const validTables = ['plants', 'resources', 'capabilities', 'production_orders', 'vendors', 'customers'];
+      const validTables = ['plants', 'resources', 'capabilities', 'production_orders', 'operations', 'vendors', 'customers'];
       
       if (!validTables.includes(table)) {
         return res.status(400).json({ error: `Invalid table: ${table}` });
@@ -16848,6 +16848,9 @@ Response must be valid JSON:
           break;
         case 'production_orders':
           response = await storage.getProductionOrdersWithPagination(request);
+          break;
+        case 'operations':
+          response = await storage.getOperationsWithPagination(request);
           break;
         case 'vendors':
           response = await storage.getVendorsWithPagination(request);
