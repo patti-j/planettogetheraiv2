@@ -554,10 +554,10 @@ export default function DataSchemaView() {
 
   return (
     <div className="h-screen flex flex-col">
-      {/* Header - Mobile Optimized */}
-      <div className="border-b bg-white px-3 sm:px-6 py-2 sm:py-4 relative z-50">
-        {/* Title Row - Compact on Mobile */}
-        <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-4">
+      {/* Header - Mobile Optimized with proper hamburger menu spacing */}
+      <div className="border-b bg-white px-3 sm:px-6 py-2 sm:py-4 relative z-10">
+        {/* Title Row - Compact on Mobile with hamburger menu clearance */}
+        <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-4 ml-12 md:ml-0">
           <Database className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
           <h1 className="text-lg sm:text-2xl font-bold">Data Schema</h1>
           <Badge variant="outline" className="text-xs">
