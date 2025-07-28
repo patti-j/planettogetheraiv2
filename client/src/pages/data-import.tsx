@@ -3169,12 +3169,20 @@ Create authentic manufacturing data that reflects this company's operations.`;
               <div className="space-y-4">
                 {/* Header with bulk download */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2 min-w-0">
-                    <div className="flex items-center space-x-2 min-w-0 flex-1">
-                      <FileSpreadsheet className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                      <h3 className="text-lg font-medium text-blue-800 truncate">Import Templates</h3>
-                    </div>
-                    <div className="flex items-center gap-2 min-w-0 flex-shrink-0">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <FileSpreadsheet className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    <h3 className="text-lg font-medium text-blue-800">Import Templates</h3>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-center gap-2 order-2 sm:order-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={selectedTemplates.size === supportedDataTypes.length ? clearTemplateSelection : selectAllTemplates}
+                        className="text-xs h-7"
+                      >
+                        {selectedTemplates.size === supportedDataTypes.length ? 'Select None' : 'Select All'}
+                      </Button>
                       {selectedTemplates.size > 0 && (
                         <div className="flex items-center gap-1 text-xs text-gray-600">
                           <span>{selectedTemplates.size} selected</span>
@@ -3188,19 +3196,21 @@ Create authentic manufacturing data that reflects this company's operations.`;
                           </Button>
                         </div>
                       )}
+                    </div>
+                    <div className="flex justify-center sm:justify-end order-1 sm:order-2">
                       <Button 
                         onClick={downloadAllTemplates}
-                        className="gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 flex-shrink-0"
+                        className="gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
                         size="sm"
                       >
                         <Download className="h-4 w-4 flex-shrink-0" />
-                        <span className="hidden sm:inline truncate">
+                        <span className="hidden sm:inline">
                           {selectedTemplates.size > 0 
                             ? `Download ${selectedTemplates.size} Selected` 
                             : 'Download All Templates'
                           }
                         </span>
-                        <span className="sm:hidden truncate">
+                        <span className="sm:hidden">
                           {selectedTemplates.size > 0 ? `Download ${selectedTemplates.size}` : 'Download All'}
                         </span>
                       </Button>
@@ -3210,19 +3220,9 @@ Create authentic manufacturing data that reflects this company's operations.`;
                     Download properly formatted templates to use with the <strong>Import Data</strong> tab. 
                     These templates include sample data and proper column headers for successful imports.
                   </p>
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-blue-600">
-                      💡 Tip: Use "Download All" to get all templates at once, or select specific ones below.
-                    </p>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={selectedTemplates.size === supportedDataTypes.length ? clearTemplateSelection : selectAllTemplates}
-                      className="text-xs h-6"
-                    >
-                      {selectedTemplates.size === supportedDataTypes.length ? 'Select None' : 'Select All'}
-                    </Button>
-                  </div>
+                  <p className="text-xs text-blue-600">
+                    💡 Tip: Use "Download All" to get all templates at once, or select specific ones below.
+                  </p>
                 </div>
 
                 {/* Multi-Template Option */}

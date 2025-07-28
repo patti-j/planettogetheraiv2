@@ -2,7 +2,7 @@
 
 ## Recent Changes (July 28, 2025)
 
-✓ **Excel-Like Mobile Cell Editing Implementation & Grid Refresh Elimination (July 28, 2025)**:
+✓ **Excel-Like Mobile Cell Editing Implementation & Templates Layout Fix (July 28, 2025)**:
 - Fixed critical mobile keyboard input issue where typing in cells wouldn't display text
 - Implemented local state management for immediate UI responsiveness during cell editing  
 - Eliminated grid refreshes that caused screen movement and visual disruption after cell edits
@@ -13,6 +13,8 @@
 - Spreadsheet behaves exactly like Excel without requiring edit mode - immediate editing on cell focus
 - Changes persist to backend automatically when leaving cells while maintaining stable visual grid layout
 - Mobile undo button now displays as icon-only to prevent overflow with flex-wrap responsive design
+- Fixed Templates tab layout issue where Download All button was overlapping section title on mobile
+- Reorganized template section with proper responsive design and clear button hierarchy
 
 ✓ **Master Data Setup Feature Selection Edit Button Implementation (July 28, 2025)**:
 - Added edit button next to "Selected Features" section in Master Data Setup page for easy feature modification
