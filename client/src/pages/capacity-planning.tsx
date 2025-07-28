@@ -1060,40 +1060,40 @@ export default function CapacityPlanning() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-9">
-          <TabsTrigger value="overview" className="text-xs sm:text-sm">
+        <TabsList className="flex w-full overflow-x-auto scrollbar-hide sm:grid sm:grid-cols-4 lg:grid-cols-9">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm flex-shrink-0">
             <BarChart3 className="w-4 h-4 mr-1" />
             Overview
           </TabsTrigger>
-          <TabsTrigger value="plants" className="text-xs sm:text-sm">
+          <TabsTrigger value="plants" className="text-xs sm:text-sm flex-shrink-0">
             <Building2 className="w-4 h-4 mr-1" />
             Plants
           </TabsTrigger>
-          <TabsTrigger value="workcenters" className="text-xs sm:text-sm">
+          <TabsTrigger value="workcenters" className="text-xs sm:text-sm flex-shrink-0">
             <MapPin className="w-4 h-4 mr-1" />
             Work Centers
           </TabsTrigger>
-          <TabsTrigger value="resources" className="text-xs sm:text-sm">
+          <TabsTrigger value="resources" className="text-xs sm:text-sm flex-shrink-0">
             <Wrench className="w-4 h-4 mr-1" />
             Resources
           </TabsTrigger>
-          <TabsTrigger value="shifts" className="text-xs sm:text-sm">
+          <TabsTrigger value="shifts" className="text-xs sm:text-sm flex-shrink-0">
             <Clock className="w-4 h-4 mr-1" />
             Shifts
           </TabsTrigger>
-          <TabsTrigger value="utilization" className="text-xs sm:text-sm">
+          <TabsTrigger value="utilization" className="text-xs sm:text-sm flex-shrink-0">
             <Activity className="w-4 h-4 mr-1" />
             Utilization
           </TabsTrigger>
-          <TabsTrigger value="overtime" className="text-xs sm:text-sm">
+          <TabsTrigger value="overtime" className="text-xs sm:text-sm flex-shrink-0">
             <Timer className="w-4 h-4 mr-1" />
             Overtime
           </TabsTrigger>
-          <TabsTrigger value="forecast" className="text-xs sm:text-sm">
+          <TabsTrigger value="forecast" className="text-xs sm:text-sm flex-shrink-0">
             <LineChart className="w-4 h-4 mr-1" />
             Forecast
           </TabsTrigger>
-          <TabsTrigger value="scenarios" className="text-xs sm:text-sm">
+          <TabsTrigger value="scenarios" className="text-xs sm:text-sm flex-shrink-0">
             <ClipboardList className="w-4 h-4 mr-1" />
             Scenarios
           </TabsTrigger>
