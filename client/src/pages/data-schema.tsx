@@ -1037,7 +1037,7 @@ function DataSchemaViewContent() {
           <Background />
           <Controls />
           
-          {/* Custom Fit View Button */}
+          {/* Custom Control Buttons */}
           <Panel position="top-right" className="flex gap-2">
             <TooltipProvider>
               <Tooltip>
@@ -1059,6 +1059,42 @@ function DataSchemaViewContent() {
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Fit all visible tables in view</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      // Reset all view settings to show everything
+                      setShowRelationships(true);
+                      setFocusMode(false);
+                      setFocusTable(null);
+                      setSelectedFeature('');
+                      setSelectedCategory('');
+                      setSearchTerm('');
+                      // Fit view after reset
+                      setTimeout(() => {
+                        fitView({ 
+                          padding: 0.15, 
+                          duration: 800,
+                          includeHiddenNodes: false,
+                          minZoom: 0.1,
+                          maxZoom: 1.5
+                        });
+                      }, 100);
+                    }}
+                    className="bg-white/90 backdrop-blur-sm hover:bg-white"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Reset all filters and show all tables with relationships</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
