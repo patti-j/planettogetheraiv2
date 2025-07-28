@@ -54,17 +54,20 @@ function DataImport() {
 
   // Feature to data requirements mapping
   const featureDataRequirements = {
-    'production-scheduling': ['plants', 'resources', 'capabilities', 'productionOrders', 'operations'],
-    'resource-management': ['plants', 'resources', 'capabilities'],
-    'job-management': ['productionOrders', 'resources', 'plants', 'operations'],
-    'capacity-planning': ['resources', 'capabilities', 'plants', 'productionOrders', 'operations'],
-    'inventory-management': ['inventoryItems', 'storageLocations', 'plants'],
-    'quality-management': ['resources', 'plants', 'productionOrders', 'operations'],
-    'maintenance-scheduling': ['resources', 'plants', 'users'],
-    'procurement': ['vendors', 'resources', 'plants'],
-    'sales-orders': ['customers', 'productionOrders', 'plants'],
-    'user-management': ['users', 'plants'],
-    'analytics-reporting': ['plants', 'resources', 'productionOrders', 'operations']
+    'production-scheduling': ['plants', 'resources', 'capabilities', 'productionOrders', 'operations', 'workCenters', 'routings'],
+    'resource-management': ['plants', 'resources', 'capabilities', 'workCenters', 'employees'],
+    'job-management': ['productionOrders', 'resources', 'plants', 'operations', 'workCenters'],
+    'capacity-planning': ['resources', 'capabilities', 'plants', 'productionOrders', 'operations', 'workCenters', 'forecasts'],
+    'inventory-management': ['items', 'storageLocations', 'inventory', 'inventoryLots', 'plants'],
+    'quality-management': ['resources', 'plants', 'productionOrders', 'operations', 'employees'],
+    'maintenance-scheduling': ['resources', 'plants', 'users', 'employees', 'workCenters'],
+    'procurement': ['vendors', 'purchaseOrders', 'items', 'plants', 'storageLocations'],
+    'sales-orders': ['customers', 'salesOrders', 'items', 'plants'],
+    'user-management': ['users', 'employees', 'departments', 'sites'],
+    'analytics-reporting': ['plants', 'resources', 'productionOrders', 'operations', 'forecasts'],
+    'bill-of-materials': ['billsOfMaterial', 'items', 'plants', 'routings'],
+    'demand-planning': ['forecasts', 'items', 'customers', 'salesOrders'],
+    'transfer-management': ['transferOrders', 'storageLocations', 'inventory', 'items']
   };
 
   const [showConsolidatedDialog, setShowConsolidatedDialog] = useState(false);
@@ -100,6 +103,42 @@ function DataImport() {
           return { name: '', description: '', category: '' };
         case 'productionOrders':
           return { orderNumber: '', name: '', priority: '', dueDate: '', description: '' };
+        case 'operations':
+          return { name: '', description: '', duration: '', sequence: '', status: '' };
+        case 'sites':
+          return { name: '', address: '', city: '', country: '', description: '' };
+        case 'departments':
+          return { name: '', code: '', manager: '', description: '' };
+        case 'workCenters':
+          return { name: '', code: '', department: '', capacity: '', description: '' };
+        case 'employees':
+          return { firstName: '', lastName: '', email: '', department: '', position: '' };
+        case 'users':
+          return { username: '', email: '', role: '', firstName: '', lastName: '' };
+        case 'items':
+          return { itemCode: '', name: '', category: '', unitOfMeasure: '', description: '' };
+        case 'storageLocations':
+          return { name: '', code: '', type: '', capacity: '', description: '' };
+        case 'inventory':
+          return { itemCode: '', location: '', quantity: '', unitCost: '', lastUpdated: '' };
+        case 'inventoryLots':
+          return { lotNumber: '', itemCode: '', quantity: '', expirationDate: '', location: '' };
+        case 'vendors':
+          return { vendorName: '', contactPerson: '', email: '', phone: '', address: '' };
+        case 'customers':
+          return { customerName: '', contactPerson: '', email: '', phone: '', address: '' };
+        case 'salesOrders':
+          return { orderNumber: '', customerName: '', orderDate: '', deliveryDate: '', status: '' };
+        case 'purchaseOrders':
+          return { orderNumber: '', vendorName: '', orderDate: '', deliveryDate: '', status: '' };
+        case 'transferOrders':
+          return { orderNumber: '', fromLocation: '', toLocation: '', transferDate: '', status: '' };
+        case 'billsOfMaterial':
+          return { bomNumber: '', parentItem: '', componentItem: '', quantity: '', unitOfMeasure: '' };
+        case 'routings':
+          return { routingNumber: '', itemCode: '', operationSequence: '', workCenter: '', setupTime: '' };
+        case 'forecasts':
+          return { itemCode: '', period: '', forecastQuantity: '', actualDemand: '', accuracy: '' };
         default:
           return { name: '', description: '' };
       }
@@ -136,6 +175,149 @@ function DataImport() {
             { key: 'dueDate', label: 'Due Date', type: 'date' },
             { key: 'description', label: 'Description', type: 'text' }
           ];
+        case 'operations':
+          return [
+            { key: 'name', label: 'Operation Name', type: 'text', required: true },
+            { key: 'description', label: 'Description', type: 'text' },
+            { key: 'duration', label: 'Duration (minutes)', type: 'number' },
+            { key: 'sequence', label: 'Sequence', type: 'number' },
+            { key: 'status', label: 'Status', type: 'select', options: ['Pending', 'In Progress', 'Completed', 'On Hold'] }
+          ];
+        case 'sites':
+          return [
+            { key: 'name', label: 'Site Name', type: 'text', required: true },
+            { key: 'address', label: 'Address', type: 'text' },
+            { key: 'city', label: 'City', type: 'text' },
+            { key: 'country', label: 'Country', type: 'text' },
+            { key: 'description', label: 'Description', type: 'text' }
+          ];
+        case 'departments':
+          return [
+            { key: 'name', label: 'Department Name', type: 'text', required: true },
+            { key: 'code', label: 'Department Code', type: 'text' },
+            { key: 'manager', label: 'Manager', type: 'text' },
+            { key: 'description', label: 'Description', type: 'text' }
+          ];
+        case 'workCenters':
+          return [
+            { key: 'name', label: 'Work Center Name', type: 'text', required: true },
+            { key: 'code', label: 'Work Center Code', type: 'text' },
+            { key: 'department', label: 'Department', type: 'text' },
+            { key: 'capacity', label: 'Capacity', type: 'number' },
+            { key: 'description', label: 'Description', type: 'text' }
+          ];
+        case 'employees':
+          return [
+            { key: 'firstName', label: 'First Name', type: 'text', required: true },
+            { key: 'lastName', label: 'Last Name', type: 'text', required: true },
+            { key: 'email', label: 'Email', type: 'email' },
+            { key: 'department', label: 'Department', type: 'text' },
+            { key: 'position', label: 'Position', type: 'text' }
+          ];
+        case 'users':
+          return [
+            { key: 'username', label: 'Username', type: 'text', required: true },
+            { key: 'email', label: 'Email', type: 'email', required: true },
+            { key: 'role', label: 'Role', type: 'select', options: ['Admin', 'Manager', 'Operator', 'Viewer'] },
+            { key: 'firstName', label: 'First Name', type: 'text' },
+            { key: 'lastName', label: 'Last Name', type: 'text' }
+          ];
+        case 'items':
+          return [
+            { key: 'itemCode', label: 'Item Code', type: 'text', required: true },
+            { key: 'name', label: 'Item Name', type: 'text', required: true },
+            { key: 'category', label: 'Category', type: 'text' },
+            { key: 'unitOfMeasure', label: 'Unit of Measure', type: 'select', options: ['Each', 'Pound', 'Kilogram', 'Liter', 'Gallon', 'Meter', 'Foot'] },
+            { key: 'description', label: 'Description', type: 'text' }
+          ];
+        case 'storageLocations':
+          return [
+            { key: 'name', label: 'Location Name', type: 'text', required: true },
+            { key: 'code', label: 'Location Code', type: 'text' },
+            { key: 'type', label: 'Location Type', type: 'select', options: ['Warehouse', 'Storage Room', 'Outdoor Yard', 'Cold Storage'] },
+            { key: 'capacity', label: 'Capacity', type: 'number' },
+            { key: 'description', label: 'Description', type: 'text' }
+          ];
+        case 'inventory':
+          return [
+            { key: 'itemCode', label: 'Item Code', type: 'text', required: true },
+            { key: 'location', label: 'Storage Location', type: 'text', required: true },
+            { key: 'quantity', label: 'Quantity', type: 'number', required: true },
+            { key: 'unitCost', label: 'Unit Cost', type: 'number' },
+            { key: 'lastUpdated', label: 'Last Updated', type: 'date' }
+          ];
+        case 'inventoryLots':
+          return [
+            { key: 'lotNumber', label: 'Lot Number', type: 'text', required: true },
+            { key: 'itemCode', label: 'Item Code', type: 'text', required: true },
+            { key: 'quantity', label: 'Quantity', type: 'number', required: true },
+            { key: 'expirationDate', label: 'Expiration Date', type: 'date' },
+            { key: 'location', label: 'Storage Location', type: 'text' }
+          ];
+        case 'vendors':
+          return [
+            { key: 'vendorName', label: 'Vendor Name', type: 'text', required: true },
+            { key: 'contactPerson', label: 'Contact Person', type: 'text' },
+            { key: 'email', label: 'Email', type: 'email' },
+            { key: 'phone', label: 'Phone', type: 'text' },
+            { key: 'address', label: 'Address', type: 'text' }
+          ];
+        case 'customers':
+          return [
+            { key: 'customerName', label: 'Customer Name', type: 'text', required: true },
+            { key: 'contactPerson', label: 'Contact Person', type: 'text' },
+            { key: 'email', label: 'Email', type: 'email' },
+            { key: 'phone', label: 'Phone', type: 'text' },
+            { key: 'address', label: 'Address', type: 'text' }
+          ];
+        case 'salesOrders':
+          return [
+            { key: 'orderNumber', label: 'Order Number', type: 'text', required: true },
+            { key: 'customerName', label: 'Customer', type: 'text', required: true },
+            { key: 'orderDate', label: 'Order Date', type: 'date' },
+            { key: 'deliveryDate', label: 'Delivery Date', type: 'date' },
+            { key: 'status', label: 'Status', type: 'select', options: ['Draft', 'Confirmed', 'In Production', 'Shipped', 'Delivered', 'Cancelled'] }
+          ];
+        case 'purchaseOrders':
+          return [
+            { key: 'orderNumber', label: 'PO Number', type: 'text', required: true },
+            { key: 'vendorName', label: 'Vendor', type: 'text', required: true },
+            { key: 'orderDate', label: 'Order Date', type: 'date' },
+            { key: 'deliveryDate', label: 'Expected Delivery', type: 'date' },
+            { key: 'status', label: 'Status', type: 'select', options: ['Draft', 'Sent', 'Acknowledged', 'Shipped', 'Received', 'Cancelled'] }
+          ];
+        case 'transferOrders':
+          return [
+            { key: 'orderNumber', label: 'Transfer Number', type: 'text', required: true },
+            { key: 'fromLocation', label: 'From Location', type: 'text', required: true },
+            { key: 'toLocation', label: 'To Location', type: 'text', required: true },
+            { key: 'transferDate', label: 'Transfer Date', type: 'date' },
+            { key: 'status', label: 'Status', type: 'select', options: ['Planned', 'In Transit', 'Completed', 'Cancelled'] }
+          ];
+        case 'billsOfMaterial':
+          return [
+            { key: 'bomNumber', label: 'BOM Number', type: 'text', required: true },
+            { key: 'parentItem', label: 'Parent Item', type: 'text', required: true },
+            { key: 'componentItem', label: 'Component Item', type: 'text', required: true },
+            { key: 'quantity', label: 'Quantity', type: 'number', required: true },
+            { key: 'unitOfMeasure', label: 'Unit of Measure', type: 'select', options: ['Each', 'Pound', 'Kilogram', 'Liter', 'Gallon'] }
+          ];
+        case 'routings':
+          return [
+            { key: 'routingNumber', label: 'Routing Number', type: 'text', required: true },
+            { key: 'itemCode', label: 'Item Code', type: 'text', required: true },
+            { key: 'operationSequence', label: 'Operation Sequence', type: 'number', required: true },
+            { key: 'workCenter', label: 'Work Center', type: 'text' },
+            { key: 'setupTime', label: 'Setup Time (min)', type: 'number' }
+          ];
+        case 'forecasts':
+          return [
+            { key: 'itemCode', label: 'Item Code', type: 'text', required: true },
+            { key: 'period', label: 'Period', type: 'text', required: true },
+            { key: 'forecastQuantity', label: 'Forecast Quantity', type: 'number', required: true },
+            { key: 'actualDemand', label: 'Actual Demand', type: 'number' },
+            { key: 'accuracy', label: 'Accuracy %', type: 'number' }
+          ];
         default:
           return [
             { key: 'name', label: 'Name', type: 'text', required: true },
@@ -145,13 +327,31 @@ function DataImport() {
     };
 
     const getApiEndpoint = (dataType: string) => {
-      switch (dataType) {
-        case 'resources': return 'resources';
-        case 'plants': return 'plants';
-        case 'capabilities': return 'capabilities';
-        case 'productionOrders': return 'production-orders';
-        default: return dataType;
-      }
+      const endpoints: Record<string, string> = {
+        plants: 'plants',
+        resources: 'resources', 
+        capabilities: 'capabilities',
+        productionOrders: 'production-orders',
+        operations: 'operations',
+        sites: 'sites',
+        departments: 'departments',
+        workCenters: 'work-centers',
+        employees: 'employees',
+        users: 'users',
+        items: 'items',
+        storageLocations: 'storage-locations',
+        inventory: 'inventory',
+        inventoryLots: 'inventory-lots',
+        vendors: 'vendors',
+        customers: 'customers',
+        salesOrders: 'sales-orders',
+        purchaseOrders: 'purchase-orders',
+        transferOrders: 'transfer-orders',
+        billsOfMaterial: 'bills-of-material',
+        routings: 'routings',
+        forecasts: 'forecasts'
+      };
+      return endpoints[dataType] || dataType;
     };
 
     const submitEntries = async () => {
@@ -198,10 +398,40 @@ function DataImport() {
                 <SelectValue placeholder="Choose data type to enter" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="resources">Resources</SelectItem>
-                <SelectItem value="plants">Plants</SelectItem>
-                <SelectItem value="capabilities">Capabilities</SelectItem>
-                <SelectItem value="productionOrders">Production Orders</SelectItem>
+                <optgroup label="Core Manufacturing">
+                  <SelectItem value="plants">Plants</SelectItem>
+                  <SelectItem value="resources">Resources</SelectItem>
+                  <SelectItem value="capabilities">Capabilities</SelectItem>
+                  <SelectItem value="operations">Operations</SelectItem>
+                </optgroup>
+                <optgroup label="Organization">
+                  <SelectItem value="sites">Sites</SelectItem>
+                  <SelectItem value="departments">Departments</SelectItem>
+                  <SelectItem value="workCenters">Work Centers</SelectItem>
+                  <SelectItem value="employees">Employees</SelectItem>
+                  <SelectItem value="users">Users</SelectItem>
+                </optgroup>
+                <optgroup label="Products & Inventory">
+                  <SelectItem value="items">Items</SelectItem>
+                  <SelectItem value="storageLocations">Storage Locations</SelectItem>
+                  <SelectItem value="inventory">Inventory</SelectItem>
+                  <SelectItem value="inventoryLots">Inventory Lots</SelectItem>
+                </optgroup>
+                <optgroup label="Business Partners">
+                  <SelectItem value="vendors">Vendors</SelectItem>
+                  <SelectItem value="customers">Customers</SelectItem>
+                </optgroup>
+                <optgroup label="Sales & Orders">
+                  <SelectItem value="productionOrders">Production Orders</SelectItem>
+                  <SelectItem value="salesOrders">Sales Orders</SelectItem>
+                  <SelectItem value="purchaseOrders">Purchase Orders</SelectItem>
+                  <SelectItem value="transferOrders">Transfer Orders</SelectItem>
+                </optgroup>
+                <optgroup label="Manufacturing Planning">
+                  <SelectItem value="billsOfMaterial">Bills of Material</SelectItem>
+                  <SelectItem value="routings">Routings</SelectItem>
+                  <SelectItem value="forecasts">Forecasts</SelectItem>
+                </optgroup>
               </SelectContent>
             </Select>
           </div>
@@ -428,14 +658,41 @@ Create authentic manufacturing data that reflects this company's operations.`;
     setShowAIDialog(true);
   };
 
-  // Only show supported data types that have backend API support
+  // Comprehensive list of all master data types organized by category
   const supportedDataTypes = [
-    { key: 'plants', label: 'Plants', icon: Building, description: 'Manufacturing facilities and locations' },
-    { key: 'resources', label: 'Resources', icon: Wrench, description: 'Equipment, machinery, and personnel' },
-    { key: 'capabilities', label: 'Capabilities', icon: Database, description: 'Skills and machine capabilities' },
-    { key: 'productionOrders', label: 'Production Orders', icon: Briefcase, description: 'Active production work orders' },
-    { key: 'vendors', label: 'Vendors', icon: Building2, description: 'Suppliers and vendor information' },
-    { key: 'customers', label: 'Customers', icon: Users, description: 'Customer accounts and information' }
+    // Core Manufacturing
+    { key: 'plants', label: 'Plants', icon: Building, description: 'Manufacturing facilities and locations', category: 'Core Manufacturing' },
+    { key: 'resources', label: 'Resources', icon: Wrench, description: 'Equipment, machinery, and personnel', category: 'Core Manufacturing' },
+    { key: 'capabilities', label: 'Capabilities', icon: Database, description: 'Skills and machine capabilities', category: 'Core Manufacturing' },
+    { key: 'operations', label: 'Operations', icon: Cog, description: 'Manufacturing process steps and tasks', category: 'Core Manufacturing' },
+    
+    // Organization
+    { key: 'sites', label: 'Sites', icon: MapPin, description: 'Company sites and facility locations', category: 'Organization' },
+    { key: 'departments', label: 'Departments', icon: Building2, description: 'Organizational departments and divisions', category: 'Organization' },
+    { key: 'workCenters', label: 'Work Centers', icon: Factory, description: 'Production work centers and stations', category: 'Organization' },
+    { key: 'employees', label: 'Employees', icon: UserCheck, description: 'Staff and personnel information', category: 'Organization' },
+    { key: 'users', label: 'Users', icon: Users, description: 'System users and access accounts', category: 'Organization' },
+    
+    // Products & Inventory
+    { key: 'items', label: 'Items', icon: Package, description: 'Products, materials, and inventory items', category: 'Products & Inventory' },
+    { key: 'storageLocations', label: 'Storage Locations', icon: Warehouse, description: 'Warehouses and storage locations', category: 'Products & Inventory' },
+    { key: 'inventory', label: 'Inventory', icon: Package2, description: 'Current inventory levels and stock', category: 'Products & Inventory' },
+    { key: 'inventoryLots', label: 'Inventory Lots', icon: Hash, description: 'Inventory lot tracking and batches', category: 'Products & Inventory' },
+    
+    // Business Partners
+    { key: 'vendors', label: 'Vendors', icon: Building2, description: 'Suppliers and vendor information', category: 'Business Partners' },
+    { key: 'customers', label: 'Customers', icon: Users, description: 'Customer accounts and information', category: 'Business Partners' },
+    
+    // Sales & Orders
+    { key: 'productionOrders', label: 'Production Orders', icon: Briefcase, description: 'Active production work orders', category: 'Sales & Orders' },
+    { key: 'salesOrders', label: 'Sales Orders', icon: ShoppingCart, description: 'Customer sales orders and requests', category: 'Sales & Orders' },
+    { key: 'purchaseOrders', label: 'Purchase Orders', icon: FileText, description: 'Supplier purchase orders', category: 'Sales & Orders' },
+    { key: 'transferOrders', label: 'Transfer Orders', icon: ArrowLeftRight, description: 'Inter-location transfer orders', category: 'Sales & Orders' },
+    
+    // Manufacturing Planning
+    { key: 'billsOfMaterial', label: 'Bills of Material', icon: List, description: 'Product structure and component lists', category: 'Manufacturing Planning' },
+    { key: 'routings', label: 'Routings', icon: Route, description: 'Manufacturing process routings', category: 'Manufacturing Planning' },
+    { key: 'forecasts', label: 'Forecasts', icon: TrendingUp, description: 'Demand forecasts and planning data', category: 'Manufacturing Planning' }
   ];
 
   // Record counts state
@@ -465,8 +722,24 @@ Create authentic manufacturing data that reflects this company's operations.`;
       mappedCounts.resources = recordCountsData.resources || 0;
       mappedCounts.capabilities = recordCountsData.capabilities || 0;
       mappedCounts.productionOrders = recordCountsData.production_orders || 0;
+      mappedCounts.operations = recordCountsData.operations || 0;
+      mappedCounts.sites = recordCountsData.sites || 0;
+      mappedCounts.departments = recordCountsData.departments || 0;
+      mappedCounts.workCenters = recordCountsData.work_centers || 0;
+      mappedCounts.employees = recordCountsData.employees || 0;
+      mappedCounts.users = recordCountsData.users || 0;
+      mappedCounts.items = recordCountsData.items || 0;
+      mappedCounts.storageLocations = recordCountsData.storage_locations || 0;
+      mappedCounts.inventory = recordCountsData.inventory || 0;
+      mappedCounts.inventoryLots = recordCountsData.inventory_lots || 0;
       mappedCounts.vendors = recordCountsData.vendors || 0;
       mappedCounts.customers = recordCountsData.customers || 0;
+      mappedCounts.salesOrders = recordCountsData.sales_orders || 0;
+      mappedCounts.purchaseOrders = recordCountsData.purchase_orders || 0;
+      mappedCounts.transferOrders = recordCountsData.transfer_orders || 0;
+      mappedCounts.billsOfMaterial = recordCountsData.bills_of_material || 0;
+      mappedCounts.routings = recordCountsData.routings || 0;
+      mappedCounts.forecasts = recordCountsData.forecasts || 0;
       setRecordCounts(mappedCounts);
     }
   }, [recordCountsData]);
