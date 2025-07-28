@@ -114,7 +114,7 @@ const optimizationAddons: OptimizationAddon[] = [
   {
     id: "inventory-optimization",
     name: "Inventory Optimization",
-    description: "Smart inventory management with demand forecasting and stock optimization",
+    description: "Advanced inventory optimization with AI-powered demand forecasting and stock optimization",
     monthlyPrice: 30,
     yearlyPrice: 300,
     features: [

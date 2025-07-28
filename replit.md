@@ -2,6 +2,13 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Pricing Terminology Consistency Verification (July 28, 2025)**:
+- Verified professional tier correctly uses "Inventory Planning AI" instead of "Inventory Optimization AI"
+- Confirmed optimization add-ons properly maintain "Inventory Optimization" terminology for premium modules
+- Pricing structure successfully reserves "optimization" terminology for higher-tier optimization plug-in upgrades
+- Professional tier focuses on "planning" capabilities while optimization add-ons provide advanced optimization features
+- Clear upgrade path established between planning (professional) and optimization (premium add-ons) tiers
+
 ✓ **Master Data Setup Mobile Layout Fix & Industry Lists Consistency (July 28, 2025)**:
 - Fixed Master Data Setup page mobile overflow issue by implementing proper responsive container structure
 - Added mobile-responsive margins (ml-3 mr-3 on mobile, md:ml-12 md:mr-12 on desktop) with Max AI panel integration
