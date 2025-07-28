@@ -2,6 +2,11 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Optimization Studio New Algorithm Button Removal (July 28, 2025)**:
+- Removed "New Algorithm" button from optimization studio page header section at user request
+- Cleaned up header layout after button removal for better visual balance
+- Optimization studio now focuses on existing algorithms with AI-powered collaborative development workflow
+
 ✓ **AI Assistant Mobile Enhancement & Component Error Fixes (July 28, 2025)**:
 - Fixed AI Development Algorithm Assistant dialog mobile scrolling issues with responsive design and proper overflow handling
 - Enhanced dialog width for mobile devices (w-[95vw] sm:w-full) and improved conversation area scrolling (min-h-[200px] max-h-[300px] sm:max-h-[400px])

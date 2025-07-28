@@ -359,7 +359,7 @@ export default function OptimizationStudio() {
           <Button 
             onClick={() => setShowBackwardsScheduling(false)}
             variant="outline"
-            className="mb-4"
+            className="mb-4 relative z-50"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Optimization Studio
@@ -574,10 +574,7 @@ export default function OptimizationStudio() {
                 </div>
               </DialogContent>
             </Dialog>
-            <Button variant="outline">
-              <Plus className="w-4 h-4 mr-2" />
-              New Algorithm
-            </Button>
+
           </div>
         </div>
 
