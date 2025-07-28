@@ -1700,6 +1700,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
         
         const result = await response.json();
         console.log(`[updateMutation] Success result:`, result);
+        console.log(`[updateMutation] Checking if description field is in result:`, result.description);
         return result;
       },
       onMutate: async (updatedItem) => {

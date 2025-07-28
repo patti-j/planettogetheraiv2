@@ -1734,14 +1734,21 @@ Rules:
   app.put("/api/resources/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      console.log(`[PUT /api/resources/${id}] Request body:`, req.body);
+      
       const resource = insertResourceSchema.partial().parse(req.body);
+      console.log(`[PUT /api/resources/${id}] Parsed resource:`, resource);
+      
       const updatedResource = await storage.updateResource(id, resource);
+      console.log(`[PUT /api/resources/${id}] Updated resource result:`, updatedResource);
+      
       if (!updatedResource) {
         return res.status(404).json({ message: "Resource not found" });
       }
       res.json(updatedResource);
     } catch (error) {
-      res.status(400).json({ message: "Invalid resource data" });
+      console.error(`[PUT /api/resources/${id}] Error:`, error);
+      res.status(400).json({ message: "Invalid resource data", error: error.message });
     }
   });
 
