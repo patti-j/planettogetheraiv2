@@ -405,7 +405,7 @@ export default function OptimizationStudio() {
                   AI Collaborate
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[80vh] w-[95vw] sm:w-full overflow-hidden flex flex-col">
+              <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] sm:w-full overflow-hidden flex flex-col" style={{ WebkitOverflowScrolling: 'touch' }}>
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <Brain className="w-5 h-5" />
@@ -477,7 +477,7 @@ export default function OptimizationStudio() {
                       </div>
 
                       {/* Conversation Area */}
-                      <div className="flex-1 overflow-y-auto border rounded-lg p-2 sm:p-4 space-y-4 bg-gray-50 min-h-[200px] max-h-[300px] sm:max-h-[400px]">
+                      <div className="flex-1 overflow-y-auto border rounded-lg p-2 sm:p-4 space-y-4 bg-gray-50 min-h-[200px] max-h-[300px] sm:max-h-[400px] overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
                         {aiSessionMessages.map((message, index) => (
                           <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[85%] sm:max-w-[80%] p-2 sm:p-3 rounded-lg ${

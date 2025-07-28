@@ -92,10 +92,10 @@ export default function IntegratedAIAssistant() {
     // Mobile-first responsive sizing
     if (screenWidth < 768) {
       return {
-        width: Math.min(320, screenWidth - 40),
-        height: Math.min(400, screenHeight - 100),
-        x: Math.max(20, screenWidth - Math.min(320, screenWidth - 40) - 20),
-        y: 80
+        width: Math.min(screenWidth - 20, 350), // Use almost full width on mobile
+        height: Math.min(screenHeight - 80, 450), // Use more height on mobile
+        x: Math.max(10, (screenWidth - Math.min(screenWidth - 20, 350)) / 2), // Center on mobile
+        y: 40 // Position higher on mobile
       };
     } else {
       return {
@@ -950,10 +950,10 @@ export default function IntegratedAIAssistant() {
             )}
 
             {/* Messages */}
-            <div className="flex-1 p-3 min-h-0 overflow-y-auto" 
+            <div className="flex-1 p-3 overflow-y-auto" 
                  style={{ 
-                   maxHeight: `${size.height - 200}px`,
-                   minHeight: `${Math.min(200, size.height - 200)}px`
+                   minHeight: '200px',
+                   maxHeight: window.innerWidth < 768 ? '300px' : `${size.height - 200}px`
                  }}>
               <div className="space-y-3">
                 {messages.length === 0 && (
@@ -997,7 +997,7 @@ export default function IntegratedAIAssistant() {
                     placeholder="Ask me anything about your operations..."
                     onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
                     className="flex-1 text-sm border border-gray-300 rounded px-3 py-2 resize-none"
-                    rows={2}
+                    rows={window.innerWidth < 768 ? 2 : 2}
                     style={{ minHeight: '40px' }}
                   />
                   <Button
