@@ -2,7 +2,7 @@
 
 ## Recent Changes (July 28, 2025)
 
-✓ **Functional Map Network View Implementation (July 28, 2025)**:
+✓ **Functional Map Network View Implementation & Mobile Optimization (July 28, 2025)**:
 - Implemented comprehensive network view for the functional map showing interconnections between manufacturing functional areas
 - Added view toggle between Grid View and Network View in the functional map header for flexible exploration
 - Created interactive ReactFlow-based network visualization with custom functional area nodes displaying icons, descriptions, and features
@@ -16,6 +16,11 @@
 - Network view automatically fits all nodes in viewport with proper padding and zoom controls
 - ReactFlow controls panel allows zooming, panning, and resetting network view for optimal exploration
 - Both grid and network views maintain same selection highlighting and details panel functionality
+- Optimized mobile layout for Functional Map by reducing header space allocation to ensure at least one full card is visible on screen
+- Enhanced mobile responsiveness with compact headers, reduced padding, smaller icons, and hidden statistics section
+- Mobile view toggle buttons show icons only to save space while maintaining full functionality
+- Compressed mobile filter inputs and search placeholder text for better screen utilization
+- Mobile cards use reduced spacing and padding to maximize content visibility within limited screen space
 
 ✓ **Data Schema View Auto-Fit Enhancement & Engineering Filter Addition (July 28, 2025)**:
 - Enhanced auto-fit functionality to automatically adjust viewport when filters are applied showing all filtered tables optimally
