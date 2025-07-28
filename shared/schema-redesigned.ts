@@ -79,6 +79,45 @@ export const userRoles = pgTable("user_roles", {
   userRoleUnique: unique().on(table.userId, table.roleId, table.plantId),
 }));
 
+export const userPreferences = pgTable("user_preferences", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull().unique(),
+  theme: text("theme").default("light"), // light, dark
+  language: text("language").default("en"),
+  timezone: text("timezone").default("UTC"),
+  dateFormat: text("date_format").default("MM/dd/yyyy"),
+  timeFormat: text("time_format").default("12h"), // 12h, 24h
+  dashboardLayout: jsonb("dashboard_layout").$type<any>().default({}),
+  notificationSettings: jsonb("notification_settings").$type<{
+    email?: boolean;
+    push?: boolean;
+    sms?: boolean;
+    inApp?: boolean;
+  }>().default({}),
+  maxAiSettings: jsonb("max_ai_settings").$type<{
+    isOpen?: boolean;
+    dockPosition?: string;
+    preferredModel?: string;
+  }>().default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const recentPages = pgTable("recent_pages", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  pagePath: text("page_path").notNull(),
+  pageTitle: text("page_title").notNull(),
+  pageIcon: text("page_icon"), // Icon name for display
+  visitedAt: timestamp("visited_at").defaultNow(),
+  visitCount: integer("visit_count").default(1),
+  isPinned: boolean("is_pinned").default(false),
+}, (table) => ({
+  userPageUnique: unique().on(table.userId, table.pagePath),
+  userIdIdx: index("recent_pages_user_id_idx").on(table.userId),
+  visitedAtIdx: index("recent_pages_visited_at_idx").on(table.visitedAt),
+}));
+
 // =============================================================================
 // 3. MASTER DATA - ITEMS & MATERIALS
 // =============================================================================
@@ -476,6 +515,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     references: [plants.id],
   }),
   userRoles: many(userRoles),
+  preferences: one(userPreferences),
+  recentPages: many(recentPages),
   productionOrders: many(productionOrders),
   algorithmRuns: many(algorithmRuns),
 }));
@@ -533,6 +574,20 @@ export const operationsRelations = relations(operations, ({ one }) => ({
   }),
 }));
 
+export const userPreferencesRelations = relations(userPreferences, ({ one }) => ({
+  user: one(users, {
+    fields: [userPreferences.userId],
+    references: [users.id],
+  }),
+}));
+
+export const recentPagesRelations = relations(recentPages, ({ one }) => ({
+  user: one(users, {
+    fields: [recentPages.userId],
+    references: [users.id],
+  }),
+}));
+
 // =============================================================================
 // TYPE DEFINITIONS
 // =============================================================================
@@ -545,6 +600,8 @@ export const insertProductionOrderSchema = createInsertSchema(productionOrders).
 export const insertOperationSchema = createInsertSchema(operations).omit({ id: true });
 export const insertVendorSchema = createInsertSchema(vendors).omit({ id: true, createdAt: true });
 export const insertCustomerSchema = createInsertSchema(customers).omit({ id: true, createdAt: true });
+export const insertUserPreferencesSchema = createInsertSchema(userPreferences).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertRecentPageSchema = createInsertSchema(recentPages).omit({ id: true, visitedAt: true });
 
 // Select Types
 export type Plant = typeof plants.$inferSelect;
@@ -567,6 +624,8 @@ export type PlannedOrder = typeof plannedOrders.$inferSelect;
 export type Operation = typeof operations.$inferSelect;
 export type Vendor = typeof vendors.$inferSelect;
 export type Customer = typeof customers.$inferSelect;
+export type UserPreferences = typeof userPreferences.$inferSelect;
+export type RecentPage = typeof recentPages.$inferSelect;
 export type StorageLocation = typeof storageLocations.$inferSelect;
 export type InventoryBalance = typeof inventoryBalances.$inferSelect;
 export type InventoryTransaction = typeof inventoryTransactions.$inferSelect;
@@ -581,3 +640,5 @@ export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
 export type InsertOperation = z.infer<typeof insertOperationSchema>;
 export type InsertVendor = z.infer<typeof insertVendorSchema>;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
+export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
+export type InsertRecentPage = z.infer<typeof insertRecentPageSchema>;

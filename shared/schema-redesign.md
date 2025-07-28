@@ -11,20 +11,24 @@ Created a clean, focused database schema that reduces complexity by **85%** whil
 - **Complexity Score**: 9.2/10 (very high)
 
 ## Redesigned Schema Overview
-- **26 core tables** (85% reduction)
+- **28 core tables** (84% reduction from 177)
 - **Zero TypeScript errors** - fully type-safe
 - **Zero circular references** - clean relational design
 - **Manufacturing-focused** - only essential ERP entities
+- **Complete user management** - includes preferences and recent pages tracking
 - **Complexity Score**: 2.1/10 (very low)
 
 ## Schema Categories & Tables
 
-### 1. Organization Structure (5 tables)
+### 1. Organization & User Management (7 tables)
 - **plants**: Manufacturing locations with timezone support
 - **departments**: Organizational units within plants  
 - **work_centers**: Production resources/stations with capacity
 - **users**: System users with plant assignments
+- **roles**: Role definitions with permissions
 - **user_roles**: Role-based permissions with plant scope
+- **user_preferences**: User settings (theme, language, dashboard layout, Max AI settings)
+- **recent_pages**: Navigation history with pin/visit tracking
 
 ### 2. Product & Process Definition (9 tables)
 - **items**: Products/materials master data with categories
@@ -50,10 +54,9 @@ Created a clean, focused database schema that reduces complexity by **85%** whil
 - **inventory_transactions**: Complete material movements
 - **roles**: System role definitions
 
-### 5. Optimization & Analytics (3 tables)
+### 5. Optimization & Analytics (2 tables)
 - **optimization_algorithms**: Available algorithms with parameters
 - **algorithm_runs**: Execution history with results
-- **user_roles**: User-role junction table
 
 ## Key Improvements
 
