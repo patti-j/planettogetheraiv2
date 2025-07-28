@@ -2,6 +2,16 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Data Schema View Session Persistence Implementation (July 28, 2025)**:
+- Added comprehensive localStorage persistence for all Data Schema View filter states to remember user preferences between sessions
+- Enhanced filter state initialization to load previous settings from localStorage with proper error handling and fallback defaults
+- Implemented session persistence for searchTerm, selectedCategory, selectedFeature, layoutType, showColumns, showRelationships, and simplifyLines states
+- Users' filter selections now persist across browser sessions, page refreshes, and application restarts without requiring manual reconfiguration
+- Added comprehensive useEffect hooks to automatically save filter changes to localStorage with detailed error logging for debugging
+- Enhanced user experience by maintaining personalized Data Schema View configuration without losing work progress or preferred settings
+- Filter persistence complements existing legend, minimap, and fullscreen mode localStorage persistence for complete interface state management
+- System gracefully handles localStorage unavailability with try-catch error handling and fallback to default behavior
+
 ✓ **Storage Locations Engineering Filter Fix & Gantt Chart TypeScript Cleanup (July 28, 2025)**:
 - Added storage_locations table to Engineering & Product Design filter in Data Schema View as requested
 - Engineering teams can now see storage locations alongside other engineering tables for understanding material storage during manufacturing processes

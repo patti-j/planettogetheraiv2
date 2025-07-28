@@ -401,16 +401,70 @@ const layoutAlgorithms = {
 };
 
 function DataSchemaViewContent() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedFeature, setSelectedFeature] = useState<string>('all');
-  const [layoutType, setLayoutType] = useState<'hierarchical' | 'circular' | 'grid'>('hierarchical');
-  const [showColumns, setShowColumns] = useState(true);
-  const [showRelationships, setShowRelationships] = useState(true);
+  // Initialize all filter states with localStorage persistence
+  const [searchTerm, setSearchTerm] = useState(() => {
+    try {
+      return localStorage.getItem('dataSchemaSearchTerm') || '';
+    } catch {
+      return '';
+    }
+  });
+  
+  const [selectedCategory, setSelectedCategory] = useState<string>(() => {
+    try {
+      return localStorage.getItem('dataSchemaSelectedCategory') || 'all';
+    } catch {
+      return 'all';
+    }
+  });
+  
+  const [selectedFeature, setSelectedFeature] = useState<string>(() => {
+    try {
+      return localStorage.getItem('dataSchemaSelectedFeature') || 'all';
+    } catch {
+      return 'all';
+    }
+  });
+  
+  const [layoutType, setLayoutType] = useState<'hierarchical' | 'circular' | 'grid'>(() => {
+    try {
+      const saved = localStorage.getItem('dataSchemaLayoutType');
+      return (saved as 'hierarchical' | 'circular' | 'grid') || 'hierarchical';
+    } catch {
+      return 'hierarchical';
+    }
+  });
+  
+  const [showColumns, setShowColumns] = useState(() => {
+    try {
+      const saved = localStorage.getItem('dataSchemaShowColumns');
+      return saved ? JSON.parse(saved) : true;
+    } catch {
+      return true;
+    }
+  });
+  
+  const [showRelationships, setShowRelationships] = useState(() => {
+    try {
+      const saved = localStorage.getItem('dataSchemaShowRelationships');
+      return saved ? JSON.parse(saved) : true;
+    } catch {
+      return true;
+    }
+  });
+  
+  const [simplifyLines, setSimplifyLines] = useState(() => {
+    try {
+      const saved = localStorage.getItem('dataSchemaSimplifyLines');
+      return saved ? JSON.parse(saved) : false;
+    } catch {
+      return false;
+    }
+  });
+  
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [focusMode, setFocusMode] = useState(false);
   const [focusTable, setFocusTable] = useState<string | null>(null);
-  const [simplifyLines, setSimplifyLines] = useState(false);
   
   // Initialize showLegend state from localStorage, default to true if not set
   const [showLegend, setShowLegend] = useState(() => {
@@ -462,7 +516,7 @@ function DataSchemaViewContent() {
     }
   });
 
-  // Persist full screen mode to localStorage
+  // Persist all filter states to localStorage
   useEffect(() => {
     try {
       localStorage.setItem('dataSchemaFullScreen', JSON.stringify(isFullScreen));
@@ -470,6 +524,62 @@ function DataSchemaViewContent() {
       console.warn('Failed to save full screen mode to localStorage:', error);
     }
   }, [isFullScreen]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('dataSchemaSearchTerm', searchTerm);
+    } catch (error) {
+      console.warn('Failed to save search term to localStorage:', error);
+    }
+  }, [searchTerm]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('dataSchemaSelectedCategory', selectedCategory);
+    } catch (error) {
+      console.warn('Failed to save selected category to localStorage:', error);
+    }
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('dataSchemaSelectedFeature', selectedFeature);
+    } catch (error) {
+      console.warn('Failed to save selected feature to localStorage:', error);
+    }
+  }, [selectedFeature]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('dataSchemaLayoutType', layoutType);
+    } catch (error) {
+      console.warn('Failed to save layout type to localStorage:', error);
+    }
+  }, [layoutType]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('dataSchemaShowColumns', JSON.stringify(showColumns));
+    } catch (error) {
+      console.warn('Failed to save show columns setting to localStorage:', error);
+    }
+  }, [showColumns]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('dataSchemaShowRelationships', JSON.stringify(showRelationships));
+    } catch (error) {
+      console.warn('Failed to save show relationships setting to localStorage:', error);
+    }
+  }, [showRelationships]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('dataSchemaSimplifyLines', JSON.stringify(simplifyLines));
+    } catch (error) {
+      console.warn('Failed to save simplify lines setting to localStorage:', error);
+    }
+  }, [simplifyLines]);
 
   // Keyboard shortcuts for full screen mode
   useEffect(() => {
