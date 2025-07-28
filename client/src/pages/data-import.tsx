@@ -2086,19 +2086,22 @@ Create authentic manufacturing data that reflects this company's operations.`;
                       value: 'small',
                       label: 'Small Sample',
                       description: industryDescriptions.small.description,
-                      details: industryDescriptions.small.records
+                      details: industryDescriptions.small.records,
+                      timing: 'Fastest generation (~30 seconds)'
                     },
                     {
                       value: 'medium',
                       label: 'Medium Sample',
                       description: industryDescriptions.medium.description,
-                      details: industryDescriptions.medium.records
+                      details: industryDescriptions.medium.records,
+                      timing: 'Moderate generation (~45-60 seconds)'
                     },
                     {
                       value: 'large',
                       label: 'Large Sample',
                       description: industryDescriptions.large.description,
-                      details: industryDescriptions.large.records
+                      details: industryDescriptions.large.records,
+                      timing: 'Longer generation (~90+ seconds)'
                     }
                   ];
                 })().map((option) => (
@@ -2134,6 +2137,11 @@ Create authentic manufacturing data that reflects this company's operations.`;
                           aiSampleSize === option.value ? 'text-blue-600' : 'text-gray-500'
                         }`}>
                           {option.details}
+                        </p>
+                        <p className={`text-xs font-medium mt-1 ${
+                          aiSampleSize === option.value ? 'text-green-700' : 'text-green-600'
+                        }`}>
+                          {option.timing}
                         </p>
                       </div>
                     </div>
