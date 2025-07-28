@@ -3493,25 +3493,26 @@ Create authentic manufacturing data that reflects this company's operations.`;
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        onClick={selectedTemplates.size === supportedDataTypes.length ? clearTemplateSelection : selectAllTemplates}
+                        onClick={selectAllTemplates}
                         className="h-8"
+                        disabled={selectedTemplates.size === supportedDataTypes.length}
                       >
-                        {selectedTemplates.size === supportedDataTypes.length ? 'Select None' : 'Select All'}
+                        Select All
                       </Button>
                       
                       {selectedTemplates.size > 0 && (
                         <>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={clearTemplateSelection}
+                            className="h-8"
+                          >
+                            Clear Selections
+                          </Button>
                           <span className="text-blue-600 font-medium">
                             {selectedTemplates.size} selected
                           </span>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={clearTemplateSelection}
-                            className="h-8 px-3 text-gray-600"
-                          >
-                            Clear
-                          </Button>
                         </>
                       )}
                     </div>
