@@ -1358,7 +1358,11 @@ Create authentic manufacturing data that reflects this company's operations.`;
                   <div className="w-full sm:w-80">
                     <Select value={selectedManageDataType} onValueChange={setSelectedManageDataType}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select data type" />
+                        <SelectValue placeholder="Select data type">
+                          {selectedManageDataType && (
+                            supportedDataTypes.find(dt => dt.key === selectedManageDataType)?.label
+                          )}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">Supported Data Types</div>
