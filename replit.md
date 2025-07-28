@@ -2,6 +2,17 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **BOM Material Requirements & Product Outputs Schema Enhancement (July 28, 2025)**:
+- Enhanced Bills of Material (BOM) structure with comprehensive material requirements and product outputs tracking
+- Added bomMaterialRequirements table supporting material inputs with required quantities, units, material types, consumption types, scrap percentages, and lead time offsets
+- Added bomProductOutputs table supporting multiple product outputs including primary products, co-products, and by-products with yield percentages
+- Implemented complete Drizzle ORM relations linking BOM tables with proper foreign key relationships to bills_of_material and items tables
+- Added comprehensive insert schemas and TypeScript type definitions for BomMaterialRequirement and BomProductOutput entities
+- Enhanced Data Schema View feature-to-table mapping to include new BOM tables in Engineering, Production Scheduling, and Production Management filters
+- BOM system now supports complex manufacturing scenarios: discrete manufacturing with material requirements, process manufacturing with co-products/by-products, and flexible material consumption patterns
+- Schema changes prepared for database migration with proper table structures, constraints, and relationship mappings
+- Enhanced manufacturing data exploration capabilities by categorizing BOM material requirements and product outputs in relevant filter groups
+
 ✓ **Data Schema View Filter Configuration Enhancement (July 28, 2025)**:
 - Added capacity_planning_scenarios table to Production Scheduling filter as requested
 - Capacity planning scenarios now visible when filtering by Production Scheduling in Data Schema View

@@ -5910,6 +5910,41 @@ export const bomLines = pgTable("bom_lines", {
   bomLineIdx: unique().on(table.bomId, table.lineNumber),
 }));
 
+// BOM Material Requirements - detailed material requirements for each BOM
+export const bomMaterialRequirements = pgTable("bom_material_requirements", {
+  id: serial("id").primaryKey(),
+  bomId: integer("bom_id").references(() => billsOfMaterial.id).notNull(),
+  materialId: integer("material_id").references(() => items.id).notNull(), // Reference to material/item
+  requiredQuantity: numeric("required_quantity", { precision: 10, scale: 4 }).notNull(),
+  unitOfMeasure: text("unit_of_measure").notNull(),
+  materialType: text("material_type").notNull().default("raw_material"), // raw_material, semi_finished, purchased_part
+  consumptionType: text("consumption_type").notNull().default("variable"), // variable, fixed, backflush
+  scrapPercentage: numeric("scrap_percentage", { precision: 5, scale: 2 }).default("0"),
+  leadTimeOffset: integer("lead_time_offset").default(0), // days before production start
+  isOptional: boolean("is_optional").default(false),
+  substituteItems: jsonb("substitute_items").$type<number[]>().default([]), // Array of substitute item IDs
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// BOM Product Outputs - what products are produced by each BOM
+export const bomProductOutputs = pgTable("bom_product_outputs", {
+  id: serial("id").primaryKey(),
+  bomId: integer("bom_id").references(() => billsOfMaterial.id).notNull(),
+  productId: integer("product_id").references(() => items.id).notNull(), // Reference to output product/item
+  outputQuantity: numeric("output_quantity", { precision: 10, scale: 4 }).notNull(),
+  unitOfMeasure: text("unit_of_measure").notNull(),
+  productType: text("product_type").notNull().default("primary"), // primary, co_product, by_product
+  yieldPercentage: numeric("yield_percentage", { precision: 5, scale: 2 }).default("100"), // Expected yield %
+  qualityGrade: text("quality_grade"), // Grade or quality classification
+  isPrimary: boolean("is_primary").default(false), // True for the main output product
+  sortOrder: integer("sort_order").default(1), // Display order
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  bomProductIdx: unique().on(table.bomId, table.productId),
+}));
+
 // Routings - sequence of operations to make items
 export const routings = pgTable("routings", {
   id: serial("id").primaryKey(),
@@ -6129,6 +6164,8 @@ export const billsOfMaterialRelations = relations(billsOfMaterial, ({ one, many 
     references: [items.id],
   }),
   lines: many(bomLines),
+  materialRequirements: many(bomMaterialRequirements),
+  productOutputs: many(bomProductOutputs),
 }));
 
 export const bomLinesRelations = relations(bomLines, ({ one }) => ({
@@ -6138,6 +6175,30 @@ export const bomLinesRelations = relations(bomLines, ({ one }) => ({
   }),
   componentItem: one(items, {
     fields: [bomLines.componentItemId],
+    references: [items.id],
+  }),
+}));
+
+// Relations for BOM Material Requirements
+export const bomMaterialRequirementsRelations = relations(bomMaterialRequirements, ({ one }) => ({
+  bom: one(billsOfMaterial, {
+    fields: [bomMaterialRequirements.bomId],
+    references: [billsOfMaterial.id],
+  }),
+  material: one(items, {
+    fields: [bomMaterialRequirements.materialId],
+    references: [items.id],
+  }),
+}));
+
+// Relations for BOM Product Outputs  
+export const bomProductOutputsRelations = relations(bomProductOutputs, ({ one }) => ({
+  bom: one(billsOfMaterial, {
+    fields: [bomProductOutputs.bomId],
+    references: [billsOfMaterial.id],
+  }),
+  product: one(items, {
+    fields: [bomProductOutputs.productId],
     references: [items.id],
   }),
 }));
@@ -6329,6 +6390,16 @@ export const insertBomLineSchema = createInsertSchema(bomLines).omit({
   createdAt: true,
 });
 
+export const insertBomMaterialRequirementSchema = createInsertSchema(bomMaterialRequirements).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertBomProductOutputSchema = createInsertSchema(bomProductOutputs).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertRoutingSchema = createInsertSchema(routings).omit({
   id: true,
   createdAt: true,
@@ -6400,6 +6471,12 @@ export type InsertBillOfMaterial = z.infer<typeof insertBillOfMaterialSchema>;
 
 export type BomLine = typeof bomLines.$inferSelect;
 export type InsertBomLine = z.infer<typeof insertBomLineSchema>;
+
+export type BomMaterialRequirement = typeof bomMaterialRequirements.$inferSelect;
+export type InsertBomMaterialRequirement = z.infer<typeof insertBomMaterialRequirementSchema>;
+
+export type BomProductOutput = typeof bomProductOutputs.$inferSelect;
+export type InsertBomProductOutput = z.infer<typeof insertBomProductOutputSchema>;
 
 export type Routing = typeof routings.$inferSelect;
 export type InsertRouting = z.infer<typeof insertRoutingSchema>;

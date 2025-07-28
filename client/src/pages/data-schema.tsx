@@ -166,7 +166,7 @@ const featureTableMapping: Record<string, string[]> = {
     'production_orders', 'planned_orders', 'operations', 'resources', 'resource_capabilities', 'capabilities',
     'shift_templates', 'resource_shift_assignments', 'resource_downtime', 'resource_overtime',
     'production_versions', 'routings', 'routing_operations', 'work_centers', 'calendar_exceptions',
-    'recipes', 'bills_of_materials', 'bom_items', 'capacity_planning_scenarios'
+    'recipes', 'bills_of_materials', 'bom_items', 'bom_material_requirements', 'bom_product_outputs', 'capacity_planning_scenarios'
   ],
   'inventory': [
     'stock_items', 'inventory_transactions', 'warehouses', 'storage_locations', 
@@ -174,7 +174,7 @@ const featureTableMapping: Record<string, string[]> = {
     'purchase_orders', 'goods_receipts', 'inventory_reservations'
   ],
   'production': [
-    'production_orders', 'operations', 'bills_of_materials', 'bom_items', 'recipes',
+    'production_orders', 'operations', 'bills_of_materials', 'bom_items', 'bom_material_requirements', 'bom_product_outputs', 'recipes',
     'production_versions', 'routings', 'routing_operations', 'work_centers',
     'quality_inspections', 'production_lots', 'batch_records'
   ],
@@ -209,7 +209,7 @@ const featureTableMapping: Record<string, string[]> = {
     'profitability_analysis'
   ],
   'engineering': [
-    'bills_of_materials', 'bom_items', 'recipes', 'routings', 'routing_operations',
+    'bills_of_materials', 'bom_items', 'bom_material_requirements', 'bom_product_outputs', 'recipes', 'routings', 'routing_operations',
     'production_versions', 'work_centers', 'product_masters', 'products',
     'product_categories', 'product_structures', 'engineering_changes',
     'specifications', 'documents', 'alternate_routings', 'operations',
