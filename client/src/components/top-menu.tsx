@@ -316,7 +316,7 @@ export default function TopMenu() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <Input
                     type="text"
-                    placeholder="Search menu..."
+                    placeholder="Search"
                     value={searchFilter}
                     onChange={(e) => setSearchFilter(e.target.value)}
                     className="pl-9 pr-8 py-2 w-full text-sm border-gray-200 focus:border-blue-500 focus:ring-blue-500"
