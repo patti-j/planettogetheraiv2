@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import ReactFlow, {
   Node,
@@ -8,6 +8,7 @@ import ReactFlow, {
   MiniMap,
   useNodesState,
   useEdgesState,
+  useReactFlow,
   ConnectionMode,
   Panel,
   MarkerType,
@@ -283,6 +284,7 @@ function DataSchemaViewContent() {
   const [focusTable, setFocusTable] = useState<string | null>(null);
   
   const { toast } = useToast();
+  const { fitView } = useReactFlow();
 
   // Fetch database schema information
   const { data: schemaData, isLoading, error } = useQuery({
@@ -470,6 +472,22 @@ function DataSchemaViewContent() {
     setNodes(nodes);
     setEdges(edges);
   }, [nodes, edges, setNodes, setEdges]);
+
+  // Auto-fit view when filters change to show all filtered tables
+  useEffect(() => {
+    if (filteredTables.length > 0) {
+      // Use a small delay to ensure nodes are rendered before fitting
+      const timer = setTimeout(() => {
+        fitView({ 
+          padding: 0.2,
+          duration: 800,
+          includeHiddenNodes: false 
+        });
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [selectedFeature, selectedCategory, focusMode, focusTable, searchTerm, layoutType, filteredTables.length, fitView]);
 
   const handleTableClick = useCallback((event: any, node: Node) => {
     setSelectedTable(node.id);

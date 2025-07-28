@@ -2,13 +2,15 @@
 
 ## Recent Changes (July 28, 2025)
 
-✓ **Complete Marketing Database Cleanup (July 28, 2025)**:
+✓ **Data Schema View Auto-Fit Enhancement & Marketing Database Cleanup (July 28, 2025)**:
+- Implemented intelligent auto-fit functionality that reorganizes the schema view when filters are applied
+- Added useReactFlow hook with fitView integration to automatically zoom and center filtered tables
+- Filter changes now trigger smooth 800ms transition to show all relevant tables in optimal view
+- Enhanced user experience with automatic viewport adjustment for Production Scheduling, Inventory Management, and other feature filters
 - Successfully removed all remaining marketing tables from the actual database (not just schema)
 - Dropped 6 marketing tables: lead_captures, buyer_personas, customer_journey_stages, marketing_pages, page_analytics, ab_tests
 - Database table count reduced from 136 to 130 tables with complete marketing functionality removal
-- Fixed Data Schema View display to no longer show marketing-related tables
 - Database now completely focused on manufacturing ERP operations without any marketing remnants
-- All cascade constraints handled properly during table removal for clean database state
 
 ✓ **Data Schema View Mobile Optimization (July 28, 2025)**:
 - Optimized Data Schema View header for mobile devices by reducing vertical space usage
