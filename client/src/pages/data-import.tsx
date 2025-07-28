@@ -903,19 +903,25 @@ Create authentic manufacturing data that reflects this company's operations.`;
     const deleteMutation = useMutation({
       mutationFn: async (id: number) => {
         const authToken = localStorage.getItem('authToken');
-        const endpoint = getApiEndpoint(dataType);
-        const response = await fetch(`/api/${endpoint}/${id}`, {
+        const tableName = getTableName(dataType);
+        const response = await fetch(`/api/data-management/${tableName}/bulk-delete`, {
           method: 'DELETE',
           headers: { 
+            'Content-Type': 'application/json',
             'Authorization': `Bearer ${authToken}`
-          }
+          },
+          body: JSON.stringify({ ids: [id] })
         });
         if (!response.ok) throw new Error('Failed to delete item');
         return response.json();
       },
       onSuccess: () => {
         toast({ title: "Success", description: "Item deleted successfully" });
-        queryClient.invalidateQueries({ queryKey: [`/api/data-management/${getTableName(dataType)}`] });
+        // Refresh data by loading page 1 again
+        setCurrentPage(1);
+        setAllLoadedItems([]);
+        setHasMoreData(true);
+        loadMoreData(1);
       },
       onError: (error: any) => {
         toast({ title: "Error", description: error.message, variant: "destructive" });
