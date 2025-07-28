@@ -2,6 +2,16 @@
 
 ## Recent Changes (July 28, 2025)
 
+✓ **Data Schema View Full-Screen Mode Implementation (July 28, 2025)**:
+- Added full-screen toggle button in top-right control panel with Maximize/Minimize icons for maximum map real estate
+- Implemented complete header hiding in full-screen mode to allocate entire screen to the schema visualization
+- Added floating exit button (top-left) when in full-screen mode for easy access to return to normal view
+- Enhanced with keyboard shortcuts: F11 key toggles full-screen, Escape key exits full-screen mode
+- Added localStorage persistence for full-screen mode preference to remember user choice between sessions
+- Full-screen mode provides unobstructed view of the entire database schema for detailed exploration
+- Toggle button shows green ring indicator when active, with comprehensive tooltip showing keyboard shortcuts
+- Users can now maximize screen real estate for complex schema analysis and relationship exploration
+
 ✓ **Data Schema View MiniMap Mobile Optimization & Hide Toggle Implementation (July 28, 2025)**:
 - Made MiniMap (view finder) smaller and hideable to save mobile screen real estate as requested
 - Added toggle button in top-right control panel with Eye/EyeOff icons for showing/hiding the MiniMap

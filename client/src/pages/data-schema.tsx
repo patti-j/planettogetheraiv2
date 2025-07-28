@@ -41,7 +41,9 @@ import {
   Info,
   Target,
   HelpCircle,
-  X
+  X,
+  Maximize,
+  Minimize
 } from "lucide-react";
 
 interface SchemaTable {
@@ -448,6 +450,45 @@ function DataSchemaViewContent() {
       console.warn('Failed to save minimap visibility to localStorage:', error);
     }
   }, [showMiniMap]);
+
+  // Full screen mode state with localStorage persistence
+  const [isFullScreen, setIsFullScreen] = useState(() => {
+    try {
+      const saved = localStorage.getItem('dataSchemaFullScreen');
+      return saved ? JSON.parse(saved) : false;
+    } catch {
+      return false;
+    }
+  });
+
+  // Persist full screen mode to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('dataSchemaFullScreen', JSON.stringify(isFullScreen));
+    } catch (error) {
+      console.warn('Failed to save full screen mode to localStorage:', error);
+    }
+  }, [isFullScreen]);
+
+  // Keyboard shortcuts for full screen mode
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      // F11 key or Ctrl/Cmd + Shift + F for full screen toggle
+      if (event.key === 'F11' || (event.key === 'f' && event.ctrlKey && event.shiftKey) || (event.key === 'f' && event.metaKey && event.shiftKey)) {
+        event.preventDefault();
+        setIsFullScreen(!isFullScreen);
+      }
+      // Escape key to exit full screen
+      if (event.key === 'Escape' && isFullScreen) {
+        setIsFullScreen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [isFullScreen]);
   
   const { toast } = useToast();
   const { fitView } = useReactFlow();
@@ -827,7 +868,8 @@ function DataSchemaViewContent() {
   return (
     <div className="h-screen flex flex-col">
       {/* Header - Mobile Optimized with proper hamburger menu spacing */}
-      <div className="border-b bg-white px-3 sm:px-6 py-2 sm:py-4 relative z-10">
+      {!isFullScreen && (
+        <div className="border-b bg-white px-3 sm:px-6 py-2 sm:py-4 relative z-10">
         {/* Title Row - Compact on Mobile with hamburger menu clearance */}
         <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-4 ml-12 md:ml-0">
           <Database className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
@@ -1059,10 +1101,11 @@ function DataSchemaViewContent() {
             )}
           </div>
         )}
-      </div>
+        </div>
+      )}
 
       {/* Schema Diagram */}
-      <div className="flex-1 relative">
+      <div className={`${isFullScreen ? 'h-screen' : 'flex-1'} relative`}>
         <ReactFlow
           nodes={flowNodes}
           edges={flowEdges}
@@ -1078,6 +1121,29 @@ function DataSchemaViewContent() {
           <Background />
           <Controls />
           
+          {/* Full Screen Exit Button - Only visible in full screen mode */}
+          {isFullScreen && (
+            <Panel position="top-left" className="z-50">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsFullScreen(false)}
+                      className="bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg"
+                    >
+                      <Minimize className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Exit full screen mode</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </Panel>
+          )}
+
           {/* Custom Control Buttons */}
           <Panel position="top-right" className="flex gap-2">
             <TooltipProvider>
@@ -1154,6 +1220,24 @@ function DataSchemaViewContent() {
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{showMiniMap ? 'Hide' : 'Show'} view finder (minimap)</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsFullScreen(!isFullScreen)}
+                    className={`bg-white/90 backdrop-blur-sm hover:bg-white ${isFullScreen ? 'ring-2 ring-green-200' : ''}`}
+                  >
+                    {isFullScreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isFullScreen ? 'Exit' : 'Enter'} full screen mode (F11 or Esc)</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
