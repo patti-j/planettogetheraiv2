@@ -12,6 +12,8 @@
 - Bulk mode slides in checkboxes on left side of rows and hides individual row delete toggles for cleaner interface
 - Selected rows highlight with blue background and show selection status in header ("X selected")
 - Bulk delete button shows trash icon with count of selected items for clear user feedback
+- Fixed pixel-perfect alignment of header and row elements by matching exact layout structure with identical padding and spacing
+- Header "Name" text and ⋮ buttons now perfectly aligned with row content using mirrored container structures
 - Enhanced user experience with comprehensive single and bulk deletion workflows optimized for mobile touch interaction
 
 ✓ **Master Data Setup Manage Tab Implementation & JSX Error Resolution (July 28, 2025)**:
