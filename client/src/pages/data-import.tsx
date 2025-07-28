@@ -461,43 +461,6 @@ Create authentic manufacturing data that reflects this company's operations.`;
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {/* Bulk mode toggle for mobile - only show in table view */}
-            {viewMode === 'table' && (
-              <Button
-                variant={bulkSelectMode ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => {
-                  setBulkSelectMode(!bulkSelectMode);
-                  setSelectedItems(new Set());
-                }}
-                className="sm:hidden"
-                title="Bulk select mode"
-              >
-                <span className="text-sm font-bold">⋮</span>
-              </Button>
-            )}
-            
-            {/* Bulk delete button - only show when items are selected */}
-            {bulkSelectMode && selectedItems.size > 0 && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={async () => {
-                  const selectedIds = Array.from(selectedItems);
-                  for (const id of selectedIds) {
-                    await deleteMutation.mutateAsync(Number(id));
-                  }
-                  setSelectedItems(new Set());
-                  setBulkSelectMode(false);
-                }}
-                className="sm:hidden"
-                title={`Delete ${selectedItems.size} selected items`}
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                {selectedItems.size}
-              </Button>
-            )}
-            
             <Button
               variant={viewMode === 'table' ? 'default' : 'ghost'}
               size="sm"
@@ -541,12 +504,50 @@ Create authentic manufacturing data that reflects this company's operations.`;
                   <TableHead>
                     <div className="flex items-center justify-between">
                       <span>Name</span>
-                      {/* Mobile bulk selection status */}
-                      {bulkSelectMode && (
-                        <span className="text-sm text-gray-500 sm:hidden">
-                          {selectedItems.size} selected
-                        </span>
-                      )}
+                      {/* Mobile header controls */}
+                      <div className="flex items-center gap-2 sm:hidden">
+                        {/* Bulk selection status */}
+                        {bulkSelectMode && (
+                          <span className="text-sm text-gray-500">
+                            {selectedItems.size} selected
+                          </span>
+                        )}
+                        
+                        {/* Bulk delete button - only show when items are selected */}
+                        {bulkSelectMode && selectedItems.size > 0 && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={async () => {
+                              const selectedIds = Array.from(selectedItems);
+                              for (const id of selectedIds) {
+                                await deleteMutation.mutateAsync(Number(id));
+                              }
+                              setSelectedItems(new Set());
+                              setBulkSelectMode(false);
+                            }}
+                            className="h-6 px-2"
+                            title={`Delete ${selectedItems.size} selected items`}
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            {selectedItems.size}
+                          </Button>
+                        )}
+                        
+                        {/* Bulk mode toggle */}
+                        <Button
+                          variant={bulkSelectMode ? 'default' : 'ghost'}
+                          size="sm"
+                          onClick={() => {
+                            setBulkSelectMode(!bulkSelectMode);
+                            setSelectedItems(new Set());
+                          }}
+                          className="h-6 w-6 p-0"
+                          title="Bulk select mode"
+                        >
+                          <span className="text-sm font-bold">⋮</span>
+                        </Button>
+                      </div>
                     </div>
                   </TableHead>
                   <TableHead className="hidden sm:table-cell">Details</TableHead>
