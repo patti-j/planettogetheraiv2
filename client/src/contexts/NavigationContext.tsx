@@ -216,21 +216,23 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     return { label: label || 'Page', icon };
   };
 
-  // Track current page when location changes
-  useEffect(() => {
-    const currentPath = location;
-    
+  // Don't automatically track location changes - only track explicit navigation
+  
+  // Function to manually track menu clicks
+  const trackMenuClick = (path: string, label?: string, icon?: string) => {
     // Don't track home page visits or login page
-    if (currentPath === '/' || currentPath === '/login') {
+    if (path === '/' || path === '/login') {
       return;
     }
     
     // Get page info from mapping or generate it
-    const pageInfo = pageMapping[currentPath] || generateLabelFromPath(currentPath);
+    const pageInfo = pageMapping[path] || generateLabelFromPath(path);
+    const finalLabel = label || pageInfo.label;
+    const finalIcon = icon || pageInfo.icon;
     
-    // Always track the page visit
-    addRecentPage(currentPath, pageInfo.label, pageInfo.icon);
-  }, [location]);
+    // Track the page visit
+    addRecentPage(path, finalLabel, finalIcon);
+  };
 
   const addRecentPage = (path: string, label: string, icon?: string) => {
     setRecentPages(current => {
@@ -371,6 +373,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     <NavigationContext.Provider value={{
       recentPages,
       addRecentPage,
+      trackMenuClick,
       clearRecentPages,
       togglePinPage,
       lastVisitedRoute,
