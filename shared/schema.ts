@@ -778,7 +778,7 @@ export const dashboardConfigs = pgTable("dashboard_configs", {
 });
 
 // Schedule Scenarios for evaluation and comparison
-export const scheduleScenarios = pgTable("schedule_scenarios", {
+export const scheduleScenarios: ReturnType<typeof pgTable> = pgTable("schedule_scenarios", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),

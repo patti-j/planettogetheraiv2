@@ -1,6 +1,5 @@
 import { 
   plants, capabilities, resources, plantResources, productionOrders, plannedOrders, operations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
-  shiftTemplates, resourceShiftAssignments,
   recipes, recipePhases, recipeFormulas, recipeEquipment, vendors, customers, productionVersions,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
@@ -11,7 +10,6 @@ import {
   stockItems, stockTransactions, stockBalances, demandForecasts, demandDrivers, demandHistory, stockOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
   type Plant, type Capability, type Resource, type PlantResource, type ProductionOrder, type PlannedOrder, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
-  type ShiftTemplate, type ResourceShiftAssignment,
   type Recipe, type RecipePhase, type RecipeFormula, type RecipeEquipment, type Vendor, type Customer, type ProductionVersion,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
@@ -23,7 +21,6 @@ import {
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
   type InsertPlant, type InsertCapability, type InsertResource, type InsertPlantResource, type InsertProductionOrder, type InsertPlannedOrder, 
   type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
-  type InsertShiftTemplate, type InsertResourceShiftAssignment,
   type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertRecipeEquipment, type InsertVendor, type InsertCustomer, type InsertProductionVersion,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
