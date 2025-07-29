@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigation } from "@/contexts/NavigationContext";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -135,6 +136,12 @@ export default function DataRelationships() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'browse' | 'details'>('browse');
+  const { addRecentPage } = useNavigation();
+
+  // Add this page to recent pages when component mounts
+  useEffect(() => {
+    addRecentPage('/data-relationships', 'Data Relationships', 'Database');
+  }, [addRecentPage]);
 
   const { data: schemaData, isLoading } = useQuery<TableInfo[]>({
     queryKey: ['/api/database/schema'],
