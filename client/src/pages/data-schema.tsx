@@ -177,7 +177,7 @@ interface SchemaRelationship {
 
 // Custom node component for database tables
 const TableNode = ({ data }: { data: any }) => {
-  const { table, showColumns, showRelationships, isFocused, isConnected, isSelected, onSelect } = data;
+  const { table, showColumns, showRelationships, isFocused, isConnected, isSelected, onSelect, onClick } = data;
   
   const getCardClassName = () => {
     let baseClasses = "min-w-[250px] max-w-[350px] shadow-lg border-2 transition-all duration-200";
@@ -204,7 +204,11 @@ const TableNode = ({ data }: { data: any }) => {
   };
 
   return (
-    <Card className={getCardClassName()} style={getCardStyle()}>
+    <Card 
+      className={getCardClassName()} 
+      style={getCardStyle()}
+      onClick={() => onClick?.(table.name)}
+    >
       <CardHeader className="pb-2 relative">
         <CardTitle className="flex items-center gap-2 text-sm pr-8">
           <Table className="w-4 h-4 flex-shrink-0" />
@@ -782,7 +786,19 @@ function DataSchemaViewContent() {
   
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [focusMode, setFocusMode] = useState(false);
+  const [clickedTable, setClickedTable] = useState<string | null>(null);
   const [focusTable, setFocusTable] = useState<string | null>(null);
+  
+  // Handle table card clicks for relationship highlighting
+  const handleTableClick = useCallback((tableName: string) => {
+    if (clickedTable === tableName) {
+      // If clicking the same table, clear the click highlight
+      setClickedTable(null);
+    } else {
+      // Highlight relationships for the clicked table
+      setClickedTable(tableName);
+    }
+  }, [clickedTable]);
   
   // Table selection functionality
   const [selectedTables, setSelectedTables] = useState<string[]>(() => {
@@ -1243,7 +1259,8 @@ function DataSchemaViewContent() {
           isConnected,
           isSelected,
           onSelect: handleCardSelection,
-          label: <TableNode data={{ table, showColumns, showRelationships, isFocused, isConnected, isSelected, onSelect: handleCardSelection }} />
+          onClick: handleTableClick,
+          label: <TableNode data={{ table, showColumns, showRelationships, isFocused, isConnected, isSelected, onSelect: handleCardSelection, onClick: handleTableClick }} />
         },
         style: {
           background: 'transparent',
@@ -1276,9 +1293,10 @@ function DataSchemaViewContent() {
               }
             }
             
-            const isHighlighted = focusMode && focusTable && 
+            const isHighlighted = (focusMode && focusTable && 
               (rel.fromTable === focusTable || rel.toTable === focusTable || 
-               (connectedTableNames.includes(rel.fromTable) && connectedTableNames.includes(rel.toTable)));
+               (connectedTableNames.includes(rel.fromTable) && connectedTableNames.includes(rel.toTable)))) ||
+              (clickedTable && (rel.fromTable === clickedTable || rel.toTable === clickedTable));
             
             // Calculate better edge routing to avoid crossovers
             const sourcePos = tablePositions[rel.fromTable];
@@ -1444,7 +1462,7 @@ function DataSchemaViewContent() {
     }
 
     return { nodes: flowNodes, edges: flowEdges };
-  }, [filteredTables, layoutType, showColumns, showRelationships, focusMode, focusTable, schemaData, getConnectedTables, simplifyLines, selectedCards]);
+  }, [filteredTables, layoutType, showColumns, showRelationships, focusMode, focusTable, schemaData, getConnectedTables, simplifyLines, selectedCards, clickedTable]);
 
   const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
@@ -1713,7 +1731,7 @@ function DataSchemaViewContent() {
     }
   }, [selectedFeature, selectedCategory, focusMode, focusTable, searchTerm, layoutType, filteredTables.length, nodes.length, fitView]);
 
-  const handleTableClick = useCallback((event: any, node: Node) => {
+  const handleNodeClick = useCallback((event: any, node: Node) => {
     setSelectedTable(node.id);
     
     // If focus mode is enabled, clicking a table focuses on it
@@ -2421,7 +2439,7 @@ function DataSchemaViewContent() {
           edges={flowEdges}
           onNodesChange={handleNodesChange}
           onEdgesChange={onEdgesChange}
-          onNodeClick={handleTableClick}
+          onNodeClick={handleNodeClick}
           onEdgeMouseEnter={handleEdgeMouseEnter}
           onEdgeMouseLeave={handleEdgeMouseLeave}
           edgeTypes={edgeTypes}
