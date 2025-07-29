@@ -1972,9 +1972,9 @@ function DataSchemaViewContent() {
           </div>
         )}
         
-        {/* Card Selection Status - shows when cards are selected for relationship analysis */}
+        {/* Card Selection Status - Floating overlay that doesn't affect layout */}
         {selectedCards.length > 0 && !isFullScreen && (
-          <div className="flex items-center justify-between gap-4 mt-2 pt-2 border-t border-green-200 bg-green-50/30 px-3 py-2 rounded">
+          <div className="absolute top-full left-4 right-4 z-40 flex items-center justify-between gap-4 bg-green-50 border border-green-200 px-3 py-2 rounded-lg shadow-md backdrop-blur-sm">
             <div className="flex items-center gap-2">
               <Flag className="w-4 h-4 text-green-600" />
               <Label className="text-sm text-green-800 font-medium">
