@@ -269,6 +269,78 @@ export const recipePhases = pgTable("recipe_phases", {
   operationPhaseIdx: unique().on(table.operationId, table.phaseNumber),
 }));
 
+// Recipe Phase Relationships - defines sequence and dependencies between recipe phases
+export const recipePhaseRelationships = pgTable("recipe_phase_relationships", {
+  id: serial("id").primaryKey(),
+  recipeId: integer("recipe_id").references(() => recipes.id).notNull(),
+  predecessorPhaseId: integer("predecessor_phase_id").references(() => recipePhases.id).notNull(),
+  successorPhaseId: integer("successor_phase_id").references(() => recipePhases.id).notNull(),
+  
+  // Relationship type defines scheduling logic for process phases
+  relationshipType: text("relationship_type").notNull().default("FS"), // FS=Finish-Start, SS=Start-Start, FF=Finish-Finish, SF=Start-Finish
+  lagTime: integer("lag_time").default(0), // Minutes between phases (can be negative for lead time)
+  
+  // Dependency strength and conditions for process manufacturing
+  dependencyType: text("dependency_type").notNull().default("mandatory"), // mandatory, preferred, optional
+  condition: text("condition"), // Optional condition for the dependency (e.g., "if pH > 7.0")
+  
+  // Process flow and overlap control for continuous manufacturing
+  overlapType: text("overlap_type"), // none, partial, full, continuous - how much phases can overlap
+  overlapPercentage: integer("overlap_percentage").default(0), // 0-100% how much successor can start before predecessor finishes
+  transferMechanism: text("transfer_mechanism"), // pipe, pump, gravity, batch_transfer
+  
+  // Material and batch flow constraints
+  materialFlowConstraints: jsonb("material_flow_constraints").$type<{
+    batchSize?: number; // Required batch size for transfer
+    transferRate?: number; // Transfer rate (units per minute)  
+    bufferCapacity?: number; // Buffer capacity between phases
+    temperatureMaintenance?: boolean; // Whether temperature must be maintained during transfer
+    pressureMaintenance?: boolean; // Whether pressure must be maintained during transfer
+  }>(),
+  
+  // Equipment and vessel dependencies
+  equipmentConstraints: jsonb("equipment_constraints").$type<{
+    sharedEquipment?: number[]; // Equipment IDs that both phases use
+    dedicatedLines?: boolean; // Whether dedicated transfer lines are required
+    cleaningRequired?: boolean; // Whether cleaning is required between phases
+    setupTime?: number; // Setup time required for phase transition (minutes)
+  }>(),
+  
+  // Process control and automation integration
+  processControlParameters: jsonb("process_control_parameters").$type<{
+    controlSystemIntegration?: boolean; // Whether DCS/PLC controls the transition
+    automatedTransfer?: boolean; // Whether transfer is automated
+    operatorIntervention?: boolean; // Whether operator action is required
+    alarmSettings?: Array<{
+      parameter: string;
+      condition: string;
+      action: string;
+    }>;
+  }>(),
+  
+  // Quality and safety gates for process transitions
+  qualityGates: jsonb("quality_gates").$type<Array<{
+    gate_name: string;
+    gate_type: string; // sample, test, inspection, approval
+    test_method: string;
+    specification: string;
+    blocking: boolean; // Whether failure blocks successor phase
+    sampling_frequency: string; // continuous, batch_start, batch_end
+  }>>().default([]),
+  
+  // Documentation and notes
+  description: text("description"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  // Ensure no duplicate relationships and proper indexing
+  uniqueRelationshipIdx: uniqueIndex("recipe_phase_relationship_unique_idx").on(table.predecessorPhaseId, table.successorPhaseId),
+  predecessorIdx: index("recipe_phase_relationship_predecessor_idx").on(table.predecessorPhaseId),
+  successorIdx: index("recipe_phase_relationship_successor_idx").on(table.successorPhaseId),
+  recipeIdx: index("recipe_phase_relationship_recipe_idx").on(table.recipeId),
+}));
+
 // Recipe Operation Relationships - define sequence and dependencies between operations/phases
 export const recipeOperationRelationships = pgTable("recipe_operation_relationships", {
   id: serial("id").primaryKey(),
@@ -629,6 +701,54 @@ export const discreteOperationPhaseResourceRequirements = pgTable("discrete_oper
   uniquePhaseResourceIdx: uniqueIndex("discrete_phase_resource_unique_idx").on(table.discreteOperationPhaseId, table.resourceRequirementId),
   phaseIdx: index("discrete_phase_resource_phase_idx").on(table.discreteOperationPhaseId),
   resourceIdx: index("discrete_phase_resource_requirement_idx").on(table.resourceRequirementId)
+}));
+
+// Discrete Operation Phase Relationships - defines sequence and dependencies between discrete phases
+export const discreteOperationPhaseRelationships = pgTable("discrete_operation_phase_relationships", {
+  id: serial("id").primaryKey(),
+  discreteOperationId: integer("discrete_operation_id").references(() => discreteOperations.id).notNull(),
+  predecessorPhaseId: integer("predecessor_phase_id").references(() => discreteOperationPhases.id).notNull(),
+  successorPhaseId: integer("successor_phase_id").references(() => discreteOperationPhases.id).notNull(),
+  
+  // Relationship type defines scheduling logic for discrete phases
+  relationshipType: text("relationship_type").notNull().default("FS"), // FS=Finish-Start, SS=Start-Start, FF=Finish-Finish, SF=Start-Finish
+  lagTime: integer("lag_time").default(0), // Minutes between phases (can be negative for lead time)
+  
+  // Dependency strength and conditions for discrete manufacturing
+  dependencyType: text("dependency_type").notNull().default("mandatory"), // mandatory, preferred, optional
+  condition: text("condition"), // Optional condition for the dependency (e.g., "if quality check passes")
+  
+  // Overlap and parallel execution control
+  overlapType: text("overlap_type"), // none, partial, full - how much phases can overlap
+  overlapPercentage: integer("overlap_percentage").default(0), // 0-100% how much successor can start before predecessor finishes
+  maxParallelism: integer("max_parallelism").default(1), // How many phases can run in parallel
+  
+  // Resource and equipment constraints
+  resourceConstraints: jsonb("resource_constraints").$type<{
+    sharedResources?: number[]; // Resource IDs that both phases use
+    exclusiveResource?: boolean; // Whether resource usage is mutually exclusive
+    handoffRequired?: boolean; // Whether formal handoff is required between phases
+  }>(),
+  
+  // Quality and inspection dependencies
+  qualityGates: jsonb("quality_gates").$type<Array<{
+    gate_name: string;
+    gate_type: string; // inspection, approval, measurement
+    required_result: string;
+    blocking: boolean; // Whether failure blocks successor phase
+  }>>().default([]),
+  
+  // Documentation and notes
+  description: text("description"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  // Ensure no duplicate relationships and proper indexing
+  uniqueRelationshipIdx: uniqueIndex("discrete_phase_relationship_unique_idx").on(table.predecessorPhaseId, table.successorPhaseId),
+  predecessorIdx: index("discrete_phase_relationship_predecessor_idx").on(table.predecessorPhaseId),
+  successorIdx: index("discrete_phase_relationship_successor_idx").on(table.successorPhaseId),
+  operationIdx: index("discrete_phase_relationship_operation_idx").on(table.discreteOperationId),
 }));
 
 // Process Operations - for process manufacturing with continuous flows, batches, and recipes
@@ -1191,6 +1311,12 @@ export const insertDiscreteOperationPhaseSchema = createInsertSchema(discreteOpe
 });
 
 export const insertDiscreteOperationPhaseResourceRequirementSchema = createInsertSchema(discreteOperationPhaseResourceRequirements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDiscreteOperationPhaseRelationshipSchema = createInsertSchema(discreteOperationPhaseRelationships).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -2056,6 +2182,9 @@ export type DiscreteOperationPhase = typeof discreteOperationPhases.$inferSelect
 
 export type InsertDiscreteOperationPhaseResourceRequirement = z.infer<typeof insertDiscreteOperationPhaseResourceRequirementSchema>;
 export type DiscreteOperationPhaseResourceRequirement = typeof discreteOperationPhaseResourceRequirements.$inferSelect;
+
+export type InsertDiscreteOperationPhaseRelationship = z.infer<typeof insertDiscreteOperationPhaseRelationshipSchema>;
+export type DiscreteOperationPhaseRelationship = typeof discreteOperationPhaseRelationships.$inferSelect;
 
 export type InsertProcessOperation = z.infer<typeof insertProcessOperationSchema>;
 export type ProcessOperation = typeof processOperations.$inferSelect;
@@ -3530,6 +3659,12 @@ export const insertRecipePhaseSchema = createInsertSchema(recipePhases).omit({
   updatedAt: true,
 });
 
+export const insertRecipePhaseRelationshipSchema = createInsertSchema(recipePhaseRelationships).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertRecipeOperationRelationshipSchema = createInsertSchema(recipeOperationRelationships).omit({
   id: true,
   createdAt: true,
@@ -3570,6 +3705,9 @@ export type InsertRecipeOperation = z.infer<typeof insertRecipeOperationSchema>;
 
 export type RecipePhase = typeof recipePhases.$inferSelect;
 export type InsertRecipePhase = z.infer<typeof insertRecipePhaseSchema>;
+
+export type RecipePhaseRelationship = typeof recipePhaseRelationships.$inferSelect;
+export type InsertRecipePhaseRelationship = z.infer<typeof insertRecipePhaseRelationshipSchema>;
 
 export type RecipeOperationRelationship = typeof recipeOperationRelationships.$inferSelect;
 export type InsertRecipeOperationRelationship = z.infer<typeof insertRecipeOperationRelationshipSchema>;
@@ -5964,6 +6102,29 @@ export const recipePhasesRelations = relations(recipePhases, ({ one, many }) => 
   formulas: many(recipeFormulas),
   resourceRequirements: many(resourceRequirements), // One-to-many with resource requirements
   formulationDetailAssignments: many(productionVersionPhaseFormulationDetails), // Junction table for phase-specific formulation details
+  predecessorRelationships: many(recipePhaseRelationships, {
+    relationName: "predecessor"
+  }),
+  successorRelationships: many(recipePhaseRelationships, {
+    relationName: "successor"
+  }),
+}));
+
+export const recipePhaseRelationshipsRelations = relations(recipePhaseRelationships, ({ one }) => ({
+  recipe: one(recipes, {
+    fields: [recipePhaseRelationships.recipeId],
+    references: [recipes.id],
+  }),
+  predecessorPhase: one(recipePhases, {
+    fields: [recipePhaseRelationships.predecessorPhaseId],
+    references: [recipePhases.id],
+    relationName: "predecessor"
+  }),
+  successorPhase: one(recipePhases, {
+    fields: [recipePhaseRelationships.successorPhaseId],
+    references: [recipePhases.id],
+    relationName: "successor"
+  }),
 }));
 
 export const recipeOperationRelationshipsRelations = relations(recipeOperationRelationships, ({ one }) => ({
@@ -6986,6 +7147,29 @@ export const discreteOperationPhasesRelations = relations(discreteOperationPhase
     references: [discreteOperations.id],
   }),
   resourceRequirementLinks: many(discreteOperationPhaseResourceRequirements),
+  predecessorRelationships: many(discreteOperationPhaseRelationships, {
+    relationName: "predecessor"
+  }),
+  successorRelationships: many(discreteOperationPhaseRelationships, {
+    relationName: "successor"
+  }),
+}));
+
+export const discreteOperationPhaseRelationshipsRelations = relations(discreteOperationPhaseRelationships, ({ one }) => ({
+  discreteOperation: one(discreteOperations, {
+    fields: [discreteOperationPhaseRelationships.discreteOperationId],
+    references: [discreteOperations.id],
+  }),
+  predecessorPhase: one(discreteOperationPhases, {
+    fields: [discreteOperationPhaseRelationships.predecessorPhaseId],
+    references: [discreteOperationPhases.id],
+    relationName: "predecessor"
+  }),
+  successorPhase: one(discreteOperationPhases, {
+    fields: [discreteOperationPhaseRelationships.successorPhaseId],
+    references: [discreteOperationPhases.id],
+    relationName: "successor"
+  }),
 }));
 
 // Discrete Operation Phase Resource Requirements junction table relations
