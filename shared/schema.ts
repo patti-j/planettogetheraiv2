@@ -6833,6 +6833,7 @@ export const materialRequirements = pgTable("material_requirements", {
   formulationId: integer("formulation_id").references(() => formulations.id),
   bomId: integer("bom_id").references(() => billsOfMaterial.id), // New relationship to bills of material
   itemId: integer("item_id").references(() => items.id), // Link to item master for inventory management
+  stockId: integer("stock_id").references(() => stocks.id), // Link to specific stock record for material tracking
   requirementName: text("requirement_name").notNull(),
   requiredQuantity: numeric("required_quantity", { precision: 10, scale: 4 }).notNull(),
   unitOfMeasure: text("unit_of_measure").notNull(),
@@ -7228,6 +7229,7 @@ export const stocksRelations = relations(stocks, ({ one, many }) => ({
   demandForecasts: many(demandForecasts),
   bomProductOutputs: many(bomProductOutputs),
   recipeProductOutputs: many(recipeProductOutputs),
+  materialRequirements: many(materialRequirements),
 }));
 
 export const purchaseOrdersRelations = relations(purchaseOrders, ({ one, many }) => ({
@@ -7538,6 +7540,10 @@ export const materialRequirementsRelations = relations(materialRequirements, ({ 
   item: one(items, {
     fields: [materialRequirements.itemId],
     references: [items.id],
+  }),
+  stock: one(stocks, {
+    fields: [materialRequirements.stockId],
+    references: [stocks.id],
   }),
   // Junction table links for discrete operation phases within production versions
   phaseAssignments: many(productionVersionPhaseMaterialRequirements),
