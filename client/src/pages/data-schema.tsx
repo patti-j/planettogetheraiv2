@@ -891,9 +891,69 @@ function DataSchemaViewContent() {
               edgeType = 'smoothstep'; // Default for grid
             }
             
-            // Add visual distinction for different relationship types
+            // Add visual distinction for different relationship types with one-to-many indicators
             const isDashed = rel.type === 'one-to-many' || rel.type === 'many-to-many';
             const strokeDasharray = isDashed ? '5,5' : undefined;
+            
+            // Determine markers based on relationship type
+            let markerStart = undefined;
+            let markerEnd = undefined;
+            let label: string = rel.type;
+            
+            if (rel.type === 'one-to-many') {
+              // From side is "one" (no marker or single line), to side is "many" (crow's foot)
+              markerStart = {
+                type: MarkerType.Arrow,
+                color: edgeColor,
+                width: isHighlighted ? 8 : 6,
+                height: isHighlighted ? 8 : 6,
+              };
+              markerEnd = {
+                type: MarkerType.ArrowClosed,
+                color: edgeColor,
+                width: isHighlighted ? 12 : 8,
+                height: isHighlighted ? 12 : 8,
+              };
+              label = '1 ——→ ∞';
+            } else if (rel.type === 'many-to-many') {
+              // Both sides are "many" (crow's foot on both ends)
+              markerStart = {
+                type: MarkerType.ArrowClosed,
+                color: edgeColor,
+                width: isHighlighted ? 12 : 8,
+                height: isHighlighted ? 12 : 8,
+              };
+              markerEnd = {
+                type: MarkerType.ArrowClosed,
+                color: edgeColor,
+                width: isHighlighted ? 12 : 8,
+                height: isHighlighted ? 12 : 8,
+              };
+              label = '∞ ←→ ∞';
+            } else if (rel.type === 'one-to-one') {
+              // Both sides are "one" (single line on both ends)
+              markerStart = {
+                type: MarkerType.Arrow,
+                color: edgeColor,
+                width: isHighlighted ? 8 : 6,
+                height: isHighlighted ? 8 : 6,
+              };
+              markerEnd = {
+                type: MarkerType.Arrow,
+                color: edgeColor,
+                width: isHighlighted ? 8 : 6,
+                height: isHighlighted ? 8 : 6,
+              };
+              label = '1 ←→ 1';
+            } else {
+              // Default arrow for other relationship types
+              markerEnd = {
+                type: MarkerType.ArrowClosed,
+                color: edgeColor,
+                width: isHighlighted ? 12 : 8,
+                height: isHighlighted ? 12 : 8,
+              };
+            }
             
             flowEdges.push({
               id: `${rel.fromTable}-${rel.toTable}-${rel.fromColumn}`,
@@ -908,26 +968,23 @@ function DataSchemaViewContent() {
                 strokeDasharray: strokeDasharray,
                 filter: isHighlighted ? 'drop-shadow(0px 0px 6px rgba(59, 130, 246, 0.4))' : undefined,
               },
-              label: `${rel.type}`,
+              label: label,
               labelStyle: { 
-                fontSize: 10,
+                fontSize: 11,
                 fill: isHighlighted ? '#1e40af' : '#374151',
                 fontWeight: isHighlighted ? 'bold' : 'normal',
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                padding: '2px 4px',
-                borderRadius: '3px',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                padding: '3px 6px',
+                borderRadius: '4px',
                 border: isHighlighted ? '1px solid #3b82f6' : '1px solid #d1d5db',
+                fontFamily: 'monospace',
               },
               labelBgStyle: {
-                fill: 'rgba(255, 255, 255, 0.9)',
-                fillOpacity: 0.9,
+                fill: 'rgba(255, 255, 255, 0.95)',
+                fillOpacity: 0.95,
               },
-              markerEnd: {
-                type: MarkerType.ArrowClosed,
-                color: edgeColor,
-                width: isHighlighted ? 12 : 8,
-                height: isHighlighted ? 12 : 8,
-              }
+              markerStart: markerStart,
+              markerEnd: markerEnd
             });
           }
         });

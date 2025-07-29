@@ -2,6 +2,15 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Database Relationship Visual Indicators Implementation (July 29, 2025)**:
+- Added visual indicators on relationship lines showing "one" vs "many" sides for better relationship comprehension
+- One-to-many relationships now display "1 ——→ ∞" with different arrow markers on each end
+- Many-to-many relationships show "∞ ←→ ∞" with crow's foot markers on both ends  
+- One-to-one relationships display "1 ←→ 1" with single line markers on both ends
+- Enhanced relationship labels with monospace font and improved styling for clearer readability
+- Users can now immediately understand database cardinality without having to analyze foreign key structures
+- Relationship lines provide clear visual distinction between different marker types for better database comprehension
+
 ✓ **Data Schema View Auto-Load Implementation (July 29, 2025)**:
 - Removed annoying filter selection requirement from Data Schema View page startup
 - Schema now loads automatically on page visit since performance is excellent (2-3 seconds)
