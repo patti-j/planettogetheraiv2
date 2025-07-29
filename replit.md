@@ -2,6 +2,15 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Transfer Orders Architecture Fixed - Proper Inventory Relationship Structure (July 29, 2025)**:
+- **ARCHITECTURAL CORRECTION COMPLETED**: Fixed improper direct storage location relationships in transfer orders table by moving them to transfer order lines level
+- **DATABASE MIGRATION SUCCESSFUL**: Removed fromStorageLocationId and toStorageLocationId columns from transfer_orders table and added them to transfer_order_lines table
+- **PROPER INVENTORY HIERARCHY**: Transfer orders now correctly work through lines - header contains order metadata, lines contain specific item transfers with from/to storage locations
+- **SCHEMA RELATIONSHIPS UPDATED**: Updated Drizzle ORM relations - transfer orders link to lines only, lines link to storage locations, items, and stocks for proper inventory tracking
+- **STOCK-CENTRIC DESIGN MAINTAINED**: Preserved complete stock-centric inventory architecture integrity while fixing transfer order relationship structure
+- **MANUFACTURING ERP COMPLIANCE**: Transfer order structure now follows proper ERP design patterns where header-line relationships maintain referential integrity for inventory transactions
+- Enhanced inventory management capabilities by ensuring transfer orders follow proper manufacturing ERP architecture with line-level storage location tracking for accurate inventory movement control
+
 ✓ **Complete Stock-Centric Inventory System Implementation (July 29, 2025)**:
 - **TRANSFER ORDER LINES TO STOCKS**: Added stock_id foreign key to transfer_order_lines table for inventory transfer tracking
 - **MATERIAL REQUIREMENTS TO STOCKS**: Added stock_id foreign key to material_requirements table for manufacturing material tracking

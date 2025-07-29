@@ -6730,8 +6730,6 @@ export const purchaseOrderLines = pgTable("purchase_order_lines", {
 export const transferOrders = pgTable("transfer_orders", {
   id: serial("id").primaryKey(),
   orderNumber: text("order_number").notNull().unique(),
-  fromStorageLocationId: integer("from_storage_location_id").references(() => storageLocations.id).notNull(),
-  toStorageLocationId: integer("to_storage_location_id").references(() => storageLocations.id).notNull(),
   requestedDate: timestamp("requested_date").notNull(),
   shippedDate: timestamp("shipped_date"),
   receivedDate: timestamp("received_date"),
@@ -6750,6 +6748,8 @@ export const transferOrderLines = pgTable("transfer_order_lines", {
   lineNumber: integer("line_number").notNull(),
   itemId: integer("item_id").references(() => items.id).notNull(),
   stockId: integer("stock_id").references(() => stocks.id), // Link to specific stock record for transfer tracking
+  fromStorageLocationId: integer("from_storage_location_id").references(() => storageLocations.id).notNull(),
+  toStorageLocationId: integer("to_storage_location_id").references(() => storageLocations.id).notNull(),
   requestedQuantity: integer("requested_quantity").notNull(),
   shippedQuantity: integer("shipped_quantity").default(0),
   receivedQuantity: integer("received_quantity").default(0),
@@ -7159,8 +7159,8 @@ export const storageLocationsRelations = relations(storageLocations, ({ one, man
   inventory: many(inventory),
   inventoryLots: many(inventoryLots),
   stocks: many(stocks),
-  transferOrdersFrom: many(transferOrders, { relationName: "fromStorageLocation" }),
-  transferOrdersTo: many(transferOrders, { relationName: "toStorageLocation" }),
+  transferOrderLinesFrom: many(transferOrderLines, { relationName: "fromStorageLocation" }),
+  transferOrderLinesTo: many(transferOrderLines, { relationName: "toStorageLocation" }),
 }));
 
 export const inventoryRelations = relations(inventory, ({ one }) => ({
@@ -7257,17 +7257,7 @@ export const purchaseOrderLinesRelations = relations(purchaseOrderLines, ({ one 
   }),
 }));
 
-export const transferOrdersRelations = relations(transferOrders, ({ one, many }) => ({
-  fromStorageLocation: one(storageLocations, {
-    fields: [transferOrders.fromStorageLocationId],
-    references: [storageLocations.id],
-    relationName: "fromStorageLocation",
-  }),
-  toStorageLocation: one(storageLocations, {
-    fields: [transferOrders.toStorageLocationId],
-    references: [storageLocations.id],
-    relationName: "toStorageLocation",
-  }),
+export const transferOrdersRelations = relations(transferOrders, ({ many }) => ({
   lines: many(transferOrderLines),
 }));
 
@@ -7283,6 +7273,16 @@ export const transferOrderLinesRelations = relations(transferOrderLines, ({ one 
   stock: one(stocks, {
     fields: [transferOrderLines.stockId],
     references: [stocks.id],
+  }),
+  fromStorageLocation: one(storageLocations, {
+    fields: [transferOrderLines.fromStorageLocationId],
+    references: [storageLocations.id],
+    relationName: "fromStorageLocation",
+  }),
+  toStorageLocation: one(storageLocations, {
+    fields: [transferOrderLines.toStorageLocationId],
+    references: [storageLocations.id],
+    relationName: "toStorageLocation",
   }),
 }));
 
