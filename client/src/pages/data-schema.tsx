@@ -979,11 +979,21 @@ function DataSchemaViewContent() {
     });
 
     const flowEdges: Edge[] = [];
+    const processedRelationships = new Set<string>();
     
     if (showRelationships) {
       filteredTables.forEach(table => {
         table.relationships.forEach(rel => {
           if (filteredTables.some(t => t.name === rel.toTable)) {
+            // Create a unique identifier for this relationship that ignores direction
+            // This prevents duplicate lines for bidirectional relationships
+            const relationshipKey = [rel.fromTable, rel.toTable].sort().join('-') + '-' + [rel.fromColumn, rel.toColumn].sort().join('-');
+            
+            // Skip if we've already processed this relationship
+            if (processedRelationships.has(relationshipKey)) {
+              return;
+            }
+            processedRelationships.add(relationshipKey);
             const isHighlighted = focusMode && focusTable && 
               (rel.fromTable === focusTable || rel.toTable === focusTable || 
                (connectedTableNames.includes(rel.fromTable) && connectedTableNames.includes(rel.toTable)));
