@@ -76,8 +76,6 @@ const CardinalityEdge = ({
     sourceY,
     targetX,
     targetY,
-    sourcePosition,
-    targetPosition,
   });
 
   const sourceLabel = data?.sourceLabel;
@@ -616,28 +614,6 @@ function DataSchemaViewContent() {
   // Card-based selection for relationship filtering - separate from table selector
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
   
-  // Handler for card selection via flag icon
-  const handleCardSelection = useCallback((tableName: string) => {
-    setSelectedCards(prev => {
-      const newSelection = prev.includes(tableName) 
-        ? prev.filter(name => name !== tableName)
-        : [...prev, tableName];
-      
-      // Update node data without changing positions by directly updating the existing nodes
-      setNodes((nds) => 
-        nds.map((node) => ({
-          ...node,
-          data: {
-            ...node.data,
-            isSelected: newSelection.includes(node.id)
-          }
-        }))
-      );
-      
-      return newSelection;
-    });
-  }, [setNodes]);
-  
   // Initialize showLegend state from localStorage, default to true if not set
   const [showLegend, setShowLegend] = useState(() => {
     try {
@@ -995,6 +971,17 @@ function DataSchemaViewContent() {
     return Array.from(new Set(schemaData.map((table: SchemaTable) => table.category)));
   }, [schemaData]);
 
+  // Handler for card selection via flag icon - create stable reference for useMemo
+  const handleCardSelection = useCallback((tableName: string) => {
+    setSelectedCards(prev => {
+      const newSelection = prev.includes(tableName) 
+        ? prev.filter(name => name !== tableName)
+        : [...prev, tableName];
+      
+      return newSelection;
+    });
+  }, []);
+
   // Generate nodes and edges for React Flow
   const { nodes, edges } = useMemo(() => {
     if (!filteredTables.length) return { nodes: [], edges: [] };
@@ -1205,7 +1192,7 @@ function DataSchemaViewContent() {
     }
 
     return { nodes: flowNodes, edges: flowEdges };
-  }, [filteredTables, layoutType, showColumns, showRelationships, focusMode, focusTable, schemaData, getConnectedTables, simplifyLines]);
+  }, [filteredTables, layoutType, showColumns, showRelationships, focusMode, focusTable, schemaData, getConnectedTables, simplifyLines, selectedCards, handleCardSelection]);
 
   const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
@@ -1215,6 +1202,19 @@ function DataSchemaViewContent() {
     setNodes(nodes);
     setEdges(edges);
   }, [nodes, edges, setNodes, setEdges]);
+
+  // Update node selection when selectedCards changes
+  React.useEffect(() => {
+    setNodes((nds) => 
+      nds.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          isSelected: selectedCards.includes(node.id)
+        }
+      }))
+    );
+  }, [selectedCards, setNodes]);
 
   // Auto-fit view when filters change to show all filtered tables
   useEffect(() => {
