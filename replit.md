@@ -2,6 +2,19 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Production Versions-Routings Relationship Implementation (July 29, 2025)**:
+- Successfully added missing routingId foreign key to production_versions table for SAP-compliant discrete manufacturing
+- Created routings database table to support production version routing relationships  
+- Enhanced production versions schema with routing reference for discrete manufacturing (routing + BOM approach)
+- Added bidirectional Drizzle ORM relations: productionVersions.routing and routings.productionVersions
+- Fixed relationship direction detection in Data Schema View - cardinality markers now properly show parent vs child relationships
+- Updated getDatabaseSchema method to correctly determine many-to-one vs one-to-many relationships
+- Green "1" markers correctly indicate parent tables, Red "∞" markers correctly indicate child tables
+- Production versions now support both manufacturing approaches: routingId (discrete) and recipeId (process)
+- Manufacturing hierarchy complete: Production Order → Production Version → Routing (discrete) OR Recipe (process) for full SAP compliance
+
+## Recent Changes (July 29, 2025)
+
 ✓ **Manual Schema Refresh Button Implementation (July 29, 2025)**:
 - Added manual refresh button in Data Schema View top-right control panel for reloading schema data when recent changes were made
 - Implemented RefreshCw icon with spinning animation during refresh process for visual feedback

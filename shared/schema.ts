@@ -502,6 +502,9 @@ export const productionVersions = pgTable("production_versions", {
   // Link to Recipe for process manufacturing (BOM is linked through routing operations, not directly)
   recipeId: integer("recipe_id").references(() => recipes.id), // For process manufacturing
   
+  // Link to Routing for discrete manufacturing (defines the sequence of operations)
+  routingId: integer("routing_id").references(() => routings.id), // For discrete manufacturing
+  
   // Routing information - links operations to material consumption
   routingOperations: jsonb("routing_operations").$type<Array<{
     operation_number: string; // e.g., "010", "020", "030"
@@ -6564,6 +6567,7 @@ export const routingsRelations = relations(routings, ({ one, many }) => ({
     references: [items.id],
   }),
   operations: many(routingOperations),
+  productionVersions: many(productionVersions),
 }));
 
 export const routingOperationsRelations = relations(routingOperations, ({ one }) => ({
@@ -6610,6 +6614,10 @@ export const productionVersionsRelations = relations(productionVersions, ({ one,
   recipe: one(recipes, {
     fields: [productionVersions.recipeId],
     references: [recipes.id],
+  }),
+  routing: one(routings, {
+    fields: [productionVersions.routingId],
+    references: [routings.id],
   }),
   productionOrders: many(productionOrders),
   plannedOrders: many(plannedOrders),
