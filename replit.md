@@ -3,18 +3,21 @@
 ## Recent Changes (July 29, 2025)
 
 ✓ **Complete Stock-Centric Inventory System Implementation (July 29, 2025)**:
+- **TRANSFER ORDER LINES TO STOCKS**: Added stock_id foreign key to transfer_order_lines table for inventory transfer tracking
 - **MATERIAL REQUIREMENTS TO STOCKS**: Added stock_id foreign key to material_requirements table for manufacturing material tracking
 - **PRODUCT OUTPUTS TO STOCKS**: Added stock_id foreign key to both bom_product_outputs and recipe_product_outputs tables for manufacturing output tracking
 - **DEMAND FORECASTS TO STOCKS**: Added stock_id foreign key to demand_forecasts table, replacing item_id reference for unified inventory forecasting
 - **PURCHASE ORDER LINES ENHANCED**: Added stock_id foreign key to purchase_order_lines table enabling direct link to stocks when purchase orders are received
 - **SALES ORDER DISTRIBUTIONS CORRECTED**: Fixed sales_order_line_distributions table to link directly to stocks table instead of storage_locations for logical inventory tracking
-- **DATABASE MIGRATIONS COMPLETED**: Successfully added stock_id columns to material_requirements, bom_product_outputs, recipe_product_outputs, demand_forecasts, purchase_order_lines, and migrated sales_order_line_distributions
-- **SCHEMA RELATIONS UPDATED**: Updated Drizzle ORM relations - all six key tables now connect to stocks: material requirements (inputs), product outputs (manufacturing), demand forecasts (planning), purchase lines (inbound), sales distributions (outbound)
+- **TRANSFER ORDERS SYSTEM COMPLETE**: Created transfer_orders and transfer_order_lines tables with one-to-many relationship and stock tracking for inventory movements
+- **DATABASE MIGRATIONS COMPLETED**: Successfully created transfer order tables and added stock_id columns to material_requirements, bom_product_outputs, recipe_product_outputs, demand_forecasts, purchase_order_lines, and migrated sales_order_line_distributions
+- **SCHEMA RELATIONS UPDATED**: Updated Drizzle ORM relations - all seven key tables now connect to stocks: transfer lines (movements), material requirements (inputs), product outputs (manufacturing), demand forecasts (planning), purchase lines (inbound), sales distributions (outbound)
 - **COMPLETE MANUFACTURING INTEGRATION**: Both discrete (BOM) and process (recipe) manufacturing inputs and outputs now track specific stock records for materials and products
-- **CENTRALIZED STOCK HUB**: Stocks table now serves as central inventory hub with relationships spanning entire manufacturing lifecycle - materials, production outputs, purchases, sales, and forecasting
+- **CENTRALIZED STOCK HUB**: Stocks table now serves as central inventory hub with relationships spanning entire manufacturing lifecycle - transfers, materials, production outputs, purchases, sales, and forecasting
+- **INVENTORY FILTER ENHANCED**: Updated Data Schema View inventory filter to include transfer_orders and transfer_order_lines tables for complete inventory management visibility
 - **API CONSISTENCY**: Updated demand forecasts API to use stockId parameter instead of itemId for consistent inventory-centric approach
-- **UNIFIED INVENTORY TRACKING**: All six key inventory-affecting tables now link to stocks enabling complete manufacturing-to-sales inventory accuracy and traceability
-- Enhanced manufacturing ERP capabilities by creating comprehensive stock-centric inventory system where manufacturing materials, outputs, inventory transactions, and forecasts all track specific stock records for complete supply chain visibility
+- **UNIFIED INVENTORY TRACKING**: All seven key inventory-affecting tables now link to stocks enabling complete manufacturing-to-sales inventory accuracy and traceability
+- Enhanced manufacturing ERP capabilities by creating comprehensive stock-centric inventory system where inventory transfers, manufacturing materials, outputs, transactions, and forecasts all track specific stock records for complete supply chain visibility
 
 ✓ **Stocks & Sales Order Line Distributions Tables Implementation (July 29, 2025)**:
 - **STOCKS TABLE CREATED**: Successfully implemented comprehensive stocks table for inventory tracking linked to storage_locations and items tables

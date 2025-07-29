@@ -305,6 +305,8 @@ const featureTableMapping: Record<string, string[]> = {
     'purchase_orders', 'purchase_order_lines',
     // Sales management
     'sales_orders', 'sales_order_lines', 'sales_order_line_distributions',
+    // Transfer management
+    'transfer_orders', 'transfer_order_lines',
     // Demand and forecasting
     'demand_forecasts', 'demand_history', 'demand_drivers',
     // Product outputs affecting inventory

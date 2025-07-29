@@ -6749,6 +6749,7 @@ export const transferOrderLines = pgTable("transfer_order_lines", {
   transferOrderId: integer("transfer_order_id").references(() => transferOrders.id).notNull(),
   lineNumber: integer("line_number").notNull(),
   itemId: integer("item_id").references(() => items.id).notNull(),
+  stockId: integer("stock_id").references(() => stocks.id), // Link to specific stock record for transfer tracking
   requestedQuantity: integer("requested_quantity").notNull(),
   shippedQuantity: integer("shipped_quantity").default(0),
   receivedQuantity: integer("received_quantity").default(0),
@@ -7230,6 +7231,7 @@ export const stocksRelations = relations(stocks, ({ one, many }) => ({
   bomProductOutputs: many(bomProductOutputs),
   recipeProductOutputs: many(recipeProductOutputs),
   materialRequirements: many(materialRequirements),
+  transferOrderLines: many(transferOrderLines),
 }));
 
 export const purchaseOrdersRelations = relations(purchaseOrders, ({ one, many }) => ({
@@ -7277,6 +7279,10 @@ export const transferOrderLinesRelations = relations(transferOrderLines, ({ one 
   item: one(items, {
     fields: [transferOrderLines.itemId],
     references: [items.id],
+  }),
+  stock: one(stocks, {
+    fields: [transferOrderLines.stockId],
+    references: [stocks.id],
   }),
 }));
 
