@@ -1,6 +1,6 @@
 import { 
   plants, capabilities, resources, plantResources, productionOrders, plannedOrders, discreteOperations, processOperations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
-  recipes, recipePhases, recipeFormulas, recipeEquipment, vendors, customers, productionVersions,
+  recipes, recipePhases, recipeFormulas, recipeEquipment, vendors, customers, productionVersions, ingredients,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
   capacityPlanningScenarios, staffingPlans, shiftPlans, equipmentPlans, capacityProjections,
@@ -10,7 +10,7 @@ import {
   stockItems, stockTransactions, stockBalances, demandForecasts, demandDrivers, demandHistory, stockOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
   type Plant, type Capability, type Resource, type PlantResource, type ProductionOrder, type PlannedOrder, type DiscreteOperation, type ProcessOperation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
-  type Recipe, type RecipePhase, type RecipeFormula, type RecipeEquipment, type Vendor, type Customer, type ProductionVersion,
+  type Recipe, type RecipePhase, type RecipeFormula, type RecipeEquipment, type Vendor, type Customer, type ProductionVersion, type Ingredient,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
   type CapacityPlanningScenario, type StaffingPlan, type ShiftPlan, type EquipmentPlan, type CapacityProjection,
@@ -21,7 +21,7 @@ import {
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
   type InsertPlant, type InsertCapability, type InsertResource, type InsertPlantResource, type InsertProductionOrder, type InsertPlannedOrder, 
   type InsertDiscreteOperation, type InsertProcessOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
-  type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertRecipeEquipment, type InsertVendor, type InsertCustomer, type InsertProductionVersion,
+  type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertRecipeEquipment, type InsertVendor, type InsertCustomer, type InsertProductionVersion, type InsertIngredient,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
   type InsertCapacityPlanningScenario, type InsertStaffingPlan, type InsertShiftPlan, type InsertEquipmentPlan, type InsertCapacityProjection,
@@ -1243,6 +1243,15 @@ export interface IStorage {
   createVendor(vendor: InsertVendor): Promise<Vendor>;
   updateVendor(id: number, vendor: Partial<InsertVendor>): Promise<Vendor | undefined>;
   deleteVendor(id: number): Promise<boolean>;
+
+  // Ingredients
+  getIngredients(): Promise<Ingredient[]>;
+  getIngredient(id: number): Promise<Ingredient | undefined>;
+  getIngredientByNumber(ingredientNumber: string): Promise<Ingredient | undefined>;
+  createIngredient(ingredient: InsertIngredient): Promise<Ingredient>;
+  updateIngredient(id: number, ingredient: Partial<InsertIngredient>): Promise<Ingredient | undefined>;
+  deleteIngredient(id: number): Promise<boolean>;
+  getIngredientsByVendor(vendorId: number): Promise<Ingredient[]>;
 
   // Customers
   getCustomers(): Promise<Customer[]>;
@@ -10756,6 +10765,47 @@ export class DatabaseStorage implements IStorage {
   async deleteVendor(id: number): Promise<boolean> {
     const result = await db.delete(vendors).where(eq(vendors.id, id));
     return result.rowCount > 0;
+  }
+
+  // Ingredients
+  async getIngredients(): Promise<Ingredient[]> {
+    return await db.select().from(ingredients).orderBy(asc(ingredients.ingredientNumber));
+  }
+
+  async getIngredient(id: number): Promise<Ingredient | undefined> {
+    const [ingredient] = await db.select().from(ingredients).where(eq(ingredients.id, id));
+    return ingredient || undefined;
+  }
+
+  async getIngredientByNumber(ingredientNumber: string): Promise<Ingredient | undefined> {
+    const [ingredient] = await db.select().from(ingredients).where(eq(ingredients.ingredientNumber, ingredientNumber));
+    return ingredient || undefined;
+  }
+
+  async createIngredient(ingredient: InsertIngredient): Promise<Ingredient> {
+    const [newIngredient] = await db
+      .insert(ingredients)
+      .values(ingredient)
+      .returning();
+    return newIngredient;
+  }
+
+  async updateIngredient(id: number, ingredient: Partial<InsertIngredient>): Promise<Ingredient | undefined> {
+    const [updatedIngredient] = await db
+      .update(ingredients)
+      .set({ ...ingredient, updatedAt: new Date() })
+      .where(eq(ingredients.id, id))
+      .returning();
+    return updatedIngredient || undefined;
+  }
+
+  async deleteIngredient(id: number): Promise<boolean> {
+    const result = await db.delete(ingredients).where(eq(ingredients.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async getIngredientsByVendor(vendorId: number): Promise<Ingredient[]> {
+    return await db.select().from(ingredients).where(eq(ingredients.preferredVendorId, vendorId));
   }
 
   // Customers

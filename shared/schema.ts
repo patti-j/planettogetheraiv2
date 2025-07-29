@@ -6345,9 +6345,95 @@ export const bomProductOutputs = pgTable("bom_product_outputs", {
   sortOrder: integer("sort_order").default(1), // Display order
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
-}, (table) => ({
-  bomProductIdx: unique().on(table.bomId, table.productId),
-}));
+});
+
+// Ingredients - master list of ingredients for process manufacturing (similar to BOM but for process manufacturing)
+export const ingredients = pgTable("ingredients", {
+  id: serial("id").primaryKey(),
+  ingredientNumber: text("ingredient_number").notNull().unique(), // e.g., "ING-001"
+  ingredientName: text("ingredient_name").notNull(),
+  chemicalName: text("chemical_name"), // Official chemical name
+  casNumber: text("cas_number"), // Chemical Abstracts Service number
+  molecularFormula: text("molecular_formula"), // e.g., "C8H9NO2"
+  molecularWeight: numeric("molecular_weight", { precision: 10, scale: 4 }), // g/mol
+  ingredientType: text("ingredient_type").notNull().default("raw_material"), // raw_material, catalyst, solvent, intermediate, additive, preservative
+  
+  // Physical properties
+  physicalForm: text("physical_form").notNull().default("solid"), // solid, liquid, gas, powder, granular, paste
+  density: numeric("density", { precision: 10, scale: 4 }), // g/cm³ or kg/L
+  meltingPoint: numeric("melting_point", { precision: 10, scale: 2 }), // °C
+  boilingPoint: numeric("boiling_point", { precision: 10, scale: 2 }), // °C
+  solubility: text("solubility"), // Water soluble, organic soluble, etc.
+  color: text("color"),
+  odor: text("odor"),
+  
+  // Safety and handling
+  hazardClass: text("hazard_class"), // Flammable, Corrosive, Toxic, etc.
+  unNumber: text("un_number"), // UN shipping classification
+  packingGroup: text("packing_group"), // I, II, III
+  flashPoint: numeric("flash_point", { precision: 10, scale: 2 }), // °C
+  autoIgnitionTemp: numeric("auto_ignition_temp", { precision: 10, scale: 2 }), // °C
+  
+  // Storage requirements
+  storageTemperature: jsonb("storage_temperature").$type<{
+    min: number;
+    max: number;
+    unit: string; // C, F
+    controlled: boolean;
+  }>(),
+  storageConditions: text("storage_conditions"), // Cool, dry place; Under nitrogen; Refrigerated
+  shelfLife: integer("shelf_life"), // days
+  lightSensitive: boolean("light_sensitive").default(false),
+  moistureSensitive: boolean("moisture_sensitive").default(false),
+  airSensitive: boolean("air_sensitive").default(false),
+  
+  // Quality specifications
+  purity: numeric("purity", { precision: 5, scale: 2 }), // percentage
+  moistureContent: numeric("moisture_content", { precision: 5, scale: 2 }), // percentage
+  ashContent: numeric("ash_content", { precision: 5, scale: 2 }), // percentage
+  specifications: jsonb("specifications").$type<Array<{
+    parameter: string;
+    specification: string;
+    test_method: string;
+    min_value?: number;
+    max_value?: number;
+    unit?: string;
+  }>>().default([]),
+  
+  // Regulatory and compliance
+  foodGrade: boolean("food_grade").default(false),
+  pharmacopeialGrade: text("pharmacopeial_grade"), // USP, EP, JP, etc.
+  kosherCertified: boolean("kosher_certified").default(false),
+  halalCertified: boolean("halal_certified").default(false),
+  organicCertified: boolean("organic_certified").default(false),
+  gmoFree: boolean("gmo_free").default(false),
+  
+  // Sourcing and supply
+  preferredVendorId: integer("preferred_vendor_id").references(() => vendors.id),
+  backupVendors: jsonb("backup_vendors").$type<number[]>().default([]), // Array of vendor IDs
+  standardPackSize: numeric("standard_pack_size", { precision: 10, scale: 4 }), // kg, L, units
+  packSizeUnit: text("pack_size_unit"), // kg, L, units, drums, bags
+  minimumOrderQuantity: numeric("minimum_order_quantity", { precision: 10, scale: 4 }),
+  leadTime: integer("lead_time").default(0), // days
+  
+  // Cost and economics
+  standardCost: numeric("standard_cost", { precision: 10, scale: 4 }), // per unit
+  costUnit: text("cost_unit"), // per kg, per L, per unit
+  lastCostUpdate: timestamp("last_cost_update"),
+  
+  // Status and lifecycle
+  status: text("status").notNull().default("active"), // active, inactive, obsolete, restricted
+  approvalStatus: text("approval_status").notNull().default("approved"), // approved, pending, rejected
+  approvedBy: text("approved_by"),
+  approvedDate: timestamp("approved_date"),
+  
+  // Documentation
+  sdsPath: text("sds_path"), // Path to Safety Data Sheet
+  specSheetPath: text("spec_sheet_path"), // Path to specification sheet
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
 
 // Routings - sequence of operations to make items
 export const routings = pgTable("routings", {
@@ -6767,6 +6853,19 @@ export const processOperationsRelations = relations(processOperations, ({ one, m
   resourceRequirements: many(resourceRequirements),
 }));
 
+// Relations for ingredients
+export const ingredientsRelations = relations(ingredients, ({ one, many }) => ({
+  preferredVendor: one(vendors, {
+    fields: [ingredients.preferredVendorId],
+    references: [vendors.id],
+  }),
+}));
+
+// Enhanced vendor relations to include ingredients
+export const vendorsRelations = relations(vendors, ({ many }) => ({
+  preferredIngredients: many(ingredients),
+}));
+
 
 
 // ===== ERP INSERT SCHEMAS =====
@@ -7042,4 +7141,17 @@ export type ResourceRequirement = typeof resourceRequirements.$inferSelect;
 export type InsertResourceRequirement = z.infer<typeof insertResourceRequirementSchema>;
 export type ResourceRequirementAssignment = typeof resourceRequirementAssignments.$inferSelect;
 export type InsertResourceRequirementAssignment = z.infer<typeof insertResourceRequirementAssignmentSchema>;
+
+// Ingredients Insert Schema and Types
+export const insertIngredientSchema = createInsertSchema(ingredients).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  approvedDate: z.union([z.string().datetime(), z.date()]).optional(),
+  lastCostUpdate: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export type Ingredient = typeof ingredients.$inferSelect;
+export type InsertIngredient = z.infer<typeof insertIngredientSchema>;
 
