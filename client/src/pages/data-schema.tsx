@@ -344,6 +344,8 @@ const featureTableMapping: Record<string, string[]> = {
     'production_orders', 'production_versions', 'planned_orders',
     // Resources and infrastructure
     'work_centers', 'resources', 'resource_capabilities', 'capabilities', 'resource_requirements',
+    // Material Requirements (BOM-based for discrete manufacturing)
+    'material_requirements',
     // Products and items
     'items', 'products', 'product_structures', 'product_categories',
     // Planning and scheduling
