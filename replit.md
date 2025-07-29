@@ -24,13 +24,14 @@
 - Database schema now properly supports real-world manufacturing scenarios where planned orders are flexibly converted to production orders
 - System enables advanced production planning with quantity consolidation, order splitting, and detailed conversion tracking
 
-✓ **Session Persistence Fix - Proper Last Visited Route Restoration (July 29, 2025)**:
-- Fixed session startup issue where users were always redirected to production schedule view instead of their last visited page
-- Enhanced useSessionPersistence hook to redirect to lastVisitedRoute only when user visits root URL (/)
-- Users now return to their exact last visited page when starting new sessions or refreshing the browser
-- Prevents unwanted redirects to dashboard when user is actively navigating other pages
-- Maintains user workflow continuity by preserving navigation context across sessions
-- Fixed root cause: default route was overriding user's intended destination
+✓ **Session Persistence Route Mapping Fix & Navigation Enhancement (July 29, 2025)**:
+- Fixed Data Schema View route mapping in NavigationContext by adding missing `/data-schema` pageMapping entry
+- Added proper route mapping for Data Schema View with Database icon and clear label for navigation tracking
+- Enhanced NavigationContext to track both `/data-schema` and `/data-relationships` routes correctly in recent pages
+- Session persistence system now properly recognizes and restores Data Schema View route instead of defaulting to data relationships
+- Fixed root cause: missing pageMapping entry was causing route tracking confusion between similar data exploration pages
+- Users now return to correct data visualization page (schema vs relationships) when resuming sessions
+- Enhanced route resolution for data exploration pages with consistent Database icons and clear navigation labels
 
 ✓ **Database Relationship Visual Indicators Enhancement - Positioned Cardinality Markers (July 29, 2025)**:
 - Enhanced relationship line cardinality indicators to position "1" and "∞" markers closer to their respective objects for better visual comprehension

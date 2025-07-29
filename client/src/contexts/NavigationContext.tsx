@@ -60,7 +60,7 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/presentation-system': { label: 'Presentation System', icon: 'Presentation' },
   '/data-import': { label: 'Master Data Setup', icon: 'Database' },
   '/data-validation': { label: 'Data Validation', icon: 'Shield' },
-  '/data-schema': { label: 'Data Schema View', icon: 'Network' },
+  '/data-schema': { label: 'Data Schema View', icon: 'Database' },
   '/data-relationships': { label: 'Data Relationships', icon: 'Database' },
   '/data-map': { label: 'Data Relationship Map', icon: 'Network' },
   '/billing': { label: 'Billing & Usage', icon: 'CreditCard' },
