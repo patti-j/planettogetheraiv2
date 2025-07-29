@@ -1206,7 +1206,7 @@ function DataSchemaViewContent() {
   });
 
   // Track if positions have been restored for current filter to prevent overriding user changes
-  const [positionsRestored, setPositionsRestored] = useState(false);
+  const [positionsRestored, setPositionsRestored] = useState(true);
 
   // Generate layout positions (separate from selection state to prevent recalculation on flag clicks)
   const tablePositions = useMemo(() => {
@@ -1217,7 +1217,7 @@ function DataSchemaViewContent() {
     
     // Check if we have saved positions for this filter
     const savedPositions = customPositions[filterKey];
-    if (savedPositions && positionsRestored) {
+    if (savedPositions && Object.keys(savedPositions).length > 0 && positionsRestored) {
       // Use saved positions for tables that exist, fallback to algorithm for new tables
       const algorithmPositions = layoutAlgorithms[layoutType](filteredTables);
       const positions: Record<string, { x: number; y: number }> = {};
@@ -1672,15 +1672,9 @@ function DataSchemaViewContent() {
     
     const filtersChanged = JSON.stringify(previousFilterStateWithoutCards) !== JSON.stringify(currentFilterStateWithoutCards);
     if (filtersChanged) {
-      setPositionsRestored(false);
       setPreviousFilterState(filterState);
-      
-      // Re-enable position restoration after layout completes
-      const timer = setTimeout(() => {
-        setPositionsRestored(true);
-      }, 500);
-      
-      return () => clearTimeout(timer);
+      // Positions should always be restored from localStorage when filters change
+      setPositionsRestored(true);
     } else {
       // Update previous state for selectedCards changes without triggering position reset
       setPreviousFilterState(filterState);
