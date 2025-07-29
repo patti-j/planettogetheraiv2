@@ -2,6 +2,16 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Planned Orders-Production Versions Relationship Implementation (July 29, 2025)**:
+- Added missing production_version_id foreign key column to planned_orders table matching production_orders structure
+- Created planned_orders table in database (was missing despite being defined in schema)
+- Implemented plannedOrdersRelations with production version, plant, and production order relationships
+- Enhanced productionVersionsRelations to include both production orders and planned orders
+- Added sample data demonstrating working relationships: production version PV-001 now links to 3 production orders AND 3 planned orders
+- Database relationship structure now complete: planned_orders (many) ←→ (one) production_versions ←→ (many) production_orders
+- Both order types follow SAP's production version approach for consistent manufacturing hierarchy
+- Schema now supports complete order lifecycle: planned orders → production orders via same production version
+
 ✓ **Session Persistence Fix - Proper Last Visited Route Restoration (July 29, 2025)**:
 - Fixed session startup issue where users were always redirected to production schedule view instead of their last visited page
 - Enhanced useSessionPersistence hook to redirect to lastVisitedRoute only when user visits root URL (/)

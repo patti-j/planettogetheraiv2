@@ -79,6 +79,7 @@ export const plannedOrders = pgTable("planned_orders", {
   priority: text("priority").notNull().default("medium"),
   plantId: integer("plant_id").references(() => plants.id).notNull(),
   salesOrderNumber: text("sales_order_number"), // Originating sales order if applicable
+  productionVersionId: integer("production_version_id").references(() => productionVersions.id), // Links to production version which defines how to produce this item
   createdAt: timestamp("created_at").defaultNow(),
   convertedToProductionOrder: boolean("converted_to_production_order").default(false),
   productionOrderId: integer("production_order_id").references(() => productionOrders.id), // If converted
@@ -6585,6 +6586,22 @@ export const productionVersionsRelations = relations(productionVersions, ({ one,
     references: [recipes.id],
   }),
   productionOrders: many(productionOrders),
+  plannedOrders: many(plannedOrders),
+}));
+
+export const plannedOrdersRelations = relations(plannedOrders, ({ one }) => ({
+  plant: one(plants, {
+    fields: [plannedOrders.plantId],
+    references: [plants.id],
+  }),
+  productionVersion: one(productionVersions, {
+    fields: [plannedOrders.productionVersionId],
+    references: [productionVersions.id],
+  }),
+  productionOrder: one(productionOrders, {
+    fields: [plannedOrders.productionOrderId],
+    references: [productionOrders.id],
+  }),
 }));
 
 export const operationsRelations = relations(operations, ({ one }) => ({
