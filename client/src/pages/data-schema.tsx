@@ -1135,11 +1135,15 @@ function DataSchemaViewContent() {
     });
   }, []);
 
+  // Generate layout positions (separate from selection state to prevent recalculation on flag clicks)
+  const tablePositions = useMemo(() => {
+    if (!filteredTables.length) return {};
+    return layoutAlgorithms[layoutType](filteredTables);
+  }, [filteredTables, layoutType]);
+
   // Generate nodes and edges for React Flow
   const { nodes, edges } = useMemo(() => {
     if (!filteredTables.length) return { nodes: [], edges: [] };
-    
-    const positions = layoutAlgorithms[layoutType](filteredTables);
     
     // Get connected tables if in focus mode
     const connectedTableNames = focusMode && focusTable && schemaData 
@@ -1154,7 +1158,7 @@ function DataSchemaViewContent() {
       return {
         id: table.name,
         type: 'default',
-        position: positions[table.name],
+        position: tablePositions[table.name] || { x: 0, y: 0 },
         data: { 
           table, 
           showColumns, 
@@ -1201,8 +1205,8 @@ function DataSchemaViewContent() {
                (connectedTableNames.includes(rel.fromTable) && connectedTableNames.includes(rel.toTable)));
             
             // Calculate better edge routing to avoid crossovers
-            const sourcePos = positions[rel.fromTable];
-            const targetPos = positions[rel.toTable];
+            const sourcePos = tablePositions[rel.fromTable];
+            const targetPos = tablePositions[rel.toTable];
             const edgeColor = isHighlighted ? '#3b82f6' : getCategoryColor(table.category);
             
             // Determine the best edge type based on relative positions
@@ -1368,7 +1372,11 @@ function DataSchemaViewContent() {
   
   // Reset position preservation when filters change for intelligent reorganization
   React.useEffect(() => {
-    const filtersChanged = JSON.stringify(previousFilterState) !== JSON.stringify(filterState);
+    // Exclude selectedCards from filter change detection to prevent position reset on flag clicks
+    const currentFilterStateWithoutCards = { ...filterState, selectedCards: '' };
+    const previousFilterStateWithoutCards = { ...previousFilterState, selectedCards: '' };
+    
+    const filtersChanged = JSON.stringify(previousFilterStateWithoutCards) !== JSON.stringify(currentFilterStateWithoutCards);
     if (filtersChanged) {
       setShouldPreservePositions(false);
       setPreviousFilterState(filterState);
@@ -1379,22 +1387,31 @@ function DataSchemaViewContent() {
       }, 500);
       
       return () => clearTimeout(timer);
+    } else {
+      // Update previous state for selectedCards changes without triggering position reset
+      setPreviousFilterState(filterState);
     }
   }, [filterState, previousFilterState]);
 
   // Update nodes and edges when data changes
   React.useEffect(() => {
     setNodes((currentNodes) => {
-      // Only preserve positions if filters haven't changed and user has manually moved nodes
-      if (shouldPreservePositions && currentNodes.length > 0) {
+      // Always preserve positions when they exist, except when filters have changed
+      if (currentNodes.length > 0 && shouldPreservePositions) {
         const positionMap = new Map(currentNodes.map(node => [node.id, node.position]));
         
-        return nodes.map(node => ({
-          ...node,
-          position: positionMap.get(node.id) || node.position
-        }));
+        return nodes.map(node => {
+          const existingPosition = positionMap.get(node.id);
+          return {
+            ...node,
+            // Preserve existing position if available, otherwise use new position
+            position: existingPosition || node.position,
+            // Update selection state without affecting position
+            selected: node.selected
+          };
+        });
       } else {
-        // Use new intelligent layout positions when filters change
+        // Use new intelligent layout positions when filters change or no existing positions
         return nodes;
       }
     });
