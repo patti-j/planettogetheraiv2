@@ -13,6 +13,11 @@ import ReactFlow, {
   Panel,
   MarkerType,
   ReactFlowProvider,
+  EdgeTypes,
+  BaseEdge,
+  EdgeLabelRenderer,
+  getBezierPath,
+  getStraightPath,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Button } from "@/components/ui/button";
@@ -51,6 +56,94 @@ import {
   Minus,
   RefreshCw
 } from "lucide-react";
+
+// Custom edge component for relationships with cardinality labels
+const CardinalityEdge = ({
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  sourcePosition,
+  targetPosition,
+  style = {},
+  data,
+  markerEnd,
+  markerStart,
+}: any) => {
+  const [edgePath] = getStraightPath({
+    sourceX,
+    sourceY,
+    targetX,
+    targetY,
+    sourcePosition,
+    targetPosition,
+  });
+
+  const sourceLabel = data?.sourceLabel;
+  const targetLabel = data?.targetLabel;
+
+  // Calculate label positions - closer to endpoints
+  const sourceX_pos = sourceX + (targetX - sourceX) * 0.05;
+  const sourceY_pos = sourceY + (targetY - sourceY) * 0.05;
+  const targetX_pos = sourceX + (targetX - sourceX) * 0.95;
+  const targetY_pos = sourceY + (targetY - sourceY) * 0.95;
+
+  return (
+    <>
+      <BaseEdge path={edgePath} markerEnd={markerEnd} markerStart={markerStart} style={style} />
+      {data?.showCardinality && (
+        <EdgeLabelRenderer>
+          {sourceLabel && (
+            <div
+              style={{
+                position: 'absolute',
+                transform: `translate(-50%, -50%) translate(${sourceX_pos}px,${sourceY_pos}px)`,
+                fontSize: '20px',
+                fontWeight: 'bold',
+                color: sourceLabel === '1' ? '#059669' : '#dc2626',
+                backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                padding: '6px 10px',
+                borderRadius: '8px',
+                border: `2px solid ${sourceLabel === '1' ? '#059669' : '#dc2626'}`,
+                fontFamily: 'monospace',
+                boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                pointerEvents: 'none',
+                zIndex: 1000,
+              }}
+            >
+              {sourceLabel}
+            </div>
+          )}
+          {targetLabel && (
+            <div
+              style={{
+                position: 'absolute',
+                transform: `translate(-50%, -50%) translate(${targetX_pos}px,${targetY_pos}px)`,
+                fontSize: '20px',
+                fontWeight: 'bold',
+                color: targetLabel === '1' ? '#059669' : '#dc2626',
+                backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                padding: '6px 10px',
+                borderRadius: '8px',
+                border: `2px solid ${targetLabel === '1' ? '#059669' : '#dc2626'}`,
+                fontFamily: 'monospace',
+                boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                pointerEvents: 'none',
+                zIndex: 1000,
+              }}
+            >
+              {targetLabel}
+            </div>
+          )}
+        </EdgeLabelRenderer>
+      )}
+    </>
+  );
+};
+
+const edgeTypes: EdgeTypes = {
+  cardinality: CardinalityEdge,
+};
 
 interface SchemaTable {
   name: string;
@@ -1002,10 +1095,10 @@ function DataSchemaViewContent() {
               markerEnd: markerEnd
             });
 
-            // Create two separate edges with positioned labels for better cardinality indication
+            // Add cardinality labels as edge labels using a single edge
             if (rel.type === 'many-to-many' || rel.type === 'one-to-many' || rel.type === 'one-to-one') {
-              // Remove the main edge we just added and replace with two positioned label edges
-              flowEdges.pop();
+              // Remove the main edge we just added and replace with a single labeled edge
+              const mainEdge = flowEdges.pop()!;
               
               // Determine source and target labels
               let sourceCardinalityLabel = '';
@@ -1022,90 +1115,16 @@ function DataSchemaViewContent() {
                 targetCardinalityLabel = '1';
               }
               
-              // Create the main relationship line without labels
+              // Create the main relationship line with positioned cardinality labels using custom edge
               flowEdges.push({
-                id: `${rel.fromTable}-${rel.toTable}-${rel.fromColumn}`,
-                source: rel.fromTable,
-                target: rel.toTable,
-                type: edgeType,
-                animated: !!isHighlighted,
-                style: { 
-                  stroke: edgeColor,
-                  strokeWidth: isHighlighted ? 6 : 3,
-                  opacity: focusMode && !isHighlighted ? 0.2 : 0.9,
-                  strokeDasharray: strokeDasharray,
-                  filter: isHighlighted ? 'drop-shadow(0px 0px 8px rgba(59, 130, 246, 0.5))' : 'drop-shadow(0px 0px 2px rgba(0, 0, 0, 0.1))',
-                },
-                markerStart: markerStart,
-                markerEnd: markerEnd
-              });
-              
-              // Add source cardinality label edge - positioned closer to source
-              flowEdges.push({
-                id: `${rel.fromTable}-${rel.toTable}-${rel.fromColumn}-source-label`,
-                source: rel.fromTable,
-                target: rel.toTable,
-                type: 'straight',
-                style: { 
-                  stroke: 'transparent',
-                  strokeWidth: 0,
-                },
-                label: sourceCardinalityLabel,
-                labelStyle: {
-                  fontSize: '28px',
-                  fill: sourceCardinalityLabel === '1' ? '#059669' : '#dc2626', // Green for "1", Red for "∞"
-                  fontWeight: 'bold',
-                  backgroundColor: 'rgba(255, 255, 255, 0.98)',
-                  padding: '8px 14px',
-                  borderRadius: '10px',
-                  border: sourceCardinalityLabel === '1' ? '3px solid #059669' : '3px solid #dc2626',
-                  fontFamily: 'monospace',
-                  boxShadow: '0 6px 12px rgba(0,0,0,0.25)',
-                  textShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                },
-                labelBgStyle: {
-                  fill: 'rgba(255, 255, 255, 0.95)',
-                  fillOpacity: 0.95,
-                  rx: 6,
-                  ry: 6,
-                },
-                labelShowBg: true,
-                // This positions the label very close to the source node endpoint
-                data: { labelPosition: 0.05 }
-              });
-              
-              // Add target cardinality label edge - positioned closer to target
-              flowEdges.push({
-                id: `${rel.fromTable}-${rel.toTable}-${rel.fromColumn}-target-label`,
-                source: rel.fromTable,
-                target: rel.toTable,
-                type: 'straight',
-                style: { 
-                  stroke: 'transparent',
-                  strokeWidth: 0,
-                },
-                label: targetCardinalityLabel,
-                labelStyle: {
-                  fontSize: '28px',
-                  fill: targetCardinalityLabel === '1' ? '#059669' : '#dc2626', // Green for "1", Red for "∞"
-                  fontWeight: 'bold',
-                  backgroundColor: 'rgba(255, 255, 255, 0.98)',
-                  padding: '8px 14px',
-                  borderRadius: '10px',
-                  border: targetCardinalityLabel === '1' ? '3px solid #059669' : '3px solid #dc2626',
-                  fontFamily: 'monospace',
-                  boxShadow: '0 6px 12px rgba(0,0,0,0.25)',
-                  textShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                },
-                labelBgStyle: {
-                  fill: 'rgba(255, 255, 255, 0.95)',
-                  fillOpacity: 0.95,
-                  rx: 6,
-                  ry: 6,
-                },
-                labelShowBg: true,
-                // This positions the label very close to the target node endpoint
-                data: { labelPosition: 0.95 }
+                ...mainEdge,
+                type: 'cardinality',
+                // Add custom edge data for rendering cardinality markers
+                data: {
+                  sourceLabel: sourceCardinalityLabel,
+                  targetLabel: targetCardinalityLabel,
+                  showCardinality: true
+                }
               });
             }
           }
@@ -1804,6 +1823,7 @@ function DataSchemaViewContent() {
           onNodeClick={handleTableClick}
           onEdgeMouseEnter={handleEdgeMouseEnter}
           onEdgeMouseLeave={handleEdgeMouseLeave}
+          edgeTypes={edgeTypes}
           connectionMode={ConnectionMode.Loose}
           fitView
           fitViewOptions={{ padding: 0.2 }}
