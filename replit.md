@@ -2,6 +2,18 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **BOM to Material Requirements One-to-Many Relationship Implementation (July 29, 2025)**:
+- **DIRECT BOM-MATERIAL LINKAGE**: Successfully confirmed and tested one-to-many relationship between bills_of_material and material_requirements tables enabling comprehensive material specification per BOM
+- **COMPREHENSIVE MATERIAL COVERAGE**: Material requirements table supports both discrete manufacturing (through bomId) and process manufacturing (through formulationId) with unified material specification approach
+- **DRIZZLE ORM RELATIONS VERIFIED**: Confirmed billsOfMaterialRelations includes materialRequirements many relationship and materialRequirementsRelations includes billOfMaterial one relationship
+- **DETAILED MATERIAL SPECIFICATIONS**: Material requirements support comprehensive specifications including quality parameters (purity, particle size), storage conditions, handling instructions, and safety requirements
+- **REAL-WORLD TESTING COMPLETED**: Successfully created and tested BOM material requirements for pharmaceutical tablet production (Acetaminophen API, Microcrystalline Cellulose, Magnesium Stearate) and industrial adhesive manufacturing (Epoxy Resin Base, Hardener Agent, Silica Filler, Pigment Colorant)
+- **MANUFACTURING PRECISION**: Enables detailed material requirement specification with consumption types (variable/fixed), criticality flags, quality specifications, and process-specific handling instructions
+- **DISCRETE MANUFACTURING SUPPORT**: BOMs now support complete material requirement planning with precise quantities, units of measure, material types (API, excipient, lubricant, base material, curing agent, filler, additive)
+- **QUALITY INTEGRATION**: Material requirements include detailed quality specifications in JSONB format supporting pharmaceutical and chemical manufacturing quality standards
+- **MULTI-BOM CAPABILITY**: System tested with multiple BOMs - tablet production (3 requirements), industrial adhesive (4 requirements) demonstrating scalable material planning
+- Enhanced discrete manufacturing ERP capabilities by providing comprehensive material requirement specification enabling pharmaceutical, chemical, and industrial manufacturing workflows with detailed material planning per bill of materials
+
 ✓ **Resource Requirements Direct Discrete Operation Phase Relationship Implementation (July 29, 2025)**:
 - **DIRECT PHASE-RESOURCE LINKAGE**: Successfully implemented direct one-to-many relationship between discrete_operation_phases and resource_requirements tables enabling granular resource allocation per manufacturing phase
 - **DATABASE SCHEMA ENHANCEMENT**: Added discreteOperationPhaseId foreign key column to resource_requirements table alongside existing recipePhaseId for complete manufacturing coverage
