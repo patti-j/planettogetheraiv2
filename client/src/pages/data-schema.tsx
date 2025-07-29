@@ -297,9 +297,21 @@ const featureTableMapping: Record<string, string[]> = {
     'recipes', 'bills_of_materials', 'bom_items', 'bom_material_requirements', 'bom_product_outputs', 'capacity_planning_scenarios'
   ],
   'inventory': [
+    // Core inventory tracking
     'stock_items', 'inventory_transactions', 'warehouses', 'storage_locations', 
-    'inventory_adjustments', 'cycle_counts', 'material_requirements', 'suppliers',
-    'purchase_orders', 'goods_receipts', 'inventory_reservations'
+    'inventory_adjustments', 'cycle_counts', 'inventory_reservations',
+    // Material requirements and suppliers
+    'material_requirements', 'suppliers',
+    // Purchase management
+    'purchase_orders', 'purchase_order_lines', 'goods_receipts',
+    // Sales and shipments
+    'sales_orders', 'sales_order_lines', 'sales_order_line_shipments',
+    // Demand and forecasting
+    'demand_forecasts', 'demand_history', 'forecast_lines',
+    // Transfers between locations
+    'transfer_orders', 'transfer_order_shipments',
+    // Product outputs affecting inventory
+    'bom_product_outputs', 'recipe_product_outputs'
   ],
   'production': [
     'production_orders', 'operations', 'bills_of_materials', 'bom_items', 'bom_material_requirements', 'bom_product_outputs', 'recipes',
