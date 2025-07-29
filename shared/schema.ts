@@ -751,6 +751,31 @@ export const discreteOperationPhaseRelationships = pgTable("discrete_operation_p
   operationIdx: index("discrete_phase_relationship_operation_idx").on(table.discreteOperationId),
 }));
 
+// Production Version Phase Material Requirements junction table - links discrete operation phases to BOM material requirements within production versions
+export const productionVersionPhaseMaterialRequirements = pgTable("production_version_phase_material_requirements", {
+  id: serial("id").primaryKey(),
+  productionVersionId: integer("production_version_id").notNull().references(() => productionVersions.id, { onDelete: "cascade" }),
+  discreteOperationPhaseId: integer("discrete_operation_phase_id").notNull().references(() => discreteOperationPhases.id, { onDelete: "cascade" }),
+  materialRequirementId: integer("material_requirement_id").notNull().references(() => materialRequirements.id, { onDelete: "cascade" }),
+  phaseSpecificQuantity: numeric("phase_specific_quantity", { precision: 10, scale: 4 }), // Override quantity for this specific phase
+  phasePriority: text("phase_priority").default("medium"), // low, medium, high, critical
+  timingConstraints: jsonb("timing_constraints").$type<{
+    startOffset?: number; // minutes from phase start
+    endOffset?: number; // minutes from phase end
+    consumptionTiming?: 'phase_start' | 'phase_middle' | 'phase_end' | 'continuous';
+  }>().default({}),
+  consumptionTiming: text("consumption_timing").default("phase_start"), // When materials are consumed during the phase
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  // Unique constraint to prevent duplicate production version-phase-material requirement links
+  uniqueProductionVersionPhaseMaterialLink: unique().on(table.productionVersionId, table.discreteOperationPhaseId, table.materialRequirementId),
+  productionVersionIdx: index("production_version_phase_material_pv_idx").on(table.productionVersionId),
+  phaseIdx: index("production_version_phase_material_phase_idx").on(table.discreteOperationPhaseId),
+  materialIdx: index("production_version_phase_material_material_idx").on(table.materialRequirementId),
+}));
+
 // Process Operations - for process manufacturing with continuous flows, batches, and recipes
 export const processOperations = pgTable("process_operations", {
   id: serial("id").primaryKey(),
@@ -1313,6 +1338,12 @@ export const insertDiscreteOperationPhaseSchema = createInsertSchema(discreteOpe
 });
 
 export const insertDiscreteOperationPhaseResourceRequirementSchema = createInsertSchema(discreteOperationPhaseResourceRequirements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertProductionVersionPhaseMaterialRequirementSchema = createInsertSchema(productionVersionPhaseMaterialRequirements).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -2187,6 +2218,9 @@ export type DiscreteOperationPhaseResourceRequirement = typeof discreteOperation
 
 export type InsertDiscreteOperationPhaseRelationship = z.infer<typeof insertDiscreteOperationPhaseRelationshipSchema>;
 export type DiscreteOperationPhaseRelationship = typeof discreteOperationPhaseRelationships.$inferSelect;
+
+export type ProductionVersionPhaseMaterialRequirement = typeof productionVersionPhaseMaterialRequirements.$inferSelect;
+export type InsertProductionVersionPhaseMaterialRequirement = z.infer<typeof insertProductionVersionPhaseMaterialRequirementSchema>;
 
 export type InsertProcessOperation = z.infer<typeof insertProcessOperationSchema>;
 export type ProcessOperation = typeof processOperations.$inferSelect;
@@ -7105,6 +7139,7 @@ export const productionVersionsRelations = relations(productionVersions, ({ one,
   plannedOrders: many(plannedOrders),
   formulations: many(formulations), // One-to-many: one production version can have many formulations
   phaseFormulationDetailAssignments: many(productionVersionPhaseFormulationDetails), // Junction table for phase-specific formulation details
+  phaseMaterialRequirementAssignments: many(productionVersionPhaseMaterialRequirements), // Junction table for phase-specific material requirements
 }));
 
 export const plannedOrdersRelations = relations(plannedOrders, ({ one, many }) => ({
@@ -7155,6 +7190,8 @@ export const discreteOperationPhasesRelations = relations(discreteOperationPhase
   resourceRequirements: many(resourceRequirements),
   // Junction table links (keeping for backward compatibility if needed)
   resourceRequirementLinks: many(discreteOperationPhaseResourceRequirements),
+  // Junction table links for material requirements within production versions
+  materialRequirementLinks: many(productionVersionPhaseMaterialRequirements),
   predecessorRelationships: many(discreteOperationPhaseRelationships, {
     relationName: "predecessor"
   }),
@@ -7211,7 +7248,7 @@ export const processOperationsRelations = relations(processOperations, ({ one, m
 }));
 
 // Relations for material requirements
-export const materialRequirementsRelations = relations(materialRequirements, ({ one }) => ({
+export const materialRequirementsRelations = relations(materialRequirements, ({ one, many }) => ({
   formulation: one(formulations, {
     fields: [materialRequirements.formulationId],
     references: [formulations.id],
@@ -7224,6 +7261,8 @@ export const materialRequirementsRelations = relations(materialRequirements, ({ 
     fields: [materialRequirements.itemId],
     references: [items.id],
   }),
+  // Junction table links for discrete operation phases within production versions
+  phaseAssignments: many(productionVersionPhaseMaterialRequirements),
 }));
 
 // Relations for formulations
@@ -7266,6 +7305,22 @@ export const productionVersionPhaseFormulationDetailsRelations = relations(produ
   formulationDetail: one(formulationDetails, {
     fields: [productionVersionPhaseFormulationDetails.formulationDetailId],
     references: [formulationDetails.id],
+  }),
+}));
+
+// Relations for production version phase material requirements junction table
+export const productionVersionPhaseMaterialRequirementsRelations = relations(productionVersionPhaseMaterialRequirements, ({ one }) => ({
+  productionVersion: one(productionVersions, {
+    fields: [productionVersionPhaseMaterialRequirements.productionVersionId],
+    references: [productionVersions.id],
+  }),
+  discreteOperationPhase: one(discreteOperationPhases, {
+    fields: [productionVersionPhaseMaterialRequirements.discreteOperationPhaseId],
+    references: [discreteOperationPhases.id],
+  }),
+  materialRequirement: one(materialRequirements, {
+    fields: [productionVersionPhaseMaterialRequirements.materialRequirementId],
+    references: [materialRequirements.id],
   }),
 }));
 

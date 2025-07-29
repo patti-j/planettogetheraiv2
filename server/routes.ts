@@ -47,7 +47,7 @@ import {
   insertApiIntegrationSchema, insertApiMappingSchema, insertApiTestSchema, insertApiCredentialSchema, insertApiAuditLogSchema,
   insertSchedulingHistorySchema, insertSchedulingResultSchema, insertAlgorithmPerformanceSchema,
   insertRecipeSchema, insertRecipePhaseSchema, insertRecipeFormulaSchema, insertProductionVersionSchema,
-  insertVendorSchema, insertCustomerSchema, insertFormulationSchema, insertFormulationDetailSchema, insertProductionVersionPhaseFormulationDetailSchema, insertMaterialRequirementSchema,
+  insertVendorSchema, insertCustomerSchema, insertFormulationSchema, insertFormulationDetailSchema, insertProductionVersionPhaseFormulationDetailSchema, insertProductionVersionPhaseMaterialRequirementSchema, insertMaterialRequirementSchema,
   insertOptimizationScopeConfigSchema, insertOptimizationRunSchema,
   insertOptimizationProfileSchema, insertProfileUsageHistorySchema,
   insertUserSecretSchema,
@@ -17094,6 +17094,138 @@ Response must be valid JSON:
     } catch (error) {
       console.error("Error fetching assignments by formulation detail:", error);
       res.status(500).json({ error: "Failed to fetch assignments by formulation detail" });
+    }
+  });
+
+  // Production Version Phase Material Requirements junction table routes
+  app.get("/api/production-version-phase-material-requirements", async (req, res) => {
+    try {
+      const productionVersionId = req.query.productionVersionId ? parseInt(req.query.productionVersionId as string) : undefined;
+      const assignments = await storage.getProductionVersionPhaseMaterialRequirements(productionVersionId);
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching production version phase material requirements:", error);
+      res.status(500).json({ error: "Failed to fetch production version phase material requirements" });
+    }
+  });
+
+  app.get("/api/production-version-phase-material-requirements/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid production version phase material requirement ID" });
+      }
+
+      const assignment = await storage.getProductionVersionPhaseMaterialRequirement(id);
+      if (!assignment) {
+        return res.status(404).json({ error: "Production version phase material requirement not found" });
+      }
+      res.json(assignment);
+    } catch (error) {
+      console.error("Error fetching production version phase material requirement:", error);
+      res.status(500).json({ error: "Failed to fetch production version phase material requirement" });
+    }
+  });
+
+  app.post("/api/production-version-phase-material-requirements", async (req, res) => {
+    try {
+      const validation = insertProductionVersionPhaseMaterialRequirementSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid production version phase material requirement data", details: validation.error.errors });
+      }
+
+      const assignment = await storage.createProductionVersionPhaseMaterialRequirement(validation.data);
+      res.status(201).json(assignment);
+    } catch (error) {
+      console.error("Error creating production version phase material requirement:", error);
+      res.status(500).json({ error: "Failed to create production version phase material requirement" });
+    }
+  });
+
+  app.put("/api/production-version-phase-material-requirements/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid production version phase material requirement ID" });
+      }
+
+      const validation = insertProductionVersionPhaseMaterialRequirementSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid production version phase material requirement data", details: validation.error.errors });
+      }
+
+      const assignment = await storage.updateProductionVersionPhaseMaterialRequirement(id, validation.data);
+      if (!assignment) {
+        return res.status(404).json({ error: "Production version phase material requirement not found" });
+      }
+      res.json(assignment);
+    } catch (error) {
+      console.error("Error updating production version phase material requirement:", error);
+      res.status(500).json({ error: "Failed to update production version phase material requirement" });
+    }
+  });
+
+  app.delete("/api/production-version-phase-material-requirements/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid production version phase material requirement ID" });
+      }
+
+      const success = await storage.deleteProductionVersionPhaseMaterialRequirement(id);
+      if (!success) {
+        return res.status(404).json({ error: "Production version phase material requirement not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting production version phase material requirement:", error);
+      res.status(500).json({ error: "Failed to delete production version phase material requirement" });
+    }
+  });
+
+  // Specialized routes for production version phase material requirements
+  app.get("/api/production-versions/:id/phase-material-requirements", async (req, res) => {
+    try {
+      const productionVersionId = parseInt(req.params.id);
+      if (isNaN(productionVersionId)) {
+        return res.status(400).json({ error: "Invalid production version ID" });
+      }
+
+      const assignments = await storage.getProductionVersionPhaseMaterialRequirementsByProductionVersion(productionVersionId);
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching production version phase material requirements:", error);
+      res.status(500).json({ error: "Failed to fetch production version phase material requirements" });
+    }
+  });
+
+  app.get("/api/discrete-operation-phases/:id/material-requirements", async (req, res) => {
+    try {
+      const discreteOperationPhaseId = parseInt(req.params.id);
+      if (isNaN(discreteOperationPhaseId)) {
+        return res.status(400).json({ error: "Invalid discrete operation phase ID" });
+      }
+
+      const assignments = await storage.getProductionVersionPhaseMaterialRequirementsByPhase(discreteOperationPhaseId);
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching discrete operation phase material requirements:", error);
+      res.status(500).json({ error: "Failed to fetch discrete operation phase material requirements" });
+    }
+  });
+
+  app.get("/api/material-requirements/:id/phase-assignments", async (req, res) => {
+    try {
+      const materialRequirementId = parseInt(req.params.id);
+      if (isNaN(materialRequirementId)) {
+        return res.status(400).json({ error: "Invalid material requirement ID" });
+      }
+
+      const assignments = await storage.getProductionVersionPhaseMaterialRequirementsByMaterial(materialRequirementId);
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching material requirement phase assignments:", error);
+      res.status(500).json({ error: "Failed to fetch material requirement phase assignments" });
     }
   });
 

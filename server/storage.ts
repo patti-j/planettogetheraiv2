@@ -1,5 +1,5 @@
 import { 
-  plants, capabilities, resources, plantResources, productionOrders, plannedOrders, discreteOperations, discreteOperationPhases, discreteOperationPhaseResourceRequirements, processOperations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
+  plants, capabilities, resources, plantResources, productionOrders, plannedOrders, discreteOperations, discreteOperationPhases, discreteOperationPhaseResourceRequirements, productionVersionPhaseMaterialRequirements, processOperations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
   recipes, recipePhases, recipeFormulas, vendors, customers, productionVersions, formulations, formulationDetails, productionVersionPhaseFormulationDetails, materialRequirements,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
@@ -9,7 +9,7 @@ import {
   disruptions, disruptionActions, disruptionEscalations,
   stockItems, stockTransactions, stockBalances, demandForecasts, demandDrivers, demandHistory, stockOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
-  type Plant, type Capability, type Resource, type PlantResource, type ProductionOrder, type PlannedOrder, type DiscreteOperation, type DiscreteOperationPhase, type DiscreteOperationPhaseResourceRequirement, type ProcessOperation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
+  type Plant, type Capability, type Resource, type PlantResource, type ProductionOrder, type PlannedOrder, type DiscreteOperation, type DiscreteOperationPhase, type DiscreteOperationPhaseResourceRequirement, type ProductionVersionPhaseMaterialRequirement, type ProcessOperation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
   type Recipe, type RecipePhase, type RecipeFormula, type Vendor, type Customer, type ProductionVersion, type Formulation, type FormulationDetail, type ProductionVersionPhaseFormulationDetail, type MaterialRequirement,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
@@ -20,7 +20,7 @@ import {
   type StockItem, type StockTransaction, type StockBalance, type DemandForecast, type DemandDriver, type DemandHistory, type StockOptimizationScenario, type OptimizationRecommendation,
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
   type InsertPlant, type InsertCapability, type InsertResource, type InsertPlantResource, type InsertProductionOrder, type InsertPlannedOrder, 
-  type InsertDiscreteOperation, type InsertDiscreteOperationPhase, type InsertDiscreteOperationPhaseResourceRequirement, type InsertProcessOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
+  type InsertDiscreteOperation, type InsertDiscreteOperationPhase, type InsertDiscreteOperationPhaseResourceRequirement, type InsertProductionVersionPhaseMaterialRequirement, type InsertProcessOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
   type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertVendor, type InsertCustomer, type InsertProductionVersion, type InsertFormulation, type InsertFormulationDetail, type InsertProductionVersionPhaseFormulationDetail, type InsertMaterialRequirement,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
@@ -1271,6 +1271,16 @@ export interface IStorage {
   getProductionVersionPhaseFormulationDetailsByProductionVersion(productionVersionId: number): Promise<ProductionVersionPhaseFormulationDetail[]>;
   getProductionVersionPhaseFormulationDetailsByRecipePhase(recipePhaseId: number): Promise<ProductionVersionPhaseFormulationDetail[]>;
   getProductionVersionPhaseFormulationDetailsByFormulationDetail(formulationDetailId: number): Promise<ProductionVersionPhaseFormulationDetail[]>;
+
+  // Production Version Phase Material Requirements junction table methods
+  getProductionVersionPhaseMaterialRequirements(productionVersionId?: number): Promise<ProductionVersionPhaseMaterialRequirement[]>;
+  getProductionVersionPhaseMaterialRequirement(id: number): Promise<ProductionVersionPhaseMaterialRequirement | undefined>;
+  createProductionVersionPhaseMaterialRequirement(assignment: InsertProductionVersionPhaseMaterialRequirement): Promise<ProductionVersionPhaseMaterialRequirement>;
+  updateProductionVersionPhaseMaterialRequirement(id: number, updates: Partial<InsertProductionVersionPhaseMaterialRequirement>): Promise<ProductionVersionPhaseMaterialRequirement | undefined>;
+  deleteProductionVersionPhaseMaterialRequirement(id: number): Promise<boolean>;
+  getProductionVersionPhaseMaterialRequirementsByProductionVersion(productionVersionId: number): Promise<ProductionVersionPhaseMaterialRequirement[]>;
+  getProductionVersionPhaseMaterialRequirementsByPhase(discreteOperationPhaseId: number): Promise<ProductionVersionPhaseMaterialRequirement[]>;
+  getProductionVersionPhaseMaterialRequirementsByMaterial(materialRequirementId: number): Promise<ProductionVersionPhaseMaterialRequirement[]>;
 
   // Material Requirements - dual relationship with formulations and BOMs
   getMaterialRequirements(): Promise<MaterialRequirement[]>;
@@ -11048,6 +11058,57 @@ export class DatabaseStorage implements IStorage {
       .from(productionVersionPhaseFormulationDetails)
       .where(eq(productionVersionPhaseFormulationDetails.formulationDetailId, formulationDetailId))
       .orderBy(productionVersionPhaseFormulationDetails.id);
+  }
+
+  // Production Version Phase Material Requirements junction table methods
+  async getProductionVersionPhaseMaterialRequirements(productionVersionId?: number): Promise<ProductionVersionPhaseMaterialRequirement[]> {
+    const query = db.select().from(productionVersionPhaseMaterialRequirements);
+    if (productionVersionId) {
+      return await query.where(eq(productionVersionPhaseMaterialRequirements.productionVersionId, productionVersionId));
+    }
+    return await query;
+  }
+
+  async getProductionVersionPhaseMaterialRequirement(id: number): Promise<ProductionVersionPhaseMaterialRequirement | undefined> {
+    const results = await db.select().from(productionVersionPhaseMaterialRequirements)
+      .where(eq(productionVersionPhaseMaterialRequirements.id, id));
+    return results[0] || undefined;
+  }
+
+  async createProductionVersionPhaseMaterialRequirement(assignment: InsertProductionVersionPhaseMaterialRequirement): Promise<ProductionVersionPhaseMaterialRequirement> {
+    const results = await db.insert(productionVersionPhaseMaterialRequirements)
+      .values(assignment)
+      .returning();
+    return results[0];
+  }
+
+  async updateProductionVersionPhaseMaterialRequirement(id: number, updates: Partial<InsertProductionVersionPhaseMaterialRequirement>): Promise<ProductionVersionPhaseMaterialRequirement | undefined> {
+    const results = await db.update(productionVersionPhaseMaterialRequirements)
+      .set(updates)
+      .where(eq(productionVersionPhaseMaterialRequirements.id, id))
+      .returning();
+    return results[0] || undefined;
+  }
+
+  async deleteProductionVersionPhaseMaterialRequirement(id: number): Promise<boolean> {
+    const result = await db.delete(productionVersionPhaseMaterialRequirements)
+      .where(eq(productionVersionPhaseMaterialRequirements.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getProductionVersionPhaseMaterialRequirementsByProductionVersion(productionVersionId: number): Promise<ProductionVersionPhaseMaterialRequirement[]> {
+    return await db.select().from(productionVersionPhaseMaterialRequirements)
+      .where(eq(productionVersionPhaseMaterialRequirements.productionVersionId, productionVersionId));
+  }
+
+  async getProductionVersionPhaseMaterialRequirementsByPhase(discreteOperationPhaseId: number): Promise<ProductionVersionPhaseMaterialRequirement[]> {
+    return await db.select().from(productionVersionPhaseMaterialRequirements)
+      .where(eq(productionVersionPhaseMaterialRequirements.discreteOperationPhaseId, discreteOperationPhaseId));
+  }
+
+  async getProductionVersionPhaseMaterialRequirementsByMaterial(materialRequirementId: number): Promise<ProductionVersionPhaseMaterialRequirement[]> {
+    return await db.select().from(productionVersionPhaseMaterialRequirements)
+      .where(eq(productionVersionPhaseMaterialRequirements.materialRequirementId, materialRequirementId));
   }
 
   // Material Requirements - dual relationship with formulations and BOMs
