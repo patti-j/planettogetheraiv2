@@ -2,16 +2,17 @@
 
 ## Recent Changes (July 29, 2025)
 
-✓ **Purchase Order Lines & Sales Order Line Distributions Database Relationship Corrections (July 29, 2025)**:
+✓ **Complete Stock-Centric Inventory System Implementation (July 29, 2025)**:
+- **DEMAND FORECASTS TO STOCKS**: Added stock_id foreign key to demand_forecasts table, replacing item_id reference for unified inventory forecasting
 - **PURCHASE ORDER LINES ENHANCED**: Added stock_id foreign key to purchase_order_lines table enabling direct link to stocks when purchase orders are received
 - **SALES ORDER DISTRIBUTIONS CORRECTED**: Fixed sales_order_line_distributions table to link directly to stocks table instead of storage_locations for logical inventory tracking
-- **DATABASE MIGRATIONS COMPLETED**: Successfully added stock_id column to both purchase_order_lines and migrated sales_order_line_distributions from storage_location_id to stock_id
-- **SCHEMA RELATIONS UPDATED**: Updated Drizzle ORM relations - both purchase order lines and sales order line distributions now connect to stocks, stocks have many relationships to both
-- **COMPLETE INVENTORY INTEGRATION**: Both inbound (purchase orders) and outbound (sales shipments) transactions now properly track specific stock records being affected
-- **LOGICAL DATA FLOW**: Purchase receipts and sales shipments now properly track which specific stock inventory is being received or distributed
-- **FOREIGN KEY CONSTRAINTS**: Added proper foreign key constraints from purchase_order_lines.stock_id and sales_order_line_distributions.stock_id to stocks.id table
-- **COMPREHENSIVE STOCK TRACKING**: Stocks table now serves as central inventory hub with relationships to both purchase receipts and sales shipments
-- Enhanced inventory management by creating logical relationships where both inbound and outbound transactions track specific stock records, enabling complete inventory accuracy and traceability
+- **DATABASE MIGRATIONS COMPLETED**: Successfully added stock_id columns to demand_forecasts, purchase_order_lines, and migrated sales_order_line_distributions from storage_location_id to stock_id
+- **SCHEMA RELATIONS UPDATED**: Updated Drizzle ORM relations - demand forecasts, purchase order lines, and sales order line distributions all connect to stocks, with stocks having many relationships to all three
+- **COMPLETE INVENTORY INTEGRATION**: Inbound (purchase orders), outbound (sales shipments), and forecasting (demand planning) all properly track specific stock records being affected
+- **CENTRALIZED STOCK HUB**: Stocks table now serves as central inventory hub with relationships to purchase receipts, sales shipments, and demand forecasts
+- **API CONSISTENCY**: Updated demand forecasts API to use stockId parameter instead of itemId for consistent inventory-centric approach
+- **UNIFIED INVENTORY TRACKING**: All three key inventory-affecting tables now link to stocks enabling complete inventory accuracy, traceability, and forecasting integration
+- Enhanced manufacturing ERP capabilities by creating comprehensive stock-centric inventory system where all inventory transactions and forecasts track specific stock records for complete supply chain visibility
 
 ✓ **Stocks & Sales Order Line Distributions Tables Implementation (July 29, 2025)**:
 - **STOCKS TABLE CREATED**: Successfully implemented comprehensive stocks table for inventory tracking linked to storage_locations and items tables

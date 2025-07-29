@@ -603,7 +603,7 @@ export interface IStorage {
   updateStockBalance(itemId: number, location: string, balance: Partial<InsertStockBalance>): Promise<StockBalance | undefined>;
   
   // Demand Forecasting
-  getDemandForecasts(itemId?: number): Promise<DemandForecast[]>;
+  getDemandForecasts(stockId?: number): Promise<DemandForecast[]>;
   createDemandForecast(forecast: InsertDemandForecast): Promise<DemandForecast>;
   updateDemandForecast(id: number, forecast: Partial<InsertDemandForecast>): Promise<DemandForecast | undefined>;
   deleteDemandForecast(id: number): Promise<boolean>;
@@ -5570,10 +5570,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Demand Forecasting
-  async getDemandForecasts(itemId?: number): Promise<DemandForecast[]> {
-    if (itemId) {
+  async getDemandForecasts(stockId?: number): Promise<DemandForecast[]> {
+    if (stockId) {
       return await db.select().from(demandForecasts)
-        .where(eq(demandForecasts.itemId, itemId))
+        .where(eq(demandForecasts.stockId, stockId))
         .orderBy(desc(demandForecasts.forecastDate));
     }
     return await db.select().from(demandForecasts).orderBy(desc(demandForecasts.forecastDate));

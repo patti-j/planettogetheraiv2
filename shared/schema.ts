@@ -2460,7 +2460,7 @@ export const stockBalances = pgTable("stock_balances", {
 // Demand Planning Tables
 export const demandForecasts = pgTable("demand_forecasts", {
   id: serial("id").primaryKey(),
-  itemId: integer("item_id").references(() => stockItems.id).notNull(),
+  stockId: integer("stock_id").references(() => stocks.id).notNull(), // Link to specific stock record for demand forecasting
   forecastPeriod: text("forecast_period").notNull(), // daily, weekly, monthly, quarterly
   forecastDate: timestamp("forecast_date").notNull(),
   forecastQuantity: integer("forecast_quantity").notNull(),
@@ -2483,6 +2483,13 @@ export const demandForecasts = pgTable("demand_forecasts", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+export const demandForecastsRelations = relations(demandForecasts, ({ one }) => ({
+  stock: one(stocks, {
+    fields: [demandForecasts.stockId],
+    references: [stocks.id],
+  }),
+}));
 
 export const demandDrivers = pgTable("demand_drivers", {
   id: serial("id").primaryKey(),
@@ -7216,6 +7223,7 @@ export const stocksRelations = relations(stocks, ({ one, many }) => ({
   }),
   salesOrderLineDistributions: many(salesOrderLineDistributions),
   purchaseOrderLines: many(purchaseOrderLines),
+  demandForecasts: many(demandForecasts),
 }));
 
 export const purchaseOrdersRelations = relations(purchaseOrders, ({ one, many }) => ({
