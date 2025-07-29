@@ -2,6 +2,20 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Data Schema View Auto-Load Implementation (July 29, 2025)**:
+- Removed annoying filter selection requirement from Data Schema View page startup
+- Schema now loads automatically on page visit since performance is excellent (2-3 seconds)
+- Users can immediately see and explore the entire database schema without forced filter selection
+- Eliminated hasAppliedFilters logic that was blocking schema display
+- Enhanced user experience by removing unnecessary workflow friction
+- All filter functionality remains available but optional instead of mandatory
+
+✓ **Data Relationships Page Navigation Fix (July 29, 2025)**:
+- Fixed Data Relationships page not appearing in recent pages navigation
+- Added useNavigation hook and automatic page tracking on component mount
+- Page now properly registers as "Data Relationships" with Database icon when visited
+- Navigation tracking works consistently across all data exploration pages
+
 ✓ **Plants-Storage Locations One-to-Many Relationship Implementation (July 29, 2025)**:
 - Successfully implemented one-to-many relationship between plants and storage locations as requested
 - Updated storage_locations table schema to reference plantId instead of siteId for proper plant-based organization  

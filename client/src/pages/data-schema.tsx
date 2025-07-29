@@ -647,23 +647,8 @@ function DataSchemaViewContent() {
   const { toast } = useToast();
   const { fitView } = useReactFlow();
 
-  // Track if user has applied filters to trigger schema loading
-  const [hasAppliedFilters, setHasAppliedFilters] = useState(() => {
-    // Check if user has any saved filters that would indicate they want to see data
-    try {
-      const savedCategory = localStorage.getItem('dataSchemaSelectedCategory');
-      const savedFeature = localStorage.getItem('dataSchemaSelectedFeature');
-      const savedSearch = localStorage.getItem('dataSchemaSearchTerm');
-      const savedTables = localStorage.getItem('dataSchemaSelectedTables');
-      
-      return (savedCategory && savedCategory !== 'all') || 
-             (savedFeature && savedFeature !== 'all') || 
-             (savedSearch && savedSearch.length > 0) ||
-             (savedTables && savedTables !== '[]');
-    } catch {
-      return false;
-    }
-  });
+  // Always show schema by default since it loads quickly now (2-3 seconds)
+  const [hasAppliedFilters, setHasAppliedFilters] = useState(true);
 
   // Fetch database schema information only when filters are applied
   const { data: schemaData, isLoading, error } = useQuery({
@@ -697,13 +682,12 @@ function DataSchemaViewContent() {
         throw error;
       }
     },
-    enabled: Boolean(hasAppliedFilters), // Only fetch when user has applied filters
+    enabled: Boolean(hasAppliedFilters), // Always fetch schema since it's fast now
   });
 
-  // Wrapper functions to trigger data loading when filters are applied
+  // Filter handler functions with localStorage persistence
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
-    setHasAppliedFilters(true);
     // Persist to localStorage
     try {
       localStorage.setItem('dataSchemaSearchTerm', value);
@@ -712,9 +696,6 @@ function DataSchemaViewContent() {
 
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value);
-    if (value !== 'all') {
-      setHasAppliedFilters(true);
-    }
     // Persist to localStorage
     try {
       localStorage.setItem('dataSchemaSelectedCategory', value);
@@ -723,9 +704,6 @@ function DataSchemaViewContent() {
 
   const handleFeatureChange = (value: string) => {
     setSelectedFeature(value);
-    if (value !== 'all') {
-      setHasAppliedFilters(true);
-    }
     // Persist to localStorage
     try {
       localStorage.setItem('dataSchemaSelectedFeature', value);
@@ -734,9 +712,6 @@ function DataSchemaViewContent() {
 
   const handleTableSelectionChange = (tables: string[]) => {
     setSelectedTables(tables);
-    if (tables.length > 0) {
-      setHasAppliedFilters(true);
-    }
     // Persist to localStorage
     try {
       localStorage.setItem('dataSchemaSelectedTables', JSON.stringify(tables));
