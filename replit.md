@@ -520,6 +520,19 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Comprehensive Database Comments Implementation (July 29, 2025)**:
+- **COMPLETE DATABASE DOCUMENTATION**: Successfully implemented comprehensive field-level comments for all core manufacturing tables using SQL COMMENT statements
+- **USERS TABLE DOCUMENTED**: Added detailed comments for users table with actual schema fields (password_hash, first_name, last_name, job_title, department, phone_number, etc.)
+- **PRODUCTION ORDERS COMPREHENSIVE**: Documented all 66 fields in production_orders table including WIP tracking, cost variance analysis, yield tracking, timing analysis, batch traceability, and quality management
+- **ITEMS MASTER DATA**: Added detailed comments for items table covering ABC/XYZ classification, inventory planning, quality specifications, procurement data, lifecycle management, and physical properties
+- **BILLS OF MATERIAL**: Documented BOM table including version control, change management, scrap/yield factors, and alternate items for discrete manufacturing
+- **STOCKS INVENTORY TRACKING**: Added comprehensive comments for stocks table covering quantity tracking, cost methods, allocation quantities, lot control, and cycle counting
+- **ORGANIZATIONAL STRUCTURE**: Documented plants, departments, work_centers, and resources tables with capacity tracking, cost centers, and operational status
+- **SALES & PROCUREMENT**: Added detailed comments for sales_orders and purchase_orders tables with pricing, delivery tracking, and supplier management
+- **SQL EXECUTION SUCCESS**: All database comments applied successfully to live PostgreSQL database enabling better schema understanding for developers and users
+- **MANUFACTURING ERP DOCUMENTATION**: Comprehensive field documentation now supports pharmaceutical, chemical, and industrial manufacturing workflows with detailed explanations of each field's purpose and usage
+- Enhanced database usability by providing complete field-level documentation for all core manufacturing tables enabling better understanding of complex ERP data structures
+
 ✓ **Manual Schema Refresh Button Implementation (July 29, 2025)**:
 - Added manual refresh button in Data Schema View top-right control panel for reloading schema data when recent changes were made
 - Implemented RefreshCw icon with spinning animation during refresh process for visual feedback
