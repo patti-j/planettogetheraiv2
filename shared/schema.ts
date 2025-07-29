@@ -455,31 +455,7 @@ export const recipeFormulas = pgTable("recipe_formulas", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Recipe Equipment Requirements - specific equipment needed for the recipe
-export const recipeEquipment = pgTable("recipe_equipment", {
-  id: serial("id").primaryKey(),
-  recipeId: integer("recipe_id").references(() => recipes.id).notNull(),
-  phaseId: integer("phase_id").references(() => recipePhases.id), // which phase needs this equipment
-  equipmentType: text("equipment_type").notNull(), // reactor, mixer, heater, cooler, pump, etc.
-  equipmentModel: text("equipment_model"),
-  capacity: integer("capacity").notNull(), // required capacity
-  capacityUnit: text("capacity_unit").notNull(), // liters, kg, etc.
-  operatingConditions: jsonb("operating_conditions").$type<{
-    temperature: { min: number; max: number; unit: string };
-    pressure: { min: number; max: number; unit: string };
-    agitation_speed: { min: number; max: number; unit: string };
-    flow_rate: { min: number; max: number; unit: string };
-  }>(),
-  setupTime: integer("setup_time").default(0), // minutes
-  cleanupTime: integer("cleanup_time").default(0), // minutes
-  resourceId: integer("resource_id").references(() => resources.id), // link to actual equipment
-  isAlternative: boolean("is_alternative").default(false), // true if this is backup equipment
-  alternativeGroup: integer("alternative_group"), // group ID for alternative equipment sets
-  utilizationPercentage: integer("utilization_percentage").default(100), // how much of equipment capacity is used
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+
 
 // Production Versions - Links BOMs/Recipes with Routings to define material consumption per operation
 // Similar to SAP's Production Version concept
@@ -3520,11 +3496,7 @@ export const insertRecipeFormulaSchema = createInsertSchema(recipeFormulas).omit
   updatedAt: true,
 });
 
-export const insertRecipeEquipmentSchema = createInsertSchema(recipeEquipment).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+
 
 // Vendor and Customer Insert Schemas
 export const insertVendorSchema = createInsertSchema(vendors).omit({
@@ -3558,8 +3530,7 @@ export type InsertRecipeMaterialAssignment = z.infer<typeof insertRecipeMaterial
 export type RecipeFormula = typeof recipeFormulas.$inferSelect;
 export type InsertRecipeFormula = z.infer<typeof insertRecipeFormulaSchema>;
 
-export type RecipeEquipment = typeof recipeEquipment.$inferSelect;
-export type InsertRecipeEquipment = z.infer<typeof insertRecipeEquipmentSchema>;
+
 
 // Vendor and Customer Types
 export type Vendor = typeof vendors.$inferSelect;
@@ -5906,7 +5877,6 @@ export const recipesRelations = relations(recipes, ({ one, many }) => ({
   }),
   materialAssignments: many(recipeMaterialAssignments),
   formulas: many(recipeFormulas),
-  equipment: many(recipeEquipment),
 }));
 
 export const recipeOperationsRelations = relations(recipeOperations, ({ one, many }) => ({
@@ -5943,7 +5913,6 @@ export const recipePhasesRelations = relations(recipePhases, ({ one, many }) => 
   }),
   materialAssignments: many(recipeMaterialAssignments),
   formulas: many(recipeFormulas),
-  equipment: many(recipeEquipment),
   resourceRequirementLinks: many(recipePhaseResourceRequirements), // Many-to-many with resource requirements
 }));
 
@@ -5999,20 +5968,7 @@ export const recipeFormulasRelations = relations(recipeFormulas, ({ one }) => ({
   }),
 }));
 
-export const recipeEquipmentRelations = relations(recipeEquipment, ({ one }) => ({
-  recipe: one(recipes, {
-    fields: [recipeEquipment.recipeId],
-    references: [recipes.id],
-  }),
-  phase: one(recipePhases, {
-    fields: [recipeEquipment.phaseId],
-    references: [recipePhases.id],
-  }),
-  resource: one(resources, {
-    fields: [recipeEquipment.resourceId],
-    references: [resources.id],
-  }),
-}));
+
 
 // Junction table relations for recipe phase - resource requirements many-to-many
 export const recipePhaseResourceRequirementsRelations = relations(recipePhaseResourceRequirements, ({ one }) => ({

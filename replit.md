@@ -14,6 +14,7 @@
 - Junction table enables granular resource planning at recipe phase level supporting complex process manufacturing workflows with phase-specific resource priorities and timing constraints
 - System now supports advanced process operations where different recipe phases can have different resource requirements with precise timing and priority control
 - Enhanced manufacturing precision by enabling resource requirements to be linked to specific recipe phases rather than just operation-level, improving scheduling accuracy for process manufacturing
+- Cleaned up database schema: removed recipe_equipment table, reducing database from 146 to 145 tables for simplified architecture
 
 ✓ **Complete Ingredients Table Implementation for Process Manufacturing (July 29, 2025)**:
 - Successfully implemented comprehensive ingredients table as process manufacturing counterpart to bills of materials for discrete manufacturing

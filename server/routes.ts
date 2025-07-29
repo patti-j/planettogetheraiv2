@@ -46,7 +46,7 @@ import {
   insertStrategyDocumentSchema, insertDevelopmentTaskSchema, insertTestSuiteSchema, insertTestCaseSchema, insertArchitectureComponentSchema,
   insertApiIntegrationSchema, insertApiMappingSchema, insertApiTestSchema, insertApiCredentialSchema, insertApiAuditLogSchema,
   insertSchedulingHistorySchema, insertSchedulingResultSchema, insertAlgorithmPerformanceSchema,
-  insertRecipeSchema, insertRecipePhaseSchema, insertRecipeFormulaSchema, insertRecipeEquipmentSchema, insertProductionVersionSchema,
+  insertRecipeSchema, insertRecipePhaseSchema, insertRecipeFormulaSchema, insertProductionVersionSchema,
   insertVendorSchema, insertCustomerSchema, insertIngredientSchema,
   insertOptimizationScopeConfigSchema, insertOptimizationRunSchema,
   insertOptimizationProfileSchema, insertProfileUsageHistorySchema,
