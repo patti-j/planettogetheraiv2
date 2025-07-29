@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar, numeric, primaryKey, index, unique, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar, numeric, decimal, primaryKey, index, unique, uniqueIndex } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -6526,29 +6526,127 @@ export const sites = pgTable("sites", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Items - products, components, raw materials
+// Items - products, components, raw materials with comprehensive supply chain management
 export const items = pgTable("items", {
   id: serial("id").primaryKey(),
   itemNumber: text("item_number").notNull().unique(),
   name: text("name").notNull(),
   description: text("description"),
-  itemType: text("item_type").notNull(), // finished_good, component, raw_material, service
-  unitOfMeasure: text("unit_of_measure").notNull().default("EA"), // EA, LBS, GAL, etc.
+  itemType: text("item_type").notNull(), // finished_good, component, raw_material, service, packaging, tooling
+  unitOfMeasure: text("unit_of_measure").notNull().default("EA"), // EA, LBS, GAL, KG, M, L, etc.
+  alternateUnitOfMeasure: text("alternate_unit_of_measure"), // Secondary UOM for dual unit items
+  conversionFactor: decimal("conversion_factor", { precision: 10, scale: 4 }).default("1.0000"), // Conversion between primary and alternate UOM
+  
+  // Physical Properties
   weight: integer("weight").default(0), // in grams
   volume: integer("volume").default(0), // in cubic centimeters
+  dimensions: jsonb("dimensions").$type<{
+    length?: number; // in millimeters
+    width?: number;
+    height?: number;
+    diameter?: number;
+  }>().default({}),
+  
+  // Financial Information
   standardCost: integer("standard_cost").default(0), // in cents
   listPrice: integer("list_price").default(0), // in cents
+  lastCost: integer("last_cost").default(0), // in cents - most recent purchase cost
+  averageCost: integer("average_cost").default(0), // in cents - rolling average cost
+  targetMargin: integer("target_margin").default(0), // target profit margin percentage (100 = 100%)
+  
+  // ABC Classification and Analytics
+  abcClassification: text("abc_classification").default("C"), // A, B, C based on usage/value
+  xyzClassification: text("xyz_classification").default("Z"), // X, Y, Z based on demand variability
+  annualUsage: integer("annual_usage").default(0), // annual consumption quantity
+  annualValue: integer("annual_value").default(0), // annual consumption value in cents
+  demandVariability: integer("demand_variability").default(0), // coefficient of variation percentage
+  lastAnalysisDate: timestamp("last_analysis_date"), // last ABC/XYZ analysis date
+  
+  // Inventory Planning
   leadTime: integer("lead_time").default(0), // days
   safetyStock: integer("safety_stock").default(0),
   reorderPoint: integer("reorder_point").default(0),
-  lotSizeRule: text("lot_size_rule").default("fixed"), // fixed, lot_for_lot, economic_order_quantity
+  maximumStock: integer("maximum_stock").default(0), // maximum inventory level
+  economicOrderQuantity: integer("economic_order_quantity").default(0), // calculated EOQ
+  lotSizeRule: text("lot_size_rule").default("fixed"), // fixed, lot_for_lot, economic_order_quantity, period_order_quantity
   lotSize: integer("lot_size").default(1),
+  minimumOrderQuantity: integer("minimum_order_quantity").default(1),
+  orderMultiple: integer("order_multiple").default(1), // must order in multiples of this quantity
+  
+  // Quality and Compliance
   shelfLife: integer("shelf_life").default(0), // days
   requiresLotControl: boolean("requires_lot_control").default(false),
   requiresSerialControl: boolean("requires_serial_control").default(false),
+  requiresInspection: boolean("requires_inspection").default(false),
+  qualityGrade: text("quality_grade"), // A, B, C quality classification
+  hazardousMaterial: boolean("hazardous_material").default(false),
+  regulatoryClass: text("regulatory_class"), // pharmaceutical: API, excipient, finished_product; chemical: controlled, restricted, standard
+  unCode: text("un_code"), // UN hazardous material code
+  casNumber: text("cas_number"), // Chemical Abstracts Service registry number
+  
+  // Storage Requirements
+  storageConditions: jsonb("storage_conditions").$type<{
+    temperatureMin?: number; // Celsius
+    temperatureMax?: number;
+    humidityMin?: number; // percentage
+    humidityMax?: number;
+    lightSensitive?: boolean;
+    pressureRequirement?: string;
+    specialHandling?: string[];
+  }>().default({}),
+  
+  // Procurement and Sourcing
+  preferredVendorId: integer("preferred_vendor_id").references(() => vendors.id),
+  sourceType: text("source_type").default("purchase"), // purchase, make, transfer, consignment
+  buyerCode: text("buyer_code"), // responsible purchaser identifier
+  sourcingStrategy: text("sourcing_strategy").default("single"), // single, dual, multiple
+  makeVsBuyDecision: text("make_vs_buy_decision").default("buy"), // make, buy, both
+  
+  // Product Lifecycle Management
+  lifecycleStage: text("lifecycle_stage").default("active"), // development, introduction, growth, maturity, decline, obsolete
+  phaseOutDate: timestamp("phase_out_date"), // planned obsolescence date
+  replacementItemId: integer("replacement_item_id").references((): any => items.id), // superseding item
+  revisionLevel: text("revision_level").default("A"), // engineering change revision
+  releaseDate: timestamp("release_date"), // when item was released for production
+  
+  // Manufacturing Planning
+  planningMethod: text("planning_method").default("mrp"), // mrp, kanban, reorder_point, manual
+  planningHorizon: integer("planning_horizon").default(30), // days
+  consumptionMethod: text("consumption_method").default("forward"), // forward, backward
+  backflushFlag: boolean("backflush_flag").default(false), // auto-consume in manufacturing
+  phantomFlag: boolean("phantom_flag").default(false), // pass-through component
+  criticalComponent: boolean("critical_component").default(false),
+  
+  // Additional Classifications
+  productFamily: text("product_family"), // product grouping for planning
+  plannerCode: text("planner_code"), // responsible planner identifier
+  commodityCode: text("commodity_code"), // procurement commodity classification  
+  htsCode: text("hts_code"), // Harmonized Tariff Schedule code for international trade
+  countryOfOrigin: text("country_of_origin"), // manufacturing origin country
+  
+  // Tracking and Audit
+  createdBy: integer("created_by").references(() => users.id),
+  lastModifiedBy: integer("last_modified_by").references(() => users.id),
+  lastModifiedDate: timestamp("last_modified_date").defaultNow(),
+  lastCountDate: timestamp("last_count_date"), // last physical inventory count
+  lastUsageDate: timestamp("last_usage_date"), // last transaction date
+  
+  // System Fields
   isActive: boolean("is_active").default(true),
+  isBlocked: boolean("is_blocked").default(false), // temporarily blocked from transactions
+  blockReason: text("block_reason"), // reason for blocking
   createdAt: timestamp("created_at").defaultNow(),
-});
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  // Performance indexes for common queries
+  itemTypeIdx: index("items_item_type_idx").on(table.itemType),
+  abcClassificationIdx: index("items_abc_classification_idx").on(table.abcClassification),
+  lifecycleStageIdx: index("items_lifecycle_stage_idx").on(table.lifecycleStage),
+  preferredVendorIdx: index("items_preferred_vendor_idx").on(table.preferredVendorId),
+  plannerCodeIdx: index("items_planner_code_idx").on(table.plannerCode),
+  commodityCodeIdx: index("items_commodity_code_idx").on(table.commodityCode),
+  activeItemsIdx: index("items_active_idx").on(table.isActive),
+}));
 
 // Storage Locations - warehouses and storage areas within plants
 export const storageLocations = pgTable("storage_locations", {
@@ -7725,6 +7823,15 @@ export const insertSiteSchema = createInsertSchema(sites).omit({
 export const insertItemSchema = createInsertSchema(items).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
+}).extend({
+  // Date field transformations for enhanced items table
+  lastAnalysisDate: z.union([z.string().datetime(), z.date()]).optional(),
+  phaseOutDate: z.union([z.string().datetime(), z.date()]).optional(),
+  releaseDate: z.union([z.string().datetime(), z.date()]).optional(),
+  lastModifiedDate: z.union([z.string().datetime(), z.date()]).optional(),
+  lastCountDate: z.union([z.string().datetime(), z.date()]).optional(),
+  lastUsageDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
 export const insertStorageLocationSchema = createInsertSchema(storageLocations).omit({
@@ -8056,4 +8163,6 @@ export const insertProductionVersionPhaseFormulationDetailSchema = createInsertS
 
 export type ProductionVersionPhaseFormulationDetail = typeof productionVersionPhaseFormulationDetails.$inferSelect;
 export type InsertProductionVersionPhaseFormulationDetail = z.infer<typeof insertProductionVersionPhaseFormulationDetailSchema>;
+
+
 
