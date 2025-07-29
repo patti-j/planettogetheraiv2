@@ -1478,17 +1478,34 @@ function DataSchemaViewContent() {
   const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
 
-  // Smart Layout Algorithm - Grid-based with generous spacing for relationship visibility
+  // Smart Layout Algorithm - Simple grid with extra-large spacing to guarantee no overlaps
   const generateSmartLayout = useCallback((tables: SchemaTable[]) => {
     if (!tables.length) return {};
+    
+    console.log('Smart layout: Processing', tables.length, 'tables');
 
     const positions: Record<string, { x: number; y: number }> = {};
     const nodeWidth = 320;
     const nodeHeight = 200;
-    const horizontalSpacing = 120; // Generous horizontal spacing for relationship lines
-    const verticalSpacing = 100;   // Generous vertical spacing for relationship lines
     
-    // Build relationship graph
+    // Use very large spacing to absolutely guarantee no overlaps
+    const horizontalSpacing = 200; // Extra large horizontal spacing
+    const verticalSpacing = 180;   // Extra large vertical spacing
+    
+    // Calculate total spacing between cards
+    const totalHorizontalSpacing = nodeWidth + horizontalSpacing; // 520px between card starts
+    const totalVerticalSpacing = nodeHeight + verticalSpacing;    // 380px between card starts
+    
+    console.log('Spacing calculations:', {
+      nodeWidth,
+      nodeHeight,
+      horizontalSpacing,
+      verticalSpacing,
+      totalHorizontalSpacing,
+      totalVerticalSpacing
+    });
+
+    // Build relationship graph for connection analysis
     const relationshipGraph: Record<string, string[]> = {};
     tables.forEach(table => {
       relationshipGraph[table.name] = [];
@@ -1499,79 +1516,50 @@ function DataSchemaViewContent() {
       });
     });
 
-    // Calculate connection counts for each table
+    // Calculate connection counts and sort by most connected first
     const connectionCounts = tables.map(table => ({
       name: table.name,
       connections: relationshipGraph[table.name].length + 
                   Object.values(relationshipGraph).filter(rels => rels.includes(table.name)).length
     }));
-
-    // Sort by connection count (most connected first) for better hub placement
     connectionCounts.sort((a, b) => b.connections - a.connections);
 
-    // Use an adaptive grid layout that expands based on table count
+    // Determine grid dimensions - favor more columns for better relationship visibility
     const tableCount = tables.length;
     let cols: number;
     
     if (tableCount <= 4) {
       cols = 2;
-    } else if (tableCount <= 9) {
+    } else if (tableCount <= 6) {
       cols = 3;
-    } else if (tableCount <= 16) {
+    } else if (tableCount <= 12) {
       cols = 4;
-    } else if (tableCount <= 25) {
+    } else if (tableCount <= 20) {
       cols = 5;
     } else {
-      cols = Math.ceil(Math.sqrt(tableCount));
+      cols = 6; // Maximum columns to keep layout manageable
     }
     
-    const startX = 150; // More padding from screen edge
-    const startY = 150;
+    console.log('Grid layout:', { tableCount, cols });
     
-    // Calculate actual spacing including card dimensions
-    const totalHorizontalSpacing = nodeWidth + horizontalSpacing;
-    const totalVerticalSpacing = nodeHeight + verticalSpacing;
+    const startX = 200; // Large padding from screen edge
+    const startY = 200;
     
-    // Place tables in organized grid with relationship-aware ordering
+    // Place tables in simple grid pattern - most connected tables first
     connectionCounts.forEach((table, index) => {
       const row = Math.floor(index / cols);
       const col = index % cols;
       
-      // Position with generous spacing
+      // Calculate position with guaranteed large spacing
       const x = startX + col * totalHorizontalSpacing;
       const y = startY + row * totalVerticalSpacing;
       
       positions[table.name] = { x, y };
+      
+      console.log(`Placed ${table.name} at (${x}, ${y}) - row ${row}, col ${col}, connections: ${table.connections}`);
     });
 
-    // Optional refinement: Try to move highly connected tables to more central positions
-    if (tableCount > 6) {
-      const centerCol = Math.floor(cols / 2);
-      const centerRow = Math.floor(Math.ceil(tableCount / cols) / 2);
-      
-      // Find the most connected table and try to place it more centrally if possible
-      const mostConnected = connectionCounts[0];
-      if (mostConnected.connections > 2) {
-        const centerX = startX + centerCol * totalHorizontalSpacing;
-        const centerY = startY + centerRow * totalVerticalSpacing;
-        
-        // Check if center position is different from current position
-        const currentPos = positions[mostConnected.name];
-        if (currentPos.x !== centerX || currentPos.y !== centerY) {
-          // Find what's currently at center and swap if beneficial
-          const centerOccupant = Object.entries(positions).find(([_, pos]) => 
-            pos.x === centerX && pos.y === centerY
-          );
-          
-          if (centerOccupant) {
-            // Swap positions
-            positions[centerOccupant[0]] = currentPos;
-            positions[mostConnected.name] = { x: centerX, y: centerY };
-          }
-        }
-      }
-    }
-
+    console.log('Final positions:', positions);
     return positions;
   }, []);
 
