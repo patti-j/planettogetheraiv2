@@ -13,6 +13,15 @@
 - Manual refresh particularly useful when database schema changes have been made within last 5 minutes and need immediate visibility
 - Enhanced user control over data freshness without requiring full page reload or navigation away from current schema view
 
+✓ **Production Versions Foreign Key Relationships Fix (July 29, 2025)**:
+- Fixed critical missing foreign key constraints between production_versions and bills_of_material/recipes tables
+- Added production_versions_bom_id_fkey constraint linking production_versions.bom_id → bills_of_material.id
+- Added production_versions_recipe_id_fkey constraint linking production_versions.recipe_id → recipes.id
+- Production versions table now correctly shows related tables: plants, bills_of_material, recipes, planned_orders, production_orders
+- Enhanced manufacturing hierarchy visibility in Data Schema View - BOMs, routings, and recipes now appear as related to production versions
+- Completed SAP-style production version approach with proper database relationships for discrete (BOM) and process (recipe) manufacturing
+- Data Schema View now accurately reflects manufacturing relationships enabling users to understand complete production version dependencies
+
 ✓ **Enhanced Database Relationship Cardinality Indicators (July 29, 2025)**:
 - Fixed cardinality indicators positioning from tiny center symbols to large, readable "1" and "∞" markers
 - Improved font size from 14px to 20px with enhanced contrast, white backgrounds, and border styling for better visibility
