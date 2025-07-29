@@ -6460,6 +6460,9 @@ export const ingredients = pgTable("ingredients", {
   organicCertified: boolean("organic_certified").default(false),
   gmoFree: boolean("gmo_free").default(false),
   
+  // Production version linkage for process manufacturing
+  productionVersionId: integer("production_version_id").references(() => productionVersions.id),
+  
   // Sourcing and supply
   preferredVendorId: integer("preferred_vendor_id").references(() => vendors.id),
   backupVendors: jsonb("backup_vendors").$type<number[]>().default([]), // Array of vendor IDs
@@ -6840,6 +6843,7 @@ export const productionVersionsRelations = relations(productionVersions, ({ one,
   }),
   productionOrders: many(productionOrders),
   plannedOrders: many(plannedOrders),
+  ingredients: many(ingredients), // One-to-many: one production version can have many ingredients
 }));
 
 export const plannedOrdersRelations = relations(plannedOrders, ({ one, many }) => ({
@@ -6912,6 +6916,10 @@ export const materialRequirementsRelations = relations(materialRequirements, ({ 
 
 // Relations for ingredients
 export const ingredientsRelations = relations(ingredients, ({ one, many }) => ({
+  productionVersion: one(productionVersions, {
+    fields: [ingredients.productionVersionId],
+    references: [productionVersions.id],
+  }),
   preferredVendor: one(vendors, {
     fields: [ingredients.preferredVendorId],
     references: [vendors.id],

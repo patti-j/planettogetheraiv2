@@ -2,6 +2,17 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Ingredients to Production Versions Relationship Implementation (July 29, 2025)**:
+- **IMPLEMENTED RELATIONSHIP**: Successfully established one-to-many relationship between production_versions and ingredients tables
+- **Database Migration**: Added production_version_id column to ingredients table with proper foreign key constraint
+- **Schema Integration**: Added productionVersion relation to ingredientsRelations and ingredients relation to productionVersionsRelations
+- **Process Manufacturing Support**: Ingredients now properly connect to production versions enabling process manufacturing ingredient management
+- **Relationship Structure**: One production version can have many ingredients - supports complete process manufacturing bill of materials approach
+- **Foreign Key Relationship**: Verified foreign key constraint ingredients.production_version_id → production_versions.id for proper data integrity
+- **Complete Integration**: All changes integrated successfully with no TypeScript errors and application restarting correctly
+- **Data Schema View Enhancement**: Ingredients table now appears as connected to production versions in relationship visualization
+- System now supports complete process manufacturing workflows where ingredients are managed through production versions for recipe-based manufacturing
+
 ✓ **Recipe Phases Direct Recipe Relationship Removal (July 29, 2025)**:
 - **REMOVED DIRECT RELATIONSHIP**: Eliminated direct relationship between recipe_phases and recipes tables as it should be indirect through process_operations
 - **Database Migration**: Removed recipe_id column from recipe_phases table - phases now connect to recipes only through process_operations
