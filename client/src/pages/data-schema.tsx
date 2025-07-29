@@ -180,7 +180,7 @@ const TableNode = ({ data }: { data: any }) => {
   const { table, showColumns, showRelationships, isFocused, isConnected, isSelected, onSelect, onClick } = data;
   
   const getCardClassName = () => {
-    let baseClasses = "min-w-[250px] max-w-[350px] shadow-lg border-2 transition-all duration-200";
+    let baseClasses = "min-w-[280px] max-w-[380px] shadow-lg border-2 transition-all duration-200";
     
     if (isFocused) {
       return `${baseClasses} ring-4 ring-blue-500 ring-opacity-50 border-blue-500 scale-105`;
@@ -210,15 +210,15 @@ const TableNode = ({ data }: { data: any }) => {
       onClick={() => onClick?.(table.name)}
     >
       <CardHeader className="pb-2 relative">
-        <CardTitle className="flex items-center gap-2 text-sm pr-8">
-          <Table className="w-4 h-4 flex-shrink-0" />
-          <span className="truncate">{table.name}</span>
+        <CardTitle className="flex items-start gap-2 text-sm pr-8 leading-tight">
+          <Table className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <span className="break-words hyphens-auto leading-tight font-medium">{table.name}</span>
         </CardTitle>
         
         {/* Positioned controls container to prevent overflow */}
-        <div className="absolute top-2 right-2 flex items-center gap-1">
-          {isFocused && <Badge variant="default" className="text-xs bg-blue-500 text-white">FOCUS</Badge>}
-          {isSelected && <Badge variant="default" className="text-xs bg-green-500 text-white">SELECTED</Badge>}
+        <div className="absolute top-2 right-2 flex items-start gap-1 flex-wrap max-w-[120px] justify-end">
+          {isFocused && <Badge variant="default" className="text-xs bg-blue-500 text-white whitespace-nowrap">FOCUS</Badge>}
+          {isSelected && <Badge variant="default" className="text-xs bg-green-500 text-white whitespace-nowrap">SELECTED</Badge>}
           <Button
             variant="ghost"
             size="sm"
