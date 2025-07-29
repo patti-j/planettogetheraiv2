@@ -24,7 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Database, 
@@ -48,7 +48,8 @@ import {
   Square,
   Settings,
   Plus,
-  Minus
+  Minus,
+  RefreshCw
 } from "lucide-react";
 
 interface SchemaTable {
@@ -646,6 +647,29 @@ function DataSchemaViewContent() {
   
   const { toast } = useToast();
   const { fitView } = useReactFlow();
+  
+  // Manual refresh functionality
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // Invalidate the schema cache and refetch
+      await queryClient.invalidateQueries({ queryKey: ['/api/database/schema'] });
+      toast({
+        title: "Schema Refreshed",
+        description: "Database schema has been reloaded with latest changes.",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh schema data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Always show schema by default since it loads quickly now (2-3 seconds)
   const [hasAppliedFilters, setHasAppliedFilters] = useState(true);
@@ -1323,6 +1347,85 @@ function DataSchemaViewContent() {
             </Badge>
           </div>
           
+          {/* Top Right Controls */}
+          <div className="flex items-center gap-2">
+            {/* Manual Refresh Button */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleManualRefresh}
+                    disabled={isRefreshing}
+                    className="flex items-center gap-2"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    <span className="hidden sm:inline">Refresh</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Manually refresh schema data to load recent changes</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* Fit to View Button */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fitView({ padding: 0.1, minZoom: 0.1, maxZoom: 1.5 })}
+                  >
+                    <Target className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Fit to View - Center and zoom to show all tables</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* MiniMap Toggle */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowMiniMap(!showMiniMap)}
+                    className={showMiniMap ? 'ring-2 ring-blue-500' : ''}
+                  >
+                    {showMiniMap ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{showMiniMap ? 'Hide' : 'Show'} MiniMap</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* Full Screen Toggle */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsFullScreen(!isFullScreen)}
+                    className={isFullScreen ? 'ring-2 ring-green-500' : ''}
+                  >
+                    {isFullScreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isFullScreen ? 'Exit' : 'Enter'} Full Screen (F11)</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
 
         </div>
         

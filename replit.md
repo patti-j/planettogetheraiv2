@@ -2,6 +2,27 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Manual Schema Refresh Button Implementation (July 29, 2025)**:
+- Added manual refresh button in Data Schema View top-right control panel for reloading schema data when recent changes were made
+- Implemented RefreshCw icon with spinning animation during refresh process for visual feedback
+- Integrated with React Query's cache invalidation system to force fresh schema data retrieval from database
+- Added comprehensive tooltip explaining refresh functionality: "Manually refresh schema data to load recent changes"
+- Button positioned alongside other utility controls (Fit to View, MiniMap toggle, Full Screen toggle) for intuitive access
+- Refresh button shows "Refresh" text on desktop, icon-only on mobile for space efficiency
+- Toast notifications provide user feedback on successful refresh or error states during manual refresh operations
+- Manual refresh particularly useful when database schema changes have been made within last 5 minutes and need immediate visibility
+- Enhanced user control over data freshness without requiring full page reload or navigation away from current schema view
+
+✓ **Enhanced Database Relationship Cardinality Indicators (July 29, 2025)**:
+- Fixed cardinality indicators positioning from tiny center symbols to large, readable "1" and "∞" markers
+- Improved font size from 14px to 20px with enhanced contrast, white backgrounds, and border styling for better visibility
+- Enhanced relationship visualization with separate source and target cardinality labels positioned along relationship lines
+- Clear relationship type indication: one-to-many shows "1" near one-side table and "∞" near many-side table
+- Many-to-many relationships display "∞" markers near both connected tables for immediate identification
+- One-to-one relationships show "1" markers near both tables with consistent styling and visibility
+- Added rounded corners, borders, and subtle shadows to cardinality indicators for improved readability against complex schema backgrounds
+- Users can now immediately identify relationship types and cardinality without analyzing foreign key directions or table structures
+
 ✓ **Production Versions BOM/Recipe Reference Implementation (July 29, 2025)**:
 - Created bills_of_material table in database to support discrete manufacturing approach (BOM + routing)
 - Enhanced production versions to demonstrate both manufacturing methods: BOM-based (discrete) and recipe-based (process)
