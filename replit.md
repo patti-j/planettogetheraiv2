@@ -2,6 +2,15 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Bills of Material Direct Plant Relationship Removal & SAP Architecture Compliance Fix (July 29, 2025)**:
+- CRITICAL ARCHITECTURAL FIX: Removed incorrect direct foreign key relationship between bills_of_material and plants tables
+- Bills of material now correctly connect to plants ONLY through production versions, following proper SAP manufacturing hierarchy
+- Executed database migration: ALTER TABLE bills_of_material DROP COLUMN plant_id to remove direct plant reference
+- Manufacturing relationship path now correctly follows: BOM → Production Version → Plant (no direct BOM → Plant connection)
+- Fixed Data Schema View to accurately show proper manufacturing hierarchy without incorrect direct relationships
+- Enhanced SAP compliance by ensuring bills of material are plant-agnostic and only become plant-specific through production versions
+- Verified relationship integrity: bills_of_material connects to plants through production_versions.bom_id → production_versions.plant_id path
+
 ✓ **Complete Production Versions SAP Manufacturing Hierarchy Implementation & Cardinality Marker Endpoint Positioning Fix (July 29, 2025)**:
 - Successfully implemented complete SAP-style manufacturing hierarchy with both BOM and routing relationships to production versions
 - Added bomId foreign key to production_versions table alongside existing routingId for complete discrete manufacturing support
