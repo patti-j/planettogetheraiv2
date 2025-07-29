@@ -6774,7 +6774,7 @@ export const inventoryLots = pgTable("inventory_lots", {
   lotItemStorageLocationIdx: unique().on(table.lotNumber, table.itemId, table.storageLocationId),
 }));
 
-// Sales orders from customers
+// Sales orders from customers - enhanced with comprehensive pricing, discount, payment terms, freight handling, and tax management
 export const salesOrders = pgTable("sales_orders", {
   id: serial("id").primaryKey(),
   orderNumber: text("order_number").notNull().unique(),
@@ -6785,22 +6785,124 @@ export const salesOrders = pgTable("sales_orders", {
   shippedDate: timestamp("shipped_date"),
   status: text("status").notNull().default("open"), // open, confirmed, in_production, shipped, invoiced, closed, cancelled
   priority: text("priority").notNull().default("medium"), // low, medium, high, urgent
-  totalAmount: integer("total_amount").default(0), // in cents
   currency: text("currency").notNull().default("USD"),
   siteId: integer("site_id").references(() => sites.id).notNull(),
   salesPerson: text("sales_person"),
   notes: text("notes"),
+  
+  // Comprehensive pricing and financial terms
+  subtotal: numeric("subtotal", { precision: 15, scale: 2 }).default("0"), // Order subtotal before discounts and taxes
+  discountAmount: numeric("discount_amount", { precision: 15, scale: 2 }).default("0"), // Total discount amount
+  discountPercentage: numeric("discount_percentage", { precision: 5, scale: 2 }).default("0"), // Overall discount percentage
+  taxAmount: numeric("tax_amount", { precision: 15, scale: 2 }).default("0"), // Total tax amount
+  freightAmount: numeric("freight_amount", { precision: 15, scale: 2 }).default("0"), // Shipping/freight charges
+  totalAmount: numeric("total_amount", { precision: 15, scale: 2 }).default("0"), // Final order total (subtotal - discount + tax + freight)
+  
+  // Payment and financial terms
+  paymentTerms: text("payment_terms").default("NET30"), // NET30, NET15, COD, Prepaid, 2/10NET30, etc.
+  paymentMethod: text("payment_method"), // credit_card, ach, wire_transfer, check, cash, trade_credit
+  creditLimit: numeric("credit_limit", { precision: 15, scale: 2 }), // Customer credit limit for this order
+  creditCheckRequired: boolean("credit_check_required").default(false),
+  creditApproved: boolean("credit_approved").default(false),
+  creditApprovedBy: integer("credit_approved_by").references(() => users.id),
+  creditApprovedDate: timestamp("credit_approved_date"),
+  
+  // Shipping and logistics terms
+  shippingTerms: text("shipping_terms").default("FOB Origin"), // FOB Origin, FOB Destination, EXW, FCA, CPT, CIP, DAP, DDP
+  carrierCode: text("carrier_code"), // UPS, FedEx, DHL, USPS, Freight, Customer_Pickup, etc.
+  shippingMethod: text("shipping_method"), // ground, air, express, freight, overnight, 2day, standard
+  freightTerms: text("freight_terms").default("Prepaid"), // Prepaid, Collect, Third_Party, Prepaid_Add
+  expectedDeliveryDate: timestamp("expected_delivery_date"),
+  
+  // Sales channel and territory management
+  salesChannel: text("sales_channel").default("direct"), // direct, distributor, online, retail, partner, reseller
+  salesTerritory: text("sales_territory"), // North, South, East, West, International, specific regions
+  salesRegion: text("sales_region"), // Americas, EMEA, APAC, etc.
+  commissionRate: numeric("commission_rate", { precision: 5, scale: 2 }).default("0"), // Sales commission percentage
+  commissionAmount: numeric("commission_amount", { precision: 15, scale: 2 }).default("0"), // Calculated commission amount
+  
+  // Advanced discount and promotion management
+  discountCodes: text("discount_codes").array().default([]), // Applied discount/promo codes
+  volumeDiscountTier: text("volume_discount_tier"), // bronze, silver, gold, platinum based on order value
+  loyaltyDiscount: numeric("loyalty_discount", { precision: 5, scale: 2 }).default("0"), // Customer loyalty discount percentage
+  seasonalDiscount: numeric("seasonal_discount", { precision: 5, scale: 2 }).default("0"), // Seasonal promotion discount
+  earlyPaymentDiscount: numeric("early_payment_discount", { precision: 5, scale: 2 }).default("0"), // Early payment discount (e.g., 2/10NET30)
+  
+  // Tax management and compliance  
+  taxExempt: boolean("tax_exempt").default(false), // Customer tax exempt status
+  taxExemptCertificate: text("tax_exempt_certificate"), // Tax exemption certificate number
+  taxJurisdiction: text("tax_jurisdiction"), // State, province, country for tax calculation
+  salesTaxRate: numeric("sales_tax_rate", { precision: 5, scale: 4 }).default("0"), // Applied sales tax rate
+  useTaxRate: numeric("use_tax_rate", { precision: 5, scale: 4 }).default("0"), // Use tax rate if applicable
+  vatRate: numeric("vat_rate", { precision: 5, scale: 4 }).default("0"), // VAT rate for international orders
+  taxCalculationMethod: text("tax_calculation_method").default("standard"), // standard, vertex, avalara, manual
+  
+  // Contract and pricing agreements
+  contractNumber: text("contract_number"), // Reference to blanket purchase agreement or contract
+  priceListId: integer("price_list_id"), // Reference to customer-specific price list
+  quotationNumber: text("quotation_number"), // Reference to sales quotation
+  quotationValidUntil: timestamp("quotation_valid_until"), // Quote expiration date
+  priceHoldUntil: timestamp("price_hold_until"), // Price protection date
+  
+  // International trade and compliance
+  incoterms: text("incoterms"), // EXW, FCA, CPT, CIP, DAT, DAP, DDP, FAS, FOB, CFR, CIF for international orders
+  exportLicense: text("export_license"), // Export license number if required
+  importLicense: text("import_license"), // Import license number if required  
+  countryOfOrigin: text("country_of_origin"), // Country where goods originate
+  harmonizedCode: text("harmonized_code"), // HS code for customs classification
+  customsValue: numeric("customs_value", { precision: 15, scale: 2 }), // Declared customs value
+  
+  // Approval and authorization workflow
+  requiresApproval: boolean("requires_approval").default(false), // Order requires manager approval
+  approvalRequired: text("approval_required"), // credit, pricing, terms, discount, manager
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvedDate: timestamp("approved_date"),
+  approvalNotes: text("approval_notes"),
+  
+  // Shipping address with enhanced structure
   shippingAddress: jsonb("shipping_address").$type<{
     name?: string;
+    company?: string;
     street: string;
+    street2?: string;
     city: string;
     state: string;
     postalCode: string;
     country: string;
+    phone?: string;
+    email?: string;
+    specialInstructions?: string;
   }>(),
+  
+  // Billing address (separate from shipping)
+  billingAddress: jsonb("billing_address").$type<{
+    name?: string;
+    company?: string;
+    street: string;
+    street2?: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    phone?: string;
+    email?: string;
+  }>(),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  // Performance indexes for frequently queried fields
+  salesOrderStatusIdx: index("sales_orders_status_idx").on(table.status),
+  salesOrderCustomerIdx: index("sales_orders_customer_idx").on(table.customerId),
+  salesOrderDateIdx: index("sales_orders_order_date_idx").on(table.orderDate),
+  salesOrderPersonIdx: index("sales_orders_sales_person_idx").on(table.salesPerson),
+  salesOrderChannelIdx: index("sales_orders_sales_channel_idx").on(table.salesChannel),
+  salesOrderTerritoryIdx: index("sales_orders_sales_territory_idx").on(table.salesTerritory),
+  salesOrderTotalIdx: index("sales_orders_total_amount_idx").on(table.totalAmount),
+  salesOrderApprovalIdx: index("sales_orders_requires_approval_idx").on(table.requiresApproval),
+  salesOrderCarrierIdx: index("sales_orders_carrier_code_idx").on(table.carrierCode),
+  salesOrderContractIdx: index("sales_orders_contract_number_idx").on(table.contractNumber),
+}));
 
 // Sales order line items
 export const salesOrderLines = pgTable("sales_order_lines", {
@@ -7930,6 +8032,11 @@ export const insertSalesOrderSchema = createInsertSchema(salesOrders).omit({
   requestedDate: z.union([z.string().datetime(), z.date()]),
   promisedDate: z.union([z.string().datetime(), z.date()]).optional(),
   shippedDate: z.union([z.string().datetime(), z.date()]).optional(),
+  creditApprovedDate: z.union([z.string().datetime(), z.date()]).optional(),
+  expectedDeliveryDate: z.union([z.string().datetime(), z.date()]).optional(),
+  quotationValidUntil: z.union([z.string().datetime(), z.date()]).optional(),
+  priceHoldUntil: z.union([z.string().datetime(), z.date()]).optional(),
+  approvedDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
 export const insertSalesOrderLineSchema = createInsertSchema(salesOrderLines).omit({
