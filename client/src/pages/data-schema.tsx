@@ -1478,14 +1478,15 @@ function DataSchemaViewContent() {
   const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
 
-  // Smart Layout Algorithm - Intelligently arrange nodes to minimize relationship confusion
+  // Smart Layout Algorithm - Fixed to prevent overlapping cards
   const generateSmartLayout = useCallback((tables: SchemaTable[]) => {
     if (!tables.length) return {};
 
     const positions: Record<string, { x: number; y: number }> = {};
     const nodeWidth = 320;
     const nodeHeight = 200;
-    const minSpacing = 80; // Minimum space between nodes for relationship visibility
+    const minSpacing = 60; // Spacing between cards
+    const safeDistance = nodeWidth + minSpacing; // Minimum safe distance between card centers
     
     // Build relationship graph
     const relationshipGraph: Record<string, string[]> = {};
@@ -1508,75 +1509,88 @@ function DataSchemaViewContent() {
     // Sort by connection count (most connected first)
     connectionCounts.sort((a, b) => b.connections - a.connections);
 
-    // Use force-directed layout with relationship awareness
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
-    
-    // Place most connected table at center
-    if (connectionCounts.length > 0) {
-      positions[connectionCounts[0].name] = { x: centerX - nodeWidth/2, y: centerY - nodeHeight/2 };
-    }
+    // Helper function to check if a position collides with existing positions
+    const hasCollision = (x: number, y: number, existing: Record<string, { x: number; y: number }>) => {
+      return Object.values(existing).some(pos => {
+        const dx = Math.abs(x - pos.x);
+        const dy = Math.abs(y - pos.y);
+        return dx < safeDistance && dy < (nodeHeight + minSpacing);
+      });
+    };
 
-    // Place remaining tables using force-directed algorithm
-    for (let i = 1; i < connectionCounts.length; i++) {
-      const tableName = connectionCounts[i].name;
-      let bestPosition = { x: 0, y: 0 };
-      let bestScore = -Infinity;
+    // Start with a grid-based layout to ensure no overlaps
+    const cols = Math.ceil(Math.sqrt(tables.length));
+    const startX = 100;
+    const startY = 100;
+    
+    // First pass: Place tables in a grid to guarantee no overlaps
+    connectionCounts.forEach((table, index) => {
+      const row = Math.floor(index / cols);
+      const col = index % cols;
+      const x = startX + col * (nodeWidth + minSpacing);
+      const y = startY + row * (nodeHeight + minSpacing);
+      positions[table.name] = { x, y };
+    });
+
+    // Second pass: Try to improve positions based on relationships while maintaining no overlaps
+    const maxIterations = 3; // Limit iterations to prevent infinite loops
+    for (let iteration = 0; iteration < maxIterations; iteration++) {
+      let improved = false;
       
-      // Try multiple positions around existing nodes
-      const attempts = 50;
-      for (let attempt = 0; attempt < attempts; attempt++) {
-        const angle = (attempt / attempts) * 2 * Math.PI;
-        const radius = 300 + (attempt * 20); // Increasing radius for each attempt
+      connectionCounts.forEach((table) => {
+        const tableName = table.name;
+        const currentPos = positions[tableName];
+        let bestPos = currentPos;
+        let bestScore = -Infinity;
         
-        const candidateX = centerX + Math.cos(angle) * radius - nodeWidth/2;
-        const candidateY = centerY + Math.sin(angle) * radius - nodeHeight/2;
+        // Try positions in a small radius around current position
+        const searchRadius = 150;
+        const searchSteps = 12;
         
-        // Calculate score for this position
-        let score = 0;
-        let hasCollision = false;
-        
-        // Check for collisions and calculate relationship quality
-        Object.entries(positions).forEach(([otherName, otherPos]) => {
-          const dx = candidateX - otherPos.x;
-          const dy = candidateY - otherPos.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          
-          // Collision penalty
-          if (distance < nodeWidth + minSpacing) {
-            hasCollision = true;
-            score -= 1000;
+        for (let angle = 0; angle < 2 * Math.PI; angle += (2 * Math.PI) / searchSteps) {
+          for (let radius = safeDistance; radius <= searchRadius; radius += 40) {
+            const candidateX = currentPos.x + Math.cos(angle) * radius;
+            const candidateY = currentPos.y + Math.sin(angle) * radius;
+            
+            // Create temporary positions without current table
+            const tempPositions = { ...positions };
+            delete tempPositions[tableName];
+            
+            // Check if this position would cause collisions
+            if (!hasCollision(candidateX, candidateY, tempPositions)) {
+              // Calculate score based on relationships
+              let score = 0;
+              
+              Object.entries(tempPositions).forEach(([otherName, otherPos]) => {
+                const dx = candidateX - otherPos.x;
+                const dy = candidateY - otherPos.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                const hasRelationship = relationshipGraph[tableName].includes(otherName) || 
+                                      relationshipGraph[otherName].includes(tableName);
+                
+                if (hasRelationship) {
+                  // Prefer moderate distance for related tables
+                  const idealDistance = safeDistance + 80;
+                  const distanceFromIdeal = Math.abs(distance - idealDistance);
+                  score += Math.max(0, 100 - distanceFromIdeal / 2);
+                }
+              });
+              
+              if (score > bestScore) {
+                bestScore = score;
+                bestPos = { x: candidateX, y: candidateY };
+                improved = true;
+              }
+            }
           }
-          
-          // Relationship bonus/penalty
-          const hasRelationship = relationshipGraph[tableName].includes(otherName) || 
-                                relationshipGraph[otherName].includes(tableName);
-          
-          if (hasRelationship) {
-            // Prefer moderate distance for related tables (not too close, not too far)
-            const idealDistance = nodeWidth + minSpacing + 100;
-            const distanceFromIdeal = Math.abs(distance - idealDistance);
-            score += Math.max(0, 200 - distanceFromIdeal);
-          } else {
-            // Prefer more distance for unrelated tables
-            score += Math.min(100, distance / 10);
-          }
-        });
-        
-        // Prefer positions closer to center but not too close
-        const distanceFromCenter = Math.sqrt(
-          Math.pow(candidateX + nodeWidth/2 - centerX, 2) + 
-          Math.pow(candidateY + nodeHeight/2 - centerY, 2)
-        );
-        score += Math.max(0, 300 - distanceFromCenter / 3);
-        
-        if (!hasCollision && score > bestScore) {
-          bestScore = score;
-          bestPosition = { x: candidateX, y: candidateY };
         }
-      }
+        
+        positions[tableName] = bestPos;
+      });
       
-      positions[tableName] = bestPosition;
+      // If no improvements were made, stop iterating
+      if (!improved) break;
     }
 
     return positions;
