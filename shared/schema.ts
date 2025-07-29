@@ -149,6 +149,7 @@ export const recipeProductOutputs = pgTable("recipe_product_outputs", {
   id: serial("id").primaryKey(),
   recipeId: integer("recipe_id").references(() => recipes.id).notNull(),
   productId: integer("product_id").references(() => items.id).notNull(), // Reference to output product/item
+  stockId: integer("stock_id").references(() => stocks.id), // Link to specific stock record for output tracking
   outputQuantity: numeric("output_quantity", { precision: 10, scale: 4 }).notNull(),
   unitOfMeasure: text("unit_of_measure").notNull(),
   productType: text("product_type").notNull().default("primary"), // primary, co_product, by_product
@@ -6813,6 +6814,7 @@ export const bomProductOutputs = pgTable("bom_product_outputs", {
   id: serial("id").primaryKey(),
   bomId: integer("bom_id").references(() => billsOfMaterial.id).notNull(),
   productId: integer("product_id").references(() => items.id).notNull(), // Reference to output product/item
+  stockId: integer("stock_id").references(() => stocks.id), // Link to specific stock record for output tracking
   outputQuantity: numeric("output_quantity", { precision: 10, scale: 4 }).notNull(),
   unitOfMeasure: text("unit_of_measure").notNull(),
   productType: text("product_type").notNull().default("primary"), // primary, co_product, by_product
@@ -7224,6 +7226,8 @@ export const stocksRelations = relations(stocks, ({ one, many }) => ({
   salesOrderLineDistributions: many(salesOrderLineDistributions),
   purchaseOrderLines: many(purchaseOrderLines),
   demandForecasts: many(demandForecasts),
+  bomProductOutputs: many(bomProductOutputs),
+  recipeProductOutputs: many(recipeProductOutputs),
 }));
 
 export const purchaseOrdersRelations = relations(purchaseOrders, ({ one, many }) => ({
@@ -7319,6 +7323,10 @@ export const bomProductOutputsRelations = relations(bomProductOutputs, ({ one })
     fields: [bomProductOutputs.productId],
     references: [items.id],
   }),
+  stock: one(stocks, {
+    fields: [bomProductOutputs.stockId],
+    references: [stocks.id],
+  }),
 }));
 
 export const recipeProductOutputsRelations = relations(recipeProductOutputs, ({ one }) => ({
@@ -7329,6 +7337,10 @@ export const recipeProductOutputsRelations = relations(recipeProductOutputs, ({ 
   product: one(items, {
     fields: [recipeProductOutputs.productId],
     references: [items.id],
+  }),
+  stock: one(stocks, {
+    fields: [recipeProductOutputs.stockId],
+    references: [stocks.id],
   }),
 }));
 

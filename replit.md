@@ -3,16 +3,17 @@
 ## Recent Changes (July 29, 2025)
 
 ✓ **Complete Stock-Centric Inventory System Implementation (July 29, 2025)**:
+- **PRODUCT OUTPUTS TO STOCKS**: Added stock_id foreign key to both bom_product_outputs and recipe_product_outputs tables for manufacturing output tracking
 - **DEMAND FORECASTS TO STOCKS**: Added stock_id foreign key to demand_forecasts table, replacing item_id reference for unified inventory forecasting
 - **PURCHASE ORDER LINES ENHANCED**: Added stock_id foreign key to purchase_order_lines table enabling direct link to stocks when purchase orders are received
 - **SALES ORDER DISTRIBUTIONS CORRECTED**: Fixed sales_order_line_distributions table to link directly to stocks table instead of storage_locations for logical inventory tracking
-- **DATABASE MIGRATIONS COMPLETED**: Successfully added stock_id columns to demand_forecasts, purchase_order_lines, and migrated sales_order_line_distributions from storage_location_id to stock_id
-- **SCHEMA RELATIONS UPDATED**: Updated Drizzle ORM relations - demand forecasts, purchase order lines, and sales order line distributions all connect to stocks, with stocks having many relationships to all three
-- **COMPLETE INVENTORY INTEGRATION**: Inbound (purchase orders), outbound (sales shipments), and forecasting (demand planning) all properly track specific stock records being affected
-- **CENTRALIZED STOCK HUB**: Stocks table now serves as central inventory hub with relationships to purchase receipts, sales shipments, and demand forecasts
+- **DATABASE MIGRATIONS COMPLETED**: Successfully added stock_id columns to bom_product_outputs, recipe_product_outputs, demand_forecasts, purchase_order_lines, and migrated sales_order_line_distributions
+- **SCHEMA RELATIONS UPDATED**: Updated Drizzle ORM relations - all five key tables now connect to stocks: product outputs (manufacturing), demand forecasts (planning), purchase lines (inbound), sales distributions (outbound)
+- **COMPLETE MANUFACTURING INTEGRATION**: Both discrete (BOM) and process (recipe) manufacturing outputs now track specific stock records being produced
+- **CENTRALIZED STOCK HUB**: Stocks table now serves as central inventory hub with relationships spanning entire manufacturing lifecycle - production outputs, purchases, sales, and forecasting
 - **API CONSISTENCY**: Updated demand forecasts API to use stockId parameter instead of itemId for consistent inventory-centric approach
-- **UNIFIED INVENTORY TRACKING**: All three key inventory-affecting tables now link to stocks enabling complete inventory accuracy, traceability, and forecasting integration
-- Enhanced manufacturing ERP capabilities by creating comprehensive stock-centric inventory system where all inventory transactions and forecasts track specific stock records for complete supply chain visibility
+- **UNIFIED INVENTORY TRACKING**: All five key inventory-affecting tables now link to stocks enabling complete manufacturing-to-sales inventory accuracy and traceability
+- Enhanced manufacturing ERP capabilities by creating comprehensive stock-centric inventory system where manufacturing outputs, inventory transactions, and forecasts all track specific stock records for complete supply chain visibility
 
 ✓ **Stocks & Sales Order Line Distributions Tables Implementation (July 29, 2025)**:
 - **STOCKS TABLE CREATED**: Successfully implemented comprehensive stocks table for inventory tracking linked to storage_locations and items tables
