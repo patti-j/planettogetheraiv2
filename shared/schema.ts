@@ -107,20 +107,20 @@ export const recipes = pgTable("recipes", {
   id: serial("id").primaryKey(),
   recipeNumber: text("recipe_number").notNull().unique(), // e.g., "RCP-001"
   recipeName: text("recipe_name").notNull(),
-  materialNumber: text("material_number").notNull(), // Finished or intermediate product the recipe is for
+  productItemNumber: text("product_item_number").notNull(), // Finished or intermediate product the recipe is for
   plantId: integer("plant_id").references(() => plants.id).notNull(),
   recipeVersion: text("recipe_version").notNull().default("1.0"),
   recipeType: text("recipe_type").notNull().default("master"), // master, pilot, trial, development
   status: text("status").notNull().default("created"), // created, released_for_planning, released_for_execution, obsolete
-  baseQuantity: numeric("base_quantity", { precision: 10, scale: 4 }).notNull(), // Standard quantity the recipe is designed for
-  baseUnit: text("base_unit").notNull().default("kg"), // Base unit of measure
-  validityDateFrom: timestamp("validity_date_from").notNull(), // When recipe becomes valid
-  validityDateTo: timestamp("validity_date_to"), // When recipe expires (null = unlimited)
+  batchSize: integer("batch_size"), // Standard batch size the recipe is designed for
+  batchUnit: text("batch_unit"), // Base unit of measure
+  effectiveDate: timestamp("effective_date"), // When recipe becomes valid
+  endDate: timestamp("end_date"), // When recipe expires (null = unlimited)
   
   // Process Manufacturing specific attributes
-  yieldFactor: numeric("yield_factor", { precision: 5, scale: 2 }).notNull().default("100"), // percentage (95.5 = 95.5% yield)
-  scaleMinimum: numeric("scale_minimum", { precision: 5, scale: 2 }).default("50"), // minimum scale percentage
-  scaleMaximum: numeric("scale_maximum", { precision: 5, scale: 2 }).default("200"), // maximum scale percentage
+  yieldFactor: integer("yield_factor"), // yield factor
+  scaleMinimum: integer("scale_minimum"), // minimum scale percentage
+  scaleMaximum: integer("scale_maximum"), // maximum scale percentage
   totalCycleTime: integer("total_cycle_time"), // total time in minutes
   
   // Recipe documentation
@@ -129,34 +129,83 @@ export const recipes = pgTable("recipes", {
   safetyNotes: text("safety_notes"),
   
   // Quality and environmental specifications
-  qualitySpecifications: jsonb("quality_specifications").$type<{
-    target_yield: number;
-    min_yield: number;
-    max_yield: number;
-    critical_quality_parameters: Array<{
-      parameter: string;
-      target_value: number;
-      min_value: number;
-      max_value: number;
-      unit: string;
-      test_method: string;
-    }>;
-  }>(),
-  environmentalConditions: jsonb("environmental_conditions").$type<{
-    temperature_range: { min: number; max: number };
-    humidity_range: { min: number; max: number };
-    pressure_range: { min: number; max: number };
-    atmosphere: string; // nitrogen, air, vacuum, etc.
-  }>(),
+  qualitySpecifications: jsonb("quality_specifications"),
+  environmentalImpact: jsonb("environmental_impact"),
+  costData: jsonb("cost_data"),
+  environmentalConditions: jsonb("environmental_conditions"),
   
   // Audit fields
-  createdBy: text("created_by").notNull(),
+  createdBy: text("created_by"),
   approvedBy: text("approved_by"),
   approvedDate: timestamp("approved_date"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  materialPlantIdx: unique().on(table.materialNumber, table.plantId, table.recipeVersion),
+  materialPlantIdx: unique().on(table.productItemNumber, table.plantId, table.recipeVersion),
+}));
+
+// Recipe Product Outputs - define products produced by recipes (primary, co-products, by-products)
+export const recipeProductOutputs = pgTable("recipe_product_outputs", {
+  id: serial("id").primaryKey(),
+  recipeId: integer("recipe_id").references(() => recipes.id).notNull(),
+  productId: integer("product_id").references(() => items.id).notNull(), // Reference to output product/item
+  outputQuantity: numeric("output_quantity", { precision: 10, scale: 4 }).notNull(),
+  unitOfMeasure: text("unit_of_measure").notNull(),
+  productType: text("product_type").notNull().default("primary"), // primary, co_product, by_product
+  yieldPercentage: numeric("yield_percentage", { precision: 5, scale: 2 }).default("100"), // Expected yield %
+  qualityGrade: text("quality_grade"), // Grade or quality classification
+  isPrimary: boolean("is_primary").default(false), // True for the main output product
+  sortOrder: integer("sort_order").default(1), // Display order
+  
+  // Process manufacturing specific attributes
+  concentrationPercentage: numeric("concentration_percentage", { precision: 5, scale: 2 }), // % purity/concentration
+  densityValue: numeric("density_value", { precision: 8, scale: 4 }), // kg/L, g/mL
+  viscosityValue: numeric("viscosity_value", { precision: 8, scale: 2 }), // cP (centipoise)
+  phValue: numeric("ph_value", { precision: 3, scale: 1 }), // pH level
+  temperatureStability: jsonb("temperature_stability").$type<{
+    min_temp: number;
+    max_temp: number;
+    unit: string;
+  }>(),
+  
+  // Storage and handling requirements
+  storageConditions: jsonb("storage_conditions").$type<{
+    temperature_range: { min: number; max: number; unit: string };
+    humidity_range: { min: number; max: number };
+    light_sensitivity: boolean;
+    atmosphere_requirements: string; // nitrogen, inert, normal
+    special_handling: string[];
+  }>(),
+  
+  // Quality specifications
+  qualitySpecifications: jsonb("quality_specifications").$type<{
+    appearance: string;
+    color: string;
+    odor: string;
+    purity_min: number;
+    moisture_max: number;
+    ash_content_max: number;
+    heavy_metals_max: number;
+    microbiological_limits: {
+      total_plate_count: number;
+      yeast_mold: number;
+      e_coli: string; // "absent" or number
+      salmonella: string; // "absent" or number
+    };
+  }>(),
+  
+  // Economic and business data
+  standardCost: numeric("standard_cost", { precision: 10, scale: 2 }), // Cost per unit
+  marketValue: numeric("market_value", { precision: 10, scale: 2 }), // Market value per unit  
+  isWaste: boolean("is_waste").default(false), // True if this is waste/disposal
+  disposalMethod: text("disposal_method"), // If waste, how to dispose
+  
+  // Notes and documentation
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  recipeProductIdx: unique().on(table.recipeId, table.productId),
 }));
 
 // Recipe Operations - define individual processing steps (like operations in discrete manufacturing routing)
@@ -6094,6 +6143,7 @@ export const recipesRelations = relations(recipes, ({ one, many }) => ({
     references: [plants.id],
   }),
   operations: many(recipeOperations),
+  productOutputs: many(recipeProductOutputs),
   processOperations: many(processOperations), // One-to-many relationship with process operations
   operationRelationships: many(recipeOperationRelationships, {
     relationName: "recipeToRelationships"
@@ -6921,6 +6971,8 @@ export const itemsRelations = relations(items, ({ many }) => ({
   transferOrderLines: many(transferOrderLines),
   billsOfMaterial: many(billsOfMaterial),
   bomLines: many(bomLines),
+  bomProductOutputs: many(bomProductOutputs), // BOM outputs for discrete manufacturing
+  recipeProductOutputs: many(recipeProductOutputs), // Recipe outputs for process manufacturing
   materialRequirements: many(materialRequirements), // Link to material requirements for inventory management
   formulationDetails: many(formulationDetails), // Link to formulation details for standardized specifications
   routings: many(routings),
@@ -7066,6 +7118,17 @@ export const bomProductOutputsRelations = relations(bomProductOutputs, ({ one })
   }),
   product: one(items, {
     fields: [bomProductOutputs.productId],
+    references: [items.id],
+  }),
+}));
+
+export const recipeProductOutputsRelations = relations(recipeProductOutputs, ({ one }) => ({
+  recipe: one(recipes, {
+    fields: [recipeProductOutputs.recipeId],
+    references: [recipes.id],
+  }),
+  product: one(items, {
+    fields: [recipeProductOutputs.productId],
     references: [items.id],
   }),
 }));
@@ -7457,6 +7520,12 @@ export const insertBomProductOutputSchema = createInsertSchema(bomProductOutputs
   createdAt: true,
 });
 
+export const insertRecipeProductOutputSchema = createInsertSchema(recipeProductOutputs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertRoutingSchema = createInsertSchema(routings).omit({
   id: true,
   createdAt: true,
@@ -7477,11 +7546,7 @@ export const insertMaterialRequirementSchema = createInsertSchema(materialRequir
   updatedAt: true,
 });
 
-export const insertFormulationsSchema = createInsertSchema(formulations).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+// Removed: insertFormulationsSchema - use insertFormulationSchema instead
 
 export const insertForecastSchema = createInsertSchema(forecasts).omit({
   id: true,
@@ -7547,6 +7612,9 @@ export type InsertBomMaterialRequirement = z.infer<typeof insertBomMaterialRequi
 export type BomProductOutput = typeof bomProductOutputs.$inferSelect;
 export type InsertBomProductOutput = z.infer<typeof insertBomProductOutputSchema>;
 
+export type RecipeProductOutput = typeof recipeProductOutputs.$inferSelect;
+export type InsertRecipeProductOutput = z.infer<typeof insertRecipeProductOutputSchema>;
+
 export type Routing = typeof routings.$inferSelect;
 export type InsertRouting = z.infer<typeof insertRoutingSchema>;
 
@@ -7555,9 +7623,6 @@ export type InsertRoutingOperation = z.infer<typeof insertRoutingOperationSchema
 
 export type MaterialRequirement = typeof materialRequirements.$inferSelect;
 export type InsertMaterialRequirement = z.infer<typeof insertMaterialRequirementSchema>;
-
-export type Formulation = typeof formulations.$inferSelect;
-export type InsertFormulation = z.infer<typeof insertFormulationsSchema>;
 
 export type Forecast = typeof forecasts.$inferSelect;
 export type InsertForecast = z.infer<typeof insertForecastSchema>;

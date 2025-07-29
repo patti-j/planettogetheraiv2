@@ -1,6 +1,6 @@
 import { 
   plants, capabilities, resources, plantResources, productionOrders, plannedOrders, discreteOperations, discreteOperationPhases, discreteOperationPhaseResourceRequirements, productionVersionPhaseMaterialRequirements, processOperations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
-  recipes, recipePhases, recipeFormulas, vendors, customers, productionVersions, formulations, formulationDetails, productionVersionPhaseFormulationDetails, materialRequirements,
+  recipes, recipePhases, recipeFormulas, recipeProductOutputs, vendors, customers, productionVersions, formulations, formulationDetails, productionVersionPhaseFormulationDetails, materialRequirements,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
   capacityPlanningScenarios, staffingPlans, shiftPlans, equipmentPlans, capacityProjections,
@@ -10,7 +10,7 @@ import {
   stockItems, stockTransactions, stockBalances, demandForecasts, demandDrivers, demandHistory, stockOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
   type Plant, type Capability, type Resource, type PlantResource, type ProductionOrder, type PlannedOrder, type DiscreteOperation, type DiscreteOperationPhase, type DiscreteOperationPhaseResourceRequirement, type ProductionVersionPhaseMaterialRequirement, type ProcessOperation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
-  type Recipe, type RecipePhase, type RecipeFormula, type Vendor, type Customer, type ProductionVersion, type Formulation, type FormulationDetail, type ProductionVersionPhaseFormulationDetail, type MaterialRequirement,
+  type Recipe, type RecipePhase, type RecipeFormula, type RecipeProductOutput, type Vendor, type Customer, type ProductionVersion, type Formulation, type FormulationDetail, type ProductionVersionPhaseFormulationDetail, type MaterialRequirement,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
   type CapacityPlanningScenario, type StaffingPlan, type ShiftPlan, type EquipmentPlan, type CapacityProjection,
@@ -21,7 +21,7 @@ import {
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
   type InsertPlant, type InsertCapability, type InsertResource, type InsertPlantResource, type InsertProductionOrder, type InsertPlannedOrder, 
   type InsertDiscreteOperation, type InsertDiscreteOperationPhase, type InsertDiscreteOperationPhaseResourceRequirement, type InsertProductionVersionPhaseMaterialRequirement, type InsertProcessOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
-  type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertVendor, type InsertCustomer, type InsertProductionVersion, type InsertFormulation, type InsertFormulationDetail, type InsertProductionVersionPhaseFormulationDetail, type InsertMaterialRequirement,
+  type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertRecipeProductOutput, type InsertVendor, type InsertCustomer, type InsertProductionVersion, type InsertFormulation, type InsertFormulationDetail, type InsertProductionVersionPhaseFormulationDetail, type InsertMaterialRequirement,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
   type InsertCapacityPlanningScenario, type InsertStaffingPlan, type InsertShiftPlan, type InsertEquipmentPlan, type InsertCapacityProjection,
@@ -1221,6 +1221,13 @@ export interface IStorage {
   createRecipeFormula(formula: InsertRecipeFormula): Promise<RecipeFormula>;
   updateRecipeFormula(id: number, formula: Partial<InsertRecipeFormula>): Promise<RecipeFormula | undefined>;
   deleteRecipeFormula(id: number): Promise<boolean>;
+
+  // Recipe Product Outputs
+  getRecipeProductOutputs(recipeId?: number): Promise<RecipeProductOutput[]>;
+  getRecipeProductOutput(id: number): Promise<RecipeProductOutput | undefined>;
+  createRecipeProductOutput(output: InsertRecipeProductOutput): Promise<RecipeProductOutput>;
+  updateRecipeProductOutput(id: number, output: Partial<InsertRecipeProductOutput>): Promise<RecipeProductOutput | undefined>;
+  deleteRecipeProductOutput(id: number): Promise<boolean>;
 
   // Recipe Equipment
   getRecipeEquipment(recipeId?: number, phaseId?: number): Promise<RecipeEquipment[]>;
@@ -10766,6 +10773,39 @@ export class DatabaseStorage implements IStorage {
 
   async deleteRecipeFormula(id: number): Promise<boolean> {
     const result = await db.delete(recipeFormulas).where(eq(recipeFormulas.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Recipe Product Outputs
+  async getRecipeProductOutputs(recipeId?: number): Promise<RecipeProductOutput[]> {
+    if (recipeId) {
+      return await db.select().from(recipeProductOutputs)
+        .where(eq(recipeProductOutputs.recipeId, recipeId))
+        .orderBy(recipeProductOutputs.sortOrder, recipeProductOutputs.id);
+    }
+    return await db.select().from(recipeProductOutputs).orderBy(recipeProductOutputs.sortOrder, recipeProductOutputs.id);
+  }
+
+  async getRecipeProductOutput(id: number): Promise<RecipeProductOutput | undefined> {
+    const [output] = await db.select().from(recipeProductOutputs).where(eq(recipeProductOutputs.id, id));
+    return output || undefined;
+  }
+
+  async createRecipeProductOutput(output: InsertRecipeProductOutput): Promise<RecipeProductOutput> {
+    const [newOutput] = await db.insert(recipeProductOutputs).values(output).returning();
+    return newOutput;
+  }
+
+  async updateRecipeProductOutput(id: number, output: Partial<InsertRecipeProductOutput>): Promise<RecipeProductOutput | undefined> {
+    const [updated] = await db.update(recipeProductOutputs)
+      .set({ ...output, updatedAt: new Date() })
+      .where(eq(recipeProductOutputs.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteRecipeProductOutput(id: number): Promise<boolean> {
+    const result = await db.delete(recipeProductOutputs).where(eq(recipeProductOutputs.id, id));
     return result.rowCount > 0;
   }
 

@@ -46,7 +46,7 @@ import {
   insertStrategyDocumentSchema, insertDevelopmentTaskSchema, insertTestSuiteSchema, insertTestCaseSchema, insertArchitectureComponentSchema,
   insertApiIntegrationSchema, insertApiMappingSchema, insertApiTestSchema, insertApiCredentialSchema, insertApiAuditLogSchema,
   insertSchedulingHistorySchema, insertSchedulingResultSchema, insertAlgorithmPerformanceSchema,
-  insertRecipeSchema, insertRecipePhaseSchema, insertRecipeFormulaSchema, insertProductionVersionSchema,
+  insertRecipeSchema, insertRecipePhaseSchema, insertRecipeFormulaSchema, insertRecipeProductOutputSchema, insertProductionVersionSchema,
   insertVendorSchema, insertCustomerSchema, insertFormulationSchema, insertFormulationDetailSchema, insertProductionVersionPhaseFormulationDetailSchema, insertProductionVersionPhaseMaterialRequirementSchema, insertMaterialRequirementSchema,
   insertOptimizationScopeConfigSchema, insertOptimizationRunSchema,
   insertOptimizationProfileSchema, insertProfileUsageHistorySchema,
@@ -16531,6 +16531,93 @@ Response must be valid JSON:
     } catch (error) {
       console.error("Error creating recipe formula:", error);
       res.status(500).json({ error: "Failed to create recipe formula" });
+    }
+  });
+
+  // Recipe Product Outputs
+  app.get("/api/recipe-product-outputs", async (req, res) => {
+    try {
+      const recipeId = req.query.recipeId ? parseInt(req.query.recipeId as string) : undefined;
+      
+      const outputs = await storage.getRecipeProductOutputs(recipeId);
+      res.json(outputs);
+    } catch (error) {
+      console.error("Error fetching recipe product outputs:", error);
+      res.status(500).json({ error: "Failed to fetch recipe product outputs" });
+    }
+  });
+
+  app.get("/api/recipe-product-outputs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid recipe product output ID" });
+      }
+
+      const output = await storage.getRecipeProductOutput(id);
+      if (!output) {
+        return res.status(404).json({ error: "Recipe product output not found" });
+      }
+      res.json(output);
+    } catch (error) {
+      console.error("Error fetching recipe product output:", error);
+      res.status(500).json({ error: "Failed to fetch recipe product output" });
+    }
+  });
+
+  app.post("/api/recipe-product-outputs", async (req, res) => {
+    try {
+      const validation = insertRecipeProductOutputSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid recipe product output data", details: validation.error.errors });
+      }
+
+      const output = await storage.createRecipeProductOutput(validation.data);
+      res.status(201).json(output);
+    } catch (error) {
+      console.error("Error creating recipe product output:", error);
+      res.status(500).json({ error: "Failed to create recipe product output" });
+    }
+  });
+
+  app.put("/api/recipe-product-outputs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid recipe product output ID" });
+      }
+
+      const validation = insertRecipeProductOutputSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid recipe product output data", details: validation.error.errors });
+      }
+
+      const output = await storage.updateRecipeProductOutput(id, validation.data);
+      if (!output) {
+        return res.status(404).json({ error: "Recipe product output not found" });
+      }
+      res.json(output);
+    } catch (error) {
+      console.error("Error updating recipe product output:", error);
+      res.status(500).json({ error: "Failed to update recipe product output" });
+    }
+  });
+
+  app.delete("/api/recipe-product-outputs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid recipe product output ID" });
+      }
+
+      const success = await storage.deleteRecipeProductOutput(id);
+      if (!success) {
+        return res.status(404).json({ error: "Recipe product output not found" });
+      }
+      res.status(200).json({ message: "Recipe product output deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting recipe product output:", error);
+      res.status(500).json({ error: "Failed to delete recipe product output" });
     }
   });
 
