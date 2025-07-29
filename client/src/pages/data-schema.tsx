@@ -612,13 +612,24 @@ function DataSchemaViewContent() {
   // Handler for card selection via flag icon
   const handleCardSelection = useCallback((tableName: string) => {
     setSelectedCards(prev => {
-      if (prev.includes(tableName)) {
-        return prev.filter(name => name !== tableName);
-      } else {
-        return [...prev, tableName];
-      }
+      const newSelection = prev.includes(tableName) 
+        ? prev.filter(name => name !== tableName)
+        : [...prev, tableName];
+      
+      // Update node data without changing positions by directly updating the existing nodes
+      setNodes((nds) => 
+        nds.map((node) => ({
+          ...node,
+          data: {
+            ...node.data,
+            isSelected: newSelection.includes(node.id)
+          }
+        }))
+      );
+      
+      return newSelection;
     });
-  }, []);
+  }, [setNodes]);
   
   // Initialize showLegend state from localStorage, default to true if not set
   const [showLegend, setShowLegend] = useState(() => {
@@ -1187,7 +1198,7 @@ function DataSchemaViewContent() {
     }
 
     return { nodes: flowNodes, edges: flowEdges };
-  }, [filteredTables, layoutType, showColumns, showRelationships, focusMode, focusTable, schemaData, getConnectedTables, simplifyLines, selectedCards, handleCardSelection]);
+  }, [filteredTables, layoutType, showColumns, showRelationships, focusMode, focusTable, schemaData, getConnectedTables, simplifyLines]);
 
   const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
