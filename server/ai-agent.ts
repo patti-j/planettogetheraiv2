@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
 import { storage } from "./storage";
-import { InsertJob, InsertOperation, InsertResource } from "@shared/schema";
+import { InsertProductionOrder, InsertDiscreteOperation, InsertProcessOperation, InsertResource } from "@shared/schema";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -134,7 +134,7 @@ Please analyze and optimize the shift schedule to improve efficiency, reduce cos
     console.error("Error processing shift AI request:", error);
     return {
       success: false,
-      message: "Failed to process AI shift request: " + error.message
+      message: "Failed to process AI shift request: " + (error instanceof Error ? error.message : String(error))
     };
   }
 }
@@ -232,7 +232,7 @@ Focus on practical, implementable assignments that can be created immediately.`;
             resourceId: assignment.resourceId,
             shiftTemplateId: assignment.shiftTemplateId,
             effectiveDate: new Date(assignment.effectiveDate),
-            endDate: assignment.endDate ? new Date(assignment.endDate) : null,
+            endDate: assignment.endDate ? new Date(assignment.endDate) : undefined,
             assignedBy: assignment.assignedBy || 6,
             notes: assignment.notes || '',
             isTemporary: assignment.isTemporary || false,
@@ -260,7 +260,7 @@ Focus on practical, implementable assignments that can be created immediately.`;
     console.error("Error processing shift assignment AI request:", error);
     return {
       success: false,
-      message: "Failed to process AI shift assignment request: " + error.message
+      message: "Failed to process AI shift assignment request: " + (error instanceof Error ? error.message : String(error))
     };
   }
 }
@@ -277,7 +277,7 @@ export async function processAICommand(command: string, attachments?: Attachment
       resourceCount: context.resources.length,
       capabilityCount: context.capabilities.length,
       plantCount: context.plants.length,
-      allJobs: context.jobs.map(j => ({ id: j.id, name: j.name, status: j.status, customer: j.customer, priority: j.priority, dueDate: j.dueDate })),
+      allJobs: context.jobs.map(j => ({ id: j.id, name: j.name, status: j.status, customerId: j.customerId, priority: j.priority, dueDate: j.dueDate })),
       allResources: context.resources.map(r => ({ id: r.id, name: r.name, type: r.type, status: r.status })),
       allCapabilities: context.capabilities.map(c => ({ id: c.id, name: c.name, description: c.description })),
       allPlants: context.plants.map(p => ({ id: p.id, name: p.name, address: p.address, timezone: p.timezone, isActive: p.isActive }))
@@ -542,7 +542,7 @@ async function executeAction(action: string, parameters: any, message: string, c
                 data: allJobs.map(job => ({
                   "Job ID": job.id,
                   "Job Name": job.name,
-                  "Customer": job.customer,
+                  "Customer": job.customerId,
                   "Priority": job.priority,
                   "Status": job.status,
                   "Due Date": job.dueDate ? new Date(job.dueDate).toLocaleDateString() : 'Not set'
@@ -557,7 +557,7 @@ async function executeAction(action: string, parameters: any, message: string, c
         
         return {
           success: true,
-          message: message || `Here are the active jobs in our system:\n\n${allJobs.map(job => `• ${job.name} (ID: ${job.id})\n  Customer: ${job.customer}\n  Priority: ${job.priority}\n  Status: ${job.status}\n  Due: ${job.dueDate ? new Date(job.dueDate).toLocaleDateString() : 'Not set'}`).join('\n\n')}`,
+          message: message || `Here are the active jobs in our system:\n\n${allJobs.map(job => `• ${job.name} (ID: ${job.id})\n  Customer: ${job.customerId || 'Not specified'}\n  Priority: ${job.priority}\n  Status: ${job.status}\n  Due: ${job.dueDate ? new Date(job.dueDate).toLocaleDateString() : 'Not set'}`).join('\n\n')}`,
           data: allJobs,
           actions: ["LIST_JOBS"]
         };
@@ -703,10 +703,10 @@ async function executeAction(action: string, parameters: any, message: string, c
           }
         }
         
-        const jobData: InsertJob = {
+        const jobData: InsertProductionOrder = {
           name: parameters.name || "New Job",
           description: parameters.description || null,
-          customer: customerName || "Unknown Customer",
+          customerId: customerName ? parseInt(customerName) || null : null,
           plantId: parameters.plantId || 1, // Default to plant 1
           priority: parameters.priority || "medium",
           dueDate: parameters.dueDate ? new Date(parameters.dueDate) : null,
@@ -764,7 +764,7 @@ async function executeAction(action: string, parameters: any, message: string, c
 
       case "ASSIGN_OPERATION":
         const assignedOperation = await storage.updateOperation(parameters.operationId, {
-          assignedResourceId: parameters.resourceId
+          resourceId: parameters.resourceId
         });
         return {
           success: true,
@@ -853,7 +853,7 @@ async function executeAction(action: string, parameters: any, message: string, c
         } else {
           analysisMessage += `⚠️ ${lateJobs.length} job(s) are overdue:\n`;
           lateJobs.forEach(job => {
-            analysisMessage += `• ${job.name} (${job.customer}) - ${job.daysLate} days late\n`;
+            analysisMessage += `• ${job.name} (Customer ID: ${job.customerId || 'Unknown'}) - ${job.daysLate} days late\n`;
             analysisMessage += `  Due: ${new Date(job.dueDate).toLocaleDateString()}\n`;
             analysisMessage += `  Operations: ${job.operations.length} total\n`;
           });
@@ -1790,14 +1790,6 @@ async function executeAction(action: string, parameters: any, message: string, c
             context: tourContext,
             tourInitiated: true
           },
-          frontendAction: {
-            type: "START_TOUR",
-            parameters: {
-              roleId: finalRoleId,
-              voiceEnabled,
-              context: tourContext
-            }
-          },
           actions: ["START_TOUR"]
         };
 
@@ -1828,14 +1820,6 @@ async function executeAction(action: string, parameters: any, message: string, c
             tour: tourContent,
             created: true,
             customTour: true
-          },
-          frontendAction: {
-            type: "START_CUSTOM_TOUR",
-            parameters: {
-              tourContent,
-              voiceEnabled: voiceEnabledForTour,
-              targetRoles
-            }
           },
           actions: ["CREATE_TOUR", "START_CUSTOM_TOUR"]
         };
@@ -1879,10 +1863,10 @@ async function calculateCustomMetric(parameters: any, context?: SystemContext) {
     "resource_utilization_by_type": () => {
       if (!resources || !operations) return {};
       
-      const utilization = {};
-      resources.forEach(resource => {
-        const resourceOps = operations.filter(op => op.assignedResourceId === resource.id);
-        const totalHours = resourceOps.reduce((sum, op) => sum + (op.duration || 0), 0);
+      const utilization: Record<string, any> = {};
+      resources.forEach((resource: any) => {
+        const resourceOps = operations.filter((op: any) => op.assignedResourceId === resource.id);
+        const totalHours = resourceOps.reduce((sum: number, op: any) => sum + (op.duration || 0), 0);
         const workingHours = 8 * 5; // 40 hours per week
         
         if (!utilization[resource.type]) {
@@ -1892,7 +1876,7 @@ async function calculateCustomMetric(parameters: any, context?: SystemContext) {
         utilization[resource.type].resourceCount += 1;
       });
       
-      Object.keys(utilization).forEach(type => {
+      Object.keys(utilization).forEach((type: string) => {
         const data = utilization[type];
         utilization[type].averageUtilization = Math.round((data.totalHours / (data.resourceCount * workingHours)) * 100);
       });
@@ -1903,8 +1887,8 @@ async function calculateCustomMetric(parameters: any, context?: SystemContext) {
     "jobs_by_priority": () => {
       if (!jobs) return {};
       
-      const priorityCount = {};
-      jobs.forEach(job => {
+      const priorityCount: Record<string, number> = {};
+      jobs.forEach((job: any) => {
         const priority = job.priority || 'medium';
         priorityCount[priority] = (priorityCount[priority] || 0) + 1;
       });
@@ -1914,21 +1898,21 @@ async function calculateCustomMetric(parameters: any, context?: SystemContext) {
     
     "completion_rate": () => {
       if (!jobs || jobs.length === 0) return 0;
-      const completedJobs = jobs.filter(j => j.status === "completed").length;
+      const completedJobs = jobs.filter((j: any) => j.status === "completed").length;
       return Math.round((completedJobs / jobs.length) * 100);
     },
     
     "average_lead_time": () => {
       if (!jobs || !operations) return 0;
       
-      const completedJobs = jobs.filter(j => j.status === "completed");
+      const completedJobs = jobs.filter((j: any) => j.status === "completed");
       if (completedJobs.length === 0) return 0;
       
-      const totalLeadTime = completedJobs.reduce((sum, job) => {
-        const jobOps = operations.filter(op => op.jobId === job.id);
-        const firstOpStart = jobOps.reduce((earliest, op) => 
+      const totalLeadTime = completedJobs.reduce((sum: number, job: any) => {
+        const jobOps = operations.filter((op: any) => op.jobId === job.id);
+        const firstOpStart = jobOps.reduce((earliest: any, op: any) => 
           !earliest || (op.startTime && new Date(op.startTime) < new Date(earliest)) ? op.startTime : earliest, null);
-        const lastOpEnd = jobOps.reduce((latest, op) => 
+        const lastOpEnd = jobOps.reduce((latest: any, op: any) => 
           !latest || (op.endTime && new Date(op.endTime) > new Date(latest)) ? op.endTime : latest, null);
         
         if (firstOpStart && lastOpEnd) {
@@ -1943,8 +1927,9 @@ async function calculateCustomMetric(parameters: any, context?: SystemContext) {
   
   // Check if the metric name matches a predefined calculation
   const metricName = parameters.metricName || parameters.name;
-  if (metricName && calculations[metricName.toLowerCase().replace(/\s+/g, '_')]) {
-    const result = calculations[metricName.toLowerCase().replace(/\s+/g, '_')]();
+  const calculationKey = metricName?.toLowerCase().replace(/\s+/g, '_');
+  if (metricName && calculationKey && (calculations as any)[calculationKey]) {
+    const result = (calculations as any)[calculationKey]();
     return {
       metricName,
       value: result,
@@ -2284,7 +2269,7 @@ function generateBarChartData(parameters: any, context: any) {
   if (parameters.dataType === "jobs_by_customer" || parameters.title?.toLowerCase().includes("customer")) {
     const customerCounts = {};
     jobs.forEach(job => {
-      const customer = job.customer || "Unknown";
+      const customer = job.customerId ? `Customer ${job.customerId}` : "Unknown";
       customerCounts[customer] = (customerCounts[customer] || 0) + 1;
     });
     
@@ -2492,7 +2477,7 @@ function generateWidgetData(type: string, config: any, context?: SystemContext) 
         return jobs?.slice(0, 10).map(job => ({
           id: job.id,
           name: job.name,
-          customer: job.customer,
+          customerId: job.customerId,
           priority: job.priority,
           status: job.status,
           dueDate: job.dueDate
