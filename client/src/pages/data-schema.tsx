@@ -1954,32 +1954,7 @@ function DataSchemaViewContent() {
               </Tooltip>
             </TooltipProvider>
 
-            {/* Smart Layout Button */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      console.log('Smart Layout clicked');
-                      if (typeof handleSmartLayout === 'function') {
-                        handleSmartLayout();
-                      } else {
-                        console.error('handleSmartLayout is not a function');
-                      }
-                    }}
-                    className="flex items-center gap-2"
-                  >
-                    <Zap className="w-4 h-4" />
-                    <span className="hidden sm:inline">Smart Layout</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Reorganize tables to minimize relationship confusion and maximize visibility</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+
 
             {/* Fit to View Button */}
             <TooltipProvider>
@@ -2469,6 +2444,31 @@ function DataSchemaViewContent() {
 
           {/* Custom Control Buttons */}
           <Panel position="top-right" className="flex gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      console.log('Smart Layout clicked');
+                      if (typeof handleSmartLayout === 'function') {
+                        handleSmartLayout();
+                      } else {
+                        console.error('handleSmartLayout is not a function');
+                      }
+                    }}
+                    className="bg-white/90 backdrop-blur-sm hover:bg-white"
+                  >
+                    <Zap className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Smart Layout - Reorganize tables to minimize relationship confusion and maximize visibility</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
