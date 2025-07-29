@@ -996,7 +996,7 @@ function DataSchemaViewContent() {
     const flowNodes: Node[] = filteredTables.map(table => {
       const isFocused = focusMode && table.name === focusTable;
       const isConnected = focusMode && focusTable && connectedTableNames.includes(table.name) && table.name !== focusTable;
-      const isSelected = false; // Will be updated via useEffect to preserve positions
+      const isSelected = selectedCards.includes(table.name);
       
       return {
         id: table.name,
