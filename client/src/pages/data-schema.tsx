@@ -996,7 +996,7 @@ function DataSchemaViewContent() {
     const flowNodes: Node[] = filteredTables.map(table => {
       const isFocused = focusMode && table.name === focusTable;
       const isConnected = focusMode && focusTable && connectedTableNames.includes(table.name) && table.name !== focusTable;
-      const isSelected = selectedCards.includes(table.name);
+      const isSelected = false; // Will be updated via useEffect to preserve positions
       
       return {
         id: table.name,
@@ -1192,7 +1192,7 @@ function DataSchemaViewContent() {
     }
 
     return { nodes: flowNodes, edges: flowEdges };
-  }, [filteredTables, layoutType, showColumns, showRelationships, focusMode, focusTable, schemaData, getConnectedTables, simplifyLines, selectedCards, handleCardSelection]);
+  }, [filteredTables, layoutType, showColumns, showRelationships, focusMode, focusTable, schemaData, getConnectedTables, simplifyLines]);
 
   const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
@@ -1203,18 +1203,26 @@ function DataSchemaViewContent() {
     setEdges(edges);
   }, [nodes, edges, setNodes, setEdges]);
 
-  // Update node selection when selectedCards changes
+  // Update node selection when selectedCards changes - preserve user-moved positions
   React.useEffect(() => {
     setNodes((nds) => 
       nds.map((node) => ({
         ...node,
+        // Preserve the current position (user may have moved it)
+        position: node.position,
         data: {
           ...node.data,
-          isSelected: selectedCards.includes(node.id)
+          isSelected: selectedCards.includes(node.id),
+          // Update the label with new selection state while preserving other data
+          label: <TableNode data={{ 
+            ...node.data, 
+            isSelected: selectedCards.includes(node.id), 
+            onSelect: handleCardSelection 
+          }} />
         }
       }))
     );
-  }, [selectedCards, setNodes]);
+  }, [selectedCards, setNodes, handleCardSelection]);
 
   // Auto-fit view when filters change to show all filtered tables
   useEffect(() => {
