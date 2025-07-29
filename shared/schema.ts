@@ -50,7 +50,9 @@ export const productionOrders = pgTable("production_orders", {
   orderNumber: text("order_number").notNull().unique(), // e.g., "PO-2025-001"
   name: text("name").notNull(),
   description: text("description"),
-  customer: text("customer").notNull(),
+  customerId: integer("customer_id").references(() => customers.id), // Changed from text to foreign key
+  parentOrderId: integer("parent_order_id").references(() => productionOrders.id), // For order splitting/consolidation
+  orderCategory: text("order_category").notNull().default("normal"), // normal, rework, prototype, sample
   priority: text("priority").notNull().default("medium"),
   status: text("status").notNull().default("released"), // released, in_progress, completed, cancelled
   quantity: integer("quantity").notNull().default(1),
@@ -942,9 +944,17 @@ export const resourceRequirements = pgTable("resource_requirements", {
   isOptional: boolean("is_optional").default(false), // whether this requirement is optional
   canBeShared: boolean("can_be_shared").default(false), // whether this resource can be shared with other operations
   
-  // Allocation preferences
+  // Allocation preferences and enhancements
   allocationStrategy: text("allocation_strategy").default("capability_based"), // capability_based, specific_resource, load_balanced
   preferredSkillLevel: text("preferred_skill_level").default("any"), // any, basic, intermediate, advanced, expert
+  skillLevel: text("skill_level").notNull().default("basic"), // basic, intermediate, advanced
+  certificationRequired: boolean("certification_required").default(false), // Whether certification is required
+  alternateResources: jsonb("alternate_resources").$type<{
+    resourceIds?: number[];
+    selectionCriteria?: string;
+    preferenceOrder?: number[];
+    flexibilityLevel?: "none" | "limited" | "moderate" | "high";
+  }>().default({}), // Flexible alternate resource options
   
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -1421,6 +1431,7 @@ export const insertProductionOrderSchema = createInsertSchema(productionOrders).
   actualStartDate: z.union([z.string().datetime(), z.date()]).optional(),
   actualEndDate: z.union([z.string().datetime(), z.date()]).optional(),
   releaseDate: z.union([z.string().datetime(), z.date()]).optional(),
+  customer: z.string().optional(), // Backward compatibility field
 });
 
 export const insertPlannedOrderSchema = createInsertSchema(plannedOrders).omit({
@@ -6952,6 +6963,10 @@ export const stocks = pgTable("stocks", {
   quantityOnHand: integer("quantity_on_hand").notNull().default(0),
   quantityReserved: integer("quantity_reserved").default(0), // Reserved for sales orders
   quantityAvailable: integer("quantity_available").notNull().default(0), // On hand - reserved
+  allocatedQuantity: integer("allocated_quantity").default(0), // Planned allocations
+  inTransitQuantity: integer("in_transit_quantity").default(0), // Goods in transit
+  costMethod: text("cost_method").notNull().default("FIFO"), // FIFO, LIFO, average
+  lastCountVariance: integer("last_count_variance").default(0), // Cycle counting variance
   unitCost: integer("unit_cost").default(0), // in cents - current average unit cost
   totalValue: integer("total_value").default(0), // in cents - quantity * unit cost
   minimumLevel: integer("minimum_level").default(0), // Reorder point
@@ -7058,9 +7073,17 @@ export const billsOfMaterial = pgTable("bills_of_material", {
   revision: text("revision").notNull().default("1"),
   description: text("description"),
   effectiveDate: timestamp("effective_date").notNull(),
-  expiredDate: timestamp("expired_date"),
+  obsoleteDate: timestamp("obsolete_date"), // Changed from expiredDate to obsoleteDate for change management
   bomType: text("bom_type").notNull().default("production"), // production, engineering, costing
   standardQuantity: integer("standard_quantity").notNull().default(1), // quantity this BOM produces
+  scrapFactor: numeric("scrap_factor", { precision: 5, scale: 2 }).default("0"), // Scrap factor for the BOM
+  yieldFactor: numeric("yield_factor", { precision: 5, scale: 2 }).default("100"), // Yield factor for each component
+  alternateItems: jsonb("alternate_items").$type<{
+    itemId?: number;
+    substitutionRatio?: number;
+    preferenceLevel?: number;
+    conditions?: string[];
+  }[]>().default([]), // Alternate item substitutions
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
