@@ -3961,6 +3961,112 @@ export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type FeedbackComment = typeof feedbackComments.$inferSelect;
 export type InsertFeedbackComment = z.infer<typeof insertFeedbackCommentSchema>;
 
+// Production Version Phase Product Output Junction Tables
+// Junction table linking production versions, discrete operation phases, and BOM product outputs
+export const productionVersionPhaseBomProductOutputs = pgTable("production_version_phase_bom_product_outputs", {
+  id: serial("id").primaryKey(),
+  productionVersionId: integer("production_version_id").references(() => productionVersions.id, { onDelete: "cascade" }).notNull(),
+  discreteOperationPhaseId: integer("discrete_operation_phase_id").references(() => discreteOperationPhases.id, { onDelete: "cascade" }).notNull(),
+  bomProductOutputId: integer("bom_product_output_id").references(() => bomProductOutputs.id, { onDelete: "cascade" }).notNull(),
+  phaseSpecificQuantity: numeric("phase_specific_quantity", { precision: 10, scale: 4 }),
+  phasePriority: text("phase_priority", { enum: ["low", "medium", "high", "critical"] }).default("medium"),
+  timingConstraints: jsonb("timing_constraints").$type<{
+    startOffset?: number;
+    endOffset?: number;
+    duration?: number;
+    flexibility?: "fixed" | "flexible" | "preferred";
+  }>(),
+  productionTiming: text("production_timing").default("end_of_phase"), // start_of_phase, during_phase, end_of_phase
+  qualityRequirements: jsonb("quality_requirements").$type<{
+    required_tests?: string[];
+    quality_checkpoints?: string[];
+    acceptance_criteria?: string[];
+  }>(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  uniqueProductionVersionPhaseBomOutput: unique().on(table.productionVersionId, table.discreteOperationPhaseId, table.bomProductOutputId),
+}));
+
+// Junction table linking production versions, recipe phases, and recipe product outputs
+export const productionVersionPhaseRecipeProductOutputs = pgTable("production_version_phase_recipe_product_outputs", {
+  id: serial("id").primaryKey(),
+  productionVersionId: integer("production_version_id").references(() => productionVersions.id, { onDelete: "cascade" }).notNull(),
+  recipePhaseId: integer("recipe_phase_id").references(() => recipePhases.id, { onDelete: "cascade" }).notNull(),
+  recipeProductOutputId: integer("recipe_product_output_id").references(() => recipeProductOutputs.id, { onDelete: "cascade" }).notNull(),
+  phaseSpecificQuantity: numeric("phase_specific_quantity", { precision: 10, scale: 4 }),
+  phasePriority: text("phase_priority", { enum: ["low", "medium", "high", "critical"] }).default("medium"),
+  timingConstraints: jsonb("timing_constraints").$type<{
+    startOffset?: number;
+    endOffset?: number;
+    duration?: number;
+    flexibility?: "fixed" | "flexible" | "preferred";
+  }>(),
+  productionTiming: text("production_timing").default("end_of_phase"), // start_of_phase, during_phase, end_of_phase
+  qualityRequirements: jsonb("quality_requirements").$type<{
+    required_tests?: string[];
+    quality_checkpoints?: string[];
+    acceptance_criteria?: string[];
+  }>(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  uniqueProductionVersionPhaseRecipeOutput: unique().on(table.productionVersionId, table.recipePhaseId, table.recipeProductOutputId),
+}));
+
+// Insert schemas for product output junction tables
+export const insertProductionVersionPhaseBomProductOutputSchema = createInsertSchema(productionVersionPhaseBomProductOutputs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertProductionVersionPhaseRecipeProductOutputSchema = createInsertSchema(productionVersionPhaseRecipeProductOutputs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Types for product output junction tables
+export type ProductionVersionPhaseBomProductOutput = typeof productionVersionPhaseBomProductOutputs.$inferSelect;
+export type InsertProductionVersionPhaseBomProductOutput = z.infer<typeof insertProductionVersionPhaseBomProductOutputSchema>;
+
+export type ProductionVersionPhaseRecipeProductOutput = typeof productionVersionPhaseRecipeProductOutputs.$inferSelect;
+export type InsertProductionVersionPhaseRecipeProductOutput = z.infer<typeof insertProductionVersionPhaseRecipeProductOutputSchema>;
+
+// Relations for production version phase product output junction tables
+export const productionVersionPhaseBomProductOutputsRelations = relations(productionVersionPhaseBomProductOutputs, ({ one }) => ({
+  productionVersion: one(productionVersions, {
+    fields: [productionVersionPhaseBomProductOutputs.productionVersionId],
+    references: [productionVersions.id],
+  }),
+  discreteOperationPhase: one(discreteOperationPhases, {
+    fields: [productionVersionPhaseBomProductOutputs.discreteOperationPhaseId],
+    references: [discreteOperationPhases.id],
+  }),
+  bomProductOutput: one(bomProductOutputs, {
+    fields: [productionVersionPhaseBomProductOutputs.bomProductOutputId],
+    references: [bomProductOutputs.id],
+  }),
+}));
+
+export const productionVersionPhaseRecipeProductOutputsRelations = relations(productionVersionPhaseRecipeProductOutputs, ({ one }) => ({
+  productionVersion: one(productionVersions, {
+    fields: [productionVersionPhaseRecipeProductOutputs.productionVersionId],
+    references: [productionVersions.id],
+  }),
+  recipePhase: one(recipePhases, {
+    fields: [productionVersionPhaseRecipeProductOutputs.recipePhaseId],
+    references: [recipePhases.id],
+  }),
+  recipeProductOutput: one(recipeProductOutputs, {
+    fields: [productionVersionPhaseRecipeProductOutputs.recipeProductOutputId],
+    references: [recipeProductOutputs.id],
+  }),
+}));
+
 // Onboarding schemas
 export const insertCompanyOnboardingSchema = createInsertSchema(companyOnboarding).omit({
   id: true,
@@ -6188,6 +6294,8 @@ export const recipePhasesRelations = relations(recipePhases, ({ one, many }) => 
   formulas: many(recipeFormulas),
   resourceRequirements: many(resourceRequirements), // One-to-many with resource requirements
   formulationDetailAssignments: many(productionVersionPhaseFormulationDetails), // Junction table for phase-specific formulation details
+  // Junction table links for recipe product outputs within production versions
+  recipeProductOutputLinks: many(productionVersionPhaseRecipeProductOutputs),
   predecessorRelationships: many(recipePhaseRelationships, {
     relationName: "predecessor"
   }),
@@ -6656,6 +6764,7 @@ export const bomProductOutputs = pgTable("bom_product_outputs", {
   sortOrder: integer("sort_order").default(1), // Display order
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Material Requirements - detailed requirements for formulations in process manufacturing OR bills of material in discrete manufacturing
@@ -7203,6 +7312,8 @@ export const productionVersionsRelations = relations(productionVersions, ({ one,
   formulations: many(formulations), // One-to-many: one production version can have many formulations
   phaseFormulationDetailAssignments: many(productionVersionPhaseFormulationDetails), // Junction table for phase-specific formulation details
   phaseMaterialRequirementAssignments: many(productionVersionPhaseMaterialRequirements), // Junction table for phase-specific material requirements
+  phaseBomProductOutputAssignments: many(productionVersionPhaseBomProductOutputs), // Junction table for discrete phase-specific product outputs
+  phaseRecipeProductOutputAssignments: many(productionVersionPhaseRecipeProductOutputs), // Junction table for process phase-specific product outputs
 }));
 
 export const plannedOrdersRelations = relations(plannedOrders, ({ one, many }) => ({
@@ -7255,6 +7366,8 @@ export const discreteOperationPhasesRelations = relations(discreteOperationPhase
   resourceRequirementLinks: many(discreteOperationPhaseResourceRequirements),
   // Junction table links for material requirements within production versions
   materialRequirementLinks: many(productionVersionPhaseMaterialRequirements),
+  // Junction table links for BOM product outputs within production versions
+  bomProductOutputLinks: many(productionVersionPhaseBomProductOutputs),
   predecessorRelationships: many(discreteOperationPhaseRelationships, {
     relationName: "predecessor"
   }),

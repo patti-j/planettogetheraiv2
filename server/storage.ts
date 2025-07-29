@@ -1,6 +1,7 @@
 import { 
   plants, capabilities, resources, plantResources, productionOrders, plannedOrders, discreteOperations, discreteOperationPhases, discreteOperationPhaseResourceRequirements, productionVersionPhaseMaterialRequirements, processOperations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
   recipes, recipePhases, recipeFormulas, recipeProductOutputs, vendors, customers, productionVersions, formulations, formulationDetails, productionVersionPhaseFormulationDetails, materialRequirements,
+  productionVersionPhaseBomProductOutputs, productionVersionPhaseRecipeProductOutputs, bomProductOutputs,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
   capacityPlanningScenarios, staffingPlans, shiftPlans, equipmentPlans, capacityProjections,
@@ -11,6 +12,7 @@ import {
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
   type Plant, type Capability, type Resource, type PlantResource, type ProductionOrder, type PlannedOrder, type DiscreteOperation, type DiscreteOperationPhase, type DiscreteOperationPhaseResourceRequirement, type ProductionVersionPhaseMaterialRequirement, type ProcessOperation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
   type Recipe, type RecipePhase, type RecipeFormula, type RecipeProductOutput, type Vendor, type Customer, type ProductionVersion, type Formulation, type FormulationDetail, type ProductionVersionPhaseFormulationDetail, type MaterialRequirement,
+  type ProductionVersionPhaseBomProductOutput, type ProductionVersionPhaseRecipeProductOutput, type BomProductOutput,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
   type CapacityPlanningScenario, type StaffingPlan, type ShiftPlan, type EquipmentPlan, type CapacityProjection,
@@ -22,6 +24,7 @@ import {
   type InsertPlant, type InsertCapability, type InsertResource, type InsertPlantResource, type InsertProductionOrder, type InsertPlannedOrder, 
   type InsertDiscreteOperation, type InsertDiscreteOperationPhase, type InsertDiscreteOperationPhaseResourceRequirement, type InsertProductionVersionPhaseMaterialRequirement, type InsertProcessOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
   type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertRecipeProductOutput, type InsertVendor, type InsertCustomer, type InsertProductionVersion, type InsertFormulation, type InsertFormulationDetail, type InsertProductionVersionPhaseFormulationDetail, type InsertMaterialRequirement,
+  type InsertProductionVersionPhaseBomProductOutput, type InsertProductionVersionPhaseRecipeProductOutput, type InsertBomProductOutput,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
   type InsertCapacityPlanningScenario, type InsertStaffingPlan, type InsertShiftPlan, type InsertEquipmentPlan, type InsertCapacityProjection,
@@ -1298,6 +1301,34 @@ export interface IStorage {
   getMaterialRequirementsByFormulation(formulationId: number): Promise<MaterialRequirement[]>;
   getMaterialRequirementsByBom(bomId: number): Promise<MaterialRequirement[]>;
   getMaterialRequirementsByItem(itemId: number): Promise<MaterialRequirement[]>;
+
+  // Production Version Phase BOM Product Output Junction Table
+  getProductionVersionPhaseBomProductOutputs(): Promise<ProductionVersionPhaseBomProductOutput[]>;
+  getProductionVersionPhaseBomProductOutput(id: number): Promise<ProductionVersionPhaseBomProductOutput | undefined>;
+  createProductionVersionPhaseBomProductOutput(assignment: InsertProductionVersionPhaseBomProductOutput): Promise<ProductionVersionPhaseBomProductOutput>;
+  updateProductionVersionPhaseBomProductOutput(id: number, assignment: Partial<InsertProductionVersionPhaseBomProductOutput>): Promise<ProductionVersionPhaseBomProductOutput | undefined>;
+  deleteProductionVersionPhaseBomProductOutput(id: number): Promise<boolean>;
+  getProductionVersionPhaseBomProductOutputsByProductionVersion(productionVersionId: number): Promise<ProductionVersionPhaseBomProductOutput[]>;
+  getProductionVersionPhaseBomProductOutputsByPhase(discreteOperationPhaseId: number): Promise<ProductionVersionPhaseBomProductOutput[]>;
+  getProductionVersionPhaseBomProductOutputsByBomOutput(bomProductOutputId: number): Promise<ProductionVersionPhaseBomProductOutput[]>;
+
+  // Production Version Phase Recipe Product Output Junction Table
+  getProductionVersionPhaseRecipeProductOutputs(): Promise<ProductionVersionPhaseRecipeProductOutput[]>;
+  getProductionVersionPhaseRecipeProductOutput(id: number): Promise<ProductionVersionPhaseRecipeProductOutput | undefined>;
+  createProductionVersionPhaseRecipeProductOutput(assignment: InsertProductionVersionPhaseRecipeProductOutput): Promise<ProductionVersionPhaseRecipeProductOutput>;
+  updateProductionVersionPhaseRecipeProductOutput(id: number, assignment: Partial<InsertProductionVersionPhaseRecipeProductOutput>): Promise<ProductionVersionPhaseRecipeProductOutput | undefined>;
+  deleteProductionVersionPhaseRecipeProductOutput(id: number): Promise<boolean>;
+  getProductionVersionPhaseRecipeProductOutputsByProductionVersion(productionVersionId: number): Promise<ProductionVersionPhaseRecipeProductOutput[]>;
+  getProductionVersionPhaseRecipeProductOutputsByPhase(recipePhaseId: number): Promise<ProductionVersionPhaseRecipeProductOutput[]>;
+  getProductionVersionPhaseRecipeProductOutputsByRecipeOutput(recipeProductOutputId: number): Promise<ProductionVersionPhaseRecipeProductOutput[]>;
+
+    // BOM Product Outputs  
+  getBomProductOutputs(): Promise<BomProductOutput[]>;
+  getBomProductOutput(id: number): Promise<BomProductOutput | undefined>;
+  createBomProductOutput(output: InsertBomProductOutput): Promise<BomProductOutput>;
+  updateBomProductOutput(id: number, output: Partial<InsertBomProductOutput>): Promise<BomProductOutput | undefined>;
+  deleteBomProductOutput(id: number): Promise<boolean>;
+  getBomProductOutputsByBom(bomId: number): Promise<BomProductOutput[]>;
 
   // Customers
   getCustomers(): Promise<Customer[]>;
@@ -11201,6 +11232,132 @@ export class DatabaseStorage implements IStorage {
       .from(materialRequirements)
       .where(eq(materialRequirements.itemId, itemId))
       .orderBy(materialRequirements.requirementName);
+  }
+
+  // Production Version Phase BOM Product Output Junction Table
+  async getProductionVersionPhaseBomProductOutputs(): Promise<ProductionVersionPhaseBomProductOutput[]> {
+    return await db.select().from(productionVersionPhaseBomProductOutputs);
+  }
+
+  async getProductionVersionPhaseBomProductOutput(id: number): Promise<ProductionVersionPhaseBomProductOutput | undefined> {
+    const [result] = await db.select().from(productionVersionPhaseBomProductOutputs)
+      .where(eq(productionVersionPhaseBomProductOutputs.id, id));
+    return result || undefined;
+  }
+
+  async createProductionVersionPhaseBomProductOutput(assignment: InsertProductionVersionPhaseBomProductOutput): Promise<ProductionVersionPhaseBomProductOutput> {
+    const [newAssignment] = await db.insert(productionVersionPhaseBomProductOutputs).values(assignment).returning();
+    return newAssignment;
+  }
+
+  async updateProductionVersionPhaseBomProductOutput(id: number, assignment: Partial<InsertProductionVersionPhaseBomProductOutput>): Promise<ProductionVersionPhaseBomProductOutput | undefined> {
+    const [updated] = await db.update(productionVersionPhaseBomProductOutputs)
+      .set({ ...assignment, updatedAt: new Date() })
+      .where(eq(productionVersionPhaseBomProductOutputs.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteProductionVersionPhaseBomProductOutput(id: number): Promise<boolean> {
+    const result = await db.delete(productionVersionPhaseBomProductOutputs)
+      .where(eq(productionVersionPhaseBomProductOutputs.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getProductionVersionPhaseBomProductOutputsByProductionVersion(productionVersionId: number): Promise<ProductionVersionPhaseBomProductOutput[]> {
+    return await db.select().from(productionVersionPhaseBomProductOutputs)
+      .where(eq(productionVersionPhaseBomProductOutputs.productionVersionId, productionVersionId));
+  }
+
+  async getProductionVersionPhaseBomProductOutputsByPhase(discreteOperationPhaseId: number): Promise<ProductionVersionPhaseBomProductOutput[]> {
+    return await db.select().from(productionVersionPhaseBomProductOutputs)
+      .where(eq(productionVersionPhaseBomProductOutputs.discreteOperationPhaseId, discreteOperationPhaseId));
+  }
+
+  async getProductionVersionPhaseBomProductOutputsByBomOutput(bomProductOutputId: number): Promise<ProductionVersionPhaseBomProductOutput[]> {
+    return await db.select().from(productionVersionPhaseBomProductOutputs)
+      .where(eq(productionVersionPhaseBomProductOutputs.bomProductOutputId, bomProductOutputId));
+  }
+
+  // Production Version Phase Recipe Product Output Junction Table  
+  async getProductionVersionPhaseRecipeProductOutputs(): Promise<ProductionVersionPhaseRecipeProductOutput[]> {
+    return await db.select().from(productionVersionPhaseRecipeProductOutputs);
+  }
+
+  async getProductionVersionPhaseRecipeProductOutput(id: number): Promise<ProductionVersionPhaseRecipeProductOutput | undefined> {
+    const [result] = await db.select().from(productionVersionPhaseRecipeProductOutputs)
+      .where(eq(productionVersionPhaseRecipeProductOutputs.id, id));
+    return result || undefined;
+  }
+
+  async createProductionVersionPhaseRecipeProductOutput(assignment: InsertProductionVersionPhaseRecipeProductOutput): Promise<ProductionVersionPhaseRecipeProductOutput> {
+    const [newAssignment] = await db.insert(productionVersionPhaseRecipeProductOutputs).values(assignment).returning();
+    return newAssignment;
+  }
+
+  async updateProductionVersionPhaseRecipeProductOutput(id: number, assignment: Partial<InsertProductionVersionPhaseRecipeProductOutput>): Promise<ProductionVersionPhaseRecipeProductOutput | undefined> {
+    const [updated] = await db.update(productionVersionPhaseRecipeProductOutputs)
+      .set({ ...assignment, updatedAt: new Date() })
+      .where(eq(productionVersionPhaseRecipeProductOutputs.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteProductionVersionPhaseRecipeProductOutput(id: number): Promise<boolean> {
+    const result = await db.delete(productionVersionPhaseRecipeProductOutputs)  
+      .where(eq(productionVersionPhaseRecipeProductOutputs.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getProductionVersionPhaseRecipeProductOutputsByProductionVersion(productionVersionId: number): Promise<ProductionVersionPhaseRecipeProductOutput[]> {
+    return await db.select().from(productionVersionPhaseRecipeProductOutputs)
+      .where(eq(productionVersionPhaseRecipeProductOutputs.productionVersionId, productionVersionId));
+  }
+
+  async getProductionVersionPhaseRecipeProductOutputsByPhase(recipePhaseId: number): Promise<ProductionVersionPhaseRecipeProductOutput[]> {
+    return await db.select().from(productionVersionPhaseRecipeProductOutputs)
+      .where(eq(productionVersionPhaseRecipeProductOutputs.recipePhaseId, recipePhaseId));
+  }
+
+  async getProductionVersionPhaseRecipeProductOutputsByRecipeOutput(recipeProductOutputId: number): Promise<ProductionVersionPhaseRecipeProductOutput[]> {
+    return await db.select().from(productionVersionPhaseRecipeProductOutputs)
+      .where(eq(productionVersionPhaseRecipeProductOutputs.recipeProductOutputId, recipeProductOutputId));
+  }
+
+  // BOM Product Outputs
+  async getBomProductOutputs(): Promise<BomProductOutput[]> {
+    return await db.select().from(bomProductOutputs);
+  }
+
+  async getBomProductOutput(id: number): Promise<BomProductOutput | undefined> {
+    const [output] = await db.select().from(bomProductOutputs).where(eq(bomProductOutputs.id, id));
+    return output || undefined;
+  }
+
+  async createBomProductOutput(output: InsertBomProductOutput): Promise<BomProductOutput> {
+    const [newOutput] = await db.insert(bomProductOutputs).values(output).returning();
+    return newOutput;
+  }
+
+  async updateBomProductOutput(id: number, output: Partial<InsertBomProductOutput>): Promise<BomProductOutput | undefined> {
+    const [updated] = await db.update(bomProductOutputs)
+      .set({ ...output, updatedAt: new Date() })
+      .where(eq(bomProductOutputs.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteBomProductOutput(id: number): Promise<boolean> {
+    const result = await db.delete(bomProductOutputs).where(eq(bomProductOutputs.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getBomProductOutputsByBom(bomId: number): Promise<BomProductOutput[]> {
+    return await db
+      .select()
+      .from(bomProductOutputs)
+      .where(eq(bomProductOutputs.bomId, bomId))
+      .orderBy(bomProductOutputs.sortOrder, bomProductOutputs.id);
   }
 
   // Customers

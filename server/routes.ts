@@ -48,6 +48,7 @@ import {
   insertSchedulingHistorySchema, insertSchedulingResultSchema, insertAlgorithmPerformanceSchema,
   insertRecipeSchema, insertRecipePhaseSchema, insertRecipeFormulaSchema, insertRecipeProductOutputSchema, insertProductionVersionSchema,
   insertVendorSchema, insertCustomerSchema, insertFormulationSchema, insertFormulationDetailSchema, insertProductionVersionPhaseFormulationDetailSchema, insertProductionVersionPhaseMaterialRequirementSchema, insertMaterialRequirementSchema,
+  insertProductionVersionPhaseBomProductOutputSchema, insertProductionVersionPhaseRecipeProductOutputSchema, insertBomProductOutputSchema,
   insertOptimizationScopeConfigSchema, insertOptimizationRunSchema,
   insertOptimizationProfileSchema, insertProfileUsageHistorySchema,
   insertUserSecretSchema,
@@ -17445,6 +17446,368 @@ Response must be valid JSON:
     } catch (error) {
       console.error("Error fetching material requirements by item:", error);
       res.status(500).json({ error: "Failed to fetch material requirements" });
+    }
+  });
+
+  // Production Version Phase BOM Product Output Junction Table Management
+  app.get("/api/production-version-phase-bom-product-outputs", requireAuth, async (req, res) => {
+    try {
+      const outputs = await storage.getProductionVersionPhaseBomProductOutputs();
+      res.json(outputs);
+    } catch (error) {
+      console.error("Error fetching production version phase BOM product outputs:", error);
+      res.status(500).json({ error: "Failed to fetch production version phase BOM product outputs" });
+    }  
+  });
+
+  app.get("/api/production-version-phase-bom-product-outputs/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid ID" });
+      }
+
+      const output = await storage.getProductionVersionPhaseBomProductOutput(id);
+      if (!output) {
+        return res.status(404).json({ error: "Production version phase BOM product output not found" });
+      }
+      res.json(output);
+    } catch (error) {
+      console.error("Error fetching production version phase BOM product output:", error);
+      res.status(500).json({ error: "Failed to fetch production version phase BOM product output" });
+    }
+  });
+
+  app.post("/api/production-version-phase-bom-product-outputs", requireAuth, async (req, res) => {
+    try {
+      const validation = insertProductionVersionPhaseBomProductOutputSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid data", details: validation.error.errors });
+      }
+
+      const output = await storage.createProductionVersionPhaseBomProductOutput(validation.data);
+      res.status(201).json(output);
+    } catch (error) {
+      console.error("Error creating production version phase BOM product output:", error);
+      res.status(500).json({ error: "Failed to create production version phase BOM product output" });
+    }
+  });
+
+  app.put("/api/production-version-phase-bom-product-outputs/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid ID" });
+      }
+
+      const validation = insertProductionVersionPhaseBomProductOutputSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid data", details: validation.error.errors });
+      }
+
+      const output = await storage.updateProductionVersionPhaseBomProductOutput(id, validation.data);
+      if (!output) {
+        return res.status(404).json({ error: "Production version phase BOM product output not found" });
+      }
+      res.json(output);
+    } catch (error) {
+      console.error("Error updating production version phase BOM product output:", error);
+      res.status(500).json({ error: "Failed to update production version phase BOM product output" });
+    }
+  });
+
+  app.delete("/api/production-version-phase-bom-product-outputs/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid ID" });
+      }
+
+      const success = await storage.deleteProductionVersionPhaseBomProductOutput(id);
+      if (!success) {
+        return res.status(404).json({ error: "Production version phase BOM product output not found" });
+      }
+      res.json({ message: "Production version phase BOM product output deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting production version phase BOM product output:", error);
+      res.status(500).json({ error: "Failed to delete production version phase BOM product output" });
+    }
+  });
+
+  // Specialized routes for BOM product output junction
+  app.get("/api/production-versions/:id/phase-bom-product-outputs", requireAuth, async (req, res) => {
+    try {
+      const productionVersionId = parseInt(req.params.id);
+      if (isNaN(productionVersionId)) {
+        return res.status(400).json({ error: "Invalid production version ID" });
+      }
+
+      const outputs = await storage.getProductionVersionPhaseBomProductOutputsByProductionVersion(productionVersionId);
+      res.json(outputs);
+    } catch (error) {
+      console.error("Error fetching production version phase BOM product outputs by production version:", error);
+      res.status(500).json({ error: "Failed to fetch production version phase BOM product outputs" });
+    }
+  });
+
+  app.get("/api/discrete-operation-phases/:id/bom-product-outputs", requireAuth, async (req, res) => {
+    try {
+      const discreteOperationPhaseId = parseInt(req.params.id);
+      if (isNaN(discreteOperationPhaseId)) {
+        return res.status(400).json({ error: "Invalid discrete operation phase ID" });
+      }
+
+      const outputs = await storage.getProductionVersionPhaseBomProductOutputsByPhase(discreteOperationPhaseId);
+      res.json(outputs);
+    } catch (error) {
+      console.error("Error fetching production version phase BOM product outputs by phase:", error);
+      res.status(500).json({ error: "Failed to fetch production version phase BOM product outputs" });
+    }
+  });
+
+  app.get("/api/bom-product-outputs/:id/phase-assignments", requireAuth, async (req, res) => {
+    try {
+      const bomProductOutputId = parseInt(req.params.id);
+      if (isNaN(bomProductOutputId)) {
+        return res.status(400).json({ error: "Invalid BOM product output ID" });
+      }
+
+      const outputs = await storage.getProductionVersionPhaseBomProductOutputsByBomOutput(bomProductOutputId);
+      res.json(outputs);
+    } catch (error) {
+      console.error("Error fetching production version phase BOM product outputs by BOM output:", error);
+      res.status(500).json({ error: "Failed to fetch production version phase BOM product outputs" });
+    }
+  });
+
+  // Production Version Phase Recipe Product Output Junction Table Management
+  app.get("/api/production-version-phase-recipe-product-outputs", requireAuth, async (req, res) => {
+    try {
+      const outputs = await storage.getProductionVersionPhaseRecipeProductOutputs();
+      res.json(outputs);
+    } catch (error) {
+      console.error("Error fetching production version phase recipe product outputs:", error);
+      res.status(500).json({ error: "Failed to fetch production version phase recipe product outputs" });
+    }
+  });
+
+  app.get("/api/production-version-phase-recipe-product-outputs/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid ID" });
+      }
+
+      const output = await storage.getProductionVersionPhaseRecipeProductOutput(id);
+      if (!output) {
+        return res.status(404).json({ error: "Production version phase recipe product output not found" });
+      }
+      res.json(output);
+    } catch (error) {
+      console.error("Error fetching production version phase recipe product output:", error);
+      res.status(500).json({ error: "Failed to fetch production version phase recipe product output" });
+    }
+  });
+
+  app.post("/api/production-version-phase-recipe-product-outputs", requireAuth, async (req, res) => {
+    try {
+      const validation = insertProductionVersionPhaseRecipeProductOutputSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid data", details: validation.error.errors });
+      }
+
+      const output = await storage.createProductionVersionPhaseRecipeProductOutput(validation.data);
+      res.status(201).json(output);
+    } catch (error) {
+      console.error("Error creating production version phase recipe product output:", error);
+      res.status(500).json({ error: "Failed to create production version phase recipe product output" });
+    }
+  });
+
+  app.put("/api/production-version-phase-recipe-product-outputs/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid ID" });
+      }
+
+      const validation = insertProductionVersionPhaseRecipeProductOutputSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid data", details: validation.error.errors });
+      }
+
+      const output = await storage.updateProductionVersionPhaseRecipeProductOutput(id, validation.data);
+      if (!output) {
+        return res.status(404).json({ error: "Production version phase recipe product output not found" });
+      }
+      res.json(output);
+    } catch (error) {
+      console.error("Error updating production version phase recipe product output:", error);
+      res.status(500).json({ error: "Failed to update production version phase recipe product output" });
+    }
+  });
+
+  app.delete("/api/production-version-phase-recipe-product-outputs/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid ID" });
+      }
+
+      const success = await storage.deleteProductionVersionPhaseRecipeProductOutput(id);
+      if (!success) {
+        return res.status(404).json({ error: "Production version phase recipe product output not found" });
+      }
+      res.json({ message: "Production version phase recipe product output deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting production version phase recipe product output:", error);
+      res.status(500).json({ error: "Failed to delete production version phase recipe product output" });
+    }
+  });
+
+  // Specialized routes for recipe product output junction
+  app.get("/api/production-versions/:id/phase-recipe-product-outputs", requireAuth, async (req, res) => {
+    try {
+      const productionVersionId = parseInt(req.params.id);
+      if (isNaN(productionVersionId)) {
+        return res.status(400).json({ error: "Invalid production version ID" });
+      }
+
+      const outputs = await storage.getProductionVersionPhaseRecipeProductOutputsByProductionVersion(productionVersionId);
+      res.json(outputs);
+    } catch (error) {
+      console.error("Error fetching production version phase recipe product outputs by production version:", error);
+      res.status(500).json({ error: "Failed to fetch production version phase recipe product outputs" });
+    }
+  });
+
+  app.get("/api/recipe-phases/:id/product-outputs", requireAuth, async (req, res) => {
+    try {
+      const recipePhaseId = parseInt(req.params.id);
+      if (isNaN(recipePhaseId)) {
+        return res.status(400).json({ error: "Invalid recipe phase ID" });
+      }
+
+      const outputs = await storage.getProductionVersionPhaseRecipeProductOutputsByPhase(recipePhaseId);
+      res.json(outputs);
+    } catch (error) {
+      console.error("Error fetching production version phase recipe product outputs by phase:", error);
+      res.status(500).json({ error: "Failed to fetch production version phase recipe product outputs" });
+    }
+  });
+
+  app.get("/api/recipe-product-outputs/:id/phase-assignments", requireAuth, async (req, res) => {
+    try {
+      const recipeProductOutputId = parseInt(req.params.id);
+      if (isNaN(recipeProductOutputId)) {
+        return res.status(400).json({ error: "Invalid recipe product output ID" });
+      }
+
+      const outputs = await storage.getProductionVersionPhaseRecipeProductOutputsByRecipeOutput(recipeProductOutputId);
+      res.json(outputs);
+    } catch (error) {
+      console.error("Error fetching production version phase recipe product outputs by recipe output:", error);
+      res.status(500).json({ error: "Failed to fetch production version phase recipe product outputs" });
+    }
+  });
+
+  // BOM Product Outputs Management
+  app.get("/api/bom-product-outputs", requireAuth, async (req, res) => {
+    try {
+      const outputs = await storage.getBomProductOutputs();
+      res.json(outputs);
+    } catch (error) {
+      console.error("Error fetching BOM product outputs:", error);
+      res.status(500).json({ error: "Failed to fetch BOM product outputs" });
+    }
+  });
+
+  app.get("/api/bom-product-outputs/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid BOM product output ID" });
+      }
+
+      const output = await storage.getBomProductOutput(id);
+      if (!output) {
+        return res.status(404).json({ error: "BOM product output not found" });
+      }
+      res.json(output);
+    } catch (error) {
+      console.error("Error fetching BOM product output:", error);
+      res.status(500).json({ error: "Failed to fetch BOM product output" });
+    }
+  });
+
+  app.post("/api/bom-product-outputs", requireAuth, async (req, res) => {
+    try {
+      const validation = insertBomProductOutputSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid BOM product output data", details: validation.error.errors });
+      }
+
+      const output = await storage.createBomProductOutput(validation.data);
+      res.status(201).json(output);
+    } catch (error) {
+      console.error("Error creating BOM product output:", error);
+      res.status(500).json({ error: "Failed to create BOM product output" });
+    }
+  });
+
+  app.put("/api/bom-product-outputs/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid BOM product output ID" });
+      }
+
+      const validation = insertBomProductOutputSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid BOM product output data", details: validation.error.errors });
+      }
+
+      const output = await storage.updateBomProductOutput(id, validation.data);
+      if (!output) {
+        return res.status(404).json({ error: "BOM product output not found" });
+      }
+      res.json(output);
+    } catch (error) {
+      console.error("Error updating BOM product output:", error);
+      res.status(500).json({ error: "Failed to update BOM product output" });
+    }
+  });
+
+  app.delete("/api/bom-product-outputs/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid BOM product output ID" });
+      }
+
+      const success = await storage.deleteBomProductOutput(id);
+      if (!success) {
+        return res.status(404).json({ error: "BOM product output not found" });
+      }
+      res.json({ message: "BOM product output deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting BOM product output:", error);
+      res.status(500).json({ error: "Failed to delete BOM product output" });
+    }
+  });
+
+  app.get("/api/bills-of-material/:bomId/product-outputs", requireAuth, async (req, res) => {
+    try {
+      const bomId = parseInt(req.params.bomId);
+      if (isNaN(bomId)) {
+        return res.status(400).json({ error: "Invalid BOM ID" });
+      }
+
+      const outputs = await storage.getBomProductOutputsByBom(bomId);
+      res.json(outputs);
+    } catch (error) {
+      console.error("Error fetching BOM product outputs by BOM:", error);
+      res.status(500).json({ error: "Failed to fetch BOM product outputs" });
     }
   });
 
