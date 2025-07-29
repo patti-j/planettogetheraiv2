@@ -2,6 +2,15 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Data Schema View Inventory Filter Enhancement & Relationship TypeScript Fix (July 29, 2025)**:
+- **COMPREHENSIVE INVENTORY FILTER**: Enhanced inventory management schema filter to include all inventory-affecting tables including stock_items, stock_transactions, stock_balances, sales orders/lines, purchase orders/lines, demand forecasts, and product outputs
+- **RELATIONSHIP MAPPINGS CONFIRMED**: Verified database relationships between sales_orders ↔ sales_order_lines and purchase_orders ↔ purchase_order_lines via foreign key columns (sales_order_id, purchase_order_id)
+- **TYPESCRIPT INTERFACE FIX**: Fixed SchemaRelationship interface to include 'many-to-one' relationship type, resolving 4 TypeScript compilation errors about type overlaps
+- **INVENTORY ECOSYSTEM COMPLETE**: Filter now shows complete inventory management ecosystem from procurement (purchase orders) through production (product outputs) to sales (sales orders and shipments)
+- **CORRECTED TABLE REFERENCES**: Fixed inventory filter to use actual database table names (stock_items vs stocks, demand_drivers vs forecast_lines) based on actual database schema
+- **MANUFACTURING INTEGRATION**: Inventory filter includes both BOM product outputs (discrete manufacturing) and recipe product outputs (process manufacturing) affecting inventory levels
+- Enhanced data schema exploration by providing comprehensive inventory management view with all tables affecting stock levels, movements, and transactions
+
 ✓ **Complete Production Version Phase BOM Product Outputs Junction System Implementation & Testing (July 29, 2025)**:
 - **COMPLETE JUNCTION TABLE SYSTEM OPERATIONAL**: Successfully implemented and tested complete production_version_phase_bom_product_outputs junction table system enabling phase-specific product output tracking for discrete manufacturing
 - **BOM PRODUCT OUTPUTS SCHEMA FIXED**: Resolved critical database schema issues including missing updatedAt column and incorrect orderBy field references that were causing SQL syntax errors

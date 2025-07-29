@@ -167,7 +167,7 @@ interface SchemaColumn {
 }
 
 interface SchemaRelationship {
-  type: 'one-to-one' | 'one-to-many' | 'many-to-many';
+  type: 'one-to-one' | 'one-to-many' | 'many-to-one' | 'many-to-many';
   fromTable: string;
   fromColumn: string;
   toTable: string;
@@ -298,7 +298,7 @@ const featureTableMapping: Record<string, string[]> = {
   ],
   'inventory': [
     // Core inventory tracking
-    'stock_items', 'inventory_transactions', 'warehouses', 'storage_locations', 
+    'stock_items', 'stock_transactions', 'stock_balances', 'inventory_transactions', 'warehouses', 'storage_locations', 
     'inventory_adjustments', 'cycle_counts', 'inventory_reservations',
     // Material requirements and suppliers
     'material_requirements', 'suppliers',
@@ -307,7 +307,7 @@ const featureTableMapping: Record<string, string[]> = {
     // Sales and shipments
     'sales_orders', 'sales_order_lines', 'sales_order_line_shipments',
     // Demand and forecasting
-    'demand_forecasts', 'demand_history', 'forecast_lines',
+    'demand_forecasts', 'demand_history', 'demand_drivers',
     // Transfers between locations
     'transfer_orders', 'transfer_order_shipments',
     // Product outputs affecting inventory
