@@ -13,6 +13,15 @@
 - Manual refresh particularly useful when database schema changes have been made within last 5 minutes and need immediate visibility
 - Enhanced user control over data freshness without requiring full page reload or navigation away from current schema view
 
+✓ **Data Schema View Fit to View Enhancement (July 29, 2025)**:
+- Fixed "Fit to View" button viewport calculations to prevent objects from being shifted off screen
+- Increased padding from 0.1 to 0.2 (20%) to provide better margin around all schema objects
+- Enhanced zoom limits: minZoom from 0.1 to 0.05, maxZoom from 1.5 to 2.0 for better flexibility
+- Added smooth 800ms duration transition for better user experience during viewport adjustments
+- Fixed both manual "Fit to View" button and automatic filter-triggered viewport adjustments
+- Auto-fit functionality now properly centers all filtered tables within visible area with appropriate spacing
+- Users can now reliably see all schema objects without any being cut off at screen edges
+
 ✓ **Production Versions Foreign Key Relationships Fix (July 29, 2025)**:
 - Fixed critical missing foreign key constraints between production_versions and bills_of_material/recipes tables
 - Added production_versions_bom_id_fkey constraint linking production_versions.bom_id → bills_of_material.id

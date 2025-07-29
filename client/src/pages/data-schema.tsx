@@ -1129,11 +1129,11 @@ function DataSchemaViewContent() {
       // Use a longer delay to ensure nodes are fully positioned after layout changes
       const timer = setTimeout(() => {
         fitView({ 
-          padding: 0.15, // Slightly tighter padding for better use of space
+          padding: 0.2, // Increased padding to prevent objects from being cut off
           duration: 800,
           includeHiddenNodes: false,
-          minZoom: 0.1,
-          maxZoom: 1.5
+          minZoom: 0.05,
+          maxZoom: 2.0
         });
       }, 300); // Increased delay for layout completion
       
@@ -1377,7 +1377,7 @@ function DataSchemaViewContent() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => fitView({ padding: 0.1, minZoom: 0.1, maxZoom: 1.5 })}
+                    onClick={() => fitView({ padding: 0.2, minZoom: 0.05, maxZoom: 2.0, duration: 800 })}
                   >
                     <Target className="w-4 h-4" />
                   </Button>
